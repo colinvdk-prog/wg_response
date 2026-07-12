@@ -1208,6 +1208,48 @@ def _late_shift(ctx: _Ctx, crew_id: str, keys, stops, frozen_n: int):
 # Within-count-maximal-plan urgency ordering (FOUNDER ROUND 4 law 7 utility)
 # ---------------------------------------------------------------------------
 
+def _fire_first_reorder(ctx: _Ctx, crew_id: str, keys, frozen_n: int):
+    """FOUNDER ROUND 6 'fire_first': re-order one crew's NON-frozen stops
+    CLOSEST-TO-FIRE-FIRST while minimizing travel — stops are grouped into
+    30-minute p50-arrival BANDS (earliest band first: the homes the fire
+    reaches soonest), and inside each band chained NEAREST-NEIGHBOR from the
+    previous stop (travel-aware, so equal-deadline homes never zigzag).
+    Adopted ONLY when the whole re-ordered route stays feasible under the
+    exact same safety chain (eval_route: deadline + slack floor + corridors +
+    egress, every original stop still served) — count-safe per plan call,
+    same guarantee as _urgency_reorder. No-op outside homes mode."""
+    if not ctx.homes_mode:
+        return keys
+    suffix = list(keys[frozen_n:])
+    if len(suffix) < 2:
+        return keys
+    bands = {}
+    for k in suffix:
+        eta50 = ctx.jobmap[k].eta.eta_p50_s
+        band = (math.inf if not math.isfinite(eta50)
+                else math.floor(eta50 / 1800.0))
+        bands.setdefault(band, []).append(k)
+    crew = ctx.crew_by_id[crew_id]
+    prev_loc = (ctx.jobmap[keys[frozen_n - 1]].client.loc if frozen_n > 0
+                else crew.loc())
+    ordered = []
+    for band in sorted(bands):
+        pool = bands[band]
+        while pool:
+            nxt = min(pool, key=lambda k: (
+                ctx.travel(prev_loc, ctx.jobmap[k].client.loc), k))
+            pool.remove(nxt)
+            ordered.append(nxt)
+            prev_loc = ctx.jobmap[nxt].client.loc
+    if ordered == suffix:
+        return keys
+    cand = list(keys[:frozen_n]) + ordered
+    stops, _fail = ctx.eval_route(crew_id, tuple(cand))
+    if stops is not None:                        # fully feasible => free
+        return cand
+    return keys
+
+
 def _urgency_reorder(ctx: _Ctx, crew_id: str, keys, frozen_n: int):
     """Order a crew's NON-frozen stops to service the sooner-to-burn (higher-
     urgency, on the honest median p50) home first, WITHOUT ever changing the
@@ -1555,6 +1597,13 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
         # count-safe PER CALL but NOT dynamically, so it stays out of the emitted
         # plan; see its docstring and the module header.
         keys = final.assign[cid]
+        # FOUNDER ROUND 6 within-route sequence (default 'auto' = untouched):
+        # 'fire_first' = closest-to-fire-first in 30-min bands w/ travel
+        # chaining; 'urgency' = raw deadline sort. Both count-safe per call.
+        if cfg.dispatch_sequence == "fire_first":
+            keys = _fire_first_reorder(ctx, cid, keys, final.frozen[cid])
+        elif cfg.dispatch_sequence == "urgency":
+            keys = _urgency_reorder(ctx, cid, keys, final.frozen[cid])
         stops, _fail = ctx.eval_route(cid, tuple(keys))
         # COAT-EARLY lever (dispatch_late_shift, default on = shipped): the gel-
         # freshness backward polish. Off => coat as early as feasible, freeing

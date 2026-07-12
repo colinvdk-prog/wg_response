@@ -1803,6 +1803,25 @@ class SimSession:
         self._cmd_log.append({"cmd": "set_buffer",
                               "egress_buffer_min": float(egress_buffer_min)})
 
+    def set_deploy_min(self, deploy_min: float) -> None:
+        """FOUNDER ROUND 6 COAT-TIME SLIDER: live-update cfg.deploy_min (the
+        minutes one crew spends coating one home — the 3-person crew model is
+        15, a 2-person crew ~30). Validates, mutates the shared cfg, and
+        revokes every not-yet-started stop so the next tick re-plans under
+        the new coat time. IN-PROGRESS deploys keep their captured deploy_s
+        (adoption-time rule — the crew on a roof finishes the job it started;
+        the new time governs every stop planned after the change)."""
+        trial = replace(self._cfg, deploy_min=float(deploy_min))
+        problems = validate_config(trial)
+        if problems:
+            raise ValueError("invalid config: " + "; ".join(problems))
+        if not (1.0 <= float(deploy_min) <= 120.0):
+            raise ValueError("deploy_min must be in [1, 120] minutes")
+        self._cfg.deploy_min = float(deploy_min)
+        self._policy_changed()
+        self._cmd_log.append({"cmd": "set_deploy_min",
+                              "deploy_min": float(deploy_min)})
+
     def set_slack(self, slack_min: float) -> None:
         """Live-update cfg.slack_min (SAFETY SEMANTICS 7 planned-slack floor);
         revokes unstarted stops to force a re-plan under the new floor and
@@ -3508,6 +3527,7 @@ class SimSession:
             "relocations": self._n_relocations,
             "buffer_min": cfg.egress_buffer_min,
             "slack_min": cfg.slack_min,
+            "deploy_min": cfg.deploy_min,
             # LAW 8 OUTCOME TAG (FOUNDER ROUND 4): the per-home outcome
             # breakdown {tag: count}. Every tag is present (0 before it first
             # occurs) so the UI block is stable; the counts sum to len(clients)

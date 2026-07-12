@@ -935,6 +935,18 @@ class ResponseConfig:
     # 24 h; the release boundary equals the EXTREME_24H alert rung.
     dispatch_hold_h: float = 0.0
     dispatch_hold_weather_buffer_h: float = 6.0
+    # FOUNDER ROUND 6 (2026-07-12): within-route stop SEQUENCE. 'auto' (default,
+    # byte-identical) = the count-max emit order. 'fire_first' = each crew's
+    # non-frozen stops re-ordered CLOSEST-TO-FIRE-FIRST (earliest p50 arrival)
+    # in 30-min deadline bands with nearest-neighbor travel chaining inside a
+    # band (the founder's 'work backward from the fire, but minimize travel');
+    # adopted ONLY when the whole re-ordered route stays feasible under the
+    # unchanged safety chain, so it can never drop a served home per plan call.
+    # 'urgency' = the raw deadline sort (no travel banding, _urgency_reorder).
+    # Prior pure-urgency attempts lost homes DYNAMICALLY (−113/−4/−24 across
+    # three sweeps, pre-roads/pre-hold); this knob exists to re-measure under
+    # the current stack — the sweep verdict picks the shipped sim default.
+    dispatch_sequence: str = "auto"
     ember_threat_radius_m: float = 0.0      # eta_at adjacency fallback for developed-cell homes (0 = off/byte-identical; sim sets ~200)
     crew_reinforce_1h_min: float = 60.0     # out-of-region '1h away' crews arrive this many min after first ignition (SEMANTICS 9)
     crew_reinforce_3h_min: float = 180.0    # out-of-region '3h away' crews arrive this many min after first ignition (SEMANTICS 9)

@@ -437,6 +437,12 @@
       <div class="sub">the egress-buffer rule — move it and watch served counts + margins re-plan</div>
       <div style="margin-top:6px">slack floor <span class="val" id="slackval">15</span> min</div>
       <input type="range" id="slack" min="0" max="60" step="5" value="15">
+      <!-- FOUNDER ROUND 6 COAT-TIME SLIDER: minutes one crew spends coating one
+           home (15 = the 3-person crew model, one member preps the next site;
+           ~30 = a 2-person crew). Live mid-run: future stops re-plan under the
+           new time; a crew mid-coat finishes the job it started. -->
+      <div style="margin-top:6px">coat time <span class="val" id="deployval">15</span> min/home</div>
+      <input type="range" id="deploy" min="5" max="45" step="5" value="15">
     </div>
 
     <div class="ctl">
@@ -1176,7 +1182,7 @@ function applyScrubUI() {
   // timeline + LIVE button stay live so the user can scrub and return)
   const ids = ["run", "pause", "step", "reset", "reroll", "loc", "firezone",
                "clients", "crews", "crews_1h", "crews_3h", "wind", "buffer",
-               "slack", "speed", "int-low", "int-moderate", "int-high",
+               "slack", "deploy", "speed", "int-low", "int-moderate", "int-high",
                "int-extreme", "spotting", "grass_realism", "safetytoggle"];
   for (const id of ids) { const el = $(id); if (el) el.disabled = scrubbing; }
   if (scrubbing && armed) {          // drop a primed ignite: no map mutation
@@ -1293,6 +1299,8 @@ $("buffer").addEventListener("input", () => { $("bufval").textContent = $("buffe
 $("buffer").addEventListener("change", () => sendConfig({ egress_buffer_min: +$("buffer").value }));
 $("slack").addEventListener("input", () => { $("slackval").textContent = $("slack").value; });
 $("slack").addEventListener("change", () => sendConfig({ slack_min: +$("slack").value }));
+$("deploy").addEventListener("input", () => { $("deployval").textContent = $("deploy").value; });
+$("deploy").addEventListener("change", () => sendConfig({ deploy_min: +$("deploy").value }));
 $("speed").addEventListener("input", () => { $("speedval").textContent = $("speed").value; });
 $("speed").addEventListener("change", () => sendConfig({ speed: +$("speed").value }));
 
@@ -1648,6 +1656,9 @@ function render(st) {
   }
   if (document.activeElement !== $("slack") && sb.slack_min != null) {
     $("slack").value = sb.slack_min; $("slackval").textContent = sb.slack_min;
+  }
+  if (document.activeElement !== $("deploy") && sb.deploy_min != null) {
+    $("deploy").value = sb.deploy_min; $("deployval").textContent = sb.deploy_min;
   }
   if (document.activeElement !== $("speed") && st.speed_x != null) {
     $("speed").value = st.speed_x; $("speedval").textContent = Math.round(st.speed_x);

@@ -215,7 +215,7 @@ class SimSessionManager:
     MAX_SPEED_X = 600.0                # design doc clock ceiling
     MIN_TICK_REAL_S = 0.25             # ticker floor (protects tiny periods)
 
-    _CONFIG_KEYS = ("egress_buffer_min", "slack_min", "speed")
+    _CONFIG_KEYS = ("egress_buffer_min", "slack_min", "speed", "deploy_min")
     _ISO_LEADS_H = (6.0, 12.0, 24.0, 48.0, 72.0)   # simui._isochrones leads
 
     def __init__(self, tile_dir=None, synth_size_km=None):
@@ -333,6 +333,22 @@ class SimSessionManager:
         cfg["dispatch_late_shift"] = not coat_early
         cfg["dispatch_plan_on_roads"] = plan_on_roads
         cfg["dispatch_hold_h"] = 24.0 if hold_24h else 0.0
+        # FOUNDER ROUND 6: coat time per home (minutes). Default 15 = the
+        # adopted 3-person crew model (one member preps the next site); the
+        # UI slider (POST /config deploy_min) changes it live mid-run.
+        try:
+            deploy_min = float(payload.get("deploy_min", 15.0))
+        except (TypeError, ValueError):
+            return 400, {"error": "deploy_min must be a number"}
+        if not (1.0 <= deploy_min <= 120.0):
+            return 400, {"error": "deploy_min must be in [1, 120] minutes"}
+        cfg["deploy_min"] = deploy_min
+        # FOUNDER ROUND 6 sequence knob (measured: fire_first/urgency cost
+        # 0-12 homes vs the count-max order across ratios — default stays auto)
+        sequence = payload.get("sequence", "auto")
+        if sequence not in ("auto", "fire_first", "urgency"):
+            return 400, {"error": "sequence must be auto|fire_first|urgency"}
+        cfg["dispatch_sequence"] = sequence
         with self._lock:
             self._n += 1
             sid = f"sim-{self._n}"
@@ -457,6 +473,8 @@ class SimSessionManager:
             return 400, {"error": "egress_buffer_min must be >= 0"}
         if vals.get("slack_min", 0.0) < 0.0:
             return 400, {"error": "slack_min must be >= 0"}
+        if "deploy_min" in vals and not (1.0 <= vals["deploy_min"] <= 120.0):
+            return 400, {"error": "deploy_min must be in [1, 120] minutes"}
         if "speed" in vals and not (0.0 < vals["speed"] <= self.MAX_SPEED_X):
             return 400, {"error": f"speed must be in (0, {self.MAX_SPEED_X:g}]"}
         with entry.lock:
@@ -465,6 +483,8 @@ class SimSessionManager:
                     entry.session.set_buffer(vals["egress_buffer_min"])
                 if "slack_min" in vals:
                     entry.session.set_slack(vals["slack_min"])
+                if "deploy_min" in vals:
+                    entry.session.set_deploy_min(vals["deploy_min"])
             except ValueError as e:    # validate_config residuals (defensive)
                 return 400, {"error": str(e)}
             if "speed" in vals:
