@@ -1312,21 +1312,31 @@ class SimSession:
                  fire_zone: str = "standard", n_crews_1h: int = 0,
                  n_crews_3h: int = 0, *,
                  tile_dir=None, synth_size_km: float = DEFAULT_SYNTH_SIZE_KM,
-                 roads_module: object = _ROADS_AUTO):
+                 roads_module: object = _ROADS_AUTO,
+                 client_locs: Optional[list] = None):
         self._tile_dir = tile_dir
         self._synth_size_km = float(synth_size_km)
         self._roads_module_arg = roads_module
         self.configure(location_key, n_clients, n_crews, seed, cfg_overrides,
                        fire_zone=fire_zone, n_crews_1h=n_crews_1h,
-                       n_crews_3h=n_crews_3h)
+                       n_crews_3h=n_crews_3h, client_locs=client_locs)
 
     # -- lifecycle -----------------------------------------------------------
 
     def configure(self, location_key: str, n_clients: int, n_crews: int,
                   seed: object, cfg_overrides: Optional[dict] = None,
                   fire_zone: str = "standard", n_crews_1h: int = 0,
-                  n_crews_3h: int = 0):
+                  n_crews_3h: int = 0, client_locs: Optional[list] = None):
         """(Re)build the whole scenario deterministically (contract seam).
+
+        client_locs (ONBOARDING/BENCH seam, 2026-07-12): optional list of
+        LatLon — place clients at EXACTLY these coordinates (deterministic
+        ids sim-c1..N in input order, flat $1.2M value, priority 1.0) instead
+        of the seeded WUI draw; n_clients is then ignored in favor of
+        len(client_locs). Off-tile coordinates fail loud. This is how the
+        onboarding tool and the interface-geometry benchmarks evaluate REAL
+        candidate homes; None (default) = the seeded WUI placement,
+        byte-identical.
 
         fire_zone (contracts FIRE ZONE block): 'standard' | 'extended';
         anything else fails loud. HORIZON PRECEDENCE on extended sessions
@@ -1369,6 +1379,9 @@ class SimSession:
         overrides = dict(cfg_overrides or {})
         self._args = (location_key, n_clients, n_crews, str(seed), overrides,
                       fire_zone, n_crews_1h, n_crews_3h)
+        # ONBOARDING/BENCH seam: exact client coordinates survive reset()
+        # (same custom homes on every replay of the scenario).
+        self._client_locs = list(client_locs) if client_locs else None
         self._cmd_log = [{
             "cmd": "configure", "location": location_key,
             "n_clients": n_clients, "n_crews": n_crews, "seed": str(seed),
@@ -1445,9 +1458,27 @@ class SimSession:
         # WUI mask is restricted to the coordinate-computed central sub-grid.
         window = (central_window_bbox(self._loc.center)
                   if fire_zone == "extended" else None)
-        self._clients = place_clients(tile, n_clients,
-                                      seed=f"{location_key}|{seed}",
-                                      notes=self._notes, window=window)
+        if self._client_locs is not None:
+            # ONBOARDING/BENCH seam: exact caller-supplied home coordinates
+            # (real candidate parcels / synthetic geometries). Off-tile fails
+            # loud — a silently dropped candidate would corrupt every
+            # downstream serviceability number.
+            if not self._client_locs:
+                raise ValueError("client_locs must be non-empty when given")
+            self._clients = []
+            for k, p in enumerate(self._client_locs, start=1):
+                if geo.latlon_to_rc(tile.spec, p) is None:
+                    raise ValueError(
+                        f"client_locs[{k - 1}] ({p.lat:.5f},{p.lon:.5f}) is "
+                        f"outside the {location_key} tile")
+                self._clients.append(ClientProperty(
+                    client_id=f"sim-c{k}", loc=p, name=f"Sim client {k}",
+                    value_usd=1_200_000.0, graphgel_enrolled=True,
+                    priority_weight=1.0))
+        else:
+            self._clients = place_clients(tile, n_clients,
+                                          seed=f"{location_key}|{seed}",
+                                          notes=self._notes, window=window)
         self._client_by_id = {c.client_id: c for c in self._clients}
         # Honest-model note (never silent): the WUI band deliberately includes
         # the developed side of the interface, and the overflow pool can land

@@ -1,0 +1,215 @@
+[
+  {
+    "scenario": "head_on (line perp-to-spread, high, 6km)",
+    "crews": 2,
+    "served": 2,
+    "threatened": 40,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 2,
+    "reasons": {
+      "infeasible_deadline": 35,
+      "no_safe_corridor": 3
+    }
+  },
+  {
+    "scenario": "head_on (line perp-to-spread, high, 6km)",
+    "crews": 4,
+    "served": 9,
+    "threatened": 40,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 0,
+    "reasons": {
+      "infeasible_deadline": 28,
+      "no_safe_corridor": 3
+    }
+  },
+  {
+    "scenario": "head_on_extreme (line perp, extreme)",
+    "crews": 2,
+    "served": 2,
+    "threatened": 40,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 0,
+    "reasons": {
+      "infeasible_deadline": 36,
+      "no_safe_corridor": 2
+    }
+  },
+  {
+    "scenario": "head_on_extreme (line perp, extreme)",
+    "crews": 4,
+    "served": 3,
+    "threatened": 40,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 0,
+    "reasons": {
+      "infeasible_deadline": 35,
+      "no_safe_corridor": 2
+    }
+  },
+  {
+    "scenario": "flank_column (line parallel-spread, high)",
+    "crews": 2,
+    "served": 16,
+    "threatened": 40,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 0,
+    "reasons": {
+      "infeasible_deadline": 24
+    }
+  },
+  {
+    "scenario": "flank_column (line parallel-spread, high)",
+    "crews": 4,
+    "served": 20,
+    "threatened": 40,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 0,
+    "reasons": {
+      "infeasible_deadline": 18,
+      "no_safe_corridor": 2
+    }
+  },
+  {
+    "scenario": "scattered (seeded WUI, high)",
+    "crews": 2,
+    "served": 12,
+    "threatened": 26,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 0,
+    "reasons": {
+      "infeasible_deadline": 13,
+      "no_safe_corridor": 1
+    }
+  },
+  {
+    "scenario": "scattered (seeded WUI, high)",
+    "crews": 4,
+    "served": 13,
+    "threatened": 26,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 0,
+    "reasons": {
+      "infeasible_deadline": 13
+    }
+  },
+  {
+    "scenario": "second_fire (+60\u00b0 at T+2h, high)",
+    "crews": 2,
+    "served": 11,
+    "threatened": 30,
+    "viol": 1,
+    "ov": 34,
+    "withdrawn": 0,
+    "reasons": {
+      "infeasible_deadline": 13,
+      "no_safe_corridor": 6
+    }
+  },
+  {
+    "scenario": "second_fire (+60\u00b0 at T+2h, high)",
+    "crews": 4,
+    "served": 16,
+    "threatened": 30,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 0,
+    "reasons": {
+      "infeasible_deadline": 13,
+      "no_safe_corridor": 1
+    }
+  },
+  {
+    "scenario": "alerted (line perp, extended 20km)",
+    "crews": 2,
+    "served": 40,
+    "threatened": 40,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 0,
+    "reasons": {}
+  },
+  {
+    "scenario": "alerted (line perp, extended 20km)",
+    "crews": 4,
+    "served": 40,
+    "threatened": 40,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 0,
+    "reasons": {}
+  },
+  {
+    "scenario": "capacity_N10",
+    "crews": 2,
+    "served": 7,
+    "threatened": 10,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 0,
+    "reasons": {
+      "no_safe_corridor": 1,
+      "infeasible_deadline": 2
+    }
+  },
+  {
+    "scenario": "capacity_N20",
+    "crews": 2,
+    "served": 4,
+    "threatened": 20,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 1,
+    "reasons": {
+      "infeasible_deadline": 13,
+      "no_safe_corridor": 3
+    }
+  },
+  {
+    "scenario": "capacity_N30",
+    "crews": 2,
+    "served": 2,
+    "threatened": 30,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 2,
+    "reasons": {
+      "infeasible_deadline": 25,
+      "no_safe_corridor": 3
+    }
+  },
+  {
+    "scenario": "capacity_N40",
+    "crews": 2,
+    "served": 2,
+    "threatened": 40,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 2,
+    "reasons": {
+      "infeasible_deadline": 35,
+      "no_safe_corridor": 3
+    }
+  },
+  {
+    "scenario": "capacity_N60",
+    "crews": 2,
+    "served": 3,
+    "threatened": 60,
+    "viol": 0,
+    "ov": 0,
+    "withdrawn": 2,
+    "reasons": {
+      "infeasible_deadline": 54,
+      "no_safe_corridor": 3
+    }
+  }
+]

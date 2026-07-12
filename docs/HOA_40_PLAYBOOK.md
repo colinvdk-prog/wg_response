@@ -28,6 +28,49 @@ case (evacuation-first + hardening), and buy lead time (detection) before
 buying a third crew.** The reactive sizing curve (3-person/15-min crews,
 measured): 2 crews 41.7% · 4 crews 50.6% · 6 crews 56.3% · 8 crews 58.8%.
 
+## 1b. Interface geometry — why lead time is the product (2026-07-12)
+
+WUI communities usually form a LINE along the wildland edge, and the fire
+wall arrives PERPENDICULAR to it — every home's deadline lands in the same
+narrow window. Engine benchmarks (Paradise tile, shipped config, 40 homes on
+a WUI-snapped interface line):
+
+| Scenario | 2 crews | 4 crews |
+|---|---|---|
+| Head-on interface, reactive (fire 6 km, high) | **5%** | 22% |
+| Head-on interface, reactive, extreme | 5% | 8% |
+| Flank/parallel line (staggered deadlines), reactive | 40% | 50% |
+| Scattered WUI (reference), reactive | 46% | 50% |
+| Second ignition at T+2h, reactive | 37% | 53% |
+| **Head-on interface, ALERTED (detected ~20 km out, hold+preposition)** | **100%** | **100%** |
+
+Capacity law for the head-on reactive case: served saturates at ~1-2 homes
+per crew NO MATTER how many homes enroll (deadline-limited: unserved reasons
+are `infeasible_deadline`, not access) — adding crews barely moves it.
+**The same line is fully coverable with 2 crews when the fire is detected a
+day out.** Operationally: for interface communities, detection + the alert
+ladder + the 24h hold/preposition regime IS the product; reactive crews are
+the backstop, not the plan. This is the quantitative case for the marketing
+strategy below.
+
+## 1c. Onboarding & marketing tool (`tools/onboard.py`)
+
+Grades any candidate home (real coordinates) with the real engine:
+`reactive%` across a compass ensemble of nearby ignitions, `alerted`
+coverability (far detection, hold regime), grade A-D, and **fleet impact**
+(home-scenarios the existing portfolio loses if the candidates join —
+nonzero means add a crew or cap enrollment).
+
+    py -3 tools/onboard.py --location paradise_ca --crews 2 \
+        --portfolio "lat,lon;..." --candidates "lat,lon;..."
+
+Marketing interpretation: grade C (alerted-only) is the NORMAL state of
+interface-edge homes — do not decline them; sell the detection + alert-
+ladder package that covers them 100%. Grade D = decline, require hardening/
+access work, or price a dedicated crew. Use the tool neighborhood-by-
+neighborhood to find where enrollment keeps response high (A/B clusters,
+capacity-safe additions) — that is the target map for sales.
+
 ## 2. HOA requirements
 
 ### Staffing & equipment
