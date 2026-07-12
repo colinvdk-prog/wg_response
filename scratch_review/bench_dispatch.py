@@ -61,11 +61,17 @@ def run_scenario(sc, overrides, horizon=HORIZON_TICKS):
                     saved=0, protected_impacted=0, abandoned=0, triaged=0,
                     not_threatened=N_CLIENTS, threatened=0, error="off_tile")
     st = None
+    max_viol = 0          # per-TICK max (scoreboard.violations is instantaneous
+    ov_ticks = 0          # for overruns — final-tick reads can hide transients)
     for _ in range(horizon):
         st = s.tick()
+        v = st["scoreboard"].get("violations", 0)
+        if v > max_viol:
+            max_viol = v
+        if st.get("crew_overruns"):
+            ov_ticks += 1
     sb = st["scoreboard"]
-    ov = sb.get("crew_overruns", 0)
-    ov = ov if isinstance(ov, int) else len(ov or [])
+    ov = ov_ticks
     outs = sb.get("outcomes", {}) or {}
     # gel freshness at (projected) fire arrival over every serviced stop — the
     # thing late-shift protects; coat-early must not tank it (LEVER C honesty).
@@ -77,7 +83,7 @@ def run_scenario(sc, overrides, horizon=HORIZON_TICKS):
         seed=sc["seed"], map=sc["map"], wind_off=sc["wind_off"],
         dist=sc["dist"], inten=sc["inten"],
         served=int(sb.get("served", 0)),
-        violations=int(sb.get("violations", 0)),
+        violations=int(max_viol),
         overruns=int(ov),
         withdrawn=int(sb.get("withdrawn", 0)),
         relocations=int(sb.get("relocations", 0)),

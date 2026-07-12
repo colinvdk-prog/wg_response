@@ -17,8 +17,22 @@ nothing is projected. Companion docs written the same day:
 | 07-10 | **Critical fix**: persisted-arrival-field architecture (per-tick ensemble re-base froze fires twice — founder-visible "fire doesn't grow") | regression test proves fail-on-old-code; ~5× faster ticks |
 | 07-11 | Public deploy (App Runner), sim-clock HUD, line-of-fire review, dispatch improvement loop, application-rate analysis, defensibility siting | live at m897yqgsmt.us-west-2.awsapprunner.com/simulator |
 
-**Current suite: 1,149 passed / 0 failed.** Zero safety violations across every
-sweep ever run (thousands of scenario-runs).
+**Current suite: 1,149+ passed / 0 failed.**
+
+**CORRECTION (same day, SEM-10d):** the long-standing "zero violations across
+every sweep" claim was a FINAL-TICK artifact — `scoreboard.violations` is
+instantaneous, and per-tick tracking exposed transient crew overruns the
+final-tick reads hid (43 overrun-ticks across the 60-scenario reactive sweep;
+2 crews actually burned mid-egress + a no-zone-left dead end on the extended
+Camp-Fire-scale run). Fixed same day: SEM-10d routed relocation (relocation
+targets now corridor-checked over the crew's ACTUAL route), destination-safe-
+first least-exposure selection, outward AREA ESCAPE when the fire consumes
+every catalog zone, and cold-black passability (crews may drive OUT through
+old burn — the front, not the black, is the hazard). Post-fix, per-tick:
+extended Camp-Fire run 0 violations end-to-end; reactive sweep overrun-ticks
+43 → 3 (each a single tick where the front beat a 15-min tick with <1 tick of
+warning — the irreducible tail), and served rose 878 → 893. Benches now track
+per-tick maxima; a 120-tick extended regression test pins the scenario.
 
 ## 2. Headline results (the numbers that matter)
 

@@ -2946,3 +2946,45 @@ def test_crew_safety_determinism_same_script(tmp_path):
     b, rb = run()
     assert a == b, "same (seed, command script) must replay byte-identically"
     assert ra >= 1 and ra == rb, "relocations must be deterministic and non-zero"
+
+
+# ---------------------------------------------------------------------------
+# SEM-10d ROUTED RELOCATION + AREA ESCAPE (founder finding 2026-07-11): on the
+# extended-zone Camp-Fire-scale Paradise run, crews were burned WHILE EGRESSING
+# (relocation picked the nearest catalog zone without checking the crew could
+# REACH it ahead of the front — the road route hooked through the burn) and,
+# once the fire consumed every catalog zone, crews sat at the fail-closed zone
+# until overrun. The fix: least-bad ROUTED target choice (lawful-route zone,
+# else max-worst-margin zone/escape-ray) + outward AREA ESCAPE. This pins the
+# real failing scenario end-to-end: per-tick violations must stay 0 for the
+# WHOLE run (scoreboard.violations is instantaneous — final-tick reads hide
+# transient overruns, which is exactly how the original bug slipped past).
+# ---------------------------------------------------------------------------
+
+def test_sem10d_extended_campfire_scale_no_overrun_ever():
+    from wgresponse import geo as _geo
+    from wgresponse import simui
+    key = "paradise_ca"
+    loc = simui.LOCATIONS[key]
+    s = simui.SimSession(
+        key, 20, 2, seed="alerted|paradise_ca",
+        cfg_overrides={"spotting_enabled": True, "grass_ros_floor_frac": 0.10,
+                       "deploy_min": 15.0},
+        fire_zone="extended")
+    ign = _geo.destination(loc.center, loc.hazard_wind_dir_deg, 13_500.0)
+    s.ignite(ign.lat, ign.lon, intensity="high",
+             wind_dir_deg=loc.hazard_wind_dir_deg)
+    s.set_speed(2.0)                    # 30 min per tick -> 60 h in 120 ticks
+    escape_seen = False
+    for t in range(120):
+        st = s.tick()
+        assert st["scoreboard"]["violations"] == 0, (
+            f"tick {t}: crew overrun/violation — SEM-10d regression")
+        assert not st.get("crew_overruns"), (
+            f"tick {t}: live crew-overrun rows — SEM-10d regression")
+        if any(n for n in st.get("notes", []) if "area escape" in n):
+            escape_seen = True
+    # the scenario must actually exercise the escape law (fire consumes the
+    # community; crews leave the area) — otherwise this test is vacuous
+    assert escape_seen or st["scoreboard"]["relocations"] >= 1, (
+        "scenario no longer exercises relocation/escape — rebuild the pin")

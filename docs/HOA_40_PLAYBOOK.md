@@ -16,7 +16,12 @@ Two regimes, very different math:
 - **Alerted** (event visible on the 72h/24h ladder): **1–2 crews coat the
   entire community before arrival.** At 15 min/home + short hops, one 3-person
   crew ≈ 10.5 h for all 40 homes; two crews ≈ 5.3 h — comfortably inside an
-  EXTREME_24H window, trivially inside WATCH.
+  EXTREME_24H window, trivially inside WATCH. ENGINE-MEASURED (2026-07-11,
+  extended-tile 60 h Camp-Fire-scale runs, 2 crews, `bench_alerted.py`):
+  4.4–6.7 h of lead → **80–100% coated** (Boulder 100%, Santa Rosa 93.5%,
+  Paradise 84.6%) vs ~42% reactive with the same 2 crews. Lead time is the
+  multiplier; a fast-run canyon fire with <1 h lead (Malibu 0.8 h → 41%)
+  stays reactive — which is what the evacuate-first protocol is for.
 
 **Therefore: staff for the alerted case (2 crews), protocol for the reactive
 case (evacuation-first + hardening), and buy lead time (detection) before

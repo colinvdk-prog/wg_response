@@ -239,6 +239,16 @@ INTENSITY_WEATHER = {
 #: Fixed simulation epoch (unix s). Deterministic law: never wall-clock.
 T0_S = 1_790_000_000.0
 
+#: SEM-10d escape-path COLD-BLACK window (seconds): a cell the nominal front
+#: consumed at least this long before a fleeing crew would pass it counts as
+#: OLD BURN — passable (the hazard is the front's flaming residence, minutes
+#: in grass/shrub; 45 min is a conservative bound incl. heavy fuels) — so a
+#: crew stranded inside a large burn scar can drive OUT through the black
+#: (park_city finding: 44 ticks standing in the burn with zero candidates).
+#: ROUTE-SELECTION policy only; the 10c audit still reports any crew standing
+#: on a front-passed cell, and cells inside the window remain undriveable.
+_COLD_BLACK_PASS_S = 45.0 * 60.0
+
 #: Synthetic-fallback tile edge length (km). Real cached tiles are ~18x18 km;
 #: the rehearsal-grade fallback defaults smaller to keep the dep-free pure-
 #: Python spread loop responsive. Overridable per session (tests use ~6-16).
@@ -1615,6 +1625,9 @@ class SimSession:
         self._n_relocations = 0
         self._crew_overruns = []
         self._no_safe_zone = False
+        # SEM-10d: one-shot alarm latch for the area-escape note (crews leaving
+        # the operating area because no catalog zone is safely reachable).
+        self._area_escape_alarmed = False
         # LAW 1 TIME-SCRUB HISTORY (FOUNDER ROUND 3): a bounded ring of DEEP
         # snapshots of every emitted tick's state() (oldest evicted at
         # cfg.history_ticks). Recorded ONLY at tick emit (never on a bare
@@ -2014,6 +2027,191 @@ class SimSession:
         escape from a pre-filtered currently-safe candidate list."""
         return min(zones, key=lambda z: (geo.haversine_m(pos, z.loc), z.zone_id))
 
+    # -- SEM-10d ROUTED ESCAPE (founder finding 2026-07-11: two crews burned
+    # -- WHILE EGRESSING on the extended-zone Camp-Fire-scale run — the sweep
+    # -- picked the NEAREST safe zone without checking the crew could REACH it
+    # -- ahead of the front, and when the fire consumed every catalog zone the
+    # -- crews sat at the fail-closed zone until overrun) ----------------------
+
+    def _route_points_with_times(self, a, b, speed_mps: float):
+        """The ACTUAL escape path a->b as [(LatLon, pass_time_offset_s)] —
+        the road route (wgresponse.roads seam, exactly what the crew will
+        drive) when a graph is loaded, else the straight tier-0 leg; long
+        spans subdivided to ~275 m so the front cannot slip between samples.
+        Pass times are cumulative distance / crew ground speed."""
+        pts = []
+        rr = self._leg_route(a, b)
+        if rr is not None and getattr(rr, "segments", None):
+            for seg in rr.segments:
+                for p in seg.points:
+                    q = p if isinstance(p, LatLon) else LatLon(p[0], p[1])
+                    if not pts or (pts[-1].lat, pts[-1].lon) != (q.lat, q.lon):
+                        pts.append(q)
+        if len(pts) < 2:
+            pts = [a, b]
+        out = [(pts[0], 0.0)]
+        t = 0.0
+        step = 275.0
+        for i in range(1, len(pts)):
+            p0, p1 = pts[i - 1], pts[i]
+            d = geo.haversine_m(p0, p1)
+            if d <= 0.0:
+                continue
+            n_sub = max(1, int(d // step))
+            for k in range(1, n_sub + 1):
+                f = k / n_sub
+                q = LatLon(p0.lat + (p1.lat - p0.lat) * f,
+                           p0.lon + (p1.lon - p0.lon) * f)
+                t += (d / n_sub) / max(speed_mps, 0.1)
+                out.append((q, t))
+        return out
+
+    def _route_metrics(self, a, b, now, speed_mps: float, lead_s: float):
+        """(burned, exposure_s, worst_s, total_s, dest_margin_s) for
+        traversing a->b along the crew's ACTUAL route, each sample judged at
+        its PASS time by the same cell law the sweep applies to a standing
+        crew. burned: some sample's nominal front has passed by the crew's
+        pass time (a route through the burn is never chosen while any
+        alternative exists). exposure_s: total seconds spent on cells whose
+        eroded-P10 margin (p10 − (pass + egress buffer + lead)) is negative —
+        the exact condition the 10c audit counts as a live overrun.
+        worst_s: minimum margin anywhere. total_s: route duration.
+        dest_margin_s: the DESTINATION's margin at arrival — the standing
+        state after the dash; a zero-length route has zero transit exposure
+        but its dest_margin says whether staying there is lawful (scoring by
+        transit exposure alone let a crew 'choose' its own unsafe position
+        and stand in the alarm forever). (not burned and worst_s >= 0) == the
+        whole route is fully lawful (SEM-10 extended from the crew's cell to
+        every cell of its escape route)."""
+        buffer_s = self._cfg.egress_buffer_min * 60.0
+        pts = self._route_points_with_times(a, b, speed_mps)
+        burned = False
+        exposure = 0.0
+        worst = math.inf
+        dest_margin = math.inf
+        prev_dt = 0.0
+        for q, dt in pts:
+            pass_t = now + dt
+            nom, p10 = self._crew_exposure(q)
+            # BURNED = the FLAMING FRONT crosses this cell within the cold-
+            # black window of the crew's pass time. Two deliberate carve-outs
+            # (both from the park_city stranded-crew finding, 44 ticks in the
+            # burn with zero candidates):
+            #   dt > 0 — the STARTING cell is exempt (a crew standing in the
+            #   burn is exactly the crew that MUST drive out);
+            #   COLD BLACK — a cell the front consumed >= _COLD_BLACK_PASS_S
+            #   before the crew passes is OLD BURN, passable (the hazard is
+            #   the front's flaming residence, minutes — not the black behind
+            #   it, which is the classic survival ground). The 10c AUDIT is
+            #   unchanged — standing in ANY front-passed cell still reports —
+            #   this only lets a black-stranded crew LEAVE.
+            if ((not math.isinf(nom)) and nom <= pass_t and dt > 0.0
+                    and (pass_t - nom) < _COLD_BLACK_PASS_S):
+                burned = True
+            m = math.inf
+            if not math.isinf(p10):
+                m = p10 - (pass_t + buffer_s + lead_s)
+                worst = min(worst, m)
+                if m < 0.0:
+                    exposure += max(0.0, dt - prev_dt)
+            dest_margin = m                 # last sample = the destination
+            prev_dt = dt
+        total = pts[-1][1] if pts else 0.0
+        return burned, exposure, worst, total, dest_margin
+
+    def _reachable_zone(self, pos, zones, now, speed_mps: float, lead_s: float):
+        """Nearest zone from `zones` whose ROUTE from `pos` is fully lawful
+        (not burned, worst margin >= 0; nearest-first, tie by zone_id); None
+        when no catalog zone is safely reachable."""
+        for z in sorted(zones,
+                        key=lambda z: (geo.haversine_m(pos, z.loc), z.zone_id)):
+            burned, _e, worst, _t, _dm = self._route_metrics(
+                pos, z.loc, now, speed_mps, lead_s)
+            if not burned and worst >= 0.0:
+                return z
+        return None
+
+    def _escape_ray_targets(self, pos, now, speed_mps: float):
+        """Outward AREA-ESCAPE proposals (SEM-10d): walk 12 fixed bearings
+        (deterministic) in ~550 m straight samples out to 12 km (clamped
+        inside the tile), ending each ray at the first sample the nominal
+        front reaches by the crew's pass time. Returns (bearing, target)
+        proposals with >= 2 km of driveable length — GEOMETRY only; the
+        caller scores every proposal over the crew's ACTUAL route seam (the
+        straight ray is not what the crew drives, which is exactly how the
+        original nearest-zone bug slipped through)."""
+        spec = self._tile.spec
+        lat_hi = spec.north_lat - 2.0 * spec.cell_m / 111_320.0
+        lat_lo = spec.north_lat - (spec.nrows - 2) * spec.cell_m / 111_320.0
+        lon_w = geo.rc_to_latlon(spec, 0, 1).lon
+        lon_e = geo.rc_to_latlon(spec, 0, spec.ncols - 2).lon
+        out = []
+        for bearing in range(0, 360, 30):
+            last_ok = None
+            d = 550.0
+            while d <= 12_000.0:
+                q = geo.destination(pos, float(bearing), d)
+                if not (lat_lo < q.lat < lat_hi and lon_w < q.lon < lon_e):
+                    break
+                pass_t = now + d / max(speed_mps, 0.1)
+                nom, _p10 = self._crew_exposure(q)
+                if ((not math.isinf(nom)) and nom <= pass_t
+                        and (pass_t - nom) < _COLD_BLACK_PASS_S):
+                    break        # the FRONT is here at pass time: ray ends
+                last_ok = q
+                d += 550.0
+            if last_ok is not None and geo.haversine_m(pos, last_ok) >= 2_000.0:
+                out.append((bearing, last_ok))
+        return out
+
+    def _best_escape(self, pos, now, speed_mps: float, lead_s: float):
+        """(target_loc, target_id) for a crew that must move (SEM-10d) — the
+        LEAST-EXPOSURE ROUTED choice, never a blind nearest-zone hop:
+        1. the nearest catalog zone whose ACTUAL route is fully lawful, else
+        2. among ALL catalog zones and the outward escape-ray proposals, the
+           candidate minimizing (seconds spent on audit-unsafe cells, then
+           route duration) over the crew's ACTUAL route seam, burned-through
+           routes excluded. Exposure-time is the objective because it is what
+           the 10c audit counts — a max-worst-margin rule was measured to
+           pick long detours whose extra time-at-risk TRIPLED standard-tile
+           overrun ticks (43 -> 158 across the 60-scenario sweep), else
+        3. (every candidate route crosses the burn) the nearest catalog zone —
+           genuinely cornered; the audit reports what follows honestly."""
+        zones = list(self._loc.safe_zones)
+        safe_zones, fail_closed = self._currently_safe_zones(now, lead_s=lead_s)
+        if not fail_closed:
+            z = self._reachable_zone(pos, safe_zones, now, speed_mps, lead_s)
+            if z is not None:
+                return z.loc, z.zone_id
+        cands = []
+        for z in sorted(zones, key=lambda z: z.zone_id):
+            burned, expo, _w, total, dm = self._route_metrics(
+                pos, z.loc, now, speed_mps, lead_s)
+            if not burned:
+                cands.append((dm, expo, total, 0, z.zone_id, z.loc))
+        for _bearing, tgt in self._escape_ray_targets(pos, now, speed_mps):
+            burned, expo, _w, total, dm = self._route_metrics(
+                pos, tgt, now, speed_mps, lead_s)
+            if not burned:
+                cands.append((dm, expo, total, 1, "escape", tgt))
+        # DESTINATION SAFETY FIRST (a zero-length route has zero transit
+        # exposure — without this gate a crew 'chose' its own unsafe position
+        # and stood in the alarm): prefer candidates whose destination is
+        # lawful AT ARRIVAL, among them the least transit exposure then the
+        # shortest dash; when no destination is lawful, the one that stays
+        # lawful LONGEST (max dest margin) with exposure as tiebreak.
+        safe_dest = [c for c in cands if c[0] >= 0.0]
+        if safe_dest:
+            _dm, _e, _t, _k, zid, loc = min(
+                safe_dest, key=lambda c: (c[1], c[2], c[3], c[4]))
+            return loc, zid
+        if cands:
+            _dm, _e, _t, _k, zid, loc = min(
+                cands, key=lambda c: (-c[0], c[1], c[2], c[3], c[4]))
+            return loc, zid
+        zfb = self._nearest_zone(pos, zones)
+        return zfb.loc, zfb.zone_id
+
     def _overrun_withdraw(self, cid, now) -> None:
         """SAFETY SEMANTICS 10a: a DEPLOYING crew whose cell the fire has
         overrun aborts its in-progress gel deploy via the existing withdrawal
@@ -2110,12 +2308,16 @@ class SimSession:
             # moves. A crew whose own cell is unsafe is handled by the relocate
             # path below instead.
             if (not (burned or imminent) and cs.egress_zone_id
+                    and cs.egress_zone_id != "escape"
                     and cs._mode in ("deploy", "egress")):
                 z = self._zone_by_id.get(cs.egress_zone_id)
                 if z is None or not self._zone_currently_safe(z, now):
-                    newz = self._nearest_zone(cs.pos, safe_zones)
-                    if newz.zone_id != cs.egress_zone_id:
-                        cs.retarget_egress(newz.loc, newz.zone_id)
+                    # SEM-10d: retarget along the LEAST-BAD ROUTED choice
+                    # (lawful-route zone, else max-worst-margin zone/escape
+                    # ray) — never blindly at the nearest catalog zone.
+                    nloc, nid = self._best_escape(cs.pos, now, cs.speed, lead_s)
+                    if nid != cs.egress_zone_id:
+                        cs.retarget_egress(nloc, nid)
             if cs._mode == "deploy":
                 # A committed deploy is governed by the departure-deadline
                 # withdrawal law (dispatch feasibility + the road-egress guard +
@@ -2134,13 +2336,31 @@ class SimSession:
             # zero-lead audit line).
             if not (burned or imminent):
                 continue
-            zone = self._nearest_zone(cs.pos, safe_zones)
-            if cs.pos == zone.loc:
+            # SEM-10d ROUTED RELOCATION: the LEAST-EXPOSURE ROUTED choice —
+            # never a blind nearest-zone hop through the front (the founder's
+            # two-crews-burned-egressing finding on the extended Camp-Fire-
+            # scale run). HYSTERESIS: a crew already fleeing keeps its current
+            # target while that target is still lawful at (re)arrival —
+            # re-picking every tick let alternating 'best' targets zigzag a
+            # crew in place for hours (44 exposed ticks on park_city extreme).
+            if cid in self._relocating and cs.egress_loc is not None:
+                _b, _e, _w, _t, dm_cur = self._route_metrics(
+                    cs.pos, cs.egress_loc, now, cs.speed, lead_s)
+                if not _b and dm_cur >= 0.0:
+                    continue                    # keep fleeing to the same target
+            zone_loc, zone_id = self._best_escape(cs.pos, now, cs.speed, lead_s)
+            if zone_id == "escape" and not self._area_escape_alarmed:
+                self._notes.append(
+                    "CREW SAFETY (SEMANTICS 10d area escape): no catalog safe "
+                    "zone is safely REACHABLE ahead of the front — crews are "
+                    "leaving the operating area along the safest outward bearing")
+                self._area_escape_alarmed = True
+            if cs.pos == zone_loc:
                 # nowhere safer to go (already AT the chosen — possibly
                 # fail-closed — zone): let the audit (10c) report the unavoidable
                 # overrun; don't churn or claim a phantom relocation.
                 continue
-            dropped = cs.relocate_to(zone.loc, zone.zone_id)
+            dropped = cs.relocate_to(zone_loc, zone_id)
             for d in dropped:
                 # freed for re-planning next tick (a not-yet-serviced stop the
                 # fleeing crew abandoned); no terminal reason — it flows back to
@@ -2152,7 +2372,7 @@ class SimSession:
                 self._n_relocations += 1
                 self._notes.append(
                     f"crew {cid} repositioning — zone threatened (relocating to "
-                    f"{zone.zone_id})")
+                    f"{zone_id})")
             self._relocating[cid] = "zone_overrun" if burned else "zone_threatened"
 
     # -- the tick (the REAL cycle path) ----------------------------------------
