@@ -44,8 +44,11 @@ def run_scenario(sc, overrides, horizon=HORIZON_TICKS):
     wd = (loc.hazard_wind_dir_deg + sc["wind_off"]) % 360.0
     ign = geo.destination(loc.center, wd, sc["dist"])      # upwind of center
     cfg = dict(BASE); cfg.update(overrides)
+    kw = {}
+    if os.environ.get("BENCH_NO_ROADS"):
+        kw["roads_module"] = None     # crews fly the chords corridors checked
     s = simui.SimSession(sc["map"], N_CLIENTS, N_CREWS, seed=sc["seed"],
-                         cfg_overrides=cfg, fire_zone="standard")
+                         cfg_overrides=cfg, fire_zone="standard", **kw)
     # guard: if the offset pushes ignition off-tile, pull it in toward center
     for shrink in (1.0, 0.85, 0.7, 0.55):
         p = geo.destination(loc.center, wd, sc["dist"] * shrink)

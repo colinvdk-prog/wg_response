@@ -2120,16 +2120,32 @@ class SimSession:
         return burned, exposure, worst, total, dest_margin
 
     def _reachable_zone(self, pos, zones, now, speed_mps: float, lead_s: float):
-        """Nearest zone from `zones` whose ROUTE from `pos` is fully lawful
-        (not burned, worst margin >= 0; nearest-first, tie by zone_id); None
-        when no catalog zone is safely reachable."""
+        """LONGEVITY-FIRST lawful zone pick (founder 2026-07-11 'better
+        projection so less rerouting'): the fire's persisted arrival field
+        already says WHEN every zone will be threatened, so use it AT
+        SELECTION time instead of bouncing reactively later. Among zones
+        whose ROUTE from `pos` is fully lawful (not burned, worst margin
+        >= 0): prefer zones the eroded-P10 front NEVER reaches ('forever'
+        zones), nearest first; else the LONGEST-LIVED zone (latest P10
+        arrival, distance tiebreak). Nearest-first alone sent crews to zones
+        the engine already knew would be overrun within the hour — the
+        measured bounce chains (7 relocations per crew on extended Paradise,
+        383 across the reactive sweep). None when no catalog zone is safely
+        reachable."""
+        lawful = []
         for z in sorted(zones,
                         key=lambda z: (geo.haversine_m(pos, z.loc), z.zone_id)):
             burned, _e, worst, _t, _dm = self._route_metrics(
                 pos, z.loc, now, speed_mps, lead_s)
             if not burned and worst >= 0.0:
-                return z
-        return None
+                _nom, p10 = self._crew_exposure(z.loc)
+                lawful.append((z, p10, geo.haversine_m(pos, z.loc)))
+        if not lawful:
+            return None
+        forever = [c for c in lawful if math.isinf(c[1])]
+        if forever:
+            return min(forever, key=lambda c: (c[2], c[0].zone_id))[0]
+        return max(lawful, key=lambda c: (c[1], -c[2], c[0].zone_id))[0]
 
     def _escape_ray_targets(self, pos, now, speed_mps: float):
         """Outward AREA-ESCAPE proposals (SEM-10d): walk 12 fixed bearings
