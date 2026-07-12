@@ -917,6 +917,24 @@ class ResponseConfig:
     # closures) only. Sweep-measured at 15-min crews: 874 vs 775 homes with
     # margin 60, per-tick violations 0 at both. Chord legs keep 60.
     route_margin_roads_min: float = 30.0
+    # FOUNDER ROUND 5 — COATING HOLD (2026-07-12): "if fire is more than 24
+    # hours away, do not coat homes; place crews on alert and preposition as
+    # required — AS LONG AS all homes can be coated based on the current fire
+    # spread model and a buffer for changes in forecasted weather." The
+    # coating is OPAQUE and owners accept it only under live threat, so
+    # speculative early coats are waste — but deferral may NEVER cost a home:
+    # each cycle a feasibility PROBE re-plans every job with held jobs pushed
+    # to their release time (p50 − hold_h) AND their safety deadlines
+    # tightened by the weather buffer; the hold stays only while the deferred
+    # plan still serves EVERY home the coat-now plan would serve. The moment
+    # the gate fails, the hold releases (latched — no stop-start churn) and
+    # coating begins immediately. Held homes report unserved reason 'held'
+    # (outcome 'pending'); idle crews preposition to the safe zone nearest
+    # their deferred first stop (lawful routes only; SEM-10 still governs).
+    # dispatch_hold_h = 0 disables (byte-identical legacy). Sim server ships
+    # 24 h; the release boundary equals the EXTREME_24H alert rung.
+    dispatch_hold_h: float = 0.0
+    dispatch_hold_weather_buffer_h: float = 6.0
     ember_threat_radius_m: float = 0.0      # eta_at adjacency fallback for developed-cell homes (0 = off/byte-identical; sim sets ~200)
     crew_reinforce_1h_min: float = 60.0     # out-of-region '1h away' crews arrive this many min after first ignition (SEMANTICS 9)
     crew_reinforce_3h_min: float = 180.0    # out-of-region '3h away' crews arrive this many min after first ignition (SEMANTICS 9)

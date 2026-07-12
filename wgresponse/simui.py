@@ -1636,6 +1636,14 @@ class SimSession:
         # SEM-10d: one-shot alarm latch for the area-escape note (crews leaving
         # the operating area because no catalog zone is safely reachable).
         self._area_escape_alarmed = False
+        # FOUNDER ROUND 5 COATING HOLD state: released latches True the first
+        # time the feasibility gate fails (no stop-start churn); _hold_noted
+        # one-shots the activation note; _preposition_target avoids re-issuing
+        # the same staging move every tick.
+        self._hold_released = False
+        self._hold_noted = False
+        self._hold_active_n = 0
+        self._preposition_target = {}
         # LAW 1 TIME-SCRUB HISTORY (FOUNDER ROUND 3): a bounded ring of DEEP
         # snapshots of every emitted tick's state() (oldest evicted at
         # cfg.history_ticks). Recorded ONLY at tick emit (never on a bare
@@ -2431,6 +2439,141 @@ class SimSession:
                     f"{zone_id})")
             self._relocating[cid] = "zone_overrun" if burned else "zone_threatened"
 
+    # -- FOUNDER ROUND 5: COATING HOLD (>24h defer + preposition) --------------
+
+    def _apply_coating_hold(self, jobs, crew_args, ens_map, plan_zones,
+                            forecasts, now):
+        """Split `jobs` per the COATING HOLD law (contracts FOUNDER ROUND 5):
+        a job whose fire is more than cfg.dispatch_hold_h hours away (P50) is
+        HELD — not coated yet — as long as the deferred coverage plan still
+        serves EVERY home the coat-now plan would serve, with held deadlines
+        tightened by cfg.dispatch_hold_weather_buffer_h (forecast-change
+        buffer). Returns (plan_jobs, probe_plan_or_None, held_ids).
+
+        The gate runs BOTH probes with the real planner (same cfg, zones,
+        road provider): probe NOW = all jobs as-is; probe HOLD = held jobs
+        pushed to their release time (p50 − hold_h) with buffered deadlines.
+        served(NOW) ⊆ served(HOLD) keeps the hold; any home the deferral
+        would sacrifice RELEASES it — latched (self._hold_released), so
+        coating never stop-starts. The probe-HOLD plan is also the
+        prepositioning source (each crew's deferred first stop)."""
+        cfg = self._cfg
+        hold_s = cfg.dispatch_hold_h * 3600.0
+        if hold_s <= 0.0 or self._hold_released or not jobs:
+            self._hold_active_n = 0
+            return jobs, None, set()
+        held = [j for j in jobs if (j.eta.eta_p50_s - now) > hold_s]
+        if not held:
+            self._hold_active_n = 0
+            return jobs, None, set()
+        held_ids = {j.client.client_id for j in held}
+        buf_s = cfg.dispatch_hold_weather_buffer_h * 3600.0
+        probe_now = dispatch.plan(crew_args, jobs, ens_map, plan_zones, cfg,
+                                  now, None, forecasts=forecasts,
+                                  road_provider=self._plan_road_provider())
+        # The probe must encode deferral + buffer through job.eta — plan()
+        # RE-DERIVES every job's windows from eta via
+        # safety.derive_job_windows (field edits are overwritten):
+        #   p10' = p10 − buffer      -> latest_depart' = latest − buffer
+        #   p50' = p50 + (gel_window_h − hold_h)
+        #                            -> earliest_useful' = true_p50 − hold_h
+        #                               (the hold-release moment)
+        # p90 keeps its offset from p50 (ordering preserved). Count credit is
+        # freshness-independent, so the inflated p50' cannot change which
+        # homes the probe serves — only WHEN they may start. (Caveat: under
+        # gel_env_model_enabled the derived window is wx-scaled and the p50
+        # offset is approximate; that model is default-OFF and inapplicable
+        # to GraphGel's dried-film mechanism per contracts block 5.)
+        p50_shift = (cfg.gel_window_h - cfg.dispatch_hold_h) * 3600.0
+        deferred = []
+        for j in jobs:
+            if j.client.client_id in held_ids:
+                e = j.eta
+                deferred.append(replace(j, eta=replace(
+                    e,
+                    eta_p10_s=e.eta_p10_s - buf_s,
+                    eta_p50_s=e.eta_p50_s + p50_shift,
+                    eta_p90_s=e.eta_p90_s + p50_shift)))
+            else:
+                deferred.append(j)
+        probe_hold = dispatch.plan(crew_args, deferred, ens_map, plan_zones,
+                                   cfg, now, None, forecasts=forecasts,
+                                   road_provider=self._plan_road_provider())
+        def served_ids(p):
+            return {s.client_id for cp in p.plans.values() for s in cp.stops}
+        s_now = served_ids(probe_now)
+        s_hold = served_ids(probe_hold)
+        if not (s_now <= s_hold):
+            # deferral would sacrifice a coatable home -> release, forever
+            self._hold_released = True
+            self._hold_active_n = 0
+            lost = sorted(s_now - s_hold)
+            self._notes.append(
+                f"COATING HOLD RELEASED — deferring past the "
+                f"{cfg.dispatch_hold_h:g}h line (with the "
+                f"{cfg.dispatch_hold_weather_buffer_h:g}h weather buffer) "
+                f"would sacrifice {len(lost)} home(s) ({', '.join(lost[:4])}"
+                f"{'…' if len(lost) > 4 else ''}) — coating begins now")
+            return jobs, None, set()
+        if not self._hold_noted:
+            self._notes.append(
+                f"COATING HOLD active (FOUNDER ROUND 5): fire > "
+                f"{cfg.dispatch_hold_h:g}h out for {len(held_ids)} home(s) — "
+                f"crews on alert and prepositioning; full coverage verified "
+                f"each cycle with a "
+                f"{cfg.dispatch_hold_weather_buffer_h:g}h weather buffer")
+            self._hold_noted = True
+        self._hold_active_n = len(held_ids)
+        for cid in held_ids:
+            self._unserved_reason[cid] = "held"
+        active = [j for j in jobs if j.client.client_id not in held_ids]
+        return active, probe_hold, held_ids
+
+    def _preposition_crews(self, probe_hold, eligible_ids, now, step):
+        """Move IDLE crews toward their deferred work while a COATING HOLD is
+        active: each crew with a first stop in the probe-HOLD plan stages at
+        the currently-safe, lawfully-reachable zone NEAREST that stop (tie by
+        zone_id; >250 m improvement required so staging never churns). Uses
+        the ordinary egress movement machinery — SEM-10 continues to govern
+        (an unsafe staging cell still triggers the sweep's relocation, and a
+        prepositioning crew's route was lawfulness-checked here first)."""
+        zones, fail_closed = self._currently_safe_zones(now)
+        if fail_closed:
+            return
+        for cid in eligible_ids:
+            cs = self._crew_sims[cid]
+            if not cs.idle():
+                continue
+            cp = probe_hold.plans.get(cid)
+            if cp is None or not cp.stops:
+                continue
+            first_cl = self._client_by_id.get(cp.stops[0].client_id)
+            if first_cl is None:
+                continue
+            best = None
+            for z in zones:
+                burned, _e, worst, _t, _dm = self._route_metrics(
+                    cs.pos, z.loc, now, cs.speed, step)
+                if burned or worst < 0.0:
+                    continue
+                key = (geo.haversine_m(z.loc, first_cl.loc), z.zone_id)
+                if best is None or key < best[0]:
+                    best = (key, z)
+            if best is None:
+                continue
+            z = best[1]
+            if self._preposition_target.get(cid) == z.zone_id:
+                continue
+            if geo.haversine_m(cs.pos, z.loc) <= 250.0:
+                self._preposition_target[cid] = z.zone_id
+                continue
+            cs.relocate_to(z.loc, z.zone_id)
+            self._preposition_target[cid] = z.zone_id
+            self._notes.append(
+                f"crew {cid} PREPOSITIONING to {z.zone_id} (coating hold — "
+                f"staging near its deferred first stop "
+                f"{cp.stops[0].client_id})")
+
     # -- the tick (the REAL cycle path) ----------------------------------------
 
     def _eligible_replan_ids(self) -> list:
@@ -2671,13 +2814,22 @@ class SimSession:
             # front has overrun is filtered out (fail-closed to the safest zone
             # when none remains) so a plan never routes a crew into the fire.
             plan_zones, _fc = self._currently_safe_zones(now)
-            plan = dispatch.plan(crew_args, jobs, ens_map,
-                                 plan_zones, cfg, now,
-                                 incumbent, forecasts=forecasts,
-                                 road_provider=self._plan_road_provider())
-            self._adopt(plan, jobs, now, eligible_ids)
-            for uj in plan.unserved:
-                self._unserved_reason[uj.client_id] = uj.reason
+            # FOUNDER ROUND 5 COATING HOLD: jobs whose fire is > hold_h away
+            # are withheld from the emitted plan while (and only while) the
+            # per-cycle feasibility gate proves deferral costs no home; idle
+            # crews preposition toward their deferred first stops instead.
+            plan_jobs, probe_hold, held_ids = self._apply_coating_hold(
+                jobs, crew_args, ens_map, plan_zones, forecasts, now)
+            if plan_jobs:
+                plan = dispatch.plan(crew_args, plan_jobs, ens_map,
+                                     plan_zones, cfg, now,
+                                     incumbent, forecasts=forecasts,
+                                     road_provider=self._plan_road_provider())
+                self._adopt(plan, plan_jobs, now, eligible_ids)
+                for uj in plan.unserved:
+                    self._unserved_reason[uj.client_id] = uj.reason
+            if probe_hold is not None:
+                self._preposition_crews(probe_hold, eligible_ids, now, step)
 
         # 5. kinematic crew movement (sim.py physics; legs follow roads when
         # a graph is loaded) + service completion
@@ -3387,6 +3539,17 @@ class SimSession:
             "plan_on_roads": bool(
                 getattr(cfg, "dispatch_plan_on_roads", False)
                 and self._road_graph is not None),
+            # FOUNDER ROUND 5 COATING HOLD observability: enabled (knob > 0),
+            # released (gate failed once — latched), held (homes currently
+            # deferred), prepositioned crew->zone map.
+            "hold": {
+                "enabled": cfg.dispatch_hold_h > 0.0,
+                "hold_h": cfg.dispatch_hold_h,
+                "weather_buffer_h": cfg.dispatch_hold_weather_buffer_h,
+                "released": self._hold_released,
+                "held": self._hold_active_n,
+                "prepositioned": dict(sorted(self._preposition_target.items())),
+            },
             "terrain": terrain,
             "fires": fires,
             "burned": burned_rings,

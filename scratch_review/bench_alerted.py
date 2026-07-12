@@ -17,7 +17,7 @@ from wgresponse import simui, geo
 from wgresponse.simui import LOCATIONS
 
 CFG = {"spotting_enabled": True, "grass_ros_floor_frac": 0.10, "deploy_min": 15.0,
-       "dispatch_plan_on_roads": True}   # the sim's shipped default (2026-07-12)
+       "dispatch_plan_on_roads": True, "dispatch_hold_h": 24.0}   # sim defaults (2026-07-12)
 
 def run(key, dist_m, ticks, n_clients=40, n_crews=2, seed="alerted"):
     loc = LOCATIONS[key]

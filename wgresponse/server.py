@@ -317,16 +317,22 @@ class SimSessionManager:
         # default in the simulator (it is reality — the chord-vs-road mismatch
         # caused ~73% of relocations); optional bool to compare legacy chords.
         plan_on_roads = payload.get("plan_on_roads", True)
+        # FOUNDER ROUND 5 COATING HOLD: fire > 24h out -> alert + preposition
+        # instead of coating, gated on the every-cycle full-coverage probe.
+        # ON by default in the simulator; optional bool to compare.
+        hold_24h = payload.get("hold_24h", True)
         if (not isinstance(spotting, bool) or not isinstance(grass_realism, bool)
                 or not isinstance(coat_early, bool)
-                or not isinstance(plan_on_roads, bool)):
+                or not isinstance(plan_on_roads, bool)
+                or not isinstance(hold_24h, bool)):
             return 400, {"error": "spotting, grass_realism, coat_early, "
-                                  "plan_on_roads must be booleans"}
+                                  "plan_on_roads, hold_24h must be booleans"}
         cfg = dict(cfg)
         cfg["spotting_enabled"] = spotting
         cfg["grass_ros_floor_frac"] = 0.10 if grass_realism else 0.0
         cfg["dispatch_late_shift"] = not coat_early
         cfg["dispatch_plan_on_roads"] = plan_on_roads
+        cfg["dispatch_hold_h"] = 24.0 if hold_24h else 0.0
         with self._lock:
             self._n += 1
             sid = f"sim-{self._n}"

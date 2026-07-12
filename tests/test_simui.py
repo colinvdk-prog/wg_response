@@ -2988,3 +2988,98 @@ def test_sem10d_extended_campfire_scale_no_overrun_ever():
     # community; crews leave the area) — otherwise this test is vacuous
     assert escape_seen or st["scoreboard"]["relocations"] >= 1, (
         "scenario no longer exercises relocation/escape — rebuild the pin")
+
+
+# ---------------------------------------------------------------------------
+# FOUNDER ROUND 5 — COATING HOLD (2026-07-12): fire > hold_h away -> defer
+# coating (opaque product, owners accept it only under live threat), crews on
+# alert + prepositioned — gated on the every-cycle feasibility probe (deferred
+# start + weather buffer must still cover every coat-now home); gate failure
+# releases the hold, latched.
+# ---------------------------------------------------------------------------
+
+def _hold_session(tmp_path, n_clients, n_crews, hold_h=24.0, buffer_h=6.0,
+                  seed="hold"):
+    d = _controlled_tile_dir(tmp_path, "boulder_co")
+    cfg = dict(FAST)
+    cfg["horizon_h"] = 60.0
+    cfg["dispatch_hold_h"] = hold_h
+    cfg["dispatch_hold_weather_buffer_h"] = buffer_h
+    return SimSession("boulder_co", n_clients, n_crews, seed=seed,
+                      cfg_overrides=cfg, tile_dir=d, roads_module=None)
+
+
+def test_hold_defers_far_fire_then_coats(tmp_path):
+    """Fire ~far upwind: p50 at the community > 24h -> first ticks coat
+    NOTHING (reason 'held', hold active in state), crews may preposition; as
+    the fire closes inside 24h the hold empties naturally and homes get
+    coated. Per-tick violations 0 throughout."""
+    s = _hold_session(tmp_path, 6, 2)
+    ign = _upwind_ignition("boulder_co", 10_000.0)
+    s.ignite(ign.lat, ign.lon, intensity="low")
+    st = s.tick()
+    if st["hold"]["held"] == 0:
+        # slow-fuel tile can push p50 beyond the notice horizon (no jobs yet)
+        # or inside 24h (no hold) — either way the law is vacuous here; the
+        # scenario must actually exercise a hold to pin it.
+        import pytest
+        pytest.skip("scenario produced no >24h jobs on this tile")
+    assert st["scoreboard"]["served"] == 0
+    assert st["hold"]["enabled"] and not st["hold"]["released"]
+    assert any(u["reason"] == "held" for u in st["unserved"])
+    s.set_speed(8.0)                        # 2h per tick — close the distance
+    served_after = 0
+    for _ in range(20):
+        st = s.tick()
+        assert st["scoreboard"]["violations"] == 0
+        served_after = st["scoreboard"]["served"]
+        if served_after:
+            break
+    assert served_after >= 1, "hold must hand off to coating as fire closes"
+
+
+def test_hold_releases_when_coverage_would_be_lost(tmp_path):
+    """Scarce capacity: 1 crew, many homes, fire 26-30h out. Deferring to the
+    last 24h (plus a HUGE weather buffer) cannot cover everyone -> the gate
+    must RELEASE the hold immediately (latched) and coat now."""
+    s = _hold_session(tmp_path, 12, 1, buffer_h=40.0, seed="scarce")
+    ign = _upwind_ignition("boulder_co", 9_000.0)
+    s.ignite(ign.lat, ign.lon, intensity="moderate")
+    released = False
+    for _ in range(6):
+        st = s.tick()
+        if st["hold"]["released"]:
+            released = True
+            break
+        if st["hold"]["enabled"] and st["hold"]["held"] == 0 \
+                and st["scoreboard"]["served"] == 0 and not st["unserved"]:
+            continue
+    if not released:
+        import pytest
+        if st["hold"]["held"] == 0 and not st["hold"]["released"]:
+            pytest.skip("scenario produced no >24h jobs on this tile")
+    assert released, "impossible deferred coverage must release the hold"
+    assert any("COATING HOLD RELEASED" in n for n in st["notes"])
+
+
+def test_hold_off_is_byte_identical(tmp_path):
+    """dispatch_hold_h = 0 (the engine default) must leave the tick stream
+    byte-identical to a session that never knew the knob."""
+    def run(extra):
+        d = _controlled_tile_dir(tmp_path, "boulder_co")
+        cfg = dict(FAST)
+        cfg.update(extra)
+        s = SimSession("boulder_co", 4, 1, seed="hi", cfg_overrides=cfg,
+                       tile_dir=d, roads_module=None)
+        ign = _upwind_ignition("boulder_co", 8_000.0)
+        s.ignite(ign.lat, ign.lon, intensity="high")
+        out = []
+        for _ in range(3):
+            st = s.tick()
+            st = dict(st)
+            st.pop("hold", None)          # the only intended schema delta
+            st.pop("cmd_log", None)       # records cfg_overrides verbatim (repro line)
+            out.append(_state_hash(st))
+        return out
+    assert run({}) == run({"dispatch_hold_h": 0.0,
+                           "dispatch_hold_weather_buffer_h": 6.0})

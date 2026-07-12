@@ -110,6 +110,26 @@ Therefore optimization effort now splits three ways:
 collapses past ~5 homes/crew — buy detection and pre-coat capability before
 the 7th crew, every time.
 
+## 4b. COATING HOLD (FOUNDER ROUND 5 — built + shipped 2026-07-12)
+
+"If fire is more than 24 hours away, do not coat homes; place crews on alert
+and preposition — as long as all homes can be coated per the current spread
+model plus a weather buffer." Implemented as a per-cycle feasibility GATE:
+held jobs (p50 > 24h) are withheld from the emitted plan only while a probe
+re-plan — held starts deferred to their release time, held deadlines
+tightened by 6h — still serves every home the coat-now plan would. Gate
+failure releases the hold (latched). Idle crews preposition to the safe zone
+nearest their deferred first stop (lawful routes only). MEASURED (roads
+config, 15-min crews, per-tick 0 violations everywhere): served 882→931
+(+5.6%), OOS 60/4 1189→1238 (+4.1%), 30/3 657→693 (+5.5%); alerted regime
+76.0→79.5%. The founder's policy beats per-tick count-max myopia: withholding
+far work sequences near-deadline homes first and prepositioned crews strike
+closer at release — the first lever that is BOTH safety-clean and
+served-positive out-of-sample. It also avoids speculative coats on fires
+that never arrive (opaque product; owners accept coating only under live
+threat). Knobs: dispatch_hold_h (0=off; sim ships 24),
+dispatch_hold_weather_buffer_h (6).
+
 ## 5. Recommended order of work
 
 1. Alert-driven pre-coat mode (engine + protocol; pairs with HOA playbook).
