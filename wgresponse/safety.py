@@ -86,6 +86,24 @@ def _haversine_m(a: LatLon, b: LatLon) -> float:
     return 2.0 * 6_371_000.0 * math.asin(min(1.0, math.sqrt(h)))
 
 
+def _resample_path(path: list, step_m: float) -> list:
+    """Points every ~step_m ALONG a multi-point path (PLAN-ON-ROADS), both
+    endpoints inclusive; each span subdivided linearly in lat/lon (adequate
+    at corridor scales). Consecutive duplicate points are skipped so the
+    cumulative-distance walk in LegOracle sees monotone progress."""
+    out = [path[0]]
+    for j in range(1, len(path)):
+        p0, p1 = path[j - 1], path[j]
+        d = _haversine_m(p0, p1)
+        if d <= 0.0:
+            continue
+        n = max(1, int(math.ceil(d / max(step_m, 1.0))))
+        for i in range(1, n + 1):
+            out.append(LatLon(p0.lat + (p1.lat - p0.lat) * i / n,
+                              p0.lon + (p1.lon - p0.lon) * i / n))
+    return out
+
+
 def _sample_polyline(a: LatLon, b: LatLon, step_m: float) -> list:
     """Points every ~step_m from a to b inclusive of both endpoints.
     Uses geo.sample_polyline when available; fallback interpolates linearly
@@ -290,14 +308,32 @@ class LegOracle:
     __slots__ = ("n_pts", "samples", "margin_s", "latest_safe_depart_s")
 
     def __init__(self, a: LatLon, b: LatLon, speed_mps: float,
-                 eroded_p10: "Raster | None", cfg: ResponseConfig):
+                 eroded_p10: "Raster | None", cfg: ResponseConfig,
+                 path: "list | None" = None,
+                 margin_min: "float | None" = None):
+        """path (PLAN-ON-ROADS, 2026-07-12): optional ordered list[LatLon] of
+        the ACTUAL route geometry a->b (e.g. roads.RoadRoute.polyline). When
+        given, samples are laid every cfg.corridor_sample_m ALONG THE PATH
+        (long spans subdivided) with cumulative distance measured along it —
+        the same closed-form T*/verdict math over the road the crew will
+        actually drive instead of the straight chord. None (default) =
+        chord sampling, byte-identical to the pre-roads oracle.
+
+        margin_min: override of cfg.route_margin_min (minutes) — road-sampled
+        legs pass cfg.route_margin_roads_min (the chord margin's extra width
+        was the flat-travel-model error compensator, redundant once the
+        geometry is honest; see contracts). None = cfg.route_margin_min."""
         if speed_mps <= 0.0:
             raise ValueError("speed_mps must be > 0")
-        self.margin_s = cfg.route_margin_min * 60.0
+        m = cfg.route_margin_min if margin_min is None else margin_min
+        self.margin_s = m * 60.0
         samples = []                      # (orig index, point, arrival_s, dt_s)
         n_pts = 0
         if eroded_p10 is not None:
-            pts = _sample_polyline(a, b, cfg.corridor_sample_m)
+            if path is not None and len(path) >= 2:
+                pts = _resample_path(path, cfg.corridor_sample_m)
+            else:
+                pts = _sample_polyline(a, b, cfg.corridor_sample_m)
             n_pts = len(pts)
             cum_m = 0.0
             prev = None

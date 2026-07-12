@@ -378,7 +378,7 @@ class _Ctx:
     verdict cache could never absorb (measured 94% of plan() wall time)."""
 
     def __init__(self, crews, jobmap, rasters, safe_zones, cfg, now_s,
-                 inc_assign, inc_first):
+                 inc_assign, inc_first, road_provider=None):
         self.crews = crews
         self.crew_ids = [c.crew_id for c in crews]
         self.crew_by_id = {c.crew_id: c for c in crews}
@@ -390,6 +390,16 @@ class _Ctx:
         self.now_s = now_s
         self.inc_assign = inc_assign                # job key -> incumbent crew_id
         self.inc_first = inc_first                  # keys that were an incumbent route's first stop
+        # PLAN-ON-ROADS (2026-07-12): optional duck-typed provider
+        # (a, b) -> RoadRoute-like with .time_s/.dist_m/.polyline/.on_roads,
+        # or None. When it yields a real road route, travel() uses ITS time
+        # (exactly what the sim kinematics drive) and leg_latest_depart()
+        # samples the corridor along ITS polyline at the route's implied
+        # speed. None / on_roads=False legs fall back to tier-0 chords —
+        # which is also exactly what the sim drives for off-network legs, so
+        # prediction and kinematics agree leg-by-leg in both regimes.
+        self.road_provider = road_provider
+        self._rp_cache = {}
         self.corr_speed = safety._corridor_speed_mps(cfg)
         self.homes_mode = (cfg.dispatch_objective == "homes")
         # FOUNDER ROUND 4 law 7 (homes mode): per-job URGENCY on the honest
@@ -452,11 +462,33 @@ class _Ctx:
     def _lkey(p):
         return (round(p.lat, 7), round(p.lon, 7))
 
+    def _road_route(self, a, b):
+        """Memoized road_provider lookup for the a->b leg; None when no
+        provider, no route, or the route is the off-network chord fallback
+        (on_roads=False -> tier-0 is already the right model)."""
+        if self.road_provider is None:
+            return None
+        k = (self._lkey(a), self._lkey(b))
+        if k in self._rp_cache:
+            return self._rp_cache[k]
+        rr = self.road_provider(a, b)
+        if (rr is None or not getattr(rr, "on_roads", False)
+                or not getattr(rr, "time_s", 0.0)
+                or rr.time_s <= 0.0 or not getattr(rr, "dist_m", 0.0)
+                or rr.dist_m <= 0.0):
+            rr = None
+        self._rp_cache[k] = rr
+        return rr
+
     def travel(self, a, b) -> float:
         k = (self._lkey(a), self._lkey(b))
         v = self._tt.get(k)
         if v is None:
-            v = travel_time_s(a, b, self.cfg)
+            rr = self._road_route(a, b)
+            # PLAN-ON-ROADS: the route's own time IS the kinematic truth (sim
+            # crews drive the polyline at rr.dist_m/rr.time_s); tier-0 chord
+            # otherwise (which is what off-network crews drive).
+            v = rr.time_s if rr is not None else travel_time_s(a, b, self.cfg)
             self._tt[k] = v
         return v
 
@@ -465,14 +497,25 @@ class _Ctx:
         over EVERY incident's eroded P10 raster of the per-raster
         safety.LegOracle T* (Sprint 2 B1). Sampled once per unique leg per
         plan() invocation; UNREACHED (+inf) when nothing constrains the leg.
-        The leg is corridor-safe at depart_s iff depart_s <= T*."""
+        The leg is corridor-safe at depart_s iff depart_s <= T*.
+
+        PLAN-ON-ROADS: when the road provider yields a real route, the oracle
+        samples along ITS polyline at the route's implied speed — the corridor
+        law sees the exact ground the crew will drive (the chord-vs-road
+        mismatch caused ~73% of relocations + the residual overrun tail)."""
         k = (self._lkey(a), self._lkey(b))
         v = self._tstar.get(k)
         if v is None:
+            rr = self._road_route(a, b)
+            path = rr.polyline if rr is not None else None
+            spd = (rr.dist_m / rr.time_s) if rr is not None else self.corr_speed
+            # road legs use the leaner road margin (the chord margin's extra
+            # width compensated flat-travel-model error; see contracts)
+            mm = (self.cfg.route_margin_roads_min if rr is not None else None)
             v = UNREACHED
             for _iid, ras in self.rasters:
-                t = safety.LegOracle(a, b, self.corr_speed, ras,
-                                     self.cfg).latest_safe_depart_s
+                t = safety.LegOracle(a, b, spd, ras, self.cfg, path=path,
+                                     margin_min=mm).latest_safe_depart_s
                 if t < v:
                     v = t
             self._tstar[k] = v
@@ -1219,7 +1262,8 @@ def _urgency_reorder(ctx: _Ctx, crew_id: str, keys, frozen_n: int):
 def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
          cfg: ResponseConfig, now_s: float,
          incumbent: "DispatchPlan | None" = None,
-         forecasts: "dict | None" = None) -> DispatchPlan:
+         forecasts: "dict | None" = None,
+         road_provider=None) -> DispatchPlan:
     """Build a DispatchPlan for `crews` over `jobs` at unix time now_s.
 
     ens: incident_id -> EnsembleArrival; each incident's P10 raster is eroded
@@ -1259,6 +1303,13 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
     frozen-skeleton regret-2} -> LS -> ILS from the best), and the emitted
     plan is guarded to never be worse than the raw greedy-EDF seed in either
     objective or collected value (objective_breakdown['seed'/'guardrail']).
+
+    road_provider (PLAN-ON-ROADS, 2026-07-12): optional (a, b) -> RoadRoute-
+    like (.time_s/.dist_m/.polyline/.on_roads) or None. When given, travel
+    times use the route's own time and corridor T* oracles sample along the
+    route's polyline — the planner sees the ground crews actually drive
+    (chord-vs-road mismatch measured at ~73% of relocations + the residual
+    overrun tail). None (default) = tier-0 chords, byte-identical.
     """
     t0 = time.monotonic()
     deadline = t0 + max(0.05, cfg.solver_budget_s)
@@ -1353,7 +1404,8 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
                 if st.service_start_s < now_s + cfg.commitment_horizon_min * 60.0:
                     frozen_keys.add(key)
 
-    ctx = _Ctx(eligible, jobmap, rasters, safe_zones, cfg, now_s, inc_assign, inc_first)
+    ctx = _Ctx(eligible, jobmap, rasters, safe_zones, cfg, now_s, inc_assign,
+               inc_first, road_provider=road_provider)
 
     # -- step 2: warm start (repair incumbent; freeze committed stops) --------
     state = _State({cid: [] for cid in ctx.crew_ids}, {cid: 0 for cid in ctx.crew_ids})

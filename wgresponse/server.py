@@ -312,13 +312,21 @@ class SimSessionManager:
         # (default off) so a param-less POST stays byte-identical; the UI sends it
         # ON by default and lets the founder toggle to compare.
         coat_early = payload.get("coat_early", False)
+        # PLAN-ON-ROADS (founder build 2026-07-12): the planner sees the roads
+        # crews drive (travel + corridor T* on the route polyline). ON by
+        # default in the simulator (it is reality — the chord-vs-road mismatch
+        # caused ~73% of relocations); optional bool to compare legacy chords.
+        plan_on_roads = payload.get("plan_on_roads", True)
         if (not isinstance(spotting, bool) or not isinstance(grass_realism, bool)
-                or not isinstance(coat_early, bool)):
-            return 400, {"error": "spotting, grass_realism, coat_early must be booleans"}
+                or not isinstance(coat_early, bool)
+                or not isinstance(plan_on_roads, bool)):
+            return 400, {"error": "spotting, grass_realism, coat_early, "
+                                  "plan_on_roads must be booleans"}
         cfg = dict(cfg)
         cfg["spotting_enabled"] = spotting
         cfg["grass_ros_floor_frac"] = 0.10 if grass_realism else 0.0
         cfg["dispatch_late_shift"] = not coat_early
+        cfg["dispatch_plan_on_roads"] = plan_on_roads
         with self._lock:
             self._n += 1
             sid = f"sim-{self._n}"

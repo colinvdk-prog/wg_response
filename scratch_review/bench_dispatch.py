@@ -100,8 +100,43 @@ def run_scenario(sc, overrides, horizon=HORIZON_TICKS):
         avg_fresh=avg_fresh, min_fresh=min_fresh,
     )
 
+def _isolation_patch():
+    """EXPERIMENT-ONLY (plan-on-roads component isolation, 2026-07-12):
+    BENCH_ROADS_TRAVEL_ONLY=1  -> road travel times, CHORD corridors
+    BENCH_ROADS_CORRIDOR_ONLY=1 -> chord (tier-0) travel, ROAD corridors
+    Patches dispatch._Ctx in this worker process; shipped code untouched."""
+    import math as _m
+    from wgresponse import dispatch as D, safety as S
+    from wgresponse.travel import travel_time_s as _tt
+    from wgresponse.contracts import UNREACHED as _UNR
+    if os.environ.get("BENCH_ROADS_TRAVEL_ONLY"):
+        def leg_latest_depart(self, a, b):
+            k = (self._lkey(a), self._lkey(b))
+            v = self._tstar.get(k)
+            if v is None:
+                v = _UNR
+                for _iid, ras in self.rasters:
+                    t = S.LegOracle(a, b, self.corr_speed, ras,
+                                    self.cfg).latest_safe_depart_s
+                    if t < v:
+                        v = t
+                self._tstar[k] = v
+            return v
+        D._Ctx.leg_latest_depart = leg_latest_depart
+    if os.environ.get("BENCH_ROADS_CORRIDOR_ONLY"):
+        def travel(self, a, b):
+            k = (self._lkey(a), self._lkey(b))
+            v = self._tt.get(k)
+            if v is None:
+                v = _tt(a, b, self.cfg)
+                self._tt[k] = v
+            return v
+        D._Ctx.travel = travel
+
+
 def _worker(payload):
     sc, overrides, horizon = payload
+    _isolation_patch()
     return run_scenario(sc, overrides, horizon)
 
 def main():

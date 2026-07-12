@@ -899,6 +899,24 @@ class ResponseConfig:
     # measured and REJECTED — both overfit one crew/client ratio and lost homes
     # out-of-sample (the round-4 urgency-in-the-objective lesson, re-confirmed).
     dispatch_late_shift: bool = True
+    # PLAN-ON-ROADS (2026-07-12 founder build order, after the attribution
+    # experiment proved ~73% of relocations + the residual overrun tail = the
+    # CHORD-vs-ROAD mismatch): when True AND a road graph is available, the
+    # dispatch planner's travel times AND corridor T* checks follow the ACTUAL
+    # road polyline the crew will drive (roads.route), not the straight chord.
+    # Default False = tier-0 chords, byte-identical to the pre-roads planner;
+    # the simulator server turns it on per session (like spotting); the live
+    # engine flips only after live road graphs + validation.
+    dispatch_plan_on_roads: bool = False
+    # Corridor margin for ROAD-sampled legs (plan-on-roads only). The chord
+    # margin (route_margin_min=60) was calibrated to ALSO absorb the flat
+    # travel model's -21..-33% mountain-road optimism (Council-1 F2); with the
+    # corridor sampled along the ACTUAL road at the route's own speed that
+    # compensator double-counts, so road legs use this leaner margin — equal
+    # to the egress buffer — covering residual travel variability (traffic,
+    # closures) only. Sweep-measured at 15-min crews: 874 vs 775 homes with
+    # margin 60, per-tick violations 0 at both. Chord legs keep 60.
+    route_margin_roads_min: float = 30.0
     ember_threat_radius_m: float = 0.0      # eta_at adjacency fallback for developed-cell homes (0 = off/byte-identical; sim sets ~200)
     crew_reinforce_1h_min: float = 60.0     # out-of-region '1h away' crews arrive this many min after first ignition (SEMANTICS 9)
     crew_reinforce_3h_min: float = 180.0    # out-of-region '3h away' crews arrive this many min after first ignition (SEMANTICS 9)

@@ -71,13 +71,21 @@ Therefore optimization effort now splits three ways:
    path exactly when fires are likeliest.
 
 **(b) More honesty** — same homes, fewer surprises:
-4. **Plan on the road network** (top engine ticket): planner uses straight
-   chords, optimistic on 76% of legs (mean 1.65×, Paradise 2.43×/+20.1 min).
-   Today the per-tick replan self-corrects, surfacing as mid-run withdrawals.
-   Fix: A*-on-roads travel inside `_Ctx.travel` with memoized pair times
-   (road graphs already cached per tile). Expect: fewer withdrawals, honest
-   margins, small served change but large trust change. Effort M, risk low
-   (movement already road-true).
+4. **Plan on the road network — BUILT + SHIPPED 2026-07-12** (founder build
+   order after the chords-only control attributed ~73% of relocations + the
+   whole residual overrun tail to the chord-vs-road mismatch). Dispatch
+   travel = the road route's own time (kinematic truth); corridor T* oracles
+   sample along the route polyline (`safety.LegOracle path=`); road legs use
+   `route_margin_roads_min=30` (the chord margin's extra 30 was the F2
+   flat-travel-error compensator — redundant under honest geometry; the
+   isolation sweep proved travel-honesty ALONE is dangerous: +30 homes but
+   7× the overrun-ticks — corridor honesty is the safety component).
+   MEASURED (15-min crews, 60-scenario sweep, per-tick): relocations
+   383→121 (−68%), overrun-ticks 3→0, withdrawals 7→2, served 893→882
+   (−1.2% honest-capacity cost); OOS 60/4: 1245→1189 (−4.5%, ov 14→0);
+   30/3: 655→657 (+2, ov 4→0); extended Camp-Fire + alerted regime clean
+   (0 violations on every map). Default-OFF in the engine
+   (`dispatch_plan_on_roads`); the simulator ships it ON.
 5. Corridor-aware defensibility scoring (close the harness's optimism).
 
 **(c) More throughput** — squeeze inside the wall:

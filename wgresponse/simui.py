@@ -239,6 +239,12 @@ INTENSITY_WEATHER = {
 #: Fixed simulation epoch (unix s). Deterministic law: never wall-clock.
 T0_S = 1_790_000_000.0
 
+#: PLAN-ON-ROADS session route-cache bound (entries; cleared whole on
+#: overflow). ~110 m buckets x (clients^2 + crews x clients per bucket-move)
+#: stays well under this in any bench/live session; the cap only guards
+#: pathological long-run growth.
+_ROAD_PLAN_CACHE_MAX = 50_000
+
 #: SEM-10d escape-path COLD-BLACK window (seconds): a cell the nominal front
 #: consumed at least this long before a fleeing crew would pass it counts as
 #: OLD BURN — passable (the hazard is the front's flaming residence, minutes
@@ -1499,6 +1505,8 @@ class SimSession:
                 "straight tier-0 legs")
         self._roads = mod
         self._road_graph = None
+        # PLAN-ON-ROADS session route cache (see _plan_road_provider)
+        self._road_plan_cache = {}
         if mod is not None:
             try:
                 g = mod.load_road_graph(location_key)
@@ -1816,6 +1824,38 @@ class SimSession:
         if self._roads is None or self._road_graph is None:
             return None
         return self._roads.route(self._road_graph, a, b, self._cfg)
+
+    def _plan_road_provider(self):
+        """PLAN-ON-ROADS provider for dispatch.plan (cfg.dispatch_plan_on_roads;
+        founder build order 2026-07-12 after the chords-only control measured
+        the chord-vs-road mismatch at ~73% of relocations + the residual
+        overrun tail). Returns a session-cached (a, b) -> RoadRoute callable,
+        or None when the flag is off / no road graph is loaded (dispatch then
+        plans tier-0 chords, byte-identical to the legacy planner).
+
+        Cache keyed on ~110 m position buckets (round to 3 decimals): client
+        locations are fixed so client<->client routes compute ONCE per
+        session; a crew's rows re-compute only when it moves out of its
+        bucket (~12 s of drive), keeping per-tick A* work small. Bounded to
+        _ROAD_PLAN_CACHE_MAX entries (cleared whole on overflow — simple,
+        deterministic)."""
+        if (not getattr(self._cfg, "dispatch_plan_on_roads", False)
+                or self._roads is None or self._road_graph is None):
+            return None
+        cache = self._road_plan_cache
+
+        def provider(a: LatLon, b: LatLon):
+            k = (round(a.lat, 3), round(a.lon, 3),
+                 round(b.lat, 3), round(b.lon, 3))
+            if k in cache:
+                return cache[k]
+            if len(cache) >= _ROAD_PLAN_CACHE_MAX:
+                cache.clear()
+            rr = self._roads.route(self._road_graph, a, b, self._cfg)
+            cache[k] = rr
+            return rr
+
+        return provider
 
     def _stop_latest_depart_s(self, stop: dict) -> float:
         """LIVE latest-depart for one itinerary stop — this tick's p10 at the
@@ -2633,7 +2673,8 @@ class SimSession:
             plan_zones, _fc = self._currently_safe_zones(now)
             plan = dispatch.plan(crew_args, jobs, ens_map,
                                  plan_zones, cfg, now,
-                                 incumbent, forecasts=forecasts)
+                                 incumbent, forecasts=forecasts,
+                                 road_provider=self._plan_road_provider())
             self._adopt(plan, jobs, now, eligible_ids)
             for uj in plan.unserved:
                 self._unserved_reason[uj.client_id] = uj.reason
@@ -3340,6 +3381,12 @@ class SimSession:
             # early as feasible instead of the gel-freshness late-shift, freeing
             # them sooner (~+1% more homes). Echoes cfg.dispatch_late_shift.
             "coat_early": not cfg.dispatch_late_shift,
+            # PLAN-ON-ROADS (2026-07-12): dispatch travel + corridor T* follow
+            # the actual road polyline (True only when the flag is on AND a
+            # road graph loaded — the echo reports what the planner really did).
+            "plan_on_roads": bool(
+                getattr(cfg, "dispatch_plan_on_roads", False)
+                and self._road_graph is not None),
             "terrain": terrain,
             "fires": fires,
             "burned": burned_rings,
