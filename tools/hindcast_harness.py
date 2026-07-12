@@ -1,0 +1,497 @@
+"""hindcast_harness — Sprint-2 D1 (Council-1 model F3+F8): hindcast +
+quantile-calibration harness CLI. Evidence engine only — NO engine changes;
+the output is docs/calibration/hindcast_first_pass.md plus cached fixtures.
+
+Subcommands (run from the repo root: `py -3 tools/hindcast_harness.py ...`):
+
+    research   probe the WFIGS Daily-perimeters layer for candidate incidents
+               (1 read-only GET; prints the table, fetches nothing else)
+    fetch      pull perimeter time series + observed weather + LFPS terrain
+               for the selected incidents into --data-dir (skips anything
+               already cached; every HTTP request counted + logged, hard
+               budget --http-budget)
+    replay     re-run the shipped engine over every cached snapshot pair and
+               score coverage/PIT/head-run (OFFLINE — cache only)
+    anchors    run the offline Tubbs/Camp landmark scenario checks
+    report     render docs/calibration/hindcast_first_pass.md from cached
+               results (OFFLINE)
+    all        fetch (unless --offline) -> replay -> anchors -> report
+
+Live network policy (ticket): READ-ONLY GETs to keyless public services only
+— NIFC/WFIGS ArcGIS (public domain), Open-Meteo archive (free tier is
+NON-COMMERCIAL; this is an offline R&D calibration study — see the licensing
+note in tools/hindcast_lib.py), LANDFIRE LFPS (public domain). Never AWS,
+never writes. Volume is modest and hard-capped; the measured request count is
+printed and written into the report's reachability log.
+
+Determinism: all fetched inputs are cached to disk; replay/anchors/report are
+pure functions of the cache + the shipped ResponseConfig (ensemble members
+seed on (incident_id, k) per contracts — never wall-clock), so re-runs off
+the same cache are byte-identical.
+"""
+from __future__ import annotations
+
+import argparse
+import dataclasses
+import json
+import os
+import sys
+import urllib.request
+from datetime import datetime, timezone
+
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+from wgresponse.contracts import LatLon, ResponseConfig  # noqa: E402
+from wgresponse.terrain import LfpsTerrain, load_ascii_tile  # noqa: E402
+from tools import hindcast_lib as H  # noqa: E402
+
+DEFAULT_DATA_DIR = os.path.join("tools", "hindcast_data")
+DEFAULT_REPORT = os.path.join("docs", "calibration", "hindcast_first_pass.md")
+_USER_AGENT = ResponseConfig().user_agent
+_DOMAIN_PAD_M = 4000.0          # perimeter-union pad: room for over-prediction
+_WX_MARGIN_S = 24 * 3600.0      # weather series margin around the snapshot span
+
+# Widened-band variant measured alongside the shipped default (RECOMMENDATION
+# evidence for the perturbation knobs; config-only, engine untouched).
+_WIDE_VARIANT = {"wind_perturb_frac": 0.50, "dir_perturb_deg": 45.0}
+
+
+class BudgetExceeded(RuntimeError):
+    pass
+
+
+class CountingHttp:
+    """Injectable http_get (url, headers) -> (status, bytes) with a hard
+    request budget and a provenance log (url, status, bytes)."""
+
+    def __init__(self, budget: int):
+        self.budget = int(budget)
+        self.n_requests = 0
+        self.log: list = []
+
+    def __call__(self, url: str, headers=None, timeout_s: float = 120.0):
+        if self.n_requests >= self.budget:
+            raise BudgetExceeded(
+                f"HTTP budget of {self.budget} requests exhausted (refusing "
+                f"{url.split('?')[0]})")
+        self.n_requests += 1
+        hdrs = {"User-Agent": _USER_AGENT}
+        hdrs.update(headers or {})
+        req = urllib.request.Request(url, headers=hdrs)
+        with urllib.request.urlopen(req, timeout=timeout_s) as resp:
+            body = resp.read()
+            status = resp.getcode()
+        self.log.append({"url": url.split("?")[0], "status": status,
+                         "bytes": len(body)})
+        return status, body
+
+
+def _get_json(http: CountingHttp, url: str) -> dict:
+    status, body = http(url, {"Accept": "application/json"})
+    if status != 200:
+        raise RuntimeError(f"HTTP {status} from {url.split('?')[0]}")
+    payload = json.loads(body.decode("utf-8"))
+    if isinstance(payload, dict) and "error" in payload:
+        raise RuntimeError(f"ArcGIS error: {payload['error']}")
+    return payload
+
+
+def _irwin_slug(irwin: str) -> str:
+    return "".join(ch for ch in irwin.lower() if ch.isalnum())[:24]
+
+
+def _ensure_dirs(data_dir: str) -> None:
+    for sub in ("incidents", "weather", "lfps"):
+        os.makedirs(os.path.join(data_dir, sub), exist_ok=True)
+
+
+def _write_json(path: str, obj) -> None:
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(obj, f, indent=1, sort_keys=True)
+    os.replace(tmp, path)
+
+
+def _read_json(path: str):
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def select_incidents(cands: list, max_n: int, min_rows: int = 3) -> list:
+    """Deterministic pick from parse_candidates output: the (max_n - 1)
+    best-sampled incidents (most snapshots) plus the LARGEST-acreage remaining
+    candidate — big fast fires (few snapshots, huge growth) are exactly the
+    safety-relevant regime and would never win on row count alone."""
+    ok = [c for c in cands if c[2] >= min_rows]
+    by_rows = sorted(ok, key=lambda c: (-c[2], c[0]))
+    picked = by_rows[:max(0, max_n - 1)]
+    rest = [c for c in by_rows[len(picked):]]
+    if rest and len(picked) < max_n:
+        picked.append(max(rest, key=lambda c: (c[3], c[0])))
+    return picked[:max_n]
+
+
+# ---------------------------------------------------------------------------
+# fetch
+# ---------------------------------------------------------------------------
+
+def cmd_fetch(args) -> int:
+    _ensure_dirs(args.data_dir)
+    http = CountingHttp(args.http_budget)
+    notes: list = []
+    fetched: list = []
+    try:
+        cands = H.parse_candidates(_get_json(
+            http, H.candidates_query_url(min_acres=args.min_acres)))
+    except Exception as exc:
+        notes.append(f"BLOCKED: WFIGS Daily-perimeter discovery query failed "
+                     f"({exc}) — no hindcast incidents this run")
+        _finish_fetch_log(args, http, notes, fetched)
+        print("\n".join(notes))
+        return 1
+    if args.irwin:
+        wanted = {w.strip().lower() for w in args.irwin.split(",")}
+        chosen = [c for c in cands if c[0].strip("{}").lower() in wanted
+                  or c[0].lower() in wanted]
+    else:
+        chosen = select_incidents(cands, args.max_incidents)
+    if not chosen:
+        notes.append("BLOCKED: discovery returned no incident with >= 3 "
+                     "snapshots at the acreage floor")
+    print(f"[fetch] {len(chosen)} incident(s): "
+          + ", ".join(f"{c[1]}({c[2]} rows)" for c in chosen))
+
+    for irwin, name, n_rows, max_acres, _t0, _t1 in chosen:
+        slug = _irwin_slug(irwin)
+        inc_path = os.path.join(args.data_dir, "incidents", f"{slug}.json")
+        try:
+            if not os.path.exists(inc_path):
+                _fetch_incident(http, irwin, name, max_acres, inc_path)
+            else:
+                print(f"[fetch] {name}: perimeter cache hit")
+            _fetch_weather(http, args, slug, name, inc_path)
+            _fetch_terrain(http, args, slug, name, inc_path, notes)
+            fetched.append({"irwin": irwin, "name": name, "slug": slug})
+        except BudgetExceeded as exc:
+            notes.append(f"BLOCKED at {name}: {exc}")
+            break
+        except Exception as exc:
+            notes.append(f"DEGRADED: {name} ({irwin}) skipped — {exc}")
+    _finish_fetch_log(args, http, notes, fetched)
+    print(f"[fetch] done: {http.n_requests} HTTP requests "
+          f"(budget {args.http_budget}); {len(fetched)} incident(s) cached")
+    for n in notes:
+        print("[fetch]", n)
+    return 0
+
+
+def _fetch_incident(http: CountingHttp, irwin: str, name: str,
+                    max_acres: float, inc_path: str) -> None:
+    rows = H.parse_series_attrs(_get_json(http, H.series_attrs_url(irwin)))
+    picks = H.pick_snapshot_times(rows)
+    if len(picks) < 2:
+        raise RuntimeError(f"only {len(picks)} usable snapshot(s) after "
+                           f"growth/dt gating ({len(rows)} raw rows)")
+    all_oids = [oid for _t, oids, _a in picks for oid in oids]
+    geoms = H.parse_snapshot_features(
+        _get_json(http, H.geometry_query_url(all_oids)))
+    snaps = []
+    for t_s, oids, acres in picks:
+        rings = []
+        for oid in oids:
+            got = geoms.get(oid)
+            if got:
+                rings.extend(got[1])
+        if rings:
+            snaps.append({"t_s": t_s, "acres": acres, "oids": oids,
+                          "rings": [[[p.lat, p.lon] for p in ring]
+                                    for ring in rings]})
+    if len(snaps) < 2:
+        raise RuntimeError("geometry pull yielded < 2 snapshots with rings")
+    _write_json(inc_path, {"schema": "hindcast-incident/1", "irwin": irwin,
+                           "name": name, "max_acres": max_acres,
+                           "snapshots": snaps})
+    print(f"[fetch] {name}: {len(snaps)} snapshots "
+          f"({len(rows)} raw rows -> growth/dt-gated picks)")
+
+
+def _load_incident(inc_path: str) -> "H.HindcastIncident":
+    d = _read_json(inc_path)
+    snaps = [H.PerimeterSnapshot(
+        t_s=float(s["t_s"]), acres=float(s.get("acres") or 0.0),
+        oids=list(s.get("oids") or []),
+        rings=[[LatLon(v[0], v[1]) for v in ring] for ring in s["rings"]])
+        for s in d["snapshots"]]
+    snaps.sort(key=lambda s: s.t_s)
+    return H.HindcastIncident(irwin=d["irwin"], name=d["name"],
+                              snapshots=snaps,
+                              max_acres=float(d.get("max_acres") or 0.0))
+
+
+def _incident_centroid(inc: "H.HindcastIncident") -> LatLon:
+    pts = [p for ring in inc.snapshots[0].rings for p in ring]
+    return LatLon(sum(p.lat for p in pts) / len(pts),
+                  sum(p.lon for p in pts) / len(pts))
+
+
+def _fetch_weather(http: CountingHttp, args, slug: str, name: str,
+                   inc_path: str) -> None:
+    wx_path = os.path.join(args.data_dir, "weather", f"{slug}.json")
+    if os.path.exists(wx_path):
+        print(f"[fetch] {name}: weather cache hit")
+        return
+    inc = _load_incident(inc_path)
+    ctr = _incident_centroid(inc)
+    t_a = inc.snapshots[0].t_s - _WX_MARGIN_S
+    t_b = inc.snapshots[-1].t_s + _WX_MARGIN_S
+    d0 = datetime.fromtimestamp(t_a, tz=timezone.utc).strftime("%Y-%m-%d")
+    d1 = datetime.fromtimestamp(t_b, tz=timezone.utc).strftime("%Y-%m-%d")
+    payload = _get_json(http, H.archive_weather_url(ctr, d0, d1))
+    _write_json(wx_path, {"schema": "hindcast-weather/1",
+                          "loc": [ctr.lat, ctr.lon],
+                          "start_date": d0, "end_date": d1,
+                          "payload": payload})
+    print(f"[fetch] {name}: weather {d0}..{d1} at "
+          f"({ctr.lat:.3f},{ctr.lon:.3f})")
+
+
+def _incident_domain(inc: "H.HindcastIncident", cfg: ResponseConfig):
+    bbox = H.rings_bbox([s.rings for s in inc.snapshots], _DOMAIN_PAD_M)
+    return bbox, H.pick_cell_m(bbox, cfg)
+
+
+def _fetch_terrain(http: CountingHttp, args, slug: str, name: str,
+                   inc_path: str, notes: list) -> None:
+    inc = _load_incident(inc_path)
+    cfg = ResponseConfig()
+    bbox, cell_m = _incident_domain(inc, cfg)
+    # LFPS requires an Email job parameter (live-verified 2026-07-09; the
+    # 2026-07-06 research digest predates the requirement). Same ops address
+    # the review's smoke_lfps.py used — still keyless/no-signup.
+    lfps = LfpsTerrain(cache_dir=os.path.join(args.data_dir, "lfps"),
+                       http_get=http, poll_interval_s=20.0, timeout_s=900.0,
+                       email="ops@thewildfireguardian.com")
+    cache_path = lfps.cache_path(bbox, cell_m)
+    if cache_path and os.path.exists(cache_path):
+        print(f"[fetch] {name}: LFPS tile cache hit")
+        return
+    tile = lfps.tile(bbox, cell_m)
+    notes.append(f"LFPS tile fetched for {name}: "
+                 f"{tile.spec.nrows}x{tile.spec.ncols} @ {cell_m:.0f} m")
+    print(f"[fetch] {name}: LFPS tile {tile.spec.nrows}x{tile.spec.ncols} "
+          f"@ {cell_m:.0f} m")
+
+
+def _finish_fetch_log(args, http: CountingHttp, notes: list,
+                      fetched: list) -> None:
+    log_path = os.path.join(args.data_dir, "fetch_log.json")
+    prior = {}
+    if os.path.exists(log_path):
+        try:
+            prior = _read_json(log_path)
+        except Exception:
+            prior = {}
+    entry = {
+        "fetched_at_utc": datetime.now(timezone.utc)
+        .strftime("%Y-%m-%d %H:%M"),
+        "n_requests": http.n_requests + int(prior.get("n_requests") or 0),
+        "budget": args.http_budget,
+        "notes": (prior.get("notes") or []) + notes,
+        "incidents": {f["slug"]: f for f in fetched} |
+                     (prior.get("incidents") or {}),
+        "requests": (prior.get("requests") or []) + http.log,
+    }
+    _write_json(log_path, entry)
+
+
+# ---------------------------------------------------------------------------
+# replay (offline: cache only)
+# ---------------------------------------------------------------------------
+
+def _load_all_incidents(data_dir: str) -> list:
+    inc_dir = os.path.join(data_dir, "incidents")
+    if not os.path.isdir(inc_dir):
+        return []
+    out = []
+    for fn in sorted(os.listdir(inc_dir)):
+        if fn.endswith(".json"):
+            out.append((fn[:-5], _load_incident(os.path.join(inc_dir, fn))))
+    return out
+
+
+def cmd_replay(args) -> int:
+    os.makedirs(args.data_dir, exist_ok=True)
+    cfg = ResponseConfig()
+    wide_cfg = dataclasses.replace(cfg, **_WIDE_VARIANT)
+    incidents = _load_all_incidents(args.data_dir)
+    if not incidents:
+        print("[replay] no cached incidents — run fetch first "
+              "(or accept the honest-degradation path: anchors only)")
+        _write_json(os.path.join(args.data_dir, "replay_results.json"),
+                    {"schema": "hindcast-replay/1", "pairs": [],
+                     "pairs_wide": [], "skips": ["no cached incidents"]})
+        return 0
+    pairs, pairs_wide, skips = [], [], []
+    for slug, inc in incidents:
+        wx_path = os.path.join(args.data_dir, "weather", f"{slug}.json")
+        if not os.path.exists(wx_path):
+            skips.append(f"{inc.name}: no cached weather")
+            continue
+        wd = _read_json(wx_path)
+        wx = H.parse_archive_weather(wd["payload"],
+                                     LatLon(wd["loc"][0], wd["loc"][1]))
+        bbox, cell_m = _incident_domain(inc, cfg)
+        lfps = LfpsTerrain(cache_dir=os.path.join(args.data_dir, "lfps"))
+        cache_path = lfps.cache_path(bbox, cell_m)
+        if not (cache_path and os.path.exists(cache_path)):
+            skips.append(f"{inc.name}: no cached LFPS tile")
+            continue
+        tile = load_ascii_tile(cache_path)
+        for a, b in zip(inc.snapshots, inc.snapshots[1:]):
+            dt_h = (b.t_s - a.t_s) / 3600.0
+            if not (0.0 < dt_h <= cfg.horizon_h - 6.0):
+                skips.append(f"{inc.name}: pair dt {dt_h:.1f} h outside "
+                             f"(0, horizon-6] — skipped")
+                continue
+            print(f"[replay] {inc.name}: T0+{dt_h:.1f}h pair "
+                  f"({tile.spec.nrows}x{tile.spec.ncols} @ {cell_m:.0f} m)")
+            pairs.append(H.replay_pair(tile, wx, a, b, cfg, inc.irwin,
+                                       name=inc.name))
+            pairs_wide.append(H.replay_pair(tile, wx, a, b, wide_cfg,
+                                            inc.irwin, name=inc.name,
+                                            label="wide"))
+    _write_json(os.path.join(args.data_dir, "replay_results.json"),
+                {"schema": "hindcast-replay/1",
+                 "pairs": [dataclasses.asdict(p) for p in pairs],
+                 "pairs_wide": [dataclasses.asdict(p) for p in pairs_wide],
+                 "skips": skips})
+    pooled = H.pool_metrics(pairs)
+    print(f"[replay] scored {pooled.get('n_pairs', 0)} pairs / "
+          f"{pooled.get('n_cells', 0)} cells; skips: {len(skips)}")
+    for s in skips:
+        print("[replay] skip:", s)
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# anchors / report
+# ---------------------------------------------------------------------------
+
+def cmd_anchors(args) -> int:
+    os.makedirs(args.data_dir, exist_ok=True)
+    results = H.run_all_anchors(ResponseConfig())
+    _write_json(os.path.join(args.data_dir, "anchor_results.json"),
+                {"schema": "hindcast-anchors/1",
+                 "anchors": [dataclasses.asdict(a) for a in results]})
+    for a in results:
+        print(f"[anchor] {a.anchor:5s} {a.fuel_label:12s} "
+              f"spotting={'ON ' if a.spotting else 'OFF'} engine="
+              f"{a.engine:10.2f} observed={a.observed:10.2f} "
+              f"ratio={a.ratio:.2f}x")
+    return 0
+
+
+def _load_pairs(d: dict, key: str) -> list:
+    return [H.PairMetrics(**p) for p in d.get(key) or []]
+
+
+def _wx_note(data_dir: str) -> str:
+    """Measured parenthetical about the replay weather: the max 10-m wind
+    across every cached incident series ('' when no weather is cached)."""
+    wx_dir = os.path.join(data_dir, "weather")
+    if not os.path.isdir(wx_dir):
+        return ""
+    peak = None
+    for fn in sorted(os.listdir(wx_dir)):
+        if not fn.endswith(".json"):
+            continue
+        try:
+            wd = _read_json(os.path.join(wx_dir, fn))
+            wx = H.parse_archive_weather(wd["payload"],
+                                         LatLon(wd["loc"][0], wd["loc"][1]))
+        except Exception:
+            continue
+        top = max(s.wind_speed_mps for s in wx.samples)
+        peak = top if peak is None else max(peak, top)
+    if peak is None:
+        return ""
+    return (f" (max sustained 10-m wind across every cached series here: "
+            f"{peak:.1f} m/s)")
+
+
+def cmd_report(args) -> int:
+    data_dir = args.data_dir
+    replay_path = os.path.join(data_dir, "replay_results.json")
+    anchors_path = os.path.join(data_dir, "anchor_results.json")
+    rd = _read_json(replay_path) if os.path.exists(replay_path) else {}
+    ad = _read_json(anchors_path) if os.path.exists(anchors_path) else {}
+    pairs = _load_pairs(rd, "pairs")
+    pairs_wide = _load_pairs(rd, "pairs_wide")
+    anchors = [H.AnchorResult(**a) for a in ad.get("anchors") or []]
+    incidents = [inc for _slug, inc in _load_all_incidents(data_dir)]
+    log_path = os.path.join(data_dir, "fetch_log.json")
+    fetch_summary = _read_json(log_path) if os.path.exists(log_path) else {}
+    fetch_summary = dict(fetch_summary)
+    fetch_summary.pop("requests", None)     # provenance detail stays on disk
+    for s in rd.get("skips") or []:
+        fetch_summary.setdefault("notes", []).append(f"replay skip: {s}")
+    wx_note = _wx_note(data_dir)
+    text = H.render_report(incidents, pairs, pairs_wide, anchors,
+                           fetch_summary, ResponseConfig(), wx_note=wx_note)
+    os.makedirs(os.path.dirname(args.report), exist_ok=True)
+    with open(args.report, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
+    print(f"[report] wrote {args.report} ({len(text.splitlines())} lines)")
+    return 0
+
+
+def cmd_research(args) -> int:
+    http = CountingHttp(args.http_budget)
+    cands = H.parse_candidates(_get_json(
+        http, H.candidates_query_url(min_acres=args.min_acres)))
+    print(f"{'rows':>5} {'max_ac':>9}  irwin / name")
+    for c in cands:
+        print(f"{c[2]:>5} {c[3]:>9.0f}  {c[0]} / {c[1]}")
+    print(f"[research] would select: "
+          + ", ".join(c[1] for c in
+                      select_incidents(cands, args.max_incidents)))
+    return 0
+
+
+def cmd_all(args) -> int:
+    rc = 0
+    if not args.offline:
+        rc = cmd_fetch(args)
+    cmd_replay(args)
+    cmd_anchors(args)
+    cmd_report(args)
+    return rc
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(
+        prog="hindcast_harness",
+        description=__doc__.splitlines()[0])
+    ap.add_argument("command", choices=("all", "fetch", "replay", "anchors",
+                                        "report", "research"))
+    ap.add_argument("--data-dir", default=DEFAULT_DATA_DIR)
+    ap.add_argument("--report", default=DEFAULT_REPORT)
+    ap.add_argument("--max-incidents", type=int, default=4)
+    ap.add_argument("--min-acres", type=float, default=5000.0)
+    ap.add_argument("--http-budget", type=int, default=45,
+                    help="hard cap on live GETs for this invocation")
+    ap.add_argument("--irwin", default="",
+                    help="comma-separated IRWIN ids to fetch (override "
+                         "automatic selection)")
+    ap.add_argument("--offline", action="store_true",
+                    help="never touch the network (cache only)")
+    args = ap.parse_args(argv)
+    return {"all": cmd_all, "fetch": cmd_fetch, "replay": cmd_replay,
+            "anchors": cmd_anchors, "report": cmd_report,
+            "research": cmd_research}[args.command](args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

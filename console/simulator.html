@@ -1,0 +1,2245 @@
+<!DOCTYPE html>
+<!-- Wildfire Guardian — wgresponse INTERACTIVE SIMULATOR (SIM-3).
+     Spec of record: docs/SIMULATOR_DESIGN.md. Single file, no build step.
+     Served by `py -3 -m wgresponse.cli simui` at /simulator; talks to the
+     /api/sim/* session API (X-Internal-API-Key when the server is keyed;
+     simui runs dev-open on localhost by default).
+     EVERYTHING RENDERED IS REAL ENGINE OUTPUT — ensemble spread forecasts,
+     the alert ladder, dispatch plans, corridor/egress safety and the
+     per-tick SAFETY AUDIT (violations must stay 0). No canned animation.
+     FOUNDER UX CONTRACT (contracts.py "STATE VISUAL CONTRACT", 2026-07-10):
+       state.burned rings   -> dark-red filled fire that GROWS tick over tick
+       state.fire_bands     -> h1 RED / h5 ORANGE / h24 YELLOW projection
+                               borders, updated IN PLACE each poll (setLatLngs)
+       crews[i].route_polyline / egress_polyline -> crews drive REAL ROADS;
+                               dashed amber emergency-egress always shown while
+                               a crew is out; markers tween ALONG the polyline
+                               between polls (requestAnimationFrame).
+     Every field is optional-defensive: a missing/odd-shaped field renders as
+     a graceful no-op (old straight-leg fallbacks stay), never a JS error.
+     Leaflet 1.9.4 from unpkg CDN when reachable; identical air-gapped
+     discipline to console/index.html: if the CDN is unreachable an inline,
+     dependency-free SVG map shim (window.L below) renders every layer with
+     no basemap tiles and no network. ?nomap=1 rehearses that mode. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WG Response — Interactive Simulator</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+  :root {
+    --navy: #0e2038; --navy2: #122a4a; --navy3: #1a3a63;
+    --orange: #ff7a1a; --text: #e8eef7; --dim: #9db0c9;
+    --none: #8b93a1; --notice: #f2b04c; --watch: #ff8c1a;
+    --extreme: #e53935; --impacted: #111111; --cleared: #4caf50;
+    --safety: #4dd0e1; --amber: #ffb300;
+    --burn-fill: #7f0f0f; --burn-edge: #ff3b30;
+    --band1: #e53935; --band5: #ff8c1a; --band24: #f2b04c;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; font-family: "Segoe UI", system-ui, sans-serif;
+               background: var(--navy); color: var(--text); font-size: 13px; }
+  #app { display: flex; height: 100%; }
+  #left { flex: 0 0 272px; max-width: 40vw; overflow-y: auto; padding: 10px 12px;
+          background: var(--navy2); border-right: 3px solid var(--orange); }
+  #map { flex: 1 1 auto; min-width: 320px; background: #16283f; position: relative; }
+  #map.crosshair, #map.crosshair .leaflet-container { cursor: crosshair; }
+  #right { flex: 0 0 330px; max-width: 40vw; display: flex; flex-direction: column;
+           background: var(--navy2); border-left: 3px solid var(--orange); overflow: hidden; }
+  /* Narrow windows: the fixed side panels (272+330px) starve the flex map to a
+     0-120px sliver below ~1100px — stack vertically and keep the map >=58vh so
+     click-to-ignite always has a real target (founder bug report 2026-07-10). */
+  @media (max-width: 1100px) {
+    html, body { height: auto; min-height: 100%; }
+    #app { flex-direction: column; height: auto; min-height: 100vh; }
+    #left, #right { flex: 0 0 auto; max-width: none; border-right: 0; border-left: 0; }
+    #left { border-bottom: 3px solid var(--orange); max-height: 38vh; }
+    #map { min-width: 0; width: 100%; height: 58vh; min-height: 420px; }
+    #right { border-top: 3px solid var(--orange); overflow: visible; max-height: none; }
+  }
+  h1 { margin: 0; font-size: 16px; letter-spacing: 2px; color: var(--orange);
+       text-transform: uppercase; }
+  .sub { font-size: 11px; color: var(--dim); margin: 3px 0 8px; }
+  .ctl { margin: 10px 0; padding: 8px; background: var(--navy3); border-radius: 6px; }
+  .ctl label.h { display: block; font-size: 10px; letter-spacing: 1px;
+                 color: var(--orange); text-transform: uppercase; margin-bottom: 5px; }
+  .ctl .val { color: var(--text); font-weight: 700; }
+  select, input[type=range] { width: 100%; }
+  select { background: var(--navy); color: var(--text); border: 1px solid var(--navy3);
+           padding: 4px; border-radius: 4px; }
+  /* SEMANTICS 9 crew tiers: three compact labelled number inputs side by side */
+  input[type=number] { background: var(--navy); color: var(--text);
+           border: 1px solid var(--navy3); padding: 3px 4px; border-radius: 4px;
+           width: 100%; font: inherit; }
+  .crewtiers { display: flex; gap: 8px; align-items: flex-end; margin-top: 4px; }
+  .crewtiers .tier { flex: 1 1 0; display: flex; flex-direction: column; gap: 3px; }
+  .crewtiers .tier label { font-size: 10px; color: var(--dim); text-transform: uppercase;
+           letter-spacing: .5px; }
+  #physrow { gap: 12px; }
+  #physrow label { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
+  button { background: var(--navy); color: var(--text); border: 1px solid var(--orange);
+           border-radius: 4px; padding: 4px 10px; cursor: pointer; font: inherit;
+           font-size: 12px; }
+  button:hover { background: var(--navy3); }
+  button.active { background: var(--orange); color: var(--navy); font-weight: 700; }
+  button.small { padding: 2px 7px; font-size: 11px; }
+  .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 4px 0; }
+  /* THE SAFETY SLIDER — the threshold explorer the founder asked for */
+  #safetyblock { border: 2px solid var(--orange); background: #24160a; }
+  #safetyblock label.h { color: var(--amber); font-size: 11px; }
+  #safetyblock .big { font-size: 15px; font-weight: 700; color: var(--amber); }
+  #windarrow { display: inline-block; font-size: 16px; color: var(--safety);
+               transition: transform .2s; }
+  #seedline { font-size: 11px; color: var(--dim); word-break: break-all; }
+  #seedline b { color: var(--text); }
+  #status { font-size: 11px; color: var(--dim); padding: 6px 2px; }
+  #status .ok { color: var(--cleared); } #status .bad { color: var(--extreme); }
+  /* right panel */
+  .section { padding: 8px 12px; overflow-y: auto; }
+  .section h2 { font-size: 11px; letter-spacing: 1px; color: var(--orange);
+                text-transform: uppercase; margin: 6px 0; }
+  #scoreboard { flex: 0 0 auto; border-bottom: 1px solid var(--navy3); }
+  #alerts { flex: 1 1 45%; border-bottom: 1px solid var(--navy3); }
+  #itins { flex: 1 1 45%; }
+  .sbrow { display: flex; justify-content: space-between; padding: 2px 0; font-size: 12px; }
+  .sbrow .k { color: var(--dim); }
+  #sb_violations { font-size: 18px; font-weight: 800; padding: 2px 12px;
+                   border-radius: 6px; background: #06300d; color: var(--cleared); }
+  #sb_violations.viol { background: #b3121f; color: #fff;
+                        animation: vblink 0.7s linear infinite; }
+  @keyframes vblink { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+  /* SAFETY SEMANTICS 10c crews-caught breakout + 10a relocation counter. The
+     overrun count sits right under violations and goes red/blinking when >0
+     (violations already folds it in); relocations is a distinct activity line. */
+  #sb_overruns { font-weight: 800; padding: 1px 10px; border-radius: 6px; color: var(--dim); }
+  #sb_overruns_row.hot #sb_overruns { background: #b3121f; color: #fff;
+                        animation: vblink 0.7s linear infinite; }
+  #sb_overruns_row.hot .k { color: #ff5252; }
+  #sb_relocations { font-weight: 700; color: var(--text); }
+  .evt { font-size: 12px; padding: 4px 6px; margin-bottom: 4px; border-radius: 4px;
+         background: var(--navy3); display: flex; gap: 6px; align-items: baseline; }
+  .evt .t { color: var(--dim); font-size: 10px; white-space: nowrap; }
+  .chip { display: inline-block; padding: 1px 7px; border-radius: 9px; font-size: 10px;
+          font-weight: 600; color: #fff; text-transform: uppercase; }
+  .crew-block { margin-bottom: 10px; font-size: 12px; background: var(--navy3);
+                border-radius: 6px; padding: 6px 8px; }
+  .crew-block .cid { color: var(--orange); font-weight: 700; }
+  .crew-block .st { color: var(--dim); font-size: 10px; text-transform: uppercase; }
+  .stop { padding: 3px 0 3px 8px; border-left: 2px solid var(--navy); margin: 3px 0; }
+  .stop .who { display: flex; justify-content: space-between; }
+  .stop .tt { color: var(--dim); font-size: 10px; }
+  .stop .tt.tight { color: var(--extreme); font-weight: 700; }
+  .mbar { height: 5px; background: var(--navy); border-radius: 3px; margin-top: 2px; }
+  .mbar span { display: block; height: 100%; border-radius: 3px;
+               background: var(--cleared); }
+  .mbar span.tight { background: var(--extreme); }
+  .done { color: var(--cleared); font-size: 11px; padding-left: 8px; }
+  /* safety-withdrawal observability: scoreboard.withdrawn, state.withdrawn
+     feed entries, notes "SAFETY WITHDRAWAL ..." banner, policy_superseded */
+  #sb_withdrawn { font-weight: 700; padding: 1px 10px; border-radius: 6px; }
+  #sb_withdrawn.hot { background: #4a2a00; color: var(--amber);
+                      border: 1px solid var(--amber); }
+  .evt.wd { background: #4a2a00; border: 1px solid var(--amber); }
+  .chip.amber { background: var(--amber); color: #241600; }
+  .stop.superseded { border-left-color: var(--amber); }
+  /* SAFETY SEMANTICS 10c: crew-overrun feed entries (pinned above withdrawals)
+     + the CAUGHT chip; SEMANTICS 9: the inbound-crew chip. Crew cards accent
+     amber while repositioning / red while a crew is caught. */
+  .evt.over { background: #3a0a0d; border: 1px solid #ff1a1a; }
+  .chip.caught { background: #b3121f; color: #fff; }
+  .chip.inb { background: #46566b; color: #dbe6f5; text-transform: none; }
+  .crew-block.reloc { border: 1px solid var(--amber); }
+  .crew-block.caught { border: 1px solid #ff1a1a; background: #3a0a0d; }
+  /* honest fallback: leg with no road route (on_roads=false) */
+  .chip.offroad { background: #38424f; color: #dbe6f5; border: 1px dashed #9db0c9;
+                  text-transform: none; }
+  /* FIRE ZONE chip: lit while the extended wide-area tile is active */
+  .chip.fz { background: var(--safety); color: #06283a; margin-left: 6px;
+             vertical-align: middle; }
+  /* DEPLOYING progress ring + countdown chip (right-panel crew card) */
+  .deploychip { display: inline-flex; align-items: center; gap: 5px; background: #3a2a10;
+                color: var(--amber); border: 1px solid var(--amber); border-radius: 9px;
+                padding: 1px 8px; font-size: 10px; font-weight: 700;
+                text-transform: uppercase; vertical-align: middle; }
+  .deploychip .ring { width: 12px; height: 12px; border-radius: 50%;
+                      border: 1px solid #241600; }
+  /* LAW 4 TRIAGE: the count-maximizing abandonment ('protect as many homes as
+     possible') — visually distinct from capacity/infeasible (generic unserved)
+     and from withdrawn (amber SAFETY pull-off). Violet = the objective choice. */
+  #sb_triaged { font-weight: 700; padding: 1px 10px; border-radius: 6px; color: var(--dim); }
+  #sb_triaged_row.hot #sb_triaged { background: #2a1a3a; color: #c792ea;
+                                    border: 1px solid #c792ea; }
+  #sb_triaged_row.hot .k { color: #c792ea; }
+  /* LAW 8 OUTCOME TAG (FOUNDER ROUND 4): the per-home outcome breakdown — WHY
+     each home is / isn't protected. Label colors mirror the map markers so the
+     founder reads the scoreboard and the map as one picture (saved green,
+     protected-then-burned gel-blue, abandoned grey/red, triaged violet). */
+  #outcomes { flex: 0 0 auto; border-bottom: 1px solid var(--navy3); }
+  #outcomes .oc-saved { color: var(--cleared); }
+  #outcomes .oc-protected { color: #2196f3; }
+  #outcomes .oc-abandoned { color: #9aa4b2; }
+  #outcomes #oc_abandoned_row.hot .oc-abandoned,
+  #outcomes #oc_abandoned_row.hot #oc_abandoned { color: #ff5252; font-weight: 700; }
+  #outcomes .oc-triaged { color: #c792ea; }
+  /* the monitoring outcome (beyond the 72 h notice horizon but with a projected
+     ETA — distinct from not_threatened, which is truly no-ETA): a calm slate. */
+  #outcomes .oc-monitoring { color: #78909c; }
+  #oc_legend { font-size: 10px; color: var(--dim); margin-top: 5px;
+               line-height: 1.4; }
+  /* LAW 1 TIME-SCRUB: the replay timeline block + the LIVE snap-back button */
+  #timelineblock { border: 2px solid var(--safety); background: #0b1f2b; }
+  #timelineblock label.h { color: var(--safety); }
+  #tlreadout { font-size: 11px; color: var(--dim); }
+  #tlreadout b { color: var(--text); }
+  #timeline:disabled { opacity: 0.5; }
+  #live { border-color: var(--cleared); }
+  #live.active { background: var(--cleared); color: #06300d; font-weight: 700; }
+  /* while scrubbing, the LIVE button pulses to invite return to now */
+  body.scrubbing #live { border-color: var(--amber); color: var(--amber);
+                         animation: liveblink 1s linear infinite; }
+  @keyframes liveblink { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+  /* controls read-only while scrubbing the past (belt-and-suspenders w/ .disabled) */
+  body.scrubbing #left .ctl:not(#timelineblock) { opacity: 0.55; }
+  #map.scrub-lock, #map.scrub-lock .leaflet-container { cursor: not-allowed; }
+  /* map overlays */
+  #synthbanner { display: none; position: absolute; z-index: 1500; top: 8px; left: 50%;
+                 transform: translateX(-50%); background: rgba(255,179,0,.94);
+                 color: #241600; font-size: 12px; font-weight: 800; padding: 4px 14px;
+                 border-radius: 10px; letter-spacing: 1px; white-space: nowrap;
+                 text-transform: uppercase; }
+  /* SIM CLOCK (founder 2026-07-11): a heads-up timer so each tick's meaning and
+     the fire's age are legible while watching the spread. top-right so it clears
+     the center banners and the leaflet zoom control; pointer-events:none so a
+     click meant for ignition passes straight through. */
+  #simclock { position: absolute; z-index: 1400; top: 10px; right: 10px;
+              background: rgba(11,15,20,.82); border: 1px solid #2b3a4d;
+              border-radius: 9px; padding: 6px 13px; text-align: right;
+              pointer-events: none; box-shadow: 0 2px 10px rgba(0,0,0,.45);
+              font-variant-numeric: tabular-nums; }
+  #sc_elapsed { font-size: 21px; font-weight: 800; color: #ffd24a;
+                letter-spacing: .5px; line-height: 1.05; }
+  #simclock.pre #sc_elapsed { color: var(--dim); }
+  #sc_sub { font-size: 11px; color: #9fb2c6; margin-top: 3px; }
+  #sc_sub b { color: #e0e6ee; font-weight: 700; }
+  #withdrawbanner { display: none; position: absolute; z-index: 1550; top: 42px;
+                    left: 50%; transform: translateX(-50%); text-align: center;
+                    background: rgba(255,179,0,.96); color: #241600;
+                    border: 2px solid #b3121f; font-size: 12px; font-weight: 700;
+                    padding: 4px 14px; border-radius: 10px; max-width: 72%; }
+  /* SAFETY SEMANTICS 10c: the loudest banner on the page — a crew standing in
+     the fire (the founder's G1/G2 bug). Persistent RED alarm while any crew is
+     caught (distinct from the transient amber withdrawal banner above); the
+     scoreboard violations count already flips red in lockstep. */
+  #crewoverrunbanner { display: none; position: absolute; z-index: 1620; top: 8px;
+                    left: 50%; transform: translateX(-50%); background: #b3121f;
+                    color: #fff; border: 2px solid #ff1a1a; font-size: 13px;
+                    font-weight: 800; padding: 5px 18px; border-radius: 10px;
+                    letter-spacing: .5px; white-space: nowrap; text-transform: uppercase;
+                    box-shadow: 0 0 16px 4px rgba(255,26,26,.6);
+                    animation: vblink 0.7s linear infinite; }
+  #ignitehint { display: none; position: absolute; z-index: 1500; bottom: 44px; left: 50%;
+                transform: translateX(-50%); background: rgba(229,57,53,.92); color: #fff;
+                font-size: 12px; font-weight: 600; padding: 3px 12px; border-radius: 10px; }
+  /* LAW 1 TIME-SCRUB: loud read-only replay banner while viewing a past tick */
+  #replaybanner { display: none; position: absolute; z-index: 1560; top: 8px; left: 50%;
+                  transform: translateX(-50%); background: rgba(77,208,225,.96);
+                  color: #06283a; border: 2px solid #0e2038; font-size: 12px;
+                  font-weight: 800; padding: 4px 16px; border-radius: 10px;
+                  letter-spacing: .5px; white-space: nowrap; text-transform: uppercase; }
+  #toast { display: none; position: absolute; z-index: 1600; bottom: 14px; left: 50%;
+           transform: translateX(-50%); background: rgba(14,32,56,.96); color: var(--text);
+           border: 1px solid var(--orange); font-size: 12px; padding: 5px 12px;
+           border-radius: 8px; max-width: 70%; }
+  /* Draggable, collapsible legend window (founder UX 2026-07-10: the fixed
+     bottom-left legend overlapped the controls — grab the title bar to move it,
+     ▾ to collapse; position + collapsed state persist in localStorage). */
+  #legend { position: fixed; z-index: 1200; bottom: 14px; left: 14px;
+            background: rgba(14,32,56,.93); border: 1px solid var(--navy3);
+            border-radius: 7px; font-size: 11px; box-shadow: 0 4px 16px #0007;
+            max-height: 82vh; display: flex; flex-direction: column; }
+  #legend.dragging { opacity: .9; }
+  #legend .lg-head { display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; padding: 5px 6px 5px 9px; cursor: move; user-select: none;
+            touch-action: none; background: var(--navy3);
+            border-radius: 7px 7px 0 0; border-bottom: 1px solid #0005; }
+  #legend .lg-title { font-size: 10px; letter-spacing: 1px; color: var(--orange);
+            text-transform: uppercase; font-weight: 700; }
+  #legend .lg-title::before { content: "\2630"; margin-right: 6px; color: var(--dim);
+            font-weight: 400; }
+  #legend .lg-collapse { cursor: pointer; color: var(--dim); font-size: 13px;
+            line-height: 1; padding: 1px 4px; background: none; border: 0; font-family: inherit; }
+  #legend .lg-collapse:hover { color: var(--text); }
+  #legend .lg-body { padding: 8px 10px; overflow-y: auto; }
+  #legend.collapsed .lg-body { display: none; }
+  #legend .row { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+  #legend .dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #0008; }
+  #legend .sw { width: 14px; height: 10px; border-radius: 2px; flex: 0 0 14px; }
+  #legend .swline { width: 16px; height: 0; flex: 0 0 16px; }
+  #legend .line { width: 14px; height: 0; border-top: 2px dashed var(--safety); }
+  .crew-icon { background: var(--orange); color: #0e2038; border-radius: 3px;
+               font-size: 10px; font-weight: 700; text-align: center;
+               line-height: 18px; border: 2px solid #0008;
+               position: relative; overflow: visible; }
+  .crew-arrow { position: absolute; left: 50%; top: -13px; margin-left: -6px;
+                width: 12px; height: 12px; color: #ffd166; font-size: 11px;
+                line-height: 12px; text-align: center; pointer-events: none;
+                text-shadow: 0 0 3px #000; }
+  .zone-icon { background: var(--cleared); color: #06300d; border-radius: 50%;
+               font-size: 10px; font-weight: 700; text-align: center;
+               line-height: 16px; border: 1px solid #0008; }
+  /* pulsing fire-origin marker — reads as "the fire started HERE" */
+  .fire-origin { position: relative; overflow: visible; }
+  .fire-origin .core { position: absolute; left: 50%; top: 50%; width: 14px;
+                       height: 14px; margin: -7px 0 0 -7px; border-radius: 50%;
+                       background: var(--burn-edge); border: 2px solid #ffcf3f;
+                       box-shadow: 0 0 8px 2px rgba(255,59,48,.75); }
+  .fire-origin .halo { position: absolute; left: 50%; top: 50%; width: 14px;
+                       height: 14px; margin: -7px 0 0 -7px; border-radius: 50%;
+                       border: 2px solid var(--burn-edge);
+                       animation: firepulse 1.6s ease-out infinite; }
+  @keyframes firepulse { 0% { transform: scale(.7); opacity: .95; }
+                         100% { transform: scale(2.8); opacity: 0; } }
+  /* SEMANTICS 9 INBOUND reinforcement: a greyed / hollow (dashed) crew square
+     with a countdown chip above it, its chevron pointing IN from the region
+     edge. SEMANTICS 10a RELOCATING: a pulsing amber ring — the founder SEES a
+     crew fleeing a threatened zone. SEMANTICS 10c OVERRUN: the marker flashes
+     red — a crew CAUGHT in the fire, impossible to miss. Applied to the
+     persistent marker element each render; the offline shim (no per-marker
+     element) degrades gracefully — those states still read via the banner,
+     itinerary badges and tooltip. */
+  .crew-icon.inbound { background: #46566b; border-style: dashed; opacity: 0.95; }
+  .crew-icon.inbound .crew-arrow { display: none; }
+  .crew-icon.inbound .cnum { color: #dbe6f5; }
+  .crew-icon .cinb { display: none; position: absolute; left: 50%; top: -14px;
+                     transform: translateX(-50%); white-space: nowrap; font-size: 9px;
+                     font-weight: 700; color: #ffd166; background: rgba(14,32,56,.9);
+                     border: 1px solid #46566b; border-radius: 6px; padding: 0 4px;
+                     line-height: 12px; pointer-events: none; text-shadow: 0 0 3px #000; }
+  .crew-icon .creloc-ring { display: none; position: absolute; left: 50%; top: 50%;
+                     width: 20px; height: 18px; margin: -9px 0 0 -10px; border-radius: 4px;
+                     border: 2px solid var(--amber); pointer-events: none; }
+  .crew-icon.relocating .creloc-ring { display: block;
+                     animation: crewreloc 1.3s ease-out infinite; }
+  @keyframes crewreloc { 0% { transform: scale(.7); opacity: .95; }
+                         100% { transform: scale(2.7); opacity: 0; } }
+  .crew-icon.overrun { border-color: #ff1a1a !important;
+                     box-shadow: 0 0 9px 3px rgba(255,26,26,.9);
+                     animation: crewburn 0.5s steps(1) infinite; }
+  @keyframes crewburn { 0%,100% { background: #b3121f; } 50% { background: #ff5252; } }
+  .leaflet-container { font: inherit; }
+  /* --- offline SVG fallback map (no Leaflet, no tiles) --- */
+  #map.offline-map { position: relative; }
+  .fbmap-svg { width: 100%; height: 100%; display: block; }
+  .fbmap-tip { position: absolute; z-index: 1200; pointer-events: none;
+               background: rgba(14,32,56,.95); border: 1px solid var(--navy3);
+               color: var(--text); font-size: 11px; padding: 4px 7px;
+               border-radius: 5px; max-width: 240px; display: none; }
+  .fbmap-banner { position: absolute; z-index: 1100; top: 8px; left: 50%;
+                  transform: translateX(-50%); background: rgba(229,57,53,.92);
+                  color: #fff; font-size: 11px; font-weight: 600; padding: 3px 10px;
+                  border-radius: 10px; letter-spacing: .5px; white-space: nowrap; }
+  .fbmap-node { cursor: default; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="left">
+    <h1>WG Simulator</h1>
+    <div class="sub">real engine · real terrain · watch the safety math work</div>
+
+    <div class="ctl">
+      <label class="h" for="loc">Location (real WUI terrain)</label>
+      <select id="loc">
+        <option value="malibu_ca">Malibu / Santa Monica Mtns, CA</option>
+        <option value="paradise_ca">Paradise / Magalia, CA</option>
+        <option value="santa_rosa_ca">Santa Rosa NE / Mark West, CA</option>
+        <option value="boulder_co">Boulder / Superior, CO</option>
+        <option value="park_city_ut">Park City / Summit Park, UT</option>
+      </select>
+      <!-- FIRE ZONE (founder request 2026-07-10): extended loads the
+           wide-area <key>_ext tile so ignition can start tens of km out;
+           clients stay in the central 18 km community window. Changing it
+           re-creates the session (same UX as a location change). -->
+      <label class="h" for="firezone" style="margin-top:8px">Fire zone
+        <span id="fzchip" class="chip fz" style="display:none">extended wide-area</span></label>
+      <select id="firezone">
+        <option value="standard">Standard — 18 km community</option>
+        <option value="extended">Extended — wide-area, far ignitions</option>
+      </select>
+    </div>
+
+    <div class="ctl">
+      <label class="h">Clients <span class="val" id="clientsval">20</span> (auto-placed in the WUI band)</label>
+      <input type="range" id="clients" min="1" max="200" value="20">
+      <div class="row"><button id="reroll" class="small">Re-roll placement</button></div>
+    </div>
+
+    <!-- CREW TIERS (contracts FOUNDER ROUND 5 / SEMANTICS 9): three labelled
+         inputs. In-zone crews stage at local safe zones and respond NOW;
+         reinforcements are out-of-region — they mobilize on the FIRST ignition
+         and arrive ~1 h / ~3 h later (shown inbound at the map edge with a live
+         countdown). Passed as crews / crews_1h / crews_3h on session create;
+         changing any re-creates the session (same UX as a location change). -->
+    <div class="ctl" id="crewblock">
+      <label class="h">Response crews — regional &amp; mutual-aid tiers</label>
+      <div class="crewtiers">
+        <div class="tier"><label for="crews">Crews in-zone</label>
+          <input type="number" id="crews" min="1" max="12" value="3"></div>
+        <div class="tier"><label for="crews_1h">+1h away</label>
+          <input type="number" id="crews_1h" min="0" max="8" value="0"></div>
+        <div class="tier"><label for="crews_3h">+3h away</label>
+          <input type="number" id="crews_3h" min="0" max="8" value="0"></div>
+      </div>
+      <div class="sub">in-zone crews respond now; reinforcements mobilize on the
+        first ignition &amp; arrive after ~1 h / ~3 h — inbound at the map edge with a countdown</div>
+    </div>
+
+    <div class="ctl">
+      <label class="h">Fire — pick intensity, then click the map to ignite</label>
+      <div class="row">
+        <button id="int-low" class="small">Low</button>
+        <button id="int-moderate" class="small">Moderate</button>
+        <button id="int-high" class="small">High</button>
+        <button id="int-extreme" class="small">Extreme</button>
+      </div>
+      <div class="row">
+        <span id="windarrow">&#8595;</span>
+        <span>wind FROM <span class="val" id="windval">50</span>&deg;</span>
+      </div>
+      <input type="range" id="wind" min="0" max="359" value="50">
+      <div class="sub">dial defaults to the location's hazard wind</div>
+      <!-- PHYSICS TOGGLES (contracts SEMANTICS 11 + grass ROS floor): default
+           CHECKED (reflecting the server default). Changing either RE-CREATES
+           the session (same UX as the fire-zone / location change), passing
+           spotting / grass_realism. Both model real fire behaviour. -->
+      <div class="row" id="physrow">
+        <label><input type="checkbox" id="spotting" checked> Ember spotting</label>
+        <label><input type="checkbox" id="grass_realism" checked> Realistic grass speed</label>
+      </div>
+      <!-- COAT-EARLY toggle REMOVED 2026-07-11 (same day it shipped): GraphGel
+           product data landed — Class A at 1/8" DRY film, flat effectiveness
+           (contracts gel_full_strength_h == gel_window_h), which makes the
+           late-shift-vs-coat-early choice a structural NO-OP: both settings
+           emit byte-identical plans. Crews now always coat at the earliest
+           feasible moment. The server still accepts {coat_early} for API
+           compatibility. -->
+
+      <div class="sub">these model real fire behaviour — embers leaping ahead of the
+        front &amp; fast grass runs (Camp Fire); toggling either rebuilds the scenario</div>
+    </div>
+
+    <div class="ctl" id="safetyblock">
+      <label class="h">Safety threshold explorer</label>
+      <div>Crews clear <span class="big" id="bufval">30</span> <span class="big">min</span> before fire arrival (P10)</div>
+      <input type="range" id="buffer" min="10" max="120" step="5" value="30">
+      <div class="sub">the egress-buffer rule — move it and watch served counts + margins re-plan</div>
+      <div style="margin-top:6px">slack floor <span class="val" id="slackval">15</span> min</div>
+      <input type="range" id="slack" min="0" max="60" step="5" value="15">
+    </div>
+
+    <div class="ctl">
+      <label class="h">Clock</label>
+      <div class="row">
+        <button id="run">&#9654; Run</button>
+        <button id="pause">&#10074;&#10074; Pause</button>
+        <button id="step" class="small">Step</button>
+        <button id="reset" class="small">Reset</button>
+      </div>
+      <div class="row">speed <span class="val" id="speedval">300</span>&times; wall clock</div>
+      <input type="range" id="speed" min="1" max="600" value="300">
+    </div>
+
+    <!-- LAW 1 TIME-SCRUB (FOUNDER ROUND 3): the replay timeline. Spans
+         history.first_tick..last_tick; dragging fetches the RECORDED snapshot
+         at that tick (GET /api/sim/<id>/state?tick=k) and renders it READ-ONLY.
+         While live the thumb tracks the head (last_tick); grabbing it pauses
+         polling so the drag isn't fought. LIVE snaps back to now + re-enables
+         every scenario control. Commands are never sent while scrubbing. -->
+    <div class="ctl" id="timelineblock">
+      <label class="h">Timeline &mdash; replay history</label>
+      <input type="range" id="timeline" min="0" max="0" value="0" disabled>
+      <div class="row">
+        <button id="live" class="active">&#9679; LIVE</button>
+        <span id="tlreadout">tick <b id="tlcur">&ndash;</b> / <span id="tlmax">&ndash;</span></span>
+      </div>
+      <div class="sub">drag to scrub past ticks (read-only) &middot; LIVE returns to now</div>
+    </div>
+
+    <div class="ctl">
+      <label class="h">Reproducibility</label>
+      <div id="seedline">seed <b id="seed">–</b> · session <span id="sess">–</span></div>
+      <div class="row"><button id="copyseed" class="small">Copy repro line</button></div>
+    </div>
+
+    <div id="status"><span id="statustext">starting session…</span></div>
+  </div>
+
+  <div id="map">
+    <div id="simclock" class="pre" aria-live="polite" title="Fire age and what each simulation tick represents">
+      <div id="sc_elapsed">T+ 0h 00m</div>
+      <div id="sc_sub">tick 0 · <b>15 min</b>/tick · awaiting ignition</div>
+    </div>
+  </div>
+
+  <div id="right">
+    <div id="scoreboard" class="section">
+      <h2>Safety scoreboard</h2>
+      <div class="sbrow"><span class="k">served (gel applied)</span><span class="val" id="sb_served">0</span></div>
+      <div class="sbrow"><span class="k">withdrawn (deploy aborted)</span><span id="sb_withdrawn">0</span></div>
+      <div class="sbrow"><span class="k">unserved by reason</span><span id="sb_unserved">–</span></div>
+      <!-- LAW 4 TRIAGE: unserved_by_reason.triaged — homes the objective chose to ABANDON so more homes survive (count-maximizing). -->
+      <div class="sbrow" id="sb_triaged_row"><span class="k">triaged (abandoned to save more)</span><span id="sb_triaged">0</span></div>
+      <div class="sbrow"><span class="k">min margin observed</span><span id="sb_margin">n/a</span></div>
+      <!-- SAFETY SEMANTICS 10a: crews that fled a fire-threatened zone (cumulative). -->
+      <div class="sbrow"><span class="k">crew relocations (fled threat)</span><span id="sb_relocations">0</span></div>
+      <div class="sbrow" style="align-items:center; margin-top:4px">
+        <span class="k">SAFETY VIOLATIONS</span><span id="sb_violations">0</span>
+      </div>
+      <!-- SAFETY SEMANTICS 10c: crews CAUGHT in fire, broken out of violations
+           (which already folds them in and flips red) — the founder's G1/G2 bug. -->
+      <div class="sbrow" id="sb_overruns_row" style="align-items:center"><span class="k">crews caught in fire</span><span id="sb_overruns">0</span></div>
+      <div class="sbrow"><span class="k">rule in force</span><span id="sb_rule">buffer 30 + slack 15 min</span></div>
+      <div class="sbrow"><span class="k">safety surface</span>
+        <label><input type="checkbox" id="safetytoggle"> show eroded-P10</label></div>
+    </div>
+    <!-- LAW 8 OUTCOME TAG (FOUNDER ROUND 4): why each home is / isn't protected,
+         from scoreboard.outcomes {tag: count}. Makes 'abandoned_unsavable' read
+         as a deliberate triage call (fire beat every feasible crew), not a miss. -->
+    <div id="outcomes" class="section">
+      <h2>Outcomes — why homes are / aren't protected</h2>
+      <div class="sbrow"><span class="k oc-saved">saved (gelled, fire not yet here)</span><span id="oc_saved">0</span></div>
+      <div class="sbrow"><span class="k oc-protected">protected then burned (gelled)</span><span id="oc_protected">0</span></div>
+      <div class="sbrow" id="oc_abandoned_row"><span class="k oc-abandoned">abandoned — unsavable</span><span id="oc_abandoned">0</span></div>
+      <div class="sbrow"><span class="k oc-triaged">triaged (skipped to save more)</span><span id="oc_triaged">0</span></div>
+      <div class="sbrow"><span class="k">in progress / pending</span><span id="oc_inflight">0</span></div>
+      <!-- 'monitoring' = beyond the 72 h notice horizon but with a PROJECTED
+           ETA; distinct from not_threatened (truly no ETA). -->
+      <div class="sbrow"><span class="k oc-monitoring">monitoring (beyond 72 h, ETA projected)</span><span id="oc_monitoring">0</span></div>
+      <div class="sbrow"><span class="k">not threatened</span><span id="oc_notthreat">0</span></div>
+      <div id="oc_legend">blue ring = gel applied (protected) · grey dashed ring = abandoned, fire beat every feasible crew · violet dashed ring = triaged, deprioritized so crews could save more homes · slate dotted ring = monitoring, beyond 72 h but an ETA exists.</div>
+    </div>
+    <div id="alerts" class="section"><h2>Alert feed (live ladder)</h2><div id="alertlist"></div></div>
+    <div id="itins" class="section"><h2>Crew itineraries</h2><div id="itinlist"></div></div>
+  </div>
+</div>
+<div id="legend">
+  <div class="lg-head" id="lg-head">
+    <span class="lg-title">Legend</span>
+    <button class="lg-collapse" id="lg-collapse" title="Collapse / expand legend" aria-label="Collapse legend">&#9662;</button>
+  </div>
+  <div class="lg-body">
+  <!-- fire projection at a glance (founder UX 2026-07-10): the fire itself +
+       the three arrival bands replace the old absolute-hour isochrone rings -->
+  <div class="row"><span class="sw" style="background:#7f0f0f;border:1.5px solid #ff3b30"></span> burning now</div>
+  <div class="row"><span class="sw" style="background:rgba(229,57,53,.18);border:2px solid #e53935"></span> reached in &lt;1 h (red)</div>
+  <div class="row"><span class="sw" style="background:rgba(255,140,26,.14);border:2px solid #ff8c1a"></span> reached in &lt;5 h (orange)</div>
+  <div class="row"><span class="sw" style="background:rgba(242,176,76,.12);border:2px solid #f2b04c"></span> reached in &lt;24 h (yellow)</div>
+  <div class="row"><span class="swline" style="border-top:3px solid #ffd166"></span> crew route (on roads)</div>
+  <div class="row"><span class="swline" style="border-top:2px dotted #ffd166"></span> last-mile spur (off-network)</div>
+  <div class="row"><span class="swline" style="border-top:2px dashed #ff5252"></span> road-network fallback (chord)</div>
+  <div class="row"><span class="swline" style="border-top:2px dashed #ffb300"></span> emergency egress route</div>
+  <!-- SEMANTICS 9/10 crew states: inbound reinforcement · relocating (fleeing a
+       threatened zone) · OVERRUN (a crew caught in the fire) -->
+  <div class="row"><span class="dot" style="background:#46566b;border:2px dashed #9db0c9"></span> inbound crew (reinforcement en route)</div>
+  <div class="row"><span class="dot" style="background:transparent;border:2px solid #ffb300"></span> crew repositioning (zone threatened)</div>
+  <div class="row"><span class="dot" style="background:#b3121f;border:2px solid #ff1a1a"></span> crew OVERRUN — caught in fire</div>
+  <div class="row"><span class="dot" style="background:transparent;border:2px solid #2196f3"></span> gel applied (protected)</div>
+  <!-- LAW 8 OUTCOME TAG: the two "why unprotected" affordance rings -->
+  <div class="row"><span class="dot" style="background:transparent;border:2px dashed #9aa4b2"></span> abandoned — unsavable (fire beat crews)</div>
+  <div class="row"><span class="dot" style="background:transparent;border:2px dashed #c792ea"></span> triaged — saved more homes instead</div>
+  <div class="row"><span class="dot" style="background:transparent;border:2px dotted #78909c"></span> monitoring — beyond 72 h, ETA projected</div>
+  <div class="row"><span class="dot" style="background:#8b93a1"></span> none</div>
+  <div class="row"><span class="dot" style="background:#f2b04c"></span> notice (72h)</div>
+  <div class="row"><span class="dot" style="background:#ff8c1a"></span> watch</div>
+  <div class="row"><span class="dot" style="background:#e53935"></span> extreme (24h)</div>
+  <div class="row"><span class="dot" style="background:#111"></span> impacted</div>
+  <div class="row"><span class="dot" style="background:#4caf50"></span> cleared / safe zone</div>
+  <div class="row"><span class="line"></span> eroded-P10 safety surface</div>
+  </div>
+</div>
+<div id="synthbanner">SYNTHETIC TERRAIN — rehearsal grade</div>
+<div id="withdrawbanner"></div>
+<div id="crewoverrunbanner"></div>
+<div id="replaybanner"></div>
+<div id="ignitehint">click the map to ignite (burnable fuel only)</div>
+<div id="toast"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- Air-gapped fallback: a dependency-free SVG map shim exposing the subset of
+     the Leaflet API this page uses. Installed as window.L ONLY when the real
+     Leaflet failed to load (CDN/network unreachable). No external hosts, no
+     basemap tiles — every simulator layer still renders offline (burned fire,
+     h1/h5/h24 projection bands, road polylines, animated crew markers), and
+     clicks still unproject to lat/lon so click-to-ignite keeps working. -->
+<script>
+"use strict";
+// ?nomap=1 forces the offline fallback even when Leaflet loaded — rehearse the
+// air-gapped presentation on demand (identical switch to the ops console).
+if (new URLSearchParams(location.search).get("nomap") === "1") { window.L = undefined; }
+if (typeof window.L === "undefined") {
+  (function installFallbackLeaflet() {
+    const SVGNS = "http://www.w3.org/2000/svg";
+    const bannerText = "OFFLINE MAP · Leaflet CDN unreachable · no basemap";
+
+    // A layer is just a bag of {kind, latlngs, opts, tooltip} draw-specs.
+    class Layer {
+      constructor() { this._map = null; this._specs = []; this.tooltip = null; }
+      addTo(target) {
+        if (target instanceof FallbackMap) { target._add(this); }
+        else if (target instanceof LayerGroup) { target._add(this); }
+        return this;
+      }
+      bindTooltip(html) { this.tooltip = html; return this; }
+      setTooltipContent(html) { this.tooltip = html; return this; }
+      _owner() {
+        return this._map || null;
+      }
+      _repaint() { const m = this._owner(); if (m) m._redraw(); }
+    }
+    class Marker extends Layer {
+      constructor(latlng, opts) { super(); this._specs = [{ kind: "marker", latlng, opts: opts || {} }]; }
+      // live crew movement: the rAF animator drives setLatLng between polls
+      setLatLng(latlng) {
+        const p = Array.isArray(latlng) ? latlng : [latlng.lat, latlng.lng];
+        this._specs[0].latlng = p; this._repaint(); return this;
+      }
+    }
+    class Path extends Layer {
+      constructor(kind, latlngs, opts) { super(); this._specs = [{ kind, latlngs, opts: opts || {} }]; }
+      // in-place layer updates (no flicker): fire bands + routes reuse objects
+      setLatLngs(latlngs) { this._specs[0].latlngs = latlngs || []; this._repaint(); return this; }
+      setStyle(opts) { Object.assign(this._specs[0].opts, opts || {}); this._repaint(); return this; }
+    }
+    class LayerGroup {
+      constructor() { this._map = null; this._children = []; }
+      addTo(map) { this._map = map; map._groups.push(this); map._redraw(); return this; }
+      _add(layer) { layer._map = this._map; this._children.push(layer);
+                    if (this._map) this._map._redraw(); return this; }
+      clearLayers() { this._children = []; if (this._map) this._map._redraw(); return this; }
+    }
+
+    class FallbackMap {
+      constructor(elId) {
+        this.el = typeof elId === "string" ? document.getElementById(elId) : elId;
+        this.el.classList.add("offline-map");
+        this._groups = [];       // LayerGroup[]
+        this._loose = [];        // Layer[] added straight to the map
+        this._bounds = null;     // [[s,w],[n,e]]
+        this._view = null;       // fallback center when no bounds
+        this._unproject = null;  // px -> latlng of the LAST projection
+        this._handlers = {};     // event -> [fn]
+        this._redrawQueued = false;  // rAF-coalesced redraws (animation-friendly)
+        this.svg = document.createElementNS(SVGNS, "svg");
+        this.svg.setAttribute("class", "fbmap-svg");
+        this.el.appendChild(this.svg);
+        this.tip = document.createElement("div");
+        this.tip.className = "fbmap-tip";
+        this.el.appendChild(this.tip);
+        const banner = document.createElement("div");
+        banner.className = "fbmap-banner";
+        banner.textContent = bannerText;
+        this.el.appendChild(banner);
+        window.addEventListener("resize", () => this._redraw());
+        this.svg.addEventListener("click", (ev) => {
+          if (!this._unproject || !(this._handlers.click || []).length) return;
+          const r = this.svg.getBoundingClientRect();
+          const ll = this._unproject(ev.clientX - r.left, ev.clientY - r.top);
+          for (const fn of this._handlers.click) fn({ latlng: ll });
+        });
+      }
+      on(type, fn) { (this._handlers[type] = this._handlers[type] || []).push(fn); return this; }
+      setView(latlng, _z) { this._view = latlng; this._redraw(); return this; }
+      fitBounds(b) { this._bounds = b; this._redraw(); return this; }
+      _add(layer) { layer._map = this; this._loose.push(layer); this._redraw(); return this; }
+
+      _allLayers() {
+        const out = this._loose.slice();
+        for (const g of this._groups) for (const c of g._children) out.push(c);
+        return out;
+      }
+      // Auto-bounds from every drawn coordinate when fitBounds wasn't called.
+      _autoBounds() {
+        let s = Infinity, w = Infinity, n = -Infinity, e = -Infinity, any = false;
+        for (const layer of this._allLayers()) for (const sp of layer._specs) {
+          const pts = sp.kind === "marker" || sp.kind === "circle"
+            ? [sp.latlng] : sp.latlngs;
+          for (const p of (pts || [])) {
+            if (!p) continue;
+            const lat = p[0], lon = p[1];
+            if (lat == null || lon == null) continue;
+            any = true; s = Math.min(s, lat); n = Math.max(n, lat);
+            w = Math.min(w, lon); e = Math.max(e, lon);
+          }
+        }
+        if (!any) return null;
+        return [[s, w], [n, e]];
+      }
+      _proj(box) {
+        const rect = this.svg.getBoundingClientRect();
+        const W = rect.width || this.el.clientWidth || 600;
+        const H = rect.height || this.el.clientHeight || 400;
+        let [[s, w], [n, e]] = box;
+        // pad + guard against a zero-extent (single-point) view
+        let dLat = n - s, dLon = e - w;
+        if (dLat < 1e-4) { s -= 0.02; n += 0.02; dLat = n - s; }
+        if (dLon < 1e-4) { w -= 0.02; e += 0.02; dLon = e - w; }
+        const padLat = dLat * 0.08, padLon = dLon * 0.08;
+        s -= padLat; n += padLat; w -= padLon; e += padLon;
+        dLat = n - s; dLon = e - w;
+        const midLat = (s + n) / 2;
+        // equirectangular; longitude compressed by cos(lat)
+        const cosm = Math.cos(midLat * Math.PI / 180);
+        const kx = W / (dLon * cosm || 1);
+        const ky = H / (dLat || 1);
+        const k = Math.min(kx, ky);
+        const offX = (W - dLon * cosm * k) / 2;
+        const offY = (H - dLat * k) / 2;
+        const project = (lat, lon) => [(lon - w) * cosm * k + offX,
+                                       (n - lat) * k + offY];
+        // stash the inverse so click-to-ignite works offline too
+        this._unproject = (x, y) => ({ lat: n - (y - offY) / k,
+                                       lng: (x - offX) / (cosm * k) + w });
+        return project;
+      }
+      _tooltip(node, html) {
+        if (!html) return;
+        node.addEventListener("mousemove", (ev) => {
+          const r = this.el.getBoundingClientRect();
+          this.tip.innerHTML = html;
+          this.tip.style.display = "block";
+          this.tip.style.left = (ev.clientX - r.left + 12) + "px";
+          this.tip.style.top = (ev.clientY - r.top + 12) + "px";
+        });
+        node.addEventListener("mouseleave", () => { this.tip.style.display = "none"; });
+      }
+      // Coalesce bursts of mutations (rAF crew tween calls setLatLng every
+      // frame) into at most one real SVG rebuild per animation frame. A
+      // setTimeout backstop still paints when the tab is hidden — rAF
+      // callbacks never fire there (whichever runs first wins the queue).
+      _redraw() {
+        if (this._redrawQueued) return;
+        this._redrawQueued = true;
+        const run = () => {
+          if (!this._redrawQueued) return;
+          this._redrawQueued = false;
+          this._redrawNow();
+        };
+        if (window.requestAnimationFrame) window.requestAnimationFrame(run);
+        setTimeout(run, 50);
+      }
+      _iconMarkerNode(sp, project) {
+        // className-aware marker rendering so the pulsing fire origin, safe
+        // zones and crew boxes all read correctly in the offline shim too
+        const [x, y] = project(sp.latlng[0], sp.latlng[1]);
+        const o = sp.opts || {};
+        const cls = (o.icon && o.icon.className) || "";
+        const g = document.createElementNS(SVGNS, "g");
+        if (cls.indexOf("fire-origin") !== -1) {
+          const halo = document.createElementNS(SVGNS, "circle");
+          halo.setAttribute("cx", x); halo.setAttribute("cy", y);
+          halo.setAttribute("r", 7);
+          halo.setAttribute("fill", "none");
+          halo.setAttribute("stroke", "#ff3b30");
+          halo.setAttribute("stroke-width", 2);
+          const anim = document.createElementNS(SVGNS, "animate");
+          anim.setAttribute("attributeName", "r");
+          anim.setAttribute("values", "7;16;7");
+          anim.setAttribute("dur", "1.6s");
+          anim.setAttribute("repeatCount", "indefinite");
+          halo.appendChild(anim);
+          const core = document.createElementNS(SVGNS, "circle");
+          core.setAttribute("cx", x); core.setAttribute("cy", y);
+          core.setAttribute("r", 6);
+          core.setAttribute("fill", "#ff3b30");
+          core.setAttribute("stroke", "#ffcf3f");
+          core.setAttribute("stroke-width", 2);
+          g.appendChild(halo); g.appendChild(core);
+          return g;
+        }
+        if (cls.indexOf("zone-icon") !== -1) {
+          const c = document.createElementNS(SVGNS, "circle");
+          c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 8);
+          c.setAttribute("fill", "#4caf50"); c.setAttribute("stroke", "#0008");
+          const t = document.createElementNS(SVGNS, "text");
+          t.setAttribute("x", x); t.setAttribute("y", y + 3.5);
+          t.setAttribute("text-anchor", "middle");
+          t.setAttribute("font-size", "9"); t.setAttribute("font-weight", "700");
+          t.setAttribute("fill", "#06300d");
+          t.textContent = "Z";
+          g.appendChild(c); g.appendChild(t);
+          return g;
+        }
+        const node = document.createElementNS(SVGNS, "rect");
+        node.setAttribute("x", x - 9); node.setAttribute("y", y - 8);
+        node.setAttribute("width", 18); node.setAttribute("height", 16);
+        node.setAttribute("rx", 3);
+        node.setAttribute("fill", "#ff7a1a"); node.setAttribute("stroke", "#0008");
+        g.appendChild(node);
+        const raw = (o.icon && o.icon.html) || "";
+        const label = String(raw)
+          .replace(/<span class="crew-arrow"[^>]*>[\s\S]*?<\/span>/g, "")
+          .replace(/<[^>]*>/g, "").trim();
+        if (label) {
+          const t = document.createElementNS(SVGNS, "text");
+          t.setAttribute("x", x); t.setAttribute("y", y + 3.5);
+          t.setAttribute("text-anchor", "middle");
+          t.setAttribute("font-size", "9"); t.setAttribute("font-weight", "700");
+          t.setAttribute("fill", "#0e2038");
+          t.textContent = label.slice(0, 4);
+          g.appendChild(t);
+        }
+        return g;
+      }
+      _redrawNow() {
+        if (!this.svg) return;
+        while (this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
+        const box = this._bounds || this._autoBounds() ||
+          (this._view ? [[this._view[0], this._view[1]], [this._view[0], this._view[1]]] : null);
+        if (!box) return;
+        const project = this._proj(box);
+        for (const layer of this._allLayers()) for (const sp of layer._specs) {
+          const o = sp.opts || {};
+          let node = null;
+          if (sp.kind === "marker") {
+            if (!sp.latlng) continue;
+            node = this._iconMarkerNode(sp, project);
+          } else if (sp.kind === "circle") {
+            if (!sp.latlng) continue;
+            const [x, y] = project(sp.latlng[0], sp.latlng[1]);
+            node = document.createElementNS(SVGNS, "circle");
+            node.setAttribute("cx", x); node.setAttribute("cy", y);
+            node.setAttribute("r", o.radius || 6);
+            // honor fill:false so a HOLLOW ring (LAW 5 gel halo) reads as a ring
+            // in the offline shim too, not a solid default-red disc
+            node.setAttribute("fill", o.fill === false ? "none" : (o.fillColor || "#e53935"));
+            node.setAttribute("fill-opacity", o.fillOpacity != null ? o.fillOpacity : 0.9);
+            node.setAttribute("stroke", o.color || "#0e2038");
+            node.setAttribute("stroke-width", o.weight || 1.5);
+          } else { // polyline | polygon
+            if (!sp.latlngs || !sp.latlngs.length) continue;  // emptied layer: no-op
+            const d = (sp.latlngs || []).map((p, i) =>
+              (i ? "L" : "M") + project(p[0], p[1]).join(" ")).join(" ") +
+              (sp.kind === "polygon" ? " Z" : "");
+            node = document.createElementNS(SVGNS, "path");
+            node.setAttribute("d", d);
+            node.setAttribute("fill", sp.kind === "polygon" ? (o.fillColor || o.color || "#e53935") : "none");
+            node.setAttribute("fill-opacity", o.fillOpacity != null ? o.fillOpacity : 0.14);
+            node.setAttribute("stroke", o.color || "#ff7a1a");
+            node.setAttribute("stroke-width", o.weight || 2);
+            if (o.dashArray) node.setAttribute("stroke-dasharray", o.dashArray);
+            node.setAttribute("stroke-opacity", o.opacity != null ? o.opacity : 1);
+          }
+          if (node) {
+            node.setAttribute("class", "fbmap-node");
+            this._tooltip(node, layer.tooltip);
+            this.svg.appendChild(node);
+          }
+        }
+      }
+    }
+
+    // Public L.* surface used by this simulator (and no more).
+    window.L = {
+      map: (id, _opts) => new FallbackMap(id),
+      tileLayer: () => ({ addTo: () => ({}) }),   // no basemap offline
+      layerGroup: () => new LayerGroup(),
+      control: { layers: () => ({ addTo: () => ({}) }) },  // no layer switcher offline
+      circleMarker: (latlng, opts) => { const l = new Path("circle", null, opts);
+        l._specs = [{ kind: "circle", latlng, opts: opts || {} }]; return l; },
+      polygon: (latlngs, opts) => new Path("polygon", latlngs, opts),
+      polyline: (latlngs, opts) => new Path("polyline", latlngs, opts),
+      rectangle: (b, opts) => new Path("polygon",
+        [[b[0][0], b[0][1]], [b[0][0], b[1][1]], [b[1][0], b[1][1]], [b[1][0], b[0][1]]],
+        opts),
+      marker: (latlng, opts) => new Marker(latlng, opts),
+      divIcon: (opts) => opts,
+      _fallback: true,
+    };
+    console.warn("wgresponse simulator: Leaflet CDN unreachable — using offline SVG map fallback");
+  })();
+}
+// --------------------------------------------------------------------------
+// simulator app
+// --------------------------------------------------------------------------
+const SIM_LOCATIONS = {   // key -> [name, canonical hazard wind FROM deg]
+  malibu_ca: ["Malibu / Santa Monica Mtns, CA", 50],
+  paradise_ca: ["Paradise / Magalia, CA", 45],
+  santa_rosa_ca: ["Santa Rosa NE / Mark West, CA", 45],
+  boulder_co: ["Boulder / Superior, CO", 270],
+  park_city_ut: ["Park City / Summit Park, UT", 225],
+};
+const POLL_MS = 1000;              // 1 s state poll while RUNNING (adaptive)
+const COLORS = { none:"#8b93a1", notice_72h:"#f2b04c", watch:"#ff8c1a",
+                 extreme_24h:"#e53935", impacted:"#111111", cleared:"#4caf50" };
+const colorFor = s => COLORS[s] || COLORS.none;
+// LAW 8 OUTCOME TAG (FOUNDER ROUND 4): human-readable label per outcome tag,
+// for the client tooltip (the scoreboard block + map rings show the counts).
+const OUTCOME_LABEL = {
+  saved: "SAVED (gelled, fire not yet arrived)",
+  protected_then_impacted: "PROTECTED then impacted (gelled, fire arrived)",
+  abandoned_unsavable: "ABANDONED — unsavable (fire beat every feasible crew)",
+  triaged: "TRIAGED (deprioritized to save more homes)",
+  in_progress: "in progress (crew en route / deploying)",
+  pending: "pending (a crew will be assigned)",
+  // 'monitoring' (SEMANTICS 9 state emission): beyond the 72 h notice horizon
+  // but with a PROJECTED ETA — distinct from not_threatened (truly no ETA).
+  monitoring: "MONITORING (beyond the 72 h notice horizon, but fire is projected to reach it)",
+  not_threatened: "not threatened (fire not projected to reach it)",
+};
+const outcomeLabel = o => OUTCOME_LABEL[o] || o || "";
+// SEMANTICS 9 REGIONAL / MUTUAL-AID CREWS: crew region label (tooltip + card).
+const REGION_LABEL = { in_zone: "in-zone", reg_1h: "1h away", reg_3h: "3h away" };
+// FIRE PROJECTION BANDS (founder UX contract): the fire the crowd can read.
+// state.fire_bands = {h1, h5, h24} rings — RED = reached in <1 h, ORANGE =
+// <5 h, YELLOW = <24 h. Solid borders, faint fills; replaces the old
+// absolute-hour isochrone rings entirely.
+const BAND_STYLE = {
+  h1:  { color: "#e53935", weight: 3.0, opacity: 0.95, fillColor: "#e53935",
+         fillOpacity: 0.10, label: "reached in <1 h" },
+  h5:  { color: "#ff8c1a", weight: 2.5, opacity: 0.95, fillColor: "#ff8c1a",
+         fillOpacity: 0.06, label: "reached in <5 h" },
+  h24: { color: "#f2b04c", weight: 2.0, opacity: 0.9,  fillColor: "#f2b04c",
+         fillOpacity: 0.04, label: "reached in <24 h" },
+};
+// the fire itself (state.burned rings): dark-red fill, hot edge
+const BURNED_STYLE = { color: "#ff3b30", weight: 1.5, opacity: 0.9,
+                       fillColor: "#7f0f0f", fillOpacity: 0.55 };
+// crew-colored road routes (index-stable per session; 12 crews max)
+const CREW_COLORS = ["#ffd166", "#4dd0e1", "#c792ea", "#80e27e", "#ff8a65",
+                     "#f06292", "#a3d5ff", "#e6ee9c", "#ffab91", "#b0bec5",
+                     "#ffe082", "#81d4fa"];
+const $ = id => document.getElementById(id);
+
+const map = L.map("map", { zoomControl: true, attributionControl: true });
+map.setView([34.055, -118.72], 12);
+// Crossing the 1100px stacked-layout breakpoint (or any window resize) changes
+// the container size out from under Leaflet — recompute or tiles stay stale.
+window.addEventListener("resize", () => {
+  if (map.invalidateSize) { try { map.invalidateSize(false); } catch (e) {} }
+});
+try {
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    { maxZoom: 17, opacity: 0.55, attribution: "&copy; OpenStreetMap" }).addTo(map);
+} catch (e) { /* offline: navy background only */ }
+
+const layers = {
+  extent: L.layerGroup().addTo(map), burned: L.layerGroup().addTo(map),
+  band24: L.layerGroup().addTo(map), band5: L.layerGroup().addTo(map),
+  band1: L.layerGroup().addTo(map), safety: L.layerGroup().addTo(map),
+  fire: L.layerGroup().addTo(map), clients: L.layerGroup().addTo(map),
+  crews: L.layerGroup().addTo(map), routes: L.layerGroup().addTo(map),
+  zones: L.layerGroup().addTo(map)
+};
+L.control.layers(null, { "Terrain extent": layers.extent, "Burning now": layers.burned,
+  "Reached in <1 h": layers.band1, "Reached in <5 h": layers.band5,
+  "Reached in <24 h": layers.band24, "Safety surface": layers.safety,
+  "Fires": layers.fire, "Clients": layers.clients, "Crews": layers.crews,
+  "Routes": layers.routes, "Safe zones": layers.zones }, { collapsed: true }).addTo(map);
+
+let sid = null;            // current session id
+let running = false;       // server ticker state (gates the 1 s poll)
+let fittedFor = null;      // session id we already fitBounds-ed for
+let armed = null;          // armed ignite intensity, or null
+let safetyOn = false;      // eroded-P10 layer toggle (adds ?safety=1)
+let busy = false;          // one in-flight command at a time
+let lastState = null;
+let wdSeen = { sid: null, n: 0 };  // SAFETY WITHDRAWAL notes already bannered
+// LAW 1 TIME-SCRUB (FOUNDER ROUND 3): replay state. `scrubbing` gates the live
+// poll (paused so it can't fight the drag) AND every scenario-mutating command
+// (rejected while viewing the past). `headTick` is the live head last seen; the
+// scrub fetch is coalesced (latest tick wins) so a fast drag issues few reads.
+let scrubbing = false;     // true while viewing a RECORDED past tick (read-only)
+let headTick = null;       // history.last_tick seen while live (the playhead)
+let scrubBusy = false;     // a scrub state?tick fetch is in flight
+let scrubWant = null;      // the newest tick the user dragged to (coalesced)
+
+function apiKey(forceAsk) {
+  let k = localStorage.getItem("wgresp_key");
+  if (!k && forceAsk) {
+    k = window.prompt("Wildfire Guardian ops API key (X-Internal-API-Key):") || "";
+    if (k) localStorage.setItem("wgresp_key", k);
+  }
+  return k || "";
+}
+
+async function api(method, path, body) {
+  const headers = {};
+  const k = apiKey(false);
+  if (k) headers["X-Internal-API-Key"] = k;
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  const r = await fetch(path, { method, headers,
+    body: body === undefined ? undefined : JSON.stringify(body) });
+  if (r.status === 401) {
+    localStorage.removeItem("wgresp_key");
+    apiKey(true);
+    throw new Error("unauthorized (401) — key prompted, retry the action");
+  }
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
+  return data;
+}
+
+function setStatus(html) { $("statustext").innerHTML = html; }
+function toast(msg) {
+  const el = $("toast");
+  el.textContent = msg;
+  el.style.display = "block";
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = "none"; }, 4000);
+}
+function fmtClock(t_s) {
+  if (t_s == null) return "–";
+  const d = new Date(t_s * 1000);
+  return d.toISOString().replace("T", " ").slice(5, 16) + "Z";
+}
+// SIM CLOCK (founder 2026-07-11): "Xh YYm" from a second count (fire age).
+function fmtDur(sec) {
+  if (sec == null || !isFinite(sec) || sec < 0) sec = 0;
+  const m = Math.round(sec / 60), h = Math.floor(m / 60), mm = m % 60;
+  return `${h}h ${String(mm).padStart(2, "0")}m`;
+}
+// Update the heads-up timer: fire age (T+ since the FIRST ignition — the clock
+// the spread is measured against) plus what one tick means in SIM time. Minutes
+// per tick is read straight off the state ((sim_now - t0)/tick) so it is exact
+// and speed-agnostic (the server holds SimSession._speed at 1.0 → 15 min); the
+// wall cadence (1 tick ≈ Ns real) comes from the server-injected tick_interval_s.
+function updateClock(st) {
+  const box = $("simclock"); if (!box) return;
+  const fires = st.fires || [];
+  const tIgn = fires.length ? Math.min(...fires.map(f => +f.t_ignite_s)) : null;
+  const now = st.sim_now_s;
+  let perTick = 15;                                   // default 900 s / 60
+  if (st.tick > 0 && st.t0_s != null && now != null)
+    perTick = (now - st.t0_s) / st.tick / 60;
+  const perTxt = `<b>${Math.round(perTick)} min</b>/tick`;
+  const wall = (st.tick_interval_s != null && isFinite(st.tick_interval_s))
+    ? ` · 1 tick ≈ ${st.tick_interval_s < 1 ? st.tick_interval_s.toFixed(1)
+        : Math.round(st.tick_interval_s)}s` : "";
+  if (tIgn == null) {
+    box.classList.add("pre");
+    $("sc_elapsed").textContent = "T+ 0h 00m";
+    $("sc_sub").innerHTML = `tick ${st.tick || 0} · ${perTxt} · awaiting ignition`;
+  } else {
+    box.classList.remove("pre");
+    $("sc_elapsed").textContent = "T+ " + fmtDur(now - tIgn);
+    $("sc_sub").innerHTML = `since ignition · tick ${st.tick} · ${perTxt}${wall}`;
+  }
+}
+function relH(t_s, now_s) {
+  if (t_s == null || now_s == null) return null;
+  return (t_s - now_s) / 3600.0;
+}
+function relFmt(t_s, now_s) {          // signed hours-from-now, e.g. +1.4h / -0.2h
+  const h = relH(t_s, now_s);
+  return h == null ? "?" : (h >= 0 ? "+" : "") + h.toFixed(1) + "h";
+}
+
+// --- defensive geometry decoding (STATE VISUAL CONTRACT; the backend is
+// being built to the same contract concurrently — any missing or oddly
+// shaped field must degrade to a graceful no-op, never a JS error) ---------
+function pt(p) {          // [lat,lon] | {lat,lon} | {lat,lng} -> [lat,lon] | null
+  if (p == null) return null;
+  if (Array.isArray(p)) {
+    if (p.length < 2 || !isFinite(p[0]) || !isFinite(p[1])) return null;
+    return [+p[0], +p[1]];
+  }
+  if (typeof p === "object") {
+    const lat = p.lat, lon = (p.lon != null ? p.lon : p.lng);
+    if (isFinite(lat) && isFinite(lon)) return [+lat, +lon];
+  }
+  return null;
+}
+function ptList(raw, minPts) {   // -> [[lat,lon], ...] (drops bad points)
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  for (const p of raw) { const q = pt(p); if (q) out.push(q); }
+  return out.length >= (minPts || 2) ? out : [];
+}
+function ringList(raw) {  // rings | single ring | [{points:...}] -> [ring,...]
+  if (!Array.isArray(raw) || !raw.length) return [];
+  if (pt(raw[0])) {                    // a single ring of points
+    const r = ptList(raw, 3);
+    return r.length ? [r] : [];
+  }
+  const out = [];
+  for (const ring of raw) {
+    const src = (ring && !Array.isArray(ring) && Array.isArray(ring.points))
+      ? ring.points : ring;
+    const r = ptList(src, 3);
+    if (r.length) out.push(r);
+  }
+  return out;
+}
+// honest fallback flag: any on_roads=false anywhere on this crew's legs
+function offRoadFlag(c) {
+  let off = false;
+  const scan = v => {
+    if (v == null || off) return;
+    if (Array.isArray(v)) { v.forEach(scan); return; }
+    if (typeof v === "object") { scan(v.on_roads); return; }
+    if (v === false || v === 0) off = true;
+  };
+  scan(c.on_roads); scan(c.route_on_roads); scan(c.egress_on_roads);
+  scan(c.route); scan(c.legs);
+  return off;
+}
+function setTip(layer, html) {
+  if (!layer) return;
+  if (layer.setTooltipContent && layer.getTooltip && layer.getTooltip()) {
+    layer.setTooltipContent(html);
+  } else if (layer.bindTooltip) layer.bindTooltip(html);
+}
+
+// --- commands -------------------------------------------------------------
+async function guard(fn) {
+  if (busy) return;
+  busy = true;
+  try { await fn(); }
+  catch (e) { toast(String(e.message || e)); setStatus(`<span class="bad">●</span> ${String(e.message || e)}`); }
+  finally { busy = false; }
+}
+
+// LAW 1 TIME-SCRUB: a scenario-mutating command must NEVER touch the past.
+// While scrubbing every mutation is a no-op that flashes a nudge to return to
+// LIVE (the controls are also .disabled, so this is belt-and-suspenders and
+// also covers the map-click ignite path, which has no disabled attribute).
+function mutationBlocked() {
+  if (scrubbing) { toast("return to LIVE to change the scenario"); return true; }
+  return false;
+}
+
+// --- LAW 1 TIME-SCRUB: replay timeline -------------------------------------
+// Keep the slider synced to the live head; while scrubbing the user drives it
+// and we never override their drag. first_tick/last_tick are null before the
+// first recorded tick (history disabled or brand-new session) -> disabled.
+function updateTimeline(hist) {
+  // While scrubbing, `hist` is the RECORDED past snapshot's history block whose
+  // last_tick is that old tick's head, not the live one — leave the slider
+  // bounds/headTick frozen at the live values captured before the drag began.
+  if (scrubbing) return;
+  const tl = $("timeline");
+  const first = hist ? hist.first_tick : null;
+  const last = hist ? hist.last_tick : null;
+  if (first == null || last == null || last < first) {
+    tl.disabled = true; tl.min = 0; tl.max = 0; tl.value = 0;
+    headTick = null;
+    $("tlcur").textContent = "live"; $("tlmax").textContent = "–";
+    return;
+  }
+  tl.disabled = false;
+  headTick = last;
+  tl.min = first; tl.max = last;
+  tl.value = last;                  // track the live head
+  $("tlcur").textContent = String(hist.current_tick != null ? hist.current_tick : last);
+  $("tlmax").textContent = String(last);
+}
+
+function setReplayBanner(k, err) {
+  const b = $("replaybanner");
+  const n = headTick != null ? headTick : "?";
+  b.innerHTML = err
+    ? `◀ REPLAY tick ${k} unavailable — ${err} · press LIVE`
+    : `◀ REPLAY tick ${k} / ${n} — viewing history (read-only)`;
+  b.style.display = "block";
+  $("tlcur").textContent = "▶" + k;
+}
+
+// The replay READ: GET /api/sim/<id>/state?tick=k returns the RECORDED snapshot
+// (404 when evicted/future). Fetches are coalesced — a fast drag only ever has
+// one request in flight and always resolves to the LATEST tick dragged to.
+async function scrubTo(k) {
+  scrubWant = k;
+  if (scrubBusy || !sid) return;
+  scrubBusy = true;
+  try {
+    while (scrubWant != null && scrubbing) {
+      const want = scrubWant; scrubWant = null;
+      try {
+        const st = await api("GET",
+          `/api/sim/${sid}/state?tick=${want}${safetyOn ? "&safety=1" : ""}`);
+        render(st);                 // render the PAST snapshot read-only
+        setReplayBanner(want, null);
+      } catch (e) {                 // 404 evicted/future -> stay put, say so
+        setReplayBanner(want, String(e.message || e));
+      }
+    }
+  } finally { scrubBusy = false; }
+}
+
+function applyScrubUI() {
+  document.body.classList.toggle("scrubbing", scrubbing);
+  $("live").classList.toggle("active", !scrubbing);
+  $("map").classList.toggle("scrub-lock", scrubbing);
+  // freeze every scenario-mutating control while viewing the past (the
+  // timeline + LIVE button stay live so the user can scrub and return)
+  const ids = ["run", "pause", "step", "reset", "reroll", "loc", "firezone",
+               "clients", "crews", "crews_1h", "crews_3h", "wind", "buffer",
+               "slack", "speed", "int-low", "int-moderate", "int-high",
+               "int-extreme", "spotting", "grass_realism", "safetytoggle"];
+  for (const id of ids) { const el = $(id); if (el) el.disabled = scrubbing; }
+  if (scrubbing && armed) {          // drop a primed ignite: no map mutation
+    armed = null;
+    for (const j of ["low", "moderate", "high", "extreme"])
+      $("int-" + j).classList.remove("active");
+    $("map").classList.remove("crosshair");
+    $("ignitehint").style.display = "none";
+  }
+}
+
+function enterScrub(k) {            // user grabbed the slider -> pause + replay
+  if (!sid || headTick == null) return;
+  if (!scrubbing) { scrubbing = true; applyScrubUI(); }
+  scrubTo(k);
+}
+
+function exitScrub() {              // ● LIVE: snap to now, re-enable, resume poll
+  if (!scrubbing) { poll(true); return; }
+  scrubbing = false; scrubWant = null;
+  $("replaybanner").style.display = "none";
+  applyScrubUI();
+  poll(true);                       // fetch the current head + resume live poll
+}
+
+async function newSession() {
+  if (mutationBlocked()) return;
+  setStatus("building scenario (real tile + WUI placement)…");
+  // SEMANTICS 9 crew tiers (crews_1h/crews_3h out-of-region reinforcements) +
+  // SEMANTICS 11 physics toggles (spotting / grass_realism) passed on create.
+  const body = { location: $("loc").value, clients: +$("clients").value,
+                 crews: +$("crews").value, fire_zone: $("firezone").value,
+                 crews_1h: +$("crews_1h").value, crews_3h: +$("crews_3h").value,
+                 spotting: $("spotting").checked,
+                 grass_realism: $("grass_realism").checked };
+  const out = await api("POST", "/api/sim/new", body);
+  sid = out.session_id;
+  // FIRE ZONE honesty: requested extended but the wide-area tile is not
+  // cached -> the engine fell back to standard with a loud note; surface it.
+  if (body.fire_zone === "extended" && out.state &&
+      out.state.fire_zone !== "extended") {
+    const note = (out.state.notes || [])
+      .find(n => String(n).indexOf("FIRE ZONE") !== -1);
+    toast(note || "extended fire zone unavailable — standard tile loaded");
+  }
+  render(out.state);
+}
+
+function afterCommand(state) {
+  render(state);
+  // command responses carry no safety_surface; re-fetch it so the eroded-P10
+  // layer survives commands even while paused (manager caches it per tick)
+  if (safetyOn) setTimeout(() => poll(true), 0);
+}
+
+const ctl = action => guard(async () => {
+  if (!sid || mutationBlocked()) return;
+  const out = await api("POST", `/api/sim/${sid}/ctl`, { action });
+  if (out.seed) toast("re-rolled placement — new seed " + out.seed);
+  afterCommand(out.state);
+});
+const sendConfig = patch => guard(async () => {
+  if (!sid || mutationBlocked()) return;
+  const out = await api("POST", `/api/sim/${sid}/config`, patch);
+  afterCommand(out.state);
+});
+
+async function igniteAt(lat, lng) {
+  if (!sid || !armed || mutationBlocked()) return;
+  try {
+    const out = await api("POST", `/api/sim/${sid}/ignite`,
+      { lat, lon: lng, intensity: armed, wind_dir_deg: +$("wind").value });
+    toast(`ignited ${out.incident_id} (${armed})`);
+    afterCommand(out.state);
+  } catch (e) {
+    toast("ignite rejected: " + String(e.message || e));  // e.g. non-burnable cell
+  }
+}
+
+// --- controls wiring --------------------------------------------------------
+$("loc").addEventListener("change", () => {
+  const w = SIM_LOCATIONS[$("loc").value][1];
+  $("wind").value = w;                       // dial resets to hazard wind
+  guard(newSession);
+});
+// FIRE ZONE: re-create the session on the new tile (same UX as a location
+// change); the map re-fits to the loaded tile's terrain bbox on session change
+$("firezone").addEventListener("change", () => guard(newSession));
+$("clients").addEventListener("input", () => { $("clientsval").textContent = $("clients").value; });
+$("clients").addEventListener("change", () => guard(newSession));
+// SEMANTICS 9 crew tiers: any tier change re-creates the session (same UX as a
+// location change) so the new crews / reinforcements are staged from scratch.
+$("crews").addEventListener("change", () => guard(newSession));
+$("crews_1h").addEventListener("change", () => guard(newSession));
+$("crews_3h").addEventListener("change", () => guard(newSession));
+$("reroll").addEventListener("click", () => ctl("reroll_clients"));
+
+for (const k of ["low", "moderate", "high", "extreme"]) {
+  $("int-" + k).addEventListener("click", () => {
+    armed = (armed === k) ? null : k;
+    for (const j of ["low", "moderate", "high", "extreme"])
+      $("int-" + j).classList.toggle("active", armed === j);
+    $("map").classList.toggle("crosshair", !!armed);
+    $("ignitehint").style.display = armed ? "block" : "none";
+  });
+}
+map.on("click", e => { if (armed) igniteAt(e.latlng.lat, e.latlng.lng); });
+
+$("wind").addEventListener("input", () => {
+  $("windval").textContent = $("wind").value;
+  $("windarrow").style.transform = `rotate(${+$("wind").value}deg)`;
+});
+$("buffer").addEventListener("input", () => { $("bufval").textContent = $("buffer").value; });
+$("buffer").addEventListener("change", () => sendConfig({ egress_buffer_min: +$("buffer").value }));
+$("slack").addEventListener("input", () => { $("slackval").textContent = $("slack").value; });
+$("slack").addEventListener("change", () => sendConfig({ slack_min: +$("slack").value }));
+$("speed").addEventListener("input", () => { $("speedval").textContent = $("speed").value; });
+$("speed").addEventListener("change", () => sendConfig({ speed: +$("speed").value }));
+
+$("run").addEventListener("click", () => ctl("run"));
+$("pause").addEventListener("click", () => ctl("pause"));
+$("step").addEventListener("click", () => ctl("step"));
+$("reset").addEventListener("click", () => ctl("reset"));
+// LAW 1 TIME-SCRUB: grabbing the slider pauses the live poll and replays that
+// recorded tick READ-ONLY; the ● LIVE button snaps back to now and re-enables
+// every scenario control. (Keyboard arrows on the focused slider fire 'input'
+// too, so they enter scrub as well — intended.)
+$("timeline").addEventListener("input", () => { if (sid) enterScrub(+$("timeline").value); });
+$("live").addEventListener("click", exitScrub);
+$("safetytoggle").addEventListener("change", () => {
+  safetyOn = $("safetytoggle").checked;
+  if (sid) poll(true);                       // fetch once even when paused
+});
+// SEMANTICS 11 physics toggles: ember spotting + realistic grass speed. Each
+// re-creates the session (same UX as fire-zone / location) passing the flags —
+// they change the modelled fire behaviour, so the scenario must rebuild.
+$("spotting").addEventListener("change", () => guard(newSession));
+$("grass_realism").addEventListener("change", () => guard(newSession));
+$("copyseed").addEventListener("click", () => {
+  if (!lastState) return;
+  const s = lastState;
+  const line = `wgresponse simui repro: seed=${s.seed} location=${s.location} ` +
+               `fire_zone=${s.fire_zone || "standard"} ` +
+               `clients=${s.clients.length} crews=${s.crews.length} tick=${s.tick}`;
+  (navigator.clipboard ? navigator.clipboard.writeText(line)
+                       : Promise.reject()).then(
+    () => toast("copied: " + line),
+    () => { window.prompt("copy the repro line:", line); });
+});
+
+// --- burned-mask RLE decode --------------------------------------------------
+// state.terrain.burned: {encoding: "rle01", first_value, nrows, ncols, runs}.
+// Decode to per-row [row, c0, c1] segments (runs may span row boundaries).
+// FALLBACK ONLY: preferred source is state.burned rings (visual contract);
+// the RLE mask keeps the fire visible against a backend that predates it.
+function burnedSegments(b) {
+  const segs = [];
+  if (!b || b.encoding !== "rle01" || !Array.isArray(b.runs)) return segs;
+  let idx = 0, val = b.first_value || 0;
+  for (const run of b.runs) {
+    if (val === 1) {
+      let start = idx;
+      const end = idx + run;
+      while (start < end) {
+        const r = Math.floor(start / b.ncols);
+        const rowEnd = Math.min(end, (r + 1) * b.ncols);
+        segs.push([r, start - r * b.ncols, rowEnd - 1 - r * b.ncols]);
+        start = rowEnd;
+      }
+    }
+    idx += run; val = 1 - val;
+  }
+  return segs;
+}
+
+// --- persistent map layers (no flicker: reuse layer objects, setLatLngs) ----
+// pools of polygons per family, grown on demand; surplus layers are emptied
+// (setLatLngs([])) rather than removed, so objects are reused every poll.
+const pools = { burned: [], h1: [], h5: [], h24: [] };
+function syncRingPool(pool, group, rings, style, tip) {
+  for (let i = 0; i < rings.length; i++) {
+    let lay = pool[i];
+    if (!lay) {
+      lay = L.polygon(rings[i], style);
+      if (tip) lay.bindTooltip(tip);
+      lay.addTo(group);
+      pool[i] = lay;
+    } else if (lay.setLatLngs) lay.setLatLngs(rings[i]);
+  }
+  for (let i = rings.length; i < pool.length; i++)
+    if (pool[i] && pool[i].setLatLngs) pool[i].setLatLngs([]);
+}
+let layersSid = null;      // session the persistent registries belong to
+let burnedMode = null;     // "rings" | "rle" — switching resets layers.burned
+const crewReg = {};        // crew_id -> {color, marker, route, egress, track, shown}
+const fireReg = {};        // incident_id -> marker
+let lastTick = -1;
+let lastRenderAt = 0;      // performance.now() of previous TICK-CHANGE render
+let tickGapMs = 1200;      // measured wall ms between sim ticks (tween length)
+
+function resetPersistentLayers() {
+  for (const k of ["burned", "h1", "h5", "h24"]) pools[k] = [];
+  layers.burned.clearLayers(); layers.band1.clearLayers();
+  layers.band5.clearLayers(); layers.band24.clearLayers();
+  layers.crews.clearLayers(); layers.routes.clearLayers();
+  layers.fire.clearLayers(); layers.extent.clearLayers();
+  layers.zones.clearLayers();
+  for (const k in crewReg) delete crewReg[k];
+  for (const k in fireReg) delete fireReg[k];
+  burnedMode = null;
+  for (const k in anim) delete anim[k];
+}
+
+// --- crew tween: drive markers ALONG the road polyline between polls ---------
+// (requestAnimationFrame interpolation — "watch them travel on roads")
+const anim = {};           // crew_id -> tween record
+let animRunning = false;
+const perfNow = () => (window.performance && performance.now)
+  ? performance.now() : Date.now();
+function toXY(p, lat0) {   // local planar frame (fine at neighborhood scale)
+  const k = Math.cos(lat0 * Math.PI / 180) || 1;
+  return [p[1] * k, p[0]];
+}
+function d2(a, b) { const dx = a[0] - b[0], dy = a[1] - b[1]; return dx * dx + dy * dy; }
+function projectOnPath(path, p) {
+  if (!path || path.length < 2) return null;
+  const lat0 = p[0], P = toXY(p, lat0);
+  let best = null;
+  for (let i = 0; i + 1 < path.length; i++) {
+    const A = toXY(path[i], lat0), B = toXY(path[i + 1], lat0);
+    const vx = B[0] - A[0], vy = B[1] - A[1];
+    const L2 = vx * vx + vy * vy;
+    let t = L2 > 0 ? ((P[0] - A[0]) * vx + (P[1] - A[1]) * vy) / L2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    const q = [A[0] + t * vx, A[1] + t * vy];
+    const dd = d2(P, q);
+    if (!best || dd < best.d2)
+      best = { seg: i, t, d2: dd,
+               pos: [path[i][0] + t * (path[i + 1][0] - path[i][0]),
+                     path[i][1] + t * (path[i + 1][1] - path[i][1])] };
+  }
+  return best;
+}
+function subPathAlong(path, from, to) {
+  // ordered walk from's projection -> to's projection along the polyline;
+  // straight leg when there is no usable path (graceful, honest fallback)
+  const a = projectOnPath(path, from), b = projectOnPath(path, to);
+  if (!a || !b) return [from, to];
+  const pts = [from, a.pos];
+  if (a.seg < b.seg || (a.seg === b.seg && a.t <= b.t)) {
+    for (let i = a.seg + 1; i <= b.seg; i++) pts.push(path[i]);
+  } else {
+    for (let i = a.seg; i > b.seg; i--) pts.push(path[i]);
+  }
+  pts.push(b.pos); pts.push(to);
+  const out = [];
+  for (const p of pts)      // drop consecutive near-duplicates
+    if (!out.length || d2(toXY(out[out.length - 1], p[0]), toXY(p, p[0])) > 1e-14)
+      out.push(p);
+  return out.length >= 2 ? out : [from, to];
+}
+function buildTween(pts, marker, arrowEl, durMs) {
+  const lat0 = pts[0][0], cum = [0];
+  for (let i = 1; i < pts.length; i++)
+    cum.push(cum[i - 1] + Math.sqrt(d2(toXY(pts[i - 1], lat0), toXY(pts[i], lat0))));
+  return { pts, cum, total: cum[cum.length - 1], t0: perfNow(),
+           dur: Math.max(1, durMs), marker, arrowEl, cur: pts[0], done: false };
+}
+function tweenPointAt(a, f) {
+  if (a.total <= 0) return a.pts[a.pts.length - 1];
+  const s = f * a.total;
+  let i = 1;
+  while (i < a.cum.length && a.cum[i] < s) i++;
+  if (i >= a.pts.length) return a.pts[a.pts.length - 1];
+  const seg = (a.cum[i] - a.cum[i - 1]) || 1;
+  const t = (s - a.cum[i - 1]) / seg;
+  return [a.pts[i - 1][0] + t * (a.pts[i][0] - a.pts[i - 1][0]),
+          a.pts[i - 1][1] + t * (a.pts[i][1] - a.pts[i - 1][1])];
+}
+function bearingDeg(from, to) {   // clockwise from north
+  const k = Math.cos(from[0] * Math.PI / 180) || 1;
+  return Math.atan2((to[1] - from[1]) * k, to[0] - from[0]) * 180 / Math.PI;
+}
+function ensureAnimLoop() {
+  if (animRunning) return;
+  animRunning = true;
+  const frame = () => {
+    let live = false;
+    const now = perfNow();
+    for (const cid in anim) {
+      const a = anim[cid];
+      if (!a || a.done) continue;
+      const f = Math.min(1, (now - a.t0) / a.dur);
+      const pos = tweenPointAt(a, f);
+      try {
+        if (a.marker && a.marker.setLatLng) a.marker.setLatLng(pos);
+        if (a.arrowEl && (pos[0] !== a.cur[0] || pos[1] !== a.cur[1])) {
+          const b = bearingDeg(a.cur, pos);
+          // the glyph points east by default; 0deg bearing = north => -90
+          a.arrowEl.style.transform = `rotate(${(b - 90).toFixed(1)}deg)`;
+        }
+      } catch (e) { /* marker torn down mid-frame: no-op */ }
+      a.cur = pos;
+      if (f >= 1) a.done = true; else live = true;
+    }
+    if (live) requestAnimationFrame(frame);
+    else animRunning = false;
+  };
+  requestAnimationFrame(frame);
+}
+function startCrewTween(cid, R, target, paths, snap, durMs) {
+  // an in-flight tween toward the SAME goal keeps running (renders happen
+  // every poll, crews only move on tick changes — never cancel mid-drive)
+  const prev = anim[cid];
+  if (prev && !prev.done) {
+    const goal = prev.pts[prev.pts.length - 1];
+    if (!snap && d2(toXY(goal, goal[0]), toXY(target, goal[0])) < 1e-14) return;
+  }
+  const from = (prev && prev.cur) || R.shown || target;
+  const moved = d2(toXY(from, from[0]), toXY(target, from[0]));
+  if (snap || moved < 1e-14 || moved > 0.09) {   // teleport (reset) => no tween
+    delete anim[cid];
+    if (R.marker && R.marker.setLatLng) R.marker.setLatLng(target);
+    R.shown = target;
+    return;
+  }
+  // pick the candidate polyline (ingress route, else egress) that the crew's
+  // endpoints actually sit on — projection error decides, never a guess
+  let pts = null, bestErr = Infinity;
+  for (const path of paths) {
+    if (!path || path.length < 2) continue;
+    const a = projectOnPath(path, from), b = projectOnPath(path, target);
+    if (!a || !b) continue;
+    const err = a.d2 + b.d2;
+    if (err < bestErr) { bestErr = err; pts = subPathAlong(path, from, target); }
+  }
+  if (!pts) pts = [from, target];
+  anim[cid] = buildTween(pts, R.marker, R.arrowEl, durMs);
+  R.shown = target;
+  ensureAnimLoop();
+}
+
+// --- LAW 2 ROADS RENDER: per-segment styling (road solid / spur / chord) -----
+// state.crews[i].route_segments = [{points:[[lat,lon]...], kind, spur}] — the
+// ROADS ADHERENCE spur metadata. Draw the road portion SOLID crew-color, the
+// last-mile SPUR short-dashed + thin (the honest off-network connector), and a
+// whole-leg CHORD fallback dashed RED-ish (no graph / endpoint beyond the spur
+// ceiling). Defensive decode: any missing/odd-shaped field degrades to a no-op.
+function decodeSegments(raw) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  for (const s of raw) {
+    if (!s || typeof s !== "object") continue;
+    const pts = ptList(s.points);
+    if (pts.length < 2) continue;
+    let kind = s.kind;
+    if (kind !== "road" && kind !== "spur" && kind !== "chord")
+      kind = s.spur ? "spur" : "road";           // fall back to the spur flag
+    out.push({ points: pts, kind });
+  }
+  return out;
+}
+// dashArray is ALWAYS set (null = solid) so a pooled slot that switches kind
+// across ticks never keeps a stale dash from its previous kind.
+function segStyle(kind, color) {
+  if (kind === "spur")                             // short-dash thin off-network
+    return { color, weight: 2.0, opacity: 0.9, dashArray: "3 4" };
+  if (kind === "chord")                            // whole-leg fallback: red warn
+    return { color: "#ff5252", weight: 2.5, opacity: 0.9, dashArray: "6 5" };
+  return { color, weight: 3.5, opacity: 0.9, dashArray: null };   // road: solid
+}
+// egress keeps its amber-dashed identity for the road portion (the long 8 5
+// dash the founder already reads as "emergency egress"); spur tightens the
+// dash; a chord goes red like the ingress chord.
+function egressSegStyle(kind) {
+  if (kind === "spur")
+    return { color: "#ffb300", weight: 2.0, opacity: 0.9, dashArray: "3 4" };
+  if (kind === "chord")
+    return { color: "#ff5252", weight: 2.5, opacity: 0.9, dashArray: "6 5" };
+  return { color: "#ffb300", weight: 2.5, opacity: 0.95, dashArray: "8 5" };
+}
+// pool of per-segment polylines per crew (no flicker: reuse objects, setLatLngs
+// + setStyle; surplus slots emptied to []), mirroring the ring-pool discipline.
+function syncCrewSegs(pool, group, segs, styleFn, tipFn) {
+  for (let i = 0; i < segs.length; i++) {
+    const seg = segs[i], style = styleFn(seg.kind);
+    let lay = pool[i];
+    if (!lay) {
+      lay = L.polyline(seg.points, style).addTo(group);
+      pool[i] = lay;
+    } else {
+      if (lay.setLatLngs) lay.setLatLngs(seg.points);
+      if (lay.setStyle) lay.setStyle(style);
+    }
+    if (tipFn) setTip(lay, tipFn(seg));
+  }
+  for (let i = segs.length; i < pool.length; i++)
+    if (pool[i] && pool[i].setLatLngs) pool[i].setLatLngs([]);
+}
+
+// --- SEMANTICS 9/10 crew-state affordances on the persistent marker element ---
+// INBOUND (SEMANTICS 9): greyed / hollow square + a "arrives in Xm" chevron chip
+//   pointing IN from the region edge (reg_1h EAST edge -> ◂, reg_3h WEST -> ▸).
+// RELOCATING (SEMANTICS 10a): a pulsing amber ring — a crew fleeing a threatened
+//   zone (via the .relocating class -> .creloc-ring animation).
+// OVERRUN (SEMANTICS 10c): the marker flashes red — a crew caught in the fire.
+// The offline SVG shim has no per-marker element (getElement absent) -> a
+// graceful no-op; those states still read via the banner, itinerary and tooltip.
+function styleCrewMarker(R, c, caught) {
+  const el = R.marker && R.marker.getElement ? R.marker.getElement() : null;
+  if (!el) return;
+  el.classList.toggle("inbound", !!c.inbound);
+  el.classList.toggle("relocating", !!c.relocating);
+  el.classList.toggle("overrun", !!caught);
+  const chip = el.querySelector(".cinb");
+  if (chip) {
+    if (c.inbound) {
+      const mins = c.arrival_eta_s != null ? Math.max(0, Math.ceil(c.arrival_eta_s / 60)) : null;
+      const chev = c.region === "reg_1h" ? "◂" : "▸";   // ◂ from E edge / ▸ from W edge
+      chip.textContent = chev + (mins != null ? " " + mins + "m" : "");
+      chip.style.display = "block";
+    } else { chip.style.display = "none"; }
+  }
+}
+
+// --- render -------------------------------------------------------------------
+function render(st) {
+  lastState = st;
+  running = !!st.running;
+  $("run").classList.toggle("active", running);
+  $("pause").classList.toggle("active", !running);
+  // LAW 1 TIME-SCRUB: sync the replay timeline to history {first,last,current}.
+  // While scrubbing the user drives the thumb, so updateTimeline only refreshes
+  // the bounds — it never yanks the thumb back to the live head mid-drag.
+  updateTimeline(st.history);
+  $("seed").textContent = st.seed;
+  $("sess").textContent = st.session_id || "–";
+  $("windval").textContent = Math.round(st.wind_dir_deg);
+  $("windarrow").style.transform = `rotate(${st.wind_dir_deg}deg)`;
+  if (document.activeElement !== $("wind")) $("wind").value = Math.round(st.wind_dir_deg);
+
+  // FIRE ZONE: select tracks what ACTUALLY loaded (a missing _ext tile falls
+  // back to standard, loudly) + a small chip while extended is active
+  const fz = st.fire_zone || "standard";
+  if (document.activeElement !== $("firezone")) $("firezone").value = fz;
+  $("fzchip").style.display = fz === "extended" ? "inline-block" : "none";
+
+  // SEMANTICS 11 physics toggles: reflect what the session ACTUALLY ran with
+  // when the backend echoes it (state.spotting / state.grass_realism); if the
+  // field is absent the checkbox keeps its default-checked value (the toggles
+  // still re-create the session with the flags on change either way).
+  if (typeof st.spotting === "boolean" && document.activeElement !== $("spotting"))
+    $("spotting").checked = st.spotting;
+  if (typeof st.grass_realism === "boolean" && document.activeElement !== $("grass_realism"))
+    $("grass_realism").checked = st.grass_realism;
+
+  const sb = st.scoreboard || {};
+  // SAFETY SEMANTICS 10c: crews CAUGHT in fire. Keyed off top-level
+  // crew_overruns (the per-crew rows: crew_id, reason burned|imminent, lat/lon)
+  // AND scoreboard.crew_overruns (the count). Drives the RED alarm banner, the
+  // flashing crew markers, the scoreboard breakout row and the pinned feed
+  // entries. scoreboard.violations already folds these in (flips red).
+  const overrunRows = Array.isArray(st.crew_overruns) ? st.crew_overruns : [];
+  const overrunIds = {};
+  overrunRows.forEach(o => { if (o && o.crew_id != null) overrunIds[o.crew_id] = o; });
+  const nOverruns = sb.crew_overruns != null ? sb.crew_overruns : overrunRows.length;
+  if (document.activeElement !== $("buffer") && sb.buffer_min != null) {
+    $("buffer").value = sb.buffer_min; $("bufval").textContent = sb.buffer_min;
+  }
+  if (document.activeElement !== $("slack") && sb.slack_min != null) {
+    $("slack").value = sb.slack_min; $("slackval").textContent = sb.slack_min;
+  }
+  if (document.activeElement !== $("speed") && st.speed_x != null) {
+    $("speed").value = st.speed_x; $("speedval").textContent = Math.round(st.speed_x);
+  }
+
+  // SYNTHETIC TERRAIN banner — loud, never silent (design rule)
+  const synth = st.terrain && st.terrain.synthetic;
+  $("synthbanner").style.display = synth ? "block" : "none";
+  if (synth) $("synthbanner").textContent = st.terrain.banner || "SYNTHETIC TERRAIN";
+
+  setStatus(`<span class="${running ? "ok" : "bad"}">●</span> ${st.location_name} · ` +
+    `sim ${fmtClock(st.sim_now_s)} · tick ${st.tick} · ` +
+    `${running ? "RUNNING ×" + Math.round(st.speed_x) : "PAUSED"} · ` +
+    `fires ${(st.fires || []).length}`);
+  updateClock(st);      // heads-up fire-age timer (top-right of the map)
+
+  // scoreboard — "violations" stays the loudest element on the page
+  $("sb_served").textContent = sb.served ?? 0;
+  const wd = sb.withdrawn ?? 0;      // mid-deploy safety pull-offs (loud)
+  $("sb_withdrawn").textContent = wd;
+  $("sb_withdrawn").classList.toggle("hot", wd > 0);
+  const reasons = sb.unserved_by_reason || {};
+  // LAW 4 TRIAGE: split 'triaged' (the count-maximizing ABANDONMENT) out of the
+  // generic capacity/infeasible line into its own violet-styled row, so the
+  // founder sees the objective's deliberate give-up separate from "ran out of
+  // crews". Distinct from the amber SAFETY withdrawal count above.
+  const triaged = reasons.triaged || 0;
+  const otherReasons = Object.keys(reasons).filter(k => k !== "triaged").sort();
+  $("sb_unserved").textContent = otherReasons.length
+    ? otherReasons.map(k => `${k} ×${reasons[k]}`).join(" · ") : "0";
+  $("sb_triaged").textContent = triaged;
+  $("sb_triaged_row").classList.toggle("hot", triaged > 0);
+  const mm = sb.min_margin_h;
+  $("sb_margin").textContent = mm == null ? "n/a" : mm.toFixed(2) + " h";
+  $("sb_margin").style.color = (mm != null && mm < 1.0) ? "var(--extreme)" : "";
+  const nv = sb.violations ?? 0;
+  $("sb_violations").textContent = nv === 0 ? "0 — SAFE" : `${nv} — UNSAFE`;
+  $("sb_violations").classList.toggle("viol", nv > 0);
+  // SAFETY SEMANTICS 10a relocations (cumulative) + 10c crews-caught breakout.
+  $("sb_relocations").textContent = sb.relocations ?? 0;
+  $("sb_overruns").textContent = nOverruns;
+  $("sb_overruns_row").classList.toggle("hot", nOverruns > 0);
+  $("sb_rule").textContent = `buffer ${sb.buffer_min} + slack ${sb.slack_min} min`;
+
+  // LAW 8 OUTCOME TAG (FOUNDER ROUND 4): the per-home outcome breakdown from
+  // scoreboard.outcomes {tag: count}. Every tag key is always present (the
+  // backend seeds 0s), so the block is stable; "in progress / pending" groups
+  // the two actively-handled tags. abandoned is hot-highlighted so the founder
+  // sees losses at a glance and reads them as deliberate triage, not misses.
+  const oc = sb.outcomes || {};
+  $("oc_saved").textContent = oc.saved || 0;
+  $("oc_protected").textContent = oc.protected_then_impacted || 0;
+  $("oc_abandoned").textContent = oc.abandoned_unsavable || 0;
+  $("oc_triaged").textContent = oc.triaged || 0;
+  $("oc_inflight").textContent = (oc.in_progress || 0) + (oc.pending || 0);
+  // 'monitoring' (SEMANTICS 9): beyond the 72 h notice horizon but with an ETA.
+  $("oc_monitoring").textContent = oc.monitoring || 0;
+  $("oc_notthreat").textContent = oc.not_threatened || 0;
+  $("oc_abandoned_row").classList.toggle("hot", (oc.abandoned_unsavable || 0) > 0);
+
+  // "SAFETY WITHDRAWAL ..." session notes -> loud transient banner on each
+  // NEW one (evidence persists in the scoreboard count + amber feed entries;
+  // reset/reroll wipes the session's notes, so re-sync the seen count down)
+  const wnotes = (st.notes || []).filter(n =>
+    String(n).indexOf("SAFETY WITHDRAWAL") !== -1);
+  if (wdSeen.sid !== st.session_id || wnotes.length < wdSeen.n) {
+    wdSeen = { sid: st.session_id, n: 0 };
+    $("withdrawbanner").style.display = "none";
+  }
+  if (wnotes.length > wdSeen.n) {
+    wdSeen.n = wnotes.length;
+    const wb = $("withdrawbanner");
+    wb.textContent = "⚠ " + wnotes[wnotes.length - 1];
+    wb.style.display = "block";
+    clearTimeout(wb._t);
+    wb._t = setTimeout(() => { wb.style.display = "none"; }, 12000);
+  }
+
+  // SAFETY SEMANTICS 10c — THE LOUD ALARM: a crew standing in the fire (the
+  // founder's G1/G2 bug). A PERSISTENT red banner while any crew is caught
+  // (unlike the transient withdrawal banner) naming the crew(s); it clears only
+  // when the count returns to 0. The scoreboard violations already blink red.
+  const cob = $("crewoverrunbanner");
+  if (nOverruns > 0) {
+    const caught = overrunRows.map(o => o.crew_id).filter(x => x != null);
+    cob.textContent = `⚠ CREW OVERRUN — ${nOverruns} crew${nOverruns === 1 ? "" : "s"} caught in fire` +
+      (caught.length ? " (" + caught.join(", ") + ")" : "");
+    cob.style.display = "block";
+  } else { cob.style.display = "none"; }
+
+  // ---- map layers ----
+  const t = st.terrain || {}, bbox = t.bbox || {};
+  const sessionChanged = layersSid !== st.session_id;
+  const clockRewound = st.tick != null && st.tick < lastTick;   // reset
+  const tickChanged = st.tick != null && st.tick !== lastTick;
+  if (sessionChanged) { resetPersistentLayers(); layersSid = st.session_id; }
+  // tween duration follows the MEASURED tick cadence (state changes per sim
+  // tick, ~3 s wall at 300x — polls in between return the same positions)
+  if (tickChanged) {
+    if (lastRenderAt)
+      tickGapMs = Math.max(250, Math.min(4000, perfNow() - lastRenderAt));
+    lastRenderAt = perfNow();
+  }
+
+  if (sessionChanged && bbox.south != null) {
+    L.rectangle([[bbox.south, bbox.west], [bbox.north, bbox.east]],
+      { color: "#9db0c9", weight: 1.5, dashArray: "4 4", fillColor: "#9db0c9",
+        fillOpacity: 0.03 })
+      .bindTooltip(`terrain ${t.nrows}×${t.ncols} @ ${t.cell_m} m<br>${t.source}`)
+      .addTo(layers.extent);
+    (st.safe_zones || []).forEach(z => {
+      L.marker([z.lat, z.lon], { icon: L.divIcon({ className: "zone-icon",
+        html: "Z", iconSize: [18, 18] }) })
+        .bindTooltip(`${z.zone_id} ${z.name || ""} (safe zone)`).addTo(layers.zones);
+    });
+  }
+
+  // THE FIRE ITSELF — state.burned rings (visual contract): dark-red filled
+  // polygons that grow tick over tick, updated in place (setLatLngs).
+  const burnedRings = ringList(st.burned);
+  if (burnedRings.length) {
+    if (burnedMode !== "rings") {
+      layers.burned.clearLayers(); pools.burned = []; burnedMode = "rings";
+    }
+    syncRingPool(pools.burned, layers.burned, burnedRings, BURNED_STYLE,
+                 "burning now — fire has arrived");
+  } else {
+    // fallback: RLE burned mask from state.terrain.burned (older backend or
+    // point-young fire) — same dark-red read, rebuilt per poll
+    if (burnedMode !== "rle") { layers.burned.clearLayers(); pools.burned = []; }
+    burnedMode = "rle";
+    layers.burned.clearLayers();
+    if (t.nrows && t.ncols && bbox.north != null) {
+      const latAt = r => bbox.north - r * (bbox.north - bbox.south) / t.nrows;
+      const lonAt = c => bbox.west + c * (bbox.east - bbox.west) / t.ncols;
+      for (const [r, c0, c1] of burnedSegments(t.burned)) {
+        L.rectangle([[latAt(r + 1), lonAt(c0)], [latAt(r), lonAt(c1 + 1)]],
+          { color: "#ff3b30", weight: 0.6, opacity: 0.8, fillColor: "#7f0f0f",
+            fillOpacity: 0.55 }).addTo(layers.burned);
+      }
+    }
+  }
+
+  // FIRE PROJECTION BANDS — state.fire_bands {h1,h5,h24} (visual contract):
+  // RED <1 h / ORANGE <5 h / YELLOW <24 h solid borders, faint fills,
+  // recomputed by the engine every tick and moved in place here (no flicker).
+  // Missing field or missing band -> layers empty out gracefully.
+  const bands = (st.fire_bands && typeof st.fire_bands === "object")
+    ? st.fire_bands : {};
+  const bandGroup = { h1: layers.band1, h5: layers.band5, h24: layers.band24 };
+  const bandAlias = { h1: "1h", h5: "5h", h24: "24h" };
+  for (const key of ["h1", "h5", "h24"]) {
+    const raw = bands[key] != null ? bands[key] : bands[bandAlias[key]];
+    const s = BAND_STYLE[key];
+    syncRingPool(pools[key], bandGroup[key], ringList(raw), s,
+                 `${s.label} — p50 projection`);
+  }
+
+  // fire origins: pulsing markers, persistent per incident (pulse must not
+  // restart every poll) — id-set change (reset/reroll) rebuilds the group
+  const fireIds = {};
+  (st.fires || []).forEach(f => { fireIds[f.incident_id] = true; });
+  for (const fid in fireReg) {
+    if (!fireIds[fid]) {
+      layers.fire.clearLayers();
+      for (const k in fireReg) delete fireReg[k];
+      break;
+    }
+  }
+  (st.fires || []).forEach(f => {
+    const tip = `${f.incident_id} · ${f.intensity}<br>wind FROM ${f.wind_dir_deg}°` +
+                `<br>ignited ${fmtClock(f.t_ignite_s)}`;
+    let m = fireReg[f.incident_id];
+    if (!m) {
+      m = L.marker([f.lat, f.lon], { icon: L.divIcon({ className: "fire-origin",
+        html: '<span class="halo"></span><span class="core"></span>',
+        iconSize: [18, 18] }) });
+      m.bindTooltip(tip);
+      m.addTo(layers.fire);
+      fireReg[f.incident_id] = m;
+    } else setTip(m, tip);
+  });
+
+  // eroded-P10 safety surface (the corridor no-go frontier), when toggled on
+  layers.safety.clearLayers();
+  (st.safety_surface || []).forEach(iso => {
+    L.polyline((iso.points || []).map(p => [p.lat, p.lon]),
+      { color: "#4dd0e1", weight: 2, dashArray: "2 4", opacity: 0.9 })
+      .bindTooltip(`${iso.incident_id} eroded-P10 +${iso.h} h — corridor check surface`)
+      .addTo(layers.safety);
+  });
+
+  const now = st.sim_now_s;
+  // client dots: slightly larger, white rim (legibility pass)
+  layers.clients.clearLayers();
+  (st.clients || []).forEach(c => {
+    const cleared = c.state === "cleared";
+    const eta = relH(c.eta_p50_s, now);
+    // LAW 5 GEL RING (FOUNDER ROUND 3): every gel_applied (protected) home gets
+    // a hollow BLUE outer halo, drawn FIRST so it sits under the alert-state
+    // fill dot and reads as a ring around it. Keyed off the persistent
+    // gel_applied flag, so a gelled home KEEPS its blue ring even after its
+    // alert state later changes color (the job-done marker never disappears).
+    if (c.gel_applied) {
+      L.circleMarker([c.lat, c.lon], { radius: 12, color: "#2196f3",
+        weight: 2.5, opacity: 0.95, fill: false, fillOpacity: 0 })
+        .bindTooltip(`${c.client_id} — GEL APPLIED (protected)` +
+          (c.gelled_at_s ? `<br>gelled ${fmtClock(c.gelled_at_s)}` : ""))
+        .addTo(layers.clients);
+    }
+    // LAW 8 OUTCOME TAG (FOUNDER ROUND 4): an affordance ring that explains WHY
+    // a home is UNprotected, so a burned home reads as a deliberate call, not a
+    // miss. abandoned_unsavable -> grey DASHED ring (fire beat every feasible
+    // crew) — clearly different from a plain pending home (bare alert dot, no
+    // ring); triaged -> muted VIOLET dashed ring (deprioritized so crews could
+    // save more homes), matching the violet triaged scoreboard row.
+    // protected_then_impacted needs no extra ring: it already reads as the blue
+    // gel ring on a burned (impacted-colored) dot. Drawn UNDER the state dot
+    // (like the gel ring) and hollow (fill:false), so it renders as a ring in
+    // the offline SVG shim too (which honors fill:false; dashArray degrades to a
+    // solid ring offline — still clearly a distinct outcome marker).
+    if (c.outcome === "abandoned_unsavable") {
+      L.circleMarker([c.lat, c.lon], { radius: 10.5, color: "#9aa4b2",
+        weight: 2.5, opacity: 0.95, fill: false, fillOpacity: 0, dashArray: "2 3" })
+        .bindTooltip(`${c.client_id} — ABANDONED (unsavable): fire beat every feasible crew`)
+        .addTo(layers.clients);
+    } else if (c.outcome === "triaged") {
+      L.circleMarker([c.lat, c.lon], { radius: 10.5, color: "#c792ea",
+        weight: 2.0, opacity: 0.9, fill: false, fillOpacity: 0, dashArray: "3 4" })
+        .bindTooltip(`${c.client_id} — TRIAGED: deprioritized so crews could save more homes`)
+        .addTo(layers.clients);
+    } else if (c.outcome === "monitoring") {
+      // SEMANTICS 9: beyond the 72 h notice horizon but with a PROJECTED ETA (a
+      // low-urgency watch, distinct from not_threatened = truly no ETA). Hollow
+      // slate DOTTED ring, drawn under the state dot; hollow (fill:false) so it
+      // reads as a ring in the offline shim too.
+      L.circleMarker([c.lat, c.lon], { radius: 9.5, color: "#78909c",
+        weight: 2.0, opacity: 0.9, fill: false, fillOpacity: 0, dashArray: "1 3" })
+        .bindTooltip(`${c.client_id} — MONITORING: beyond 72 h, but fire is projected to reach it`)
+        .addTo(layers.clients);
+    }
+    L.circleMarker([c.lat, c.lon], { radius: 7.5,
+      color: cleared ? "#4caf50" : "#ffffff",
+      weight: cleared ? 2.5 : 2,
+      fillColor: colorFor(c.state), fillOpacity: 0.95 })
+      .bindTooltip(`${c.client_id} ${c.name || ""} · $${(c.value_usd / 1e6).toFixed(2)}M` +
+                   `<br>state: ${c.state}${c.gel_applied ? " · GEL APPLIED (protected)" : (c.assigned ? " · crew inbound" : "")}` +
+                   `<br>outcome: ${outcomeLabel(c.outcome)}` +
+                   (eta != null ? `<br>ETA p50 ${relFmt(c.eta_p50_s, now)} / p10 ${relFmt(c.eta_p10_s, now)}` : ""))
+      .addTo(layers.clients);
+  });
+
+  const zoneById = {};
+  (st.safe_zones || []).forEach(z => { zoneById[z.zone_id] = z; });
+
+  // CREWS ON ROADS — persistent per-crew layers, updated in place:
+  //   route_polyline  -> solid crew-colored road-following line
+  //   egress_polyline -> dashed amber EMERGENCY EGRESS, always visible while
+  //                      the crew is out (en_route / deploying / egressing)
+  //   marker          -> tweened ALONG the polyline between polls (rAF)
+  const crewIds = (st.crews || []).map(c => c.crew_id);
+  for (const cid in crewReg) {
+    if (crewIds.indexOf(cid) === -1) {   // crew set changed: full rebuild
+      layers.crews.clearLayers(); layers.routes.clearLayers();
+      for (const k in crewReg) delete crewReg[k];
+      for (const k in anim) delete anim[k];
+      break;
+    }
+  }
+  const routeMeta = {};                  // crew_id -> {offroad} for the cards
+  (st.crews || []).forEach((c, idx) => {
+    let R = crewReg[c.crew_id];
+    if (!R) {
+      const color = CREW_COLORS[idx % CREW_COLORS.length];
+      R = crewReg[c.crew_id] = {
+        color,
+        track: L.polyline([], { color: "#ffd9b3", weight: 2, opacity: 0.8 })
+          .addTo(layers.crews),
+        // LAW 2 ROADS RENDER: pools of per-segment polylines (road/spur/chord),
+        // grown on demand + emptied when the remaining path has fewer segments
+        routeSegs: [],
+        egressSegs: [],
+        marker: L.marker([c.lat, c.lon], { icon: L.divIcon({
+          className: "crew-icon",
+          // creloc-ring = SEMANTICS 10a pulsing amber ring (shown via .relocating);
+          // cinb = SEMANTICS 9 inbound countdown chip (shown via .inbound); both
+          // toggled per render by styleCrewMarker. crew-arrow = travel bearing.
+          html: '<span class="creloc-ring"></span>' +
+                '<span class="crew-arrow">&#10148;</span>' +
+                '<span class="cinb"></span>' +
+                `<span class="cnum">${String(c.crew_id).replace("sim-", "")}</span>`,
+          iconSize: [26, 20] }) }).addTo(layers.crews),
+        arrowEl: null, shown: [c.lat, c.lon],
+      };
+      // crew-colored marker edge + rotation handle (real Leaflet only; the
+      // offline shim has no DOM elements per marker — graceful no-op)
+      if (R.marker.getElement) {
+        try {
+          const el = R.marker.getElement();
+          if (el) {
+            el.style.borderColor = R.color;
+            R.arrowEl = el.querySelector(".crew-arrow");
+            if (R.arrowEl) R.arrowEl.style.color = R.color;
+          }
+        } catch (e) { /* keep default styling */ }
+      }
+    }
+    // tooltip carries the crew's REGION (SEMANTICS 9) + any inbound countdown /
+    // relocating / caught-in-fire context (SEMANTICS 10) so hovering a crew
+    // explains its state in words (and covers the offline shim, which has no
+    // per-marker styling).
+    setTip(R.marker, `${c.crew_id} ${c.name || ""}<br>status: ${c.status}` +
+      `<br>region: ${REGION_LABEL[c.region] || c.region || "in-zone"}` +
+      (c.inbound && c.arrival_eta_s != null
+        ? `<br>▸ inbound — arrives in ${Math.max(0, Math.ceil(c.arrival_eta_s / 60))} min` : "") +
+      (c.relocating
+        ? `<br>⟳ REPOSITIONING — ${c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened"}` : "") +
+      (overrunIds[c.crew_id]
+        ? `<br>⚠ CAUGHT IN FIRE (${overrunIds[c.crew_id].reason || ""})` : ""));
+    // SEMANTICS 9/10: paint the persistent marker element for this crew's state
+    // (inbound greyed square + chevron countdown / relocating amber pulse ring /
+    // overrun red flash). No-op in the offline shim (no per-marker element).
+    styleCrewMarker(R, c, !!overrunIds[c.crew_id]);
+
+    // breadcrumb of actual positions
+    const trackPts = ptList(c.track);
+    if (R.track.setLatLngs) R.track.setLatLngs(trackPts.length > 1 ? trackPts : []);
+
+    // planned ingress route (LAW 2 ROADS RENDER): prefer route_segments so the
+    // road portion draws SOLID and the last-mile spur / whole-leg chord draw
+    // dashed (honest). Fall back to a single route_polyline (older backend), or
+    // the straight crew->stops line (no road route at all — a chord).
+    const stops = c.itinerary || [];
+    const roadRoute = ptList(c.route_polyline);
+    let routeSegList = decodeSegments(c.route_segments);
+    let straightFallback = false;
+    if (!routeSegList.length) {
+      if (roadRoute.length > 1) {
+        routeSegList = [{ points: roadRoute, kind: "road" }];
+      } else if (stops.length) {
+        straightFallback = true;                       // whole-leg chord
+        routeSegList = [{ points: [[c.lat, c.lon]]
+          .concat(stops.map(s => [s.lat, s.lon])), kind: "chord" }];
+      }
+    }
+    const routeStopTip = `${c.crew_id} route — ${stops.length} stop${stops.length === 1 ? "" : "s"}`;
+    syncCrewSegs(R.routeSegs, layers.routes, routeSegList,
+      k => segStyle(k, R.color),
+      seg => routeStopTip + (seg.kind === "road" ? " · on roads"
+        : seg.kind === "spur" ? " · last-mile spur (off-network)"
+        : " · ≈ straight-line (no road route)"));
+
+    // EMERGENCY EGRESS — the planned escape route, always on while deployed;
+    // honor its road/spur/chord split (road stays amber-dashed, spur tightens,
+    // chord goes red). egressPts is still computed for the marker tween.
+    const active = ["en_route", "deploying", "egressing"].indexOf(c.status) !== -1
+      || stops.length > 0;
+    let egressSegList = decodeSegments(c.egress_segments);
+    let egressPts = ptList(c.egress_polyline);
+    const egressSynth = active && !egressPts.length && !egressSegList.length;
+    if (!egressPts.length && active) {
+      const ez = zoneById[c.egress_zone_id];
+      if (ez) {
+        const from = (c.status === "egressing" || !stops.length)
+          ? [c.lat, c.lon]
+          : [stops[stops.length - 1].lat, stops[stops.length - 1].lon];
+        egressPts = [from, [ez.lat, ez.lon]];
+      }
+    }
+    if (!egressSegList.length && active && egressPts.length > 1) {
+      // synthesized escape (no road data) is a chord; a bare egress_polyline
+      // with no segments is treated as an on-road leg
+      egressSegList = [{ points: egressPts, kind: egressSynth ? "chord" : "road" }];
+    }
+    const egressTip = `${c.crew_id} emergency egress — ${c.egress_zone_id || "nearest safe zone"}`;
+    syncCrewSegs(R.egressSegs, layers.routes, active ? egressSegList : [],
+      egressSegStyle,
+      seg => egressTip + (seg.kind === "chord" ? " · ≈ straight-line (no road route)"
+        : seg.kind === "spur" ? " · last-mile spur" : ""));
+
+    // "≈ straight-line leg" honesty chip — ONLY when a straight line is
+    // actually standing in for a road: a TRAVELING crew flagged off-road (or
+    // with no road polyline at all), or a deployed crew whose planned escape
+    // had to be synthesized straight. Idle crews carry on_roads=false as a
+    // resting default (no route exists) — never chip them.
+    const traveling = c.status === "en_route" || c.status === "egressing";
+    routeMeta[c.crew_id] = {
+      offroad: (traveling && (offRoadFlag(c) || straightFallback))
+        || (active && egressSynth),
+    };
+
+    // tween the marker along the road toward its new tick position; polls
+    // between ticks repeat the same target and leave the tween running
+    if (tickChanged || sessionChanged || clockRewound)
+      startCrewTween(c.crew_id, R, [c.lat, c.lon],
+                     [roadRoute, egressPts], sessionChanged || clockRewound,
+                     tickGapMs);
+  });
+  lastTick = st.tick != null ? st.tick : lastTick;
+
+  // alert feed (real AlertEvents, newest first)
+  const evts = (st.alert_feed || []).slice(-60).reverse();
+  const ladder = evts.map(e => {
+    const s = e.state || "?";
+    return `<div class="evt"><span class="t">${fmtClock(e.t_s)}</span>` +
+      `<span class="chip" style="background:${colorFor(s)}">${s.replace(/_/g, " ")}</span>` +
+      `<span>${e.client_id}</span>` +
+      `<span class="t">${e.eta_p50_h != null ? "p50 " + Number(e.eta_p50_h).toFixed(1) + "h" : ""}</span></div>`;
+  }).join("");
+  // safety withdrawals pinned on top of the feed — rare, loud, never buried
+  // (state.withdrawn records: crew pulled off a mid-deploy stop, gel unfinished)
+  const wds = (st.withdrawn || []).slice(-8).reverse().map(w =>
+    `<div class="evt wd"><span class="t">${fmtClock(w.at_s)}</span>` +
+    `<span class="chip amber">withdrawn</span>` +
+    `<span>${w.crew_id} pulled off ${w.client_id}</span>` +
+    `<span class="t">${String(w.cause || "").replace(/_/g, " ")} · over rule by ` +
+    `${Number(w.deficit_min).toFixed(1)} min · gel NOT applied</span></div>`).join("");
+  // SAFETY SEMANTICS 10c: crew-overrun rows pinned ABOVE the withdrawals — the
+  // loudest entry, never buried (a crew standing in the fire).
+  const cos = overrunRows.slice(-8).reverse().map(o =>
+    `<div class="evt over"><span class="t">${fmtClock(now)}</span>` +
+    `<span class="chip caught">crew overrun</span>` +
+    `<span>${o.crew_id} caught in fire</span>` +
+    `<span class="t">${String(o.reason || "").replace(/_/g, " ")}` +
+    `${o.mode ? " · " + o.mode : ""}</span></div>`).join("");
+  $("alertlist").innerHTML = cos + wds + (ladder ||
+    `<div class="evt"><span class="t">no alerts yet — ignite a fire</span></div>`);
+
+  // per-crew itinerary cards: arrive/service/depart vs latest-depart + margin bar
+  const servicedBy = {};
+  (st.serviced || []).forEach(sv => {
+    (servicedBy[sv.crew_id] = servicedBy[sv.crew_id] || []).push(sv);
+  });
+  $("itinlist").innerHTML = (st.crews || []).map(c => {
+    const stops = (c.itinerary || []).map(s => {
+      const m = s.planned_margin_h;
+      const tight = m != null && m < 1.0;
+      const w = Math.max(4, Math.min(100, (m || 0) / 4.0 * 100));
+      // kept through a live rule tightening: audited under the NEW rule and
+      // re-checked against the newest P10 every tick — badge it, never silent
+      const sup = s.policy_superseded
+        ? ' <span class="chip amber" title="kept through a live rule change — ' +
+          'audited under the NEW rule, re-checked against the newest P10 every ' +
+          'tick">policy superseded</span>' : "";
+      return `<div class="stop${s.policy_superseded ? " superseded" : ""}">` +
+        `<div class="who"><span>${s.client_id}${sup}</span>` +
+        `<span class="tt${tight ? " tight" : ""}">margin ${m != null ? m.toFixed(2) : "?"} h</span></div>` +
+        `<div class="tt">arrive ${relFmt(s.planned_arrive_s, now)} · ` +
+        `depart ${relFmt(s.planned_depart_s, now)} · ` +
+        `latest ${relFmt(s.latest_depart_s, now)}</div>` +
+        `<div class="mbar"><span class="${tight ? "tight" : ""}" style="width:${w}%"></span></div></div>`;
+    }).join("");
+    const done = (servicedBy[c.crew_id] || []).map(sv =>
+      `<div class="done">✓ ${sv.client_id} gelled · margin ${Number(sv.margin_h).toFixed(2)} h</div>`).join("");
+    // DEPLOYING: progress ring + countdown chip from the active stop's data
+    let dep = "";
+    if (c.status === "deploying") {
+      const s0 = (c.itinerary || [])[0] || {};
+      let leftMin = null, frac = null;
+      if (s0.planned_depart_s != null && now != null)
+        leftMin = Math.max(0, (s0.planned_depart_s - now) / 60);
+      else if (s0.deploy_min != null) leftMin = Number(s0.deploy_min);
+      else if (c.deploy_min != null) leftMin = Number(c.deploy_min);
+      if (s0.planned_depart_s != null && s0.planned_arrive_s != null &&
+          s0.planned_depart_s > s0.planned_arrive_s && now != null)
+        frac = Math.min(1, Math.max(0,
+          (now - s0.planned_arrive_s) / (s0.planned_depart_s - s0.planned_arrive_s)));
+      const deg = Math.round((frac == null ? 0 : frac) * 360);
+      dep = ` <span class="deploychip"><span class="ring" style="background:` +
+        `conic-gradient(#ffb300 ${deg}deg, #241600 0)"></span>gel deploy` +
+        `${leftMin != null && isFinite(leftMin) ? " · " + leftMin.toFixed(0) + "m left" : ""}</span>`;
+    }
+    // honest fallback chip: some leg has no road route (on_roads=false)
+    const meta = routeMeta[c.crew_id] || {};
+    const offroad = meta.offroad
+      ? ' <span class="chip offroad" title="no road route for part of this ' +
+        'itinerary — straight-line estimate">≈ straight-line leg</span>' : "";
+    // SEMANTICS 9/10 crew-state badges: inbound reinforcement w/ its ETA,
+    // repositioning (fleeing a threatened zone), or CAUGHT in fire.
+    const regionTag = REGION_LABEL[c.region] || c.region || "in-zone";
+    const inbMin = c.arrival_eta_s != null ? Math.max(0, Math.ceil(c.arrival_eta_s / 60)) : null;
+    let badges = "";
+    if (c.inbound)
+      badges += ` <span class="chip inb" title="out-of-region reinforcement mobilizing on the first ignition (SEMANTICS 9) — excluded from dispatch until it arrives">inbound · ${regionTag}${inbMin != null ? " · " + inbMin + "m" : ""}</span>`;
+    if (c.relocating)
+      badges += ` <span class="chip amber" title="continuous crew safety (SEMANTICS 10a): the fire threatened this crew's position — it is repositioning to a currently-safe zone">⟳ repositioning — ${c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened"}</span>`;
+    if (overrunIds[c.crew_id])
+      badges += ` <span class="chip caught" title="SEMANTICS 10c: a crew is standing in the fire (the founder's G1/G2 bug) — audited so violations can never read 0 while a crew is in the burn">⚠ CAUGHT IN FIRE (${overrunIds[c.crew_id].reason || ""})</span>`;
+    let tail = "";
+    if (c.inbound)
+      tail = `<div class="tt" style="color:var(--amber)">▸ mobilized from ${regionTag} — arrives in ${inbMin != null ? inbMin + "m" : "—"} (not dispatch-eligible until arrival)</div>`;
+    else if (!stops && !done)
+      tail = `<div class="tt" style="color:var(--dim)">idle — staged at ${c.anchor_zone_id || "base"}</div>`;
+    const cls = overrunIds[c.crew_id] ? " caught" : (c.relocating ? " reloc" : "");
+    return `<div class="crew-block${cls}"><span class="cid">${c.crew_id}</span> ` +
+      `<span class="st">${c.status}</span>${badges}${dep}${offroad}${stops}${done}${tail}</div>`;
+  }).join("") || `<div class="evt"><span class="t">no crews</span></div>`;
+
+  if (fittedFor !== st.session_id && bbox && bbox.south != null) {
+    // A map created while its container had no layout (hidden/background
+    // tab) caches size 0 and fitBounds degenerates to zoom 0 — invalidate
+    // first, and only mark fitted once the container really has pixels so
+    // the next render retries. (Shim map has neither method: always fitted.)
+    if (map.invalidateSize) { try { map.invalidateSize(false); } catch (e) {} }
+    map.fitBounds([[bbox.south, bbox.west], [bbox.north, bbox.east]]);
+    const sz = map.getSize ? map.getSize() : null;
+    if (!sz || (sz.x > 0 && sz.y > 0)) fittedFor = st.session_id;
+  }
+}
+
+// --- adaptive polling: 1 s while running, quiet while paused -----------------
+// LAW 1 TIME-SCRUB: `scrubbing` pauses the live poll so it can't fight the drag
+// or overwrite the replayed past snapshot. exitScrub()'s poll(true) resumes it.
+async function poll(force) {
+  if (!sid || busy || scrubbing || (!running && !force)) return;
+  try {
+    const st = await api("GET", `/api/sim/${sid}/state${safetyOn ? "?safety=1" : ""}`);
+    if (scrubbing) return;   // user grabbed the slider mid-fetch: don't clobber
+    render(st);              // the replayed past view with a live snapshot
+  } catch (e) {
+    setStatus(`<span class="bad">●</span> ${String(e.message || e)}`);
+  }
+}
+setInterval(() => poll(false), POLL_MS);
+
+// boot: dial defaults to the first location's hazard wind, then a session
+$("wind").value = SIM_LOCATIONS[$("loc").value][1];
+$("windval").textContent = $("wind").value;
+$("windarrow").style.transform = `rotate(${+$("wind").value}deg)`;
+guard(newSession);
+</script>
+<script>
+/* Draggable + collapsible legend window (founder UX 2026-07-10). Self-contained,
+   pure DOM (works in the offline SVG-shim mode too — no Leaflet dependency).
+   Grab the title bar to move it; ▾/▸ collapses to the header; position and
+   collapsed state persist in localStorage and are re-clamped on resize. */
+(function () {
+  var lg = document.getElementById("legend");
+  var head = document.getElementById("lg-head");
+  var btn = document.getElementById("lg-collapse");
+  if (!lg || !head || !btn) return;
+  var clamp = function (v, lo, hi) { return Math.max(lo, Math.min(hi, v)); };
+  function placeAt(left, top) {
+    var w = lg.offsetWidth, h = lg.offsetHeight;
+    lg.style.left = clamp(left, 4, Math.max(4, window.innerWidth - w - 4)) + "px";
+    lg.style.top = clamp(top, 4, Math.max(4, window.innerHeight - h - 4)) + "px";
+    lg.style.right = "auto"; lg.style.bottom = "auto";
+  }
+  // restore persisted state
+  try {
+    if (localStorage.getItem("wg_legend_collapsed") === "1") {
+      lg.classList.add("collapsed"); btn.innerHTML = "&#9656;";
+    }
+    var p = JSON.parse(localStorage.getItem("wg_legend_pos") || "null");
+    if (p && typeof p.left === "number") placeAt(p.left, p.top);
+  } catch (e) {}
+  var drag = null;
+  head.addEventListener("pointerdown", function (e) {
+    if (e.target === btn) return;               // collapse button is not a drag handle
+    var r = lg.getBoundingClientRect();
+    drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+    lg.classList.add("dragging");
+    try { head.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  });
+  head.addEventListener("pointermove", function (e) {
+    if (drag) placeAt(e.clientX - drag.dx, e.clientY - drag.dy);
+  });
+  function endDrag(e) {
+    if (!drag) return;
+    drag = null; lg.classList.remove("dragging");
+    try { head.releasePointerCapture(e.pointerId); } catch (_) {}
+    try {
+      var r = lg.getBoundingClientRect();
+      localStorage.setItem("wg_legend_pos", JSON.stringify({ left: r.left, top: r.top }));
+    } catch (_) {}
+  }
+  head.addEventListener("pointerup", endDrag);
+  head.addEventListener("pointercancel", endDrag);
+  btn.addEventListener("click", function () {
+    var c = lg.classList.toggle("collapsed");
+    btn.innerHTML = c ? "&#9656;" : "&#9662;";       // ▸ collapsed / ▾ expanded
+    try { localStorage.setItem("wg_legend_collapsed", c ? "1" : "0"); } catch (_) {}
+  });
+  window.addEventListener("resize", function () {
+    var r = lg.getBoundingClientRect(); placeAt(r.left, r.top);
+  });
+  // don't let clicks/scroll on the legend reach (and pan/zoom) the map underneath
+  ["pointerdown", "wheel", "dblclick"].forEach(function (ev) {
+    lg.addEventListener(ev, function (e) { e.stopPropagation(); });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# CodeBuild spec: build the simulator image and push it to ECR.
+# (Local Docker daemon is unavailable on the dev box, so the image is built in
+# CodeBuild — same pattern as the firerisk pipeline.)
+# Expects env vars: ECR_REGISTRY, IMAGE_REPO, IMAGE_TAG, AWS_DEFAULT_REGION.
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Logging in to ECR $ECR_REGISTRY"
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+  build:
+    commands:
+      - echo "Building $ECR_REGISTRY/$IMAGE_REPO:$IMAGE_TAG"
+      - docker build -t "$ECR_REGISTRY/$IMAGE_REPO:$IMAGE_TAG" -t "$ECR_REGISTRY/$IMAGE_REPO:latest" .
+  post_build:
+    commands:
+      - echo "Pushing image"
+      - docker push "$ECR_REGISTRY/$IMAGE_REPO:$IMAGE_TAG"
+      - docker push "$ECR_REGISTRY/$IMAGE_REPO:latest"
+      - echo "Pushed $ECR_REGISTRY/$IMAGE_REPO:$IMAGE_TAG"

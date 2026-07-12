@@ -1,0 +1,362 @@
+"""wgresponse.weather — weather providers (contracts.WeatherProvider).
+
+    NwsWeather        api.weather.gov points -> forecastGridData (model-grade RLE
+                      series, ~191 h horizon) + red_flag_active() via alerts/active
+    OpenMeteoWeather  keyless fallback (LICENSING: free tier is NON-COMMERCIAL —
+                      see class docstring)
+    MockWeather       deterministic synthetic hourly series with scripted shifts
+
+Units at the seam (contracts law): wind m/s (10-m sustained + gust), direction
+compass degrees the wind blows FROM (0 = N, CW), RH percent 0-100, temperature
+Celsius, times unix seconds. NWS serves wind in km/h — converted here.
+
+The NWS gridpoint response run-length-encodes every variable:
+``values[] = {"validTime": "2026-07-06T02:00:00+00:00/PT3H", "value": 18.52}``
+where the ISO-8601 duration says how long the value holds. ``_parse_duration_s``
++ ``_expand_rle_hourly`` below ARE that decoder (a PT3H segment becomes 3
+hourly samples). Endpoint shapes per docs/research/weather_terrain_fuel.md
+(live-verified 2026-07-06).
+
+Network goes through injectable ``http_get(url, headers) -> (status, bytes)``;
+NWS REQUIRES a User-Agent header (taken from cfg.user_agent). Stdlib only.
+Live adapters raise RuntimeError on failure so callers can fall back
+(NWS -> OpenMeteo); they never invent weather.
+"""
+from __future__ import annotations
+
+import json
+import logging
+import math
+import re
+import urllib.request
+from datetime import datetime, timezone
+from typing import Callable, Optional
+
+from .contracts import (LatLon, ResponseConfig, WeatherForecast, WeatherSample,
+                        seeded_rng)
+
+log = logging.getLogger(__name__)
+
+HttpGet = Callable[[str, dict], "tuple[int, bytes]"]
+
+
+def _default_http_get(url: str, headers: Optional[dict] = None,
+                      timeout_s: float = 30.0) -> "tuple[int, bytes]":
+    """Stdlib urllib GET -> (HTTP status, body bytes)."""
+    req = urllib.request.Request(url, headers=headers or {})
+    with urllib.request.urlopen(req, timeout=timeout_s) as resp:
+        return resp.getcode(), resp.read()
+
+
+# ---------------------------------------------------------------------------
+# ISO-8601 helpers (the NWS RLE decoder)
+# ---------------------------------------------------------------------------
+
+def _parse_iso8601_s(s: str) -> float:
+    """ISO-8601 timestamp -> unix seconds. 'Z' accepted; naive treated as UTC."""
+    s = s.strip()
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    dt = datetime.fromisoformat(s)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.timestamp()
+
+
+_DURATION_RE = re.compile(
+    r"^P(?:(?P<weeks>\d+(?:\.\d+)?)W)?(?:(?P<days>\d+(?:\.\d+)?)D)?"
+    r"(?:T(?:(?P<hours>\d+(?:\.\d+)?)H)?(?:(?P<minutes>\d+(?:\.\d+)?)M)?"
+    r"(?:(?P<seconds>\d+(?:\.\d+)?)S)?)?$")
+
+
+def _parse_duration_s(s: str) -> float:
+    """ISO-8601 duration ('PT3H', 'P1DT2H', 'PT30M', ...) -> seconds."""
+    m = _DURATION_RE.match(s.strip())
+    if not m or not any(m.groupdict().values()):
+        raise ValueError(f"unparseable ISO-8601 duration: {s!r}")
+    g = {k: float(v) if v else 0.0 for k, v in m.groupdict().items()}
+    return (g["weeks"] * 604800.0 + g["days"] * 86400.0 + g["hours"] * 3600.0
+            + g["minutes"] * 60.0 + g["seconds"])
+
+
+def _split_valid_time(vt: str) -> "tuple[float, float]":
+    """NWS validTime 'start/ISO-duration' -> (start unix s, duration s).
+    Missing duration defaults to one hour."""
+    if "/" in vt:
+        start, dur = vt.split("/", 1)
+        return _parse_iso8601_s(start), _parse_duration_s(dur)
+    return _parse_iso8601_s(vt), 3600.0
+
+
+def _snap_hour(t_s: float) -> int:
+    """Snap a unix-seconds time to the nearest whole hour (int seconds)."""
+    return int(round(t_s / 3600.0)) * 3600
+
+
+def _expand_rle_hourly(values: list, convert: Callable[[float], float]) -> dict:
+    """Expand NWS RLE segments into {hour_unix_s(int): converted value}.
+    A segment spanning N hours contributes N hourly entries (min 1); later
+    segments overwrite overlapping hours (they are authoritative at their
+    own start)."""
+    out: dict = {}
+    for seg in values or []:
+        v = seg.get("value")
+        if v is None:
+            continue
+        try:
+            t0, dur = _split_valid_time(seg["validTime"])
+        except (KeyError, ValueError):
+            continue
+        # A genuinely zero-duration segment (PT0H) spans no time and must emit
+        # zero hours; the max(1, ...) floor only applies to positive sub-hour
+        # durations (e.g. PT30M), which still occupy their starting hour.
+        if dur <= 0.0:
+            continue
+        hours = max(1, int(dur // 3600.0))
+        base = _snap_hour(t0)
+        cv = convert(float(v))
+        for k in range(hours):
+            out[base + k * 3600] = cv
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Unit conversion (per-variable 'uom' on the NWS response)
+# ---------------------------------------------------------------------------
+
+def _speed_to_mps(uom: str) -> Callable[[float], float]:
+    """Converter for a wmoUnit speed uom -> m/s. NWS grid default is km/h."""
+    u = (uom or "").lower()
+    if "m_s" in u:
+        return lambda v: v
+    if u.endswith(":kn") or "knot" in u:
+        return lambda v: v * 0.514444
+    return lambda v: v / 3.6          # wmoUnit:km_h-1 (NWS default)
+
+
+def _temp_to_c(uom: str) -> Callable[[float], float]:
+    """Converter for a wmoUnit temperature uom -> Celsius."""
+    if "degf" in (uom or "").lower():
+        return lambda v: (v - 32.0) * 5.0 / 9.0
+    return lambda v: v
+
+
+_IDENT = lambda v: v
+
+
+class NwsWeather:
+    """NOAA/NWS api.weather.gov provider (primary; keyless, US coverage).
+
+    forecast(): points/{lat},{lon} -> properties.forecastGridData ->
+    RLE-decoded windSpeed/windGust (km/h -> m/s), windDirection (deg FROM),
+    relativeHumidity (%), temperature (C) merged into hourly WeatherSamples
+    (unix s). red_flag_active(): alerts/active?point= scan for Red Flag
+    Warning / Extreme Fire Danger events. A User-Agent header (cfg.user_agent)
+    is sent on every call — NWS requires it. Raises RuntimeError on transport/
+    shape failure; callers fall back to OpenMeteoWeather."""
+
+    POINTS_URL = "https://api.weather.gov/points/{lat:.4f},{lon:.4f}"
+    ALERTS_URL = "https://api.weather.gov/alerts/active?point={lat:.4f},{lon:.4f}"
+    _RED_FLAG_EVENTS = ("red flag warning", "extreme fire danger")
+
+    def __init__(self, http_get: Optional[HttpGet] = None,
+                 cfg: Optional[ResponseConfig] = None):
+        self._http_get = http_get or _default_http_get
+        self._cfg = cfg or ResponseConfig()
+
+    def _get_json(self, url: str) -> dict:
+        headers = {"User-Agent": self._cfg.user_agent,
+                   "Accept": "application/geo+json"}
+        status, body = self._http_get(url, headers)
+        if status != 200:
+            raise RuntimeError(f"NWS HTTP {status} for {url}")
+        try:
+            return json.loads(body.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError) as e:
+            raise RuntimeError(f"NWS returned unparseable JSON from {url}") from e
+
+    def forecast(self, loc: LatLon, horizon_h: float) -> WeatherForecast:
+        """Hourly forecast at loc out to horizon_h hours (clipped to NWS's ~191 h
+        grid horizon). Returns WeatherForecast with ascending hourly samples."""
+        pts = self._get_json(self.POINTS_URL.format(lat=loc.lat, lon=loc.lon))
+        try:
+            grid_url = pts["properties"]["forecastGridData"]
+        except (KeyError, TypeError) as e:
+            raise RuntimeError("NWS points response missing forecastGridData") from e
+        grid = self._get_json(grid_url).get("properties") or {}
+
+        def series(key: str, conv_for_uom) -> dict:
+            var = grid.get(key) or {}
+            return _expand_rle_hourly(var.get("values") or [],
+                                      conv_for_uom(var.get("uom") or ""))
+
+        speed = series("windSpeed", _speed_to_mps)
+        gust = series("windGust", _speed_to_mps)
+        wdir = series("windDirection", lambda u: _IDENT)
+        rh = series("relativeHumidity", lambda u: _IDENT)
+        temp = series("temperature", _temp_to_c)
+        if not speed:
+            raise RuntimeError("NWS gridpoint response had no windSpeed data")
+
+        t0 = min(speed)
+        t_end = min(max(speed), t0 + int(horizon_h * 3600.0))
+        samples = []
+        last: dict = {}
+        t = t0
+        while t <= t_end:
+            for key, d in (("speed", speed), ("gust", gust), ("dir", wdir),
+                           ("rh", rh), ("temp", temp)):
+                v = d.get(t)
+                if v is not None:
+                    last[key] = v
+            wind = last.get("speed")
+            if wind is not None:
+                g = last.get("gust")
+                g = wind if g is None else max(g, wind)
+                samples.append(WeatherSample(
+                    t_s=float(t),
+                    wind_speed_mps=wind,
+                    wind_gust_mps=g,
+                    wind_dir_deg=float(last.get("dir", 0.0)) % 360.0,
+                    rh_pct=float(last.get("rh", 40.0)),
+                    temp_c=float(last.get("temp", 20.0)),
+                ))
+            t += 3600
+        if not samples:
+            raise RuntimeError("NWS gridpoint decode produced no samples")
+        return WeatherForecast(loc=loc, samples=samples, source="nws")
+
+    def red_flag_active(self, loc: LatLon) -> bool:
+        """True if an active Red Flag Warning / Extreme Fire Danger alert covers
+        loc (alerts/active?point=lat,lon). Raises RuntimeError on transport
+        failure — a fetch error must not read as 'no red flag'."""
+        payload = self._get_json(self.ALERTS_URL.format(lat=loc.lat, lon=loc.lon))
+        for feat in payload.get("features") or []:
+            event = str((feat.get("properties") or {}).get("event") or "").lower()
+            if any(name in event for name in self._RED_FLAG_EVENTS):
+                return True
+        return False
+
+
+class OpenMeteoWeather:
+    """Open-Meteo fallback provider (keyless, global).
+
+    LICENSING: the free api.open-meteo.com endpoint is NON-COMMERCIAL ONLY
+    (10k calls/day). WG Response is commercial software — production use
+    requires the paid tier (hostname customer-api.open-meteo.com + &apikey=)
+    or self-hosting (AGPLv3 server, CC-BY-4.0 data). Pass base_url/apikey once
+    licensed; the default free endpoint is for development only.
+
+    Requests wind in m/s directly (&wind_speed_unit=ms) and UTC timestamps;
+    returns hourly WeatherSamples (unix s). Raises RuntimeError on failure."""
+
+    DEFAULT_BASE_URL = "https://api.open-meteo.com/v1/forecast"
+    _HOURLY = ("temperature_2m,relative_humidity_2m,wind_speed_10m,"
+               "wind_direction_10m,wind_gusts_10m")
+
+    def __init__(self, http_get: Optional[HttpGet] = None,
+                 base_url: str = DEFAULT_BASE_URL, apikey: Optional[str] = None):
+        self._http_get = http_get or _default_http_get
+        self._base_url = base_url
+        self._apikey = apikey
+
+    def forecast(self, loc: LatLon, horizon_h: float) -> WeatherForecast:
+        """Hourly forecast at loc out to horizon_h hours (max 16 days)."""
+        days = max(1, min(16, math.ceil(horizon_h / 24.0)))
+        url = (f"{self._base_url}?latitude={loc.lat:.4f}&longitude={loc.lon:.4f}"
+               f"&hourly={self._HOURLY}&wind_speed_unit=ms&timezone=UTC"
+               f"&forecast_days={days}")
+        if self._apikey:
+            url += f"&apikey={self._apikey}"
+        status, body = self._http_get(url, {"Accept": "application/json"})
+        if status != 200:
+            raise RuntimeError(f"Open-Meteo HTTP {status}")
+        try:
+            hourly = json.loads(body.decode("utf-8"))["hourly"]
+            times = hourly["time"]
+            temp = hourly["temperature_2m"]
+            rh = hourly["relative_humidity_2m"]
+            wind = hourly["wind_speed_10m"]
+            wdir = hourly["wind_direction_10m"]
+            gust = hourly["wind_gusts_10m"]
+        except (ValueError, KeyError, TypeError) as e:
+            raise RuntimeError("Open-Meteo response missing hourly arrays") from e
+        # Guard against ragged arrays (a truncated/partial response, or a variable
+        # unavailable for later hours): bound the loop to the shortest array so an
+        # out-of-range index can never escape as a bare IndexError. The class
+        # contract is to raise RuntimeError on failure (caller falls back); a raw
+        # IndexError would crash a fallback that only catches RuntimeError.
+        n = min(len(times), len(temp), len(rh), len(wind), len(wdir), len(gust))
+        samples = []
+        limit_s = None
+        for i in range(n):
+            ts = times[i]
+            if None in (wind[i], temp[i], rh[i], wdir[i]):
+                continue
+            t_s = _parse_iso8601_s(ts)      # naive == UTC (timezone=UTC requested)
+            if limit_s is None:
+                limit_s = t_s + horizon_h * 3600.0
+            if t_s > limit_s:
+                break
+            w = float(wind[i])
+            g = float(gust[i]) if gust[i] is not None else w
+            samples.append(WeatherSample(
+                t_s=t_s, wind_speed_mps=w, wind_gust_mps=max(g, w),
+                wind_dir_deg=float(wdir[i]) % 360.0, rh_pct=float(rh[i]),
+                temp_c=float(temp[i])))
+        if not samples:
+            raise RuntimeError("Open-Meteo decode produced no samples")
+        return WeatherForecast(loc=loc, samples=samples, source="open-meteo")
+
+
+class MockWeather:
+    """Deterministic synthetic weather (contracts.seeded_rng; no wall-clock).
+
+    Constant base conditions plus optional scripted shifts:
+    ``shifts=[(hour, wind_mps, dir_deg, rh_pct), ...]`` — from the given hour
+    onward the base wind/direction/RH step to those values (temp unchanged).
+    Optional jitter_frac (default 0 = exact) adds seeded per-hour wobble.
+    Same (seed, loc, args) always yields the identical series, and the first N
+    hours are identical regardless of horizon_h. Units: m/s, deg FROM, %, C,
+    unix seconds; samples start at t0_s, hourly."""
+
+    def __init__(self, seed: object, base_wind_mps: float = 6.0,
+                 dir_deg: float = 45.0, rh_pct: float = 25.0,
+                 temp_c: float = 30.0, gust_factor: float = 1.4,
+                 shifts: Optional[list] = None, jitter_frac: float = 0.0,
+                 t0_s: float = 1_780_000_000.0, red_flag: bool = False):
+        self._seed = seed
+        self._base = (base_wind_mps, dir_deg, rh_pct, temp_c)
+        self._gust_factor = gust_factor
+        self._shifts = sorted(shifts or [], key=lambda s: s[0])
+        self._jitter_frac = jitter_frac
+        self._t0_s = t0_s
+        self._red_flag = red_flag
+
+    def forecast(self, loc: LatLon, horizon_h: float) -> WeatherForecast:
+        """Deterministic hourly series at loc covering [t0_s, t0_s + horizon_h]."""
+        rng = seeded_rng(self._seed, "mockwx", round(loc.lat, 4), round(loc.lon, 4))
+        wind, wdir, rh, temp = self._base
+        n = max(1, int(horizon_h) + 1)
+        samples = []
+        si = 0
+        for h in range(n):
+            while si < len(self._shifts) and self._shifts[si][0] <= h:
+                _, wind, wdir, rh = self._shifts[si]
+                si += 1
+            jw = 1.0 + rng.uniform(-self._jitter_frac, self._jitter_frac)
+            jr = rng.uniform(-self._jitter_frac, self._jitter_frac) * 10.0
+            w = max(0.0, wind * jw)
+            samples.append(WeatherSample(
+                t_s=self._t0_s + h * 3600.0,
+                wind_speed_mps=w,
+                wind_gust_mps=w * self._gust_factor,
+                wind_dir_deg=float(wdir) % 360.0,
+                rh_pct=min(100.0, max(1.0, rh + jr)),
+                temp_c=float(temp),
+            ))
+        return WeatherForecast(loc=loc, samples=samples, source="mock")
+
+    def red_flag_active(self, loc: LatLon) -> bool:
+        """Scripted red-flag state (constructor arg; deterministic)."""
+        return self._red_flag

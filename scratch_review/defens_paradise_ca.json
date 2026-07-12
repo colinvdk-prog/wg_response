@@ -1,0 +1,4821 @@
+{
+  "location": "paradise_ca",
+  "name": "Paradise / Magalia, CA",
+  "synthetic": false,
+  "scenarios": 12,
+  "n_sites": 480,
+  "wall_s": 37.9,
+  "allow": 410,
+  "conditional": 70,
+  "avoid": 0,
+  "pct_allow": 85.4,
+  "pct_avoid": 0.0,
+  "med_window_h": 3.42,
+  "homes_per_crew_per_event": 12,
+  "center": {
+    "lat": 39.775,
+    "lon": -121.6
+  },
+  "rows": [
+    {
+      "lat": 39.726436,
+      "lon": -121.610531,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 7.26,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.726437,
+      "lon": -121.605266,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.0,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.726437,
+      "lon": -121.6,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.58,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.726437,
+      "lon": -121.594734,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.23,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.726436,
+      "lon": -121.589469,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.45,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.730481,
+      "lon": -121.626328,
+      "fuel": 162,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 10.4,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.730482,
+      "lon": -121.621062,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 10.66,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.730483,
+      "lon": -121.615797,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 9.85,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.730483,
+      "lon": -121.610531,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.24,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.730484,
+      "lon": -121.605266,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.94,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.730484,
+      "lon": -121.6,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.06,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.730484,
+      "lon": -121.594734,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.06,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.730483,
+      "lon": -121.589469,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.78,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.730483,
+      "lon": -121.584203,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 6.48,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.730482,
+      "lon": -121.578938,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.46,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.730481,
+      "lon": -121.573672,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.35,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.734525,
+      "lon": -121.636859,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 12.09,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.734526,
+      "lon": -121.631594,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.19,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.734528,
+      "lon": -121.626328,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 9.41,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.734529,
+      "lon": -121.621062,
+      "fuel": 145,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 10.47,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.73453,
+      "lon": -121.615797,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 8.76,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.73453,
+      "lon": -121.610531,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 5.4,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.73453,
+      "lon": -121.605266,
+      "fuel": 187,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.96,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.734531,
+      "lon": -121.6,
+      "fuel": 121,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.45,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.73453,
+      "lon": -121.594734,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.82,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.73453,
+      "lon": -121.589469,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 7.02,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.73453,
+      "lon": -121.584203,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 4.25,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.734529,
+      "lon": -121.578938,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.69,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.734528,
+      "lon": -121.573672,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.62,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.734526,
+      "lon": -121.568406,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.9,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.734525,
+      "lon": -121.563141,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.14,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.73857,
+      "lon": -121.642125,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 10.06,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738572,
+      "lon": -121.636859,
+      "fuel": 188,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 9.63,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738573,
+      "lon": -121.631594,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 8.61,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738575,
+      "lon": -121.626328,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.6,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738576,
+      "lon": -121.621062,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 8.0,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738576,
+      "lon": -121.615797,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.48,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738577,
+      "lon": -121.610531,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 5.3,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738577,
+      "lon": -121.605266,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 6.25,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738578,
+      "lon": -121.6,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 4.14,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.738577,
+      "lon": -121.594734,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.83,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738577,
+      "lon": -121.589469,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 5.11,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738576,
+      "lon": -121.584203,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.86,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738576,
+      "lon": -121.578938,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.82,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738575,
+      "lon": -121.573672,
+      "fuel": 121,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.93,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738573,
+      "lon": -121.568406,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.48,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.738572,
+      "lon": -121.563141,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.83,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.73857,
+      "lon": -121.557875,
+      "fuel": 142,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.68,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742615,
+      "lon": -121.64739,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 8.64,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742617,
+      "lon": -121.642125,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 7.71,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742619,
+      "lon": -121.636859,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 10.64,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.74262,
+      "lon": -121.631594,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.73,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742621,
+      "lon": -121.626328,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.82,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742623,
+      "lon": -121.621062,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.02,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742623,
+      "lon": -121.615797,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.73,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742624,
+      "lon": -121.610531,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 5.48,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742624,
+      "lon": -121.605266,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.24,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742624,
+      "lon": -121.6,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 4.69,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742624,
+      "lon": -121.594734,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 4.13,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.742624,
+      "lon": -121.589469,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.41,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742623,
+      "lon": -121.584203,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.97,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742623,
+      "lon": -121.578938,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 4.88,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742621,
+      "lon": -121.573672,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.82,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.74262,
+      "lon": -121.568406,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.73,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742619,
+      "lon": -121.563141,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.87,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742617,
+      "lon": -121.557875,
+      "fuel": 142,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.13,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.742615,
+      "lon": -121.55261,
+      "fuel": 185,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.65,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.74666,
+      "lon": -121.652656,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 11.16,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746662,
+      "lon": -121.64739,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 9.48,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746664,
+      "lon": -121.642125,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 4.5,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746666,
+      "lon": -121.636859,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 4.6,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746667,
+      "lon": -121.631594,
+      "fuel": 189,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 6.26,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746668,
+      "lon": -121.626328,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.41,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.74667,
+      "lon": -121.621062,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.64,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.74667,
+      "lon": -121.615797,
+      "fuel": 121,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.73,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746671,
+      "lon": -121.610531,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 10.34,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746671,
+      "lon": -121.605266,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 3.08,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.746671,
+      "lon": -121.6,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.12,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746671,
+      "lon": -121.594734,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.94,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746671,
+      "lon": -121.589469,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 3.77,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.74667,
+      "lon": -121.584203,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.94,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.74667,
+      "lon": -121.578938,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.34,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746668,
+      "lon": -121.573672,
+      "fuel": 189,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.88,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746667,
+      "lon": -121.568406,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.54,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746666,
+      "lon": -121.563141,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 4.49,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746664,
+      "lon": -121.557875,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.15,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.746662,
+      "lon": -121.55261,
+      "fuel": 187,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.19,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.74666,
+      "lon": -121.547344,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 6.73,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750706,
+      "lon": -121.652656,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 8.2,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750709,
+      "lon": -121.64739,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.98,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750711,
+      "lon": -121.642125,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.77,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750713,
+      "lon": -121.636859,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.81,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750714,
+      "lon": -121.631594,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.36,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750715,
+      "lon": -121.626328,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.74,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750716,
+      "lon": -121.621062,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.81,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750717,
+      "lon": -121.615797,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.34,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750718,
+      "lon": -121.610531,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.6,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750718,
+      "lon": -121.605266,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 4.37,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750718,
+      "lon": -121.6,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 6.18,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750718,
+      "lon": -121.594734,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.79,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750718,
+      "lon": -121.589469,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.99,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750717,
+      "lon": -121.584203,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.4,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.750716,
+      "lon": -121.578938,
+      "fuel": 99,
+      "developed": false,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.62,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.750715,
+      "lon": -121.573672,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.47,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750714,
+      "lon": -121.568406,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.9,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750713,
+      "lon": -121.563141,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.66,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750711,
+      "lon": -121.557875,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.68,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750709,
+      "lon": -121.55261,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.36,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.750706,
+      "lon": -121.547344,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.93,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754751,
+      "lon": -121.657922,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 9.33,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754753,
+      "lon": -121.652656,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.16,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754756,
+      "lon": -121.64739,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.78,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754758,
+      "lon": -121.642125,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 1.94,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754759,
+      "lon": -121.636859,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.58,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754761,
+      "lon": -121.631594,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 1.92,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754762,
+      "lon": -121.626328,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.8,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754763,
+      "lon": -121.621062,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.52,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754764,
+      "lon": -121.615797,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.32,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754765,
+      "lon": -121.610531,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.47,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754765,
+      "lon": -121.605266,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.51,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754765,
+      "lon": -121.6,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.76,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754765,
+      "lon": -121.594734,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 2.74,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754765,
+      "lon": -121.589469,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.56,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754764,
+      "lon": -121.584203,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.78,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.754763,
+      "lon": -121.578938,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.88,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754762,
+      "lon": -121.573672,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.16,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.754761,
+      "lon": -121.568406,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.51,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754759,
+      "lon": -121.563141,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.08,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754758,
+      "lon": -121.557875,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.12,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754756,
+      "lon": -121.55261,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.18,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754753,
+      "lon": -121.547344,
+      "fuel": 145,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.6,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.754751,
+      "lon": -121.542078,
+      "fuel": 121,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 8.67,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758798,
+      "lon": -121.657922,
+      "fuel": 187,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 7.31,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.7588,
+      "lon": -121.652656,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.58,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758803,
+      "lon": -121.64739,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.43,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758805,
+      "lon": -121.642125,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.61,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758806,
+      "lon": -121.636859,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.92,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758808,
+      "lon": -121.631594,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.32,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758809,
+      "lon": -121.626328,
+      "fuel": 121,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.44,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.75881,
+      "lon": -121.621062,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.9,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758811,
+      "lon": -121.615797,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.92,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758812,
+      "lon": -121.610531,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.15,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758812,
+      "lon": -121.605266,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.32,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758812,
+      "lon": -121.6,
+      "fuel": 121,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.97,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758812,
+      "lon": -121.594734,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.77,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758812,
+      "lon": -121.589469,
+      "fuel": 121,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.45,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758811,
+      "lon": -121.584203,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 2.69,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.75881,
+      "lon": -121.578938,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.31,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758809,
+      "lon": -121.573672,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.68,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758808,
+      "lon": -121.568406,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.31,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758806,
+      "lon": -121.563141,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.82,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758805,
+      "lon": -121.557875,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.04,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758803,
+      "lon": -121.55261,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.02,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.7588,
+      "lon": -121.547344,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.49,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.758798,
+      "lon": -121.542078,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.25,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762845,
+      "lon": -121.657922,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.47,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762847,
+      "lon": -121.652656,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.52,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.76285,
+      "lon": -121.64739,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.23,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762852,
+      "lon": -121.642125,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.17,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762853,
+      "lon": -121.636859,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.49,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.762855,
+      "lon": -121.631594,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.89,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.762856,
+      "lon": -121.626328,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.68,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.762857,
+      "lon": -121.621062,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.2,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762858,
+      "lon": -121.615797,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 7.44,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762859,
+      "lon": -121.610531,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 6.4,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762859,
+      "lon": -121.605266,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.43,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762859,
+      "lon": -121.6,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 1.83,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762859,
+      "lon": -121.594734,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.03,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762859,
+      "lon": -121.589469,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.53,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762858,
+      "lon": -121.584203,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.99,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762857,
+      "lon": -121.578938,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 2.63,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762856,
+      "lon": -121.573672,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.56,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762855,
+      "lon": -121.568406,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.12,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.762853,
+      "lon": -121.563141,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 1.82,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762852,
+      "lon": -121.557875,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.71,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.76285,
+      "lon": -121.55261,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.47,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762847,
+      "lon": -121.547344,
+      "fuel": 145,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.89,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.762845,
+      "lon": -121.542078,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 7.38,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766889,
+      "lon": -121.663187,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.51,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766892,
+      "lon": -121.657922,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.09,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766894,
+      "lon": -121.652656,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.16,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766896,
+      "lon": -121.64739,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.12,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766899,
+      "lon": -121.642125,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 2.89,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.7669,
+      "lon": -121.636859,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.7,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.766902,
+      "lon": -121.631594,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.54,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766903,
+      "lon": -121.626328,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.16,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.766904,
+      "lon": -121.621062,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 6.1,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766905,
+      "lon": -121.615797,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.4,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.766906,
+      "lon": -121.610531,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.58,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766906,
+      "lon": -121.605266,
+      "fuel": 162,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 6.27,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766906,
+      "lon": -121.6,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 2.14,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.766906,
+      "lon": -121.594734,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.23,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766906,
+      "lon": -121.589469,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.47,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766905,
+      "lon": -121.584203,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.64,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766904,
+      "lon": -121.578938,
+      "fuel": 185,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.83,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766903,
+      "lon": -121.573672,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.41,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766902,
+      "lon": -121.568406,
+      "fuel": 145,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.64,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.7669,
+      "lon": -121.563141,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.23,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.766899,
+      "lon": -121.557875,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.35,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766896,
+      "lon": -121.55261,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.1,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766894,
+      "lon": -121.547344,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 6.46,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766892,
+      "lon": -121.542078,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 7.45,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.766889,
+      "lon": -121.536813,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 8.21,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770936,
+      "lon": -121.663187,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 8.08,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770939,
+      "lon": -121.657922,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.54,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770941,
+      "lon": -121.652656,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.52,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770943,
+      "lon": -121.64739,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.57,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770945,
+      "lon": -121.642125,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.63,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.770947,
+      "lon": -121.636859,
+      "fuel": 187,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.88,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770949,
+      "lon": -121.631594,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.07,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.77095,
+      "lon": -121.626328,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.38,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.770951,
+      "lon": -121.621062,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.2,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770952,
+      "lon": -121.615797,
+      "fuel": 188,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.84,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770953,
+      "lon": -121.610531,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.35,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.770953,
+      "lon": -121.605266,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.09,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770953,
+      "lon": -121.6,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.36,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.770953,
+      "lon": -121.594734,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 6.04,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770953,
+      "lon": -121.589469,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.96,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770952,
+      "lon": -121.584203,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.46,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770951,
+      "lon": -121.578938,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.97,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.77095,
+      "lon": -121.573672,
+      "fuel": 185,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.55,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770949,
+      "lon": -121.568406,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.97,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.770947,
+      "lon": -121.563141,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.5,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770945,
+      "lon": -121.557875,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.62,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770943,
+      "lon": -121.55261,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.84,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770941,
+      "lon": -121.547344,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.11,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770939,
+      "lon": -121.542078,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 6.09,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.770936,
+      "lon": -121.536813,
+      "fuel": 145,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 8.06,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774983,
+      "lon": -121.663187,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.55,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774986,
+      "lon": -121.657922,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.72,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774988,
+      "lon": -121.652656,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.45,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.77499,
+      "lon": -121.64739,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.38,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774992,
+      "lon": -121.642125,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.86,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774994,
+      "lon": -121.636859,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.79,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774996,
+      "lon": -121.631594,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.3,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.774997,
+      "lon": -121.626328,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.06,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774998,
+      "lon": -121.621062,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.9,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.774999,
+      "lon": -121.615797,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.69,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.775,
+      "lon": -121.610531,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.31,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.775,
+      "lon": -121.605266,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.55,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.775,
+      "lon": -121.6,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.25,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.775,
+      "lon": -121.594734,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 2.47,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.775,
+      "lon": -121.589469,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.5,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.774999,
+      "lon": -121.584203,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.37,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774998,
+      "lon": -121.578938,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.46,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774997,
+      "lon": -121.573672,
+      "fuel": 162,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.05,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774996,
+      "lon": -121.568406,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 3.13,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.774994,
+      "lon": -121.563141,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.01,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774992,
+      "lon": -121.557875,
+      "fuel": 189,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.52,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.77499,
+      "lon": -121.55261,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 2.55,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774988,
+      "lon": -121.547344,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.63,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774986,
+      "lon": -121.542078,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.87,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.774983,
+      "lon": -121.536813,
+      "fuel": 145,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 9.2,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.77903,
+      "lon": -121.663187,
+      "fuel": 185,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.24,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779033,
+      "lon": -121.657922,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.98,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779035,
+      "lon": -121.652656,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 6.55,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779037,
+      "lon": -121.64739,
+      "fuel": 163,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.11,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779039,
+      "lon": -121.642125,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.95,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779041,
+      "lon": -121.636859,
+      "fuel": 162,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.62,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779043,
+      "lon": -121.631594,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.52,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779044,
+      "lon": -121.626328,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.2,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.779045,
+      "lon": -121.621062,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.79,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.779046,
+      "lon": -121.615797,
+      "fuel": 188,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.79,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779046,
+      "lon": -121.610531,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.63,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779047,
+      "lon": -121.605266,
+      "fuel": 121,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.96,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779047,
+      "lon": -121.6,
+      "fuel": 162,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.69,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779047,
+      "lon": -121.594734,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.98,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779046,
+      "lon": -121.589469,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.77,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.779046,
+      "lon": -121.584203,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.61,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.779045,
+      "lon": -121.578938,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.95,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.779044,
+      "lon": -121.573672,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.35,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779043,
+      "lon": -121.568406,
+      "fuel": 142,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.43,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779041,
+      "lon": -121.563141,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.16,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779039,
+      "lon": -121.557875,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.11,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779037,
+      "lon": -121.55261,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.61,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779035,
+      "lon": -121.547344,
+      "fuel": 145,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.73,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.779033,
+      "lon": -121.542078,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.41,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.77903,
+      "lon": -121.536813,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 7.8,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783077,
+      "lon": -121.663187,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.78,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783079,
+      "lon": -121.657922,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 8.0,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783082,
+      "lon": -121.652656,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 6.74,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783084,
+      "lon": -121.64739,
+      "fuel": 189,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.78,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783086,
+      "lon": -121.642125,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.5,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783088,
+      "lon": -121.636859,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.83,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.78309,
+      "lon": -121.631594,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.44,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.783091,
+      "lon": -121.626328,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.67,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.783092,
+      "lon": -121.621062,
+      "fuel": 142,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.19,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.783093,
+      "lon": -121.615797,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.38,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.783093,
+      "lon": -121.610531,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.79,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.783094,
+      "lon": -121.605266,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.98,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783094,
+      "lon": -121.6,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.56,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.783094,
+      "lon": -121.594734,
+      "fuel": 185,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 2.79,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783093,
+      "lon": -121.589469,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.583,
+      "exposure": 0.917,
+      "med_lead_h": 1.08,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.783093,
+      "lon": -121.584203,
+      "fuel": 188,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.43,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783092,
+      "lon": -121.578938,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.29,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.783091,
+      "lon": -121.573672,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.71,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.78309,
+      "lon": -121.568406,
+      "fuel": 142,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.33,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783088,
+      "lon": -121.563141,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.99,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783086,
+      "lon": -121.557875,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 1.87,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783084,
+      "lon": -121.55261,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.03,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783082,
+      "lon": -121.547344,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.66,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783079,
+      "lon": -121.542078,
+      "fuel": 145,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.43,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.783077,
+      "lon": -121.536813,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 6.01,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.787126,
+      "lon": -121.657922,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.05,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.787129,
+      "lon": -121.652656,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.44,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.787131,
+      "lon": -121.64739,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.81,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.787133,
+      "lon": -121.642125,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.85,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.787135,
+      "lon": -121.636859,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.48,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.787137,
+      "lon": -121.631594,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.27,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.787138,
+      "lon": -121.626328,
+      "fuel": 189,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 1.81,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.787139,
+      "lon": -121.621062,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.89,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.78714,
+      "lon": -121.615797,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.84,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.78714,
+      "lon": -121.610531,
+      "fuel": 142,
+      "developed": false,
+      "defensibility": 0.583,
+      "exposure": 0.917,
+      "med_lead_h": 1.41,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.787141,
+      "lon": -121.605266,
+      "fuel": 142,
+      "developed": false,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.45,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.787141,
+      "lon": -121.6,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.03,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.787141,
+      "lon": -121.594734,
+      "fuel": 162,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.74,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.78714,
+      "lon": -121.589469,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 1.79,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.78714,
+      "lon": -121.584203,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 2.87,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.787139,
+      "lon": -121.578938,
+      "fuel": 182,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.57,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.787138,
+      "lon": -121.573672,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.85,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.787137,
+      "lon": -121.568406,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.63,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.787135,
+      "lon": -121.563141,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.41,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.787133,
+      "lon": -121.557875,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.48,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.787131,
+      "lon": -121.55261,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.46,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.787129,
+      "lon": -121.547344,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.8,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.787126,
+      "lon": -121.542078,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.17,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.791173,
+      "lon": -121.657922,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 9.12,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.791176,
+      "lon": -121.652656,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 5.03,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.791178,
+      "lon": -121.64739,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.31,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.79118,
+      "lon": -121.642125,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.96,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.791182,
+      "lon": -121.636859,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.74,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.791183,
+      "lon": -121.631594,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.15,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.791185,
+      "lon": -121.626328,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.08,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.791186,
+      "lon": -121.621062,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.75,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.791187,
+      "lon": -121.615797,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.94,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.791187,
+      "lon": -121.610531,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.14,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.791188,
+      "lon": -121.605266,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.61,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.791188,
+      "lon": -121.6,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.91,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.791188,
+      "lon": -121.594734,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.9,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.791187,
+      "lon": -121.589469,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.24,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.791187,
+      "lon": -121.584203,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.25,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.791186,
+      "lon": -121.578938,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.6,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.791185,
+      "lon": -121.573672,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 1.8,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.791183,
+      "lon": -121.568406,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.9,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.791182,
+      "lon": -121.563141,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.86,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.79118,
+      "lon": -121.557875,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.24,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.791178,
+      "lon": -121.55261,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.27,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.791176,
+      "lon": -121.547344,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.09,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.791173,
+      "lon": -121.542078,
+      "fuel": 145,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 8.24,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.79522,
+      "lon": -121.657922,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 8.11,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795223,
+      "lon": -121.652656,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.15,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795225,
+      "lon": -121.64739,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 6.37,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795227,
+      "lon": -121.642125,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.05,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795229,
+      "lon": -121.636859,
+      "fuel": 162,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.02,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.79523,
+      "lon": -121.631594,
+      "fuel": 162,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.12,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795232,
+      "lon": -121.626328,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.05,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.795233,
+      "lon": -121.621062,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.95,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.795234,
+      "lon": -121.615797,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.23,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795234,
+      "lon": -121.610531,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.59,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795235,
+      "lon": -121.605266,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 2.35,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795235,
+      "lon": -121.6,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.93,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795235,
+      "lon": -121.594734,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 2.11,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795234,
+      "lon": -121.589469,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 2.5,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795234,
+      "lon": -121.584203,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 2.07,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795233,
+      "lon": -121.578938,
+      "fuel": 182,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.84,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795232,
+      "lon": -121.573672,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.12,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.79523,
+      "lon": -121.568406,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.02,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795229,
+      "lon": -121.563141,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.85,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795227,
+      "lon": -121.557875,
+      "fuel": 187,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.11,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795225,
+      "lon": -121.55261,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.12,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.795223,
+      "lon": -121.547344,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 5.58,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.79522,
+      "lon": -121.542078,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.17,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.79927,
+      "lon": -121.652656,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.63,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799272,
+      "lon": -121.64739,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.22,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799274,
+      "lon": -121.642125,
+      "fuel": 187,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.05,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799276,
+      "lon": -121.636859,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.11,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799277,
+      "lon": -121.631594,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.43,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799279,
+      "lon": -121.626328,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.38,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.79928,
+      "lon": -121.621062,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.77,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799281,
+      "lon": -121.615797,
+      "fuel": 189,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.74,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799281,
+      "lon": -121.610531,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 1.81,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.799282,
+      "lon": -121.605266,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.97,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799282,
+      "lon": -121.6,
+      "fuel": 188,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.37,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799282,
+      "lon": -121.594734,
+      "fuel": 142,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.39,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799281,
+      "lon": -121.589469,
+      "fuel": 162,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.87,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799281,
+      "lon": -121.584203,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.5,
+      "exposure": 0.917,
+      "med_lead_h": 1.1,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.79928,
+      "lon": -121.578938,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.41,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.799279,
+      "lon": -121.573672,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 2.43,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799277,
+      "lon": -121.568406,
+      "fuel": 187,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.43,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799276,
+      "lon": -121.563141,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.42,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799274,
+      "lon": -121.557875,
+      "fuel": 187,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.48,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.799272,
+      "lon": -121.55261,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.97,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.79927,
+      "lon": -121.547344,
+      "fuel": 187,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.85,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803317,
+      "lon": -121.652656,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 8.47,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803319,
+      "lon": -121.64739,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.65,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803321,
+      "lon": -121.642125,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.22,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803323,
+      "lon": -121.636859,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.25,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803324,
+      "lon": -121.631594,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.03,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803326,
+      "lon": -121.626328,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.16,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803327,
+      "lon": -121.621062,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.83,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803328,
+      "lon": -121.615797,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.91,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803328,
+      "lon": -121.610531,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.06,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.803328,
+      "lon": -121.605266,
+      "fuel": 188,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.86,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803329,
+      "lon": -121.6,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.583,
+      "exposure": 0.917,
+      "med_lead_h": 1.5,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.803328,
+      "lon": -121.594734,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.5,
+      "exposure": 0.917,
+      "med_lead_h": 1.04,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.803328,
+      "lon": -121.589469,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.71,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803328,
+      "lon": -121.584203,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.41,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.803327,
+      "lon": -121.578938,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.19,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803326,
+      "lon": -121.573672,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.28,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803324,
+      "lon": -121.568406,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.13,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803323,
+      "lon": -121.563141,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 4.29,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803321,
+      "lon": -121.557875,
+      "fuel": 145,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.41,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803319,
+      "lon": -121.55261,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.4,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.803317,
+      "lon": -121.547344,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.0,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807366,
+      "lon": -121.64739,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.13,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807368,
+      "lon": -121.642125,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.92,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.80737,
+      "lon": -121.636859,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 4.09,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807371,
+      "lon": -121.631594,
+      "fuel": 187,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.57,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807373,
+      "lon": -121.626328,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.33,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807374,
+      "lon": -121.621062,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.58,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807374,
+      "lon": -121.615797,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.31,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807375,
+      "lon": -121.610531,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.97,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807375,
+      "lon": -121.605266,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 1.83,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807376,
+      "lon": -121.6,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.57,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807375,
+      "lon": -121.594734,
+      "fuel": 185,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.03,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807375,
+      "lon": -121.589469,
+      "fuel": 142,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.54,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807374,
+      "lon": -121.584203,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 2.93,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807374,
+      "lon": -121.578938,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.667,
+      "exposure": 0.917,
+      "med_lead_h": 1.38,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.807373,
+      "lon": -121.573672,
+      "fuel": 187,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.73,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807371,
+      "lon": -121.568406,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.6,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.80737,
+      "lon": -121.563141,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.42,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807368,
+      "lon": -121.557875,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.18,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.807366,
+      "lon": -121.55261,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.14,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811415,
+      "lon": -121.642125,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.78,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811417,
+      "lon": -121.636859,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 5.37,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811418,
+      "lon": -121.631594,
+      "fuel": 187,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.69,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.81142,
+      "lon": -121.626328,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.49,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811421,
+      "lon": -121.621062,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.19,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811421,
+      "lon": -121.615797,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.833,
+      "exposure": 0.917,
+      "med_lead_h": 3.6,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811422,
+      "lon": -121.610531,
+      "fuel": 186,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.7,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811422,
+      "lon": -121.605266,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.19,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811422,
+      "lon": -121.6,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.93,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811422,
+      "lon": -121.594734,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.54,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811422,
+      "lon": -121.589469,
+      "fuel": 142,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.34,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811421,
+      "lon": -121.584203,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.04,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811421,
+      "lon": -121.578938,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.75,
+      "exposure": 0.917,
+      "med_lead_h": 2.46,
+      "cls": "conditional"
+    },
+    {
+      "lat": 39.81142,
+      "lon": -121.573672,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.8,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811418,
+      "lon": -121.568406,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.47,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811417,
+      "lon": -121.563141,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.3,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.811415,
+      "lon": -121.557875,
+      "fuel": 142,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.63,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815464,
+      "lon": -121.636859,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.96,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815465,
+      "lon": -121.631594,
+      "fuel": 184,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 8.03,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815466,
+      "lon": -121.626328,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.82,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815468,
+      "lon": -121.621062,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 2.78,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815468,
+      "lon": -121.615797,
+      "fuel": 145,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.11,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815469,
+      "lon": -121.610531,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.46,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815469,
+      "lon": -121.605266,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.57,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815469,
+      "lon": -121.6,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 11.14,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815469,
+      "lon": -121.594734,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.91,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815469,
+      "lon": -121.589469,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.28,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815468,
+      "lon": -121.578938,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.31,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815466,
+      "lon": -121.573672,
+      "fuel": 121,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.08,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815465,
+      "lon": -121.568406,
+      "fuel": 187,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.53,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.815464,
+      "lon": -121.563141,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.18,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.819513,
+      "lon": -121.626328,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.15,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.819514,
+      "lon": -121.621062,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.25,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.819515,
+      "lon": -121.615797,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.52,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.819516,
+      "lon": -121.610531,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.6,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.819516,
+      "lon": -121.605266,
+      "fuel": 188,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 6.26,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.819516,
+      "lon": -121.6,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 3.38,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.819516,
+      "lon": -121.594734,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.09,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.819516,
+      "lon": -121.589469,
+      "fuel": 142,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 7.96,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.819515,
+      "lon": -121.584203,
+      "fuel": 122,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 9.72,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.819514,
+      "lon": -121.578938,
+      "fuel": 144,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 5.98,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.819513,
+      "lon": -121.573672,
+      "fuel": 183,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.98,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.823563,
+      "lon": -121.610531,
+      "fuel": 102,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 4.68,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.823563,
+      "lon": -121.605266,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 3.19,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.823563,
+      "lon": -121.6,
+      "fuel": 91,
+      "developed": true,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 4.2,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.823563,
+      "lon": -121.594734,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 0.917,
+      "exposure": 0.917,
+      "med_lead_h": 6.63,
+      "cls": "allow"
+    },
+    {
+      "lat": 39.823563,
+      "lon": -121.589469,
+      "fuel": 165,
+      "developed": false,
+      "defensibility": 1.0,
+      "exposure": 0.917,
+      "med_lead_h": 8.16,
+      "cls": "allow"
+    }
+  ]
+}

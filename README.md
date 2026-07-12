@@ -1,0 +1,333 @@
+# wgresponse
+
+Wildfire Guardian's operational response engine — the software side of the **GraphGel
+Events** product. It watches live fire feeds, forecasts fire propagation, computes
+threat ETAs for every protected client property, drives a 72h/24h alert ladder, and
+dispatches GraphGel crews under hard safety rules (30-minute deploy, crews clear
+>= 30 minutes before the pessimistic fire arrival, verified safe corridors in and out).
+
+Pipeline in one line:
+
+```
+live fire feeds -> spread forecast (ensemble) -> per-client threat ETAs
+                -> alert ladder (NOTICE_72H / WATCH / EXTREME_24H)
+                -> crew dispatch (deadline-TOPTW) under P10 safety rules
+```
+
+This is **defensive emergency-response software** operated by an authorized
+fire-protection company for its own contracted clients and crews.
+
+The single source of truth for types, units, and safety semantics is
+[`wgresponse/contracts.py`](wgresponse/contracts.py) — read its docstring first.
+Design narrative: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Wiring into the
+existing WG estate: [`docs/INTEGRATION.md`](docs/INTEGRATION.md). Everything still
+unresolved: [`docs/OPEN_QUESTIONS.md`](docs/OPEN_QUESTIONS.md).
+
+## Quickstart
+
+Python 3.10+ stdlib only for core logic (optional extras degrade gracefully).
+Run everything from the repo root.
+
+```bash
+# 1. Tests (no network, no third-party deps required beyond pytest)
+py -3 -m pip install pytest
+py -3 -m pytest
+
+# 2. Deterministic end-to-end simulation (synthetic fire + clients + crews)
+py -3 -m wgresponse.cli simulate --scenario canyon_wind_event --hours 48 --seed demo
+
+# 3. Ops console + beacon API on localhost (demo mode: mock feeds, open auth)
+py -3 -m wgresponse.cli serve --demo
+# then open http://127.0.0.1:8877/console
+
+# 4. One-shot live feed pull (network; respects feed licensing below)
+py -3 -m wgresponse.cli pull-feeds --bbox -121.0,32.5,-114.0,36.0
+
+# 5. THE OPERATOR DAEMON (Sprint 2): poll live feeds over an AOI every 5 min,
+#    alert + dispatch, persist state (restart re-fires nothing already sent),
+#    serve the console + /healthz off the live loop. Ctrl-C stops cleanly.
+py -3 -m wgresponse.cli watch --aoi "-121.0,32.5,-114.0,36.0" --state-dir state
+# AOI can also be a zones JSON file carrying safe_zones for dispatch:
+#   {"zones": [{"name": "sierra", "bbox": [-121,38.8,-120.7,39.2]}],
+#    "safe_zones": [{"zone_id": "Z1", "lat": 39.1, "lon": -121.0}]}
+# FIRMS hotspots join the stack when env FIRMS_MAP_KEY is set (else a loud
+# skip note); terrain is live LANDFIRE when the decode extras are installed,
+# else SyntheticTerrain with a LOUD rehearsal-grade warning. The LFPS job API
+# requires an Email parameter on submit: watch sends env LFPS_EMAIL when set,
+# else ops@thewildfireguardian.com.
+
+# 6. THE INTERACTIVE SIMULATOR (docs/SIMULATOR_DESIGN.md): five real WUI
+#    locations on cached LANDFIRE tiles, click-to-ignite fires, the REAL
+#    engine every tick (ensemble spread -> alert ladder -> dispatch ->
+#    per-tick SAFETY AUDIT), and the live safety-threshold slider (egress
+#    buffer). Localhost demo instrument: auth is dev-open unless
+#    WGRESP_API_KEY is set.
+py -3 -m wgresponse.cli simui --open
+# opens http://127.0.0.1:8878/simulator; self-test: `simui --smoke` exits 0
+# iff the safety audit reports 0 violations after 3 live engine ticks.
+```
+
+Console screenshot: *(placeholder — capture from `cli serve --demo` once the console
+lands)*
+
+![ops console placeholder](docs/img/console_placeholder.png)
+
+### Live extras
+
+Core is **stdlib only** — everything above runs on a bare Python install (pytest is
+the sole dev dependency). Exactly two live paths need optional third-party packages,
+listed in [`requirements.txt`](requirements.txt):
+
+```bash
+py -3 -m pip install -r requirements.txt   # tifffile + numpy + imagecodecs (+ boto3)
+```
+
+- **`LfpsTerrain` fresh-GeoTIFF decode** needs `tifffile numpy imagecodecs` — real
+  LFPS tiles are LZW-compressed, so `tifffile` alone cannot decode them. The adapter
+  probes importability **before** submitting an LFPS job (a job costs 90–180 s; a
+  missing codec must fail in milliseconds, not after the download) and raises a
+  `RuntimeError` naming the exact pips. The downloaded job zip is cached to disk
+  **before** decode, so a decode failure never wastes the job — the next call
+  re-decodes the cached zip without re-submitting. Cached/ascii tiles stay dep-free.
+- **`DynamoClientRegistry` live scans** need `boto3` (lazily imported; tests inject
+  `scan_fn`).
+
+## Module map
+
+| Module | Owns |
+|---|---|
+| `wgresponse.contracts` | THE LAW: types, units, safety semantics, config. Never import anything from a sibling module here. |
+| `wgresponse.geo` | Haversine/bearing/destination, `GridSpec`/`Raster` helpers, polyline sampling, bbox, morphological min (`erode_min`). |
+| `wgresponse.fuels` | FBFM40 fuel-model table (Scott & Burgan RMRS-GTR-153), burnability, Simard dead-fuel moisture, live-moisture season defaults. |
+| `wgresponse.rothermel` | Rothermel/Albini surface ROS, wind adjustment factor, Anderson (1983) ellipse L/B, directional ROS. Imperial units internal only. |
+| `wgresponse.spread` | Time-dependent 16-neighbor MTT Dijkstra arrival grids, ensemble perturbation, per-location `ThreatEta` lookup. |
+| `wgresponse.feeds` | WFIGS / FIRIS / CAL FIRE / FIRMS adapters + Watch Duty Enterprise stub + deterministic mock; IRWIN-id fusion. |
+| `wgresponse.weather` | NWS gridpoint + Open-Meteo adapters + mock (`WeatherProvider` protocol). |
+| `wgresponse.terrain` | LANDFIRE LFPS job-API tiles + synthetic terrain; dependency-free ASCII tile cache. |
+| `wgresponse.clients` | `DynamoClientRegistry` (wg-consumer-profiles) + mock registry. |
+| `wgresponse.crews` | Phone-GPS beacon ingest, crew state, staleness. |
+| `wgresponse.alerts` | Alert ladder state machine with hysteresis (`ALERT_TRANSITIONS` enforced). |
+| `wgresponse.threat` | `ThreatMonitor.cycle()` — the full orchestration loop. |
+| `wgresponse.safety` | P10 departure deadlines, eroded-grid corridor checks, egress-to-safe-zone verdicts. |
+| `wgresponse.dispatch` | Deadline-TOPTW planner: regret-2 insertion + ILS, commitment/churn stability. |
+| `wgresponse.travel` | Tier-0 travel time (haversine x circuity / class speed x fire-traffic factor). |
+| `wgresponse.notify` | Notifier protocol; SES/SMS stubs, log notifier. |
+| `wgresponse.sim` | Seeded synthetic scenarios + full-loop sim harness (the acceptance test and the demo). |
+| `wgresponse.server` | Stdlib HTTP: `POST /api/beacon`, `GET /api/state`, `GET /api/plan`, `GET /console`; `/healthz` carries last-cycle age + degraded + cycle count; `/simulator` + `/api/sim/*` session API (LRU-capped, per-session ticker). `X-Internal-API-Key`, fail-closed. |
+| `wgresponse.simui` | `SimSession`: the interactive simulator over the REAL engine — five cached LFPS WUI tiles, seeded WUI client placement, perimeter-seeded ensembles, live safety-slider re-plans (in-flight deploys re-checked, never grandfathered), per-tick safety audit. |
+| `wgresponse.persist` | `StateStore`: atomic-write (fsync'd) versioned JSON persistence for alert records, the notified ledger, the incumbent plan, and watch metadata — restart re-fires nothing already sent (an applied-but-never-sent active alert IS re-fired: re-notify-ward); ANY corrupt state — including non-UTF-8 bytes and type-corrupt fields — loads fresh with a loud note, never a crash. |
+| `wgresponse.cli` | `simulate \| forecast \| plan \| serve \| pull-feeds \| watch \| simui` (watch = the live operator daemon: AOI-bounded feeds, per-cycle persistence, console + healthz off the live loop; simui = the interactive simulator UI). |
+
+## Config knobs (`contracts.ResponseConfig`)
+
+Every tunable lives in `ResponseConfig`; nothing hardcodes these. Defaults below are
+the shipped values.
+
+### Alert ladder
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `notice_h` | 72.0 | First advance notice when P50 arrival within this many hours. |
+| `extreme_h` | 24.0 | EXTREME alert when P50 arrival within this. |
+| `extreme_p10_h` | 12.0 | EXTREME also when the pessimistic P10 arrival is within this. |
+| `clear_cycles` | 2 | Consecutive clear evaluations required to downgrade. |
+| `clear_margin_h` | 6.0 | Headroom beyond the threshold needed to count as "clear". |
+
+### Crew safety (operational hard rules)
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `deploy_min` | 30.0 | Gel application time on site (minutes). |
+| `egress_buffer_min` | 30.0 | Crew must be clear of the property this many minutes before **P10** arrival. |
+| `route_margin_min` | 60.0 | Margin required at every corridor sample point (minutes). |
+| `corridor_erosion_m` | 500.0 | Erosion radius applied to the P10 grid before corridor checks. |
+| `corridor_sample_m` | 300.0 | Sample spacing along travel legs. |
+| `ember_buffer_min` | 0.0 | Extra buffer on top of P10; default OFF, enable in wind events. |
+
+### Gel product parameters — **ALL UNVERIFIED, PENDING SUPPLIER DATA**
+
+> **WARNING:** these three numbers are PLACEHOLDERS. No measured GraphGel
+> effectiveness-window or save-rate data exists on disk; the only documented product
+> evidence is the E84 Class A rating and the ABC7 burn demo. Worse, the wgdefense
+> coating-life model says a hydrogel coat lasts **~6 h at 25 C** (temp/RH/wind scaled),
+> while the dispatch placeholder assumes **72 h**. That is a 12x conflict in a
+> load-bearing parameter. Do not trust any plan freshness math until the supplier
+> confirms real numbers. See `docs/OPEN_QUESTIONS.md` item P-1.
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `gel_window_h` | 72.0 | Operational window after application. GraphGel is Class A at 1/8" dry film (product data 2026-07-11); the outer weathering/rain wash-off horizon beyond 72 h is **UNVERIFIED**. |
+| `gel_full_strength_h` | 72.0 | Equals `gel_window_h`: GraphGel's DRIED coating is the protection, so effectiveness is FLAT across the window (no decay ramp) and early application provides good protection. Outer horizon **UNVERIFIED** (weathering/wash-off). |
+| `gel_effectiveness` | 0.85 | **UNVERIFIED** P(save) multiplier (a Class A flame-spread rating is not a survival probability). |
+| `gel_env_model_enabled` | False | Switch to the wgdefense temp/RH/wind-scaled coating-life model (~6 h @ 25 C base). |
+
+### Travel
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `circuity` | 1.35 | Road-network/geodesic distance ratio (literature 1.3 +/- 0.1; canyon terrain runs 1.5–2.0 — calibrate per area). |
+| `fire_traffic_factor` | 1.4 | Congestion multiplier near active fire (heuristic, uncalibrated). |
+| `road_speed_mps` | 17.9 | Blended class speed (~40 mph). |
+
+### Spread / forecast
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `horizon_h` | 96.0 | Forecast horizon. |
+| `ensemble_n` | 6 | Perturbed ensemble members (+1 nominal). |
+| `wind_perturb_frac` | 0.25 | +/- wind-speed scale at max lead; grows with lead time. |
+| `moisture_perturb_frac` | 0.20 | +/- moisture scale. |
+| `spotting_enabled` | False | Sardoy lognormal ember transport; default OFF. |
+| `grid_cell_m` | 90.0 | Working cell size (never below LANDFIRE-native 30 m). |
+| `grid_max_cells` | 300000 | Coarsen the grid above this cell count. |
+| `live_herb_frac` | 0.30 | Cured fire-season live herbaceous moisture default. |
+| `live_woody_frac` | 0.60 | Live woody moisture default. |
+
+### Dispatch
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `replan_period_s` | 900.0 | Scheduled re-plan cadence (15 min, matches forecast refresh). |
+| `commitment_horizon_min` | 20.0 | Stops reachable within this are frozen across re-plans. |
+| `churn_penalty_frac` | 0.05 | Objective penalty per reassigned stop (fraction of mean stop score). |
+| `adoption_threshold_frac` | 0.03 | New plan must beat the repaired incumbent by this fraction to be adopted. |
+| `solver_budget_s` | 5.0 | Wall-clock budget per plan cycle. |
+| `ils_iterations` | 30 | Iterated-local-search restarts. |
+
+### Crew tracking / feeds
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `beacon_stale_s` | 600.0 | Crew GPS older than this = stale (crew treated unavailable-pending). |
+| `poll_period_s` | 300.0 | Feed poll cadence. |
+| `user_agent` | `wg-response/0.1 (ops@thewildfireguardian.com)` | Sent on all HTTP; **required** by NWS. |
+
+### Sprint 2 (Council-1 remediations)
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `slack_min` | 15.0 | Planned-slack floor per dispatch stop, on top of deadline feasibility (SAFETY SEMANTICS 7 — absorbs mountain-road travel-model optimism). |
+| `blind_alarm_cycles` | 1 | Consecutive unassessed cycles before an `OperatorEvent('degraded')` fires (SAFETY SEMANTICS 6 — absence is not clearance). |
+| `registry_ttl_s` | 300.0 | Client-registry cache TTL; prevents per-incident full-table re-scans. |
+| `dir_perturb_deg` | 30.0 | Ensemble wind-direction perturbation at max lead time, degrees (makes P10 pessimistic for off-axis clients — Council-1 model F2). |
+| `dispatch_objective` | `homes` | `homes` = maximize COUNT of homes protected (value as tiebreak; may skip/abandon a job that costs more savable homes — reason `triaged`). `value` = legacy $-weighted objective. Never weakens crew-safety law. |
+| `dispatch_urgency_weight` | 0.30 | Homes-mode: weight of the urgency (sooner-to-burn, on p50) tiebreak — protect at-risk homes before comfortable-margin ones. Count stays primary; safety gate untouched. |
+| `dispatch_value_weight` | 0.05 | Homes-mode: weight of the value tiebreak (below urgency). |
+| `dispatch_late_shift` | True | Emit-time gel-freshness polish: delay each coat toward the freshest-gel-at-arrival time (still inside the p10 safety slack). `True` = shipped. `False` = coat as early as feasible, freeing crews sooner — sweep-proven ~+1% more homes protected across crew/client ratios, 0 safety violations, gel-freshness-at-arrival neutral (2026-07-11 founder dispatch loop). |
+| `ember_threat_radius_m` | 0.0 | Adjacency/ember threat fallback: a home on a non-burnable (developed) cell inherits the earliest fire arrival within this radius so it can alert + dispatch (fixes "home surrounded by fire, no alert"). 0 = off (live default); the simulator sets ~200 m. Conservative (more homes threatened). |
+| `crew_reinforce_1h_min` | 60.0 | Out-of-region "1h away" reinforcement crews arrive this many minutes after the first ignition (mutual-aid mobilization; SEMANTICS 9). |
+| `crew_reinforce_3h_min` | 180.0 | Out-of-region "3h away" reinforcement crews arrive this many minutes after the first ignition. |
+| `grass_ros_floor_frac` | 0.0 | Simulator-only grass head-fire ROS floor as a fraction of 10-m wind (Cruz–Alexander anchor; makes grass spread realistically). 0 = off (live engine byte-identical); the simulator sets ~0.10 (GR) / 0.07 (GS). |
+| `spotting_enabled` | False | Ember spotting — burning cells throw firebrands downwind that ignite ahead of the front (samples the distance distribution). Off by default (live engine); the simulator turns it on. |
+| `history_ticks` | 600 | Simulator time-scrub replay: state snapshots kept per session (ring buffer; oldest evicted). |
+| `road_spur_max_m` | 2000.0 | Max straight "spur" joining an off-network point to the road graph; beyond this a leg falls back to a loud straight line. |
+| `incident_stale_h` | 168.0 | Incidents with `updated_at_s` older than this are excluded from alerting/dispatch with a note (SAFETY SEMANTICS 9 — kills zombie perimeters). |
+| `containment_gate_enabled` | False | WATCH ceiling for highly-contained, non-growing fires (SAFETY SEMANTICS 8). **Default OFF pending founder policy approval**; never touches crew-safety math. |
+| `containment_watch_ceiling_pct` | 90.0 | Containment at/above this (with no growth) engages the WATCH ceiling when the gate is enabled. |
+| `containment_no_growth_h` | 48.0 | Hours without acreage growth required before the WATCH ceiling engages. |
+
+## Feed & data licensing posture
+
+Read this before pointing any adapter at a live endpoint.
+
+| Source | Status | Rule |
+|---|---|---|
+| **Watch Duty** | Enterprise license **pending** (sales conversation required; API is an Enterprise addon, no self-serve tier). | The unofficial `api.watchduty.org` app API is **ToS-banned** for automated/commercial use — `WatchDutyEnterpriseFeed` stays a stub until a signed license exists. Never poll the app API from WG servers. |
+| **WFIGS** (NIFC ArcGIS) | Public, no key. | The automated backbone for incident points + perimeter polygons. Layers refresh every 5 min; perimeter *content* is often nightly (IR flights). |
+| **FIRIS ComboLayer** (CAL FIRE/Cal OES) | Public, no key. | Fastest public perimeters in CA (intra-day aircraft IR); union with WFIGS by IRWIN id, take freshest. |
+| **CAL FIRE IncidentApi** | Public, no key. | CA metadata cross-check (acres/containment); duty-officer cadence, hours of lag — never the fast trigger. |
+| **NASA FIRMS** | Free MAP_KEY (instant email signup). | Hotspot growth signal between perimeter updates. 5000 transactions / 10 min per key. VIIRS 375 m, 4–6 passes/day — **not continuous**; no GOES in the area API. |
+| **NWS** (api.weather.gov) | Public, no key. | **A `User-Agent` header is REQUIRED** (`ResponseConfig.user_agent`). Rate limit unpublished; honor `Cache-Control`, retry with backoff. Known multi-hour outage history — the fallback is not optional. |
+| **Open-Meteo** | Free tier is **non-commercial only**. | wgresponse is commercial software: production use requires the paid API (`customer-api.open-meteo.com` + key) or self-hosting (AGPLv3 server, CC-BY-4.0 data). Do NOT ship on the free endpoint. |
+| **LANDFIRE LFPS** | Public, no key. | Fuel + slope + aspect + elevation as one aligned 30 m GeoTIFF per job (~60–90 s). Max AOI per job unverified — see open questions. |
+
+## Determinism & testing conventions
+
+- All mocks/synthetic generators seed RNG via `contracts.seeded_rng(...)` (SHA-256 of
+  explicit seed strings). Never wall-clock, never unseeded `random`.
+- Live adapters take an injectable `http_get` callable; tests never touch the network.
+- Third-party deps (e.g. `tifffile`/`numpy` for live GeoTIFF ingest) import inside
+  `try` and raise a clear `RuntimeError` only when the live path is invoked without
+  them. Core logic is stdlib-only.
+- Regression anchors for the spread model (Camp/Tubbs/East Troublesome growth rates)
+  are documented in `docs/ARCHITECTURE.md`.
+
+## Verified demo results
+
+Real numbers from a full verification pass on 2026-07-06 (Python 3.14.5, pytest 9.1.1,
+Windows 11). Every figure below is reproducible from the repo root with the exact
+commands shown — the sim is deterministic (seeded RNG, no wall-clock), the feed pull is
+a live read-only GET sweep.
+
+### Test suite
+
+```
+py -3 -m pytest
+```
+
+**453 passed** in ~16 s. Zero failures, zero errors, zero skips, zero warnings
+(`filterwarnings = error::RuntimeWarning` is in effect, so any RuntimeWarning would have
+failed the run).
+
+### Flagship scenario — `canyon_wind_event`, 96 h
+
+```
+py -3 -m wgresponse.cli simulate --scenario canyon_wind_event --hours 96
+```
+
+*Scenario:* 12 h calm, then 8 h of 15 m/s wind from the west pushing the fire east
+through a canyon community of 12 protected homes; 3 GraphGel crews, 3 safe zones.
+
+| Metric | Value |
+|---|---|
+| Cycles run | **384** × 900 s (96 h simulated) |
+| Alert events | **28** |
+| First `NOTICE_72H` | sim hour **0.00** (C10 / C12 — the two farthest homes; P50 ≈ 34–35 h out at t0) |
+| First `EXTREME_24H` | sim hour **0.00** (C01 — closest home, already inside the 24 h window at t0, P50 = 8.18 h) |
+| First `IMPACTED` | sim hour **8.25** (C01, fire arrives) |
+| Properties serviced | **12 / 12** (gel applied before arrival) |
+| Unserved | **0** |
+| **SAFETY AUDIT** | **0 violations** (every serviced crew departed before its P10 latest-departure deadline) |
+| Min crew margin observed | **4.59 h** of headroom on the tightest stop |
+| Wall-clock runtime | **~2.2 s** |
+| Exit code | 0 |
+
+All 12 homes are eventually reached by the fire (this is a fast, wind-driven
+conflagration), but the response engine got GraphGel onto all 12 with crews safely clear
+in every case — the safety audit against the final P10 arrival grids is clean, which is
+the release gate. Re-running is bit-for-bit identical (deterministic).
+
+Output written to `out/sim_canyon_wind_event.json` (full report) and
+`out/sim_canyon_wind_event_console.json` (map console payload). The console JSON was
+structurally validated against every field `console/index.html`'s `?file=` renderer
+reads — 12 clients, 3 crews, 28 events, 1 planned route, 3 isochrones, 247-point
+modeled perimeter, 3 safe zones; `kind="wgresponse-sim-console"`, `schema_version="0.1.0"`;
+no bare `NaN`/`Infinity` tokens that would break browser `JSON.parse()`.
+
+### Live feed pull (real public feeds, read-only)
+
+```
+py -3 -m wgresponse.cli pull-feeds --bbox "-120,33,-116,36"
+```
+
+Live GET sweep of the keyless public feeds over a Southern California bounding box:
+
+| Feed | Incidents parsed |
+|---|---|
+| WFIGS (NIFC ArcGIS) | **207** |
+| FIRIS ComboLayer (CAL FIRE / Cal OES) | **112** |
+| CAL FIRE IncidentApi | **3** |
+| Raw total (pre-fusion) | **322** |
+| **Fused total** (IRWIN-id join, freshest wins) | **291** |
+
+Fusion collapsed **31** duplicate records across feeds (1 fused incident carried
+cross-feed multi-source provenance). Largest active perimeters returned included
+SANTA ROSA (18,379 ac, FIRIS), SANTA ROSA ISLAND (16,938 ac), and LOST (12,820 ac).
+FIRMS was skipped gracefully — at the time of this run the `pull-feeds` CLI's keyless
+construction died with `[FirmsFeed] fetch failed: ... missing 1 required positional
+argument: 'map_key'` on stderr and the sweep continued (non-fatal, exit 0). *(Since
+Sprint-2 ticket C3d, `FirmsFeed()` constructs without a key and a keyless fetch
+returns `[]` as a BLIND fetch — `last_fetch_ok=False` — with one loud log naming the
+free MAP_KEY signup at `firms.modaps.eosdis.nasa.gov/api/area/`.)* Fetch wall-clock was
+~7–14 s depending on feed latency. This confirms the live adapters parse and fuse real
+WFIGS/FIRIS/CAL FIRE data end to end.

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<!-- Wildfire Guardian — wgresponse ops console.
+     Single file, no build step. Leaflet 1.9.4 from unpkg CDN when reachable.
+     Live mode: polls /api/state every 15 s with X-Internal-API-Key header
+     (key prompted once, persisted to localStorage).
+     Offline mode: ?file=<relative path to a sim_*_console.json> renders a
+     static sim result (serve the repo root with any static server).
+     AIR-GAPPED RESILIENCE: if the Leaflet CDN (unpkg) is unreachable, an
+     inline, dependency-free SVG map shim (window.L below) renders the same
+     operational layers — fire perimeter, arrival isochrones, protected
+     clients, crews, plan routes, safe zones — with no basemap tiles and no
+     network. A wildfire response may run under exactly these conditions, so
+     the presentation layer must not hard-depend on any external host. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WG Response — Ops Console</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+  :root {
+    --navy: #0e2038; --navy2: #122a4a; --navy3: #1a3a63;
+    --orange: #ff7a1a; --text: #e8eef7; --dim: #9db0c9;
+    --none: #8b93a1; --notice: #f2b04c; --watch: #ff8c1a;
+    --extreme: #e53935; --impacted: #111111; --cleared: #4caf50;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; font-family: "Segoe UI", system-ui, sans-serif;
+               background: var(--navy); color: var(--text); }
+  #app { display: flex; height: 100%; }
+  #map { flex: 1 1 auto; background: #16283f; }
+  #panel { flex: 0 0 340px; max-width: 45vw; display: flex; flex-direction: column;
+           background: var(--navy2); border-left: 3px solid var(--orange);
+           overflow: hidden; }
+  #hdr { padding: 12px 14px 8px; border-bottom: 1px solid var(--navy3); }
+  #hdr h1 { margin: 0; font-size: 16px; letter-spacing: 2px; color: var(--orange);
+            text-transform: uppercase; }
+  #hdr .sub { font-size: 11px; color: var(--dim); margin-top: 3px; }
+  #status { font-size: 11px; padding: 6px 14px; color: var(--dim);
+            border-bottom: 1px solid var(--navy3); }
+  #status .ok { color: var(--cleared); } #status .bad { color: var(--extreme); }
+  /* Sprint-2 C1: last-cycle age chip (live watch mode). Turns red when the
+     cycle is overdue (> 2.5x the poll period) — a stalled loop must be as
+     unmissable as a degraded one. Hidden when the state carries no
+     last_cycle_t_s (sim files / demo replay). */
+  #agechip { display: none; margin-left: 8px; padding: 1px 8px;
+             border-radius: 9px; font-size: 10px; font-weight: 600;
+             background: var(--navy3); color: var(--text);
+             border: 1px solid var(--orange); white-space: nowrap; }
+  #agechip.stale { background: #b3121f; color: #fff; border-color: #ff5252; }
+  .section { padding: 8px 14px; overflow-y: auto; }
+  .section h2 { font-size: 11px; letter-spacing: 1px; color: var(--orange);
+                text-transform: uppercase; margin: 6px 0 6px; }
+  #alerts { flex: 1 1 50%; } #itins { flex: 1 1 40%; border-top: 1px solid var(--navy3); }
+  .evt { font-size: 12px; padding: 4px 6px; margin-bottom: 4px; border-radius: 4px;
+         background: var(--navy3); display: flex; gap: 6px; align-items: baseline; }
+  .evt .t { color: var(--dim); font-size: 10px; white-space: nowrap; }
+  .chip { display: inline-block; padding: 1px 7px; border-radius: 9px; font-size: 10px;
+          font-weight: 600; color: #fff; text-transform: uppercase; }
+  .crew-block { margin-bottom: 10px; font-size: 12px; }
+  .crew-block .cid { color: var(--orange); font-weight: 600; }
+  .stop { display: flex; justify-content: space-between; padding: 2px 0 2px 12px;
+          color: var(--text); }
+  .stop .m { color: var(--dim); }
+  .stop .m.tight { color: var(--extreme); }
+  /* SAFETY SEMANTICS 6: operator-facing degradation banner. Plain DOM —
+     independent of Leaflet and of the offline SVG shim, so it renders in
+     every mode (live, demo, sim file, air-gapped). */
+  #degradedbar { display: none; position: fixed; z-index: 3000; top: 0; left: 0;
+                 right: 0; background: #b3121f; color: #fff; text-align: center;
+                 font-size: 13px; font-weight: 700; letter-spacing: 1px;
+                 padding: 6px 10px; text-transform: uppercase;
+                 border-bottom: 2px solid #ff5252; }
+  #legend { position: absolute; z-index: 1000; bottom: 14px; left: 14px;
+            background: rgba(14,32,56,.88); border: 1px solid var(--navy3);
+            border-radius: 6px; padding: 8px 10px; font-size: 11px; }
+  #legend .row { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+  #legend .dot { width: 10px; height: 10px; border-radius: 50%;
+                 border: 1px solid #0008; }
+  .crew-icon { background: var(--orange); color: #0e2038; border-radius: 3px;
+               font-size: 10px; font-weight: 700; text-align: center;
+               line-height: 18px; border: 1px solid #0008; }
+  .zone-icon { background: var(--cleared); color: #06300d; border-radius: 50%;
+               font-size: 10px; font-weight: 700; text-align: center;
+               line-height: 16px; border: 1px solid #0008; }
+  .leaflet-container { font: inherit; }
+  /* --- offline SVG fallback map (no Leaflet, no tiles) --- */
+  #map.offline-map { position: relative; }
+  .fbmap-svg { width: 100%; height: 100%; display: block; }
+  .fbmap-tip { position: absolute; z-index: 1200; pointer-events: none;
+               background: rgba(14,32,56,.95); border: 1px solid var(--navy3);
+               color: var(--text); font-size: 11px; padding: 4px 7px;
+               border-radius: 5px; max-width: 240px; display: none; }
+  .fbmap-banner { position: absolute; z-index: 1100; top: 8px; left: 50%;
+                  transform: translateX(-50%); background: rgba(229,57,53,.92);
+                  color: #fff; font-size: 11px; font-weight: 600; padding: 3px 10px;
+                  border-radius: 10px; letter-spacing: .5px; white-space: nowrap; }
+  .fbmap-node { cursor: default; }
+</style>
+</head>
+<body>
+<div id="degradedbar">DEGRADED — forecasts may be stale</div>
+<div id="app">
+  <div id="map"></div>
+  <div id="panel">
+    <div id="hdr">
+      <h1>WG Response</h1>
+      <div class="sub" id="subtitle">operational fire-response console</div>
+    </div>
+    <div id="status"><span id="statustext">connecting…</span><span id="agechip"></span></div>
+    <div id="alerts" class="section"><h2>Alert feed</h2><div id="alertlist"></div></div>
+    <div id="itins" class="section"><h2>Crew itineraries</h2><div id="itinlist"></div></div>
+  </div>
+</div>
+<div id="legend">
+  <div class="row"><span class="dot" style="background:#8b93a1"></span> none</div>
+  <div class="row"><span class="dot" style="background:#f2b04c"></span> notice (72h)</div>
+  <div class="row"><span class="dot" style="background:#ff8c1a"></span> watch</div>
+  <div class="row"><span class="dot" style="background:#e53935"></span> extreme (24h)</div>
+  <div class="row"><span class="dot" style="background:#111"></span> impacted</div>
+  <div class="row"><span class="dot" style="background:#4caf50"></span> cleared / safe zone</div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- Air-gapped fallback: a dependency-free SVG map shim exposing the subset of
+     the Leaflet API this console uses. Installed as window.L ONLY when the real
+     Leaflet failed to load (CDN/network unreachable). No external hosts, no
+     basemap tiles — the operational layers still render offline. -->
+<script>
+"use strict";
+// ?nomap=1 forces the offline fallback even when Leaflet loaded — lets operators
+// rehearse the air-gapped presentation before an incident.
+if (new URLSearchParams(location.search).get("nomap") === "1") { window.L = undefined; }
+if (typeof window.L === "undefined") {
+  (function installFallbackLeaflet() {
+    const SVGNS = "http://www.w3.org/2000/svg";
+    const bannerText = "OFFLINE MAP · Leaflet CDN unreachable · no basemap";
+
+    // A layer is just a bag of {kind, latlngs, opts, tooltip} draw-specs.
+    class Layer {
+      constructor() { this._map = null; this._specs = []; this.tooltip = null; }
+      addTo(target) {
+        if (target instanceof FallbackMap) { target._add(this); }
+        else if (target instanceof LayerGroup) { target._add(this); }
+        return this;
+      }
+      bindTooltip(html) { this.tooltip = html; return this; }
+    }
+    class Marker extends Layer {
+      constructor(latlng, opts) { super(); this._specs = [{ kind: "marker", latlng, opts: opts || {} }]; }
+    }
+    class Path extends Layer {
+      constructor(kind, latlngs, opts) { super(); this._specs = [{ kind, latlngs, opts: opts || {} }]; }
+    }
+    class LayerGroup {
+      constructor() { this._map = null; this._children = []; }
+      addTo(map) { this._map = map; map._groups.push(this); map._redraw(); return this; }
+      _add(layer) { layer.tooltip = layer.tooltip; this._children.push(layer);
+                    if (this._map) this._map._redraw(); return this; }
+      clearLayers() { this._children = []; if (this._map) this._map._redraw(); return this; }
+    }
+
+    class FallbackMap {
+      constructor(elId) {
+        this.el = typeof elId === "string" ? document.getElementById(elId) : elId;
+        this.el.classList.add("offline-map");
+        this._groups = [];       // LayerGroup[]
+        this._loose = [];        // Layer[] added straight to the map
+        this._bounds = null;     // [[s,w],[n,e]]
+        this._view = null;       // fallback center when no bounds
+        this.svg = document.createElementNS(SVGNS, "svg");
+        this.svg.setAttribute("class", "fbmap-svg");
+        this.el.appendChild(this.svg);
+        this.tip = document.createElement("div");
+        this.tip.className = "fbmap-tip";
+        this.el.appendChild(this.tip);
+        const banner = document.createElement("div");
+        banner.className = "fbmap-banner";
+        banner.textContent = bannerText;
+        this.el.appendChild(banner);
+        window.addEventListener("resize", () => this._redraw());
+      }
+      setView(latlng, _z) { this._view = latlng; this._redraw(); return this; }
+      fitBounds(b) { this._bounds = b; this._redraw(); return this; }
+      _add(layer) { layer._map = this; this._loose.push(layer); this._redraw(); return this; }
+
+      _allLayers() {
+        const out = this._loose.slice();
+        for (const g of this._groups) for (const c of g._children) out.push(c);
+        return out;
+      }
+      // Auto-bounds from every drawn coordinate when fitBounds wasn't called.
+      _autoBounds() {
+        let s = Infinity, w = Infinity, n = -Infinity, e = -Infinity, any = false;
+        for (const layer of this._allLayers()) for (const sp of layer._specs) {
+          const pts = sp.kind === "marker" ? [sp.latlng] : sp.latlngs;
+          for (const p of (pts || [])) {
+            const lat = p[0], lon = p[1];
+            if (lat == null || lon == null) continue;
+            any = true; s = Math.min(s, lat); n = Math.max(n, lat);
+            w = Math.min(w, lon); e = Math.max(e, lon);
+          }
+        }
+        if (!any) return null;
+        return [[s, w], [n, e]];
+      }
+      _proj(box) {
+        const rect = this.svg.getBoundingClientRect();
+        const W = rect.width || this.el.clientWidth || 600;
+        const H = rect.height || this.el.clientHeight || 400;
+        let [[s, w], [n, e]] = box;
+        // pad + guard against a zero-extent (single-point) view
+        let dLat = n - s, dLon = e - w;
+        if (dLat < 1e-4) { s -= 0.02; n += 0.02; dLat = n - s; }
+        if (dLon < 1e-4) { w -= 0.02; e += 0.02; dLon = e - w; }
+        const padLat = dLat * 0.08, padLon = dLon * 0.08;
+        s -= padLat; n += padLat; w -= padLon; e += padLon;
+        dLat = n - s; dLon = e - w;
+        const midLat = (s + n) / 2;
+        // equirectangular; longitude compressed by cos(lat)
+        const kx = W / (dLon * Math.cos(midLat * Math.PI / 180) || 1);
+        const ky = H / (dLat || 1);
+        const k = Math.min(kx, ky);
+        const project = (lat, lon) => {
+          const x = (lon - w) * Math.cos(midLat * Math.PI / 180) * k;
+          const y = (n - lat) * k;
+          return [x + (W - dLon * Math.cos(midLat * Math.PI / 180) * k) / 2,
+                  y + (H - dLat * k) / 2];
+        };
+        return project;
+      }
+      _tooltip(node, html) {
+        if (!html) return;
+        node.addEventListener("mousemove", (ev) => {
+          const r = this.el.getBoundingClientRect();
+          this.tip.innerHTML = html;
+          this.tip.style.display = "block";
+          this.tip.style.left = (ev.clientX - r.left + 12) + "px";
+          this.tip.style.top = (ev.clientY - r.top + 12) + "px";
+        });
+        node.addEventListener("mouseleave", () => { this.tip.style.display = "none"; });
+      }
+      _redraw() {
+        if (!this.svg) return;
+        while (this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
+        const box = this._bounds || this._autoBounds() ||
+          (this._view ? [[this._view[0], this._view[1]], [this._view[0], this._view[1]]] : null);
+        if (!box) return;
+        const project = this._proj(box);
+        for (const layer of this._allLayers()) for (const sp of layer._specs) {
+          const o = sp.opts || {};
+          let node = null;
+          if (sp.kind === "marker") {
+            const [x, y] = project(sp.latlng[0], sp.latlng[1]);
+            node = document.createElementNS(SVGNS, "rect");
+            node.setAttribute("x", x - 9); node.setAttribute("y", y - 8);
+            node.setAttribute("width", 18); node.setAttribute("height", 16);
+            node.setAttribute("rx", 3);
+            node.setAttribute("fill", "#ff7a1a"); node.setAttribute("stroke", "#0008");
+          } else if (sp.kind === "circle") {
+            const [x, y] = project(sp.latlng[0], sp.latlng[1]);
+            node = document.createElementNS(SVGNS, "circle");
+            node.setAttribute("cx", x); node.setAttribute("cy", y);
+            node.setAttribute("r", o.radius || 6);
+            node.setAttribute("fill", o.fillColor || "#e53935");
+            node.setAttribute("fill-opacity", o.fillOpacity != null ? o.fillOpacity : 0.9);
+            node.setAttribute("stroke", o.color || "#0e2038");
+            node.setAttribute("stroke-width", o.weight || 1.5);
+          } else { // polyline | polygon
+            const d = (sp.latlngs || []).map((p, i) =>
+              (i ? "L" : "M") + project(p[0], p[1]).join(" ")).join(" ") +
+              (sp.kind === "polygon" ? " Z" : "");
+            node = document.createElementNS(SVGNS, "path");
+            node.setAttribute("d", d);
+            node.setAttribute("fill", sp.kind === "polygon" ? (o.fillColor || o.color || "#e53935") : "none");
+            node.setAttribute("fill-opacity", o.fillOpacity != null ? o.fillOpacity : 0.14);
+            node.setAttribute("stroke", o.color || "#ff7a1a");
+            node.setAttribute("stroke-width", o.weight || 2);
+            if (o.dashArray) node.setAttribute("stroke-dasharray", o.dashArray);
+            node.setAttribute("stroke-opacity", o.opacity != null ? o.opacity : 1);
+          }
+          if (node) {
+            node.setAttribute("class", "fbmap-node");
+            this._tooltip(node, layer.tooltip);
+            this.svg.appendChild(node);
+          }
+        }
+      }
+    }
+
+    // Public L.* surface used by this console (and no more).
+    window.L = {
+      map: (id, _opts) => new FallbackMap(id),
+      tileLayer: () => ({ addTo: () => ({}) }),   // no basemap offline
+      layerGroup: () => new LayerGroup(),
+      control: { layers: () => ({ addTo: () => ({}) }) },  // no layer switcher offline
+      circleMarker: (latlng, opts) => { const l = new Path("circle", null, opts);
+        l._specs = [{ kind: "circle", latlng, opts: opts || {} }]; return l; },
+      polygon: (latlngs, opts) => new Path("polygon", latlngs, opts),
+      polyline: (latlngs, opts) => new Path("polyline", latlngs, opts),
+      marker: (latlng, opts) => new Marker(latlng, opts),
+      divIcon: (opts) => opts,
+      _fallback: true,
+    };
+    console.warn("wgresponse console: Leaflet CDN unreachable — using offline SVG map fallback");
+  })();
+}
+const FILE = new URLSearchParams(location.search).get("file");
+const POLL_MS = 15000;
+const COLORS = { none:"#8b93a1", notice_72h:"#f2b04c", watch:"#ff8c1a",
+                 extreme_24h:"#e53935", impacted:"#111111", cleared:"#4caf50" };
+const colorFor = s => COLORS[s] || COLORS.none;
+
+const map = L.map("map", { zoomControl: true, attributionControl: true });
+map.setView([34.2, -117.6], 11);
+try {
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    { maxZoom: 17, opacity: 0.55, attribution: "&copy; OpenStreetMap" }).addTo(map);
+} catch (e) { /* offline: navy background only */ }
+
+const layers = {
+  fire: L.layerGroup().addTo(map), iso: L.layerGroup().addTo(map),
+  clients: L.layerGroup().addTo(map), crews: L.layerGroup().addTo(map),
+  routes: L.layerGroup().addTo(map), zones: L.layerGroup().addTo(map)
+};
+L.control.layers(null, { "Fire": layers.fire, "Arrival isochrones": layers.iso,
+  "Clients": layers.clients, "Crews": layers.crews, "Plan routes": layers.routes,
+  "Safe zones": layers.zones }, { collapsed: true }).addTo(map);
+
+let fitted = false;
+const $ = id => document.getElementById(id);
+
+function apiKey(forceAsk) {
+  let k = localStorage.getItem("wgresp_key");
+  if ((!k || forceAsk) && !FILE) {
+    k = window.prompt("Wildfire Guardian ops API key (X-Internal-API-Key):") || "";
+    if (k) localStorage.setItem("wgresp_key", k);
+  }
+  return k || "";
+}
+
+function setStatus(html) { $("statustext").innerHTML = html; }
+
+// --- last-cycle age chip (live watch mode; Sprint-2 C1) ---------------------
+// Driven off /api/state's last_cycle_t_s (unix s, daemon clock) + wall clock;
+// re-rendered every second so a stalled watch loop visibly ages even between
+// polls. poll_period_s (when provided) sets the staleness threshold.
+let lastCycleT = null, pollPeriod = null;
+function fmtAge(s) {
+  if (s < 90) return s.toFixed(0) + "s";
+  if (s < 5400) return (s / 60).toFixed(0) + "m";
+  return (s / 3600).toFixed(1) + "h";
+}
+function renderAgeChip() {
+  const el = $("agechip");
+  if (lastCycleT == null) { el.style.display = "none"; return; }
+  const age = Math.max(0, Date.now() / 1000 - lastCycleT);
+  const stale = pollPeriod != null && age > 2.5 * pollPeriod;
+  el.textContent = "last cycle " + fmtAge(age) + " ago";
+  el.className = stale ? "stale" : "";
+  el.title = stale ? "cycle overdue — the watch loop may be stalled"
+                   : "age of the last completed watch cycle";
+  el.style.display = "inline-block";
+}
+setInterval(renderAgeChip, 1000);
+
+function fmtClock(t_s) {
+  if (t_s == null) return "–";
+  const d = new Date(t_s * 1000);
+  return d.toISOString().replace("T", " ").slice(5, 16) + "Z";
+}
+function hoursFrom(t_s, now_s) {
+  if (t_s == null || now_s == null) return null;
+  return (t_s - now_s) / 3600.0;
+}
+
+async function fetchState() {
+  if (FILE) {
+    const r = await fetch(FILE);
+    if (!r.ok) throw new Error("file fetch " + r.status);
+    return r.json();
+  }
+  const r = await fetch("/api/state", { headers: { "X-Internal-API-Key": apiKey(false) } });
+  if (r.status === 401) {
+    localStorage.removeItem("wgresp_key");
+    apiKey(true);
+    throw new Error("unauthorized (401) — key re-prompted, will retry");
+  }
+  if (!r.ok) throw new Error("state fetch " + r.status);
+  return r.json();
+}
+
+function render(d) {
+  const now = d.now_s ?? d.t0_s ?? null;
+  // SAFETY SEMANTICS 6: a degraded cycle (provider blind/failed) must be
+  // unmissable to the operator — alert states are frozen, forecasts stale.
+  const opEvents = d.operator_events || [];
+  const degraded = !!d.degraded || opEvents.some(e =>
+    e && (e.kind === "degraded" || e.kind === "feed_blind" || e.kind === "provider_error"));
+  const bar = $("degradedbar");
+  bar.style.display = degraded ? "block" : "none";
+  if (degraded) {
+    const lastOp = opEvents.length ? opEvents[opEvents.length - 1] : null;
+    bar.textContent = "DEGRADED — forecasts may be stale" +
+      (lastOp && lastOp.message ? " · " + lastOp.message : "");
+  }
+  $("subtitle").textContent = (d.name ? "scenario: " + d.name : "live operations") +
+    (FILE ? "  [OFFLINE SIM FILE]" : (d.demo ? "  [DEMO REPLAY]" : ""));
+  setStatus(`<span class="ok">●</span> ${FILE ? "sim file" : "live"} · sim clock ` +
+            `${fmtClock(now)} · clients ${(d.clients || []).length} · crews ` +
+            `${(d.crews || []).length} · events ${(d.events || []).length}` +
+            (d.cycles_run != null ? ` · cycles ${d.cycles_run}` : ""));
+  lastCycleT = (typeof d.last_cycle_t_s === "number") ? d.last_cycle_t_s : null;
+  pollPeriod = (typeof d.poll_period_s === "number") ? d.poll_period_s : null;
+  renderAgeChip();
+
+  Object.values(layers).forEach(g => g.clearLayers());
+
+  if (d.ignition && d.ignition.lat != null) {
+    L.circleMarker([d.ignition.lat, d.ignition.lon], { radius: 9, color: "#ffcf3f",
+      weight: 2, fillColor: "#e53935", fillOpacity: 0.95 })
+      .bindTooltip("fire origin").addTo(layers.fire);
+  }
+  // Live watch mode: one marker per fused active incident.
+  (d.incidents || []).forEach(inc => {
+    if (inc.lat == null || inc.lon == null) return;
+    const extra = [
+      inc.acreage != null ? Number(inc.acreage).toFixed(0) + " ac" : null,
+      inc.containment_pct != null ? Number(inc.containment_pct).toFixed(0) + "% contained" : null,
+    ].filter(Boolean).join(" · ");
+    L.circleMarker([inc.lat, inc.lon], { radius: 9, color: "#ffcf3f",
+      weight: 2, fillColor: "#e53935", fillOpacity: 0.95 })
+      .bindTooltip(`${inc.name || inc.incident_id}${extra ? "<br>" + extra : ""}`)
+      .addTo(layers.fire);
+  });
+  if (Array.isArray(d.perimeter) && d.perimeter.length > 2) {
+    L.polygon(d.perimeter.map(p => [p.lat, p.lon]), { color: "#e53935", weight: 2,
+      fillColor: "#e53935", fillOpacity: 0.14 })
+      .bindTooltip("modeled perimeter (p50, now)").addTo(layers.fire);
+  }
+  (d.isochrones || []).forEach(iso => {
+    const dashes = { 24: null, 48: "6 6", 72: "2 8" }[iso.h] || "4 6";
+    L.polyline(iso.points.map(p => [p.lat, p.lon]), { color: "#ff7a1a", weight: 2,
+      dashArray: dashes, opacity: 0.9 })
+      .bindTooltip(`p50 arrival +${iso.h} h`).addTo(layers.iso);
+  });
+  (d.clients || []).forEach(c => {
+    if (c.lat == null || c.lon == null) return;   // roster gap: no dot, no NaN
+    const eta = hoursFrom(c.eta_p50_s, now);
+    L.circleMarker([c.lat, c.lon], { radius: 7, color: "#0e2038", weight: 1.5,
+      fillColor: colorFor(c.state), fillOpacity: 0.95 })
+      .bindTooltip(`${c.client_id} ${c.name || ""}<br>state: ${c.state}` +
+                   (eta != null ? `<br>ETA p50: ${eta.toFixed(1)} h` : ""))
+      .addTo(layers.clients);
+  });
+  (d.safe_zones || []).forEach(z => {
+    L.marker([z.lat, z.lon], { icon: L.divIcon({ className: "zone-icon",
+      html: "Z", iconSize: [18, 18] }) })
+      .bindTooltip(`${z.zone_id} ${z.name || ""} (safe zone)`).addTo(layers.zones);
+  });
+  (d.crews || []).forEach(c => {
+    const track = c.track || [];
+    if (track.length > 1) {
+      L.polyline(track.map(p => [p.lat, p.lon]), { color: "#ffd9b3", weight: 2,
+        opacity: 0.8 }).addTo(layers.crews);
+    }
+    const last = track.length ? track[track.length - 1] :
+                 (c.lat != null ? { lat: c.lat, lon: c.lon } : null);
+    if (last) {
+      L.marker([last.lat, last.lon], { icon: L.divIcon({ className: "crew-icon",
+        html: c.crew_id, iconSize: [26, 20] }) })
+        .bindTooltip(`${c.crew_id} ${c.name || ""}<br>status: ${c.status || "?"}`)
+        .addTo(layers.crews);
+    }
+  });
+  (d.routes || []).forEach(rt => {
+    L.polyline((rt.points || []).map(p => [p.lat, p.lon]), { color: "#ff7a1a",
+      weight: 3, opacity: 0.75, dashArray: "8 5" })
+      .bindTooltip(`${rt.crew_id} plan → egress ${rt.egress_zone_id || "?"}`)
+      .addTo(layers.routes);
+  });
+
+  const evts = (d.events || []).slice(-60).reverse();
+  $("alertlist").innerHTML = evts.map(e => {
+    const st = e.state || "?";
+    return `<div class="evt"><span class="t">${fmtClock(e.t_s)}</span>` +
+      `<span class="chip" style="background:${colorFor(st)}">${st.replace(/_/g, " ")}</span>` +
+      `<span>${e.client_id}</span>` +
+      `<span class="t">${e.eta_p50_h != null ? "p50 " + Number(e.eta_p50_h).toFixed(1) + "h" : ""}</span></div>`;
+  }).join("") || `<div class="evt"><span class="t">no alerts yet</span></div>`;
+
+  const byCrew = {};
+  (d.routes || []).forEach(rt => { byCrew[rt.crew_id] = rt; });
+  $("itinlist").innerHTML = Object.keys(byCrew).sort().map(cid => {
+    const rt = byCrew[cid];
+    const stops = (rt.stops || []).map(s => {
+      const m = s.margin_h;
+      const cls = (m != null && m < 1.0) ? "m tight" : "m";
+      return `<div class="stop"><span>${s.client_id}</span>` +
+        `<span class="${cls}">margin ${m != null ? m.toFixed(2) : "?"} h</span></div>`;
+    }).join("");
+    return `<div class="crew-block"><span class="cid">${cid}</span>` +
+      ` → egress ${rt.egress_zone_id || "?"}${stops}</div>`;
+  }).join("") || `<div class="evt"><span class="t">no active itineraries</span></div>`;
+
+  if (!fitted && d.bbox && d.bbox.south != null) {
+    map.fitBounds([[d.bbox.south, d.bbox.west], [d.bbox.north, d.bbox.east]]);
+    fitted = true;
+  }
+}
+
+async function tick() {
+  try {
+    render(await fetchState());
+  } catch (e) {
+    setStatus(`<span class="bad">●</span> ${String(e.message || e)}`);
+  }
+}
+
+tick();
+if (!FILE) setInterval(tick, POLL_MS);
+</script>
+</body>
+</html>

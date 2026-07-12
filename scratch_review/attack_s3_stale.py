@@ -1,0 +1,276 @@
+"""ADVERSARIAL VERIFIER (Session 3) — attack #4: staleness gate (C3a,
+SAFETY SEMANTICS 9).
+
+Claims under attack (verifier brief #4):
+  4a. A stale incident with a FRESH hotspot cluster nearby: does the gate
+      kill an actually-active fire? When the fresh evidence FUSES with the
+      stale record the fused updated_at is the fresh one -> not gated, and
+      the stale member's perimeter survives on the fused record. When it
+      does NOT fuse (the realistic FIRMS case — synthetic cluster names
+      never match, FIRMS never has IRWIN), the stale perimeter is gated but
+      the fresh cluster keeps the fire alerted — no silenced client.
+  4b. Boundary exactly at incident_stale_h (kept; strictly-older excludes),
+      including through fusion (freshest member's timestamp decides).
+
+FINDINGS documented here:
+  F3  [FIXED by the Session-3 fixer; tests below assert the FIXED behavior
+      and are promoted to tests/test_attack_s3_stale.py]
+      (model-fidelity, LATE polarity) The fused record carries ONE
+      updated_at_s (the freshest member's), and _assess_incident stamped the
+      perimeter interior at min(fused updated_at_s, now). When the perimeter
+      came from an OLD member and the freshness from a perimeter-less point
+      member, the interior was stamped burned at the FRESH time — the
+      modeled front lost (fresh - old) hours of advance (measured 47.8 h on
+      a 48 h-old ring + 15 min point; the same gap existed single-source via
+      WfigsFeed._build maxing point/perimeter times). FIX: feeds now carry
+      the PERIMETER's own provenance time as meta["perimeter_at_s"]
+      (WFIGS poly_DateCurrent; the perimeter member's own updated_at_s
+      through _merge_group / _build) and threat._assess_incident stamps
+      min(that provenance, now) — falling back to updated_at_s for
+      single-timestamp records (byte-identical there). Alerts can only get
+      EARLIER (safe polarity); bogus non-positive/garbage stamps fall back.
+
+Run from repo root:
+    py -3 -m pytest scratch_review/attack_s3_stale.py -v
+"""
+from __future__ import annotations
+
+import math
+import os
+import sys
+
+import pytest
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from scratch_review.attack_s3_common import (  # noqa: E402
+    CLIENT_LOC, H, ORIGIN, T0, ScriptedFeed, StubRegistry, StubTerrain,
+    StubWeather, client, incident, km_east, small_cfg,
+)
+from wgresponse import geo, spread  # noqa: E402
+from wgresponse.alerts import AlertEngine  # noqa: E402
+from wgresponse.contracts import AlertState, IncidentSource, LatLon  # noqa: E402
+from wgresponse.feeds import fuse_incidents  # noqa: E402
+from wgresponse.threat import ThreatMonitor  # noqa: E402
+
+NOW = T0
+
+
+def square_ring(center, half_m=500.0):
+    n = geo.destination(center, 0.0, half_m)
+    s = geo.destination(center, 180.0, half_m)
+    e = geo.destination(center, 90.0, half_m)
+    w = geo.destination(center, 270.0, half_m)
+    return [LatLon(s.lat, w.lon), LatLon(s.lat, e.lon),
+            LatLon(n.lat, e.lon), LatLon(n.lat, w.lon),
+            LatLon(s.lat, w.lon)]
+
+
+def make_monitor(feed, engine=None, cfg=None):
+    cfg = cfg or small_cfg()
+    engine = engine or AlertEngine(cfg)
+    mon = ThreatMonitor(feeds=[feed], weather_provider=StubWeather(),
+                        terrain_provider=StubTerrain(),
+                        registry=StubRegistry([client()]),
+                        alert_engine=engine, cfg=cfg, safe_zones=[])
+    return mon, engine
+
+
+# ---------------------------------------------------------------------------
+# 4a-i. fresh member FUSES with the stale perimeter record -> not gated
+# ---------------------------------------------------------------------------
+
+def stale_perimeter_member(age_h=200.0):
+    return incident(iid="firis:9", name="Volcano", source=IncidentSource.FIRIS,
+                    irwin_id="IRW-V", updated_at_s=NOW - age_h * H,
+                    perimeter=[square_ring(ORIGIN)], acreage=900.0)
+
+
+def fresh_point_member(age_h=0.25):
+    return incident(iid="irw-v", name="Volcano", source=IncidentSource.WFIGS,
+                    irwin_id="IRW-V", updated_at_s=NOW - age_h * H,
+                    origin=km_east(ORIGIN, 0.4), acreage=950.0)
+
+
+def test_fused_record_carries_fresh_updated_at_and_keeps_perimeter():
+    (fused,) = fuse_incidents([[stale_perimeter_member()],
+                               [fresh_point_member()]])
+    assert fused.incident_id == "irw-v"
+    assert fused.updated_at_s == NOW - 0.25 * H       # freshest member wins
+    assert fused.perimeter is not None                # stale member's polygon
+    assert fused.acreage == 950.0
+
+
+def test_stale_perimeter_plus_fresh_fused_member_is_not_gated_end_to_end():
+    """200 h-old perimeter member + 15 min-old point member of the SAME fire
+    (shared IRWIN): the fused record is fresh -> assessed, alerted,
+    perimeter used — the gate must not kill the actually-active fire."""
+    feed = ScriptedFeed([stale_perimeter_member(), fresh_point_member()])
+    mon, engine = make_monitor(feed)
+    res = mon.cycle(NOW)
+    assert [i.incident_id for i in res.incidents] == ["irw-v"]
+    assert not any("stale" in n for n in res.notes)
+    assert {(a.client_id, a.incident_id) for a in res.assessments} == \
+        {("c1", "irw-v")}
+    assert engine.states()[("c1", "irw-v")].state in (
+        AlertState.NOTICE_72H, AlertState.WATCH, AlertState.EXTREME_24H,
+        AlertState.IMPACTED)
+    assert res.degraded is False
+
+
+# ---------------------------------------------------------------------------
+# 4a-ii. realistic FIRMS shape: no fusion — gate drops the zombie perimeter,
+# the fresh cluster keeps the fire alerted
+# ---------------------------------------------------------------------------
+
+def firms_cluster_member(age_h=1.0):
+    pts = [km_east(ORIGIN, 0.3), km_east(ORIGIN, 0.6),
+           geo.destination(ORIGIN, 45.0, 400.0)]
+    return incident(iid="firms:39.000,-120.995",
+                    name="FIRMS cluster 39.000,-120.995",
+                    source=IncidentSource.FIRMS, irwin_id=None,
+                    origin=km_east(ORIGIN, 0.4),
+                    updated_at_s=NOW - age_h * H, hotspots=pts,
+                    acreage=None, containment_pct=None)
+
+
+def test_zombie_perimeter_gated_but_fresh_firms_cluster_keeps_fire_alive():
+    """The stale 'Volcano' perimeter (200 h) and a fresh FIRMS cluster do NOT
+    fuse (synthetic cluster name, no IRWIN). Verified consequence: the
+    perimeter record is excluded by the gate, but the client is still
+    assessed + alerted through the cluster incident — an active fire with
+    fresh satellite evidence is never silenced by the staleness gate."""
+    stale = stale_perimeter_member(age_h=200.0)
+    stale.irwin_id = None                      # nothing for FIRMS to join on
+    cluster = firms_cluster_member()
+    feed = ScriptedFeed([stale, cluster])
+    mon, engine = make_monitor(feed)
+    res = mon.cycle(NOW)
+
+    fused_ids = {i.incident_id for i in res.incidents}
+    assert fused_ids == {"firms:39.000,-120.995"}      # zombie gated
+    (note,) = [n for n in res.notes if "stale" in n]
+    assert "firis:9" in note and "200 h" in note
+    assert res.degraded is False                       # hygiene, not outage
+
+    pairs = {(a.client_id, a.incident_id) for a in res.assessments}
+    assert pairs == {("c1", "firms:39.000,-120.995")}
+    state = engine.states()[("c1", "firms:39.000,-120.995")].state
+    assert state in (AlertState.NOTICE_72H, AlertState.WATCH,
+                     AlertState.EXTREME_24H)
+    # the cluster's ETA is finite: the client would be dispatched for, too
+    (a,) = res.assessments
+    assert math.isfinite(a.eta.eta_p50_s)
+
+
+def test_gate_alone_would_have_silenced_the_fire_without_the_cluster():
+    """Control for the test above: with ONLY the zombie perimeter on the
+    feed, the cycle assesses nothing (documents what the FIRMS layer is
+    protecting against — and why FIRMS-keyless deployments lean entirely on
+    perimeter-feed freshness)."""
+    stale = stale_perimeter_member(age_h=200.0)
+    stale.irwin_id = None
+    mon, _ = make_monitor(ScriptedFeed([stale]))
+    res = mon.cycle(NOW)
+    assert res.incidents == [] and res.assessments == []
+
+
+# ---------------------------------------------------------------------------
+# 4b. boundary exactly at incident_stale_h — including through fusion
+# ---------------------------------------------------------------------------
+
+def test_boundary_exact_age_kept_one_second_over_excluded_through_fusion():
+    cfg = small_cfg()
+    max_age_s = cfg.incident_stale_h * 3600.0
+
+    def run(fresher_age_s):
+        old = stale_perimeter_member(age_h=300.0)          # very stale member
+        newer = fresh_point_member()
+        newer.updated_at_s = NOW - fresher_age_s           # decides the gate
+        mon, _ = make_monitor(ScriptedFeed([old, newer]), cfg=cfg)
+        return mon.cycle(NOW)
+
+    exact = run(max_age_s)                     # fused age exactly 168 h
+    assert [i.incident_id for i in exact.incidents] == ["irw-v"]
+    assert len(exact.assessments) == 1
+    over = run(max_age_s + 1.0)                # one second older
+    assert over.incidents == [] and over.assessments == []
+    assert any("excluded 1 stale" in n for n in over.notes)
+
+
+def test_future_stamped_incident_negative_age_is_kept():
+    inc = incident(updated_at_s=NOW + 2 * H)   # feed clock 2 h ahead
+    mon, _ = make_monitor(ScriptedFeed([inc]))
+    res = mon.cycle(NOW)
+    assert [i.incident_id for i in res.incidents] == ["inc-1"]
+    assert not any("stale" in n for n in res.notes)
+
+
+# ---------------------------------------------------------------------------
+# FINDING F3 — fused freshness re-stamps an old member's perimeter
+# ---------------------------------------------------------------------------
+
+def test_FINDING_f3_fused_old_perimeter_stamped_at_its_own_time(monkeypatch):
+    """F3 — FIXED: the fused record (old FIRIS perimeter + fresh WFIGS point)
+    still carries the FRESH updated_at_s (staleness gate unchanged), but the
+    perimeter interior is now stamped at the PERIMETER MEMBER's own 48 h-old
+    time via meta['perimeter_at_s'] — the modeled front keeps its 48 h of
+    advance instead of restarting at the fresh timestamp."""
+    captured = {}
+    orig = spread.ensemble_arrival
+
+    def spy(tile, ignition, wx, t0_s, cfg, incident_id="", perimeter=None,
+            perimeter_at_s=None):
+        captured["perimeter_at_s"] = perimeter_at_s
+        captured["has_perimeter"] = perimeter is not None
+        return orig(tile, ignition, wx, t0_s, cfg, incident_id=incident_id,
+                    perimeter=perimeter, perimeter_at_s=perimeter_at_s)
+
+    monkeypatch.setattr(spread, "ensemble_arrival", spy)
+    stale = stale_perimeter_member(age_h=48.0)
+    fresh = fresh_point_member(age_h=0.25)
+    (fused,) = fuse_incidents([[stale], [fresh]])
+    assert fused.updated_at_s == NOW - 0.25 * H        # freshness preserved
+    assert fused.meta["perimeter_at_s"] == NOW - 48.0 * H   # provenance rides
+    feed = ScriptedFeed([stale, fresh])
+    mon, _ = make_monitor(feed)
+    mon.cycle(NOW)
+    assert captured["has_perimeter"] is True
+    # The FIXED stamp: the perimeter's own age, never the fused freshness.
+    assert captured["perimeter_at_s"] == NOW - 48.0 * H
+    assert captured["perimeter_at_s"] != NOW - 0.25 * H
+
+
+def test_FINDING_f3_measured_lateness_of_fresh_stamped_old_perimeter():
+    """Quantifies what the F3 fix buys, on the harness tile: same polygon,
+    stamped at its own 48 h-old time (what production NOW does) vs at the
+    fused-fresh time (the pre-fix defect). Downwind client 4.3 km east:
+    honest-stamp p50 has already PASSED (hours_out 0) while fresh-stamp p50
+    is hours out — the defect ran up to (fresh - old) ~48 h LATE."""
+    cfg = small_cfg()
+    domain = geo.bbox_around([ORIGIN, CLIENT_LOC], 3000.0)
+    tile = StubTerrain().tile(domain, cfg.grid_cell_m)
+    wx = StubWeather().forecast(ORIGIN, cfg.horizon_h)
+    ring = square_ring(ORIGIN)
+
+    def eta_with_stamp(stamp_s):
+        ens = spread.ensemble_arrival(tile, [], wx, NOW, cfg,
+                                      incident_id="irw-v", perimeter=[ring],
+                                      perimeter_at_s=stamp_s)
+        return spread.eta_at(ens, CLIENT_LOC)
+
+    fresh = eta_with_stamp(NOW - 0.25 * H)     # what fusion produces (F3)
+    honest = eta_with_stamp(NOW - 48.0 * H)    # the perimeter's own age
+
+    fresh_h = fresh.hours_out(NOW)[1]
+    honest_h = honest.hours_out(NOW)[1]
+    assert honest_h == 0.0, "48 h-old front should already be past the client"
+    assert fresh_h > 2.0, "fresh-stamped front is hours away"
+    lateness_h = (fresh.eta_p50_s - honest.eta_p50_s) / H
+    assert lateness_h > 40.0                   # ~the 48 h stamp gap
+    print(f"\nF3 measured: fresh-stamp p50 {fresh_h:.2f} h out vs honest "
+          f"stamp already passed; raw p50 delta {lateness_h:.1f} h late")
+
+
+if __name__ == "__main__":
+    raise SystemExit(pytest.main([__file__, "-v"]))

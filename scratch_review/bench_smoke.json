@@ -1,0 +1,53 @@
+{
+  "label": "smoke",
+  "overrides": {},
+  "n_scenarios": 2,
+  "horizon": 60,
+  "wall_s": 9.1,
+  "total_served": 31,
+  "total_threatened": 42,
+  "total_violations": 0,
+  "total_overruns": 0,
+  "total_abandoned": 10,
+  "total_triaged": 0,
+  "rows": [
+    {
+      "seed": "boulder_co|+0|7000|high",
+      "map": "boulder_co",
+      "wind_off": 0.0,
+      "dist": 7000.0,
+      "inten": "high",
+      "served": 18,
+      "violations": 0,
+      "overruns": 0,
+      "withdrawn": 0,
+      "relocations": 0,
+      "min_margin_h": 3.7143,
+      "saved": 18,
+      "protected_impacted": 0,
+      "abandoned": 3,
+      "triaged": 0,
+      "not_threatened": 18,
+      "threatened": 22
+    },
+    {
+      "seed": "santa_rosa_ca|+0|7000|high",
+      "map": "santa_rosa_ca",
+      "wind_off": 0.0,
+      "dist": 7000.0,
+      "inten": "high",
+      "served": 13,
+      "violations": 0,
+      "overruns": 0,
+      "withdrawn": 0,
+      "relocations": 12,
+      "min_margin_h": 0.9518,
+      "saved": 12,
+      "protected_impacted": 1,
+      "abandoned": 7,
+      "triaged": 0,
+      "not_threatened": 20,
+      "threatened": 20
+    }
+  ]
+}

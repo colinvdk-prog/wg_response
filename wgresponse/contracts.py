@@ -1,0 +1,946 @@
+"""wgresponse.contracts — THE LAW.
+
+Every module in wgresponse codes against the types, protocols, units, and semantics
+defined here. If a module needs a shape that isn't here, the shape gets added HERE
+first. Follows the proven wgdefense convention: contracts is law; stdlib only.
+
+============================================================================
+UNITS & CONVENTIONS (non-negotiable)
+============================================================================
+- Time: absolute times are unix seconds, suffix `_s` (float). Durations meant for
+  humans/config use hours `_h` or minutes `_min` (float). Never naive datetimes.
+- Distance: meters `_m`, kilometers `_km`. Speed: meters/second `_mps`.
+- Angles: compass degrees `_deg`, 0 = north, clockwise.
+  WIND DIRECTION IS METEOROLOGICAL: `wind_dir_deg` = direction the wind blows FROM.
+  A wind_dir_deg of 0 pushes fire spread toward 180 (southward head).
+- Temperatures: Celsius `_c`. Humidity: percent 0-100 `_pct`.
+- Money: USD `_usd`.
+- Rothermel internals may use imperial (ft/min, lb/ft^2) INSIDE wgresponse.rothermel
+  only; every public seam speaks SI.
+- Grids are row-major, row 0 = NORTHERNMOST row (image convention), col 0 = west.
+- All mocks/simulators are deterministic: RNG seeded via SHA-256 of explicit seed
+  strings, never wall-clock.
+
+============================================================================
+SAFETY SEMANTICS (the load-bearing rules; do not reinterpret)
+============================================================================
+Let `eta_p10_s` be the PESSIMISTIC (earliest, 10th percentile) projected fire
+arrival at a property from the ensemble, and `eta_p50_s` the median.
+
+1. Alert ladder (per client x incident pair) evaluates on P50:
+     NOTICE_72H  when eta_p50 within <= notice_h (72 h)
+     EXTREME_24H when eta_p50 within <= extreme_h (24 h)  OR  eta_p10 <= extreme_p10_h (12 h)
+   Downgrades require `clear_cycles` consecutive clear evaluations AND
+   `clear_margin_h` of headroom (hysteresis — a flickering forecast must not flap states).
+2. Crew safety evaluates on P10 (embers precede the modeled front):
+     latest_depart_s        = eta_p10_s - egress_buffer_min*60      (30 min rule)
+     latest_service_start_s = latest_depart_s - deploy_min*60       (30 min gel deploy)
+3. Route safety: every travel leg (ingress AND egress-to-safe-zone) is checked
+   against the ERODED P10 arrival grid (morphological min over corridor_erosion_m):
+   at each sample point (every corridor_sample_m along the leg), the eroded arrival
+   time must exceed the crew's pass time by route_margin_min.
+4. A plan stop is feasible only if ALL of: service fits inside
+   [max(now, eta_p50_s - gel_window effective seconds), latest_service_start_s],
+   ingress corridor safe, egress corridor to a SafeZone safe.
+5. GEL MODEL (GraphGel product data, founder 2026-07-11): GraphGel provides
+   CLASS A protection at 1/8" DRY film — the DRIED coating is the protection, so
+   effectiveness is FLAT across the operational window, not decaying like the
+   wet-gel products (Barricade-style evaporative gels) the original placeholder
+   modeled. gel_full_strength_h therefore equals gel_window_h (no decay ramp):
+   applying early provides good protection; applying nearer the fire is at most
+   marginally better (wet+dry), never required. STILL-UNVERIFIED supplier data:
+   the outer window itself (weathering/rain wash-off horizon beyond 72 h),
+   drying time to reach the rated dry film, coverage rate (volume per home at
+   1/8" dry — gates the 15 min/home deploy assumption and inventory sizing),
+   and gel_effectiveness=0.85 (Class A flame-spread rating is not a P(save);
+   0.85 remains a placeholder). COVERAGE RATE IS QUOTED WET (founder
+   2026-07-11): the dry film is much thinner than the wet application, so all
+   volume/inventory math must use WET volume per home. THE COATING IS OPAQUE
+   (same source): homeowners will not accept preventive/seasonal application —
+   application happens ONLY under live threat (the alert-driven WATCH/EXTREME
+   window, when occupants have evacuated and survival outweighs aesthetics).
+   Seasonal pre-coating is NOT a product strategy; post-event coating removal/
+   wash-down is part of the service model. wgdefense's environment-scaled
+   coating-life model (~6 h wet-phase) models evaporative products and does NOT
+   apply to the dried-film mechanism; gel_env_model_enabled stays default-OFF.
+   Code must treat the window as config, never as a constant.
+6. ABSENCE IS NOT CLEARANCE (Sprint 2, Council-1 OPS-1). A (client, incident) pair
+   with no assessment this cycle FREEZES its alert state; it never advances toward
+   CLEARED. Downgrades require ASSESSED evaluations exclusively. Provider failure
+   (feed fetch error, weather/terrain/registry exception, empty-after-nonempty feed)
+   marks the cycle DEGRADED: affected pairs increment AlertRecord.blind_cycles, and
+   blind_cycles >= cfg.blind_alarm_cycles emits an OperatorEvent(kind='degraded') on
+   CycleResult.operator_events — operator-facing, NEVER a client notification, and
+   never auto-downgrades a client. A pair whose incident was ASSESSED and no longer
+   threatens — or whose incident is absent while every fire feed reports a healthy
+   fetch (last_fetch_ok convention below) — is assessed-clear and may progress the
+   clear streak normally.
+   REGISTRY COMPLETENESS (Council-1 verify, attack_partial_registry): a tracked
+   pair whose CLIENT silently vanishes from the registry roster while its incident
+   is still ACTIVE matches neither trustworthy-clear clause — it is BLIND (freeze +
+   OperatorEvent kind='provider_error', detail.step='registry_roster'), because a
+   partial scan / data-quality regression is indistinguishable from unenrollment at
+   this layer. Only an explicit unenrollment signal (graphgel_enrolled=False on a
+   RETURNED record) or incident end releases the pair toward CLEARED.
+7. DISPATCH SLACK FLOOR (Sprint 2, Council-1 dispatch F2). Beyond deadline
+   feasibility, every planned stop must carry at least cfg.slack_min minutes of
+   slack (latest_depart - depart), absorbing travel-model optimism on mountain
+   roads. A stop that fits the deadline but not the slack floor is infeasible.
+8. CONTAINMENT GATES THE LADDER, NEVER THE CREW MATH (Sprint 2, Council-1 model
+   F5). When cfg.containment_gate_enabled: an incident with containment_pct >=
+   cfg.containment_watch_ceiling_pct AND no acreage growth for
+   cfg.containment_no_growth_h caps that incident's ladder escalation at WATCH
+   (growth resumption or containment drop lifts the cap immediately, and any pair
+   already above WATCH is not downgraded by the cap — it merely stops NEW
+   escalations). The cap NEVER modifies ensembles, P10, corridors, or any crew-
+   safety deadline. Default OFF pending founder policy approval.
+9. DATA HYGIENE (Sprint 2, Council-1 OPS-6). Incidents whose updated_at_s is
+   older than cfg.incident_stale_h are excluded from alerting/dispatch (logged +
+   note; FIRIS zombie perimeters measured at median 49 days still active=True).
+   perimeter_at_s must be clamped to <= now_s before seeding (feed clock skew
+   must not freeze interiors at a future time).
+10. CONTINUOUS CREW SAFETY (2026-07-10, founder "crews G1/G2 caught in fire";
+   docs/review/crews_caught_report.md). The safety audit governed only gel-job
+   DEPARTURES — a crew's live/idle position was never checked, so idle crews
+   (and crews resting at a safe zone the fire later overran) burned while
+   scoreboard violations stayed 0. THREE binding rules extend (never weaken) the
+   P10/corridor/slack law to ALL crew states:
+   (a) CONTINUOUS MONITOR: every tick, EVERY crew (idle/AVAILABLE, EN_ROUTE,
+       DEPLOYING, EGRESSING, and INBOUND-once-arrived) has its CURRENT cell's
+       eroded-P10 arrival checked; unsafe iff arrival < now + egress_buffer_min.
+       An unsafe deploying crew aborts per the withdrawal law; an unsafe idle/
+       travelling/egressing crew RELOCATES immediately to a currently-safe zone.
+   (b) DYNAMIC SAFE ZONES: a safe zone whose eroded-P10 arrival is within the
+       egress buffer is NOT a valid egress/staging/anchor target; crews stage
+       only at currently-safe zones and re-home as the fire advances. If NO zone
+       is currently safe, all crews pull to the latest-arrival zone + a loud
+       operator alarm (fail-closed, like no_safe_egress).
+   (c) AUDIT COUNTS OVERRUN (the no-reship invariant): the audit ALSO flags a
+       violation for any crew whose current cell is burned (nominal arrival <=
+       now) or imminent (eroded-P10 < now + egress_buffer_min). scoreboard
+       violations can therefore NEVER read 0 while a crew is in the burn. Strict
+       superset of the old audit — byte-identical when no crew is exposed.
+   Crew telemetry gains relocating/relocate_reason so the UI shows a crew
+   repositioning ("zone threatened"). This is EXTENSION, not weakening: same
+   eroded-P10 transform, same egress_buffer_min threshold.
+11. EMBER SPOTTING MUST BE FUNCTIONAL (2026-07-10, founder). The Sardoy/ELMFIRE
+   spotting hook exists but throws one ember at the MEAN distance (~200 m in
+   grass) — measured negligible (never gets ahead of the front). To model real
+   fire behaviour (Camp Fire), spotting samples the ember-distance DISTRIBUTION
+   (lognormal tail, deterministic per cell/member via seeded_rng) so some brands
+   land far downwind AHEAD of the front and ignite new fire there. Default OFF in
+   ResponseConfig (live byte-identical; live enablement is a separate calibration
+   decision); the SIMULATOR enables it (spotting_enabled=True) with a UI toggle.
+   Spotting feeds the P10 ensemble (embers arrive early => more conservative =>
+   SEMANTICS 10 protects crews near spot-ignition zones).
+
+============================================================================
+MODULE SEAMS (public functions each module MUST expose, exactly)
+============================================================================
+wgresponse.geo
+    haversine_m(a: LatLon, b: LatLon) -> float
+    destination(origin: LatLon, bearing_deg: float, dist_m: float) -> LatLon
+    bearing_deg(a: LatLon, b: LatLon) -> float
+    class GridSpec  (defined here in contracts)
+    class Raster    (defined here in contracts)
+    sample_polyline(a: LatLon, b: LatLon, step_m: float) -> list[LatLon]
+    bbox_around(points: list[LatLon], pad_m: float) -> BBox
+    erode_min(r: Raster, radius_m: float) -> Raster        # morphological min filter
+
+wgresponse.fuels
+    FUEL_TABLE: dict[int, FuelModel]         # FBFM40 codes -> params (pinned, provenance-commented)
+    is_burnable(code: int) -> bool           # NB 91..99 are non-burnable
+    dead_fuel_moisture_frac(temp_c: float, rh_pct: float) -> float   # Simard EMC * 1.03
+    live_moisture_defaults(season: str) -> tuple[float, float]       # (herb_frac, woody_frac)
+
+wgresponse.rothermel
+    surface_ros_mps(fuel: FuelModel, m_dead_frac: float, m_live_herb_frac: float,
+                    m_live_woody_frac: float, midflame_wind_mps: float,
+                    slope_deg: float) -> RosResult
+    midflame_wind_mps(wind10_mps: float, fuel: FuelModel) -> float   # WAF
+    ellipse_lb(effective_wind_mps: float) -> float                   # Anderson 1983, capped 8
+    directional_ros_mps(head_ros_mps: float, lb: float, theta_deg: float) -> float
+        # theta = angle between max-spread direction and the direction of interest
+
+wgresponse.spread
+    compute_arrival(tile: TerrainTile, ignition: list[LatLon], wx: WeatherForecast,
+                    t0_s: float, cfg: ResponseConfig, moisture_scale: float = 1.0,
+                    wind_scale: float = 1.0, dir_offset_deg: float = 0.0,
+                    perimeter: list | None = None, perimeter_at_s: float | None = None) -> Raster
+        # arrival unix seconds per cell; UNREACHED = math.inf. Time-dependent
+        # 16-neighbor Dijkstra; edge traversal speed uses weather at departure time.
+        # Sprint 2: dir_offset_deg rotates the wind direction (ensemble knob).
+        # Sprint 2 (Council-1 model F4): when perimeter polygons are given, every cell
+        # INSIDE them is burned AT perimeter_at_s (the feed's updated_at_s, not now) —
+        # the front then advances naturally from that earlier time; interior cells
+        # never "re-burn" later; hotspots still seed even when a perimeter exists.
+    ensemble_arrival(tile, ignition, wx, t0_s, cfg, incident_id: str = '') -> EnsembleArrival
+        # Sprint 2 (Council-1 model F2+F6): members perturb wind SPEED, dead-fuel
+        # MOISTURE, and wind DIRECTION (lead-scaled, up to cfg.dir_perturb_deg at max
+        # lead), stratified draws, seeded on (incident_id, member_index) — NEVER on
+        # wall-clock/t0 — so consecutive cycles are comparable (jitter < 5%).
+    eta_at(ens: EnsembleArrival, loc: LatLon) -> ThreatEta
+
+wgresponse.feeds
+    class WfigsFeed / FirisFeed / CalFireFeed / FirmsFeed / WatchDutyEnterpriseFeed(stub) / MockFireFeed
+    fuse_incidents(batches: list[list[FireIncident]]) -> list[FireIncident]   # join on IRWIN id
+    # Health convention (Sprint 2): every adapter maintains `last_fetch_ok: bool`
+    # after each fetch_active call — True iff HTTP + parse succeeded (an empty
+    # result with last_fetch_ok=True means genuinely zero incidents; False means
+    # BLIND, and consumers must apply SAFETY SEMANTICS 6, never treat as clear).
+
+wgresponse.weather
+    class NwsWeather / OpenMeteoWeather / MockWeather   (WeatherProvider protocol)
+
+wgresponse.terrain
+    class LfpsTerrain / SyntheticTerrain                (TerrainProvider protocol)
+    load_ascii_tile(path) / save_ascii_tile(tile, path)  # dependency-free cache format
+
+wgresponse.clients
+    class DynamoClientRegistry / MockClientRegistry     (ClientRegistry protocol)
+
+wgresponse.crews
+    class CrewTracker   .ingest(beacon) .crews() .crew(id) .stale(now_s) -> list[str]
+
+wgresponse.alerts
+    class AlertEngine   .evaluate(pairs: list[ThreatAssessment], now_s) -> list[AlertEvent]
+                        .states() -> dict[tuple[str,str], AlertRecord]
+
+wgresponse.threat
+    class ThreatMonitor .cycle(now_s) -> CycleResult    # full loop: feeds->wx->terrain->spread->etas->alerts
+
+wgresponse.safety
+    corridor_safe(a: LatLon, b: LatLon, depart_s: float, speed_mps: float,
+                  eroded_p10: Raster, cfg: ResponseConfig) -> CorridorVerdict
+    latest_departure_s(eta_p10_s: float, cfg: ResponseConfig) -> float
+    egress_ok(stop_loc: LatLon, depart_s: float, safe_zones: list[SafeZone],
+              eroded_p10: Raster, cfg: ResponseConfig) -> CorridorVerdict
+
+wgresponse.dispatch
+    plan(crews: list[Crew], jobs: list[DispatchJob], ens: dict[str, EnsembleArrival],
+         safe_zones: list[SafeZone], cfg: ResponseConfig, now_s: float,
+         incumbent: DispatchPlan | None = None) -> DispatchPlan
+
+wgresponse.travel
+    travel_time_s(a: LatLon, b: LatLon, cfg: ResponseConfig) -> float
+        # haversine * circuity * fire_traffic_factor / class speed (upgrade path: Valhalla/OSRM)
+
+wgresponse.notify
+    class Notifier protocol; SesNotifier(stub wiring), SmsNotifier(stub), LogNotifier
+
+wgresponse.sim
+    build_scenario(name, seed) -> Scenario ; run(scenario, hours, cfg) -> SimReport
+
+wgresponse.server
+    stdlib http server: POST /api/beacon, GET /api/state, GET /api/plan, GET /console
+    auth: X-Internal-API-Key (fail closed unless WGRESP_DEV_OPEN=1)
+
+wgresponse.persist   (Sprint 2, Council-1 OPS-4)
+    class StateStore(dir_path)  .save(alert_records, notified_ledger, incumbent_plan, meta)
+                                .load() -> restored dicts (or None when absent/corrupt: loud note)
+    # Alert/IMPACTED/notification state survives restart; restart re-fires NOTHING.
+    # AlertEngine exposes .restore(records) and .notified_ledger() seams for this.
+
+wgresponse.roads   (founder UX request 2026-07-10 — crews travel on real roads)
+    class RoadGraph — nodes {id: LatLon}, edges (u, v, highway_class, length_m,
+        speed_mps by class table with provenance); built from OSM (Overpass) once
+        per simulator location, cached dep-free at data/roads/<key>.wgr.
+    load_road_graph(key) -> RoadGraph | None ; save_road_graph(g, path)
+    route(g, a: LatLon, b: LatLon, cfg) -> RoadRoute(polyline: list[LatLon],
+        time_s, dist_m, on_roads: bool)
+        # nearest-node snap both ends + stdlib A*; when no graph or disconnected,
+        # falls back to the straight leg with tier-0 travel time and
+        # on_roads=False — NEVER silently pretends a road route.
+    # Division of authority: dispatch.plan keeps the calibrated tier-0 travel
+    # model (circuity x fire-traffic); simulator CREWS MOVE along RoadRoute
+    # polylines (ingress AND egress) and each tick re-plans from ACTUAL crew
+    # positions, so model-vs-road divergence self-corrects cycle to cycle. The
+    # per-tick SAFETY AUDIT judges ACTUAL times and remains authoritative.
+
+wgresponse.simui   (founder request 2026-07-09; docs/SIMULATOR_DESIGN.md is the spec)
+    class SimSession — interactive accelerated simulation over REAL engine paths
+    (ensemble_arrival / AlertEngine / dispatch.plan / corridor+egress safety; the
+    sim SAFETY AUDIT runs every tick and must stay at 0 violations).
+    .configure(location_key, n_clients, n_crews, seed, cfg_overrides)  # WUI placement
+    FOUNDER ROUND 3 (2026-07-10 pm) — five laws:
+    1. TIME SCRUB / HISTORY: the session records the FULL state snapshot of every
+       tick in a bounded ring (cfg.history_ticks, oldest evicted); .state_at(tick)
+       returns the recorded snapshot VERBATIM (read-only replay — byte-identical
+       to what was served live at that tick, so scrubbing back in time confirms
+       the run). Server: GET /api/sim/<id>/state?tick=k (404 when evicted/future);
+       state() gains history {first_tick, last_tick}. UI: a timeline slider scrubs
+       history; scrubbed view is READ-ONLY (a LIVE button returns to now; commands
+       while scrubbed are rejected 409, never silently applied to the past).
+       reset() clears history.
+    2. ROADS ADHERENCE: while a leg claims route_on_roads=true the crew's position
+       lies ON its route polyline; EVERY movement leg (staging->stop, stop->stop,
+       stop->egress, restage) consults the roads seam. Off-network endpoints join
+       the graph via explicit short SPUR segments (spur is the only straight part,
+       flagged spur=true in the polyline metadata); whole-leg chord fallback is
+       legal ONLY when no graph is loaded or the endpoint is beyond
+       cfg.road_spur_max_m from the network (loud note).
+    3. FULL UTILIZATION: a crew that completes its itinerary or its egress returns
+       to AVAILABLE (staged at its safe zone) and MUST be eligible for new work on
+       the next plan. No crew idles while a feasible pending job exists; the
+       planner exhausts eligible crews before leaving jobs unserved for capacity.
+    4. TRIAGE ('protect as many homes as possible'): cfg.dispatch_objective =
+       'homes' (default) | 'value'. 'homes' maximizes the COUNT of homes protected
+       (value only as tiebreak) and is explicitly allowed to SKIP or ABANDON a
+       planned-not-started job whose service would cost strictly more savable
+       homes elsewhere — unserved reason 'triaged'. Objective-side abandonment
+       NEVER weakens SAFETY SEMANTICS 2/3/7 (safety withdrawals keep their own
+       law and vocabulary).
+    5. GEL RING: every serviced client carries gel_applied=true + gelled_at_s in
+       state.clients[]; the UI renders a BLUE outer ring on gelled homes (the
+       job-done marker), persisting through later alert-state changes.
+    FOUNDER ROUND 4 (2026-07-10, from the live sim-7 Malibu review — docs/review/
+    {eta_gap,prioritization}_report.md):
+    6. EMBER / ADJACENCY THREAT (model gap): the surface-spread model can never
+       reach a home sitting ON a non-burnable (developed 91/93, water 98) cell, so
+       such homes get no ETA / no alert / no dispatch even when fire surrounds them
+       (~23% of sim clients; the founder's c34). spread.eta_at gains
+       fallback_radius_m: when a home's own cell is UNREACHED, it inherits the
+       earliest arrival among burnable cells within the radius (reuse geo.erode_min,
+       the corridor-erosion transform — preserves p10<=p50<=p90). Default 0.0 =
+       byte-identical (live product unchanged); the SIMULATOR sets
+       cfg.ember_threat_radius_m (~200 m) so fire-adjacent developed homes DO alert
+       and dispatch. Polarity: strictly MORE homes threatened = conservative.
+    7. DISPATCH URGENCY (homes mode) — RETIRED FROM THE OBJECTIVE (2026-07-10). An
+       urgency term was tried (score += w_urg*urgency(p50)) to protect sooner-to-burn
+       homes first, but two adversarial sweeps proved it SERVES FEWER TOTAL homes
+       under the realistic (physics-on) fire — the dynamic commitment loop makes
+       crews chase imminent homes and lose more overall (measured net −129). So
+       urgency is now OUT of the emitted homes objective: the count-maximal SET is
+       chosen urgency-blind (homes tiebreak = value only), making served(count)
+       BYTE-IDENTICAL for any dispatch_urgency_weight — urgency can never cost a
+       protected home. The at-risk-first ORDERING survives as an unwired utility
+       (dispatch._urgency_reorder, count-safe within a fixed set) but is NOT applied
+       to the emitted plan. cfg.dispatch_urgency_weight is therefore INERT in the
+       shipped planner (kept for the utility / experimentation). The SAFETY GATE
+       (P10 deadlines, corridors, slack) and 'value' mode are byte-identical.
+    FOUNDER ROUND 5 (2026-07-10): REGIONAL / MUTUAL-AID CREWS.
+    9. Crews come from THREE regions: SimSession.configure gains n_crews_1h and
+       n_crews_3h alongside n_crews (= the in-zone count). In-zone crews stage at
+       local safe zones and respond immediately (region='in_zone', available now).
+       Reinforcements are OUT OF REGION and MOBILIZE ON THE FIRST IGNITION (the
+       incident is what summons mutual aid): each becomes AVAILABLE at
+       first_ignition_s + delay, staged at a safe zone (region='reg_1h'/'reg_3h';
+       delays = cfg.crew_reinforce_1h_min=60 / crew_reinforce_3h_min=180 minutes).
+       Before arrival a reinforcement is status INBOUND with a live arrival
+       countdown, EXCLUDED from dispatch (an INBOUND crew is NOT an idle crew — the
+       full-utilization law 3 applies only to ARRIVED crews). Arrival is a pure
+       function of (ignition time + delay), so it is deterministic and time-scrub
+       replay is byte-identical. With no fire ignited, reinforcements stay in
+       region on standby (never needed). state.crews[i] gains: region, inbound
+       (bool), available_at_s (unix s | null until the first ignition sets the
+       mobilization clock), arrival_eta_s (seconds until arrival | null). The UI
+       shows INBOUND crews at the map edge toward their region with the countdown,
+       and flips them to active at arrival; the itinerary lists their ETA.
+    8. PER-CLIENT OUTCOME TAG: state.clients[i].outcome explains why each home is/
+       isn't protected, so the map is never arbitrary:
+         'saved'                  gelled, fire not yet arrived
+         'protected_then_impacted' gelled AND fire arrived (the intended GraphGel
+                                   outcome — protected, then faced the fire)
+         'abandoned_unsavable'    threatened but no feasible corridor/deadline from
+                                   ANY crew (correct triage of a too-close home)
+         'triaged'                deprioritized so crews could save more homes
+         'in_progress'/'pending'  a crew is or will be assigned
+         'not_threatened'         no ETA (fire not projected to reach it)
+       Surfaced in state.clients[] + a scoreboard breakdown; the UI colours/labels
+       each so 'abandoned_unsavable' reads as a deliberate call, not a miss.
+    FIRE ZONE (founder request 2026-07-10): sessions take fire_zone='standard'|
+    'extended'. standard = the 18x18 km tile; extended = data/tiles/<key>_ext.wgt
+    (~36-48 km, coarser cells) so ignition can sit tens of km from the homes and
+    the full 72h NOTICE -> WATCH -> 24h EXTREME arc plays out. CLIENTS ARE ALWAYS
+    PLACED IN THE CENTRAL ~18 km COMMUNITY WINDOW regardless of zone (the WUI
+    placement mask is the central subgrid on extended tiles); ignition may be
+    anywhere on the tile. Extended sessions default horizon_h to >=120 (a far
+    fire must stay inside the forecast horizon). Missing _ext tile -> loud note
+    + fall back to standard.
+    .ignite(loc, intensity) / .set_wind(dir_deg) / .set_buffer(egress_buffer_min)
+    .tick() -> state dict for the UI   (deterministic given seed + command script)
+    Five real-location tiles cached dep-free under data/tiles/ (LFPS-sourced).
+    STATE VISUAL CONTRACT (founder UX 2026-07-10; UI + backend build to this):
+      state.burned      = list of rings (list[list[[lat,lon]]]) — cells with p50
+                          arrival <= sim-now; GROWS tick over tick.
+      state.fire_bands  = {"h1": rings, "h5": rings, "h24": rings} — projection
+                          bands from the CURRENT p50 arrival raster at sim-now
+                          +1 h (render red), +5 h (orange), +24 h (yellow),
+                          recomputed EVERY tick so they advance with the fire.
+      crews[i].route_polyline / egress_polyline = list[[lat,lon]] road-following
+                          paths (roads.route; on_roads flag per leg), which the
+                          crew marker follows point-to-point between ticks.
+    cfg.egress_buffer_min is the user-explorable safety threshold; changing it
+    re-plans immediately. Served-count must be monotonically non-increasing in
+    the buffer (property-tested).
+
+wgresponse.cli
+    argparse subcommands: simulate | forecast | plan | serve | pull-feeds | watch | simui
+    # watch (Sprint 2, Council-1 OPS-3): the operator daemon — runs cycle() on
+    # cfg.poll_period_s cadence over a REQUIRED --aoi bbox/zones file, serves the
+    # console+state off the live loop, persists via wgresponse.persist, exposes
+    # last-cycle age + degraded on /healthz.
+============================================================================
+"""
+from __future__ import annotations
+
+import hashlib
+import math
+import random
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Callable, Iterable, Optional, Protocol, Sequence
+
+SCHEMA_VERSION = "0.1.0"
+UNREACHED = math.inf  # arrival-raster value for cells the fire never reaches
+
+
+# ---------------------------------------------------------------------------
+# Primitives
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class LatLon:
+    lat: float
+    lon: float
+
+    def __iter__(self):
+        yield self.lat
+        yield self.lon
+
+
+@dataclass(frozen=True)
+class BBox:
+    """west/south/east/north in degrees."""
+    west: float
+    south: float
+    east: float
+    north: float
+
+    def contains(self, p: LatLon) -> bool:
+        return self.south <= p.lat <= self.north and self.west <= p.lon <= self.east
+
+    def center(self) -> LatLon:
+        return LatLon((self.south + self.north) / 2.0, (self.west + self.east) / 2.0)
+
+
+@dataclass(frozen=True)
+class GridSpec:
+    """Row-major lattice; row 0 is the NORTH edge, col 0 is the WEST edge.
+
+    Cell (r, c) center latitude  = north_lat - (r + 0.5) * cell_m / M_PER_DEG_LAT
+    Cell (r, c) center longitude = west_lon + (c + 0.5) * cell_m / m_per_deg_lon(lat)
+    geo.py owns the exact index<->latlon math; every module uses geo's helpers.
+    """
+    north_lat: float
+    west_lon: float
+    cell_m: float
+    nrows: int
+    ncols: int
+
+
+class Raster:
+    """Flat row-major float grid bound to a GridSpec. Defined in contracts so every
+    module shares one shape; geo.py provides constructors/utilities."""
+
+    __slots__ = ("spec", "data")
+
+    def __init__(self, spec: GridSpec, data: Optional[list] = None, fill: float = 0.0):
+        self.spec = spec
+        n = spec.nrows * spec.ncols
+        if data is None:
+            self.data = [fill] * n
+        else:
+            if len(data) != n:
+                raise ValueError(f"raster data length {len(data)} != {n}")
+            self.data = data
+
+    def get(self, r: int, c: int) -> float:
+        return self.data[r * self.spec.ncols + c]
+
+    def set(self, r: int, c: int, v: float) -> None:
+        self.data[r * self.spec.ncols + c] = v
+
+
+# ---------------------------------------------------------------------------
+# Fire incidents (fused view over all feeds)
+# ---------------------------------------------------------------------------
+
+class IncidentSource(str, Enum):
+    WFIGS = "wfigs"
+    FIRIS = "firis"
+    CALFIRE = "calfire"
+    FIRMS = "firms"
+    WATCHDUTY = "watchduty"   # enterprise-licensed slot only; unofficial API is ToS-banned
+    MOCK = "mock"
+
+
+@dataclass
+class FireIncident:
+    incident_id: str                    # canonical: IRWIN id when known, else source-prefixed id
+    name: str
+    source: IncidentSource
+    origin: LatLon                      # point of origin / representative point
+    updated_at_s: float
+    discovered_at_s: Optional[float] = None
+    acreage: Optional[float] = None
+    containment_pct: Optional[float] = None
+    active: bool = True
+    perimeter: Optional[list] = None    # list[list[LatLon]] rings, outer first; None if points-only
+    hotspots: Optional[list] = None     # list[LatLon] (e.g. FIRMS detections), newest first
+    irwin_id: Optional[str] = None
+    source_ids: dict = field(default_factory=dict)   # source -> native id (fusion provenance)
+    meta: dict = field(default_factory=dict)
+
+    def ignition_points(self) -> list:
+        """Points the spread model seeds from: perimeter ring vertices if present,
+        else hotspots, else origin."""
+        if self.perimeter:
+            return [p for ring in self.perimeter for p in ring]
+        if self.hotspots:
+            return list(self.hotspots)
+        return [self.origin]
+
+
+class FireFeed(Protocol):
+    def fetch_active(self, bbox: Optional[BBox] = None) -> "list[FireIncident]": ...
+
+
+# ---------------------------------------------------------------------------
+# Weather
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class WeatherSample:
+    t_s: float
+    wind_speed_mps: float      # 10-m sustained (rothermel applies WAF internally)
+    wind_gust_mps: float
+    wind_dir_deg: float        # meteorological: blowing FROM
+    rh_pct: float
+    temp_c: float
+
+
+@dataclass
+class WeatherForecast:
+    loc: LatLon
+    samples: list                # list[WeatherSample], hourly, ascending t_s
+    source: str = "mock"
+
+    def at(self, t_s: float) -> WeatherSample:
+        """Nearest-hour lookup, clamped to the series ends. Series must be non-empty."""
+        s = self.samples
+        if not s:
+            raise ValueError("empty forecast")
+        if t_s <= s[0].t_s:
+            return s[0]
+        if t_s >= s[-1].t_s:
+            return s[-1]
+        # hourly cadence: index arithmetic, guard with local scan
+        i = min(int((t_s - s[0].t_s) // 3600.0), len(s) - 1)
+        best = min(range(max(0, i - 1), min(len(s), i + 2)), key=lambda k: abs(s[k].t_s - t_s))
+        return s[best]
+
+
+class WeatherProvider(Protocol):
+    def forecast(self, loc: LatLon, horizon_h: float) -> WeatherForecast: ...
+
+
+# ---------------------------------------------------------------------------
+# Terrain & fuel
+# ---------------------------------------------------------------------------
+
+@dataclass
+class FuelModel:
+    """Rothermel parameter set for one FBFM40 model (Scott & Burgan RMRS-GTR-153).
+    Loads in kg/m^2 (SI at the seam; rothermel.py converts internally as needed).
+    sav_* in 1/m. depth_m in meters. mx_dead is a FRACTION (0-1)."""
+    code: int
+    name: str
+    dynamic: bool                      # dynamic models transfer cured herb load to dead
+    load_1h_kgm2: float
+    load_10h_kgm2: float
+    load_100h_kgm2: float
+    load_live_herb_kgm2: float
+    load_live_woody_kgm2: float
+    sav_1h_1m: float
+    sav_live_herb_1m: float
+    sav_live_woody_1m: float
+    depth_m: float
+    mx_dead_frac: float
+    heat_kjkg: float = 18608.0         # 8000 BTU/lb default
+
+
+@dataclass
+class TerrainTile:
+    """Aligned rasters on one GridSpec. fuel holds FBFM40 integer codes as floats."""
+    spec: GridSpec
+    fuel: Raster
+    slope_deg: Raster
+    aspect_deg: Raster                 # downslope-facing compass direction
+    elev_m: Raster
+    source: str = "synthetic"
+
+
+class TerrainProvider(Protocol):
+    def tile(self, bbox: BBox, cell_m: float) -> TerrainTile: ...
+
+
+# ---------------------------------------------------------------------------
+# Spread outputs
+# ---------------------------------------------------------------------------
+
+@dataclass
+class RosResult:
+    ros_mps: float                     # head-fire surface rate of spread
+    effective_wind_mps: float          # for L/B ellipse
+    flame_length_m: float = 0.0
+    intensity_kwm: float = 0.0
+
+
+@dataclass
+class EnsembleArrival:
+    """Arrival rasters (unix s) for perturbed reruns + convenience quantile rasters.
+    p10 = EARLIEST/pessimistic arrival (10th percentile of arrival time)."""
+    spec: GridSpec
+    members: list                      # list[Raster]
+    p10: Raster
+    p50: Raster
+    p90: Raster
+    t0_s: float
+    incident_id: str = ""
+
+
+@dataclass
+class ThreatEta:
+    """Per-location arrival estimate. Values are ABSOLUTE unix seconds; UNREACHED=inf."""
+    eta_p10_s: float
+    eta_p50_s: float
+    eta_p90_s: float
+
+    def hours_out(self, now_s: float) -> tuple:
+        f = lambda t: UNREACHED if t == UNREACHED else max(0.0, (t - now_s) / 3600.0)
+        return (f(self.eta_p10_s), f(self.eta_p50_s), f(self.eta_p90_s))
+
+
+# ---------------------------------------------------------------------------
+# Clients, crews, safe zones
+# ---------------------------------------------------------------------------
+
+@dataclass
+class ClientProperty:
+    client_id: str
+    loc: LatLon
+    address: str = ""
+    name: str = ""
+    value_usd: float = 1_000_000.0
+    graphgel_enrolled: bool = True
+    priority_weight: float = 1.0       # contract tier / strategic weight, >= 0
+    contact_email: str = ""
+    contact_phone: str = ""
+
+
+class ClientRegistry(Protocol):
+    def protected_clients(self, bbox: Optional[BBox] = None) -> "list[ClientProperty]": ...
+
+
+class CrewStatus(str, Enum):
+    AVAILABLE = "available"
+    EN_ROUTE = "en_route"
+    DEPLOYING = "deploying"
+    EGRESSING = "egressing"
+    OFF_DUTY = "off_duty"
+    UNKNOWN = "unknown"
+    INBOUND = "inbound"      # out-of-region reinforcement mobilizing; not yet arrived / not dispatch-eligible
+
+
+@dataclass(frozen=True)
+class CrewBeacon:
+    crew_id: str
+    loc: LatLon
+    t_s: float
+    status: CrewStatus = CrewStatus.AVAILABLE
+    accuracy_m: float = 30.0
+    speed_mps: float = 0.0
+
+
+@dataclass
+class Crew:
+    crew_id: str
+    name: str = ""
+    status: CrewStatus = CrewStatus.UNKNOWN
+    last_beacon: Optional[CrewBeacon] = None
+    home_base: Optional[LatLon] = None
+    members: int = 2
+
+    def loc(self) -> Optional[LatLon]:
+        return self.last_beacon.loc if self.last_beacon else self.home_base
+
+
+@dataclass(frozen=True)
+class SafeZone:
+    zone_id: str
+    loc: LatLon
+    name: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Alerts
+# ---------------------------------------------------------------------------
+
+class AlertState(str, Enum):
+    NONE = "none"
+    NOTICE_72H = "notice_72h"
+    WATCH = "watch"
+    EXTREME_24H = "extreme_24h"
+    CLEARED = "cleared"
+    IMPACTED = "impacted"
+
+
+# Legal ladder transitions; AlertEngine must reject anything else.
+ALERT_TRANSITIONS = {
+    AlertState.NONE:        {AlertState.NOTICE_72H, AlertState.EXTREME_24H},
+    AlertState.NOTICE_72H:  {AlertState.WATCH, AlertState.EXTREME_24H, AlertState.CLEARED},
+    AlertState.WATCH:       {AlertState.EXTREME_24H, AlertState.CLEARED},
+    AlertState.EXTREME_24H: {AlertState.WATCH, AlertState.CLEARED, AlertState.IMPACTED},
+    AlertState.CLEARED:     {AlertState.NOTICE_72H, AlertState.EXTREME_24H},
+    AlertState.IMPACTED:    set(),
+}
+
+
+@dataclass
+class ThreatAssessment:
+    client_id: str
+    incident_id: str
+    eta: ThreatEta
+    computed_at_s: float
+
+
+@dataclass
+class AlertRecord:
+    client_id: str
+    incident_id: str
+    state: AlertState = AlertState.NONE
+    entered_at_s: float = 0.0
+    last_eval_s: float = 0.0
+    clear_streak: int = 0
+    blind_cycles: int = 0             # consecutive cycles with NO assessment (SAFETY SEMANTICS 6)
+    history: list = field(default_factory=list)   # list[(t_s, AlertState)]
+
+
+@dataclass(frozen=True)
+class OperatorEvent:
+    """Operator-facing degradation/ops alarm (SAFETY SEMANTICS 6). Never sent to
+    clients; surfaced on CycleResult.operator_events, /api/state, and the console."""
+    t_s: float
+    kind: str                          # 'degraded' | 'feed_blind' | 'provider_error' | 'recovered'
+    message: str
+    incident_id: str = ""
+    detail: dict = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class AlertEvent:
+    t_s: float
+    client_id: str
+    incident_id: str
+    prev: AlertState
+    state: AlertState
+    eta_p50_h: float
+    eta_p10_h: float
+    message: str = ""
+
+
+class Notifier(Protocol):
+    def send(self, event: AlertEvent, client: ClientProperty) -> bool: ...
+
+
+# ---------------------------------------------------------------------------
+# Dispatch
+# ---------------------------------------------------------------------------
+
+@dataclass
+class DispatchJob:
+    """One protected property needing gel before a fire arrives."""
+    client: ClientProperty
+    incident_id: str
+    eta: ThreatEta
+    # Derived at plan time (safety.py owns the math; stored for explainability):
+    latest_depart_s: float = 0.0
+    latest_service_start_s: float = 0.0
+    earliest_useful_start_s: float = 0.0     # gel-window opening (p50 - gel window)
+
+
+@dataclass
+class PlannedStop:
+    client_id: str
+    incident_id: str
+    arrive_s: float
+    service_start_s: float
+    depart_s: float
+    latest_depart_s: float
+    margin_h: float                    # (latest_depart - depart) in hours; >= 0 iff feasible
+    gel_fresh_frac: float = 1.0        # projected gel effectiveness remaining at fire arrival
+
+
+@dataclass
+class CrewPlan:
+    crew_id: str
+    stops: list = field(default_factory=list)          # list[PlannedStop]
+    egress_zone_id: str = ""
+    committed_until_s: float = 0.0                     # stops starting before this are frozen
+
+
+@dataclass
+class UnservedJob:
+    client_id: str
+    incident_id: str
+    reason: str                        # "infeasible_deadline" | "no_safe_corridor" | "capacity" | ...
+
+
+@dataclass
+class DispatchPlan:
+    computed_at_s: float
+    plans: dict = field(default_factory=dict)          # crew_id -> CrewPlan
+    unserved: list = field(default_factory=list)       # list[UnservedJob]
+    objective: float = 0.0
+    objective_breakdown: dict = field(default_factory=dict)
+    churn_from_incumbent: float = 0.0
+
+
+@dataclass
+class CorridorVerdict:
+    safe: bool
+    reason: str = ""
+    worst_margin_h: float = UNREACHED  # min(arrival - pass_time) along the leg, hours
+
+
+# ---------------------------------------------------------------------------
+# Orchestration outputs
+# ---------------------------------------------------------------------------
+
+@dataclass
+class CycleResult:
+    t_s: float
+    incidents: list = field(default_factory=list)      # list[FireIncident]
+    assessments: list = field(default_factory=list)    # list[ThreatAssessment]
+    events: list = field(default_factory=list)         # list[AlertEvent]
+    plan: Optional[DispatchPlan] = None
+    ensembles: dict = field(default_factory=dict)      # incident_id -> EnsembleArrival
+    notes: list = field(default_factory=list)
+    operator_events: list = field(default_factory=list)  # list[OperatorEvent] (SAFETY SEMANTICS 6)
+    degraded: bool = False             # True when any provider was blind/failed this cycle
+
+
+# ---------------------------------------------------------------------------
+# Config (every tunable lives here; nothing hardcodes these)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class ResponseConfig:
+    # --- alert ladder ---
+    notice_h: float = 72.0             # first advance notice (3 days), on P50
+    extreme_h: float = 24.0            # extreme alert, on P50
+    extreme_p10_h: float = 12.0        # extreme also if pessimistic arrival within this
+    clear_cycles: int = 2              # consecutive clear evals to downgrade
+    clear_margin_h: float = 6.0        # headroom beyond threshold to count as clear
+    # --- crew safety (user-specified operational rules) ---
+    deploy_min: float = 30.0           # gel application time on site
+    egress_buffer_min: float = 30.0    # crew clear of property before P10 arrival
+    route_margin_min: float = 60.0     # corridor sample margin
+    corridor_erosion_m: float = 500.0  # erosion radius on P10 grid for corridor checks
+    corridor_sample_m: float = 300.0
+    ember_buffer_min: float = 0.0      # extra safety on top of P10 (default-OFF; enable in wind events)
+    # --- gel product parameters (UNVERIFIED — pending supplier data) ---
+    gel_window_h: float = 72.0         # operational window after application (outer weathering/wash-off horizon still UNVERIFIED)
+    gel_full_strength_h: float = 72.0  # == gel_window_h: GraphGel is Class A at 1/8" DRY — flat effectiveness, no decay ramp (product data 2026-07-11)
+    gel_effectiveness: float = 0.85    # P(save) multiplier (PLACEHOLDER — Class A rating is not a survival probability)
+    gel_env_model_enabled: bool = False  # wgdefense-style temp/RH/wind-scaled coating life
+    # --- travel ---
+    circuity: float = 1.35
+    fire_traffic_factor: float = 1.4
+    road_speed_mps: float = 17.9       # ~40 mph blended class speed
+    # --- spread / forecast ---
+    horizon_h: float = 96.0
+    ensemble_n: int = 6                # perturbed members (+1 nominal)
+    wind_perturb_frac: float = 0.25    # +/- scale at max lead; grows with lead time
+    moisture_perturb_frac: float = 0.20
+    spotting_enabled: bool = False     # Sardoy lognormal, default OFF
+    grid_cell_m: float = 90.0
+    grid_max_cells: int = 300_000      # coarsen above this
+    live_herb_frac: float = 0.30       # cured fire-season default
+    live_woody_frac: float = 0.60
+    # --- dispatch ---
+    replan_period_s: float = 900.0
+    commitment_horizon_min: float = 20.0
+    churn_penalty_frac: float = 0.05
+    adoption_threshold_frac: float = 0.03
+    solver_budget_s: float = 5.0
+    ils_iterations: int = 30
+    # --- crew tracking ---
+    beacon_stale_s: float = 600.0
+    # --- feeds ---
+    poll_period_s: float = 300.0
+    user_agent: str = "wg-response/0.1 (ops@thewildfireguardian.com)"
+    # --- Sprint 2 (Council-1 remediations) ---
+    slack_min: float = 15.0            # planned-slack floor per stop (SAFETY SEMANTICS 7)
+    blind_alarm_cycles: int = 1        # unassessed cycles before OperatorEvent('degraded')
+    registry_ttl_s: float = 300.0      # client-registry cache TTL (kills per-incident re-scans)
+    dir_perturb_deg: float = 30.0      # ensemble wind-direction perturbation at max lead (model F2)
+    dispatch_objective: str = "homes"  # 'homes' = max count (founder triage law) | 'value' = legacy $-weighted
+    dispatch_urgency_weight: float = 0.30   # INERT in the shipped planner (urgency retired from the objective — SEMANTICS 7; kept for the _urgency_reorder utility)
+    dispatch_value_weight: float = 0.05     # homes-mode value tiebreak (< urgency; count stays primary)
+    # COAT-EARLY (2026-07-11 founder dispatch loop): emit-time gel-freshness
+    # late-shift polish. Default True = shipped behavior (coat as late as safe for
+    # freshest gel). False = coat as early as feasible, freeing crews sooner for
+    # more homes — a sweep-proven robust +~1% homes-protected across 8 crew/client
+    # ratios x 5 maps x winds x intensities, 0 safety violations, gel freshness at
+    # arrival neutral (late-shift rarely binds under the p10 safety cap). Two other
+    # levers (at-risk-first EMIT ordering; an urgency OBJECTIVE tiebreak) were
+    # measured and REJECTED — both overfit one crew/client ratio and lost homes
+    # out-of-sample (the round-4 urgency-in-the-objective lesson, re-confirmed).
+    dispatch_late_shift: bool = True
+    ember_threat_radius_m: float = 0.0      # eta_at adjacency fallback for developed-cell homes (0 = off/byte-identical; sim sets ~200)
+    crew_reinforce_1h_min: float = 60.0     # out-of-region '1h away' crews arrive this many min after first ignition (SEMANTICS 9)
+    crew_reinforce_3h_min: float = 180.0    # out-of-region '3h away' crews arrive this many min after first ignition (SEMANTICS 9)
+    grass_ros_floor_frac: float = 0.0       # sim-only grass head-ROS floor = frac*U10 (Cruz-Alexander; 0=off/live-identical; sim ~0.10 GR/0.07 GS)
+    history_ticks: int = 600           # simulator state-snapshot ring size (time-scrub replay)
+    road_spur_max_m: float = 2000.0    # max off-network spur; beyond -> loud straight-leg fallback
+    incident_stale_h: float = 168.0    # exclude incidents staler than this from alerting (SAFETY SEMANTICS 9)
+    containment_gate_enabled: bool = False   # WATCH ceiling for contained fires (SAFETY SEMANTICS 8, default OFF)
+    containment_watch_ceiling_pct: float = 90.0
+    containment_no_growth_h: float = 48.0
+
+
+# ---------------------------------------------------------------------------
+# Deterministic RNG (wgdefense convention)
+# ---------------------------------------------------------------------------
+
+def seeded_rng(*seed_parts: object) -> random.Random:
+    """Deterministic RNG from explicit seed strings. Never seed from wall-clock."""
+    h = hashlib.sha256("|".join(str(p) for p in seed_parts).encode("utf-8")).digest()
+    return random.Random(int.from_bytes(h[:8], "big"))
+
+
+# ---------------------------------------------------------------------------
+# Conformance helpers (used by tests)
+# ---------------------------------------------------------------------------
+
+def assert_valid_transition(prev: AlertState, new: AlertState) -> None:
+    if new != prev and new not in ALERT_TRANSITIONS[prev]:
+        raise ValueError(f"illegal alert transition {prev.value} -> {new.value}")
+
+
+def validate_config(cfg: ResponseConfig) -> "list[str]":
+    """Return a list of human-readable config problems (empty = valid)."""
+    problems = []
+    if cfg.extreme_h >= cfg.notice_h:
+        problems.append("extreme_h must be < notice_h")
+    if cfg.deploy_min <= 0 or cfg.egress_buffer_min < 0:
+        problems.append("deploy_min must be > 0 and egress_buffer_min >= 0")
+    if cfg.gel_window_h <= 0:
+        problems.append("gel_window_h must be > 0")
+    if cfg.ensemble_n < 1:
+        problems.append("ensemble_n must be >= 1")
+    if cfg.grid_cell_m < 30.0:
+        problems.append("grid_cell_m below LANDFIRE native 30 m is fabricated precision")
+    return problems

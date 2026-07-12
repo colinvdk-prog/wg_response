@@ -1,0 +1,184 @@
+[
+ {
+  "incident_id": "69dd692f-9d85-4d69-91e9-ab82aeb5aeb5",
+  "name": "3-1 PIT",
+  "lat": 40.948838288544295,
+  "lon": -121.26851345578423,
+  "age_h": 18.93,
+  "acreage": 1055.0,
+  "containment": 20.0,
+  "sources": [
+   "firis",
+   "wfigs"
+  ]
+ },
+ {
+  "incident_id": "53ad78e1-0926-492a-97e4-068554a3b309",
+  "name": "VOLCANO",
+  "lat": 33.5305416953137,
+  "lon": -117.2984662578145,
+  "age_h": 19.01,
+  "acreage": 143.61,
+  "containment": null,
+  "sources": [
+   "firis",
+   "wfigs"
+  ]
+ },
+ {
+  "incident_id": "firis:200",
+  "name": "CA-MMU-Van",
+  "lat": 37.316078858826785,
+  "lon": -120.05851789272907,
+  "age_h": 20.56,
+  "acreage": 1107.8054384099773,
+  "containment": null,
+  "sources": [
+   "firis"
+  ]
+ },
+ {
+  "incident_id": "9e36ffee-bede-4738-b90f-2f72fc4949fd",
+  "name": "Grapevine",
+  "lat": 37.38084947746172,
+  "lon": -114.30471379941834,
+  "age_h": 21.06,
+  "acreage": 26464.0,
+  "containment": 99.0,
+  "sources": [
+   "wfigs"
+  ]
+ },
+ {
+  "incident_id": "326a860d-0c59-4691-a3f8-7fafd14c4cb9",
+  "name": "Dry Canyon",
+  "lat": 38.00545556020198,
+  "lon": -114.13871183626027,
+  "age_h": 21.23,
+  "acreage": 1651.0,
+  "containment": 95.0,
+  "sources": [
+   "wfigs"
+  ]
+ },
+ {
+  "incident_id": "6ce01911-1146-4307-aac9-12809b77cc22",
+  "name": "Kane Springs",
+  "lat": 37.28449844437815,
+  "lon": -114.63036285018195,
+  "age_h": 21.28,
+  "acreage": 17042.0,
+  "containment": 95.0,
+  "sources": [
+   "wfigs"
+  ]
+ },
+ {
+  "incident_id": "0f38d49e-85bb-4284-932a-f7e57a2aaa25",
+  "name": "Parsnip Peak",
+  "lat": 38.08333855816987,
+  "lon": -114.29301187417697,
+  "age_h": 21.41,
+  "acreage": 2264.0,
+  "containment": 85.0,
+  "sources": [
+   "wfigs"
+  ]
+ },
+ {
+  "incident_id": "b631db36-4641-45d1-a1fe-bcb81d4a38d8",
+  "name": "Pinenut",
+  "lat": 39.34842229655674,
+  "lon": -119.53889595544203,
+  "age_h": 24.86,
+  "acreage": 5.0,
+  "containment": null,
+  "sources": [
+   "wfigs"
+  ]
+ },
+ {
+  "incident_id": "firis:197",
+  "name": "CA-HIA-Milepost16",
+  "lat": 41.11806652493123,
+  "lon": -123.68699670009885,
+  "age_h": 25.18,
+  "acreage": 9.871111737674404,
+  "containment": null,
+  "sources": [
+   "firis"
+  ]
+ },
+ {
+  "incident_id": "firis:198",
+  "name": "3DASH1",
+  "lat": 40.944184714286514,
+  "lon": -121.24442614285915,
+  "age_h": 25.24,
+  "acreage": 1054.77,
+  "containment": null,
+  "sources": [
+   "firis"
+  ]
+ },
+ {
+  "incident_id": "firis:196",
+  "name": "CA-HAI-Milepost16",
+  "lat": 41.11806652493123,
+  "lon": -123.68699670009885,
+  "age_h": 25.7,
+  "acreage": 9.871111737674404,
+  "containment": null,
+  "sources": [
+   "firis"
+  ]
+ },
+ {
+  "incident_id": "firis:195",
+  "name": "CA-RRU-VOLCANO-N50X",
+  "lat": 33.52994515923804,
+  "lon": -117.29854910423883,
+  "age_h": 39.9,
+  "acreage": 137.36466699326223,
+  "containment": null,
+  "sources": [
+   "firis"
+  ]
+ },
+ {
+  "incident_id": "firis:194",
+  "name": "CA-LMU-3dash1",
+  "lat": 40.9441845891378,
+  "lon": -121.24442608711914,
+  "age_h": 42.71,
+  "acreage": 712.994378274345,
+  "containment": null,
+  "sources": [
+   "firis"
+  ]
+ },
+ {
+  "incident_id": "firis:193",
+  "name": "CA-SLU-BEAR-N57B",
+  "lat": 35.29961586817132,
+  "lon": -119.87742621735075,
+  "age_h": 43.45,
+  "acreage": 542.7955615172905,
+  "containment": null,
+  "sources": [
+   "firis"
+  ]
+ },
+ {
+  "incident_id": "firis:192",
+  "name": "CA-RRU-VOLCANO-N57B",
+  "lat": 33.528109392126986,
+  "lon": -117.29881232419706,
+  "age_h": 44.59,
+  "acreage": 77.74068008117041,
+  "containment": null,
+  "sources": [
+   "firis"
+  ]
+ }
+]

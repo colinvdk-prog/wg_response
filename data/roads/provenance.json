@@ -1,0 +1,106 @@
+{
+  "highway_regex": "^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|service)$",
+  "locations": {
+    "boulder_co": {
+      "bbox_wsen": [
+        -105.277614,
+        39.874061,
+        -105.052386,
+        40.035939
+      ],
+      "checked_utc": "2026-07-10T12:54:21Z",
+      "fetched_utc": "2026-07-10T12:47:31Z",
+      "name": "Boulder / Superior, CO",
+      "status": "cached",
+      "summary": {
+        "edges": 44644,
+        "fetch_seconds": 17.7,
+        "file_kb": 3533.1,
+        "largest_component_node_pct": 99.21,
+        "nodes": 33459,
+        "ways_fetched": 26244
+      }
+    },
+    "malibu_ca": {
+      "bbox_wsen": [
+        -118.8473,
+        33.974061,
+        -118.622307,
+        34.15949
+      ],
+      "checked_utc": "2026-07-10T12:54:21Z",
+      "fetched_utc": "2026-07-10T12:48:37Z",
+      "name": "Malibu / Santa Monica Mtns, CA",
+      "status": "cached",
+      "summary": {
+        "edges": 16356,
+        "fetch_seconds": 16.6,
+        "file_kb": 1799.3,
+        "largest_component_node_pct": 98.85,
+        "nodes": 13440,
+        "ways_fetched": 10016
+      }
+    },
+    "paradise_ca": {
+      "bbox_wsen": [
+        -121.722535,
+        39.67151,
+        -121.494688,
+        39.855939
+      ],
+      "checked_utc": "2026-07-10T12:54:21Z",
+      "fetched_utc": "2026-07-10T12:48:51Z",
+      "name": "Paradise / Magalia, CA",
+      "status": "cached",
+      "summary": {
+        "edges": 5137,
+        "fetch_seconds": 5.8,
+        "file_kb": 726.9,
+        "largest_component_node_pct": 95.97,
+        "nodes": 4429,
+        "ways_fetched": 2723
+      }
+    },
+    "park_city_ut": {
+      "bbox_wsen": [
+        -111.674809,
+        40.63251,
+        -111.443207,
+        40.800939
+      ],
+      "checked_utc": "2026-07-10T12:54:21Z",
+      "fetched_utc": "2026-07-10T12:49:49Z",
+      "name": "Park City / Summit Park, UT",
+      "status": "cached",
+      "summary": {
+        "edges": 9210,
+        "fetch_seconds": 11.6,
+        "file_kb": 1178.7,
+        "largest_component_node_pct": 92.08,
+        "nodes": 7554,
+        "ways_fetched": 5570
+      }
+    },
+    "santa_rosa_ca": {
+      "bbox_wsen": [
+        -122.787244,
+        38.419061,
+        -122.546578,
+        38.580939
+      ],
+      "checked_utc": "2026-07-10T12:54:21Z",
+      "fetched_utc": "2026-07-10T12:50:44Z",
+      "name": "Santa Rosa NE / Mark West, CA",
+      "status": "cached",
+      "summary": {
+        "edges": 29731,
+        "fetch_seconds": 8.8,
+        "file_kb": 2607.4,
+        "largest_component_node_pct": 99.13,
+        "nodes": 24184,
+        "ways_fetched": 16710
+      }
+    }
+  },
+  "source": "overpass-api.de (OpenStreetMap, ODbL)"
+}

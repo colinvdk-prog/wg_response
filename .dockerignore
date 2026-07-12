@@ -1,0 +1,20 @@
+# Keep the simulator image small — exclude everything the runtime doesn't need.
+.git/
+.github/
+tests/
+scratch_review/
+bench/
+tools/
+out/
+state/
+state_soak24/
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.grok-media/
+docs/research/
+docs/review/
+docs/calibration/
+docs/img/
+*.log

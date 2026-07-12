@@ -1,0 +1,21 @@
+# wgresponse — dependency policy (Sprint 2 ticket C3c)
+#
+# CORE IS STDLIB ONLY. The engine, the full test suite, the simulator, the
+# CLI, the ops console/server, and cached/synthetic terrain run on a bare
+# Python 3.10+ install; the only development dependency is pytest
+# (`py -3 -m pip install pytest`). NOTHING below is required for any of that.
+#
+# [live] extras — needed only when specific LIVE paths are exercised:
+#
+# LfpsTerrain fresh-GeoTIFF decode (live LANDFIRE tiles). Real LFPS GeoTIFFs
+# are LZW-compressed, so tifffile alone cannot decode them (measured live:
+# ops review OPS-2) — all three are required together. LfpsTerrain probes
+# these BEFORE submitting an LFPS job and raises a RuntimeError naming this
+# exact install when any is missing; cached tiles need none of them.
+tifffile
+numpy
+imagecodecs
+
+# DynamoClientRegistry live table scans (wg-consumer-profiles). Imported
+# lazily; tests inject scan_fn and never need it.
+boto3

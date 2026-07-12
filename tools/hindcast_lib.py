@@ -1,0 +1,1259 @@
+"""hindcast_lib — pure logic for the Sprint-2 D1 hindcast + quantile-calibration
+harness (Council-1 model F3+F8). See tools/hindcast_harness.py for the CLI and
+the (live, read-only) fetch layer; everything in THIS module is deterministic,
+network-free, and unit-tested by tests/test_hindcast.py.
+
+What the harness measures
+=========================
+1. HINDCAST REPLAY: seed the shipped engine (spread.ensemble_arrival, default
+   ResponseConfig, perimeter-interior seeding path) with an observed WFIGS
+   perimeter snapshot T0 + observed (reanalysis) weather, run it forward, and
+   score the predicted arrival-time quantile field against the NEXT observed
+   perimeter T1. Because a perimeter pair only brackets each newly-burned
+   cell's true burn time inside (T0, T1], every coverage statistic is reported
+   as a CERTAIN/POSSIBLE bound pair, never a point estimate — the honest-
+   numbers discipline.
+2. LANDMARK ANCHORS (offline): parameterized Tubbs-run and Camp-growth
+   scenario checks of the engine's core GR2/SH-mix ROS against the documented
+   observed rates (docs/review/model_fidelity_review.md F3 measured the
+   point-ROS ratio at ~0.47x observed Tubbs on Santa Ana grass).
+
+Data sources (fetch layer; documented here because the URL builders live here)
+==============================================================================
+- WFIGS *Daily* fire perimeters: NIFC ArcGIS `WFIGS_Daily_Perimeters_Public`
+  FeatureServer layer 0 — researched live 2026-07-09: unlike the CURRENT /
+  YearToDate / InterAgencyFirePerimeterHistory layers (one latest/final
+  polygon per fire), the Daily layer keeps EVERY published capture as its own
+  row (measured up to 110 rows per IRWIN id), keyed by `poly_PolygonDateTime`
+  (epoch ms). This is the perimeter TIME SERIES the ticket needs.
+  Licensing: NIFC/WFIGS open data (public domain, keyless); server is Esri
+  ArcGIS Online — read-only queries, modest volume, User-Agent sent.
+- Observed weather: Open-Meteo HISTORICAL archive API
+  (archive-api.open-meteo.com, keyless, ERA5-family reanalysis) at the fire
+  centroid. LICENSING NOTE (mirrors wgresponse.weather.OpenMeteoWeather): the
+  free tier is NON-COMMERCIAL ONLY and the data is CC-BY-4.0. This harness is
+  an offline R&D calibration study, not the shipped product loop; any
+  production/commercial use requires the paid tier or self-hosting.
+- Terrain/fuel: LANDFIRE LFPS (lfps.usgs.gov, keyless, public domain) via the
+  engine's own wgresponse.terrain.LfpsTerrain with a disk cache, so each
+  incident tile is fetched exactly once. LF2024_FBFM40 fuels predate the
+  replayed 2025 fires (pre-fire landscape — correct for hindcasting).
+
+Units per contracts law: unix seconds `_s`, meters `_m`, m/s, compass degrees
+(wind FROM), Celsius, percent RH. Grids row-major, row 0 = north.
+"""
+from __future__ import annotations
+
+import json
+import math
+import urllib.parse
+from dataclasses import dataclass, field, replace
+from datetime import datetime, timezone
+
+from wgresponse import geo, rothermel, spread
+from wgresponse.contracts import (
+    BBox,
+    GridSpec,
+    LatLon,
+    Raster,
+    ResponseConfig,
+    TerrainTile,
+    UNREACHED,
+    WeatherForecast,
+    WeatherSample,
+)
+from wgresponse.fuels import FUEL_TABLE, dead_fuel_moisture_frac, is_burnable
+
+# ---------------------------------------------------------------------------
+# Endpoints (fetch layer uses these; pinned here so tests can pin the URLs)
+# ---------------------------------------------------------------------------
+
+DAILY_PERIMETERS_URL = (
+    "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/"
+    "WFIGS_Daily_Perimeters_Public/FeatureServer/0/query")
+
+# NON-COMMERCIAL free tier — see the module-docstring licensing note.
+ARCHIVE_WEATHER_URL = "https://archive-api.open-meteo.com/v1/archive"
+
+_ARCHIVE_HOURLY = ("temperature_2m,relative_humidity_2m,wind_speed_10m,"
+                   "wind_direction_10m,wind_gusts_10m")
+
+# Perimeter rings are subsampled to <= this many vertices before being handed
+# to spread — the SAME law threat.py applies to live feed perimeters
+# (contracts: "rings subsampled <= 200 vertices upstream").
+MAX_RING_VERTS = 200
+# Snapshot rings are STORED at a finer cap so the T1 scoring mask keeps more
+# boundary fidelity than the engine seed needs (engine gets MAX_RING_VERTS).
+STORE_RING_VERTS = 400
+
+_MS_EPOCH_CUTOFF = 1e11          # epoch ms vs s discriminator (feeds law)
+
+
+# ---------------------------------------------------------------------------
+# Shapes
+# ---------------------------------------------------------------------------
+
+@dataclass
+class PerimeterSnapshot:
+    """One observed perimeter capture: rings (list[list[LatLon]], outer rings
+    and holes mixed — even-odd rule applies) at capture time t_s (unix s)."""
+    t_s: float
+    rings: list
+    acres: float = 0.0
+    oids: list = field(default_factory=list)   # source OBJECTIDs (provenance)
+
+
+@dataclass
+class HindcastIncident:
+    irwin: str
+    name: str
+    snapshots: list = field(default_factory=list)   # PerimeterSnapshot, by t_s
+    max_acres: float = 0.0
+
+
+@dataclass
+class PairMetrics:
+    """Scores for one (T0 -> T1) replay. All cell counts are cells of the
+    replay grid; areas derive from cell_m^2. Coverage semantics (interval-
+    censored observation — the true burn time of a newly-burned cell is only
+    known to lie in (T0, T1]):
+      covered_certain   [p10,p90] contains ALL of [T0,T1]  (true time surely in band)
+      covered_possible  [p10,p90] intersects [T0,T1]       (true time may be in band)
+      late_miss         p10 > T1   (band entirely after the window — engine
+                        definitively LATE for that cell; the dangerous polarity)
+      early_miss        p90 < T0   (band entirely before the window)
+      never_reached     p10 = inf  (no pessimistic arrival within the horizon
+                        at all — counted inside late_miss as its worst case)
+    """
+    incident: str = ""
+    name: str = ""
+    t0_s: float = 0.0
+    t1_s: float = 0.0
+    dt_h: float = 0.0
+    cell_m: float = 0.0
+    label: str = "default"          # config variant label
+    n_new: int = 0                  # newly-burned cells (observed growth)
+    n_new_burnable: int = 0         # ... with a burnable FBFM40 code (scored)
+    n_new_nonburnable: int = 0      # ... LANDFIRE non-burnable (urban/etc.; unscorable)
+    covered_certain: int = 0
+    covered_possible: int = 0
+    late_miss: int = 0
+    early_miss: int = 0
+    never_reached: int = 0
+    p90_unreached: int = 0          # p90 = inf: 'covered' only because the band
+                                    # stretches to infinity — reported, not hidden
+    p50_in_window: int = 0
+    p10_not_after_window: int = 0   # p10 <= T1: NECESSARY for p10 <= true time
+    p10_before_window: int = 0      # p10 <= T0: SUFFICIENT for p10 <= true time
+    pit_hist: list = field(default_factory=list)    # PIT bins (approx, midpoint)
+    obs_head_m: float = 0.0
+    head_m_p50: float = 0.0
+    head_m_p10: float = 0.0
+    head_m_nominal: float = 0.0
+    obs_new_area_ac: float = 0.0
+    modeled_new_area_ac_p50: float = 0.0
+    by_fuel_class: dict = field(default_factory=dict)  # class -> {n, late, cert, poss}
+    notes: list = field(default_factory=list)
+
+    # -- derived, guarded against n=0 --
+    def frac(self, count: int) -> float:
+        return count / self.n_new_burnable if self.n_new_burnable else 0.0
+
+    def head_ratio_p50(self) -> float:
+        return self.head_m_p50 / self.obs_head_m if self.obs_head_m > 0 else 0.0
+
+    def head_ratio_p10(self) -> float:
+        return self.head_m_p10 / self.obs_head_m if self.obs_head_m > 0 else 0.0
+
+    def area_ratio_p50(self) -> float:
+        return (self.modeled_new_area_ac_p50 / self.obs_new_area_ac
+                if self.obs_new_area_ac > 0 else 0.0)
+
+
+@dataclass
+class AnchorResult:
+    """One landmark-anchor scenario outcome. ratio = engine / observed —
+    < 1 means the engine is SLOWER than the historical fire (LATE polarity)."""
+    anchor: str                     # 'tubbs' | 'camp'
+    fuel_label: str                 # 'GR2' | 'SH5' | 'GR2/SH5 mix'
+    spotting: bool
+    metric: str                     # e.g. 'head km/h over 3 h'
+    observed: float
+    engine: float
+    ratio: float
+    point_ros_kmh: float = 0.0      # single-cell Rothermel head ROS (no grid)
+    notes: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Small helpers (mirrors of engine laws, kept dependency-light)
+# ---------------------------------------------------------------------------
+
+def parse_iso8601_s(s: str) -> float:
+    """ISO-8601 timestamp -> unix seconds; naive treated as UTC ('Z' ok)."""
+    s = s.strip()
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    dt = datetime.fromisoformat(s)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.timestamp()
+
+
+def epoch_s(v) -> float:
+    """ArcGIS epoch (ms or s) -> unix seconds. Raises on None."""
+    f = float(v)
+    return f / 1000.0 if f > _MS_EPOCH_CUTOFF else f
+
+
+def subsample_ring(ring: list, max_verts: int = MAX_RING_VERTS) -> list:
+    """Every ceil(n/max_verts)-th vertex, first kept — the same subsample law
+    wgresponse.threat applies to live perimeters before seeding spread."""
+    n = len(ring)
+    if n <= max_verts:
+        return list(ring)
+    step = -(-n // max_verts)
+    return list(ring[::step])
+
+
+def rings_bbox(rings_list: list, pad_m: float) -> BBox:
+    """BBox around every vertex of every ring in a list of ring-lists."""
+    pts = [p for rings in rings_list for ring in rings for p in ring]
+    return geo.bbox_around(pts, pad_m)
+
+
+def pick_cell_m(bbox: BBox, cfg: ResponseConfig) -> float:
+    """cfg.grid_cell_m, coarsened so the domain fits cfg.grid_max_cells —
+    the same sizing law as threat.ThreatMonitor._pick_cell_m."""
+    ctr = bbox.center()
+    w_m = max((bbox.east - bbox.west) * geo.m_per_deg_lon(ctr.lat),
+              cfg.grid_cell_m)
+    h_m = max((bbox.north - bbox.south) * geo.M_PER_DEG_LAT, cfg.grid_cell_m)
+    needed = math.sqrt((w_m * h_m) / float(max(1, cfg.grid_max_cells)))
+    return max(cfg.grid_cell_m, needed)
+
+
+def polygon_interior_mask(spec: GridSpec, rings: list) -> set:
+    """Row-major indices of cells whose CENTER is inside the polygon —
+    even-odd scanline rule, same convention as spread._perimeter_interior_cells
+    (independent implementation, unit-tested; sub-cell boundary divergence from
+    the engine's rasterizer is possible and handled by callers via the
+    engine-seeded-mask subtraction, never assumed away)."""
+    edges = []
+    for ring in rings or ():
+        pts = list(ring)
+        if len(pts) >= 2 and pts[0].lat == pts[-1].lat and pts[0].lon == pts[-1].lon:
+            pts = pts[:-1]
+        if len(pts) < 3:
+            continue
+        for i in range(len(pts)):
+            a, b = pts[i], pts[(i + 1) % len(pts)]
+            if a.lat != b.lat:
+                edges.append((a.lat, a.lon, b.lat, b.lon))
+    out: set = set()
+    if not edges:
+        return out
+    ncols = spec.ncols
+    for r in range(spec.nrows):
+        lat = spec.north_lat - (r + 0.5) * spec.cell_m / geo.M_PER_DEG_LAT
+        xs = []
+        for alat, alon, blat, blon in edges:
+            if (alat <= lat < blat) or (blat <= lat < alat):
+                t = (lat - alat) / (blat - alat)
+                xs.append(alon + t * (blon - alon))
+        if not xs:
+            continue
+        xs.sort()
+        step = spec.cell_m / geo.m_per_deg_lon(lat)
+        base = r * ncols
+        for i in range(0, len(xs) - 1, 2):
+            c_lo = max(0, math.ceil((xs[i] - spec.west_lon) / step - 0.5))
+            c_hi = min(ncols - 1, math.floor((xs[i + 1] - spec.west_lon) / step - 0.5))
+            for c in range(c_lo, c_hi + 1):
+                out.add(base + c)
+    return out
+
+
+def boundary_cells(mask: set, spec: GridSpec) -> list:
+    """Sorted indices of mask cells with at least one 4-neighbor outside the
+    mask (or on the grid edge) — the discrete boundary."""
+    ncols, nrows = spec.ncols, spec.nrows
+    out = []
+    for idx in mask:
+        r, c = divmod(idx, ncols)
+        for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            nr, nc = r + dr, c + dc
+            if not (0 <= nr < nrows and 0 <= nc < ncols) or \
+                    (nr * ncols + nc) not in mask:
+                out.append(idx)
+                break
+    return sorted(out)
+
+
+def max_dist_m(from_cells: list, to_cells: list, spec: GridSpec,
+               max_from: int = 400, max_to: int = 400) -> float:
+    """max over `from_cells` of (min distance to `to_cells`), meters, on the
+    metric grid (cells are cell_m squares — planar distance is exact for the
+    grid geometry). Both sets are deterministically strided down to the caps
+    (max of a min can only shrink with subsampling — reported values are
+    therefore conservative LOWER bounds on observed head run and modeled head
+    run alike, same bias on both sides of the ratio)."""
+    if not from_cells or not to_cells:
+        return 0.0
+    fr = from_cells[::max(1, len(from_cells) // max_from)]
+    to = to_cells[::max(1, len(to_cells) // max_to)]
+    ncols = spec.ncols
+    to_rc = [divmod(i, ncols) for i in to]
+    best_overall = 0.0
+    for idx in fr:
+        r, c = divmod(idx, ncols)
+        d2min = min((r - tr) * (r - tr) + (c - tc) * (c - tc)
+                    for tr, tc in to_rc)
+        if d2min > best_overall:
+            best_overall = d2min
+    return math.sqrt(best_overall) * spec.cell_m
+
+
+FUEL_CLASSES = (("GR", range(101, 110)), ("GS", range(121, 125)),
+                ("SH", range(141, 150)), ("TU", range(161, 166)),
+                ("TL", range(181, 190)), ("SB", range(201, 205)))
+
+
+def fuel_class(code: int) -> str:
+    """FBFM40 class letter-group for a fuel code ('NB' for non-burnable)."""
+    if not is_burnable(code):
+        return "NB"
+    for label, rng in FUEL_CLASSES:
+        if code in rng:
+            return label
+    return "??"
+
+
+# ---------------------------------------------------------------------------
+# ArcGIS daily-perimeter query builders + parsers (pure)
+# ---------------------------------------------------------------------------
+
+def candidates_query_url(min_acres: float = 5000.0, state: str = "US-CA",
+                         since_iso: str = "2025-01-01 00:00:00",
+                         limit: int = 25) -> str:
+    """Discovery query: incidents grouped by IRWIN id with snapshot counts,
+    max acres, and first/last capture time — large `state` fires since
+    `since_iso`, most snapshots first."""
+    stats = [
+        {"statisticType": "count", "onStatisticField": "OBJECTID",
+         "outStatisticFieldName": "n_rows"},
+        {"statisticType": "max", "onStatisticField": "poly_GISAcres",
+         "outStatisticFieldName": "max_acres"},
+        {"statisticType": "min", "onStatisticField": "poly_PolygonDateTime",
+         "outStatisticFieldName": "t_min"},
+        {"statisticType": "max", "onStatisticField": "poly_PolygonDateTime",
+         "outStatisticFieldName": "t_max"},
+    ]
+    q = {
+        "where": (f"poly_GISAcres >= {min_acres:g} AND "
+                  f"attr_POOState = '{state}' AND "
+                  f"poly_PolygonDateTime >= TIMESTAMP '{since_iso}'"),
+        "outStatistics": json.dumps(stats),
+        "groupByFieldsForStatistics": "attr_IrwinID,attr_IncidentName",
+        "orderByFields": "n_rows DESC",
+        "f": "json",
+        "resultRecordCount": str(limit),
+    }
+    return DAILY_PERIMETERS_URL + "?" + urllib.parse.urlencode(q)
+
+
+def parse_candidates(payload: dict) -> list:
+    """[(irwin, name, n_rows, max_acres, t_min_s, t_max_s)] sorted by n_rows
+    desc; rows with a null IRWIN id are dropped (unjoinable bulk uploads)."""
+    out = []
+    for f in payload.get("features") or []:
+        a = f.get("attributes") or {}
+        irwin = a.get("attr_IrwinID")
+        if not irwin:
+            continue
+        try:
+            out.append((str(irwin), str(a.get("attr_IncidentName") or ""),
+                        int(a.get("n_rows") or 0),
+                        float(a.get("max_acres") or 0.0),
+                        epoch_s(a.get("t_min")), epoch_s(a.get("t_max"))))
+        except (TypeError, ValueError):
+            continue
+    out.sort(key=lambda t: -t[2])
+    return out
+
+
+def series_attrs_url(irwin: str) -> str:
+    """Attribute-only time series for one incident (no geometry — cheap)."""
+    q = {
+        "where": f"attr_IrwinID = '{irwin}'",
+        "outFields": ("OBJECTID,poly_PolygonDateTime,poly_DateCurrent,"
+                      "poly_GISAcres,attr_IncidentName"),
+        "returnGeometry": "false",
+        "orderByFields": "poly_PolygonDateTime ASC",
+        "f": "json",
+    }
+    return DAILY_PERIMETERS_URL + "?" + urllib.parse.urlencode(q)
+
+
+def parse_series_attrs(payload: dict) -> list:
+    """[(oid, t_s, acres)] ascending by time. Capture time is
+    poly_PolygonDateTime, falling back to poly_DateCurrent; rows with neither
+    (or no OBJECTID) are dropped."""
+    rows = []
+    for f in payload.get("features") or []:
+        a = f.get("attributes") or {}
+        oid = a.get("OBJECTID")
+        t_raw = a.get("poly_PolygonDateTime") or a.get("poly_DateCurrent")
+        if oid is None or t_raw is None:
+            continue
+        try:
+            rows.append((int(oid), epoch_s(t_raw),
+                         float(a.get("poly_GISAcres") or 0.0)))
+        except (TypeError, ValueError):
+            continue
+    rows.sort(key=lambda r: (r[1], r[0]))
+    return rows
+
+
+def pick_snapshot_times(rows: list, min_dt_h: float = 6.0,
+                        max_dt_h: float = 90.0,
+                        min_growth_frac: float = 0.08,
+                        min_growth_ac: float = 300.0,
+                        max_snapshots: int = 5) -> list:
+    """Greedy snapshot selection from an attrs time series.
+
+    `rows` = [(oid, t_s, acres)] ascending. Rows sharing one capture time form
+    ONE snapshot (multi-row multipolygon uploads). Starting from the earliest
+    capture, the next snapshot is the first capture >= min_dt_h later whose
+    acreage grew by >= max(min_growth_frac * prev, min_growth_ac) — pairs
+    closer than min_dt_h can't be scored against 90 m cells, and no-growth
+    pairs score nothing. Gaps longer than max_dt_h exceed the shipped forecast
+    horizon (cfg.horizon_h = 96 h) and BREAK the chain: the long-gap capture
+    starts a fresh T0 (the pair across the gap is never emitted).
+
+    Returns [(t_s, [oids], acres)] — at most max_snapshots entries.
+    """
+    groups: dict = {}
+    for oid, t_s, acres in rows:
+        g = groups.setdefault(t_s, [[], 0.0])
+        g[0].append(oid)
+        g[1] = max(g[1], acres)
+    times = sorted(groups)
+    if not times:
+        return []
+    picked = [(times[0], sorted(groups[times[0]][0]), groups[times[0]][1])]
+    for t in times[1:]:
+        if len(picked) >= max_snapshots:
+            break
+        prev_t, _oids, prev_ac = picked[-1]
+        dt_h = (t - prev_t) / 3600.0
+        acres = groups[t][1]
+        if dt_h < min_dt_h:
+            continue
+        if dt_h > max_dt_h:
+            picked.append((t, sorted(groups[t][0]), acres))   # fresh T0
+            continue
+        if acres - prev_ac >= max(min_growth_frac * prev_ac, min_growth_ac):
+            picked.append((t, sorted(groups[t][0]), acres))
+    return picked
+
+
+def geometry_query_url(oids: list, offset_deg: float = 0.0003) -> str:
+    """Geometry pull for specific OBJECTIDs, generalized to ~offset_deg
+    (0.0003 deg ~ 30 m — below the working cell size) to keep payloads small."""
+    q = {
+        "objectIds": ",".join(str(o) for o in oids),
+        "outFields": "OBJECTID,poly_PolygonDateTime,poly_GISAcres",
+        "returnGeometry": "true",
+        "outSR": "4326",
+        "geometryPrecision": "5",
+        "maxAllowableOffset": f"{offset_deg:g}",
+        "f": "json",
+    }
+    return DAILY_PERIMETERS_URL + "?" + urllib.parse.urlencode(q)
+
+
+def parse_snapshot_features(payload: dict) -> dict:
+    """{oid: (t_s, rings)} from a geometry query. Esri rings are [lon, lat]
+    vertex lists; dirty vertices are skipped defensively (feeds.py law);
+    rings are stored subsampled to STORE_RING_VERTS."""
+    out: dict = {}
+    for f in payload.get("features") or []:
+        a = f.get("attributes") or {}
+        oid = a.get("OBJECTID")
+        t_raw = a.get("poly_PolygonDateTime")
+        if oid is None:
+            continue
+        rings = []
+        for raw in (f.get("geometry") or {}).get("rings") or []:
+            ring = []
+            for v in raw:
+                if not (isinstance(v, (list, tuple)) and len(v) >= 2):
+                    continue
+                try:
+                    lon, lat = float(v[0]), float(v[1])
+                except (TypeError, ValueError):
+                    continue
+                ring.append(LatLon(lat, lon))
+            if len(ring) >= 3:
+                rings.append(subsample_ring(ring, STORE_RING_VERTS))
+        if rings:
+            out[int(oid)] = (epoch_s(t_raw) if t_raw is not None else None,
+                             rings)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Open-Meteo archive (observed weather) — builder + parser (pure)
+# ---------------------------------------------------------------------------
+
+def archive_weather_url(loc: LatLon, start_date: str, end_date: str) -> str:
+    """Hourly reanalysis request, UTC, wind already in m/s (engine units)."""
+    q = {
+        "latitude": f"{loc.lat:.4f}",
+        "longitude": f"{loc.lon:.4f}",
+        "start_date": start_date,
+        "end_date": end_date,
+        "hourly": _ARCHIVE_HOURLY,
+        "wind_speed_unit": "ms",
+        "timezone": "UTC",
+    }
+    return ARCHIVE_WEATHER_URL + "?" + urllib.parse.urlencode(q)
+
+
+def parse_archive_weather(payload: dict, loc: LatLon) -> WeatherForecast:
+    """Open-Meteo archive JSON -> WeatherForecast (hourly WeatherSamples,
+    unix s ascending). Same conventions as weather.OpenMeteoWeather: rows with
+    a null core variable are skipped; gust = max(gust, wind); raises
+    RuntimeError when the payload yields no samples."""
+    try:
+        hourly = payload["hourly"]
+        times = hourly["time"]
+        temp = hourly["temperature_2m"]
+        rh = hourly["relative_humidity_2m"]
+        wind = hourly["wind_speed_10m"]
+        wdir = hourly["wind_direction_10m"]
+        gust = hourly["wind_gusts_10m"]
+    except (KeyError, TypeError) as e:
+        raise RuntimeError("archive response missing hourly arrays") from e
+    n = min(len(times), len(temp), len(rh), len(wind), len(wdir), len(gust))
+    samples = []
+    for i in range(n):
+        if None in (wind[i], temp[i], rh[i], wdir[i]):
+            continue
+        w = float(wind[i])
+        g = float(gust[i]) if gust[i] is not None else w
+        samples.append(WeatherSample(
+            t_s=parse_iso8601_s(times[i]), wind_speed_mps=w,
+            wind_gust_mps=max(g, w), wind_dir_deg=float(wdir[i]) % 360.0,
+            rh_pct=float(rh[i]), temp_c=float(temp[i])))
+    if not samples:
+        raise RuntimeError("archive decode produced no samples")
+    return WeatherForecast(loc=loc, samples=samples, source="open-meteo-archive")
+
+
+# ---------------------------------------------------------------------------
+# Replay + scoring
+# ---------------------------------------------------------------------------
+
+def replay_pair(tile: TerrainTile, wx: WeatherForecast,
+                snap0: PerimeterSnapshot, snap1: PerimeterSnapshot,
+                cfg: ResponseConfig, incident_id: str,
+                name: str = "", label: str = "default") -> PairMetrics:
+    """Seed the engine with snap0's perimeter at snap0.t_s (the production A5
+    interior-seeding path, rings subsampled per the threat law, no exterior
+    seeds) and score the ensemble against snap1. Deterministic: the ensemble
+    seeds on (incident_id, member_k) only, per contracts."""
+    seed_rings = [subsample_ring(r, MAX_RING_VERTS) for r in snap0.rings]
+    ens = spread.ensemble_arrival(tile, [], wx, snap0.t_s, cfg,
+                                  incident_id=incident_id,
+                                  perimeter=seed_rings,
+                                  perimeter_at_s=snap0.t_s)
+    return score_pair(tile, ens, snap0, snap1, incident_id, name, label)
+
+
+def score_pair(tile: TerrainTile, ens, snap0: PerimeterSnapshot,
+               snap1: PerimeterSnapshot, incident_id: str, name: str = "",
+               label: str = "default") -> PairMetrics:
+    """Pure scoring of an EnsembleArrival against the observed T1 perimeter.
+
+    Engine-T0 mask = cells whose NOMINAL arrival == snap0.t_s exactly — by
+    construction those are precisely the cells compute_arrival pre-burned
+    (interior cells are FINAL at perimeter_at_s; every exterior cell is
+    strictly later), so subtracting it can never misclassify a spread cell.
+    Newly-burned = (interior of T1 by the even-odd mask) minus engine-T0.
+    """
+    spec = tile.spec
+    t0_s, t1_s = snap0.t_s, snap1.t_s
+    m = PairMetrics(incident=incident_id, name=name, t0_s=t0_s, t1_s=t1_s,
+                    dt_h=(t1_s - t0_s) / 3600.0, cell_m=spec.cell_m,
+                    label=label)
+    nominal = ens.members[0].data
+    p10, p50, p90 = ens.p10.data, ens.p50.data, ens.p90.data
+    member_cols = [mem.data for mem in ens.members]
+    n_members = len(member_cols)
+
+    t1_mask = polygon_interior_mask(spec, snap1.rings)
+    engine_t0 = {i for i in range(spec.nrows * spec.ncols)
+                 if nominal[i] == t0_s}
+    if not engine_t0:
+        m.notes.append("engine seeded no T0 interior cells (degenerate ring?)")
+    # Monotonicity guard: T1 must (mostly) contain T0 — a partial-lobe upload
+    # would otherwise fabricate "unburned" former-interior cells.
+    if engine_t0:
+        contained = len(engine_t0 & t1_mask) / len(engine_t0)
+        if contained < 0.85:
+            m.notes.append(
+                f"NON-MONOTONE pair: only {contained:.0%} of the T0 interior "
+                f"is inside T1 (partial mapping upload?) — pair UNSCORED")
+            return m
+
+    new_cells = sorted(t1_mask - engine_t0)
+    m.n_new = len(new_cells)
+    cell_ac = spec.cell_m * spec.cell_m / 4046.8564224
+    m.obs_new_area_ac = m.n_new * cell_ac
+
+    fdata = tile.fuel.data
+    mid = 0.5 * (t0_s + t1_s)
+    pit_bins = [0] * (n_members + 1)
+    by_class: dict = {}
+    for i in new_cells:
+        code = int(round(fdata[i]))
+        cls = fuel_class(code)
+        rec = by_class.setdefault(cls, {"n": 0, "late": 0, "cert": 0, "poss": 0})
+        rec["n"] += 1
+        if cls == "NB":
+            m.n_new_nonburnable += 1
+            continue
+        m.n_new_burnable += 1
+        lo, hi = p10[i], p90[i]
+        if hi == UNREACHED and lo != UNREACHED:
+            m.p90_unreached += 1
+        if lo == UNREACHED:
+            m.never_reached += 1
+            m.late_miss += 1
+            rec["late"] += 1
+        elif lo > t1_s:
+            m.late_miss += 1
+            rec["late"] += 1
+        elif hi < t0_s:
+            m.early_miss += 1
+        if lo <= t0_s and hi >= t1_s:
+            m.covered_certain += 1
+            rec["cert"] += 1
+        if lo <= t1_s and hi >= t0_s:
+            m.covered_possible += 1
+            rec["poss"] += 1
+        if lo <= t1_s:
+            m.p10_not_after_window += 1
+        if lo <= t0_s:
+            m.p10_before_window += 1
+        if t0_s < p50[i] <= t1_s:
+            m.p50_in_window += 1
+        rank = sum(1 for col in member_cols if col[i] <= mid)
+        pit_bins[rank] += 1
+    m.pit_hist = pit_bins
+    m.by_fuel_class = by_class
+
+    # Head-run lengths: observed = farthest newly-burned boundary cell from
+    # the T0 boundary; modeled = same measure over the modeled burned region.
+    t0_b = boundary_cells(engine_t0, spec)
+    new_set = set(new_cells)
+    obs_b = [i for i in boundary_cells(t1_mask, spec) if i in new_set]
+    m.obs_head_m = max_dist_m(obs_b, t0_b, spec)
+
+    def _model_head(vals) -> float:
+        region = engine_t0 | {i for i in range(len(vals))
+                              if vals[i] <= t1_s and vals[i] != UNREACHED}
+        return max_dist_m(boundary_cells(region, spec), t0_b, spec)
+
+    m.head_m_p50 = _model_head(p50)
+    m.head_m_p10 = _model_head(p10)
+    m.head_m_nominal = _model_head(nominal)
+    n_model_new = sum(1 for i in range(len(p50))
+                      if p50[i] <= t1_s and p50[i] != UNREACHED
+                      and i not in engine_t0)
+    m.modeled_new_area_ac_p50 = n_model_new * cell_ac
+    return m
+
+
+def pool_metrics(pairs: list) -> dict:
+    """Cell-weighted pooled coverage over scored pairs (n_new_burnable > 0)."""
+    scored = [p for p in pairs if p.n_new_burnable > 0]
+    tot = sum(p.n_new_burnable for p in scored)
+    if tot == 0:
+        return {"n_pairs": 0, "n_cells": 0}
+    s = lambda attr: sum(getattr(p, attr) for p in scored)
+    n_bins = max(len(p.pit_hist) for p in scored)
+    pit = [0] * n_bins
+    for p in scored:
+        for k, v in enumerate(p.pit_hist):
+            pit[k] += v
+    head_ratios = sorted(p.head_ratio_p50() for p in scored if p.obs_head_m > 0)
+    med_head = head_ratios[len(head_ratios) // 2] if head_ratios else 0.0
+    by_fuel: dict = {}
+    for p in scored:
+        for cls, rec in p.by_fuel_class.items():
+            agg = by_fuel.setdefault(cls, {"n": 0, "late": 0, "cert": 0,
+                                           "poss": 0})
+            for k in agg:
+                agg[k] += rec.get(k, 0)
+    return {
+        "n_pairs": len(scored),
+        "n_cells": tot,
+        "nonburnable_frac": s("n_new_nonburnable") /
+                            max(1, s("n_new_nonburnable") + tot),
+        "covered_certain_frac": s("covered_certain") / tot,
+        "covered_possible_frac": s("covered_possible") / tot,
+        "late_miss_frac": s("late_miss") / tot,
+        "early_miss_frac": s("early_miss") / tot,
+        "never_reached_frac": s("never_reached") / tot,
+        "p90_unreached_frac": s("p90_unreached") / tot,
+        "p50_in_window_frac": s("p50_in_window") / tot,
+        "p10_not_after_window_frac": s("p10_not_after_window") / tot,
+        "p10_before_window_frac": s("p10_before_window") / tot,
+        "pit_hist": pit,
+        "median_head_ratio_p50": med_head,
+        "by_fuel_class": by_fuel,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Landmark anchors (offline-capable; F3)
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class AnchorScenario:
+    """Parameterized landmark scenario. Weather values are the documented
+    fire-day conditions used by the Council-1 review (exp3 'Santa Ana core'
+    for Tubbs); tweak fields to re-anchor without touching code."""
+    name: str
+    wind10_mps: float
+    rh_pct: float
+    temp_c: float
+    duration_h: float
+    observed_head_kmh: float = 0.0      # Tubbs-style sustained-head anchor
+    observed_area_ach: float = 0.0      # Camp-style area-growth anchor
+    cell_m: float = 100.0
+    width_km: float = 24.0
+    height_km: float = 10.0
+
+
+# Tubbs (1917-10-08/09): ~12 mi Calistoga->Santa Rosa in ~3 h => ~6.4 km/h
+# sustained head run under Diablo winds. Review exp3 'Santa Ana core'
+# conditions: wind10 12 m/s, RH 10%, 35 C -> GR2 point ROS 2.98 km/h (0.47x).
+TUBBS = AnchorScenario(name="tubbs", wind10_mps=12.0, rh_pct=10.0,
+                       temp_c=35.0, duration_h=3.0, observed_head_kmh=6.4)
+# Camp (2018-11-08): ~6,600 ac/h average over the first 90 minutes (NIST
+# timeline: Pulga ignition 06:30 to Paradise fully involved) under ~11 m/s
+# sustained Jarbo Gap NE winds, RH ~23%, cold morning.
+CAMP = AnchorScenario(name="camp", wind10_mps=11.0, rh_pct=23.0,
+                      temp_c=12.0, duration_h=1.5, observed_area_ach=6600.0,
+                      cell_m=60.0, width_km=14.0, height_km=8.0)
+
+_ANCHOR_FUELS = (("GR2", 102.0), ("SH5", 145.0), ("GR2/SH5 mix", None))
+
+
+def _anchor_tile(scn: AnchorScenario, fuel_code, anchor_lat: float = 39.0) -> TerrainTile:
+    """Flat uniform (or 4-cell-checkerboard GR2/SH5 mix when fuel_code is
+    None) tile centered near anchor_lat. Deterministic, no RNG needed."""
+    ncols = max(8, int(round(scn.width_km * 1000.0 / scn.cell_m)))
+    nrows = max(8, int(round(scn.height_km * 1000.0 / scn.cell_m)))
+    spec = GridSpec(north_lat=anchor_lat + (nrows * scn.cell_m / 2.0)
+                    / geo.M_PER_DEG_LAT,
+                    west_lon=-122.0, cell_m=scn.cell_m,
+                    nrows=nrows, ncols=ncols)
+    n = nrows * ncols
+    if fuel_code is not None:
+        fuel = Raster(spec, [float(fuel_code)] * n)
+    else:
+        data = [0.0] * n
+        for r in range(nrows):
+            for c in range(ncols):
+                data[r * ncols + c] = 102.0 if ((r // 4) + (c // 4)) % 2 == 0 \
+                    else 145.0
+        fuel = Raster(spec, data)
+    zeros = lambda fill: Raster(spec, [fill] * n)
+    return TerrainTile(spec=spec, fuel=fuel, slope_deg=zeros(0.0),
+                       aspect_deg=zeros(-1.0), elev_m=zeros(100.0),
+                       source=f"anchor:{scn.name}")
+
+
+def _anchor_wx(scn: AnchorScenario, t0_s: float, loc: LatLon) -> WeatherForecast:
+    """Constant observed-condition series, wind FROM the west (pushes the head
+    due east across the tile). Direction is arbitrary on flat uniform fuel."""
+    samples = [WeatherSample(t_s=t0_s + h * 3600.0,
+                             wind_speed_mps=scn.wind10_mps,
+                             wind_gust_mps=scn.wind10_mps * 1.4,
+                             wind_dir_deg=270.0, rh_pct=scn.rh_pct,
+                             temp_c=scn.temp_c)
+               for h in range(int(scn.duration_h) + 3)]
+    return WeatherForecast(loc=loc, samples=samples, source="anchor")
+
+
+def point_ros_kmh(fuel_code: int, scn: AnchorScenario,
+                  cfg: ResponseConfig) -> float:
+    """Single-cell Rothermel head ROS (km/h) at the scenario conditions via
+    the production chain (10-m wind -> WAF midflame -> surface_ros_mps) —
+    the review's F3 measurement, reproduced."""
+    fuel = FUEL_TABLE[int(fuel_code)]
+    m_dead = dead_fuel_moisture_frac(scn.temp_c, scn.rh_pct)
+    u_mid = rothermel.midflame_wind_mps(scn.wind10_mps, fuel)
+    res = rothermel.surface_ros_mps(fuel, m_dead, cfg.live_herb_frac,
+                                    cfg.live_woody_frac, u_mid, 0.0)
+    return res.ros_mps * 3.6
+
+
+def run_anchor(scn: AnchorScenario, cfg: ResponseConfig,
+               spotting: bool) -> list:
+    """Run one anchor scenario over the GR2 / SH5 / mix tiles; returns
+    AnchorResults. compute_arrival nominal member only — the anchor measures
+    the CORE spread model, not ensemble dispersion. Deterministic."""
+    t0_s = 1_750_000_000.0
+    out = []
+    # Horizon needs only to cover the anchor duration: the metric reads the
+    # arrival field at t0 + duration_h, which is identical under any horizon
+    # >= duration (a longer horizon just burns the rest of the tile for
+    # nothing). Everything else stays at the passed (shipped) config.
+    run_cfg = replace(cfg, spotting_enabled=spotting,
+                      horizon_h=scn.duration_h + 2.0)
+    for fuel_label, code in _ANCHOR_FUELS:
+        tile = _anchor_tile(scn, code)
+        spec = tile.spec
+        # Ignite mid-height on the west edge (head runs east with the wind).
+        ign_r, ign_c = spec.nrows // 2, 1
+        ign = [geo.rc_to_latlon(spec, ign_r, ign_c)]
+        wx = _anchor_wx(scn, t0_s, ign[0])
+        arr = spread.compute_arrival(tile, ign, wx, t0_s, run_cfg)
+        t_end = t0_s + scn.duration_h * 3600.0
+        burned = [i for i, v in enumerate(arr.data)
+                  if v <= t_end and v != UNREACHED]
+        if scn.observed_head_kmh > 0.0:
+            # Max downwind (eastward) run from the ignition column.
+            max_dc = max((i % spec.ncols) - ign_c for i in burned) if burned else 0
+            head_kmh = (max_dc * spec.cell_m / 1000.0) / scn.duration_h
+            observed, engine = scn.observed_head_kmh, head_kmh
+            metric = f"head km/h over {scn.duration_h:g} h"
+        else:
+            cell_ac = spec.cell_m * spec.cell_m / 4046.8564224
+            ach = len(burned) * cell_ac / scn.duration_h
+            observed, engine = scn.observed_area_ach, ach
+            metric = f"area ac/h over {scn.duration_h:g} h"
+        notes = ""
+        if burned and scn.observed_head_kmh > 0.0:
+            max_dc = max((i % spec.ncols) - ign_c for i in burned)
+            if max_dc >= spec.ncols - ign_c - 2:
+                notes = "head reached tile edge — engine value is a floor"
+        out.append(AnchorResult(
+            anchor=scn.name, fuel_label=fuel_label, spotting=spotting,
+            metric=metric, observed=observed, engine=engine,
+            ratio=engine / observed if observed else 0.0,
+            point_ros_kmh=(point_ros_kmh(int(code), scn, cfg)
+                           if code is not None else 0.0),
+            notes=notes))
+    return out
+
+
+def run_all_anchors(cfg: ResponseConfig) -> list:
+    """Tubbs + Camp, spotting OFF (shipped default) and ON (F3 option c)."""
+    out = []
+    for scn in (TUBBS, CAMP):
+        for spotting in (False, True):
+            out.extend(run_anchor(scn, cfg, spotting))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Recommendation + report rendering
+# ---------------------------------------------------------------------------
+
+# The F8 review target: >= 90% of observed arrivals at/after modeled p10.
+P10_COVERAGE_TARGET = 0.90
+
+
+def recommendations(pooled: dict, pooled_wide: dict, anchors: list) -> list:
+    """Data-driven recommendation lines (strings) from the measured stats.
+    Every line is conditional on the numbers actually observed — no
+    unconditional tuning advice ever comes out of this function."""
+    recs = []
+    n = pooled.get("n_cells", 0)
+    if n == 0:
+        recs.append(
+            "NO REPLAY EVIDENCE THIS RUN — no perturbation-fraction or "
+            "grass-ROS change is justified by this document. Keep "
+            "wind_perturb_frac=0.25, moisture_perturb_frac=0.20, "
+            "dir_perturb_deg=30 as shipped; re-run the harness once live "
+            "perimeter pairs are reachable.")
+        return recs
+
+    p10_nec = pooled["p10_not_after_window_frac"]
+    late = pooled["late_miss_frac"]
+    early = pooled["early_miss_frac"]
+    recs.append(
+        f"P10 pessimism (F8 target >= {P10_COVERAGE_TARGET:.0%} of observed "
+        f"arrivals at/after p10): best measurable bound {p10_nec:.0%} "
+        f"(p10 <= T1; the sufficient bound p10 <= T0 is STRUCTURALLY ~0 in "
+        f"this replay — the observation window opens at the seed time and "
+        f"p10 can never precede the seed, so it carries no information) on "
+        f"{n} cells / {pooled['n_pairs']} pairs.")
+    wide_nec = pooled_wide.get("p10_not_after_window_frac")
+    if p10_nec < P10_COVERAGE_TARGET:
+        if wide_nec is not None and (wide_nec - p10_nec) < 0.05:
+            recs.append(
+                f"The necessary bound ({p10_nec:.0%}) misses the "
+                f"{P10_COVERAGE_TARGET:.0%} bar, and the WIDENED variant "
+                f"(wind_perturb 0.50 / dir 45 deg) moved it only to "
+                f"{wide_nec:.0%} (+{100 * (wide_nec - p10_nec):.1f} pp): "
+                f"widening the perturbation fractions ALONE does NOT close "
+                f"the late tail. The deficit is in the ROS LEVEL (Council-1 "
+                f"F3), not the band width — do NOT chase coverage by "
+                f"inflating wind_perturb_frac / dir_perturb_deg; keep them "
+                f"at shipped defaults pending the F3 level decision.")
+        else:
+            wide_txt = (f" Widened variant (wind 0.50 / dir 45 deg) measured "
+                        f"{wide_nec:.0%} on the same pairs."
+                        if wide_nec is not None else "")
+            recs.append(
+                f"The necessary bound ({p10_nec:.0%}) misses the "
+                f"{P10_COVERAGE_TARGET:.0%} bar and widening helps "
+                f"materially: INCREASE wind_perturb_frac and/or "
+                f"dir_perturb_deg (crew-safety-conservative; an earlier p10 "
+                f"is fail-safe polarity), then re-run this harness.{wide_txt}")
+    else:
+        recs.append(
+            f"The necessary bound ({p10_nec:.0%}) clears the bar; the "
+            f"censored windows cannot prove the sufficient side. Needed: "
+            f"shorter-dt pairs (FIRIS intra-day perimeters) before changing "
+            f"any perturbation knob.")
+    if late > 3.0 * max(early, 0.01) and late > 0.10:
+        recs.append(
+            f"LATE-dominant misses ({late:.0%} late vs {early:.0%} early): "
+            f"the dangerous polarity (a late p10 delays crew deadlines and "
+            f"EXTREME triggers). Consistent with the F3 slow finding.")
+    elif early > 3.0 * max(late, 0.01) and early > 0.10:
+        recs.append(
+            f"EARLY-dominant misses ({early:.0%} early vs {late:.0%} late): "
+            f"the engine over-runs observed growth on these pairs — do NOT "
+            f"add any ROS multiplier; consider whether suppression (which "
+            f"the model ignores) explains the residual before narrowing "
+            f"anything.")
+    pit = pooled.get("pit_hist") or []
+    if len(pit) >= 3 and n:
+        lo_mass = pit[0] / n
+        hi_mass = pit[-1] / n
+        if lo_mass > 0.30 and hi_mass > 0.30:
+            recs.append(
+                f"PIT mass piles at BOTH extremes (rank 0: {lo_mass:.0%}, "
+                f"top rank: {hi_mass:.0%}): the ensemble is under-dispersed "
+                f"in both directions — some sectors burn before every "
+                f"member, others after every member. Suppression (unmodeled, "
+                f"pushes 'engine early' on contained flanks) and the slow "
+                f"core ROS (pushes 'engine late' on head runs) both "
+                f"contribute; a pure band-width fix cannot repair a "
+                f"level-and-shape error.")
+    fuel = pooled.get("by_fuel_class") or {}
+    gr = fuel.get("GR") or {}
+    sh = fuel.get("SH") or {}
+    if gr.get("n", 0) >= 500 and sh.get("n", 0) >= 500:
+        gr_late = gr["late"] / gr["n"]
+        sh_late = sh["late"] / sh["n"]
+        if gr_late > sh_late + 0.10:
+            t_off = {a.fuel_label: a.ratio for a in anchors
+                     if a.anchor == "tubbs" and not a.spotting}
+            anchor_txt = ""
+            if "GR2" in t_off and "SH5" in t_off:
+                anchor_txt = (f" (matches the Tubbs anchor: GR2 "
+                              f"{t_off['GR2']:.2f}x vs SH5 "
+                              f"{t_off['SH5']:.2f}x)")
+            recs.append(
+                f"Fuel-class split: GR (grass) late-miss {gr_late:.0%} vs "
+                f"SH (shrub) {sh_late:.0%} on the SAME incidents/weather — "
+                f"direct hindcast corroboration that the slow bias "
+                f"concentrates in grass-class fuels{anchor_txt}. This is "
+                f"where a per-fuel ADJ multiplier would act IF later "
+                f"evidence justifies one.")
+
+    tubbs_off = [a for a in anchors
+                 if a.anchor == "tubbs" and not a.spotting]
+    if tubbs_off:
+        worst = min(tubbs_off, key=lambda a: a.ratio)
+        best = max(tubbs_off, key=lambda a: a.ratio)
+        recs.append(
+            f"Tubbs anchor (spotting OFF): engine/observed head ratio "
+            f"{worst.ratio:.2f}x ({worst.fuel_label}) to {best.ratio:.2f}x "
+            f"({best.fuel_label}) vs the review's 0.47x point-ROS measurement "
+            f"— the systematic-slow finding stands. A grass-ROS multiplier "
+            f"(ELMFIRE-style ADJ) is DIRECTIONALLY supported by the anchors "
+            f"but NOT yet by enough hindcast coverage evidence to pick a "
+            f"number; do not ship one from this document alone.")
+    return recs
+
+
+DO_NOT_SHIP_NOTE = """\
+## DO NOT SHIP A FUDGE
+
+No ROS multiplier, perturbation widening, or quantile remap may ship from
+this document alone. The firerisk honest-numbers discipline applies:
+
+- The replay sample here is small (a handful of incidents, interval-censored
+  observation windows, one fire season, one state) and the landmark anchors
+  are two hand-parameterized scenarios. That is EVIDENCE OF DIRECTION, not a
+  calibration fit.
+- Any proposed `ResponseConfig` change must first be re-run through this
+  harness on an EXPANDED incident set (>= 10 incidents, multiple fuel
+  regimes, both wind-driven and terrain-driven fires) and show coverage
+  moving toward the target WITHOUT wrecking the early-miss side (a p10 that
+  is pessimistic-everywhere is a false-alarm machine that erodes crew trust
+  and burns dispatch capacity).
+- A grass-ROS ADJ multiplier additionally needs the spotting decision made
+  first (F3: spotting is the mechanism that made Camp/Tubbs beat every
+  no-spotting model) — tuning surface ROS to absorb missing spotting physics
+  bakes ember transport into grass parameters where it does not belong.
+- Per SAFETY SEMANTICS, any change lands as config + regression pins, with
+  before/after coverage tables appended here, and byte-identity pins
+  re-baselined explicitly — never silently.
+"""
+
+
+def _pct(x: float) -> str:
+    return f"{100.0 * x:.1f}%"
+
+
+def render_report(incidents: list, pairs: list, pairs_wide: list,
+                  anchors: list, fetch_summary: dict,
+                  cfg: ResponseConfig, wx_note: str = "") -> str:
+    """The docs/calibration/hindcast_first_pass.md content. Pure string
+    building from measured inputs — regenerating with identical inputs yields
+    identical bytes (no wall-clock). `wx_note` is an optional measured
+    parenthetical about the replay weather (e.g. observed wind maxima),
+    computed by the caller from the cached series — never hardcoded here."""
+    L = []
+    add = L.append
+    add("# Hindcast first pass — engine vs observed perimeter growth")
+    add("")
+    add("Sprint-2 ticket D1 (Council-1 model F3+F8). Generated by "
+        "`py -3 tools/hindcast_harness.py all`; inputs cached under "
+        "`tools/hindcast_data/` so the replay re-runs offline and "
+        "deterministically. **Recommendations only — this document changes "
+        "no engine behavior.**")
+    add("")
+    add("## Method")
+    add("")
+    add("- **Perimeter time series:** NIFC ArcGIS `WFIGS_Daily_Perimeters_"
+        "Public` FeatureServer layer 0 — researched live: unlike the "
+        "`_Current` / `_YearToDate` / `InterAgencyFirePerimeterHistory` "
+        "layers (one latest/final polygon per fire), the Daily layer keeps "
+        "every published capture as its own row keyed by "
+        "`poly_PolygonDateTime` (up to 110 rows per IRWIN id measured). "
+        "Public domain (NIFC open data), keyless.")
+    add("- **Observed weather:** Open-Meteo HISTORICAL archive "
+        "(`archive-api.open-meteo.com`, ERA5-family reanalysis) hourly at "
+        "the fire centroid, wind in m/s, UTC. **Licensing:** free tier is "
+        "NON-COMMERCIAL and data is CC-BY-4.0 — this harness is an offline "
+        "R&D calibration study; production use requires the paid tier or "
+        "self-hosting (same posture as `wgresponse.weather`).")
+    add("- **Terrain/fuel:** live LANDFIRE LFPS tiles (LF2024_FBFM40 + "
+        "LF2020 slope/aspect/elev) through the engine's own "
+        "`terrain.LfpsTerrain`, disk-cached. LF2024 fuels predate the "
+        "replayed fires (pre-fire landscape — correct for hindcasting).")
+    add("- **Replay:** for each consecutive snapshot pair (T0, T1): seed "
+        "`spread.ensemble_arrival` with the T0 rings via the production "
+        "perimeter-interior path (rings subsampled to <= 200 vertices, "
+        "`perimeter_at_s = t0 = T0`, no exterior seeds), shipped default "
+        f"`ResponseConfig` (ensemble_n={cfg.ensemble_n}, wind_perturb_frac="
+        f"{cfg.wind_perturb_frac}, moisture_perturb_frac="
+        f"{cfg.moisture_perturb_frac}, dir_perturb_deg={cfg.dir_perturb_deg}"
+        f", spotting={'ON' if cfg.spotting_enabled else 'OFF'}), observed "
+        "weather as the forecast.")
+    add("- **Scoring under censoring:** a perimeter pair only brackets each "
+        "newly-burned cell's true burn time inside (T0, T1], so coverage is "
+        "a CERTAIN/POSSIBLE **bound pair**: certain = band [p10,p90] "
+        "contains all of [T0,T1]; possible = band intersects it. "
+        "`late_miss` = p10 > T1 (band entirely after the window — the "
+        "dangerous, missed-alert polarity), `early_miss` = p90 < T0. "
+        "STRUCTURAL NOTE: because the window opens exactly at the seed time "
+        "and no member can arrive before the seed, `p10 <= T0` (and hence "
+        "the certain bound and the 'sufficient' p10 column) is ~0 BY "
+        "CONSTRUCTION — those columns are kept for schema honesty but carry "
+        "no information; the informative statistics are the possible bound, "
+        "the necessary p10 bound (p10 <= T1), late/early misses, and the "
+        "PIT histogram (approximated at the window midpoint). Cells whose "
+        "LANDFIRE code is non-burnable (urban etc.) can never receive a "
+        "modeled arrival — they are counted and reported, never silently "
+        "dropped.")
+    add("- **Head run:** farthest newly-burned boundary cell from the T0 "
+        "boundary (straight-line, metric grid), observed vs the modeled "
+        "p50/p10 burned region at T1. Boundary sets are strided to caps, so "
+        "both numbers are conservative floors (same bias both sides of the "
+        "ratio).")
+    add("")
+    add("## Incidents used")
+    add("")
+    if incidents:
+        add("| incident | irwin | snapshots used | max acres | span |")
+        add("|---|---|---|---|---|")
+        for inc in incidents:
+            if not inc.snapshots:
+                continue
+            t_a = datetime.fromtimestamp(inc.snapshots[0].t_s, tz=timezone.utc)
+            t_b = datetime.fromtimestamp(inc.snapshots[-1].t_s, tz=timezone.utc)
+            add(f"| {inc.name} | `{inc.irwin}` | {len(inc.snapshots)} | "
+                f"{inc.max_acres:,.0f} | {t_a:%Y-%m-%d} .. {t_b:%Y-%m-%d} |")
+    else:
+        add("*(none — live pulls unavailable this run; see Reachability)*")
+    add("")
+    add("## Coverage — per pair (shipped default config)")
+    add("")
+    scored = [p for p in pairs if p.n_new_burnable > 0]
+    if scored:
+        add("| incident | T0 (UTC) | dt h | cell m | new cells (burnable/NB) | "
+            "coverage [certain..possible] | p10<=T1 (nec.) | p10<=T0 (suf.) | "
+            "p50 in win | late miss | early miss | never | head ratio "
+            "p50/p10 | area ratio p50 |")
+        add("|" + "---|" * 14)
+        for p in pairs:
+            t0 = datetime.fromtimestamp(p.t0_s, tz=timezone.utc)
+            if p.n_new_burnable == 0:
+                note = p.notes[0] if p.notes else "no scorable growth"
+                add(f"| {p.name} | {t0:%m-%d %H:%M} | {p.dt_h:.1f} | "
+                    f"{p.cell_m:.0f} | {p.n_new} ({p.n_new_burnable}/"
+                    f"{p.n_new_nonburnable}) | — {note} | | | | | | | |")
+                continue
+            add(f"| {p.name} | {t0:%m-%d %H:%M} | {p.dt_h:.1f} | "
+                f"{p.cell_m:.0f} | {p.n_new} ({p.n_new_burnable}/"
+                f"{p.n_new_nonburnable}) | "
+                f"[{_pct(p.frac(p.covered_certain))} .. "
+                f"{_pct(p.frac(p.covered_possible))}] | "
+                f"{_pct(p.frac(p.p10_not_after_window))} | "
+                f"{_pct(p.frac(p.p10_before_window))} | "
+                f"{_pct(p.frac(p.p50_in_window))} | "
+                f"{_pct(p.frac(p.late_miss))} | "
+                f"{_pct(p.frac(p.early_miss))} | "
+                f"{_pct(p.frac(p.never_reached))} | "
+                f"{p.head_ratio_p50():.2f}/{p.head_ratio_p10():.2f} | "
+                f"{p.area_ratio_p50():.2f} |")
+    else:
+        add("*(no scorable pairs this run — see Reachability)*")
+    add("")
+    pooled = pool_metrics(pairs)
+    pooled_wide = pool_metrics(pairs_wide)
+    if pooled.get("n_cells"):
+        add("### Pooled (cell-weighted)")
+        add("")
+        add(f"- pairs scored: **{pooled['n_pairs']}**, newly-burned burnable "
+            f"cells: **{pooled['n_cells']:,}** (plus "
+            f"{_pct(pooled['nonburnable_frac'])} of new cells non-burnable "
+            f"in LANDFIRE — structure-to-structure spread the surface model "
+            f"cannot represent).")
+        add(f"- coverage in [p10, p90]: **[{_pct(pooled['covered_certain_frac'])}"
+            f" .. {_pct(pooled['covered_possible_frac'])}]** "
+            f"(certain..possible under censoring; the certain side is "
+            f"structurally ~0 here — see Method).")
+        add(f"- p10 pessimistic bound pair: sufficient "
+            f"**{_pct(pooled['p10_before_window_frac'])}** (structural ~0), "
+            f"necessary **{_pct(pooled['p10_not_after_window_frac'])}** "
+            f"(F8 target: >= {P10_COVERAGE_TARGET:.0%}).")
+        add(f"- p50 inside window: {_pct(pooled['p50_in_window_frac'])}; "
+            f"late misses **{_pct(pooled['late_miss_frac'])}** (of which "
+            f"never-reached {_pct(pooled['never_reached_frac'])}), early "
+            f"misses {_pct(pooled['early_miss_frac'])}.")
+        add(f"- p90-unreached (band open-ended to inf, so 'covered' is "
+            f"trivially satisfiable on the late side): "
+            f"{_pct(pooled['p90_unreached_frac'])} of cells.")
+        add(f"- median head-run ratio (p50): "
+            f"**{pooled['median_head_ratio_p50']:.2f}x** observed.")
+        add(f"- PIT histogram (midpoint approx, rank 0..n): "
+            f"{pooled['pit_hist']} — mass at rank 0 = observed burn before "
+            f"every member (engine late); mass at max rank = after every "
+            f"member (engine early).")
+        if pooled_wide.get("n_cells"):
+            add(f"- widened variant (wind_perturb 0.50 / dir 45 deg): "
+                f"coverage [{_pct(pooled_wide['covered_certain_frac'])} .. "
+                f"{_pct(pooled_wide['covered_possible_frac'])}], p10 bounds "
+                f"[{_pct(pooled_wide['p10_before_window_frac'])}, "
+                f"{_pct(pooled_wide['p10_not_after_window_frac'])}], late "
+                f"{_pct(pooled_wide['late_miss_frac'])}.")
+        add("")
+        add("### Reading these numbers (interpretation caveats)")
+        add("")
+        add("- **Suppression is unmodeled.** These fires were actively "
+            "fought; on contained flanks and late-stage pairs the engine "
+            "over-runs the observed growth (head/area ratios well above 1, "
+            "PIT mass at the top rank read 'engine early'). That residual "
+            "is firefighting, NOT evidence to slow the engine down — and it "
+            "is the fail-safe direction for an alerting product.")
+        add("- **The safety-relevant evidence is the explosive-run pairs** "
+            "(first hours/day of each fire, low head-run ratios, high late "
+            "miss): there the engine is definitively LATE — no member "
+            "reaches cells that actually burned inside the window. Those "
+            "are the pairs a missed alert would have come from.")
+        add("- **ERA5 reanalysis wind is smooth.** Hourly 10-m reanalysis at "
+            "the fire centroid underestimates canyon/gap gusts and local "
+            f"fire-weather extremes{wx_note}, so part of the late bias may "
+            "be input-side, not physics-side. A HRRR-analysis or "
+            "RAWS-station replay is the follow-up that would split the two.")
+        add("")
+        cls_tot: dict = pooled.get("by_fuel_class") or {}
+        if cls_tot:
+            add("### By FBFM40 fuel class (pooled)")
+            add("")
+            add("| class | new cells | late-miss | covered [certain..possible] |")
+            add("|---|---|---|---|")
+            for cls in sorted(cls_tot):
+                rec = cls_tot[cls]
+                if cls == "NB":
+                    add(f"| NB (non-burnable) | {rec['n']:,} | — | — (unscorable "
+                        f"by the surface model) |")
+                    continue
+                nn = max(1, rec["n"])
+                add(f"| {cls} | {rec['n']:,} | {_pct(rec['late'] / nn)} | "
+                    f"[{_pct(rec['cert'] / nn)} .. {_pct(rec['poss'] / nn)}] |")
+            add("")
+    add("## Landmark anchors (offline scenario checks)")
+    add("")
+    add("Parameterized replays of the two documented conflagration anchors "
+        "on flat uniform synthetic fuel at the review's fire-day conditions "
+        "(`hindcast_lib.TUBBS` / `CAMP`). `ratio` = engine/observed; < 1 = "
+        "engine SLOWER than the historical fire (LATE polarity). The Camp "
+        "anchor scores AREA growth, which squares any ROS error (area ~ "
+        "ROS^2) — expect a lower ratio than the head-run anchors. Point ROS "
+        "= the single-cell Rothermel chain (the review's F3 measurement).")
+    add("")
+    add("| anchor | observed | fuel | spotting | engine | ratio | point ROS km/h |")
+    add("|---|---|---|---|---|---|---|")
+    for a in anchors:
+        obs = (f"{a.observed:g} km/h head" if "head" in a.metric
+               else f"{a.observed:,.0f} ac/h")
+        eng = (f"{a.engine:.2f} km/h" if "head" in a.metric
+               else f"{a.engine:,.0f} ac/h")
+        note = f" ({a.notes})" if a.notes else ""
+        pros = f"{a.point_ros_kmh:.2f}" if a.point_ros_kmh > 0.0 else "—"
+        add(f"| {a.anchor} | {obs} | {a.fuel_label} | "
+            f"{'ON' if a.spotting else 'OFF'} | {eng}{note} | "
+            f"**{a.ratio:.2f}x** | {pros} |")
+    add("")
+    add("## RECOMMENDATION")
+    add("")
+    for r in recommendations(pooled, pooled_wide, anchors):
+        add(f"- {r}")
+    add("")
+    add(DO_NOT_SHIP_NOTE)
+    add("## Reachability / degradation log")
+    add("")
+    if fetch_summary:
+        add(f"- HTTP requests, cumulative across fetch invocations: "
+            f"**{fetch_summary.get('n_requests', 0)}** (read-only GETs, "
+            f"keyless public services only; hard per-invocation budget "
+            f"{fetch_summary.get('budget', '?')}; the full per-URL log is "
+            f"`tools/hindcast_data/fetch_log.json`).")
+        for line in fetch_summary.get("notes", []):
+            add(f"- {line}")
+        fetched = fetch_summary.get("fetched_at_utc")
+        if fetched:
+            add(f"- Data fetched (UTC): {fetched} — cached under "
+                f"`tools/hindcast_data/`; replay + this report regenerate "
+                f"offline from the cache.")
+    else:
+        add("- No fetch log found (offline run against a pre-existing cache).")
+    add("")
+    return "\n".join(L) + "\n"

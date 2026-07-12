@@ -1,0 +1,369 @@
+# WG Response — Interactive Simulator UI (design of record)
+
+**Requested 2026-07-09 (founder):** a simulator UI to *watch the model's functionality*:
+five real locations; user sets client count (auto-placed in WUI areas), response-team count,
+fire location + intensity; engine demonstrates propagation + crew deployment with crews
+leaving every location at a user-selected minimum time before fire arrival — the slider is
+the tool for exploring safety options and thresholds.
+
+## Product shape
+
+`py -3 -m wgresponse.cli simui` → browser page (Leaflet, same offline-shim discipline as the
+ops console) at `/simulator`. Runs the REAL engine — `ensemble_arrival`, alert ladder,
+`dispatch.plan`, corridor/egress safety — in an accelerated background loop; nothing is
+canned. The UI is a demonstration instrument, not a toy renderer.
+
+## The five real locations (real terrain, real WUI)
+
+Chosen for known WUI exposure + business relevance (PD Mountain West = CO/UT footprint):
+
+| # | Location | Center (lat, lon) | Why |
+|---|---|---|---|
+| 1 | Malibu / Santa Monica Mtns, CA | 34.055, -118.72 | Chaparral canyon WUI, Santa Ana alignment |
+| 2 | Paradise / Magalia, CA | 39.775, -121.60 | Camp Fire geography (timber-litter + foothill towns) |
+| 3 | Santa Rosa NE / Mark West, CA | 38.50, -122.65 | Tubbs corridor (wind-driven grass/oak) |
+| 4 | Boulder / Superior, CO | 39.955, -105.16 | Marshall Fire grass-WUI; PD Mountain West |
+| 5 | Park City / Summit Park, UT | 40.72, -111.55 | Gambel-oak/aspen mountain WUI; PD Mountain West |
+
+Terrain: one-time LFPS pull per location (~18×18 km @ 90 m), cached into `data/tiles/*.wgt`
+(the dep-free ASCII tile format) and committed — the simulator then runs **offline and
+dep-free**. If a tile is missing at runtime: loud banner + synthetic fallback (never silent).
+
+## User controls (left panel)
+
+- **Location** — the five presets (map recenters; tile loads).
+- **Clients (N)** — slider/input 1–200. Placement: seeded-random over **WUI cells** derived
+  from the real fuel grid: non-burnable developed cells (FBFM40 91/93) within 3 cells of
+  burnable fuel, plus burnable cells within 1 cell of developed — the actual
+  interface/intermix band. Re-roll button (new seed). Client values drawn from a seeded
+  lognormal ($600k–$5M) so dispatch triage is visible.
+- **Response teams (M)** — 1–12. Staged at real safe-zone anchor points (town centers /
+  highway nodes per location); safe zones marked on the map.
+- **Fire** — click map to ignite (or drag existing); **intensity** preset mapping to weather:
+  Low (8 mph, RH 35%), Moderate (18 mph, RH 22%), High (28 mph, RH 12%), Extreme
+  (40 mph gusting, RH 6%) + wind direction dial (default = location's canonical hazard wind:
+  Santa Ana E-NE, Diablo NE, Marshall W, etc.). Multiple simultaneous fires allowed.
+- **THE SAFETY SLIDER — "minimum clear-by" (`egress_buffer_min`)**: 10–120 min, default 30.
+  Applied live to `ResponseConfig.egress_buffer_min` (the SAFETY SEMANTICS 2 deadline). A
+  second optional slider exposes `slack_min` (0–60). Changing either triggers an immediate
+  re-plan so thresholds can be compared side-by-side.
+- **Clock** — run/pause, speed 1×–600×, step one cycle, reset scenario. The 600× ceiling
+  is enforced at BOTH seams (SimSession.set_speed and the server /api/sim config path), so
+  no command script can request coarser multi-cycle jumps than the design allows.
+
+## What the map shows (the functionality being demonstrated)
+
+- Fire perimeter growth (burned mask) + P50 isochrone rings (6/12/24/48/72 h) and the eroded
+  P10 corridor field toggle — the actual safety surface.
+- Clients colored by live alert state (NONE→NOTICE→WATCH→EXTREME→IMPACTED/CLEARED ladder,
+  real AlertEngine with hysteresis).
+- Crews moving along planned routes (real `dispatch.plan` output, commitment horizon honored),
+  stop cards showing arrive/service/depart vs `latest_depart`, and the **margin** at each stop.
+- Egress legs to safe zones drawn when crews withdraw; corridor-blocked routes shown red with
+  the unserved reason.
+- Right panel: alert feed (real AlertEvents), per-crew itinerary with margins, and a **safety
+  scoreboard**: served / unserved (by reason) / withdrawn / min margin observed / any violation
+  (must stay 0) — recomputed per slider change. What the slider demonstrably moves is pinned
+  in "Slider observability" below: start-of-run buffer sweeps move the unserved REASONS and
+  the departure deadlines (not the served count — the corridor law dominates there), while a
+  LIVE mid-run tightening moves the headline served count itself by withdrawing in-flight
+  work — the threshold-exploration the request asks for, told honestly.
+
+## Slider observability — what the buffer demonstrably changes (measured 2026-07-10)
+
+Verifier sweeps (scratch_review/attack_sim_slider.py + attack_sim_probe_*.py) established
+that the START-OF-RUN served count is buffer-insensitive in every constructible scenario: a
+10-point sweep 10→120 min on the real santa_rosa_ca tile (60 clients / 1 crew / extreme,
+36 ticks) and probes across n∈{16..200}, 1–2 crews, near/far ignitions, plus the suite's own
+synthetic checkerboard, all leave the count flat. That is engine physics, not a defect:
+
+- **The corridor law dominates the low range.** Every serviced stop must clear its egress
+  corridor against the ERODED P10 (500 m erosion, route_margin_min 60): at the stop itself
+  that already forces departure ≥ ~60 min + the erosion gap before local P10 arrival, so
+  buffer values ≲ 60–90 min can never become the binding constraint.
+- **Early adoption gives hours of margin.** Jobs are adopted as soon as P50 ≤ notice_h (72 h)
+  and serviced immediately — measured minimum audited service margins are tens of hours on
+  the real tiles (19.2–24.2 h on the sweep scenario itself; 26.5–60.2 h across the verifier's
+  wider probe matrix); a late-notice probe (notice_h = 2) serves 0 outright because the
+  corridor blocks late dispatch. The 10–120 min slider range almost never intersects the
+  feasibility frontier of a from-scratch plan.
+
+What the slider DOES visibly demonstrate (all pinned in tests):
+
+1. **Unserved-reason escalation** — the marginal client's reason moves from
+   no_safe_corridor / infeasible_slack at low buffers to infeasible_deadline at high ones:
+   the operative safety constraint changes name on the scoreboard
+   (tests/test_simui.py::test_buffer_binds_unserved_reasons).
+2. **Deadline tightening** — every re-planned stop's latest_depart moves earlier
+   minute-for-minute with the slider, visible on the stop cards within one tick
+   (tests/test_simui.py::test_buffer_change_triggers_replan_next_tick).
+3. **Live withdrawals move the headline number** — tightening MID-RUN re-checks in-flight
+   work: a crew mid-deploy whose projected departure violates the new rule withdraws on the
+   spot (gel unfinished, immediate egress, loud `withdrawn` record). With the honest
+   anchored arrival fields (2026-07-10) a from-scratch plan never parks a deploy near the
+   120-min slider ceiling — measured p10 gaps at adoption are 400–900+ min under the
+   corridor law — so the demo tightens the WORLD mid-deploy instead of scripting a doomed
+   stop: on the pinned checkerboard (16 clients / 1 crew / high fire 4.6 km upwind, seed
+   m1) the first deploy arms at tick 2; a SECOND IGNITION 1250 m dead-upwind of the
+   deploying client, with the domain wind swung onto it (ignite's documented shared-weather
+   semantics — every fire's field re-anchors next tick), collapses that client's fresh p10
+   gap to 43.3 min worst-case (77.6 min on the stop's own fire): inside the 10-min rule,
+   outside 120. Raising 10→120 min then withdraws the in-flight stop (deficit 42.4 min);
+   the control twin — identical commands minus the tightening — legally completes it under
+   the adoption-time rule and serves 3 by tick 60 with withdrawn=0, while the tightened run
+   serves 0 with withdrawn=1; violations 0 in both
+   (tests/test_simui_policy.py::test_live_tightening_reduces_served_vs_control).
+
+The founder demo script therefore is: run at a low buffer, let a crew start a roof, tighten
+the world (drop a spot-fire ignition upwind of the property being serviced), then RAISE the
+slider — watch the crew abort, egress, and the scoreboard trade served for withdrawn, with
+the audit green the whole time.
+
+## Live policy changes vs in-flight work (the safety law)
+
+Moving either slider (buffer or slack) revokes every not-yet-started stop (next tick
+re-plans under the new rule) and re-checks any IN-PROGRESS deploy — never grandfathered
+(2026-07-09 verifier blocking finding, resolved toward safety):
+
+- the stop's audit rule only ever TIGHTENS (max of adoption-time and new rule; a live
+  loosening never relaxes work already in flight);
+- a projected departure violating the effective rule ⇒ the crew WITHDRAWS immediately: the
+  deploy aborts unfinished (no ServicedStop), the crew turns straight onto its planned
+  egress leg, and the event lands in state()['withdrawn'], the scoreboard `withdrawn`
+  count, unserved reason `withdrawn_unsafe`, and a session note;
+- a KEPT tightened stop is flagged `policy_superseded` on the itinerary and re-checked
+  EVERY tick against the newest P10 (cause `eta_drift`), so a forecast update can never let
+  it complete past the new rule;
+- COMPLETED stops keep their adoption-time rule — history is not retroactively re-labeled —
+  and every audit row carries rule_buffer_min / rule_ember_min so the grandfather is
+  visible, never silent.
+
+## Engine integration (no physics forks)
+
+New module `wgresponse/simui.py`: `SimSession` holds (location tile, clients, crews, fires,
+cfg overrides, sim clock); each accelerated tick runs the same cycle path as `sim.run`
+(ensemble → ThreatAssessments → AlertEngine.evaluate → dispatch.plan → kinematic crew
+movement → SAFETY AUDIT identical to `sim.py`'s). Server: `/api/sim/*` endpoints
+(new-session / configure / ignite / tick-state stream via poll) mounted in `server.py`;
+`cli simui` = `serve` + auto-open instructions. All seeded → any run is reproducible from
+its seed line (shown in the UI for bug reports).
+
+## Acceptance
+
+1. All five locations load real cached tiles (fuel histogram sanity per location pinned in
+   tests); WUI placement puts ≥95% of clients within the interface band (test).
+2. With defaults (30-min buffer): every serviced stop departs ≥ buffer before the local P10
+   arrival — the sim SAFETY AUDIT (violations == 0) runs every tick and renders on the
+   scoreboard.
+3. Raising the buffer strictly never increases served count (monotonic safety trade-off,
+   property test across seeds); the scoreboard reflects re-plans within one tick; the
+   slider's bind is demonstrated NON-vacuously — unserved-reason escalation to
+   infeasible_deadline, latest-depart tightening, and the live mid-deploy withdrawal
+   served-count demo ("Slider observability" above; tests/test_simui_policy.py).
+4. Deterministic: same seed + same click script ⇒ identical timeline (test via scripted
+   session).
+5. Suite stays green; simulator adds its own tests (placement, session API, audit wiring,
+   determinism).
+
+## Tile provenance
+
+**Fetched 2026-07-10T05:12Z (2026-07-09 PDT)** by `py -3 tools/fetch_sim_tiles.py` — live
+LANDFIRE **LFPS** job API (`lfps.usgs.gov`, keyless GET; `Email` = env `LFPS_EMAIL` else
+`ops@thewildfireguardian.com`), layers **`LF2024_FBFM40;LF2020_SlpD;LF2020_Asp;LF2020_Elev`**
+(`Output_Projection=4326`), 30 m native → nearest-neighbor 90 m by the shipped
+`wgresponse.terrain.LfpsTerrain` adapter, saved dep-free via `terrain.save_ascii_tile`.
+**All five jobs succeeded** (first attempt, 155–447 s each); no failures to record, so no
+location relies on the missing-tile fallback today. Every tile: 200×200 @ 90 m (~18×18 km),
+bands FUEL/SLOPE_DEG/ASPECT_DEG/ELEV_M. Machine-readable copy: `data/tiles/provenance.json`;
+offline sanity pins: `tests/test_sim_tiles.py`; raw job zips cached in `out/lfps_sim_cache/`
+(a decode failure never re-burns a completed LFPS job). Refetch: `--force`; one location:
+`--only <key>`.
+
+| key | bbox W, S, E, N (deg) | bytes | burnable | dev 91/93 | water 98 | top fuels (% of cells) | WUI dev cells (r≤3) | elev m | slope max |
+|---|---|---|---|---|---|---|---|---|---|
+| malibu_ca | -118.817584, 33.974152, -118.622416, 34.135848 | 849,857 | 57.1% | 9.3% | 30.5% | SH2 16.8, GS2 14.3, SH5 10.1 | 3,686 | 0*–853 | 56° |
+| paradise_ca | -121.705194, 39.694152, -121.494806, 39.855848 | 891,227 | 88.6% | 10.1% | 0.7% | GR2 17.9, GS2 12.5, TL4 9.9 | 4,052 | 101–1,235 | 55° |
+| santa_rosa_ca | -122.753306, 38.419152, -122.546694, 38.580848 | 865,922 | 72.0% | 27.6% | 0.3% | GR2 12.4, TU2 9.2, TL5 8.3 | 9,870 | 32–829 | 48° |
+| boulder_co | -105.265470, 39.874152, -105.054530, 40.035848 | 874,533 | 60.6% | 36.6% | 2.3% | GR2 43.6, GR1 4.8, GS2 3.1 | 14,143 | 1,547–1,974 | 26° |
+| park_city_ut | -111.656673, 40.639152, -111.443327, 40.800848 | 924,812 | 88.8% | 10.6% | 0.1% | SH7 21.4, GS2 19.1, TU5 10.1 | 4,239 | 1,844–3,034 | 49° |
+
+\* malibu_ca only: 1,181 cells (2.95%) of far-offshore Pacific fringe are LANDFIRE nodata
+(−9999 in FUEL and ELEV_M) — the bbox leaves the LANDFIRE mapping zone there. Fail-safe by
+construction: `fuels.is_burnable` treats −9999 as non-burnable, and `tests/test_sim_tiles.py`
+bounds the nodata fraction (≤35%) while rejecting any other out-of-namespace code. The other
+four tiles contain FBFM40+NB codes only. Histograms are LF2024-plausible per location
+(Malibu chaparral SH/GS, Paradise foothill timber-litter/grass, Tubbs-corridor grass/oak +
+Santa Rosa urban edge, Marshall grass + suburbs, Park City Gambel-oak SH7/aspen-conifer);
+ticket SIM-1's optional park_city developed-fraction exemption proved unnecessary (10.6%
+measured, 10× the 1% floor). If a tile is deleted, its tests SKIP with a loud refetch
+instruction and the UI must show the missing-tile banner + synthetic fallback (never silent).
+
+## Simulator (SIM-1..3) results
+
+**Gate run 2026-07-10** (Windows 11, Python 3.14.5, pytest 9.1.1; everything from the
+repo root). SIM-1 = tiles + WUI placement, SIM-2 = SimSession policy engine, SIM-3 =
+server/CLI/UI. Founder entry point: `py -3 -m wgresponse.cli simui --open`.
+
+### Suite
+
+`py -3 -m pytest` → **913 passed, 0 failed, 0 skipped** in ~31 s (Sprint-2 baseline 822
++ 91 simulator tests). All Sprint-2 pins (byte-identity, outage drills, attack suites)
+stayed green; `filterwarnings = error::RuntimeWarning` in force.
+
+### Tile provenance recap
+
+Every demo below ran on the REAL committed LFPS tiles (`data/tiles/<key>.wgt`, source
+`lfps:LF2024_FBFM40;LF2020_SlpD;LF2020_Asp;LF2020_Elev`, 200×200 @ 90 m, fetched
+2026-07-10 — provenance table above): `state.terrain.synthetic == false` on all five
+locations, so **no synthetic fallback was exercised anywhere in this gate** (the
+fallback path stays covered by tests/test_simui.py on controlled tmp tile dirs).
+
+### Five-location scripted demo
+
+Per location: 40 clients (seeded WUI placement, seed `demo`), 4 crews, one **high** fire
+(28 mph / RH 12%) ignited **6 km upwind** of the location center along the canonical
+hazard wind (deterministic burnable-cell scan; boulder_co needed a 0.5 km lateral nudge
+off non-burnable suburb cells), buffer 30 min (shipped default), **30 ticks**. One tick
+= one 900 s replan cycle — the server's run path holds the engine step at 1 cycle/tick
+and its default **300×** only compresses wall time (3 s/tick), so this scripted run is
+the same run the founder watches at 300×; 30 ticks = **7.5 sim hours**.
+
+| location | served | unserved by reason | min margin (h) | violations | first NOTICE | first EXTREME | wall, 30 ticks |
+|---|---|---|---|---|---|---|---|
+| malibu_ca | **13** | in_progress ×1 | 9.12 | **0** | tick 1 | tick 1 | 20.7 s |
+| paradise_ca | **1** | — | 35.25 | **0** | tick 1 | — | 14.9 s |
+| santa_rosa_ca | **0** | in_progress ×2 | n/a (none complete yet) | **0** | tick 1 | — | 12.5 s |
+| boulder_co | **2** | — | 16.83 | **0** | tick 1 | tick 1 | 9.6 s |
+| park_city_ut | **3** | — | 17.68 | **0** | tick 1 | — | 13.0 s |
+
+Ignition points (all `intensity=high`, wind = canonical hazard wind): malibu
+34.08967,-118.67009 (SH5 145); paradise 39.81314,-121.55033 (TU5 165); santa_rosa
+38.53814,-122.60122 (TL8 188); boulder 39.95048,-105.23039 (GR1 101); park_city
+40.68183,-111.60031 (GS2 122). "—" = did not occur within the 30-tick window.
+
+Reading it honestly: NOTICE fires at tick 1 everywhere because the ladder evaluates the
+FORECAST — the first post-ignition evaluation already puts nearby clients inside P50 ≤
+72 h. EXTREME at tick 1 only where that first forecast is inside P50 ≤ 24 h / P10 ≤
+12 h (fast chaparral/grass: malibu, boulder); the slower timber/oak tiles (paradise,
+santa_rosa, park_city) produced **no** EXTREME within the 7.5 h slice. Served counts are
+the 7.5-hour completion slice, not a campaign total (santa_rosa's only 2 threatened
+clients became jobs late, as the growing perimeter pulled their P50 inside 72 h; both
+were mid-flight at tick 30). Alert-event volumes: 20/2/4/4/6. Mean engine cost
+0.32–0.69 s/tick at default config — comfortably under the 3 s/tick the default 300×
+playback needs, i.e. the UI keeps real-time at 300× on this hardware.
+
+### Malibu buffer trade-off (the threshold-explorer story)
+
+Identical scenario, `egress_buffer_min` set at session start to 30 / 60 / 90:
+
+| buffer (min) | served | withdrawn | min audited margin (h) | unserved by reason | violations |
+|---|---|---|---|---|---|
+| 30 | 13 | 0 | 9.12 | in_progress ×1 | 0 |
+| 60 | 13 | 0 | 8.62 | in_progress ×1 | 0 |
+| 90 | 13 | 0 | 8.12 | in_progress ×1 | 0 |
+
+Exactly the pinned "Slider observability" physics: a START-of-run buffer change does not
+move the served count (corridor law + early adoption dominate; margins are hours) — what
+it demonstrably moves is every deadline and the audited margin, **minute-for-minute**
+(−0.5 h per +30 min: 9.12 → 8.62 → 8.12), with the audit green throughout. The demo that
+moves the headline served number is the LIVE mid-deploy tightening (control 3 vs tightened
+0 served, withdrawn=1, after a second-ignition p10 collapse on the pinned checkerboard;
+tests/test_simui_policy.py): tighten the world while a crew is on a roof, then raise the
+slider.
+
+### Smoke + console-JSON contract (SIM-3)
+
+- `py -3 -m wgresponse.cli simui --smoke` → **exit 0** (boulder_co real tile, ignite, 3
+  engine ticks over the live HTTP API, scoreboard printed, violations 0; DEV-OPEN
+  posture announced loudly; all five tiles reported cached).
+- Server booted once via `py -3 -m wgresponse.cli simui --port 8878`; the Malibu demo
+  scenario created over HTTP (`POST /api/sim/new` → ignite → `ctl run`, default 300×,
+  tick_interval 3 s); `GET /api/sim/<id>/state` polled at the UI's 1 s cadence across
+  ticks 1–3 plus one `?safety=1` poll. **Every field console/simulator.html reads was
+  present on every poll**: top-level (session_id, running, seed, speed_x, wind_dir_deg,
+  location, location_name, sim_now_s, tick), scoreboard (served, unserved_by_reason,
+  min_margin_h, violations, buffer_min, slack_min, withdrawn), terrain (+ bbox + rle01
+  burned mask), fires, isochrones (5 rings), clients, safe_zones, crews (+ track points
+  + 13 itinerary stop cards incl. policy_superseded), alert_feed (13→19 events),
+  serviced (1 completed stop by tick 3), and safety_surface (5 eroded-P10 rings) — all
+  strict JSON (no bare NaN/Infinity), violations 0 on every poll, clean pause after.
+
+### Known limitations (as measured)
+
+1. **Developed-cell clients never alert or dispatch.** 19/15/22/31/13 of the 40 placed
+   clients (malibu/paradise/santa_rosa/boulder/park_city) sit on FBFM40 91/93 cells; the
+   surface model treats NB fuel as a break (ember and structure-to-structure spread are
+   not modeled). The per-session note in `state.notes` says so loudly; the WUI band
+   deliberately includes the developed side of the interface.
+2. **Slice, not campaign:** 30 ticks = 7.5 h; served counts rise with longer runs
+   (santa_rosa 0 served / 2 in flight at tick 30 is the honest slice reading).
+3. **EXTREME at tick 1 is correct, not a bug** — the ladder evaluates the forecast, so a
+   client whose first P50/P10 already sits inside 24 h/12 h alerts immediately; there is
+   no artificial ramp.
+4. **Start-of-run buffer sweeps leave served flat** (re-measured above); the honest
+   slider demos are unserved-reason escalation, deadline tightening, and the live
+   mid-run withdrawal — all pinned in tests.
+5. **Determinism caveat** (inherited from dispatch.plan): bytes guaranteed while the
+   solver finishes inside `cfg.solver_budget_s` — always true at demo scale.
+6. `min_margin_h` stays null until the first stop completes (it is the audited
+   serviced-stop margin, not a plan projection).
+7. Wall-clock figures are this machine's; per-tick cost grows with burned-perimeter size
+   (malibu mean 0.69 s/tick vs boulder_co 0.32 s/tick over the 30-tick window).
+
+Repro: a SimSession given (seed, command script) is byte-reproducible (design rule 3);
+the demos above are seed `demo` with the exact parameters listed, driven through the
+public SimSession seam (configure → ignite → tick×30).
+
+## Fire zone
+
+**Requested 2026-07-10 (founder):** *"allow the fire zone to be increased so ignition can be
+further from the clients homes"* — so the full 72 h NOTICE → WATCH → 24 h EXTREME arc plays
+out instead of a fire that is already on the doorstep at ignition. Law of record:
+`wgresponse/contracts.py`, FIRE ZONE block under the `wgresponse.simui` seam.
+
+- **Two zones per session** — `fire_zone='standard'` (default; the ~18×18 km tile
+  `data/tiles/<key>.wgt`) or `'extended'` (the wide-area `data/tiles/<key>_ext.wgt`,
+  ~48×48 km @ 240 m as fetched 2026-07-10 by `py -3 tools/fetch_sim_tiles.py --extended`;
+  provenance: `data/tiles/provenance_ext.json`). Constructor/`configure()` parameter,
+  serialized into the repro `cmd_log` (`configure.fire_zone`), accepted by
+  `POST /api/sim/new` (unknown value → 400) and selectable in the UI next to the location
+  dropdown (changing it re-creates the session, same UX as a location change; a small
+  teal chip marks an active extended zone; the copy-repro line carries `fire_zone=`).
+- **Clients always live in the community** — WUI placement on extended tiles is restricted
+  to the CENTRAL window covering the standard tile's footprint
+  (`simui.STANDARD_ZONE_HALF_M` = 9 km around the location center, computed from
+  coordinates via `central_window_bbox`, never hardcoded grid indices — max client
+  distance from center ≈ 12.7 km at the window corner). Ignition may be anywhere on the
+  loaded tile; safe zones and crew staging are unchanged (lat/lon anchors).
+- **Horizon floor** — extended sessions default `cfg.horizon_h` to
+  `max(horizon_h, 120.0)` so a fire ignited tens of km out stays inside the forecast;
+  an explicit `horizon_h` in `cfg_overrides` ALWAYS wins (documented precedence on
+  `SimSession.configure`).
+- **Missing `_ext` tile** — loud `state.notes` entry + fallback to the standard tile;
+  `state.fire_zone` always reflects what ACTUALLY loaded (the UI toasts the note and
+  re-syncs the selector). There is deliberately no synthetic extended fallback.
+- **Roads** — road graphs were fetched on the STANDARD bbox and are loaded unchanged;
+  crews still route on them (clients/zones are central). A leg endpoint outside graph
+  coverage (e.g. a far ignition-side withdrawal target) falls back per the
+  `wgresponse.roads` seam: straight tier-0 leg, `on_roads=False`, never silent —
+  verified in `tests/test_simui.py::test_fire_zone_extended_real_tile_integration`.
+- **Map** — the UI fits bounds to `state.terrain.bbox` per session, so an extended
+  session automatically frames the wide tile.
+
+Tests (`tests/test_simui.py`, `tests/test_server.py`): controlled-tile window placement
+(far-hamlet WUI cells excluded, all clients ≤ 13 km), loud missing-`_ext` fallback,
+horizon default + override precedence, ~20 km ignition rejected-on-standard /
+accepted-on-extended, byte-identical replay of an extended session, per-location real
+`_ext` tile integration (loud per-tile skip when a tile is absent; bbox ~2–3× the
+standard tile, bands present, violations 0), and the `/api/sim/new` fire_zone
+happy + 400 paths (re-roll preserves the zone).
+
+Ring quality note (same UI pass, 2026-07-10): `simui._threshold_rings` now orders every
+burned/band ring by TRUE BOUNDARY FOLLOWING (clockwise Moore neighbor-trace per
+8-connected boundary component, start at the westmost-then-northmost cell) instead of
+the old centroid-angle sort, which starburst-zigzagged on concave fronts (the h5 band
+finding). Shape contract unchanged (closed `[lat, lon]` rings, ≤ 240 pts). Pinned by a
+synthetic crescent test: no self-crossing segments, consecutive points within 2 cell
+diagonals. Idle crews now emit `route_on_roads`/`egress_on_roads` = `null` when no
+polyline exists — `false` is reserved for a real straight-line leg (the UI's honesty
+chip trigger).

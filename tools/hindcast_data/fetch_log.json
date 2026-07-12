@@ -1,0 +1,329 @@
+{
+ "budget": 45,
+ "fetched_at_utc": "2026-07-10 02:04",
+ "incidents": {
+  "0140f0b62f3246519008e5ae": {
+   "irwin": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
+   "name": "Dillon",
+   "slug": "0140f0b62f3246519008e5ae"
+  },
+  "08a6358f830140939988e265": {
+   "irwin": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
+   "name": "Gifford",
+   "slug": "08a6358f830140939988e265"
+  },
+  "1ab682f7cc0f4dce87a4fa4a": {
+   "irwin": "{1AB682F7-CC0F-4DCE-87A4-FA4A9B67AB05}",
+   "name": "Madre",
+   "slug": "1ab682f7cc0f4dce87a4fa4a"
+  },
+  "f193012559934672a05874ad": {
+   "irwin": "{F1930125-5993-4672-A058-74AD25F35E3F}",
+   "name": "Butler",
+   "slug": "f193012559934672a05874ad"
+  }
+ },
+ "n_requests": 62,
+ "notes": [
+  "DEGRADED: Gifford ({08A6358F-8301-4093-9988-E265C8F6F0A9}) skipped \u2014 HTTP Error 400: Bad Request",
+  "DEGRADED: Butler ({F1930125-5993-4672-A058-74AD25F35E3F}) skipped \u2014 HTTP Error 400: Bad Request",
+  "DEGRADED: Dillon ({0140F0B6-2F32-4651-9008-E5AE2C38F547}) skipped \u2014 HTTP Error 400: Bad Request",
+  "DEGRADED: Madre ({1AB682F7-CC0F-4DCE-87A4-FA4A9B67AB05}) skipped \u2014 HTTP Error 400: Bad Request",
+  "LFPS tile fetched for Gifford: 364x373 @ 90 m",
+  "LFPS tile fetched for Butler: 152x153 @ 90 m",
+  "LFPS tile fetched for Dillon: 168x160 @ 90 m",
+  "LFPS tile fetched for Madre: 348x468 @ 90 m"
+ ],
+ "requests": [
+  {
+   "bytes": 5241,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 13124,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 53765,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 6297,
+   "status": 200,
+   "url": "https://archive-api.open-meteo.com/v1/archive"
+  },
+  {
+   "bytes": 10622,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 19982,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 8330,
+   "status": 200,
+   "url": "https://archive-api.open-meteo.com/v1/archive"
+  },
+  {
+   "bytes": 8169,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 22365,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 8330,
+   "status": 200,
+   "url": "https://archive-api.open-meteo.com/v1/archive"
+  },
+  {
+   "bytes": 5766,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 98441,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 9293,
+   "status": 200,
+   "url": "https://archive-api.open-meteo.com/v1/archive"
+  },
+  {
+   "bytes": 5241,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 410,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/submit"
+  },
+  {
+   "bytes": 117,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1293,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1293,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1293,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1293,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1293,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1293,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1293,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1782,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 4050723,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/arcgis/rest/directories/arcgisjobs/landfireproductservice_gpserver/j2797c8adb63641629589ca1966c26eea/scratch/j2797c8adb63641629589ca1966c26eea.zip"
+  },
+  {
+   "bytes": 409,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/submit"
+  },
+  {
+   "bytes": 117,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1293,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1293,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1293,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1293,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1293,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1293,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1782,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 713777,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/arcgis/rest/directories/arcgisjobs/landfireproductservice_gpserver/j3229c3bc5393453eafb009220ca0525e/scratch/j3229c3bc5393453eafb009220ca0525e.zip"
+  },
+  {
+   "bytes": 410,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/submit"
+  },
+  {
+   "bytes": 117,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1294,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1294,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1294,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1294,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1294,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1294,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1376,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1783,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 819286,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/arcgis/rest/directories/arcgisjobs/landfireproductservice_gpserver/jc1c40608581542e2a2495e40b282bd27/scratch/jc1c40608581542e2a2495e40b282bd27.zip"
+  },
+  {
+   "bytes": 408,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/submit"
+  },
+  {
+   "bytes": 117,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1291,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1291,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1291,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1291,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1291,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1291,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1291,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1291,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 1780,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/api/job/status"
+  },
+  {
+   "bytes": 4117300,
+   "status": 200,
+   "url": "https://lfps.usgs.gov/arcgis/rest/directories/arcgisjobs/landfireproductservice_gpserver/j31c3459ab55f4ed8aa3e34e62927fff8/scratch/j31c3459ab55f4ed8aa3e34e62927fff8.zip"
+  }
+ ]
+}
