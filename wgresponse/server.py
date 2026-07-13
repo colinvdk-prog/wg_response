@@ -349,6 +349,14 @@ class SimSessionManager:
         if sequence not in ("auto", "fire_first", "urgency"):
             return 400, {"error": "sequence must be auto|fire_first|urgency"}
         cfg["dispatch_sequence"] = sequence
+        # CREW SHIFTS (ROUND 6b): 12h-on / 8h-rest fatigue cycles for multi-
+        # day events (A/B staggered). Default OFF (short demo scenarios).
+        crew_shifts = payload.get("crew_shifts", False)
+        if not isinstance(crew_shifts, bool):
+            return 400, {"error": "crew_shifts must be a boolean"}
+        if crew_shifts:
+            cfg["crew_shift_max_on_h"] = 12.0
+            cfg["crew_shift_rest_h"] = 8.0
         with self._lock:
             self._n += 1
             sid = f"sim-{self._n}"

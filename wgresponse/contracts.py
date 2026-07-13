@@ -947,6 +947,18 @@ class ResponseConfig:
     # three sweeps, pre-roads/pre-hold); this knob exists to re-measure under
     # the current stack — the sweep verdict picks the shipped sim default.
     dispatch_sequence: str = "auto"
+    # CREW SHIFTS (FOUNDER ROUND 6b, 2026-07-12): multi-day events (the 24h
+    # coating hold + WATCH windows run 24-72h) need rest cycles. A crew may
+    # work at most crew_shift_max_on_h continuous hours from its mobilization
+    # (0 = shifts OFF, byte-identical); it then rests crew_shift_rest_h at its
+    # current safe position (status OFF_DUTY — never dispatchable, still
+    # SEM-10-protected and relocated if threatened) and returns AVAILABLE.
+    # Rest NEVER interrupts a job in progress (the crew finishes, then rests).
+    # First-cycle stagger: odd-indexed crews get a HALF first shift (A/B
+    # rotation) so a simultaneous mobilization cannot put the whole fleet to
+    # bed at the same hour.
+    crew_shift_max_on_h: float = 0.0
+    crew_shift_rest_h: float = 8.0
     ember_threat_radius_m: float = 0.0      # eta_at adjacency fallback for developed-cell homes (0 = off/byte-identical; sim sets ~200)
     crew_reinforce_1h_min: float = 60.0     # out-of-region '1h away' crews arrive this many min after first ignition (SEMANTICS 9)
     crew_reinforce_3h_min: float = 180.0    # out-of-region '3h away' crews arrive this many min after first ignition (SEMANTICS 9)

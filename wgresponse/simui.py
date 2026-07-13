@@ -1675,6 +1675,13 @@ class SimSession:
         self._hold_noted = False
         self._hold_active_n = 0
         self._preposition_target = {}
+        # CREW SHIFTS (ROUND 6b): duty_start = unix s this crew's current
+        # shift began (armed at first ignition / reinforcement arrival);
+        # shift_budget = seconds of this shift (first cycle halved for odd
+        # crews — A/B stagger); resting_until = unix s rest ends.
+        self._duty_start = {}
+        self._shift_budget = {}
+        self._resting_until = {}
         # LAW 1 TIME-SCRUB HISTORY (FOUNDER ROUND 3): a bounded ring of DEEP
         # snapshots of every emitted tick's state() (oldest evicted at
         # cfg.history_ticks). Recorded ONLY at tick emit (never on a bare
@@ -2489,6 +2496,88 @@ class SimSession:
                     f"{zone_id})")
             self._relocating[cid] = "zone_overrun" if burned else "zone_threatened"
 
+    # -- CREW SHIFTS (FOUNDER ROUND 6b): fatigue law for multi-day events ------
+
+    def _crew_shift_sweep(self, now: float) -> None:
+        """Rest cycles (contracts CREW SHIFTS): a crew that has been on duty
+        longer than its shift budget goes OFF_DUTY for cfg.crew_shift_rest_h
+        at its current position — but NEVER mid-job (rest starts at its first
+        idle tick after the budget runs out; the crew on a roof finishes).
+        A resting crew is not dispatchable (_eligible_replan_ids) yet remains
+        under the SEM-10 safety sweep — if its cell is threatened it FLEES
+        (status flips to EGRESSING for the escape) and resumes resting on
+        arrival. First-cycle A/B stagger: odd crews get a half first shift so
+        a simultaneous mobilization cannot bed the whole fleet at once.
+        Deterministic (id order, pure clock arithmetic). No-op at
+        crew_shift_max_on_h == 0 (byte-identical)."""
+        cfg = self._cfg
+        max_on_s = cfg.crew_shift_max_on_h * 3600.0
+        if max_on_s <= 0.0:
+            return
+        rest_s = cfg.crew_shift_rest_h * 3600.0
+        fire_active = bool(self._fires)
+        for idx, cid in enumerate(_idsort(self._crew_sims)):
+            cs = self._crew_sims[cid]
+            if cs.status == CrewStatus.INBOUND:
+                continue
+            # rest complete -> new full shift
+            rest_end = self._resting_until.get(cid)
+            if rest_end is not None and now >= rest_end:
+                self._resting_until.pop(cid, None)
+                self._duty_start[cid] = now
+                self._shift_budget[cid] = max_on_s
+                if cs.status == CrewStatus.OFF_DUTY:
+                    cs.status = CrewStatus.AVAILABLE
+                self._notes.append(
+                    f"crew {cid} BACK ON SHIFT (rested "
+                    f"{cfg.crew_shift_rest_h:g}h)")
+                continue
+            # still resting: re-impose OFF_DUTY once idle (a fleeing resting
+            # crew is EGRESSING mid-escape; it resumes resting on arrival)
+            if rest_end is not None:
+                if cs.idle() and cs.status != CrewStatus.OFF_DUTY:
+                    cs.status = CrewStatus.OFF_DUTY
+                continue
+            # arm the duty clock at first mobilization
+            if fire_active and cid not in self._duty_start:
+                self._duty_start[cid] = now
+                self._shift_budget[cid] = (max_on_s if idx % 2 == 0
+                                           else max_on_s * 0.5)
+            start = self._duty_start.get(cid)
+            if start is None:
+                continue
+            budget = self._shift_budget.get(cid, max_on_s)
+            if (now - start) >= budget and cs.idle():
+                # HOLD-UNTIL-RELIEVED: never empty the fleet — rest waits for
+                # another on-duty crew unless this crew is 2x over budget (the
+                # hard fatigue cap; then it rests regardless, loudly). Earlier
+                # ids decide first each tick (deterministic), so a later crew
+                # sees the earlier one's fresh rest and defers.
+                others_on = any(
+                    oid != cid
+                    and oid not in self._resting_until   # a fleeing resting
+                    # crew is transiently EGRESSING but is NOT on duty
+                    and self._crew_sims[oid].status not in
+                    (CrewStatus.INBOUND, CrewStatus.OFF_DUTY)
+                    for oid in self._crew_sims)
+                relief_coming = any(oid != cid for oid in self._resting_until)
+                # the hard cap bypasses hold-until-relieved ONLY when relief
+                # is impossible (nobody else on duty AND nobody resting who
+                # will return) — a resting teammate IS incoming relief, so the
+                # over-budget crew stands watch until the swap (real ops).
+                hard_over = ((now - start) >= 2.0 * budget
+                             and not relief_coming)
+                if not others_on and not hard_over:
+                    continue                     # hold until relieved
+                self._resting_until[cid] = now + rest_s
+                cs.status = CrewStatus.OFF_DUTY
+                self._notes.append(
+                    f"crew {cid} OFF SHIFT (fatigue law: "
+                    f"{(now - start) / 3600.0:.1f}h on duty"
+                    f"{', HARD CAP — no relief available' if hard_over and not others_on else ''}"
+                    f") — resting {cfg.crew_shift_rest_h:g}h at its current "
+                    f"safe position")
+
     # -- FOUNDER ROUND 5: COATING HOLD (>24h defer + preposition) --------------
 
     def _apply_coating_hold(self, jobs, crew_args, ens_map, plan_zones,
@@ -2637,7 +2726,9 @@ class SimSession:
         idle-with-work failure of the full-utilization law."""
         return [cid for cid in _idsort(self._crew_sims)
                 if self._crew_sims[cid]._mode in ("idle", "travel")
-                and self._crew_sims[cid].status != CrewStatus.INBOUND]
+                and self._crew_sims[cid].status != CrewStatus.INBOUND
+                # CREW SHIFTS (ROUND 6b): a resting crew is never dispatchable
+                and self._crew_sims[cid].status != CrewStatus.OFF_DUTY]
 
     def _incumbent_from_crews(self, eligible_ids, now: float):
         """Reconstruct a DispatchPlan from the eligible crews' CURRENT
@@ -2938,6 +3029,12 @@ class SimSession:
         # byte-identical for that half; only the new crew-overrun half reads now.
         self._now_s = now + step
         self._tick_n += 1
+
+        # 6a. CREW SHIFTS (ROUND 6b fatigue law): rest/return transitions run
+        # BEFORE the safety sweep so a crew that just went OFF_DUTY is already
+        # in its resting state when the sweep checks its cell (a threatened
+        # resting crew still flees — the sweep outranks rest).
+        self._crew_shift_sweep(self._now_s)
 
         # 6b. CONTINUOUS CREW-SAFETY SWEEP (SAFETY SEMANTICS 10a/10b): relocate
         # every arrived crew whose live cell the fire threatens, BEFORE the
@@ -3525,6 +3622,10 @@ class SimSession:
             # repositioned to a safe zone because the fire threatened it) — kept
             # DISTINCT from safety withdrawals (aborted gel deploys).
             "relocations": self._n_relocations,
+            # CREW SHIFTS (ROUND 6b): crews currently resting (fatigue law)
+            "crews_resting": sum(
+                1 for c in self._crew_sims.values()
+                if c.status == CrewStatus.OFF_DUTY),
             "buffer_min": cfg.egress_buffer_min,
             "slack_min": cfg.slack_min,
             "deploy_min": cfg.deploy_min,

@@ -1,6 +1,8 @@
-# WG Response — interactive simulator, containerized for AWS App Runner.
-# Stdlib-only at runtime: the simulator serves cached terrain tiles + road
-# graphs and mocks every feed, so no third-party packages are installed.
+# WG Response — one image, two App Runner services:
+#   wg-simulator       CMD below (interactive simulator, cached tiles, mocks)
+#   wg-response-watch  StartCommand override: `python -m wgresponse.cli watch
+#                      ...` — the SHADOW-OPS worker (live feeds, real cycles,
+#                      dry-notify: computes everything, sends nothing).
 FROM python:3.13-slim
 
 WORKDIR /app
@@ -8,6 +10,11 @@ WORKDIR /app
 # Copy the package + UI + committed data (tiles/roads) + design doc.
 # .dockerignore keeps tests/scratch/bench/.git/out out of the image.
 COPY . /app
+
+# Live-terrain extras for the watch worker (LANDFIRE LFPS GeoTIFF decode:
+# tifffile+numpy+imagecodecs; boto3 for the Phase-2 Dynamo registry). The
+# simulator ignores them; core stays stdlib.
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Public demo defaults:
 #  - bind all interfaces on App Runner's port

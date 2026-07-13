@@ -3083,3 +3083,54 @@ def test_hold_off_is_byte_identical(tmp_path):
         return out
     assert run({}) == run({"dispatch_hold_h": 0.0,
                            "dispatch_hold_weather_buffer_h": 6.0})
+
+
+# ---------------------------------------------------------------------------
+# CREW SHIFTS (FOUNDER ROUND 6b, 2026-07-12): fatigue law for multi-day
+# events — max continuous on-duty hours, then rest (OFF_DUTY, never
+# dispatchable, still SEM-10 protected), A/B first-shift stagger.
+# ---------------------------------------------------------------------------
+
+def test_crew_shifts_rest_stagger_and_return(tmp_path):
+    d = _controlled_tile_dir(tmp_path, "boulder_co")
+    cfg = dict(FAST)
+    cfg["crew_shift_max_on_h"] = 1.0      # tiny shift so the test is fast
+    cfg["crew_shift_rest_h"] = 1.0
+    s = SimSession("boulder_co", 6, 2, seed="shift", cfg_overrides=cfg,
+                   tile_dir=d, roads_module=None)
+    ign = _upwind_ignition("boulder_co", 8_000.0)
+    s.ignite(ign.lat, ign.lon, intensity="high")
+    seen_rest = set()
+    both_resting_at_once = False
+    for _ in range(24):                    # 6 h at 15-min ticks
+        st = s.tick()
+        assert st["scoreboard"]["violations"] == 0
+        resting = {c["crew_id"] for c in st["crews"]
+                   if c.get("status") == "off_duty"}
+        seen_rest |= resting
+        if len(resting) == 2:
+            both_resting_at_once = True
+        # a resting crew must never appear in a live plan
+        for cp in (st.get("plan") or {}).get("plans", {}).values():
+            for stop in cp.get("stops", []):
+                assert cp.get("crew_id") not in resting
+    assert seen_rest == {"sim-g1", "sim-g2"}, (
+        f"both crews must cycle through rest, saw {seen_rest}")
+    # A/B stagger (odd crew gets a half first shift): with equal budgets both
+    # would bed down the same tick — the stagger must prevent a fleet-wide nap
+    assert not both_resting_at_once, (
+        "A/B stagger failed — entire fleet resting simultaneously")
+    # a rested crew returns and the fleet keeps serving under the fatigue law
+    assert st["scoreboard"]["served"] >= 1
+    assert st["scoreboard"]["crews_resting"] in (0, 1)
+
+
+def test_crew_shifts_off_is_inert(tmp_path):
+    """Default crew_shift_max_on_h=0: nobody ever rests."""
+    s = _high_session(tmp_path, seed="noshift")
+    ign = _upwind_ignition("boulder_co", 8_000.0)
+    s.ignite(ign.lat, ign.lon, intensity="high")
+    for _ in range(6):
+        st = s.tick()
+        assert st["scoreboard"]["crews_resting"] == 0
+        assert all(c.get("status") != "off_duty" for c in st["crews"])

@@ -1,0 +1,12 @@
+{
+  "_comment": "SHADOW-OPS AOI (Phase 1, LIVE_OPS_PLAN.md): Southern California WUI arc. Safe zones below are PLAUSIBLE STAGING PLACEHOLDERS for the shadow worker only (mock clients, dry-notify — nothing is ever sent). They are NOT ground-verified; per HOA_40_PLAYBOOK a real deployment requires ground-verified zones before any crew dispatch. Replace at Phase 2 onboarding.",
+  "zones": [
+    {"name": "socal_wui_arc", "bbox": [-119.3, 33.6, -117.5, 34.6]}
+  ],
+  "safe_zones": [
+    {"zone_id": "SHADOW-z1-zuma", "lat": 34.0210, "lon": -118.8310, "name": "UNVERIFIED Zuma Beach lot / PCH"},
+    {"zone_id": "SHADOW-z2-i5sr14", "lat": 34.3390, "lon": -118.5090, "name": "UNVERIFIED I-5 / SR-14 junction"},
+    {"zone_id": "SHADOW-z3-rosebowl", "lat": 34.1613, "lon": -118.1676, "name": "UNVERIFIED Rose Bowl lots / Pasadena"},
+    {"zone_id": "SHADOW-z4-sanberdo", "lat": 34.0740, "lon": -117.3120, "name": "UNVERIFIED San Bernardino I-10/I-215"}
+  ]
+}
