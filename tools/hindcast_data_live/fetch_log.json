@@ -1,0 +1,16 @@
+{
+ "budget": 45,
+ "fetched_at_utc": "2026-07-15 04:37",
+ "incidents": {},
+ "n_requests": 1,
+ "notes": [
+  "BLOCKED: discovery returned no incident with >= 3 snapshots at the acreage floor"
+ ],
+ "requests": [
+  {
+   "bytes": 5857,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  }
+ ]
+}

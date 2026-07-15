@@ -1,0 +1,8 @@
+{
+ "pairs": [],
+ "pairs_wide": [],
+ "schema": "hindcast-replay/1",
+ "skips": [
+  "no cached incidents"
+ ]
+}

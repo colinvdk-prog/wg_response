@@ -1,0 +1,137 @@
+{
+ "anchors": [
+  {
+   "anchor": "tubbs",
+   "engine": 2.966666666666667,
+   "fuel_label": "GR2",
+   "metric": "head km/h over 3 h",
+   "notes": "",
+   "observed": 6.4,
+   "point_ros_kmh": 2.9783382590620886,
+   "ratio": 0.4635416666666667,
+   "spotting": false
+  },
+  {
+   "anchor": "tubbs",
+   "engine": 5.666666666666667,
+   "fuel_label": "SH5",
+   "metric": "head km/h over 3 h",
+   "notes": "",
+   "observed": 6.4,
+   "point_ros_kmh": 5.671272773719502,
+   "ratio": 0.8854166666666666,
+   "spotting": false
+  },
+  {
+   "anchor": "tubbs",
+   "engine": 3.8666666666666667,
+   "fuel_label": "GR2/SH5 mix",
+   "metric": "head km/h over 3 h",
+   "notes": "",
+   "observed": 6.4,
+   "point_ros_kmh": 0.0,
+   "ratio": 0.6041666666666666,
+   "spotting": false
+  },
+  {
+   "anchor": "tubbs",
+   "engine": 7.933333333333334,
+   "fuel_label": "GR2",
+   "metric": "head km/h over 3 h",
+   "notes": "head reached tile edge \u2014 engine value is a floor",
+   "observed": 6.4,
+   "point_ros_kmh": 2.9783382590620886,
+   "ratio": 1.2395833333333333,
+   "spotting": true
+  },
+  {
+   "anchor": "tubbs",
+   "engine": 7.933333333333334,
+   "fuel_label": "SH5",
+   "metric": "head km/h over 3 h",
+   "notes": "head reached tile edge \u2014 engine value is a floor",
+   "observed": 6.4,
+   "point_ros_kmh": 5.671272773719502,
+   "ratio": 1.2395833333333333,
+   "spotting": true
+  },
+  {
+   "anchor": "tubbs",
+   "engine": 7.933333333333334,
+   "fuel_label": "GR2/SH5 mix",
+   "metric": "head km/h over 3 h",
+   "notes": "head reached tile edge \u2014 engine value is a floor",
+   "observed": 6.4,
+   "point_ros_kmh": 0.0,
+   "ratio": 1.2395833333333333,
+   "spotting": true
+  },
+  {
+   "anchor": "camp",
+   "engine": 67.01497945389524,
+   "fuel_label": "GR2",
+   "metric": "area ac/h over 1.5 h",
+   "notes": "",
+   "observed": 6600.0,
+   "point_ros_kmh": 1.9372758600545137,
+   "ratio": 0.010153784765741702,
+   "spotting": false
+  },
+  {
+   "anchor": "camp",
+   "engine": 232.47674288430915,
+   "fuel_label": "SH5",
+   "metric": "area ac/h over 1.5 h",
+   "notes": "",
+   "observed": 6600.0,
+   "point_ros_kmh": 4.375096815514211,
+   "ratio": 0.03522374892186502,
+   "spotting": false
+  },
+  {
+   "anchor": "camp",
+   "engine": 134.02995890779047,
+   "fuel_label": "GR2/SH5 mix",
+   "metric": "area ac/h over 1.5 h",
+   "notes": "",
+   "observed": 6600.0,
+   "point_ros_kmh": 0.0,
+   "ratio": 0.020307569531483403,
+   "spotting": false
+  },
+  {
+   "anchor": "camp",
+   "engine": 458.4299036978851,
+   "fuel_label": "GR2",
+   "metric": "area ac/h over 1.5 h",
+   "notes": "",
+   "observed": 6600.0,
+   "point_ros_kmh": 1.9372758600545137,
+   "ratio": 0.06945907631786138,
+   "spotting": true
+  },
+  {
+   "anchor": "camp",
+   "engine": 806.5519651088276,
+   "fuel_label": "SH5",
+   "metric": "area ac/h over 1.5 h",
+   "notes": "",
+   "observed": 6600.0,
+   "point_ros_kmh": 4.375096815514211,
+   "ratio": 0.12220484319830721,
+   "spotting": true
+  },
+  {
+   "anchor": "camp",
+   "engine": 792.318695136319,
+   "fuel_label": "GR2/SH5 mix",
+   "metric": "area ac/h over 1.5 h",
+   "notes": "",
+   "observed": 6600.0,
+   "point_ros_kmh": 0.0,
+   "ratio": 0.12004828714186651,
+   "spotting": true
+  }
+ ],
+ "schema": "hindcast-anchors/1"
+}
