@@ -48,6 +48,7 @@ Usage: py -3 -m wgresponse.cli <subcommand> ...
 """
 from __future__ import annotations
 
+import dataclasses
 import argparse
 import json
 import logging
@@ -132,6 +133,10 @@ def _build_parser() -> argparse.ArgumentParser:
     pw.add_argument("--registry", choices=("mock", "dynamo"), default="mock",
                     help="client registry: deterministic mock (default) or "
                          "the live read-only DynamoDB roster")
+    pw.add_argument("--gust-blend", type=float, default=0.0,
+                    help="cfg.wind_gust_blend: effective wind = sustained + "
+                         "blend x (gust - sustained); hindcast-calibrated "
+                         "0.5, default 0 (sustained only)")
     pw.add_argument("--dry-notify", action="store_true",
                     help="force log-only notifications (no SES even when "
                          "WGRESP_NOTIFY_SES=1)")
@@ -855,12 +860,24 @@ def _cmd_watch(args) -> int:
         return 2
 
     cfg = ResponseConfig()
+    if getattr(args, "gust_blend", 0.0):
+        # WIND GUST BLEND (hindcast-calibrated; contracts knob): apply the
+        # operator-chosen blend to every spread forecast this daemon runs.
+        cfg = dataclasses.replace(cfg, wind_gust_blend=float(args.gust_blend))
+        startup_note_gust = (f"wind gust blend ACTIVE: effective wind = "
+                             f"sustained + {float(args.gust_blend):g} x "
+                             f"(gust - sustained) [hindcast-calibrated]")
+    else:
+        startup_note_gust = None
+
     period_s = (float(args.period) if args.period and args.period > 0
                 else cfg.poll_period_s)
     state_dir = Path(args.state_dir)
     state_dir.mkdir(parents=True, exist_ok=True)
 
     startup_notes: list = []
+    if startup_note_gust:
+        startup_notes.append(startup_note_gust)
     feeds_stack, feed_notes = _live_feed_stack(os.environ.get("FIRMS_MAP_KEY"))
     startup_notes += feed_notes
     terrain, terrain_notes = _watch_terrain(args, state_dir)

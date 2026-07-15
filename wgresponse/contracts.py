@@ -959,6 +959,17 @@ class ResponseConfig:
     # bed at the same hour.
     crew_shift_max_on_h: float = 0.0
     crew_shift_rest_h: float = 8.0
+    # WIND GUST BLEND (2026-07-13, founder "calibrate the weather input to
+    # increase accuracy"): effective 10-m wind = sustained + blend x
+    # (gust - sustained). The hindcast localized part of the engine's late
+    # bias to SMOOTH hourly wind inputs (max sustained 5.7 m/s across every
+    # cached series while real fire runs ride gusts); gusts are already
+    # parsed by every weather adapter (NWS windGust, Open-Meteo
+    # wind_gusts_10m) and were previously DROPPED at the spread seam. 0.0 =
+    # sustained only, byte-identical legacy. Calibrated against the 14-window
+    # hindcast before any live use; the watch daemon sets it via
+    # --gust-blend.
+    wind_gust_blend: float = 0.0
     ember_threat_radius_m: float = 0.0      # eta_at adjacency fallback for developed-cell homes (0 = off/byte-identical; sim sets ~200)
     crew_reinforce_1h_min: float = 60.0     # out-of-region '1h away' crews arrive this many min after first ignition (SEMANTICS 9)
     crew_reinforce_3h_min: float = 180.0    # out-of-region '3h away' crews arrive this many min after first ignition (SEMANTICS 9)

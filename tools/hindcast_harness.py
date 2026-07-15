@@ -265,7 +265,7 @@ def _incident_domain(inc: "H.HindcastIncident", cfg: ResponseConfig):
 def _fetch_terrain(http: CountingHttp, args, slug: str, name: str,
                    inc_path: str, notes: list) -> None:
     inc = _load_incident(inc_path)
-    cfg = ResponseConfig()
+    cfg = dataclasses.replace(ResponseConfig(), wind_gust_blend=getattr(args, 'gust_blend', 0.0))
     bbox, cell_m = _incident_domain(inc, cfg)
     # LFPS requires an Email job parameter (live-verified 2026-07-09; the
     # 2026-07-06 research digest predates the requirement). Same ops address
@@ -323,7 +323,7 @@ def _load_all_incidents(data_dir: str) -> list:
 
 def cmd_replay(args) -> int:
     os.makedirs(args.data_dir, exist_ok=True)
-    cfg = ResponseConfig()
+    cfg = dataclasses.replace(ResponseConfig(), wind_gust_blend=getattr(args, 'gust_blend', 0.0))
     wide_cfg = dataclasses.replace(cfg, **_WIDE_VARIANT)
     incidents = _load_all_incidents(args.data_dir)
     if not incidents:
@@ -482,6 +482,8 @@ def main(argv=None) -> int:
     ap.add_argument("--min-acres", type=float, default=5000.0)
     ap.add_argument("--http-budget", type=int, default=45,
                     help="hard cap on live GETs for this invocation")
+    ap.add_argument("--gust-blend", type=float, default=0.0,
+                    help="cfg.wind_gust_blend for the replay (calibration sweep)")
     ap.add_argument("--irwin", default="",
                     help="comma-separated IRWIN ids to fetch (override "
                          "automatic selection)")

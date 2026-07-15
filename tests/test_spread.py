@@ -1910,3 +1910,36 @@ def test_multiple_ignition_points_take_elementwise_min():
     only_b = spread.compute_arrival(tile, [p_b], wx, T0, cfg)
     for i in range(len(both.data)):
         assert both.data[i] <= min(only_a.data[i], only_b.data[i]) + 1e-6
+
+
+def test_wind_gust_blend_monotonic_and_identity():
+    """WIND GUST BLEND (2026-07-13): blend=0 is exact identity (covered by
+    every fingerprint pin in this file — this asserts the mechanism direction
+    instead): raising the blend under gusty weather strictly speeds arrival,
+    and gust==sustained makes every blend identical."""
+    from dataclasses import replace
+    from wgresponse import geo
+    from wgresponse.terrain import SyntheticTerrain
+    cfg = ResponseConfig(ensemble_n=3, grid_cell_m=250.0, horizon_h=12.0)
+    org = LatLon(39.0, -105.0)
+    tile = SyntheticTerrain(seed="gb").tile(geo.bbox_around([org], 5000.0), 250.0)
+    t0 = 1_790_000_000.0
+
+    def wx(gust):
+        samples = [WeatherSample(t_s=t0 + h * 3600.0, wind_speed_mps=6.0,
+                                 wind_gust_mps=gust, wind_dir_deg=270.0,
+                                 rh_pct=12.0, temp_c=33.0) for h in range(14)]
+        return WeatherForecast(loc=org, samples=samples, source="test")
+
+    tgt = geo.destination(org, 90.0, 2500.0)
+
+    def eta(blend, gust):
+        ens = spread.ensemble_arrival(tile, [org], wx(gust), t0,
+                                      replace(cfg, wind_gust_blend=blend),
+                                      incident_id="gb")
+        return spread.eta_at(ens, tgt).eta_p50_s
+
+    gusty = [eta(b, 14.0) for b in (0.0, 0.5, 1.0)]
+    assert gusty[0] > gusty[1] > gusty[2], gusty
+    calm = [eta(b, 6.0) for b in (0.0, 0.5, 1.0)]
+    assert calm[0] == calm[1] == calm[2], calm

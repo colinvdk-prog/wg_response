@@ -538,6 +538,7 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     # dicts: created here, garbage at return. herb/woody/spotting/scales/
     # dir_offset are invocation constants; everything else that can move a
     # float is in the keys, so hits are byte-identical to recomputation.
+    gust_blend = getattr(cfg, "wind_gust_blend", 0.0)
     hour_wx = {}     # hour -> (wind10, m_dead, wdir) after scaling + offset
     bed_cache = {}   # (fuel_code, m_dead) -> fuel-bed intermediate (or None)
     ros_cache = {}   # (fuel_code, slope, aspect, wind10, m_dead, wdir) -> p
@@ -550,7 +551,14 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             # A4 ensemble knob: rotate the wind direction wherever weather is
             # consumed (max-spread vector AND spotting bearing). +0.0 is an
             # exact float identity, keeping the default byte-identical.
-            wt = (max(0.0, s.wind_speed_mps * wind_scale),
+            # WIND GUST BLEND (cfg.wind_gust_blend): effective sustained =
+            # ws + b*(gust-ws); b=0.0 adds +0.0 (exact float identity, same
+            # convention as dir_offset_deg). Gust is clamped >= sustained at
+            # the adapter seam, so the max() guard is belt-and-braces.
+            ws_eff = (s.wind_speed_mps
+                      + gust_blend * max(0.0, s.wind_gust_mps
+                                         - s.wind_speed_mps))
+            wt = (max(0.0, ws_eff * wind_scale),
                   max(0.01, dead_fuel_moisture_frac(s.temp_c, s.rh_pct)
                       * moisture_scale),
                   s.wind_dir_deg + dir_offset_deg)
@@ -581,7 +589,10 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         seams. The byte-identity oracle for the memo path above."""
         s = wx.at(t0_s + hour * 3600.0)
         fuel = fuel_of[idx]
-        wind10 = max(0.0, s.wind_speed_mps * wind_scale)
+        ws_eff = (s.wind_speed_mps
+                  + gust_blend * max(0.0, s.wind_gust_mps
+                                     - s.wind_speed_mps))
+        wind10 = max(0.0, ws_eff * wind_scale)
         m_dead = max(0.01, dead_fuel_moisture_frac(s.temp_c, s.rh_pct)
                      * moisture_scale)
         u_wind = rothermel.midflame_wind_mps(wind10, fuel)
