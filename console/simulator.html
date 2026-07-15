@@ -1208,6 +1208,9 @@ function exitScrub() {              // ● LIVE: snap to now, re-enable, resume 
   poll(true);                       // fetch the current head + resume live poll
 }
 
+const SCENARIO = new URLSearchParams(window.location.search).get("scenario");
+let scenarioUsed = false;
+
 async function newSession() {
   if (mutationBlocked()) return;
   setStatus("building scenario (real tile + WUI placement)…");
@@ -1218,8 +1221,24 @@ async function newSession() {
                  crews_1h: +$("crews_1h").value, crews_3h: +$("crews_3h").value,
                  spotting: $("spotting").checked,
                  grass_realism: $("grass_realism").checked };
+  // ONE-CLICK SCENARIOS: /simulator?scenario=KEY builds the preset (server
+  // fills location/crews AND ignites the preset fire), then auto-runs. Only
+  // the FIRST session honors the URL so later control changes behave normally.
+  if (SCENARIO && !scenarioUsed) {
+    body.scenario = SCENARIO;
+    delete body.location; delete body.clients; delete body.crews;
+    delete body.crews_1h;
+  }
   const out = await api("POST", "/api/sim/new", body);
   sid = out.session_id;
+  if (SCENARIO && !scenarioUsed) {
+    scenarioUsed = true;
+    if (out.state && out.state.location) {
+      $("loc").value = out.state.location;
+      $("clients").value = out.state.clients.length;
+    }
+    setTimeout(() => { $("run").click(); }, 400);
+  }
   // FIRE ZONE honesty: requested extended but the wide-area tile is not
   // cached -> the engine fell back to standard with a loud note; surface it.
   if (body.fire_zone === "extended" && out.state &&

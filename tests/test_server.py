@@ -1244,3 +1244,26 @@ def test_sim_ctl_goto_returns_recorded_snapshot(sim_ctx):
     # the unknown-action message now advertises goto
     _, out = _sim_post(sim_ctx, sid, "ctl", {"action": "explode"})
     assert "goto" in out["error"]
+
+
+def test_scenario_presets_build_and_ignite(sim_ctx):
+    """ONE-CLICK SCENARIOS (founder 2026-07-12): {scenario: KEY} fills the
+    preset (location/clients/crews/reinforcement), ignites the preset fire on
+    creation (deterministic seed), and echoes state; unknown key -> 400.
+    Runs against the fixture's synthetic tile — the ignition search shrinks
+    range until a burnable cell takes, so the invariant under test is
+    'a preset session is born with its fire lit', not exact geometry."""
+    import json as _json
+    for key, loc in (("park_city_windstorm", "park_city_ut"),
+                     ("boulder_chinook", "boulder_co")):
+        status, raw = sim_ctx.request("POST", "/api/sim/new",
+                                      body={"scenario": key}, key=KEY)
+        assert status == 200, raw
+        st = _json.loads(raw)["state"]
+        assert st["location"] == loc
+        assert len(st["clients"]) == 40
+        assert len(st["fires"]) == 1, "preset fire must be lit on creation"
+        assert len(st["crews"]) == 3, "2 in-zone + 1 inbound reinforcement"
+    status, raw = sim_ctx.request("POST", "/api/sim/new",
+                                  body={"scenario": "nope"}, key=KEY)
+    assert status == 400

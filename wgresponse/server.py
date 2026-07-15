@@ -99,6 +99,28 @@ _DEFAULT_SIMULATOR = _CONSOLE_DIR / "simulator.html"
 _MAX_BODY_BYTES = 1_000_000
 
 
+#: ONE-CLICK DEMO SCENARIOS (founder 2026-07-12: "a map and scenario for a
+#: high risk area in Utah and in Colorado"). POST /api/sim/new {scenario: KEY}
+#: fills location/clients/crews/reinforcements AND ignites the preset fire
+#: (deterministic seed -> identical demo every run); the simulator UI accepts
+#: /simulator?scenario=KEY and auto-runs. Explicit payload keys still win.
+SCENARIOS = {
+    # Park City, UT — dry SW-flow wind event: ignition in the oak/brush SW of
+    # the Snyderville/Park City interface, running NE into the resort WUI.
+    "park_city_windstorm": {
+        "location": "park_city_ut", "clients": 40, "crews": 2, "crews_1h": 1,
+        "intensity": "extreme", "ign_bearing": 225.0, "ign_dist_m": 7000.0,
+    },
+    # Boulder County, CO — Marshall-style downslope WEST wind grass fire:
+    # ignition west of the Boulder–Louisville interface, running east through
+    # cured grass into the suburbs.
+    "boulder_chinook": {
+        "location": "boulder_co", "clients": 40, "crews": 2, "crews_1h": 1,
+        "intensity": "extreme", "ign_bearing": 270.0, "ign_dist_m": 6500.0,
+    },
+}
+
+
 def parse_beacon(payload: object) -> CrewBeacon:
     """Validate a decoded JSON payload into a CrewBeacon.
 
@@ -255,6 +277,16 @@ class SimSessionManager:
     def new_session(self, payload):
         if not isinstance(payload, dict):
             return 400, {"error": "body must be a JSON object"}
+        scenario = payload.get("scenario")
+        if scenario is not None:
+            if not isinstance(scenario, str) or scenario not in SCENARIOS:
+                return 400, {"error": "scenario must be one of "
+                                      f"{sorted(SCENARIOS)}"}
+            preset = SCENARIOS[scenario]
+            payload = dict(payload)
+            for k in ("location", "clients", "crews", "crews_1h"):
+                payload.setdefault(k, preset[k])
+            payload.setdefault("seed", f"scenario-{scenario}")
         loc = payload.get("location")
         if not isinstance(loc, str) or loc not in simui.LOCATIONS:
             return 400, {"error": "location must be one of "
@@ -374,6 +406,31 @@ class SimSessionManager:
                                        n_crews_3h=n_crews_3h, **kwargs)
         except (TypeError, ValueError) as e:
             return 400, {"error": str(e)}
+        if scenario is not None:
+            # preset ignition: search bearing jitter + range shrink until a
+            # burnable cell takes (the surface model cannot ignite developed/
+            # water cells); wind blows FROM the ignition bearing so the fire
+            # runs at the community. Deterministic given the fixed seed.
+            preset = SCENARIOS[scenario]
+            center = simui.LOCATIONS[loc].center
+            lit = False
+            for db in (0, 10, -10, 20, -20, 30, -30):
+                for shrink in (1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3):
+                    p = geo.destination(center, preset["ign_bearing"] + db,
+                                        preset["ign_dist_m"] * shrink)
+                    try:
+                        session.ignite(p.lat, p.lon,
+                                       intensity=preset["intensity"],
+                                       wind_dir_deg=preset["ign_bearing"])
+                        lit = True
+                        break
+                    except ValueError:
+                        continue
+                if lit:
+                    break
+            if not lit:
+                return 500, {"error": f"scenario {scenario!r} could not "
+                                      "find a burnable ignition cell"}
         entry = _SimEntry(sid, session, seed,
                           {"location": loc, "clients": n_clients,
                            "crews": n_crews, "cfg": dict(cfg),
