@@ -137,6 +137,16 @@ def _build_parser() -> argparse.ArgumentParser:
                     help="cfg.wind_gust_blend: effective wind = sustained + "
                          "blend x (gust - sustained); hindcast-calibrated "
                          "0.5, default 0 (sustained only)")
+    pw.add_argument("--grass-floor", type=float, default=0.0,
+                    help="cfg.grass_ros_floor_frac: grass-class head-ROS "
+                         "floor = frac x U10 (Cruz-Alexander); hindcast-"
+                         "validated 0.10 (cal 91.5%% / OOS-normal ~100%% "
+                         "coverage, 0%% early); default 0 (off)")
+    pw.add_argument("--extreme-regime", action="store_true",
+                    help="arm the EXTREME SPREAD REGIME posture: cured-grass "
+                         "domains (GR+GS >= 60%% burnable) with wind evaluate "
+                         "the alert ladder on the pessimistic (p10) arrival "
+                         "+ banner (docs/calibration/hindcast_oos_2026-07-28)")
     pw.add_argument("--dry-notify", action="store_true",
                     help="force log-only notifications (no SES even when "
                          "WGRESP_NOTIFY_SES=1)")
@@ -869,6 +879,28 @@ def _cmd_watch(args) -> int:
                              f"(gust - sustained) [hindcast-calibrated]")
     else:
         startup_note_gust = None
+    startup_note_floor = None
+    if getattr(args, "grass_floor", 0.0):
+        # GRASS ROS FLOOR (hindcast-validated; contracts knob): Rothermel
+        # structurally under-predicts cured-grass spread — the floor lifts
+        # grass-class head ROS to frac*U10 (GS/TU/TL at reduced fractions).
+        cfg = dataclasses.replace(
+            cfg, grass_ros_floor_frac=float(args.grass_floor))
+        startup_note_floor = (
+            f"grass ROS floor ACTIVE: grass-class head ROS >= "
+            f"{float(args.grass_floor):g} x U10 [hindcast-validated: "
+            f"calibration 91.5% / OOS-normal ~100% coverage, 0% early-miss]")
+    startup_note_regime = None
+    if getattr(args, "extreme_regime", False):
+        # EXTREME SPREAD REGIME (contracts knob block): cured-grass domains
+        # with wind evaluate the alert ladder on the pessimistic arrival.
+        cfg = dataclasses.replace(cfg, extreme_regime_enabled=True)
+        startup_note_regime = (
+            f"extreme-regime posture ARMED: burnable domain >= "
+            f"{cfg.extreme_regime_grass_frac:g} grass-class (GR+GS) + "
+            f"effective wind >= {cfg.extreme_regime_wind_mps:g} m/s within "
+            f"{cfg.extreme_regime_lookahead_h:g} h -> ladder evaluates on "
+            f"pessimistic (p10) arrival + message banner")
 
     period_s = (float(args.period) if args.period and args.period > 0
                 else cfg.poll_period_s)
@@ -878,6 +910,10 @@ def _cmd_watch(args) -> int:
     startup_notes: list = []
     if startup_note_gust:
         startup_notes.append(startup_note_gust)
+    if startup_note_floor:
+        startup_notes.append(startup_note_floor)
+    if startup_note_regime:
+        startup_notes.append(startup_note_regime)
     feeds_stack, feed_notes = _live_feed_stack(os.environ.get("FIRMS_MAP_KEY"))
     startup_notes += feed_notes
     terrain, terrain_notes = _watch_terrain(args, state_dir)

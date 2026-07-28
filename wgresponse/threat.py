@@ -102,7 +102,7 @@ import logging
 import math
 from typing import Optional
 
-from wgresponse import geo, spread
+from wgresponse import fuels, geo, spread
 from wgresponse.contracts import (
     AlertState,
     BBox,
@@ -145,6 +145,44 @@ def _subsample_ring(ring: list, max_verts: int = _MAX_RING_VERTS) -> list:
         return list(ring)
     step = -(-n // max_verts)          # ceil division
     return list(ring[::step])
+
+
+def _extreme_regime_now(tile, wxf, now_s: float, cfg) -> bool:
+    """EXTREME SPREAD REGIME detector (contracts knob block; measured in
+    docs/calibration/hindcast_oos_2026-07-28.md + scratch_review/
+    extreme_signature.py): a cured-grass-led burnable domain (GR+GS fraction
+    >= cfg.extreme_regime_grass_frac) with any meaningful wind (max effective
+    wind over the next cfg.extreme_regime_lookahead_h >= cfg.
+    extreme_regime_wind_mps). Deliberately NOT a red-flag-warning clone —
+    the measured blow-ups occurred at modest reanalysis wind/RH while
+    well-forecast windows were windier and drier; fuel is the separator, the
+    wind clause only keeps a dead-calm grass sea from arming the posture.
+
+    Detector wind uses the FIXED hindcast blend 0.5 (the unit the 4.0 m/s
+    threshold was measured in), independent of cfg.wind_gust_blend: a spread
+    model running conservative must not also weaken regime detection.
+    Fail-safe: an empty/unburnable tile or empty forecast window returns
+    False (no regime claim without evidence)."""
+    burnable = 0
+    grass = 0
+    for v in tile.fuel.data:
+        code = int(v)
+        if not fuels.is_burnable(code):
+            continue
+        burnable += 1
+        if fuels.is_grass(code) or fuels.is_grass_shrub(code):
+            grass += 1
+    if not burnable or grass / burnable < cfg.extreme_regime_grass_frac:
+        return False
+    horizon_s = now_s + cfg.extreme_regime_lookahead_h * 3600.0
+    max_eff = -1.0
+    for s in wxf.samples:
+        if now_s - 3600.0 <= s.t_s <= horizon_s:
+            eff = s.wind_speed_mps + 0.5 * max(
+                0.0, s.wind_gust_mps - s.wind_speed_mps)
+            if eff > max_eff:
+                max_eff = eff
+    return max_eff >= cfg.extreme_regime_wind_mps
 
 
 class _ProviderFailure(RuntimeError):
@@ -204,6 +242,7 @@ class ThreatMonitor:
         self._dispatcher = dispatcher
         self._aoi = aoi
         self._incumbent = None          # last DispatchPlan, warm-start seed
+        self._extreme_prev: dict = {}   # incident_id -> bool (regime toggle events)
 
     @property
     def incumbent(self):
@@ -251,11 +290,12 @@ class ThreatMonitor:
         forecasts: dict = {}            # incident_id -> WeatherForecast (C5)
         failed_incidents: set = set()
         roster_seen: dict = {}          # incident_id -> {client_id} registry returned
+        extreme_flags: dict = {}        # incident_id -> bool (extreme spread regime)
         for inc in active:
             try:
                 self._assess_incident(inc, now_s, assessments, ensembles,
                                       clients_seen, etas, notes, roster_seen,
-                                      forecasts)
+                                      forecasts, extreme_flags)
             except _ProviderFailure as pf:
                 failed_incidents.add(inc.incident_id)
                 notes.append(
@@ -331,6 +371,35 @@ class ThreatMonitor:
             }
             for inc in active
         }
+        if self._cfg.extreme_regime_enabled:
+            # EXTREME SPREAD REGIME: carried to the alert engine as additive
+            # meta (flagged incidents evaluate ladder stages on p10); one
+            # operator event per TOGGLE so shadow ops can count regime
+            # frequency and false-positive load. Incidents that failed
+            # assessment this cycle keep their previous posture (no evidence
+            # either way — a blind cycle must not silently drop the regime).
+            for iid, meta in incident_meta.items():
+                flag = extreme_flags.get(iid, self._extreme_prev.get(iid, False))
+                meta["extreme_regime"] = flag
+                prev = self._extreme_prev.get(iid, False)
+                if flag != prev:
+                    verb = "ENTERED" if flag else "exited"
+                    name = incident_meta[iid].get("name") or iid
+                    notes.append(f"incident {name}: {verb} extreme spread "
+                                 f"regime (cured-grass domain + wind)")
+                    operator_events.append(OperatorEvent(
+                        t_s=now_s, kind="extreme_regime",
+                        message=(f"incident {name} {verb} EXTREME SPREAD "
+                                 f"REGIME: cured-grass fuelscape with wind — "
+                                 f"forecasts may under-run observed spread; "
+                                 f"alert ladder evaluating on the pessimistic "
+                                 f"(p10) arrival"),
+                        incident_id=iid, detail={"extreme_regime": flag}))
+                self._extreme_prev[iid] = flag
+            # forget incidents that left the active set (no stale toggles)
+            gone = set(self._extreme_prev) - set(incident_meta)
+            for iid in gone:
+                del self._extreme_prev[iid]
         events: list = []
         try:
             events = self._evaluate_alerts(assessments, now_s, blind_pairs,
@@ -515,7 +584,8 @@ class ThreatMonitor:
                          assessments: list, ensembles: dict,
                          clients_seen: dict, etas: dict, notes: list,
                          roster_seen: Optional[dict] = None,
-                         forecasts: Optional[dict] = None) -> None:
+                         forecasts: Optional[dict] = None,
+                         extreme_flags: Optional[dict] = None) -> None:
         """Spread one incident and append per-client ThreatAssessments.
 
         Domain = bbox around (ignition geometry + protected clients within the
@@ -625,6 +695,13 @@ class ThreatMonitor:
             # forecasts=...) so gel windows under cfg.gel_env_model_enabled
             # reflect the actual fire weather, not the 25 C reference.
             forecasts[inc.incident_id] = wxf
+
+        if extreme_flags is not None and self._cfg.extreme_regime_enabled:
+            # EXTREME SPREAD REGIME (contracts knob block): computed per
+            # incident from the SAME tile + fire-centroid forecast that drive
+            # spread, so the posture and the forecast see one world.
+            extreme_flags[inc.incident_id] = _extreme_regime_now(
+                tile, wxf, now_s, self._cfg)
 
         ens = spread.ensemble_arrival(tile, seeds, wxf, now_s, self._cfg,
                                       incident_id=inc.incident_id,

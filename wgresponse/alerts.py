@@ -240,6 +240,14 @@ class AlertEngine:
         Returns the AlertEvents emitted this cycle (at most one per pair).
         """
         capped_incidents = self._update_incident_meta(incident_meta, now_s)
+        # EXTREME SPREAD REGIME (contracts knob block; additive meta key from
+        # ThreatMonitor): flagged incidents evaluate ladder stages on the
+        # PESSIMISTIC (p10) arrival — see _step. Absent key = normal ladder,
+        # byte-identical to pre-regime behavior.
+        regime_incidents = {
+            iid for iid, m in (incident_meta or {}).items()
+            if isinstance(m, dict) and m.get("extreme_regime")
+        }
         latest = self._dedupe(assessments)
         blind_keys = {tuple(k) for k in (blind_pairs or ())}
         for key, a in latest.items():
@@ -268,11 +276,14 @@ class AlertEngine:
                             "state": rec.state.value},
                 ))
                 rec.blind_cycles = 0
+            regime = key[1] in regime_incidents
             new_state, p10_h, p50_h = self._step(
-                key, rec, a, now_s, capped=key[1] in capped_incidents)
+                key, rec, a, now_s, capped=key[1] in capped_incidents,
+                regime=regime)
             rec.last_eval_s = now_s
             if new_state is not None and new_state != rec.state:
-                events.append(self._transition(rec, new_state, now_s, p10_h, p50_h))
+                events.append(self._transition(rec, new_state, now_s, p10_h,
+                                               p50_h, regime=regime))
         # Notify only after EVERY transition of this cycle has been applied,
         # so the CLEARED suppression gate sees the cycle's final states (an
         # EXTREME escalating later in the same cycle must still mute a
@@ -517,6 +528,7 @@ class AlertEngine:
         a: Optional[ThreatAssessment],
         now_s: float,
         capped: bool = False,
+        regime: bool = False,
     ) -> Tuple[Optional[AlertState], float, float]:
         """Update streaks and decide the next state (or None to hold).
 
@@ -543,15 +555,23 @@ class AlertEngine:
             deesc_ok = True
         else:
             p10_h, p50_h, _ = a.eta.hours_out(now_s)
-            extreme_now = p50_h <= cfg.extreme_h or p10_h <= cfg.extreme_p10_h
-            notice_now = p50_h <= cfg.notice_h
+            # EXTREME SPREAD REGIME (``regime``): stage thresholds evaluate
+            # on the PESSIMISTIC arrival — the hindcast blow-up windows put
+            # the true front far ahead of the median forecast, so the median
+            # is not a trustworthy stage clock there. p10 <= p50 always, so
+            # this strictly escalates earlier and clears later; IMPACTED
+            # stays on the true median (impact is an observation about the
+            # median arrival having passed, not a posture).
+            eval_h = p10_h if regime else p50_h
+            extreme_now = eval_h <= cfg.extreme_h or p10_h <= cfg.extreme_p10_h
+            notice_now = eval_h <= cfg.notice_h
             # Clear evaluation: margin beyond the notice threshold AND no
             # active extreme trigger (a near p10 must never count as clear).
-            clear_now = (not extreme_now) and p50_h > cfg.notice_h + cfg.clear_margin_h
+            clear_now = (not extreme_now) and eval_h > cfg.notice_h + cfg.clear_margin_h
             # Median arrival has passed (hours_out clamps at 0).
             impacted_now = math.isfinite(a.eta.eta_p50_s) and a.eta.eta_p50_s <= now_s
             deesc_ok = (
-                p50_h > cfg.extreme_h + cfg.clear_margin_h
+                eval_h > cfg.extreme_h + cfg.clear_margin_h
                 and p10_h > cfg.extreme_p10_h + cfg.clear_margin_h
             )
 
@@ -621,6 +641,7 @@ class AlertEngine:
         now_s: float,
         p10_h: float,
         p50_h: float,
+        regime: bool = False,
     ) -> AlertEvent:
         """Apply a validated transition at now_s (unix s); emit one event.
 
@@ -640,7 +661,8 @@ class AlertEngine:
             state=new_state,
             eta_p50_h=p50_h,
             eta_p10_h=p10_h,
-            message=self._message(rec, new_state, p10_h, p50_h),
+            message=self._message(rec, new_state, p10_h, p50_h,
+                                  regime=regime),
         )
         logger.info(
             "alert %s->%s client=%s incident=%s p50=%s p10=%s",
@@ -665,7 +687,8 @@ class AlertEngine:
             return f"{name} ({short})"
         return f"incident {short}"
 
-    def _message(self, rec: AlertRecord, state: AlertState, p10_h: float, p50_h: float) -> str:
+    def _message(self, rec: AlertRecord, state: AlertState, p10_h: float,
+                 p50_h: float, regime: bool = False) -> str:
         """Human alert text; ETAs are hours from evaluation time.
 
         EVERY message names its incident via _incident_label (D3). The
@@ -678,25 +701,36 @@ class AlertEngine:
         name = self._client_name(rec.client_id)
         fire = self._incident_label(rec.incident_id)
         etas = f"~{_fmt_h(p50_h)} (median), {_fmt_h(p10_h)} (pessimistic)"
+        # EXTREME SPREAD REGIME banner: flagged incidents alerted on the
+        # pessimistic arrival must SAY so — the reader sees a median hours
+        # figure that deliberately did not drive this escalation.
+        banner = (
+            " [EXTREME SPREAD REGIME — cured-grass wind conditions; the fire "
+            "may move much faster than the median projection; this alert is "
+            "based on the pessimistic (earliest credible) arrival.]"
+            if regime else ""
+        )
         if state is AlertState.NOTICE_72H:
             return (
                 f"Projected fire arrival at {name}: {etas} — {fire}. "
-                "Advance notice — crews being scheduled."
+                "Advance notice — crews being scheduled." + banner
             )
         if state is AlertState.WATCH:
             return (
                 f"Monitoring {name} for {fire}: projected fire arrival {etas}. "
-                "Under continuous watch; crews scheduled as needed."
+                "Under continuous watch; crews scheduled as needed." + banner
             )
         if state is AlertState.EXTREME_24H:
             if p50_h <= 0.0:
                 return (
                     f"EXTREME alert for {name} — {fire}: fire projected AT "
                     "the property NOW — do not approach; crews withdrawing."
+                    + banner
                 )
             return (
                 f"EXTREME alert for {name} — {fire}: projected fire arrival "
                 f"{etas}. Crew dispatch underway — ensure property access now."
+                + banner
             )
         if state is AlertState.CLEARED:
             return (

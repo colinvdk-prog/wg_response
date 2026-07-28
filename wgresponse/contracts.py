@@ -974,6 +974,25 @@ class ResponseConfig:
     crew_reinforce_1h_min: float = 60.0     # out-of-region '1h away' crews arrive this many min after first ignition (SEMANTICS 9)
     crew_reinforce_3h_min: float = 180.0    # out-of-region '3h away' crews arrive this many min after first ignition (SEMANTICS 9)
     grass_ros_floor_frac: float = 0.0       # sim-only grass head-ROS floor = frac*U10 (Cruz-Alexander; 0=off/live-identical; sim ~0.10 GR/0.07 GS)
+    # EXTREME SPREAD REGIME (docs/calibration/hindcast_oos_2026-07-28.md):
+    # blow-up windows (Porcupine Ridge 22.5 km/12.9 h = 13x under-forecast)
+    # are NOT separated by red-flag weather in reanalysis (they occurred at
+    # modest wind/RH while well-forecast windows had stronger wind, drier
+    # air) — the measured separator is a cured-grass FUELSCAPE (GR+GS >= ~2/3
+    # of burnable domain: Porcupine 88%, Madre grass run 69%; every
+    # non-grass-led window scored ~0% late under the grass floor) with any
+    # meaningful wind. When an incident's domain matches, the alert ladder
+    # evaluates that incident's stage thresholds on the PESSIMISTIC (p10)
+    # arrival instead of the median, and every message carries an EXTREME
+    # SPREAD REGIME banner. Crew-safety math already runs on p10 and is
+    # untouched. Detector wind uses the fixed hindcast blend 0.5 (thresholds
+    # were measured in that unit) independent of cfg.wind_gust_blend, so a
+    # conservative spread model cannot weaken regime detection. Default OFF =
+    # byte-identical ladder; the watch daemon arms it via --extreme-regime.
+    extreme_regime_enabled: bool = False
+    extreme_regime_grass_frac: float = 0.60  # GR+GS fraction of burnable domain cells
+    extreme_regime_wind_mps: float = 4.0     # max effective wind over the lookahead
+    extreme_regime_lookahead_h: float = 24.0
     history_ticks: int = 600           # simulator state-snapshot ring size (time-scrub replay)
     road_spur_max_m: float = 2000.0    # max off-network spur; beyond -> loud straight-leg fallback
     incident_stale_h: float = 168.0    # exclude incidents staler than this from alerting (SAFETY SEMANTICS 9)
