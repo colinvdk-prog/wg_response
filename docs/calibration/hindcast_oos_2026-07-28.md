@@ -136,6 +136,34 @@ earlier WATCH entries and earlier P90-crossings ⇒ more precautionary coats.
 5. Keep accumulating: the nightly-hindcast job (Phase 1.4) re-runs this
    scorecard as fires land, catching drift and growing the per-fuel evidence.
 
+## Addendum (same day): founder flipped the floor + the regime flag shipped
+
+Founder decision: grass floor ON in the shadow watcher; extreme-regime
+condition to be generated. The condition was **measured, not assumed**
+(`scratch_review/extreme_signature.py` → `extreme_signature.json`): across
+all 22 scored windows, a red-flag-weather clone (wind ≥ 11 m/s, RH ≤ 15%)
+flags NONE of the blow-ups — Porcupine ran at 3.5 m/s sustained / RH 27% in
+reanalysis while several perfectly-forecast windows were windier and drier
+(Dillon 8.5 m/s eff / RH 9%; Stookey 8.7 / 10). The measured separator is the
+FUELSCAPE: Porcupine's domain is 88% grass-class (GR+GS), the highest scored,
+and Madre's grass run 69%; every window under 60% grass-class scored ~0%
+late once the grass floor was on. 3 of the 4 residual-late windows are FIRST
+capture pairs of young fires (initial-attack mapping lag) — a data artifact
+the live path already mitigates by seeding perimeters at their own provenance
+time.
+
+**Shipped condition** (`threat._extreme_regime_now`, contracts knobs,
+default OFF): burnable domain ≥ 0.60 grass-class (GR+GS) AND max effective
+wind (fixed hindcast blend 0.5) ≥ 4.0 m/s within 24 h. On the 22 windows it
+arms Porcupine (88%, eff 6.0) and both Madre windows (69%, eff 8.6/4.3) —
+catching the two grass blow-ups at one benign-window false positive; it
+deliberately does not claim the two mapping-lag windows. **Effect when
+armed**: that incident's alert-ladder stages evaluate on the pessimistic
+(p10) arrival instead of the median (IMPACTED stays on the median), every
+message carries an EXTREME SPREAD REGIME banner, and each regime toggle
+emits an operator event so shadow ops can count posture frequency. Crew
+safety already runs on p10 and is untouched.
+
 **Live watcher status (same date).** wg-response-watch healthy on the
 gust-calibrated image: 45 real SoCal WFIGS incidents tracked, 12 stale FIRIS
 incidents correctly excluded by the 168 h staleness gate, one feed hiccup
