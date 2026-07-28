@@ -1,0 +1,1206 @@
+[
+ {
+  "incident": "{A32B1A1F-AF64-4903-9B75-8BCB276EB1DE}",
+  "name": "Stookey-UT",
+  "t0_s": 1783941780.0,
+  "t1_s": 1784000700.0,
+  "dt_h": 16.366666666666667,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 838,
+  "n_new_burnable": 835,
+  "n_new_nonburnable": 3,
+  "covered_certain": 0,
+  "covered_possible": 835,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 835,
+  "p10_not_after_window": 835,
+  "p10_before_window": 0,
+  "pit_hist": [
+   2,
+   2,
+   4,
+   6,
+   4,
+   7,
+   810
+  ],
+  "obs_head_m": 2500.6399181009647,
+  "head_m_p50": 10142.884205195285,
+  "head_m_p10": 10102.875828198623,
+  "head_m_nominal": 10102.875828198623,
+  "obs_new_area_ac": 1677.3019083228248,
+  "modeled_new_area_ac_p50": 48337.51919569955,
+  "by_fuel_class": {
+   "GS": {
+    "n": 124,
+    "late": 0,
+    "cert": 0,
+    "poss": 124
+   },
+   "SH": {
+    "n": 680,
+    "late": 0,
+    "cert": 0,
+    "poss": 680
+   },
+   "GR": {
+    "n": 23,
+    "late": 0,
+    "cert": 0,
+    "poss": 23
+   },
+   "TL": {
+    "n": 8,
+    "late": 0,
+    "cert": 0,
+    "poss": 8
+   },
+   "NB": {
+    "n": 3,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{A32B1A1F-AF64-4903-9B75-8BCB276EB1DE}",
+  "name": "Stookey-UT",
+  "t0_s": 1783941780.0,
+  "t1_s": 1784000700.0,
+  "dt_h": 16.366666666666667,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 838,
+  "n_new_burnable": 835,
+  "n_new_nonburnable": 3,
+  "covered_certain": 0,
+  "covered_possible": 835,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 835,
+  "p10_not_after_window": 835,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   0,
+   1,
+   5,
+   10,
+   11,
+   808
+  ],
+  "obs_head_m": 2500.6399181009647,
+  "head_m_p50": 10022.37995687651,
+  "head_m_p10": 10022.37995687651,
+  "head_m_nominal": 10102.875828198623,
+  "obs_new_area_ac": 1677.3019083228248,
+  "modeled_new_area_ac_p50": 62124.22032282081,
+  "by_fuel_class": {
+   "GS": {
+    "n": 124,
+    "late": 0,
+    "cert": 0,
+    "poss": 124
+   },
+   "SH": {
+    "n": 680,
+    "late": 0,
+    "cert": 0,
+    "poss": 680
+   },
+   "GR": {
+    "n": 23,
+    "late": 0,
+    "cert": 0,
+    "poss": 23
+   },
+   "TL": {
+    "n": 8,
+    "late": 0,
+    "cert": 0,
+    "poss": 8
+   },
+   "NB": {
+    "n": 3,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{A32B1A1F-AF64-4903-9B75-8BCB276EB1DE}",
+  "name": "Stookey-UT",
+  "t0_s": 1784000700.0,
+  "t1_s": 1784083860.0,
+  "dt_h": 23.1,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 1939,
+  "n_new_burnable": 1934,
+  "n_new_nonburnable": 5,
+  "covered_certain": 0,
+  "covered_possible": 1934,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 1934,
+  "p10_not_after_window": 1934,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1934
+  ],
+  "obs_head_m": 2305.1247254758255,
+  "head_m_p50": 10062.305898749053,
+  "head_m_p10": 9981.888598857433,
+  "head_m_nominal": 10062.305898749053,
+  "obs_new_area_ac": 3881.012410785152,
+  "modeled_new_area_ac_p50": 71831.7552337584,
+  "by_fuel_class": {
+   "GS": {
+    "n": 1068,
+    "late": 0,
+    "cert": 0,
+    "poss": 1068
+   },
+   "SH": {
+    "n": 534,
+    "late": 0,
+    "cert": 0,
+    "poss": 534
+   },
+   "GR": {
+    "n": 323,
+    "late": 0,
+    "cert": 0,
+    "poss": 323
+   },
+   "TU": {
+    "n": 4,
+    "late": 0,
+    "cert": 0,
+    "poss": 4
+   },
+   "TL": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 5
+   },
+   "NB": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{A32B1A1F-AF64-4903-9B75-8BCB276EB1DE}",
+  "name": "Stookey-UT",
+  "t0_s": 1784000700.0,
+  "t1_s": 1784083860.0,
+  "dt_h": 23.1,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 1939,
+  "n_new_burnable": 1934,
+  "n_new_nonburnable": 5,
+  "covered_certain": 0,
+  "covered_possible": 1934,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 1934,
+  "p10_not_after_window": 1934,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1934
+  ],
+  "obs_head_m": 2305.1247254758255,
+  "head_m_p50": 10142.884205195285,
+  "head_m_p10": 10142.884205195285,
+  "head_m_nominal": 9981.888598857433,
+  "obs_new_area_ac": 3881.012410785152,
+  "modeled_new_area_ac_p50": 74998.21301295495,
+  "by_fuel_class": {
+   "GS": {
+    "n": 1068,
+    "late": 0,
+    "cert": 0,
+    "poss": 1068
+   },
+   "SH": {
+    "n": 534,
+    "late": 0,
+    "cert": 0,
+    "poss": 534
+   },
+   "GR": {
+    "n": 323,
+    "late": 0,
+    "cert": 0,
+    "poss": 323
+   },
+   "TU": {
+    "n": 4,
+    "late": 0,
+    "cert": 0,
+    "poss": 4
+   },
+   "TL": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 5
+   },
+   "NB": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{B5597100-D6C9-49F9-BC74-6B8FC4432E92}",
+  "name": "KaiserCanyon-WA",
+  "t0_s": 1784465259.0,
+  "t1_s": 1784505520.0,
+  "dt_h": 11.18361111111111,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 5010,
+  "n_new_burnable": 4943,
+  "n_new_nonburnable": 67,
+  "covered_certain": 0,
+  "covered_possible": 4936,
+  "late_miss": 7,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 4922,
+  "p10_not_after_window": 4936,
+  "p10_before_window": 0,
+  "pit_hist": [
+   713,
+   68,
+   152,
+   58,
+   46,
+   66,
+   3840
+  ],
+  "obs_head_m": 3204.8088866576745,
+  "head_m_p50": 8260.901887808619,
+  "head_m_p10": 8863.058162959329,
+  "head_m_nominal": 8497.258381383963,
+  "obs_new_area_ac": 10027.783485319036,
+  "modeled_new_area_ac_p50": 79567.75985866021,
+  "by_fuel_class": {
+   "GR": {
+    "n": 1090,
+    "late": 1,
+    "cert": 0,
+    "poss": 1089
+   },
+   "TU": {
+    "n": 351,
+    "late": 0,
+    "cert": 0,
+    "poss": 351
+   },
+   "TL": {
+    "n": 809,
+    "late": 0,
+    "cert": 0,
+    "poss": 809
+   },
+   "GS": {
+    "n": 2382,
+    "late": 6,
+    "cert": 0,
+    "poss": 2376
+   },
+   "SH": {
+    "n": 311,
+    "late": 0,
+    "cert": 0,
+    "poss": 311
+   },
+   "NB": {
+    "n": 67,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{B5597100-D6C9-49F9-BC74-6B8FC4432E92}",
+  "name": "KaiserCanyon-WA",
+  "t0_s": 1784465259.0,
+  "t1_s": 1784505520.0,
+  "dt_h": 11.18361111111111,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 5010,
+  "n_new_burnable": 4943,
+  "n_new_nonburnable": 67,
+  "covered_certain": 0,
+  "covered_possible": 4943,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 4942,
+  "p10_not_after_window": 4943,
+  "p10_before_window": 0,
+  "pit_hist": [
+   203,
+   220,
+   209,
+   145,
+   128,
+   136,
+   3902
+  ],
+  "obs_head_m": 3204.8088866576745,
+  "head_m_p50": 8720.716713665224,
+  "head_m_p10": 9187.496938775,
+  "head_m_nominal": 8811.730817495505,
+  "obs_new_area_ac": 10027.783485319036,
+  "modeled_new_area_ac_p50": 94891.65414281242,
+  "by_fuel_class": {
+   "GR": {
+    "n": 1090,
+    "late": 0,
+    "cert": 0,
+    "poss": 1090
+   },
+   "TU": {
+    "n": 351,
+    "late": 0,
+    "cert": 0,
+    "poss": 351
+   },
+   "TL": {
+    "n": 809,
+    "late": 0,
+    "cert": 0,
+    "poss": 809
+   },
+   "GS": {
+    "n": 2382,
+    "late": 0,
+    "cert": 0,
+    "poss": 2382
+   },
+   "SH": {
+    "n": 311,
+    "late": 0,
+    "cert": 0,
+    "poss": 311
+   },
+   "NB": {
+    "n": 67,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{B5597100-D6C9-49F9-BC74-6B8FC4432E92}",
+  "name": "KaiserCanyon-WA",
+  "t0_s": 1784505520.0,
+  "t1_s": 1784633800.0,
+  "dt_h": 35.63333333333333,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 6729,
+  "n_new_burnable": 6468,
+  "n_new_nonburnable": 261,
+  "covered_certain": 0,
+  "covered_possible": 6467,
+  "late_miss": 1,
+  "early_miss": 0,
+  "never_reached": 1,
+  "p90_unreached": 0,
+  "p50_in_window": 6467,
+  "p10_not_after_window": 6467,
+  "p10_before_window": 0,
+  "pit_hist": [
+   15,
+   29,
+   34,
+   8,
+   28,
+   22,
+   6332
+  ],
+  "obs_head_m": 5916.772769001696,
+  "head_m_p50": 11665.68043450531,
+  "head_m_p10": 11700.0,
+  "head_m_nominal": 11652.132851971779,
+  "obs_new_area_ac": 13468.4541063297,
+  "modeled_new_area_ac_p50": 158761.2291960121,
+  "by_fuel_class": {
+   "TU": {
+    "n": 710,
+    "late": 0,
+    "cert": 0,
+    "poss": 710
+   },
+   "GR": {
+    "n": 1599,
+    "late": 1,
+    "cert": 0,
+    "poss": 1598
+   },
+   "GS": {
+    "n": 2155,
+    "late": 0,
+    "cert": 0,
+    "poss": 2155
+   },
+   "TL": {
+    "n": 1494,
+    "late": 0,
+    "cert": 0,
+    "poss": 1494
+   },
+   "NB": {
+    "n": 261,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 510,
+    "late": 0,
+    "cert": 0,
+    "poss": 510
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{B5597100-D6C9-49F9-BC74-6B8FC4432E92}",
+  "name": "KaiserCanyon-WA",
+  "t0_s": 1784505520.0,
+  "t1_s": 1784633800.0,
+  "dt_h": 35.63333333333333,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 6729,
+  "n_new_burnable": 6468,
+  "n_new_nonburnable": 261,
+  "covered_certain": 0,
+  "covered_possible": 6467,
+  "late_miss": 1,
+  "early_miss": 0,
+  "never_reached": 1,
+  "p90_unreached": 0,
+  "p50_in_window": 6467,
+  "p10_not_after_window": 6467,
+  "p10_before_window": 0,
+  "pit_hist": [
+   1,
+   11,
+   36,
+   15,
+   40,
+   12,
+   6353
+  ],
+  "obs_head_m": 5916.772769001696,
+  "head_m_p50": 17218.2490398995,
+  "head_m_p10": 17008.80948214777,
+  "head_m_nominal": 17010.952354292218,
+  "obs_new_area_ac": 13468.4541063297,
+  "modeled_new_area_ac_p50": 217292.66082499106,
+  "by_fuel_class": {
+   "TU": {
+    "n": 710,
+    "late": 0,
+    "cert": 0,
+    "poss": 710
+   },
+   "GR": {
+    "n": 1599,
+    "late": 1,
+    "cert": 0,
+    "poss": 1598
+   },
+   "GS": {
+    "n": 2155,
+    "late": 0,
+    "cert": 0,
+    "poss": 2155
+   },
+   "TL": {
+    "n": 1494,
+    "late": 0,
+    "cert": 0,
+    "poss": 1494
+   },
+   "NB": {
+    "n": 261,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 510,
+    "late": 0,
+    "cert": 0,
+    "poss": 510
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{B5597100-D6C9-49F9-BC74-6B8FC4432E92}",
+  "name": "KaiserCanyon-WA",
+  "t0_s": 1784633800.0,
+  "t1_s": 1784719896.0,
+  "dt_h": 23.915555555555557,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 6402,
+  "n_new_burnable": 6281,
+  "n_new_nonburnable": 121,
+  "covered_certain": 0,
+  "covered_possible": 6281,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 6281,
+  "p10_not_after_window": 6281,
+  "p10_before_window": 0,
+  "pit_hist": [
+   34,
+   7,
+   27,
+   28,
+   30,
+   28,
+   6127
+  ],
+  "obs_head_m": 3340.9280147887052,
+  "head_m_p50": 9961.174629530395,
+  "head_m_p10": 12704.034792143795,
+  "head_m_nominal": 10348.043293299463,
+  "obs_new_area_ac": 12813.94608243762,
+  "modeled_new_area_ac_p50": 140364.95015138792,
+  "by_fuel_class": {
+   "TL": {
+    "n": 722,
+    "late": 0,
+    "cert": 0,
+    "poss": 722
+   },
+   "TU": {
+    "n": 437,
+    "late": 0,
+    "cert": 0,
+    "poss": 437
+   },
+   "GR": {
+    "n": 1638,
+    "late": 0,
+    "cert": 0,
+    "poss": 1638
+   },
+   "GS": {
+    "n": 2797,
+    "late": 0,
+    "cert": 0,
+    "poss": 2797
+   },
+   "SH": {
+    "n": 687,
+    "late": 0,
+    "cert": 0,
+    "poss": 687
+   },
+   "NB": {
+    "n": 121,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{B5597100-D6C9-49F9-BC74-6B8FC4432E92}",
+  "name": "KaiserCanyon-WA",
+  "t0_s": 1784633800.0,
+  "t1_s": 1784719896.0,
+  "dt_h": 23.915555555555557,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 6402,
+  "n_new_burnable": 6281,
+  "n_new_nonburnable": 121,
+  "covered_certain": 0,
+  "covered_possible": 6281,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 6281,
+  "p10_not_after_window": 6281,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   17,
+   6264
+  ],
+  "obs_head_m": 3340.9280147887052,
+  "head_m_p50": 12419.347808963239,
+  "head_m_p10": 13725.51638372852,
+  "head_m_nominal": 12641.716655581235,
+  "obs_new_area_ac": 12813.94608243762,
+  "modeled_new_area_ac_p50": 170940.68279045649,
+  "by_fuel_class": {
+   "TL": {
+    "n": 722,
+    "late": 0,
+    "cert": 0,
+    "poss": 722
+   },
+   "TU": {
+    "n": 437,
+    "late": 0,
+    "cert": 0,
+    "poss": 437
+   },
+   "GR": {
+    "n": 1638,
+    "late": 0,
+    "cert": 0,
+    "poss": 1638
+   },
+   "GS": {
+    "n": 2797,
+    "late": 0,
+    "cert": 0,
+    "poss": 2797
+   },
+   "SH": {
+    "n": 687,
+    "late": 0,
+    "cert": 0,
+    "poss": 687
+   },
+   "NB": {
+    "n": 121,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{CCEFD7D4-FEBD-496D-855E-CA0C9944BF0C}",
+  "name": "Brewer-OR",
+  "t0_s": 1784263988.0,
+  "t1_s": 1784438160.0,
+  "dt_h": 48.38111111111111,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 2628,
+  "n_new_burnable": 2627,
+  "n_new_nonburnable": 1,
+  "covered_certain": 0,
+  "covered_possible": 2627,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 2627,
+  "p10_not_after_window": 2627,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   0,
+   0,
+   0,
+   1,
+   4,
+   2622
+  ],
+  "obs_head_m": 4597.053404083968,
+  "head_m_p50": 15574.16129362991,
+  "head_m_p10": 15528.586542245239,
+  "head_m_nominal": 15574.16129362991,
+  "obs_new_area_ac": 5260.082834215255,
+  "modeled_new_area_ac_p50": 114312.72862545725,
+  "by_fuel_class": {
+   "GS": {
+    "n": 161,
+    "late": 0,
+    "cert": 0,
+    "poss": 161
+   },
+   "SH": {
+    "n": 959,
+    "late": 0,
+    "cert": 0,
+    "poss": 959
+   },
+   "TU": {
+    "n": 1182,
+    "late": 0,
+    "cert": 0,
+    "poss": 1182
+   },
+   "TL": {
+    "n": 316,
+    "late": 0,
+    "cert": 0,
+    "poss": 316
+   },
+   "GR": {
+    "n": 9,
+    "late": 0,
+    "cert": 0,
+    "poss": 9
+   },
+   "NB": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{CCEFD7D4-FEBD-496D-855E-CA0C9944BF0C}",
+  "name": "Brewer-OR",
+  "t0_s": 1784263988.0,
+  "t1_s": 1784438160.0,
+  "dt_h": 48.38111111111111,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 2628,
+  "n_new_burnable": 2627,
+  "n_new_nonburnable": 1,
+  "covered_certain": 0,
+  "covered_possible": 2627,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 2627,
+  "p10_not_after_window": 2627,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   0,
+   0,
+   0,
+   1,
+   3,
+   2623
+  ],
+  "obs_head_m": 4597.053404083968,
+  "head_m_p50": 15528.586542245239,
+  "head_m_p10": 15666.464183088667,
+  "head_m_nominal": 15528.586542245239,
+  "obs_new_area_ac": 5260.082834215255,
+  "modeled_new_area_ac_p50": 114620.9678782994,
+  "by_fuel_class": {
+   "GS": {
+    "n": 161,
+    "late": 0,
+    "cert": 0,
+    "poss": 161
+   },
+   "SH": {
+    "n": 959,
+    "late": 0,
+    "cert": 0,
+    "poss": 959
+   },
+   "TU": {
+    "n": 1182,
+    "late": 0,
+    "cert": 0,
+    "poss": 1182
+   },
+   "TL": {
+    "n": 316,
+    "late": 0,
+    "cert": 0,
+    "poss": 316
+   },
+   "GR": {
+    "n": 9,
+    "late": 0,
+    "cert": 0,
+    "poss": 9
+   },
+   "NB": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{CCEFD7D4-FEBD-496D-855E-CA0C9944BF0C}",
+  "name": "Brewer-OR",
+  "t0_s": 1784438160.0,
+  "t1_s": 1784521320.0,
+  "dt_h": 23.1,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 3275,
+  "n_new_burnable": 3273,
+  "n_new_nonburnable": 2,
+  "covered_certain": 0,
+  "covered_possible": 3273,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 3273,
+  "p10_not_after_window": 3273,
+  "p10_before_window": 0,
+  "pit_hist": [
+   124,
+   66,
+   15,
+   12,
+   69,
+   46,
+   2941
+  ],
+  "obs_head_m": 3463.538652880894,
+  "head_m_p50": 12065.707604612338,
+  "head_m_p10": 14731.43577523929,
+  "head_m_nominal": 12065.707604612338,
+  "obs_new_area_ac": 6555.088006870229,
+  "modeled_new_area_ac_p50": 88498.6919767228,
+  "by_fuel_class": {
+   "TU": {
+    "n": 1514,
+    "late": 0,
+    "cert": 0,
+    "poss": 1514
+   },
+   "GS": {
+    "n": 895,
+    "late": 0,
+    "cert": 0,
+    "poss": 895
+   },
+   "SH": {
+    "n": 566,
+    "late": 0,
+    "cert": 0,
+    "poss": 566
+   },
+   "TL": {
+    "n": 254,
+    "late": 0,
+    "cert": 0,
+    "poss": 254
+   },
+   "GR": {
+    "n": 44,
+    "late": 0,
+    "cert": 0,
+    "poss": 44
+   },
+   "NB": {
+    "n": 2,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{CCEFD7D4-FEBD-496D-855E-CA0C9944BF0C}",
+  "name": "Brewer-OR",
+  "t0_s": 1784438160.0,
+  "t1_s": 1784521320.0,
+  "dt_h": 23.1,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 3275,
+  "n_new_burnable": 3273,
+  "n_new_nonburnable": 2,
+  "covered_certain": 0,
+  "covered_possible": 3273,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 3273,
+  "p10_not_after_window": 3273,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   0,
+   2,
+   12,
+   26,
+   81,
+   3152
+  ],
+  "obs_head_m": 3463.538652880894,
+  "head_m_p50": 14650.938536489735,
+  "head_m_p10": 14692.344945583058,
+  "head_m_nominal": 14692.344945583058,
+  "obs_new_area_ac": 6555.088006870229,
+  "modeled_new_area_ac_p50": 98442.4102112667,
+  "by_fuel_class": {
+   "TU": {
+    "n": 1514,
+    "late": 0,
+    "cert": 0,
+    "poss": 1514
+   },
+   "GS": {
+    "n": 895,
+    "late": 0,
+    "cert": 0,
+    "poss": 895
+   },
+   "SH": {
+    "n": 566,
+    "late": 0,
+    "cert": 0,
+    "poss": 566
+   },
+   "TL": {
+    "n": 254,
+    "late": 0,
+    "cert": 0,
+    "poss": 254
+   },
+   "GR": {
+    "n": 44,
+    "late": 0,
+    "cert": 0,
+    "poss": 44
+   },
+   "NB": {
+    "n": 2,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{EE6FCF97-7637-4721-B125-741098779D99}",
+  "name": "PorcupineRidge-OR",
+  "t0_s": 1784263980.0,
+  "t1_s": 1784310600.0,
+  "dt_h": 12.95,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 36947,
+  "n_new_burnable": 33888,
+  "n_new_nonburnable": 3059,
+  "covered_certain": 0,
+  "covered_possible": 12670,
+  "late_miss": 21218,
+  "early_miss": 0,
+  "never_reached": 4235,
+  "p90_unreached": 5639,
+  "p50_in_window": 12164,
+  "p10_not_after_window": 12670,
+  "p10_before_window": 0,
+  "pit_hist": [
+   23275,
+   529,
+   378,
+   138,
+   345,
+   538,
+   8685
+  ],
+  "obs_head_m": 22464.872579206854,
+  "head_m_p50": 10440.387923827351,
+  "head_m_p10": 11272.657184532847,
+  "head_m_nominal": 10616.18575572225,
+  "obs_new_area_ac": 73951.4004854456,
+  "modeled_new_area_ac_p50": 52488.74134111905,
+  "by_fuel_class": {
+   "GS": {
+    "n": 17343,
+    "late": 13565,
+    "cert": 0,
+    "poss": 3778
+   },
+   "GR": {
+    "n": 11776,
+    "late": 4410,
+    "cert": 0,
+    "poss": 7366
+   },
+   "TU": {
+    "n": 275,
+    "late": 239,
+    "cert": 0,
+    "poss": 36
+   },
+   "NB": {
+    "n": 3059,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 4493,
+    "late": 3004,
+    "cert": 0,
+    "poss": 1489
+   },
+   "TL": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{EE6FCF97-7637-4721-B125-741098779D99}",
+  "name": "PorcupineRidge-OR",
+  "t0_s": 1784263980.0,
+  "t1_s": 1784310600.0,
+  "dt_h": 12.95,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 36947,
+  "n_new_burnable": 33888,
+  "n_new_nonburnable": 3059,
+  "covered_certain": 0,
+  "covered_possible": 13075,
+  "late_miss": 20813,
+  "early_miss": 0,
+  "never_reached": 3205,
+  "p90_unreached": 6353,
+  "p50_in_window": 12243,
+  "p10_not_after_window": 13075,
+  "p10_before_window": 0,
+  "pit_hist": [
+   22832,
+   616,
+   281,
+   225,
+   323,
+   599,
+   9012
+  ],
+  "obs_head_m": 22464.872579206854,
+  "head_m_p50": 13237.03894381217,
+  "head_m_p10": 18745.079354326564,
+  "head_m_nominal": 14144.037613072158,
+  "obs_new_area_ac": 73951.4004854456,
+  "modeled_new_area_ac_p50": 70935.05922549035,
+  "by_fuel_class": {
+   "GS": {
+    "n": 17343,
+    "late": 13333,
+    "cert": 0,
+    "poss": 4010
+   },
+   "GR": {
+    "n": 11776,
+    "late": 4331,
+    "cert": 0,
+    "poss": 7445
+   },
+   "TU": {
+    "n": 275,
+    "late": 235,
+    "cert": 0,
+    "poss": 40
+   },
+   "NB": {
+    "n": 3059,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 4493,
+    "late": 2914,
+    "cert": 0,
+    "poss": 1579
+   },
+   "TL": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ }
+]

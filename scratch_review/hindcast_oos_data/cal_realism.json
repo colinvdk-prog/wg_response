@@ -1,0 +1,3086 @@
+[
+ {
+  "incident": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
+  "name": "Dillon",
+  "t0_s": 1756190158.0,
+  "t1_s": 1756219800.0,
+  "dt_h": 8.233888888888888,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 1088,
+  "n_new_burnable": 1003,
+  "n_new_nonburnable": 85,
+  "covered_certain": 0,
+  "covered_possible": 188,
+  "late_miss": 815,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 3,
+  "p50_in_window": 151,
+  "p10_not_after_window": 188,
+  "p10_before_window": 0,
+  "pit_hist": [
+   892,
+   18,
+   6,
+   4,
+   15,
+   6,
+   62
+  ],
+  "obs_head_m": 2707.4896121684383,
+  "head_m_p50": 484.66483264210535,
+  "head_m_p10": 569.2099788303083,
+  "head_m_nominal": 484.66483264210535,
+  "obs_new_area_ac": 2177.690305793835,
+  "modeled_new_area_ac_p50": 324.25168156121435,
+  "by_fuel_class": {
+   "TU": {
+    "n": 830,
+    "late": 650,
+    "cert": 0,
+    "poss": 180
+   },
+   "NB": {
+    "n": 85,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GR": {
+    "n": 3,
+    "late": 3,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 28,
+    "late": 28,
+    "cert": 0,
+    "poss": 0
+   },
+   "TL": {
+    "n": 119,
+    "late": 113,
+    "cert": 0,
+    "poss": 6
+   },
+   "GS": {
+    "n": 23,
+    "late": 21,
+    "cert": 0,
+    "poss": 2
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
+  "name": "Dillon",
+  "t0_s": 1756190158.0,
+  "t1_s": 1756219800.0,
+  "dt_h": 8.233888888888888,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 1088,
+  "n_new_burnable": 1003,
+  "n_new_nonburnable": 85,
+  "covered_certain": 0,
+  "covered_possible": 808,
+  "late_miss": 195,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 655,
+  "p10_not_after_window": 808,
+  "p10_before_window": 0,
+  "pit_hist": [
+   397,
+   45,
+   34,
+   20,
+   74,
+   30,
+   403
+  ],
+  "obs_head_m": 2707.4896121684383,
+  "head_m_p50": 2526.420392571276,
+  "head_m_p10": 2902.4127893874775,
+  "head_m_nominal": 2534.4230112591704,
+  "obs_new_area_ac": 2177.690305793835,
+  "modeled_new_area_ac_p50": 3242.5168156121435,
+  "by_fuel_class": {
+   "TU": {
+    "n": 830,
+    "late": 146,
+    "cert": 0,
+    "poss": 684
+   },
+   "NB": {
+    "n": 85,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GR": {
+    "n": 3,
+    "late": 1,
+    "cert": 0,
+    "poss": 2
+   },
+   "SH": {
+    "n": 28,
+    "late": 12,
+    "cert": 0,
+    "poss": 16
+   },
+   "TL": {
+    "n": 119,
+    "late": 34,
+    "cert": 0,
+    "poss": 85
+   },
+   "GS": {
+    "n": 23,
+    "late": 2,
+    "cert": 0,
+    "poss": 21
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
+  "name": "Dillon",
+  "t0_s": 1756190158.0,
+  "t1_s": 1756219800.0,
+  "dt_h": 8.233888888888888,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 1088,
+  "n_new_burnable": 1003,
+  "n_new_nonburnable": 85,
+  "covered_certain": 0,
+  "covered_possible": 826,
+  "late_miss": 177,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 697,
+  "p10_not_after_window": 826,
+  "p10_before_window": 0,
+  "pit_hist": [
+   364,
+   59,
+   13,
+   21,
+   89,
+   25,
+   432
+  ],
+  "obs_head_m": 2707.4896121684383,
+  "head_m_p50": 5766.324652670885,
+  "head_m_p10": 6308.35160719502,
+  "head_m_nominal": 5896.202167497311,
+  "obs_new_area_ac": 2177.690305793835,
+  "modeled_new_area_ac_p50": 6771.255794577705,
+  "by_fuel_class": {
+   "TU": {
+    "n": 830,
+    "late": 144,
+    "cert": 0,
+    "poss": 686
+   },
+   "NB": {
+    "n": 85,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GR": {
+    "n": 3,
+    "late": 1,
+    "cert": 0,
+    "poss": 2
+   },
+   "SH": {
+    "n": 28,
+    "late": 11,
+    "cert": 0,
+    "poss": 17
+   },
+   "TL": {
+    "n": 119,
+    "late": 19,
+    "cert": 0,
+    "poss": 100
+   },
+   "GS": {
+    "n": 23,
+    "late": 2,
+    "cert": 0,
+    "poss": 21
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
+  "name": "Dillon",
+  "t0_s": 1756219800.0,
+  "t1_s": 1756424460.0,
+  "dt_h": 56.85,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 453,
+  "n_new_burnable": 427,
+  "n_new_nonburnable": 26,
+  "covered_certain": 0,
+  "covered_possible": 427,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 427,
+  "p10_not_after_window": 427,
+  "p10_before_window": 0,
+  "pit_hist": [
+   2,
+   0,
+   0,
+   0,
+   2,
+   0,
+   423
+  ],
+  "obs_head_m": 458.9117562233506,
+  "head_m_p50": 4445.672052682248,
+  "head_m_p10": 5237.041149351416,
+  "head_m_nominal": 4562.565068029167,
+  "obs_new_area_ac": 906.7037762174698,
+  "modeled_new_area_ac_p50": 10488.140810992367,
+  "by_fuel_class": {
+   "TU": {
+    "n": 358,
+    "late": 0,
+    "cert": 0,
+    "poss": 358
+   },
+   "NB": {
+    "n": 26,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 21,
+    "late": 0,
+    "cert": 0,
+    "poss": 21
+   },
+   "GS": {
+    "n": 4,
+    "late": 0,
+    "cert": 0,
+    "poss": 4
+   },
+   "TL": {
+    "n": 41,
+    "late": 0,
+    "cert": 0,
+    "poss": 41
+   },
+   "GR": {
+    "n": 3,
+    "late": 0,
+    "cert": 0,
+    "poss": 3
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
+  "name": "Dillon",
+  "t0_s": 1756219800.0,
+  "t1_s": 1756424460.0,
+  "dt_h": 56.85,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 453,
+  "n_new_burnable": 427,
+  "n_new_nonburnable": 26,
+  "covered_certain": 0,
+  "covered_possible": 427,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 427,
+  "p10_not_after_window": 427,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   427
+  ],
+  "obs_head_m": 458.9117562233506,
+  "head_m_p50": 8215.674044167039,
+  "head_m_p10": 8215.674044167039,
+  "head_m_nominal": 8215.674044167039,
+  "obs_new_area_ac": 906.7037762174698,
+  "modeled_new_area_ac_p50": 47981.24265670019,
+  "by_fuel_class": {
+   "TU": {
+    "n": 358,
+    "late": 0,
+    "cert": 0,
+    "poss": 358
+   },
+   "NB": {
+    "n": 26,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 21,
+    "late": 0,
+    "cert": 0,
+    "poss": 21
+   },
+   "GS": {
+    "n": 4,
+    "late": 0,
+    "cert": 0,
+    "poss": 4
+   },
+   "TL": {
+    "n": 41,
+    "late": 0,
+    "cert": 0,
+    "poss": 41
+   },
+   "GR": {
+    "n": 3,
+    "late": 0,
+    "cert": 0,
+    "poss": 3
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
+  "name": "Dillon",
+  "t0_s": 1756219800.0,
+  "t1_s": 1756424460.0,
+  "dt_h": 56.85,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 453,
+  "n_new_burnable": 427,
+  "n_new_nonburnable": 26,
+  "covered_certain": 0,
+  "covered_possible": 427,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 427,
+  "p10_not_after_window": 427,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   427
+  ],
+  "obs_head_m": 458.9117562233506,
+  "head_m_p50": 8215.674044167039,
+  "head_m_p10": 8215.674044167039,
+  "head_m_nominal": 8215.674044167039,
+  "obs_new_area_ac": 906.7037762174698,
+  "modeled_new_area_ac_p50": 48415.57978570503,
+  "by_fuel_class": {
+   "TU": {
+    "n": 358,
+    "late": 0,
+    "cert": 0,
+    "poss": 358
+   },
+   "NB": {
+    "n": 26,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 21,
+    "late": 0,
+    "cert": 0,
+    "poss": 21
+   },
+   "GS": {
+    "n": 4,
+    "late": 0,
+    "cert": 0,
+    "poss": 4
+   },
+   "TL": {
+    "n": 41,
+    "late": 0,
+    "cert": 0,
+    "poss": 41
+   },
+   "GR": {
+    "n": 3,
+    "late": 0,
+    "cert": 0,
+    "poss": 3
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
+  "name": "Dillon",
+  "t0_s": 1756424460.0,
+  "t1_s": 1756503900.0,
+  "dt_h": 22.066666666666666,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 439,
+  "n_new_burnable": 417,
+  "n_new_nonburnable": 22,
+  "covered_certain": 0,
+  "covered_possible": 387,
+  "late_miss": 30,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 317,
+  "p10_not_after_window": 387,
+  "p10_before_window": 0,
+  "pit_hist": [
+   165,
+   33,
+   32,
+   3,
+   27,
+   37,
+   120
+  ],
+  "obs_head_m": 685.4195795277518,
+  "head_m_p50": 2620.8395601409866,
+  "head_m_p10": 2875.7781555606825,
+  "head_m_nominal": 2818.8827574058487,
+  "obs_new_area_ac": 878.6820259590933,
+  "modeled_new_area_ac_p50": 3574.7747115328943,
+  "by_fuel_class": {
+   "TL": {
+    "n": 23,
+    "late": 0,
+    "cert": 0,
+    "poss": 23
+   },
+   "GS": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 5
+   },
+   "TU": {
+    "n": 383,
+    "late": 30,
+    "cert": 0,
+    "poss": 353
+   },
+   "NB": {
+    "n": 22,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 5
+   },
+   "GR": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
+  "name": "Dillon",
+  "t0_s": 1756424460.0,
+  "t1_s": 1756503900.0,
+  "dt_h": 22.066666666666666,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 439,
+  "n_new_burnable": 417,
+  "n_new_nonburnable": 22,
+  "covered_certain": 0,
+  "covered_possible": 417,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 417,
+  "p10_not_after_window": 417,
+  "p10_before_window": 0,
+  "pit_hist": [
+   4,
+   2,
+   0,
+   0,
+   2,
+   9,
+   400
+  ],
+  "obs_head_m": 685.4195795277518,
+  "head_m_p50": 7338.726047482628,
+  "head_m_p10": 7289.444423273972,
+  "head_m_nominal": 7289.444423273972,
+  "obs_new_area_ac": 878.6820259590933,
+  "modeled_new_area_ac_p50": 33351.88746823775,
+  "by_fuel_class": {
+   "TL": {
+    "n": 23,
+    "late": 0,
+    "cert": 0,
+    "poss": 23
+   },
+   "GS": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 5
+   },
+   "TU": {
+    "n": 383,
+    "late": 0,
+    "cert": 0,
+    "poss": 383
+   },
+   "NB": {
+    "n": 22,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 5
+   },
+   "GR": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
+  "name": "Dillon",
+  "t0_s": 1756424460.0,
+  "t1_s": 1756503900.0,
+  "dt_h": 22.066666666666666,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 439,
+  "n_new_burnable": 417,
+  "n_new_nonburnable": 22,
+  "covered_certain": 0,
+  "covered_possible": 417,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 417,
+  "p10_not_after_window": 417,
+  "p10_before_window": 0,
+  "pit_hist": [
+   3,
+   3,
+   0,
+   0,
+   2,
+   7,
+   402
+  ],
+  "obs_head_m": 685.4195795277518,
+  "head_m_p50": 7773.416237408106,
+  "head_m_p10": 7840.338002917986,
+  "head_m_nominal": 7773.416237408106,
+  "obs_new_area_ac": 878.6820259590933,
+  "modeled_new_area_ac_p50": 40075.10597665823,
+  "by_fuel_class": {
+   "TL": {
+    "n": 23,
+    "late": 0,
+    "cert": 0,
+    "poss": 23
+   },
+   "GS": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 5
+   },
+   "TU": {
+    "n": 383,
+    "late": 0,
+    "cert": 0,
+    "poss": 383
+   },
+   "NB": {
+    "n": 22,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 5
+   },
+   "GR": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
+  "name": "Dillon",
+  "t0_s": 1756503900.0,
+  "t1_s": 1756600920.0,
+  "dt_h": 26.95,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 466,
+  "n_new_burnable": 445,
+  "n_new_nonburnable": 21,
+  "covered_certain": 0,
+  "covered_possible": 418,
+  "late_miss": 27,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 390,
+  "p10_not_after_window": 418,
+  "p10_before_window": 0,
+  "pit_hist": [
+   152,
+   49,
+   38,
+   15,
+   29,
+   29,
+   133
+  ],
+  "obs_head_m": 886.3972021616494,
+  "head_m_p50": 3195.9505628216466,
+  "head_m_p10": 3392.653828494738,
+  "head_m_nominal": 3244.9961479175904,
+  "obs_new_area_ac": 932.7239728859623,
+  "modeled_new_area_ac_p50": 5714.435499118932,
+  "by_fuel_class": {
+   "TU": {
+    "n": 411,
+    "late": 24,
+    "cert": 0,
+    "poss": 387
+   },
+   "NB": {
+    "n": 21,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "TL": {
+    "n": 26,
+    "late": 3,
+    "cert": 0,
+    "poss": 23
+   },
+   "SH": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 5
+   },
+   "GS": {
+    "n": 3,
+    "late": 0,
+    "cert": 0,
+    "poss": 3
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
+  "name": "Dillon",
+  "t0_s": 1756503900.0,
+  "t1_s": 1756600920.0,
+  "dt_h": 26.95,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 466,
+  "n_new_burnable": 445,
+  "n_new_nonburnable": 21,
+  "covered_certain": 0,
+  "covered_possible": 445,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 445,
+  "p10_not_after_window": 445,
+  "p10_before_window": 0,
+  "pit_hist": [
+   25,
+   7,
+   7,
+   3,
+   3,
+   7,
+   393
+  ],
+  "obs_head_m": 886.3972021616494,
+  "head_m_p50": 7489.492639691957,
+  "head_m_p10": 7388.775270638565,
+  "head_m_nominal": 7289.444423273972,
+  "obs_new_area_ac": 932.7239728859623,
+  "modeled_new_area_ac_p50": 35099.243752206516,
+  "by_fuel_class": {
+   "TU": {
+    "n": 411,
+    "late": 0,
+    "cert": 0,
+    "poss": 411
+   },
+   "NB": {
+    "n": 21,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "TL": {
+    "n": 26,
+    "late": 0,
+    "cert": 0,
+    "poss": 26
+   },
+   "SH": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 5
+   },
+   "GS": {
+    "n": 3,
+    "late": 0,
+    "cert": 0,
+    "poss": 3
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
+  "name": "Dillon",
+  "t0_s": 1756503900.0,
+  "t1_s": 1756600920.0,
+  "dt_h": 26.95,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 466,
+  "n_new_burnable": 445,
+  "n_new_nonburnable": 21,
+  "covered_certain": 0,
+  "covered_possible": 445,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 445,
+  "p10_not_after_window": 445,
+  "p10_before_window": 0,
+  "pit_hist": [
+   21,
+   11,
+   6,
+   4,
+   2,
+   4,
+   397
+  ],
+  "obs_head_m": 886.3972021616494,
+  "head_m_p50": 7409.574886590998,
+  "head_m_p10": 7506.776938207236,
+  "head_m_nominal": 7409.574886590998,
+  "obs_new_area_ac": 932.7239728859623,
+  "modeled_new_area_ac_p50": 41356.10027418402,
+  "by_fuel_class": {
+   "TU": {
+    "n": 411,
+    "late": 0,
+    "cert": 0,
+    "poss": 411
+   },
+   "NB": {
+    "n": 21,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "TL": {
+    "n": 26,
+    "late": 0,
+    "cert": 0,
+    "poss": 26
+   },
+   "SH": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 5
+   },
+   "GS": {
+    "n": 3,
+    "late": 0,
+    "cert": 0,
+    "poss": 3
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
+  "name": "Gifford",
+  "t0_s": 1754084136.0,
+  "t1_s": 1754149019.0,
+  "dt_h": 18.023055555555555,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 14827,
+  "n_new_burnable": 14211,
+  "n_new_nonburnable": 616,
+  "covered_certain": 0,
+  "covered_possible": 8013,
+  "late_miss": 6198,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 6931,
+  "p10_not_after_window": 8013,
+  "p10_before_window": 0,
+  "pit_hist": [
+   8722,
+   1057,
+   761,
+   158,
+   549,
+   846,
+   2118
+  ],
+  "obs_head_m": 10228.372304526267,
+  "head_m_p50": 6193.6741922706915,
+  "head_m_p10": 6840.592079637551,
+  "head_m_nominal": 6555.188784466852,
+  "obs_new_area_ac": 29677.03507721065,
+  "modeled_new_area_ac_p50": 29538.927879508654,
+  "by_fuel_class": {
+   "SH": {
+    "n": 11244,
+    "late": 4763,
+    "cert": 0,
+    "poss": 6481
+   },
+   "NB": {
+    "n": 616,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GR": {
+    "n": 1104,
+    "late": 488,
+    "cert": 0,
+    "poss": 616
+   },
+   "GS": {
+    "n": 1570,
+    "late": 693,
+    "cert": 0,
+    "poss": 877
+   },
+   "TU": {
+    "n": 287,
+    "late": 251,
+    "cert": 0,
+    "poss": 36
+   },
+   "TL": {
+    "n": 6,
+    "late": 3,
+    "cert": 0,
+    "poss": 3
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
+  "name": "Gifford",
+  "t0_s": 1754084136.0,
+  "t1_s": 1754149019.0,
+  "dt_h": 18.023055555555555,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 14827,
+  "n_new_burnable": 14211,
+  "n_new_nonburnable": 616,
+  "covered_certain": 0,
+  "covered_possible": 10539,
+  "late_miss": 3672,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 9158,
+  "p10_not_after_window": 10539,
+  "p10_before_window": 0,
+  "pit_hist": [
+   6691,
+   1324,
+   1108,
+   155,
+   648,
+   1265,
+   3020
+  ],
+  "obs_head_m": 10228.372304526267,
+  "head_m_p50": 8864.42891561549,
+  "head_m_p10": 11075.852111688744,
+  "head_m_nominal": 9347.0102171764,
+  "obs_new_area_ac": 29677.03507721065,
+  "modeled_new_area_ac_p50": 49832.679727342926,
+  "by_fuel_class": {
+   "SH": {
+    "n": 11244,
+    "late": 2943,
+    "cert": 0,
+    "poss": 8301
+   },
+   "NB": {
+    "n": 616,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GR": {
+    "n": 1104,
+    "late": 131,
+    "cert": 0,
+    "poss": 973
+   },
+   "GS": {
+    "n": 1570,
+    "late": 391,
+    "cert": 0,
+    "poss": 1179
+   },
+   "TU": {
+    "n": 287,
+    "late": 207,
+    "cert": 0,
+    "poss": 80
+   },
+   "TL": {
+    "n": 6,
+    "late": 0,
+    "cert": 0,
+    "poss": 6
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
+  "name": "Gifford",
+  "t0_s": 1754084136.0,
+  "t1_s": 1754149019.0,
+  "dt_h": 18.023055555555555,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 14827,
+  "n_new_burnable": 14211,
+  "n_new_nonburnable": 616,
+  "covered_certain": 0,
+  "covered_possible": 14164,
+  "late_miss": 47,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 10423,
+  "p10_not_after_window": 14164,
+  "p10_before_window": 0,
+  "pit_hist": [
+   4048,
+   2546,
+   2017,
+   173,
+   935,
+   1291,
+   3201
+  ],
+  "obs_head_m": 10228.372304526267,
+  "head_m_p50": 21298.267535177598,
+  "head_m_p10": 21010.133269448816,
+  "head_m_nominal": 21214.43376571715,
+  "obs_new_area_ac": 29677.03507721065,
+  "modeled_new_area_ac_p50": 115265.46813424205,
+  "by_fuel_class": {
+   "SH": {
+    "n": 11244,
+    "late": 39,
+    "cert": 0,
+    "poss": 11205
+   },
+   "NB": {
+    "n": 616,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GR": {
+    "n": 1104,
+    "late": 0,
+    "cert": 0,
+    "poss": 1104
+   },
+   "GS": {
+    "n": 1570,
+    "late": 5,
+    "cert": 0,
+    "poss": 1565
+   },
+   "TU": {
+    "n": 287,
+    "late": 3,
+    "cert": 0,
+    "poss": 284
+   },
+   "TL": {
+    "n": 6,
+    "late": 0,
+    "cert": 0,
+    "poss": 6
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
+  "name": "Gifford",
+  "t0_s": 1754149019.0,
+  "t1_s": 1754183739.0,
+  "dt_h": 9.644444444444444,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 4642,
+  "n_new_burnable": 4537,
+  "n_new_nonburnable": 105,
+  "covered_certain": 0,
+  "covered_possible": 4527,
+  "late_miss": 10,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 4318,
+  "p10_not_after_window": 4527,
+  "p10_before_window": 0,
+  "pit_hist": [
+   1037,
+   250,
+   184,
+   68,
+   97,
+   111,
+   2790
+  ],
+  "obs_head_m": 4080.8822575516683,
+  "head_m_p50": 5918.825897084657,
+  "head_m_p10": 7074.022900726291,
+  "head_m_nominal": 6147.7312888577035,
+  "obs_new_area_ac": 9291.21176424171,
+  "modeled_new_area_ac_p50": 39490.65232841209,
+  "by_fuel_class": {
+   "SH": {
+    "n": 3538,
+    "late": 0,
+    "cert": 0,
+    "poss": 3538
+   },
+   "GS": {
+    "n": 494,
+    "late": 2,
+    "cert": 0,
+    "poss": 492
+   },
+   "GR": {
+    "n": 192,
+    "late": 0,
+    "cert": 0,
+    "poss": 192
+   },
+   "NB": {
+    "n": 105,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "TU": {
+    "n": 312,
+    "late": 8,
+    "cert": 0,
+    "poss": 304
+   },
+   "TL": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
+  "name": "Gifford",
+  "t0_s": 1754149019.0,
+  "t1_s": 1754183739.0,
+  "dt_h": 9.644444444444444,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 4642,
+  "n_new_burnable": 4537,
+  "n_new_nonburnable": 105,
+  "covered_certain": 0,
+  "covered_possible": 4537,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 4536,
+  "p10_not_after_window": 4537,
+  "p10_before_window": 0,
+  "pit_hist": [
+   643,
+   225,
+   205,
+   78,
+   94,
+   206,
+   3086
+  ],
+  "obs_head_m": 4080.8822575516683,
+  "head_m_p50": 9622.847811329035,
+  "head_m_p10": 11507.688734059502,
+  "head_m_nominal": 10698.270888325833,
+  "obs_new_area_ac": 9291.21176424171,
+  "modeled_new_area_ac_p50": 59618.275228285995,
+  "by_fuel_class": {
+   "SH": {
+    "n": 3538,
+    "late": 0,
+    "cert": 0,
+    "poss": 3538
+   },
+   "GS": {
+    "n": 494,
+    "late": 0,
+    "cert": 0,
+    "poss": 494
+   },
+   "GR": {
+    "n": 192,
+    "late": 0,
+    "cert": 0,
+    "poss": 192
+   },
+   "NB": {
+    "n": 105,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "TU": {
+    "n": 312,
+    "late": 0,
+    "cert": 0,
+    "poss": 312
+   },
+   "TL": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
+  "name": "Gifford",
+  "t0_s": 1754149019.0,
+  "t1_s": 1754183739.0,
+  "dt_h": 9.644444444444444,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 4642,
+  "n_new_burnable": 4537,
+  "n_new_nonburnable": 105,
+  "covered_certain": 0,
+  "covered_possible": 4537,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 4537,
+  "p10_not_after_window": 4537,
+  "p10_before_window": 0,
+  "pit_hist": [
+   2,
+   8,
+   114,
+   71,
+   245,
+   175,
+   3922
+  ],
+  "obs_head_m": 4080.8822575516683,
+  "head_m_p50": 16254.159467656273,
+  "head_m_p10": 16571.979362767746,
+  "head_m_nominal": 16380.247250881166,
+  "obs_new_area_ac": 9291.21176424171,
+  "modeled_new_area_ac_p50": 129248.32151317195,
+  "by_fuel_class": {
+   "SH": {
+    "n": 3538,
+    "late": 0,
+    "cert": 0,
+    "poss": 3538
+   },
+   "GS": {
+    "n": 494,
+    "late": 0,
+    "cert": 0,
+    "poss": 494
+   },
+   "GR": {
+    "n": 192,
+    "late": 0,
+    "cert": 0,
+    "poss": 192
+   },
+   "NB": {
+    "n": 105,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "TU": {
+    "n": 312,
+    "late": 0,
+    "cert": 0,
+    "poss": 312
+   },
+   "TL": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
+  "name": "Gifford",
+  "t0_s": 1754183739.0,
+  "t1_s": 1754237527.0,
+  "dt_h": 14.94111111111111,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 5206,
+  "n_new_burnable": 5049,
+  "n_new_nonburnable": 157,
+  "covered_certain": 0,
+  "covered_possible": 5049,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 5045,
+  "p10_not_after_window": 5049,
+  "p10_before_window": 0,
+  "pit_hist": [
+   419,
+   276,
+   177,
+   63,
+   124,
+   266,
+   3724
+  ],
+  "obs_head_m": 2737.243138634199,
+  "head_m_p50": 6516.149169563263,
+  "head_m_p10": 6716.9189365363045,
+  "head_m_nominal": 6665.470726062788,
+  "obs_new_area_ac": 10420.087988936308,
+  "modeled_new_area_ac_p50": 62346.39277129794,
+  "by_fuel_class": {
+   "SH": {
+    "n": 4060,
+    "late": 0,
+    "cert": 0,
+    "poss": 4060
+   },
+   "GR": {
+    "n": 388,
+    "late": 0,
+    "cert": 0,
+    "poss": 388
+   },
+   "NB": {
+    "n": 157,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GS": {
+    "n": 419,
+    "late": 0,
+    "cert": 0,
+    "poss": 419
+   },
+   "TU": {
+    "n": 181,
+    "late": 0,
+    "cert": 0,
+    "poss": 181
+   },
+   "TL": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
+  "name": "Gifford",
+  "t0_s": 1754183739.0,
+  "t1_s": 1754237527.0,
+  "dt_h": 14.94111111111111,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 5206,
+  "n_new_burnable": 5049,
+  "n_new_nonburnable": 157,
+  "covered_certain": 0,
+  "covered_possible": 5049,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 5049,
+  "p10_not_after_window": 5049,
+  "p10_before_window": 0,
+  "pit_hist": [
+   171,
+   112,
+   121,
+   58,
+   140,
+   164,
+   4283
+  ],
+  "obs_head_m": 2737.243138634199,
+  "head_m_p50": 7452.63040811766,
+  "head_m_p10": 7993.2971920228265,
+  "head_m_nominal": 7382.194795587556,
+  "obs_new_area_ac": 10420.087988936308,
+  "modeled_new_area_ac_p50": 87816.16220257233,
+  "by_fuel_class": {
+   "SH": {
+    "n": 4060,
+    "late": 0,
+    "cert": 0,
+    "poss": 4060
+   },
+   "GR": {
+    "n": 388,
+    "late": 0,
+    "cert": 0,
+    "poss": 388
+   },
+   "NB": {
+    "n": 157,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GS": {
+    "n": 419,
+    "late": 0,
+    "cert": 0,
+    "poss": 419
+   },
+   "TU": {
+    "n": 181,
+    "late": 0,
+    "cert": 0,
+    "poss": 181
+   },
+   "TL": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
+  "name": "Gifford",
+  "t0_s": 1754183739.0,
+  "t1_s": 1754237527.0,
+  "dt_h": 14.94111111111111,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 5206,
+  "n_new_burnable": 5049,
+  "n_new_nonburnable": 157,
+  "covered_certain": 0,
+  "covered_possible": 5049,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 5049,
+  "p10_not_after_window": 5049,
+  "p10_before_window": 0,
+  "pit_hist": [
+   51,
+   31,
+   75,
+   71,
+   103,
+   219,
+   4499
+  ],
+  "obs_head_m": 2737.243138634199,
+  "head_m_p50": 14983.310715592866,
+  "head_m_p10": 15990.647266449223,
+  "head_m_nominal": 15983.047268903387,
+  "obs_new_area_ac": 10420.087988936308,
+  "modeled_new_area_ac_p50": 182913.97636514282,
+  "by_fuel_class": {
+   "SH": {
+    "n": 4060,
+    "late": 0,
+    "cert": 0,
+    "poss": 4060
+   },
+   "GR": {
+    "n": 388,
+    "late": 0,
+    "cert": 0,
+    "poss": 388
+   },
+   "NB": {
+    "n": 157,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GS": {
+    "n": 419,
+    "late": 0,
+    "cert": 0,
+    "poss": 419
+   },
+   "TU": {
+    "n": 181,
+    "late": 0,
+    "cert": 0,
+    "poss": 181
+   },
+   "TL": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
+  "name": "Gifford",
+  "t0_s": 1754237527.0,
+  "t1_s": 1754298692.0,
+  "dt_h": 16.990277777777777,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 9066,
+  "n_new_burnable": 8759,
+  "n_new_nonburnable": 307,
+  "covered_certain": 0,
+  "covered_possible": 8674,
+  "late_miss": 85,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 8485,
+  "p10_not_after_window": 8674,
+  "p10_before_window": 0,
+  "pit_hist": [
+   1316,
+   571,
+   775,
+   71,
+   599,
+   245,
+   5182
+  ],
+  "obs_head_m": 4633.033563444151,
+  "head_m_p50": 8211.729415902597,
+  "head_m_p10": 8745.295878356546,
+  "head_m_nominal": 8297.5900115636,
+  "obs_new_area_ac": 18146.0848458887,
+  "modeled_new_area_ac_p50": 92928.13007113618,
+  "by_fuel_class": {
+   "SH": {
+    "n": 6705,
+    "late": 16,
+    "cert": 0,
+    "poss": 6689
+   },
+   "NB": {
+    "n": 307,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GR": {
+    "n": 443,
+    "late": 1,
+    "cert": 0,
+    "poss": 442
+   },
+   "GS": {
+    "n": 824,
+    "late": 20,
+    "cert": 0,
+    "poss": 804
+   },
+   "TL": {
+    "n": 10,
+    "late": 3,
+    "cert": 0,
+    "poss": 7
+   },
+   "TU": {
+    "n": 777,
+    "late": 45,
+    "cert": 0,
+    "poss": 732
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
+  "name": "Gifford",
+  "t0_s": 1754237527.0,
+  "t1_s": 1754298692.0,
+  "dt_h": 16.990277777777777,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 9066,
+  "n_new_burnable": 8759,
+  "n_new_nonburnable": 307,
+  "covered_certain": 0,
+  "covered_possible": 8759,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 8759,
+  "p10_not_after_window": 8759,
+  "p10_before_window": 0,
+  "pit_hist": [
+   235,
+   290,
+   928,
+   183,
+   677,
+   186,
+   6260
+  ],
+  "obs_head_m": 4633.033563444151,
+  "head_m_p50": 12859.92612731504,
+  "head_m_p10": 15482.616058018102,
+  "head_m_nominal": 13016.439605360598,
+  "obs_new_area_ac": 18146.0848458887,
+  "modeled_new_area_ac_p50": 134510.4059009771,
+  "by_fuel_class": {
+   "SH": {
+    "n": 6705,
+    "late": 0,
+    "cert": 0,
+    "poss": 6705
+   },
+   "NB": {
+    "n": 307,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GR": {
+    "n": 443,
+    "late": 0,
+    "cert": 0,
+    "poss": 443
+   },
+   "GS": {
+    "n": 824,
+    "late": 0,
+    "cert": 0,
+    "poss": 824
+   },
+   "TL": {
+    "n": 10,
+    "late": 0,
+    "cert": 0,
+    "poss": 10
+   },
+   "TU": {
+    "n": 777,
+    "late": 0,
+    "cert": 0,
+    "poss": 777
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
+  "name": "Gifford",
+  "t0_s": 1754237527.0,
+  "t1_s": 1754298692.0,
+  "dt_h": 16.990277777777777,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 9066,
+  "n_new_burnable": 8759,
+  "n_new_nonburnable": 307,
+  "covered_certain": 0,
+  "covered_possible": 8759,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 8759,
+  "p10_not_after_window": 8759,
+  "p10_before_window": 0,
+  "pit_hist": [
+   3,
+   189,
+   540,
+   50,
+   274,
+   176,
+   7527
+  ],
+  "obs_head_m": 4633.033563444151,
+  "head_m_p50": 15937.117054222825,
+  "head_m_p10": 15725.03736084592,
+  "head_m_nominal": 16401.249952366437,
+  "obs_new_area_ac": 18146.0848458887,
+  "modeled_new_area_ac_p50": 190784.08508056685,
+  "by_fuel_class": {
+   "SH": {
+    "n": 6705,
+    "late": 0,
+    "cert": 0,
+    "poss": 6705
+   },
+   "NB": {
+    "n": 307,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GR": {
+    "n": 443,
+    "late": 0,
+    "cert": 0,
+    "poss": 443
+   },
+   "GS": {
+    "n": 824,
+    "late": 0,
+    "cert": 0,
+    "poss": 824
+   },
+   "TL": {
+    "n": 10,
+    "late": 0,
+    "cert": 0,
+    "poss": 10
+   },
+   "TU": {
+    "n": 777,
+    "late": 0,
+    "cert": 0,
+    "poss": 777
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{1AB682F7-CC0F-4DCE-87A4-FA4A9B67AB05}",
+  "name": "Madre",
+  "t0_s": 1751471500.0,
+  "t1_s": 1751535528.0,
+  "dt_h": 17.785555555555554,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 17522,
+  "n_new_burnable": 16173,
+  "n_new_nonburnable": 1349,
+  "covered_certain": 0,
+  "covered_possible": 12340,
+  "late_miss": 3833,
+  "early_miss": 0,
+  "never_reached": 5,
+  "p90_unreached": 5,
+  "p50_in_window": 11857,
+  "p10_not_after_window": 12340,
+  "p10_before_window": 0,
+  "pit_hist": [
+   5054,
+   552,
+   919,
+   298,
+   1582,
+   810,
+   6958
+  ],
+  "obs_head_m": 14642.366611992747,
+  "head_m_p50": 6660.60808034822,
+  "head_m_p10": 8913.635621899743,
+  "head_m_nominal": 6921.228214702936,
+  "obs_new_area_ac": 35071.22200194814,
+  "modeled_new_area_ac_p50": 36970.69635874809,
+  "by_fuel_class": {
+   "SH": {
+    "n": 6702,
+    "late": 512,
+    "cert": 0,
+    "poss": 6190
+   },
+   "GR": {
+    "n": 2765,
+    "late": 840,
+    "cert": 0,
+    "poss": 1925
+   },
+   "GS": {
+    "n": 6706,
+    "late": 2481,
+    "cert": 0,
+    "poss": 4225
+   },
+   "NB": {
+    "n": 1349,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{1AB682F7-CC0F-4DCE-87A4-FA4A9B67AB05}",
+  "name": "Madre",
+  "t0_s": 1751471500.0,
+  "t1_s": 1751535528.0,
+  "dt_h": 17.785555555555554,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 17522,
+  "n_new_burnable": 16173,
+  "n_new_nonburnable": 1349,
+  "covered_certain": 0,
+  "covered_possible": 16168,
+  "late_miss": 5,
+  "early_miss": 0,
+  "never_reached": 5,
+  "p90_unreached": 0,
+  "p50_in_window": 15949,
+  "p10_not_after_window": 16168,
+  "p10_before_window": 0,
+  "pit_hist": [
+   2263,
+   331,
+   218,
+   213,
+   2288,
+   1168,
+   9692
+  ],
+  "obs_head_m": 14642.366611992747,
+  "head_m_p50": 16739.51612203889,
+  "head_m_p10": 17845.436391413914,
+  "head_m_nominal": 16864.856951661346,
+  "obs_new_area_ac": 35071.22200194814,
+  "modeled_new_area_ac_p50": 91967.38434799184,
+  "by_fuel_class": {
+   "SH": {
+    "n": 6702,
+    "late": 3,
+    "cert": 0,
+    "poss": 6699
+   },
+   "GR": {
+    "n": 2765,
+    "late": 1,
+    "cert": 0,
+    "poss": 2764
+   },
+   "GS": {
+    "n": 6706,
+    "late": 1,
+    "cert": 0,
+    "poss": 6705
+   },
+   "NB": {
+    "n": 1349,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{1AB682F7-CC0F-4DCE-87A4-FA4A9B67AB05}",
+  "name": "Madre",
+  "t0_s": 1751471500.0,
+  "t1_s": 1751535528.0,
+  "dt_h": 17.785555555555554,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 17522,
+  "n_new_burnable": 16173,
+  "n_new_nonburnable": 1349,
+  "covered_certain": 0,
+  "covered_possible": 16169,
+  "late_miss": 4,
+  "early_miss": 0,
+  "never_reached": 4,
+  "p90_unreached": 1,
+  "p50_in_window": 16168,
+  "p10_not_after_window": 16169,
+  "p10_before_window": 0,
+  "pit_hist": [
+   4,
+   4,
+   3,
+   4,
+   5,
+   1274,
+   14879
+  ],
+  "obs_head_m": 14642.366611992747,
+  "head_m_p50": 31939.85754507994,
+  "head_m_p10": 32312.005508788832,
+  "head_m_nominal": 30670.330940503398,
+  "obs_new_area_ac": 35071.22200194814,
+  "modeled_new_area_ac_p50": 186260.57396742894,
+  "by_fuel_class": {
+   "SH": {
+    "n": 6702,
+    "late": 3,
+    "cert": 0,
+    "poss": 6699
+   },
+   "GR": {
+    "n": 2765,
+    "late": 1,
+    "cert": 0,
+    "poss": 2764
+   },
+   "GS": {
+    "n": 6706,
+    "late": 0,
+    "cert": 0,
+    "poss": 6706
+   },
+   "NB": {
+    "n": 1349,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{1AB682F7-CC0F-4DCE-87A4-FA4A9B67AB05}",
+  "name": "Madre",
+  "t0_s": 1751535528.0,
+  "t1_s": 1751559381.0,
+  "dt_h": 6.6258333333333335,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 8624,
+  "n_new_burnable": 8013,
+  "n_new_nonburnable": 611,
+  "covered_certain": 0,
+  "covered_possible": 3182,
+  "late_miss": 4831,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 2643,
+  "p10_not_after_window": 3182,
+  "p10_before_window": 0,
+  "pit_hist": [
+   6304,
+   167,
+   181,
+   33,
+   161,
+   128,
+   1039
+  ],
+  "obs_head_m": 3896.0749479444053,
+  "head_m_p50": 1592.2625411658719,
+  "head_m_p10": 1973.8540979515178,
+  "head_m_nominal": 1602.4044433288373,
+  "obs_new_area_ac": 17261.398159159955,
+  "modeled_new_area_ac_p50": 8558.643150344153,
+  "by_fuel_class": {
+   "GR": {
+    "n": 3317,
+    "late": 2586,
+    "cert": 0,
+    "poss": 731
+   },
+   "NB": {
+    "n": 611,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GS": {
+    "n": 2749,
+    "late": 1557,
+    "cert": 0,
+    "poss": 1192
+   },
+   "SH": {
+    "n": 1947,
+    "late": 688,
+    "cert": 0,
+    "poss": 1259
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{1AB682F7-CC0F-4DCE-87A4-FA4A9B67AB05}",
+  "name": "Madre",
+  "t0_s": 1751535528.0,
+  "t1_s": 1751559381.0,
+  "dt_h": 6.6258333333333335,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 8624,
+  "n_new_burnable": 8013,
+  "n_new_nonburnable": 611,
+  "covered_certain": 0,
+  "covered_possible": 6775,
+  "late_miss": 1238,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 6062,
+  "p10_not_after_window": 6775,
+  "p10_before_window": 0,
+  "pit_hist": [
+   3838,
+   243,
+   506,
+   132,
+   156,
+   343,
+   2795
+  ],
+  "obs_head_m": 3896.0749479444053,
+  "head_m_p50": 2623.928352680385,
+  "head_m_p10": 2754.941015702514,
+  "head_m_nominal": 2574.0629362935165,
+  "obs_new_area_ac": 17261.398159159955,
+  "modeled_new_area_ac_p50": 26324.432814154887,
+  "by_fuel_class": {
+   "GR": {
+    "n": 3317,
+    "late": 617,
+    "cert": 0,
+    "poss": 2700
+   },
+   "NB": {
+    "n": 611,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GS": {
+    "n": 2749,
+    "late": 283,
+    "cert": 0,
+    "poss": 2466
+   },
+   "SH": {
+    "n": 1947,
+    "late": 338,
+    "cert": 0,
+    "poss": 1609
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{1AB682F7-CC0F-4DCE-87A4-FA4A9B67AB05}",
+  "name": "Madre",
+  "t0_s": 1751535528.0,
+  "t1_s": 1751559381.0,
+  "dt_h": 6.6258333333333335,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 8624,
+  "n_new_burnable": 8013,
+  "n_new_nonburnable": 611,
+  "covered_certain": 0,
+  "covered_possible": 7517,
+  "late_miss": 496,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 6431,
+  "p10_not_after_window": 7517,
+  "p10_before_window": 0,
+  "pit_hist": [
+   3232,
+   577,
+   598,
+   206,
+   163,
+   393,
+   2844
+  ],
+  "obs_head_m": 3896.0749479444053,
+  "head_m_p50": 3514.612354157994,
+  "head_m_p10": 8243.233588829084,
+  "head_m_nominal": 4017.8725713989484,
+  "obs_new_area_ac": 17261.398159159955,
+  "modeled_new_area_ac_p50": 31252.25775244939,
+  "by_fuel_class": {
+   "GR": {
+    "n": 3317,
+    "late": 331,
+    "cert": 0,
+    "poss": 2986
+   },
+   "NB": {
+    "n": 611,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GS": {
+    "n": 2749,
+    "late": 114,
+    "cert": 0,
+    "poss": 2635
+   },
+   "SH": {
+    "n": 1947,
+    "late": 51,
+    "cert": 0,
+    "poss": 1896
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{F1930125-5993-4672-A058-74AD25F35E3F}",
+  "name": "Butler",
+  "t0_s": 1751671200.0,
+  "t1_s": 1751891289.0,
+  "dt_h": 61.13583333333333,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 151,
+  "n_new_burnable": 151,
+  "n_new_nonburnable": 0,
+  "covered_certain": 0,
+  "covered_possible": 151,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 151,
+  "p10_not_after_window": 151,
+  "p10_before_window": 0,
+  "pit_hist": [
+   11,
+   1,
+   2,
+   7,
+   7,
+   6,
+   117
+  ],
+  "obs_head_m": 2672.8636328851494,
+  "head_m_p50": 6125.952987086989,
+  "head_m_p10": 6199.556435746029,
+  "head_m_nominal": 6179.271801757874,
+  "obs_new_area_ac": 302.23459207248993,
+  "modeled_new_area_ac_p50": 6695.196758162111,
+  "by_fuel_class": {
+   "TU": {
+    "n": 100,
+    "late": 0,
+    "cert": 0,
+    "poss": 100
+   },
+   "SH": {
+    "n": 23,
+    "late": 0,
+    "cert": 0,
+    "poss": 23
+   },
+   "GS": {
+    "n": 24,
+    "late": 0,
+    "cert": 0,
+    "poss": 24
+   },
+   "GR": {
+    "n": 3,
+    "late": 0,
+    "cert": 0,
+    "poss": 3
+   },
+   "TL": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{F1930125-5993-4672-A058-74AD25F35E3F}",
+  "name": "Butler",
+  "t0_s": 1751671200.0,
+  "t1_s": 1751891289.0,
+  "dt_h": 61.13583333333333,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 151,
+  "n_new_burnable": 151,
+  "n_new_nonburnable": 0,
+  "covered_certain": 0,
+  "covered_possible": 151,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 151,
+  "p10_not_after_window": 151,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   151
+  ],
+  "obs_head_m": 2672.8636328851494,
+  "head_m_p50": 10109.68842249849,
+  "head_m_p10": 10548.061433268202,
+  "head_m_nominal": 10160.43798268559,
+  "obs_new_area_ac": 302.23459207248993,
+  "modeled_new_area_ac_p50": 39292.49852301358,
+  "by_fuel_class": {
+   "TU": {
+    "n": 100,
+    "late": 0,
+    "cert": 0,
+    "poss": 100
+   },
+   "SH": {
+    "n": 23,
+    "late": 0,
+    "cert": 0,
+    "poss": 23
+   },
+   "GS": {
+    "n": 24,
+    "late": 0,
+    "cert": 0,
+    "poss": 24
+   },
+   "GR": {
+    "n": 3,
+    "late": 0,
+    "cert": 0,
+    "poss": 3
+   },
+   "TL": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{F1930125-5993-4672-A058-74AD25F35E3F}",
+  "name": "Butler",
+  "t0_s": 1751671200.0,
+  "t1_s": 1751891289.0,
+  "dt_h": 61.13583333333333,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 151,
+  "n_new_burnable": 151,
+  "n_new_nonburnable": 0,
+  "covered_certain": 0,
+  "covered_possible": 151,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 151,
+  "p10_not_after_window": 151,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   151
+  ],
+  "obs_head_m": 2672.8636328851494,
+  "head_m_p50": 11109.07736943082,
+  "head_m_p10": 11226.575613249126,
+  "head_m_nominal": 11226.575613249126,
+  "obs_new_area_ac": 302.23459207248993,
+  "modeled_new_area_ac_p50": 43637.87136665182,
+  "by_fuel_class": {
+   "TU": {
+    "n": 100,
+    "late": 0,
+    "cert": 0,
+    "poss": 100
+   },
+   "SH": {
+    "n": 23,
+    "late": 0,
+    "cert": 0,
+    "poss": 23
+   },
+   "GS": {
+    "n": 24,
+    "late": 0,
+    "cert": 0,
+    "poss": 24
+   },
+   "GR": {
+    "n": 3,
+    "late": 0,
+    "cert": 0,
+    "poss": 3
+   },
+   "TL": {
+    "n": 1,
+    "late": 0,
+    "cert": 0,
+    "poss": 1
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{F1930125-5993-4672-A058-74AD25F35E3F}",
+  "name": "Butler",
+  "t0_s": 1751891289.0,
+  "t1_s": 1751985215.0,
+  "dt_h": 26.090555555555557,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 312,
+  "n_new_burnable": 305,
+  "n_new_nonburnable": 7,
+  "covered_certain": 0,
+  "covered_possible": 300,
+  "late_miss": 5,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 300,
+  "p10_not_after_window": 300,
+  "p10_before_window": 0,
+  "pit_hist": [
+   62,
+   35,
+   15,
+   15,
+   33,
+   19,
+   126
+  ],
+  "obs_head_m": 1822.361105818493,
+  "head_m_p50": 1811.2150617748298,
+  "head_m_p10": 2206.3771209836273,
+  "head_m_nominal": 1738.188712424517,
+  "obs_new_area_ac": 624.4847200438203,
+  "modeled_new_area_ac_p50": 1969.5287324458948,
+  "by_fuel_class": {
+   "TU": {
+    "n": 249,
+    "late": 4,
+    "cert": 0,
+    "poss": 245
+   },
+   "TL": {
+    "n": 3,
+    "late": 1,
+    "cert": 0,
+    "poss": 2
+   },
+   "GS": {
+    "n": 35,
+    "late": 0,
+    "cert": 0,
+    "poss": 35
+   },
+   "NB": {
+    "n": 7,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 12,
+    "late": 0,
+    "cert": 0,
+    "poss": 12
+   },
+   "GR": {
+    "n": 6,
+    "late": 0,
+    "cert": 0,
+    "poss": 6
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{F1930125-5993-4672-A058-74AD25F35E3F}",
+  "name": "Butler",
+  "t0_s": 1751891289.0,
+  "t1_s": 1751985215.0,
+  "dt_h": 26.090555555555557,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 312,
+  "n_new_burnable": 305,
+  "n_new_nonburnable": 7,
+  "covered_certain": 0,
+  "covered_possible": 305,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 305,
+  "p10_not_after_window": 305,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   305
+  ],
+  "obs_head_m": 1822.361105818493,
+  "head_m_p50": 7848.598601024261,
+  "head_m_p10": 9363.893421008166,
+  "head_m_nominal": 7848.598601024261,
+  "obs_new_area_ac": 624.4847200438203,
+  "modeled_new_area_ac_p50": 26982.943945226732,
+  "by_fuel_class": {
+   "TU": {
+    "n": 249,
+    "late": 0,
+    "cert": 0,
+    "poss": 249
+   },
+   "TL": {
+    "n": 3,
+    "late": 0,
+    "cert": 0,
+    "poss": 3
+   },
+   "GS": {
+    "n": 35,
+    "late": 0,
+    "cert": 0,
+    "poss": 35
+   },
+   "NB": {
+    "n": 7,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 12,
+    "late": 0,
+    "cert": 0,
+    "poss": 12
+   },
+   "GR": {
+    "n": 6,
+    "late": 0,
+    "cert": 0,
+    "poss": 6
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{F1930125-5993-4672-A058-74AD25F35E3F}",
+  "name": "Butler",
+  "t0_s": 1751891289.0,
+  "t1_s": 1751985215.0,
+  "dt_h": 26.090555555555557,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 312,
+  "n_new_burnable": 305,
+  "n_new_nonburnable": 7,
+  "covered_certain": 0,
+  "covered_possible": 305,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 305,
+  "p10_not_after_window": 305,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   305
+  ],
+  "obs_head_m": 1822.361105818493,
+  "head_m_p50": 9865.987026141886,
+  "head_m_p10": 9813.714892944467,
+  "head_m_nominal": 9813.714892944467,
+  "obs_new_area_ac": 624.4847200438203,
+  "modeled_new_area_ac_p50": 35397.475237099236,
+  "by_fuel_class": {
+   "TU": {
+    "n": 249,
+    "late": 0,
+    "cert": 0,
+    "poss": 249
+   },
+   "TL": {
+    "n": 3,
+    "late": 0,
+    "cert": 0,
+    "poss": 3
+   },
+   "GS": {
+    "n": 35,
+    "late": 0,
+    "cert": 0,
+    "poss": 35
+   },
+   "NB": {
+    "n": 7,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "SH": {
+    "n": 12,
+    "late": 0,
+    "cert": 0,
+    "poss": 12
+   },
+   "GR": {
+    "n": 6,
+    "late": 0,
+    "cert": 0,
+    "poss": 6
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{F1930125-5993-4672-A058-74AD25F35E3F}",
+  "name": "Butler",
+  "t0_s": 1751985215.0,
+  "t1_s": 1752025220.0,
+  "dt_h": 11.1125,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 192,
+  "n_new_burnable": 187,
+  "n_new_nonburnable": 5,
+  "covered_certain": 0,
+  "covered_possible": 169,
+  "late_miss": 18,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 160,
+  "p10_not_after_window": 169,
+  "p10_before_window": 0,
+  "pit_hist": [
+   48,
+   5,
+   10,
+   0,
+   5,
+   7,
+   112
+  ],
+  "obs_head_m": 630.0,
+  "head_m_p50": 1622.4980739587952,
+  "head_m_p10": 1890.0,
+  "head_m_nominal": 1698.1166037701885,
+  "obs_new_area_ac": 384.2982892577355,
+  "modeled_new_area_ac_p50": 2323.8037178553695,
+  "by_fuel_class": {
+   "TU": {
+    "n": 156,
+    "late": 18,
+    "cert": 0,
+    "poss": 138
+   },
+   "TL": {
+    "n": 4,
+    "late": 0,
+    "cert": 0,
+    "poss": 4
+   },
+   "GS": {
+    "n": 15,
+    "late": 0,
+    "cert": 0,
+    "poss": 15
+   },
+   "SH": {
+    "n": 10,
+    "late": 0,
+    "cert": 0,
+    "poss": 10
+   },
+   "NB": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GR": {
+    "n": 2,
+    "late": 0,
+    "cert": 0,
+    "poss": 2
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{F1930125-5993-4672-A058-74AD25F35E3F}",
+  "name": "Butler",
+  "t0_s": 1751985215.0,
+  "t1_s": 1752025220.0,
+  "dt_h": 11.1125,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 192,
+  "n_new_burnable": 187,
+  "n_new_nonburnable": 5,
+  "covered_certain": 0,
+  "covered_possible": 187,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 187,
+  "p10_not_after_window": 187,
+  "p10_before_window": 0,
+  "pit_hist": [
+   4,
+   6,
+   3,
+   1,
+   1,
+   4,
+   168
+  ],
+  "obs_head_m": 630.0,
+  "head_m_p50": 7240.946070783845,
+  "head_m_p10": 8561.833915698202,
+  "head_m_nominal": 7564.819892105826,
+  "obs_new_area_ac": 384.2982892577355,
+  "modeled_new_area_ac_p50": 18188.117471276266,
+  "by_fuel_class": {
+   "TU": {
+    "n": 156,
+    "late": 0,
+    "cert": 0,
+    "poss": 156
+   },
+   "TL": {
+    "n": 4,
+    "late": 0,
+    "cert": 0,
+    "poss": 4
+   },
+   "GS": {
+    "n": 15,
+    "late": 0,
+    "cert": 0,
+    "poss": 15
+   },
+   "SH": {
+    "n": 10,
+    "late": 0,
+    "cert": 0,
+    "poss": 10
+   },
+   "NB": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GR": {
+    "n": 2,
+    "late": 0,
+    "cert": 0,
+    "poss": 2
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{F1930125-5993-4672-A058-74AD25F35E3F}",
+  "name": "Butler",
+  "t0_s": 1751985215.0,
+  "t1_s": 1752025220.0,
+  "dt_h": 11.1125,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 192,
+  "n_new_burnable": 187,
+  "n_new_nonburnable": 5,
+  "covered_certain": 0,
+  "covered_possible": 187,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 187,
+  "p10_not_after_window": 187,
+  "p10_before_window": 0,
+  "pit_hist": [
+   2,
+   2,
+   3,
+   2,
+   6,
+   3,
+   169
+  ],
+  "obs_head_m": 630.0,
+  "head_m_p50": 9294.869552608041,
+  "head_m_p10": 9365.623310810659,
+  "head_m_nominal": 9360.432682306946,
+  "obs_new_area_ac": 384.2982892577355,
+  "modeled_new_area_ac_p50": 24511.025261719944,
+  "by_fuel_class": {
+   "TU": {
+    "n": 156,
+    "late": 0,
+    "cert": 0,
+    "poss": 156
+   },
+   "TL": {
+    "n": 4,
+    "late": 0,
+    "cert": 0,
+    "poss": 4
+   },
+   "GS": {
+    "n": 15,
+    "late": 0,
+    "cert": 0,
+    "poss": 15
+   },
+   "SH": {
+    "n": 10,
+    "late": 0,
+    "cert": 0,
+    "poss": 10
+   },
+   "NB": {
+    "n": 5,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "GR": {
+    "n": 2,
+    "late": 0,
+    "cert": 0,
+    "poss": 2
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ },
+ {
+  "incident": "{F1930125-5993-4672-A058-74AD25F35E3F}",
+  "name": "Butler",
+  "t0_s": 1752025220.0,
+  "t1_s": 1752078330.0,
+  "dt_h": 14.752777777777778,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 389,
+  "n_new_burnable": 385,
+  "n_new_nonburnable": 4,
+  "covered_certain": 0,
+  "covered_possible": 332,
+  "late_miss": 53,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 257,
+  "p10_not_after_window": 332,
+  "p10_before_window": 0,
+  "pit_hist": [
+   130,
+   49,
+   15,
+   4,
+   8,
+   19,
+   160
+  ],
+  "obs_head_m": 3024.0535709540595,
+  "head_m_p50": 1224.13234578619,
+  "head_m_p10": 1279.1403363196705,
+  "head_m_nominal": 1210.826164236634,
+  "obs_new_area_ac": 778.6043464648913,
+  "modeled_new_area_ac_p50": 1567.2164608792027,
+  "by_fuel_class": {
+   "TU": {
+    "n": 290,
+    "late": 41,
+    "cert": 0,
+    "poss": 249
+   },
+   "GR": {
+    "n": 14,
+    "late": 3,
+    "cert": 0,
+    "poss": 11
+   },
+   "GS": {
+    "n": 42,
+    "late": 8,
+    "cert": 0,
+    "poss": 34
+   },
+   "SH": {
+    "n": 37,
+    "late": 1,
+    "cert": 0,
+    "poss": 36
+   },
+   "NB": {
+    "n": 4,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "TL": {
+    "n": 2,
+    "late": 0,
+    "cert": 0,
+    "poss": 2
+   }
+  },
+  "notes": [],
+  "variant": "blend0.5"
+ },
+ {
+  "incident": "{F1930125-5993-4672-A058-74AD25F35E3F}",
+  "name": "Butler",
+  "t0_s": 1752025220.0,
+  "t1_s": 1752078330.0,
+  "dt_h": 14.752777777777778,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 389,
+  "n_new_burnable": 385,
+  "n_new_nonburnable": 4,
+  "covered_certain": 0,
+  "covered_possible": 381,
+  "late_miss": 4,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 378,
+  "p10_not_after_window": 381,
+  "p10_before_window": 0,
+  "pit_hist": [
+   5,
+   2,
+   4,
+   1,
+   35,
+   29,
+   309
+  ],
+  "obs_head_m": 3024.0535709540595,
+  "head_m_p50": 4155.62269702147,
+  "head_m_p10": 4950.0,
+  "head_m_nominal": 4500.0,
+  "obs_new_area_ac": 778.6043464648913,
+  "modeled_new_area_ac_p50": 8450.559256490415,
+  "by_fuel_class": {
+   "TU": {
+    "n": 290,
+    "late": 3,
+    "cert": 0,
+    "poss": 287
+   },
+   "GR": {
+    "n": 14,
+    "late": 0,
+    "cert": 0,
+    "poss": 14
+   },
+   "GS": {
+    "n": 42,
+    "late": 1,
+    "cert": 0,
+    "poss": 41
+   },
+   "SH": {
+    "n": 37,
+    "late": 0,
+    "cert": 0,
+    "poss": 37
+   },
+   "NB": {
+    "n": 4,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "TL": {
+    "n": 2,
+    "late": 0,
+    "cert": 0,
+    "poss": 2
+   }
+  },
+  "notes": [],
+  "variant": "grass_floor"
+ },
+ {
+  "incident": "{F1930125-5993-4672-A058-74AD25F35E3F}",
+  "name": "Butler",
+  "t0_s": 1752025220.0,
+  "t1_s": 1752078330.0,
+  "dt_h": 14.752777777777778,
+  "cell_m": 90.0,
+  "label": "default",
+  "n_new": 389,
+  "n_new_burnable": 385,
+  "n_new_nonburnable": 4,
+  "covered_certain": 0,
+  "covered_possible": 385,
+  "late_miss": 0,
+  "early_miss": 0,
+  "never_reached": 0,
+  "p90_unreached": 0,
+  "p50_in_window": 381,
+  "p10_not_after_window": 385,
+  "p10_before_window": 0,
+  "pit_hist": [
+   0,
+   5,
+   0,
+   2,
+   29,
+   39,
+   310
+  ],
+  "obs_head_m": 3024.0535709540595,
+  "head_m_p50": 6174.0262390112985,
+  "head_m_p10": 7912.837670519976,
+  "head_m_nominal": 6684.885937695571,
+  "obs_new_area_ac": 778.6043464648913,
+  "modeled_new_area_ac_p50": 16346.688168582948,
+  "by_fuel_class": {
+   "TU": {
+    "n": 290,
+    "late": 0,
+    "cert": 0,
+    "poss": 290
+   },
+   "GR": {
+    "n": 14,
+    "late": 0,
+    "cert": 0,
+    "poss": 14
+   },
+   "GS": {
+    "n": 42,
+    "late": 0,
+    "cert": 0,
+    "poss": 42
+   },
+   "SH": {
+    "n": 37,
+    "late": 0,
+    "cert": 0,
+    "poss": 37
+   },
+   "NB": {
+    "n": 4,
+    "late": 0,
+    "cert": 0,
+    "poss": 0
+   },
+   "TL": {
+    "n": 2,
+    "late": 0,
+    "cert": 0,
+    "poss": 2
+   }
+  },
+  "notes": [],
+  "variant": "realism_pack"
+ }
+]
