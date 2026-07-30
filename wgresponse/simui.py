@@ -1313,20 +1313,23 @@ class SimSession:
                  n_crews_3h: int = 0, *,
                  tile_dir=None, synth_size_km: float = DEFAULT_SYNTH_SIZE_KM,
                  roads_module: object = _ROADS_AUTO,
-                 client_locs: Optional[list] = None):
+                 client_locs: Optional[list] = None,
+                 crew_locs: Optional[list] = None):
         self._tile_dir = tile_dir
         self._synth_size_km = float(synth_size_km)
         self._roads_module_arg = roads_module
         self.configure(location_key, n_clients, n_crews, seed, cfg_overrides,
                        fire_zone=fire_zone, n_crews_1h=n_crews_1h,
-                       n_crews_3h=n_crews_3h, client_locs=client_locs)
+                       n_crews_3h=n_crews_3h, client_locs=client_locs,
+                       crew_locs=crew_locs)
 
     # -- lifecycle -----------------------------------------------------------
 
     def configure(self, location_key: str, n_clients: int, n_crews: int,
                   seed: object, cfg_overrides: Optional[dict] = None,
                   fire_zone: str = "standard", n_crews_1h: int = 0,
-                  n_crews_3h: int = 0, client_locs: Optional[list] = None):
+                  n_crews_3h: int = 0, client_locs: Optional[list] = None,
+                  crew_locs: Optional[list] = None):
         """(Re)build the whole scenario deterministically (contract seam).
 
         client_locs (ONBOARDING/BENCH seam, 2026-07-12): optional list of
@@ -1382,6 +1385,15 @@ class SimSession:
         # ONBOARDING/BENCH seam: exact client coordinates survive reset()
         # (same custom homes on every replay of the scenario).
         self._client_locs = list(client_locs) if client_locs else None
+        # STAGING seam (founder 2026-07-29 "assume all crews are within 30
+        # minutes or less"): optional list of LatLon — in-zone crew i STARTS
+        # PARKED at crew_locs[i % len] (beacon + sim position) instead of its
+        # staging safe zone. home_base and the egress anchor STAY the round-
+        # robin safe zone — escape targets are never client homes; the SEM-10
+        # safety sweep governs a threatened start position exactly as it
+        # governs any parked crew. None (default) = staging at safe zones,
+        # byte-identical.
+        self._crew_locs = list(crew_locs) if crew_locs else None
         self._cmd_log = [{
             "cmd": "configure", "location": location_key,
             "n_clients": n_clients, "n_crews": n_crews, "seed": str(seed),
@@ -1585,16 +1597,23 @@ class SimSession:
             zone = zones[(k - 1) % len(zones)]
             crew = Crew(crew_id=f"sim-g{k}", name=f"GraphGel {k}",
                         status=CrewStatus.AVAILABLE, home_base=zone.loc)
-            self._crew_sims[crew.crew_id] = _SimCrew(
+            cs = _SimCrew(
                 crew, speed, route_fn=self._leg_route,
                 latest_fn=self._stop_latest_depart_s,
                 road_guard=(self._road_graph is not None))
+            # STAGING seam: park the crew at its custom start (position +
+            # beacon only; home_base/egress anchor stay the safe zone above).
+            start = zone.loc
+            if self._crew_locs:
+                start = self._crew_locs[(k - 1) % len(self._crew_locs)]
+                cs.pos = start
+            self._crew_sims[crew.crew_id] = cs
             self._tracks[crew.crew_id] = deque(maxlen=240)
             self._crew_anchor[crew.crew_id] = zone.zone_id
             self._crew_region[crew.crew_id] = "in_zone"
             self._crew_reinforce_delay_min[crew.crew_id] = 0.0
             self._crew_available_at[crew.crew_id] = None
-            self._tracker.ingest(CrewBeacon(crew_id=crew.crew_id, loc=zone.loc,
+            self._tracker.ingest(CrewBeacon(crew_id=crew.crew_id, loc=start,
                                             t_s=T0_S, status=CrewStatus.AVAILABLE))
         # out-of-region reinforcements: created INBOUND, staged for arrival at a
         # round-robin safe zone (crew.home_base / anchor_zone_id), but PARKED at

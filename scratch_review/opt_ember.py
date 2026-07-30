@@ -101,16 +101,28 @@ def _burn_dist_m(session, loc, now_s):
 
 
 def run_one(job):
-    sc, cfg_over, n_clients, n_crews, placement = job
+    sc, cfg_over, n_clients, n_crews, placement, staging = job
     loc = LOCATIONS[sc["map"]]
     wd = (loc.hazard_wind_dir_deg + sc["wind_off"]) % 360.0
     locs = None
     if placement and placement != "scattered":
         k = {"cluster1": 1, "cluster4": 4, "cluster8": 8}[placement]
         locs = cluster_locs(sc["map"], n_clients, k, sc["seed"])
+    crew_starts = None
+    if staging == "near":
+        # founder assumption "all crews within 30 minutes or less": crews
+        # start PARKED among the client homes (evenly spread over the seeded
+        # order). The client draw is deterministic per seed, so a throwaway
+        # session yields the same homes the scored session will have.
+        probe = simui.SimSession(sc["map"], n_clients, n_crews,
+                                 seed=sc["seed"], cfg_overrides=dict(cfg_over),
+                                 fire_zone="standard", client_locs=locs)
+        homes = [c.loc for c in probe._clients]
+        crew_starts = [homes[(i * len(homes)) // n_crews]
+                       for i in range(n_crews)]
     s = simui.SimSession(sc["map"], n_clients, n_crews, seed=sc["seed"],
                          cfg_overrides=dict(cfg_over), fire_zone="standard",
-                         client_locs=locs)
+                         client_locs=locs, crew_locs=crew_starts)
     for shrink in (1.0, 0.85, 0.7, 0.55):
         p = geo.destination(loc.center, wd, sc["dist"] * shrink)
         try:
@@ -187,6 +199,8 @@ def main():
     ap.add_argument("--hold", type=float, default=24.0)
     ap.add_argument("--placement", default="scattered",
                     choices=("scattered", "cluster1", "cluster4", "cluster8"))
+    ap.add_argument("--staging", default="default",
+                    choices=("default", "near"))
     ap.add_argument("--workers", type=int, default=10)
     args = ap.parse_args()
 
@@ -208,7 +222,7 @@ def main():
     elif args.suite == "screen":
         scen = [s for s in scen if s["wind_off"] == 0.0]
 
-    jobs = [(sc, cfg, args.clients, args.crews, args.placement)
+    jobs = [(sc, cfg, args.clients, args.crews, args.placement, args.staging)
             for sc in scen]
     with ProcessPoolExecutor(max_workers=args.workers) as ex:
         rows = list(ex.map(run_one, jobs))
@@ -219,7 +233,8 @@ def main():
                                ember_radius=args.ember_radius,
                                coat_early=args.coat_early, hold=args.hold,
                                slack=args.slack, clients=args.clients,
-                               placement=args.placement),
+                               placement=args.placement,
+                               staging=args.staging),
                    stats=st, rows=rows)
     out = f"scratch_review/opt_ember_{args.tag}.json"
     json.dump(payload, open(out, "w"), indent=1)
