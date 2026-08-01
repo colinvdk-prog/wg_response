@@ -1,0 +1,146 @@
+[
+ {
+  "label": "deploy30_erosion_500",
+  "deploy": 30.0,
+  "extra": {},
+  "crew_staged": false,
+  "coated": 0,
+  "coated_ids": [],
+  "violations": 0,
+  "overruns": 0,
+  "unserved_tick1": [
+   {
+    "client": "sim-c1",
+    "reason": "no_safe_corridor"
+   },
+   {
+    "client": "sim-c2",
+    "reason": "no_safe_corridor"
+   },
+   {
+    "client": "sim-c3",
+    "reason": "no_safe_corridor"
+   },
+   {
+    "client": "sim-c4",
+    "reason": "no_safe_corridor"
+   }
+  ],
+  "unserved_final": [
+   {
+    "client": "sim-c1",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c2",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c3",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c4",
+    "reason": "infeasible_deadline"
+   }
+  ],
+  "outcomes": {
+   "sim-c1": "abandoned_unsavable",
+   "sim-c2": "abandoned_unsavable",
+   "sim-c3": "abandoned_unsavable",
+   "sim-c4": "abandoned_unsavable"
+  }
+ },
+ {
+  "label": "deploy30_erosion_250",
+  "deploy": 30.0,
+  "extra": {
+   "corridor_erosion_m": 250.0
+  },
+  "crew_staged": false,
+  "coated": 3,
+  "coated_ids": [
+   "sim-c1",
+   "sim-c2",
+   "sim-c3"
+  ],
+  "violations": 0,
+  "overruns": 0,
+  "unserved_tick1": [
+   {
+    "client": "sim-c1",
+    "reason": "in_progress"
+   },
+   {
+    "client": "sim-c2",
+    "reason": "in_progress"
+   },
+   {
+    "client": "sim-c3",
+    "reason": "in_progress"
+   },
+   {
+    "client": "sim-c4",
+    "reason": "no_safe_egress"
+   }
+  ],
+  "unserved_final": [
+   {
+    "client": "sim-c4",
+    "reason": "infeasible_deadline"
+   }
+  ],
+  "outcomes": {
+   "sim-c1": "protected_then_impacted",
+   "sim-c2": "protected_then_impacted",
+   "sim-c3": "protected_then_impacted",
+   "sim-c4": "abandoned_unsavable"
+  }
+ },
+ {
+  "label": "deploy30_erosion_0",
+  "deploy": 30.0,
+  "extra": {
+   "corridor_erosion_m": 0.0
+  },
+  "crew_staged": false,
+  "coated": 3,
+  "coated_ids": [
+   "sim-c1",
+   "sim-c3",
+   "sim-c4"
+  ],
+  "violations": 0,
+  "overruns": 0,
+  "unserved_tick1": [
+   {
+    "client": "sim-c1",
+    "reason": "in_progress"
+   },
+   {
+    "client": "sim-c2",
+    "reason": "in_progress"
+   },
+   {
+    "client": "sim-c3",
+    "reason": "in_progress"
+   },
+   {
+    "client": "sim-c4",
+    "reason": "in_progress"
+   }
+  ],
+  "unserved_final": [
+   {
+    "client": "sim-c2",
+    "reason": "infeasible_deadline"
+   }
+  ],
+  "outcomes": {
+   "sim-c1": "protected_then_impacted",
+   "sim-c2": "abandoned_unsavable",
+   "sim-c3": "protected_then_impacted",
+   "sim-c4": "protected_then_impacted"
+  }
+ }
+]

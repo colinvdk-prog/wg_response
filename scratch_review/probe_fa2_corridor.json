@@ -1,0 +1,4703 @@
+{
+ "config": {
+  "corridor_erosion_m": 500.0,
+  "corridor_sample_m": 300.0,
+  "route_margin_min": 60.0,
+  "route_margin_roads_min": 30.0,
+  "egress_buffer_min": 30.0,
+  "ember_buffer_min": 0.0,
+  "deploy_min": 15.0,
+  "road_spur_max_m": 8000.0,
+  "fire_traffic_factor": 1.4,
+  "circuity": 1.35,
+  "road_speed_mps": 17.9,
+  "raster_cell_m": 90.0,
+  "erosion_cells": 6,
+  "now_minus_t0_min": 0.0,
+  "crew_depot": [
+   40.015,
+   -105.26
+  ],
+  "crew_anchor_zone": "boulder_co-z1",
+  "homes": [
+   [
+    39.9545,
+    -105.20476
+   ],
+   [
+    39.95531,
+    -105.21743
+   ],
+   [
+    39.95531,
+    -105.22587
+   ],
+   [
+    39.95208,
+    -105.23432
+   ]
+  ],
+  "truth_arrival_h": [
+   3.08,
+   3.16,
+   3.15,
+   3.12
+  ],
+  "homes_span_m": 2535,
+  "n_jobs": 4,
+  "zones": [
+   {
+    "zone_id": "boulder_co-z1",
+    "name": "US-36 / Boulder SE",
+    "lat": 40.015,
+    "lon": -105.26,
+    "km_from_home1": 8.21
+   },
+   {
+    "zone_id": "boulder_co-z2",
+    "name": "US-287 / Lafayette",
+    "lat": 39.995,
+    "lon": -105.09,
+    "km_from_home1": 10.77
+   },
+   {
+    "zone_id": "boulder_co-z3",
+    "name": "US-36 / Broomfield",
+    "lat": 39.92,
+    "lon": -105.07,
+    "km_from_home1": 12.11
+   }
+  ],
+  "all_map_zones": [
+   {
+    "zone_id": "boulder_co-z1",
+    "km_from_home1": 8.21
+   },
+   {
+    "zone_id": "boulder_co-z2",
+    "km_from_home1": 10.77
+   },
+   {
+    "zone_id": "boulder_co-z3",
+    "km_from_home1": 12.11
+   }
+  ],
+  "zones_filtered_out": []
+ },
+ "ingress": {
+  "sim-c1": {
+   "on_roads": true,
+   "route_m": 11875,
+   "route_min": 14.4,
+   "speed_mps": 13.7,
+   "margin_min": 30.0,
+   "n_pts": 348,
+   "n_constrained": 208,
+   "n_fail": 9,
+   "safe": false,
+   "worst_margin_h": 0.097,
+   "min_slack_min": 5.8,
+   "tstar_h": -0.403,
+   "tstar_minus_depart_min": -24.2,
+   "depart_h": 0.0,
+   "binding": {
+    "sample": 218,
+    "frac_along": 0.597,
+    "cum_m": 7093,
+    "eroded_p10_h": 0.24,
+    "raw_p10_h": null,
+    "tstar_h": -0.403
+   },
+   "fails_first": [
+    {
+     "sample": 215,
+     "n_pts": 348,
+     "frac_along": 0.589,
+     "cum_m": 6995,
+     "lat": 39.96044,
+     "lon": -105.23571,
+     "pass_h": 0.142,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 24.1
+    },
+    {
+     "sample": 216,
+     "n_pts": 348,
+     "frac_along": 0.591,
+     "cum_m": 7022,
+     "lat": 39.96025,
+     "lon": -105.2355,
+     "pass_h": 0.142,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 24.1
+    },
+    {
+     "sample": 217,
+     "n_pts": 348,
+     "frac_along": 0.594,
+     "cum_m": 7055,
+     "lat": 39.96003,
+     "lon": -105.23525,
+     "pass_h": 0.143,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 24.2
+    },
+    {
+     "sample": 218,
+     "n_pts": 348,
+     "frac_along": 0.597,
+     "cum_m": 7093,
+     "lat": 39.95978,
+     "lon": -105.23494,
+     "pass_h": 0.144,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 24.2
+    },
+    {
+     "sample": 219,
+     "n_pts": 348,
+     "frac_along": 0.602,
+     "cum_m": 7151,
+     "lat": 39.95941,
+     "lon": -105.23446,
+     "pass_h": 0.145,
+     "eroded_p10_h": 0.264,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 22.9
+    },
+    {
+     "sample": 220,
+     "n_pts": 348,
+     "frac_along": 0.606,
+     "cum_m": 7197,
+     "lat": 39.95912,
+     "lon": -105.23407,
+     "pass_h": 0.146,
+     "eroded_p10_h": 0.264,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 22.9
+    }
+   ],
+   "fails_last": [
+    {
+     "sample": 221,
+     "n_pts": 348,
+     "frac_along": 0.607,
+     "cum_m": 7206,
+     "lat": 39.95907,
+     "lon": -105.23399,
+     "pass_h": 0.146,
+     "eroded_p10_h": 0.264,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 22.9
+    },
+    {
+     "sample": 222,
+     "n_pts": 348,
+     "frac_along": 0.612,
+     "cum_m": 7262,
+     "lat": 39.95872,
+     "lon": -105.23352,
+     "pass_h": 0.147,
+     "eroded_p10_h": 0.284,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 21.8
+    },
+    {
+     "sample": 223,
+     "n_pts": 348,
+     "frac_along": 0.615,
+     "cum_m": 7299,
+     "lat": 39.95849,
+     "lon": -105.2332,
+     "pass_h": 0.148,
+     "eroded_p10_h": 0.284,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 21.8
+    }
+   ]
+  },
+  "sim-c2": {
+   "on_roads": true,
+   "route_m": 9072,
+   "route_min": 10.2,
+   "speed_mps": 14.87,
+   "margin_min": 30.0,
+   "n_pts": 300,
+   "n_constrained": 160,
+   "n_fail": 9,
+   "safe": false,
+   "worst_margin_h": 0.108,
+   "min_slack_min": 6.5,
+   "tstar_h": -0.392,
+   "tstar_minus_depart_min": -23.5,
+   "depart_h": 0.0,
+   "binding": {
+    "sample": 218,
+    "frac_along": 0.782,
+    "cum_m": 7093,
+    "eroded_p10_h": 0.24,
+    "raw_p10_h": null,
+    "tstar_h": -0.392
+   },
+   "fails_first": [
+    {
+     "sample": 215,
+     "n_pts": 300,
+     "frac_along": 0.771,
+     "cum_m": 6995,
+     "lat": 39.96044,
+     "lon": -105.23571,
+     "pass_h": 0.131,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 23.4
+    },
+    {
+     "sample": 216,
+     "n_pts": 300,
+     "frac_along": 0.774,
+     "cum_m": 7022,
+     "lat": 39.96025,
+     "lon": -105.2355,
+     "pass_h": 0.131,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 23.4
+    },
+    {
+     "sample": 217,
+     "n_pts": 300,
+     "frac_along": 0.778,
+     "cum_m": 7055,
+     "lat": 39.96003,
+     "lon": -105.23525,
+     "pass_h": 0.132,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 23.5
+    },
+    {
+     "sample": 218,
+     "n_pts": 300,
+     "frac_along": 0.782,
+     "cum_m": 7093,
+     "lat": 39.95978,
+     "lon": -105.23494,
+     "pass_h": 0.133,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 23.5
+    },
+    {
+     "sample": 219,
+     "n_pts": 300,
+     "frac_along": 0.788,
+     "cum_m": 7151,
+     "lat": 39.95941,
+     "lon": -105.23446,
+     "pass_h": 0.134,
+     "eroded_p10_h": 0.264,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 22.2
+    },
+    {
+     "sample": 220,
+     "n_pts": 300,
+     "frac_along": 0.793,
+     "cum_m": 7197,
+     "lat": 39.95912,
+     "lon": -105.23407,
+     "pass_h": 0.134,
+     "eroded_p10_h": 0.264,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 22.2
+    }
+   ],
+   "fails_last": [
+    {
+     "sample": 221,
+     "n_pts": 300,
+     "frac_along": 0.794,
+     "cum_m": 7206,
+     "lat": 39.95907,
+     "lon": -105.23399,
+     "pass_h": 0.135,
+     "eroded_p10_h": 0.264,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 22.2
+    },
+    {
+     "sample": 222,
+     "n_pts": 300,
+     "frac_along": 0.8,
+     "cum_m": 7262,
+     "lat": 39.95872,
+     "lon": -105.23352,
+     "pass_h": 0.136,
+     "eroded_p10_h": 0.284,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 21.1
+    },
+    {
+     "sample": 223,
+     "n_pts": 300,
+     "frac_along": 0.805,
+     "cum_m": 7299,
+     "lat": 39.95849,
+     "lon": -105.2332,
+     "pass_h": 0.136,
+     "eroded_p10_h": 0.284,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 21.1
+    }
+   ]
+  },
+  "sim-c3": {
+   "on_roads": true,
+   "route_m": 8672,
+   "route_min": 9.9,
+   "speed_mps": 14.63,
+   "margin_min": 30.0,
+   "n_pts": 283,
+   "n_constrained": 143,
+   "n_fail": 9,
+   "safe": false,
+   "worst_margin_h": 0.106,
+   "min_slack_min": 6.3,
+   "tstar_h": -0.394,
+   "tstar_minus_depart_min": -23.7,
+   "depart_h": 0.0,
+   "binding": {
+    "sample": 218,
+    "frac_along": 0.818,
+    "cum_m": 7093,
+    "eroded_p10_h": 0.24,
+    "raw_p10_h": null,
+    "tstar_h": -0.394
+   },
+   "fails_first": [
+    {
+     "sample": 215,
+     "n_pts": 283,
+     "frac_along": 0.807,
+     "cum_m": 6995,
+     "lat": 39.96044,
+     "lon": -105.23571,
+     "pass_h": 0.133,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 23.5
+    },
+    {
+     "sample": 216,
+     "n_pts": 283,
+     "frac_along": 0.81,
+     "cum_m": 7022,
+     "lat": 39.96025,
+     "lon": -105.2355,
+     "pass_h": 0.133,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 23.6
+    },
+    {
+     "sample": 217,
+     "n_pts": 283,
+     "frac_along": 0.814,
+     "cum_m": 7055,
+     "lat": 39.96003,
+     "lon": -105.23525,
+     "pass_h": 0.134,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 23.6
+    },
+    {
+     "sample": 218,
+     "n_pts": 283,
+     "frac_along": 0.818,
+     "cum_m": 7093,
+     "lat": 39.95978,
+     "lon": -105.23494,
+     "pass_h": 0.135,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 23.7
+    },
+    {
+     "sample": 219,
+     "n_pts": 283,
+     "frac_along": 0.825,
+     "cum_m": 7151,
+     "lat": 39.95941,
+     "lon": -105.23446,
+     "pass_h": 0.136,
+     "eroded_p10_h": 0.264,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 22.3
+    },
+    {
+     "sample": 220,
+     "n_pts": 283,
+     "frac_along": 0.83,
+     "cum_m": 7197,
+     "lat": 39.95912,
+     "lon": -105.23407,
+     "pass_h": 0.137,
+     "eroded_p10_h": 0.264,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 22.4
+    }
+   ],
+   "fails_last": [
+    {
+     "sample": 221,
+     "n_pts": 283,
+     "frac_along": 0.831,
+     "cum_m": 7206,
+     "lat": 39.95907,
+     "lon": -105.23399,
+     "pass_h": 0.137,
+     "eroded_p10_h": 0.264,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 22.4
+    },
+    {
+     "sample": 222,
+     "n_pts": 283,
+     "frac_along": 0.837,
+     "cum_m": 7262,
+     "lat": 39.95872,
+     "lon": -105.23352,
+     "pass_h": 0.138,
+     "eroded_p10_h": 0.284,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 21.2
+    },
+    {
+     "sample": 223,
+     "n_pts": 283,
+     "frac_along": 0.842,
+     "cum_m": 7299,
+     "lat": 39.95849,
+     "lon": -105.2332,
+     "pass_h": 0.139,
+     "eroded_p10_h": 0.284,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 21.3
+    }
+   ]
+  },
+  "sim-c4": {
+   "on_roads": true,
+   "route_m": 8474,
+   "route_min": 9.6,
+   "speed_mps": 14.64,
+   "margin_min": 30.0,
+   "n_pts": 289,
+   "n_constrained": 149,
+   "n_fail": 30,
+   "safe": false,
+   "worst_margin_h": 0.081,
+   "min_slack_min": 4.8,
+   "tstar_h": -0.419,
+   "tstar_minus_depart_min": -25.2,
+   "depart_h": 0.0,
+   "binding": {
+    "sample": 287,
+    "frac_along": 0.993,
+    "cum_m": 8416,
+    "eroded_p10_h": 0.24,
+    "raw_p10_h": 3.782,
+    "tstar_h": -0.419
+   },
+   "fails_first": [
+    {
+     "sample": 215,
+     "n_pts": 289,
+     "frac_along": 0.825,
+     "cum_m": 6995,
+     "lat": 39.96044,
+     "lon": -105.23571,
+     "pass_h": 0.133,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 23.5
+    },
+    {
+     "sample": 216,
+     "n_pts": 289,
+     "frac_along": 0.829,
+     "cum_m": 7022,
+     "lat": 39.96025,
+     "lon": -105.2355,
+     "pass_h": 0.133,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 23.6
+    },
+    {
+     "sample": 217,
+     "n_pts": 289,
+     "frac_along": 0.832,
+     "cum_m": 7055,
+     "lat": 39.96003,
+     "lon": -105.23525,
+     "pass_h": 0.134,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 23.6
+    },
+    {
+     "sample": 218,
+     "n_pts": 289,
+     "frac_along": 0.837,
+     "cum_m": 7093,
+     "lat": 39.95978,
+     "lon": -105.23494,
+     "pass_h": 0.135,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 23.6
+    },
+    {
+     "sample": 219,
+     "n_pts": 289,
+     "frac_along": 0.844,
+     "cum_m": 7151,
+     "lat": 39.95941,
+     "lon": -105.23446,
+     "pass_h": 0.136,
+     "eroded_p10_h": 0.264,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 22.3
+    },
+    {
+     "sample": 220,
+     "n_pts": 289,
+     "frac_along": 0.849,
+     "cum_m": 7197,
+     "lat": 39.95912,
+     "lon": -105.23407,
+     "pass_h": 0.137,
+     "eroded_p10_h": 0.264,
+     "raw_p10_h": null,
+     "truth_h": null,
+     "erosion_gap_min": null,
+     "shortfall_min": 22.4
+    }
+   ],
+   "fails_last": [
+    {
+     "sample": 286,
+     "n_pts": 289,
+     "frac_along": 0.992,
+     "cum_m": 8407,
+     "lat": 39.95176,
+     "lon": -105.23503,
+     "pass_h": 0.16,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": 3.782,
+     "truth_h": 3.782,
+     "erosion_gap_min": 212.5,
+     "shortfall_min": 25.1
+    },
+    {
+     "sample": 287,
+     "n_pts": 289,
+     "frac_along": 0.993,
+     "cum_m": 8416,
+     "lat": 39.95179,
+     "lon": -105.23494,
+     "pass_h": 0.16,
+     "eroded_p10_h": 0.24,
+     "raw_p10_h": 3.782,
+     "truth_h": 3.782,
+     "erosion_gap_min": 212.5,
+     "shortfall_min": 25.2
+    },
+    {
+     "sample": 288,
+     "n_pts": 289,
+     "frac_along": 1.0,
+     "cum_m": 8477,
+     "lat": 39.95208,
+     "lon": -105.23432,
+     "pass_h": 0.161,
+     "eroded_p10_h": 0.264,
+     "raw_p10_h": 3.116,
+     "truth_h": 3.116,
+     "erosion_gap_min": 171.1,
+     "shortfall_min": 23.8
+    }
+   ]
+  }
+ },
+ "egress": {
+  "sim-c1": {
+   "travel_min": 14.4,
+   "arrive_h": 0.241,
+   "depart_h": 0.491,
+   "latest_depart_h": 2.568,
+   "eta_p10_h": 3.068,
+   "deadline_slack_min": 124.6,
+   "zones": {
+    "boulder_co-z1": {
+     "on_roads": true,
+     "route_m": 11875,
+     "route_min": 14.4,
+     "speed_mps": 13.7,
+     "margin_min": 30.0,
+     "n_pts": 348,
+     "n_constrained": 208,
+     "n_fail": 56,
+     "safe": false,
+     "worst_margin_h": -0.349,
+     "min_slack_min": -21.0,
+     "tstar_h": -0.358,
+     "tstar_minus_depart_min": -51.0,
+     "depart_h": 0.491,
+     "binding": {
+      "sample": 132,
+      "frac_along": 0.411,
+      "cum_m": 4882,
+      "eroded_p10_h": 0.24,
+      "raw_p10_h": null,
+      "tstar_h": -0.358
+     },
+     "fails_first": [
+      {
+       "sample": 81,
+       "n_pts": 348,
+       "frac_along": 0.321,
+       "cum_m": 3817,
+       "lat": 39.95567,
+       "lon": -105.2279,
+       "pass_h": 0.568,
+       "eroded_p10_h": 1.056,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 0.7
+      },
+      {
+       "sample": 82,
+       "n_pts": 348,
+       "frac_along": 0.324,
+       "cum_m": 3845,
+       "lat": 39.9558,
+       "lon": -105.22819,
+       "pass_h": 0.569,
+       "eroded_p10_h": 1.056,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 0.8
+      },
+      {
+       "sample": 83,
+       "n_pts": 348,
+       "frac_along": 0.326,
+       "cum_m": 3870,
+       "lat": 39.9559,
+       "lon": -105.22845,
+       "pass_h": 0.569,
+       "eroded_p10_h": 1.056,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 0.8
+      },
+      {
+       "sample": 84,
+       "n_pts": 348,
+       "frac_along": 0.327,
+       "cum_m": 3884,
+       "lat": 39.95596,
+       "lon": -105.2286,
+       "pass_h": 0.569,
+       "eroded_p10_h": 1.032,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 2.2
+      },
+      {
+       "sample": 85,
+       "n_pts": 348,
+       "frac_along": 0.328,
+       "cum_m": 3894,
+       "lat": 39.95599,
+       "lon": -105.22871,
+       "pass_h": 0.57,
+       "eroded_p10_h": 1.032,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 2.2
+      },
+      {
+       "sample": 86,
+       "n_pts": 348,
+       "frac_along": 0.329,
+       "cum_m": 3905,
+       "lat": 39.956,
+       "lon": -105.22883,
+       "pass_h": 0.57,
+       "eroded_p10_h": 1.032,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 2.3
+      }
+     ],
+     "fails_last": [
+      {
+       "sample": 134,
+       "n_pts": 348,
+       "frac_along": 0.417,
+       "cum_m": 4950,
+       "lat": 39.96093,
+       "lon": -105.23618,
+       "pass_h": 0.591,
+       "eroded_p10_h": 0.796,
+       "raw_p10_h": 4.679,
+       "truth_h": 4.679,
+       "erosion_gap_min": 233.0,
+       "shortfall_min": 17.7
+      },
+      {
+       "sample": 135,
+       "n_pts": 348,
+       "frac_along": 0.419,
+       "cum_m": 4978,
+       "lat": 39.96115,
+       "lon": -105.23636,
+       "pass_h": 0.592,
+       "eroded_p10_h": 0.796,
+       "raw_p10_h": 4.679,
+       "truth_h": 4.679,
+       "erosion_gap_min": 233.0,
+       "shortfall_min": 17.8
+      },
+      {
+       "sample": 136,
+       "n_pts": 348,
+       "frac_along": 0.42,
+       "cum_m": 4993,
+       "lat": 39.96126,
+       "lon": -105.23645,
+       "pass_h": 0.592,
+       "eroded_p10_h": 0.796,
+       "raw_p10_h": 4.679,
+       "truth_h": 4.679,
+       "erosion_gap_min": 233.0,
+       "shortfall_min": 17.8
+      }
+     ]
+    },
+    "boulder_co-z2": {
+     "on_roads": true,
+     "route_m": 15569,
+     "route_min": 18.6,
+     "speed_mps": 13.98,
+     "margin_min": 30.0,
+     "n_pts": 532,
+     "n_constrained": 398,
+     "n_fail": 0,
+     "safe": true,
+     "worst_margin_h": 2.44,
+     "min_slack_min": 146.4,
+     "tstar_h": 2.431,
+     "tstar_minus_depart_min": 116.4,
+     "depart_h": 0.491,
+     "binding": {
+      "sample": 0,
+      "frac_along": 0.0,
+      "cum_m": 0,
+      "eroded_p10_h": 2.931,
+      "raw_p10_h": 3.068,
+      "tstar_h": 2.431
+     },
+     "fails_first": [],
+     "fails_last": []
+    },
+    "boulder_co-z3": {
+     "on_roads": true,
+     "route_m": 15852,
+     "route_min": 17.4,
+     "speed_mps": 15.15,
+     "margin_min": 30.0,
+     "n_pts": 520,
+     "n_constrained": 237,
+     "n_fail": 0,
+     "safe": true,
+     "worst_margin_h": 2.44,
+     "min_slack_min": 146.4,
+     "tstar_h": 2.431,
+     "tstar_minus_depart_min": 116.4,
+     "depart_h": 0.491,
+     "binding": {
+      "sample": 0,
+      "frac_along": 0.0,
+      "cum_m": 0,
+      "eroded_p10_h": 2.931,
+      "raw_p10_h": 3.068,
+      "tstar_h": 2.431
+     },
+     "fails_first": [],
+     "fails_last": []
+    }
+   }
+  },
+  "sim-c2": {
+   "travel_min": 10.2,
+   "arrive_h": 0.17,
+   "depart_h": 0.42,
+   "latest_depart_h": 2.652,
+   "eta_p10_h": 3.152,
+   "deadline_slack_min": 133.9,
+   "zones": {
+    "boulder_co-z1": {
+     "on_roads": true,
+     "route_m": 9072,
+     "route_min": 10.2,
+     "speed_mps": 14.87,
+     "margin_min": 30.0,
+     "n_pts": 300,
+     "n_constrained": 160,
+     "n_fail": 21,
+     "safe": false,
+     "worst_margin_h": -0.218,
+     "min_slack_min": -13.1,
+     "tstar_h": -0.298,
+     "tstar_minus_depart_min": -43.1,
+     "depart_h": 0.42,
+     "binding": {
+      "sample": 84,
+      "frac_along": 0.229,
+      "cum_m": 2078,
+      "eroded_p10_h": 0.24,
+      "raw_p10_h": null,
+      "tstar_h": -0.298
+     },
+     "fails_first": [
+      {
+       "sample": 68,
+       "n_pts": 300,
+       "frac_along": 0.173,
+       "cum_m": 1571,
+       "lat": 39.95708,
+       "lon": -105.23172,
+       "pass_h": 0.449,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 3.1
+      },
+      {
+       "sample": 69,
+       "n_pts": 300,
+       "frac_along": 0.175,
+       "cum_m": 1584,
+       "lat": 39.95719,
+       "lon": -105.23179,
+       "pass_h": 0.449,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 3.1
+      },
+      {
+       "sample": 70,
+       "n_pts": 300,
+       "frac_along": 0.176,
+       "cum_m": 1597,
+       "lat": 39.95729,
+       "lon": -105.23186,
+       "pass_h": 0.449,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 3.1
+      },
+      {
+       "sample": 71,
+       "n_pts": 300,
+       "frac_along": 0.179,
+       "cum_m": 1623,
+       "lat": 39.95749,
+       "lon": -105.23202,
+       "pass_h": 0.45,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 3.1
+      },
+      {
+       "sample": 72,
+       "n_pts": 300,
+       "frac_along": 0.18,
+       "cum_m": 1635,
+       "lat": 39.95758,
+       "lon": -105.2321,
+       "pass_h": 0.45,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 3.1
+      },
+      {
+       "sample": 73,
+       "n_pts": 300,
+       "frac_along": 0.185,
+       "cum_m": 1682,
+       "lat": 39.95791,
+       "lon": -105.23244,
+       "pass_h": 0.451,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 3.2
+      }
+     ],
+     "fails_last": [
+      {
+       "sample": 86,
+       "n_pts": 300,
+       "frac_along": 0.237,
+       "cum_m": 2146,
+       "lat": 39.96093,
+       "lon": -105.23618,
+       "pass_h": 0.46,
+       "eroded_p10_h": 0.796,
+       "raw_p10_h": 4.679,
+       "truth_h": 4.679,
+       "erosion_gap_min": 233.0,
+       "shortfall_min": 9.8
+      },
+      {
+       "sample": 87,
+       "n_pts": 300,
+       "frac_along": 0.24,
+       "cum_m": 2175,
+       "lat": 39.96115,
+       "lon": -105.23636,
+       "pass_h": 0.46,
+       "eroded_p10_h": 0.796,
+       "raw_p10_h": 4.679,
+       "truth_h": 4.679,
+       "erosion_gap_min": 233.0,
+       "shortfall_min": 9.9
+      },
+      {
+       "sample": 88,
+       "n_pts": 300,
+       "frac_along": 0.241,
+       "cum_m": 2189,
+       "lat": 39.96126,
+       "lon": -105.23645,
+       "pass_h": 0.46,
+       "eroded_p10_h": 0.796,
+       "raw_p10_h": 4.679,
+       "truth_h": 4.679,
+       "erosion_gap_min": 233.0,
+       "shortfall_min": 9.9
+      }
+     ]
+    },
+    "boulder_co-z2": {
+     "on_roads": true,
+     "route_m": 15920,
+     "route_min": 17.6,
+     "speed_mps": 15.05,
+     "margin_min": 30.0,
+     "n_pts": 546,
+     "n_constrained": 412,
+     "n_fail": 0,
+     "safe": true,
+     "worst_margin_h": 2.168,
+     "min_slack_min": 130.1,
+     "tstar_h": 2.088,
+     "tstar_minus_depart_min": 100.1,
+     "depart_h": 0.42,
+     "binding": {
+      "sample": 1,
+      "frac_along": 0.005,
+      "cum_m": 85,
+      "eroded_p10_h": 2.589,
+      "raw_p10_h": null,
+      "tstar_h": 2.088
+     },
+     "fails_first": [],
+     "fails_last": []
+    },
+    "boulder_co-z3": {
+     "on_roads": true,
+     "route_m": 16203,
+     "route_min": 16.5,
+     "speed_mps": 16.36,
+     "margin_min": 30.0,
+     "n_pts": 534,
+     "n_constrained": 251,
+     "n_fail": 0,
+     "safe": true,
+     "worst_margin_h": 2.168,
+     "min_slack_min": 130.1,
+     "tstar_h": 2.088,
+     "tstar_minus_depart_min": 100.1,
+     "depart_h": 0.42,
+     "binding": {
+      "sample": 1,
+      "frac_along": 0.005,
+      "cum_m": 85,
+      "eroded_p10_h": 2.589,
+      "raw_p10_h": null,
+      "tstar_h": 2.088
+     },
+     "fails_first": [],
+     "fails_last": []
+    }
+   }
+  },
+  "sim-c3": {
+   "travel_min": 9.9,
+   "arrive_h": 0.165,
+   "depart_h": 0.415,
+   "latest_depart_h": 2.636,
+   "eta_p10_h": 3.136,
+   "deadline_slack_min": 133.3,
+   "zones": {
+    "boulder_co-z1": {
+     "on_roads": true,
+     "route_m": 8672,
+     "route_min": 9.9,
+     "speed_mps": 14.63,
+     "margin_min": 30.0,
+     "n_pts": 283,
+     "n_constrained": 143,
+     "n_fail": 21,
+     "safe": false,
+     "worst_margin_h": -0.206,
+     "min_slack_min": -12.4,
+     "tstar_h": -0.291,
+     "tstar_minus_depart_min": -42.4,
+     "depart_h": 0.415,
+     "binding": {
+      "sample": 67,
+      "frac_along": 0.193,
+      "cum_m": 1678,
+      "eroded_p10_h": 0.24,
+      "raw_p10_h": null,
+      "tstar_h": -0.291
+     },
+     "fails_first": [
+      {
+       "sample": 51,
+       "n_pts": 283,
+       "frac_along": 0.135,
+       "cum_m": 1170,
+       "lat": 39.95708,
+       "lon": -105.23172,
+       "pass_h": 0.437,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 2.3
+      },
+      {
+       "sample": 52,
+       "n_pts": 283,
+       "frac_along": 0.137,
+       "cum_m": 1184,
+       "lat": 39.95719,
+       "lon": -105.23179,
+       "pass_h": 0.437,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 2.4
+      },
+      {
+       "sample": 53,
+       "n_pts": 283,
+       "frac_along": 0.138,
+       "cum_m": 1196,
+       "lat": 39.95729,
+       "lon": -105.23186,
+       "pass_h": 0.437,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 2.4
+      },
+      {
+       "sample": 54,
+       "n_pts": 283,
+       "frac_along": 0.141,
+       "cum_m": 1222,
+       "lat": 39.95749,
+       "lon": -105.23202,
+       "pass_h": 0.438,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 2.4
+      },
+      {
+       "sample": 55,
+       "n_pts": 283,
+       "frac_along": 0.142,
+       "cum_m": 1235,
+       "lat": 39.95758,
+       "lon": -105.2321,
+       "pass_h": 0.438,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 2.4
+      },
+      {
+       "sample": 56,
+       "n_pts": 283,
+       "frac_along": 0.148,
+       "cum_m": 1281,
+       "lat": 39.95791,
+       "lon": -105.23244,
+       "pass_h": 0.439,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 2.5
+      }
+     ],
+     "fails_last": [
+      {
+       "sample": 69,
+       "n_pts": 283,
+       "frac_along": 0.201,
+       "cum_m": 1745,
+       "lat": 39.96093,
+       "lon": -105.23618,
+       "pass_h": 0.448,
+       "eroded_p10_h": 0.796,
+       "raw_p10_h": 4.679,
+       "truth_h": 4.679,
+       "erosion_gap_min": 233.0,
+       "shortfall_min": 9.1
+      },
+      {
+       "sample": 70,
+       "n_pts": 283,
+       "frac_along": 0.205,
+       "cum_m": 1774,
+       "lat": 39.96115,
+       "lon": -105.23636,
+       "pass_h": 0.448,
+       "eroded_p10_h": 0.796,
+       "raw_p10_h": 4.679,
+       "truth_h": 4.679,
+       "erosion_gap_min": 233.0,
+       "shortfall_min": 9.2
+      },
+      {
+       "sample": 71,
+       "n_pts": 283,
+       "frac_along": 0.206,
+       "cum_m": 1789,
+       "lat": 39.96126,
+       "lon": -105.23645,
+       "pass_h": 0.449,
+       "eroded_p10_h": 0.796,
+       "raw_p10_h": 4.679,
+       "truth_h": 4.679,
+       "erosion_gap_min": 233.0,
+       "shortfall_min": 9.2
+      }
+     ]
+    },
+    "boulder_co-z2": {
+     "on_roads": true,
+     "route_m": 16596,
+     "route_min": 18.5,
+     "speed_mps": 14.97,
+     "margin_min": 30.0,
+     "n_pts": 567,
+     "n_constrained": 433,
+     "n_fail": 0,
+     "safe": true,
+     "worst_margin_h": 0.705,
+     "min_slack_min": 42.3,
+     "tstar_h": 0.619,
+     "tstar_minus_depart_min": 12.3,
+     "depart_h": 0.415,
+     "binding": {
+      "sample": 0,
+      "frac_along": 0.0,
+      "cum_m": 0,
+      "eroded_p10_h": 1.119,
+      "raw_p10_h": 3.136,
+      "tstar_h": 0.619
+     },
+     "fails_first": [],
+     "fails_last": []
+    },
+    "boulder_co-z3": {
+     "on_roads": true,
+     "route_m": 16879,
+     "route_min": 17.4,
+     "speed_mps": 16.21,
+     "margin_min": 30.0,
+     "n_pts": 555,
+     "n_constrained": 272,
+     "n_fail": 0,
+     "safe": true,
+     "worst_margin_h": 0.705,
+     "min_slack_min": 42.3,
+     "tstar_h": 0.619,
+     "tstar_minus_depart_min": 12.3,
+     "depart_h": 0.415,
+     "binding": {
+      "sample": 0,
+      "frac_along": 0.0,
+      "cum_m": 0,
+      "eroded_p10_h": 1.119,
+      "raw_p10_h": 3.136,
+      "tstar_h": 0.619
+     },
+     "fails_first": [],
+     "fails_last": []
+    }
+   }
+  },
+  "sim-c4": {
+   "travel_min": 9.6,
+   "arrive_h": 0.161,
+   "depart_h": 0.411,
+   "latest_depart_h": 2.616,
+   "eta_p10_h": 3.116,
+   "deadline_slack_min": 132.3,
+   "zones": {
+    "boulder_co-z1": {
+     "on_roads": true,
+     "route_m": 8474,
+     "route_min": 9.6,
+     "speed_mps": 14.64,
+     "margin_min": 30.0,
+     "n_pts": 289,
+     "n_constrained": 149,
+     "n_fail": 64,
+     "safe": false,
+     "worst_margin_h": -0.198,
+     "min_slack_min": -11.9,
+     "tstar_h": -0.288,
+     "tstar_minus_depart_min": -41.9,
+     "depart_h": 0.411,
+     "binding": {
+      "sample": 73,
+      "frac_along": 0.175,
+      "cum_m": 1483,
+      "eroded_p10_h": 0.24,
+      "raw_p10_h": null,
+      "tstar_h": -0.288
+     },
+     "fails_first": [
+      {
+       "sample": 0,
+       "n_pts": 289,
+       "frac_along": 0.0,
+       "cum_m": 0,
+       "lat": 39.95208,
+       "lon": -105.23432,
+       "pass_h": 0.411,
+       "eroded_p10_h": 0.264,
+       "raw_p10_h": 3.116,
+       "truth_h": 3.116,
+       "erosion_gap_min": 171.1,
+       "shortfall_min": 38.8
+      },
+      {
+       "sample": 1,
+       "n_pts": 289,
+       "frac_along": 0.007,
+       "cum_m": 61,
+       "lat": 39.95179,
+       "lon": -105.23494,
+       "pass_h": 0.412,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": 3.782,
+       "truth_h": 3.782,
+       "erosion_gap_min": 212.5,
+       "shortfall_min": 40.3
+      },
+      {
+       "sample": 2,
+       "n_pts": 289,
+       "frac_along": 0.008,
+       "cum_m": 70,
+       "lat": 39.95176,
+       "lon": -105.23503,
+       "pass_h": 0.412,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": 3.782,
+       "truth_h": 3.782,
+       "erosion_gap_min": 212.5,
+       "shortfall_min": 40.3
+      },
+      {
+       "sample": 3,
+       "n_pts": 289,
+       "frac_along": 0.009,
+       "cum_m": 79,
+       "lat": 39.95173,
+       "lon": -105.23513,
+       "pass_h": 0.412,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": 3.782,
+       "truth_h": 3.782,
+       "erosion_gap_min": 212.5,
+       "shortfall_min": 40.3
+      },
+      {
+       "sample": 4,
+       "n_pts": 289,
+       "frac_along": 0.01,
+       "cum_m": 87,
+       "lat": 39.9517,
+       "lon": -105.23522,
+       "pass_h": 0.412,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": 3.782,
+       "truth_h": 3.782,
+       "erosion_gap_min": 212.5,
+       "shortfall_min": 40.3
+      },
+      {
+       "sample": 5,
+       "n_pts": 289,
+       "frac_along": 0.011,
+       "cum_m": 94,
+       "lat": 39.95166,
+       "lon": -105.23528,
+       "pass_h": 0.413,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 40.3
+      }
+     ],
+     "fails_last": [
+      {
+       "sample": 75,
+       "n_pts": 289,
+       "frac_along": 0.183,
+       "cum_m": 1550,
+       "lat": 39.96093,
+       "lon": -105.23618,
+       "pass_h": 0.44,
+       "eroded_p10_h": 0.796,
+       "raw_p10_h": 4.679,
+       "truth_h": 4.679,
+       "erosion_gap_min": 233.0,
+       "shortfall_min": 8.7
+      },
+      {
+       "sample": 76,
+       "n_pts": 289,
+       "frac_along": 0.186,
+       "cum_m": 1579,
+       "lat": 39.96115,
+       "lon": -105.23636,
+       "pass_h": 0.441,
+       "eroded_p10_h": 0.796,
+       "raw_p10_h": 4.679,
+       "truth_h": 4.679,
+       "erosion_gap_min": 233.0,
+       "shortfall_min": 8.7
+      },
+      {
+       "sample": 77,
+       "n_pts": 289,
+       "frac_along": 0.188,
+       "cum_m": 1594,
+       "lat": 39.96126,
+       "lon": -105.23645,
+       "pass_h": 0.441,
+       "eroded_p10_h": 0.796,
+       "raw_p10_h": 4.679,
+       "truth_h": 4.679,
+       "erosion_gap_min": 233.0,
+       "shortfall_min": 8.7
+      }
+     ]
+    },
+    "boulder_co-z2": {
+     "on_roads": true,
+     "route_m": 17848,
+     "route_min": 20.1,
+     "speed_mps": 14.82,
+     "margin_min": 30.0,
+     "n_pts": 650,
+     "n_constrained": 516,
+     "n_fail": 43,
+     "safe": false,
+     "worst_margin_h": -0.173,
+     "min_slack_min": -10.4,
+     "tstar_h": -0.262,
+     "tstar_minus_depart_min": -40.4,
+     "depart_h": 0.411,
+     "binding": {
+      "sample": 12,
+      "frac_along": 0.008,
+      "cum_m": 149,
+      "eroded_p10_h": 0.24,
+      "raw_p10_h": null,
+      "tstar_h": -0.262
+     },
+     "fails_first": [
+      {
+       "sample": 0,
+       "n_pts": 650,
+       "frac_along": 0.0,
+       "cum_m": 0,
+       "lat": 39.95208,
+       "lon": -105.23432,
+       "pass_h": 0.411,
+       "eroded_p10_h": 0.264,
+       "raw_p10_h": 3.116,
+       "truth_h": 3.116,
+       "erosion_gap_min": 171.1,
+       "shortfall_min": 38.8
+      },
+      {
+       "sample": 1,
+       "n_pts": 650,
+       "frac_along": 0.003,
+       "cum_m": 61,
+       "lat": 39.95179,
+       "lon": -105.23494,
+       "pass_h": 0.412,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": 3.782,
+       "truth_h": 3.782,
+       "erosion_gap_min": 212.5,
+       "shortfall_min": 40.3
+      },
+      {
+       "sample": 2,
+       "n_pts": 650,
+       "frac_along": 0.004,
+       "cum_m": 70,
+       "lat": 39.95176,
+       "lon": -105.23503,
+       "pass_h": 0.412,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": 3.782,
+       "truth_h": 3.782,
+       "erosion_gap_min": 212.5,
+       "shortfall_min": 40.3
+      },
+      {
+       "sample": 3,
+       "n_pts": 650,
+       "frac_along": 0.004,
+       "cum_m": 79,
+       "lat": 39.95173,
+       "lon": -105.23513,
+       "pass_h": 0.412,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": 3.782,
+       "truth_h": 3.782,
+       "erosion_gap_min": 212.5,
+       "shortfall_min": 40.3
+      },
+      {
+       "sample": 4,
+       "n_pts": 650,
+       "frac_along": 0.005,
+       "cum_m": 87,
+       "lat": 39.9517,
+       "lon": -105.23522,
+       "pass_h": 0.412,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": 3.782,
+       "truth_h": 3.782,
+       "erosion_gap_min": 212.5,
+       "shortfall_min": 40.3
+      },
+      {
+       "sample": 5,
+       "n_pts": 650,
+       "frac_along": 0.005,
+       "cum_m": 94,
+       "lat": 39.95166,
+       "lon": -105.23528,
+       "pass_h": 0.413,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 40.3
+      }
+     ],
+     "fails_last": [
+      {
+       "sample": 40,
+       "n_pts": 650,
+       "frac_along": 0.033,
+       "cum_m": 597,
+       "lat": 39.95358,
+       "lon": -105.23175,
+       "pass_h": 0.422,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 1.5
+      },
+      {
+       "sample": 41,
+       "n_pts": 650,
+       "frac_along": 0.034,
+       "cum_m": 599,
+       "lat": 39.95358,
+       "lon": -105.23173,
+       "pass_h": 0.422,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 1.5
+      },
+      {
+       "sample": 42,
+       "n_pts": 650,
+       "frac_along": 0.034,
+       "cum_m": 602,
+       "lat": 39.95357,
+       "lon": -105.2317,
+       "pass_h": 0.422,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 1.5
+      }
+     ]
+    },
+    "boulder_co-z3": {
+     "on_roads": true,
+     "route_m": 18131,
+     "route_min": 18.9,
+     "speed_mps": 15.95,
+     "margin_min": 30.0,
+     "n_pts": 638,
+     "n_constrained": 355,
+     "n_fail": 43,
+     "safe": false,
+     "worst_margin_h": -0.173,
+     "min_slack_min": -10.4,
+     "tstar_h": -0.262,
+     "tstar_minus_depart_min": -40.4,
+     "depart_h": 0.411,
+     "binding": {
+      "sample": 12,
+      "frac_along": 0.008,
+      "cum_m": 149,
+      "eroded_p10_h": 0.24,
+      "raw_p10_h": null,
+      "tstar_h": -0.262
+     },
+     "fails_first": [
+      {
+       "sample": 0,
+       "n_pts": 638,
+       "frac_along": 0.0,
+       "cum_m": 0,
+       "lat": 39.95208,
+       "lon": -105.23432,
+       "pass_h": 0.411,
+       "eroded_p10_h": 0.264,
+       "raw_p10_h": 3.116,
+       "truth_h": 3.116,
+       "erosion_gap_min": 171.1,
+       "shortfall_min": 38.8
+      },
+      {
+       "sample": 1,
+       "n_pts": 638,
+       "frac_along": 0.003,
+       "cum_m": 61,
+       "lat": 39.95179,
+       "lon": -105.23494,
+       "pass_h": 0.412,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": 3.782,
+       "truth_h": 3.782,
+       "erosion_gap_min": 212.5,
+       "shortfall_min": 40.3
+      },
+      {
+       "sample": 2,
+       "n_pts": 638,
+       "frac_along": 0.004,
+       "cum_m": 70,
+       "lat": 39.95176,
+       "lon": -105.23503,
+       "pass_h": 0.412,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": 3.782,
+       "truth_h": 3.782,
+       "erosion_gap_min": 212.5,
+       "shortfall_min": 40.3
+      },
+      {
+       "sample": 3,
+       "n_pts": 638,
+       "frac_along": 0.004,
+       "cum_m": 79,
+       "lat": 39.95173,
+       "lon": -105.23513,
+       "pass_h": 0.412,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": 3.782,
+       "truth_h": 3.782,
+       "erosion_gap_min": 212.5,
+       "shortfall_min": 40.3
+      },
+      {
+       "sample": 4,
+       "n_pts": 638,
+       "frac_along": 0.005,
+       "cum_m": 87,
+       "lat": 39.9517,
+       "lon": -105.23522,
+       "pass_h": 0.412,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": 3.782,
+       "truth_h": 3.782,
+       "erosion_gap_min": 212.5,
+       "shortfall_min": 40.3
+      },
+      {
+       "sample": 5,
+       "n_pts": 638,
+       "frac_along": 0.005,
+       "cum_m": 94,
+       "lat": 39.95166,
+       "lon": -105.23528,
+       "pass_h": 0.412,
+       "eroded_p10_h": 0.24,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 40.3
+      }
+     ],
+     "fails_last": [
+      {
+       "sample": 40,
+       "n_pts": 638,
+       "frac_along": 0.033,
+       "cum_m": 597,
+       "lat": 39.95358,
+       "lon": -105.23175,
+       "pass_h": 0.421,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 1.4
+      },
+      {
+       "sample": 41,
+       "n_pts": 638,
+       "frac_along": 0.033,
+       "cum_m": 599,
+       "lat": 39.95358,
+       "lon": -105.23173,
+       "pass_h": 0.421,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 1.4
+      },
+      {
+       "sample": 42,
+       "n_pts": 638,
+       "frac_along": 0.033,
+       "cum_m": 602,
+       "lat": 39.95357,
+       "lon": -105.2317,
+       "pass_h": 0.421,
+       "eroded_p10_h": 0.898,
+       "raw_p10_h": null,
+       "truth_h": null,
+       "erosion_gap_min": null,
+       "shortfall_min": 1.4
+      }
+     ]
+    }
+   }
+  }
+ },
+ "ingress_profile_c1": {
+  "columns": [
+   "sample",
+   "cum_m",
+   "eroded_p10_h",
+   "raw_p10_h",
+   "truth_h"
+  ],
+  "rows": [
+   [
+    0,
+    0,
+    null,
+    null,
+    null
+   ],
+   [
+    1,
+    40,
+    null,
+    null,
+    null
+   ],
+   [
+    2,
+    50,
+    null,
+    null,
+    null
+   ],
+   [
+    3,
+    56,
+    null,
+    null,
+    null
+   ],
+   [
+    4,
+    102,
+    null,
+    null,
+    null
+   ],
+   [
+    5,
+    134,
+    null,
+    null,
+    null
+   ],
+   [
+    6,
+    143,
+    null,
+    null,
+    null
+   ],
+   [
+    7,
+    160,
+    null,
+    null,
+    null
+   ],
+   [
+    8,
+    168,
+    null,
+    null,
+    null
+   ],
+   [
+    9,
+    186,
+    null,
+    null,
+    null
+   ],
+   [
+    10,
+    214,
+    null,
+    null,
+    null
+   ],
+   [
+    11,
+    262,
+    null,
+    null,
+    null
+   ],
+   [
+    12,
+    270,
+    null,
+    null,
+    null
+   ],
+   [
+    13,
+    294,
+    null,
+    null,
+    null
+   ],
+   [
+    14,
+    309,
+    null,
+    null,
+    null
+   ],
+   [
+    15,
+    322,
+    null,
+    null,
+    null
+   ],
+   [
+    16,
+    327,
+    null,
+    null,
+    null
+   ],
+   [
+    17,
+    332,
+    null,
+    null,
+    null
+   ],
+   [
+    18,
+    342,
+    null,
+    null,
+    null
+   ],
+   [
+    19,
+    371,
+    null,
+    null,
+    null
+   ],
+   [
+    20,
+    413,
+    null,
+    null,
+    null
+   ],
+   [
+    21,
+    437,
+    null,
+    null,
+    null
+   ],
+   [
+    22,
+    463,
+    null,
+    null,
+    null
+   ],
+   [
+    23,
+    498,
+    null,
+    null,
+    null
+   ],
+   [
+    24,
+    518,
+    null,
+    null,
+    null
+   ],
+   [
+    25,
+    547,
+    null,
+    null,
+    null
+   ],
+   [
+    26,
+    606,
+    null,
+    null,
+    null
+   ],
+   [
+    27,
+    736,
+    null,
+    null,
+    null
+   ],
+   [
+    28,
+    785,
+    null,
+    null,
+    null
+   ],
+   [
+    29,
+    791,
+    null,
+    null,
+    null
+   ],
+   [
+    30,
+    846,
+    null,
+    null,
+    null
+   ],
+   [
+    31,
+    853,
+    null,
+    null,
+    null
+   ],
+   [
+    32,
+    856,
+    null,
+    null,
+    null
+   ],
+   [
+    33,
+    869,
+    null,
+    null,
+    null
+   ],
+   [
+    34,
+    880,
+    null,
+    null,
+    null
+   ],
+   [
+    35,
+    892,
+    null,
+    null,
+    null
+   ],
+   [
+    36,
+    920,
+    null,
+    null,
+    null
+   ],
+   [
+    37,
+    1058,
+    null,
+    null,
+    null
+   ],
+   [
+    38,
+    1168,
+    null,
+    null,
+    null
+   ],
+   [
+    39,
+    1386,
+    null,
+    null,
+    null
+   ],
+   [
+    40,
+    1441,
+    null,
+    null,
+    null
+   ],
+   [
+    41,
+    1496,
+    null,
+    null,
+    null
+   ],
+   [
+    42,
+    1516,
+    null,
+    null,
+    null
+   ],
+   [
+    43,
+    1535,
+    null,
+    null,
+    null
+   ],
+   [
+    44,
+    1549,
+    null,
+    null,
+    null
+   ],
+   [
+    45,
+    1561,
+    null,
+    null,
+    null
+   ],
+   [
+    46,
+    1571,
+    null,
+    null,
+    null
+   ],
+   [
+    47,
+    1581,
+    null,
+    null,
+    null
+   ],
+   [
+    48,
+    1594,
+    null,
+    null,
+    null
+   ],
+   [
+    49,
+    1606,
+    null,
+    null,
+    null
+   ],
+   [
+    50,
+    1615,
+    null,
+    null,
+    null
+   ],
+   [
+    51,
+    1624,
+    null,
+    null,
+    null
+   ],
+   [
+    52,
+    1637,
+    null,
+    null,
+    null
+   ],
+   [
+    53,
+    1650,
+    null,
+    null,
+    null
+   ],
+   [
+    54,
+    1661,
+    null,
+    null,
+    null
+   ],
+   [
+    55,
+    1671,
+    null,
+    null,
+    null
+   ],
+   [
+    56,
+    1685,
+    null,
+    null,
+    null
+   ],
+   [
+    57,
+    1697,
+    null,
+    null,
+    null
+   ],
+   [
+    58,
+    1710,
+    null,
+    null,
+    null
+   ],
+   [
+    59,
+    1725,
+    null,
+    null,
+    null
+   ],
+   [
+    60,
+    1740,
+    null,
+    null,
+    null
+   ],
+   [
+    61,
+    1752,
+    null,
+    null,
+    null
+   ],
+   [
+    62,
+    1755,
+    null,
+    null,
+    null
+   ],
+   [
+    63,
+    1765,
+    null,
+    null,
+    null
+   ],
+   [
+    64,
+    1782,
+    null,
+    null,
+    null
+   ],
+   [
+    65,
+    1794,
+    null,
+    null,
+    null
+   ],
+   [
+    66,
+    1808,
+    null,
+    null,
+    null
+   ],
+   [
+    67,
+    1853,
+    null,
+    null,
+    null
+   ],
+   [
+    68,
+    1868,
+    null,
+    null,
+    null
+   ],
+   [
+    69,
+    1894,
+    null,
+    null,
+    null
+   ],
+   [
+    70,
+    1897,
+    null,
+    null,
+    null
+   ],
+   [
+    71,
+    1901,
+    null,
+    null,
+    null
+   ],
+   [
+    72,
+    1906,
+    null,
+    null,
+    null
+   ],
+   [
+    73,
+    1913,
+    null,
+    null,
+    null
+   ],
+   [
+    74,
+    1943,
+    null,
+    null,
+    null
+   ],
+   [
+    75,
+    1963,
+    null,
+    null,
+    null
+   ],
+   [
+    76,
+    2038,
+    null,
+    null,
+    null
+   ],
+   [
+    77,
+    2054,
+    null,
+    null,
+    null
+   ],
+   [
+    78,
+    2064,
+    null,
+    null,
+    null
+   ],
+   [
+    79,
+    2071,
+    null,
+    null,
+    null
+   ],
+   [
+    80,
+    2085,
+    null,
+    null,
+    null
+   ],
+   [
+    81,
+    2090,
+    null,
+    null,
+    null
+   ],
+   [
+    82,
+    2108,
+    null,
+    null,
+    null
+   ],
+   [
+    83,
+    2125,
+    null,
+    null,
+    null
+   ],
+   [
+    84,
+    2136,
+    null,
+    null,
+    null
+   ],
+   [
+    85,
+    2153,
+    null,
+    null,
+    null
+   ],
+   [
+    86,
+    2188,
+    null,
+    null,
+    null
+   ],
+   [
+    87,
+    2205,
+    null,
+    null,
+    null
+   ],
+   [
+    88,
+    2209,
+    null,
+    null,
+    null
+   ],
+   [
+    89,
+    2219,
+    null,
+    null,
+    null
+   ],
+   [
+    90,
+    2231,
+    null,
+    null,
+    null
+   ],
+   [
+    91,
+    2234,
+    null,
+    null,
+    null
+   ],
+   [
+    92,
+    2267,
+    null,
+    null,
+    null
+   ],
+   [
+    93,
+    2387,
+    null,
+    null,
+    null
+   ],
+   [
+    94,
+    2506,
+    null,
+    null,
+    null
+   ],
+   [
+    95,
+    2571,
+    null,
+    null,
+    null
+   ],
+   [
+    96,
+    2577,
+    null,
+    null,
+    null
+   ],
+   [
+    97,
+    2580,
+    null,
+    null,
+    null
+   ],
+   [
+    98,
+    2648,
+    null,
+    null,
+    null
+   ],
+   [
+    99,
+    2709,
+    null,
+    null,
+    null
+   ],
+   [
+    100,
+    2729,
+    null,
+    null,
+    null
+   ],
+   [
+    101,
+    2779,
+    null,
+    null,
+    null
+   ],
+   [
+    102,
+    3014,
+    null,
+    null,
+    null
+   ],
+   [
+    103,
+    3049,
+    null,
+    null,
+    null
+   ],
+   [
+    104,
+    3086,
+    null,
+    null,
+    null
+   ],
+   [
+    105,
+    3110,
+    null,
+    null,
+    null
+   ],
+   [
+    106,
+    3128,
+    null,
+    null,
+    null
+   ],
+   [
+    107,
+    3139,
+    null,
+    null,
+    null
+   ],
+   [
+    108,
+    3146,
+    null,
+    null,
+    null
+   ],
+   [
+    109,
+    3156,
+    null,
+    null,
+    null
+   ],
+   [
+    110,
+    3159,
+    null,
+    null,
+    null
+   ],
+   [
+    111,
+    3169,
+    null,
+    null,
+    null
+   ],
+   [
+    112,
+    3205,
+    null,
+    null,
+    null
+   ],
+   [
+    113,
+    3227,
+    null,
+    null,
+    null
+   ],
+   [
+    114,
+    3249,
+    null,
+    null,
+    null
+   ],
+   [
+    115,
+    3274,
+    null,
+    null,
+    null
+   ],
+   [
+    116,
+    3325,
+    null,
+    null,
+    null
+   ],
+   [
+    117,
+    3396,
+    null,
+    null,
+    null
+   ],
+   [
+    118,
+    3467,
+    null,
+    null,
+    null
+   ],
+   [
+    119,
+    3538,
+    null,
+    null,
+    null
+   ],
+   [
+    120,
+    3565,
+    null,
+    null,
+    null
+   ],
+   [
+    121,
+    3597,
+    null,
+    null,
+    null
+   ],
+   [
+    122,
+    3628,
+    null,
+    null,
+    null
+   ],
+   [
+    123,
+    3651,
+    null,
+    null,
+    null
+   ],
+   [
+    124,
+    3672,
+    null,
+    null,
+    null
+   ],
+   [
+    125,
+    3690,
+    null,
+    null,
+    null
+   ],
+   [
+    126,
+    3710,
+    null,
+    null,
+    null
+   ],
+   [
+    127,
+    3729,
+    null,
+    null,
+    null
+   ],
+   [
+    128,
+    3746,
+    null,
+    null,
+    null
+   ],
+   [
+    129,
+    3755,
+    null,
+    null,
+    null
+   ],
+   [
+    130,
+    3768,
+    null,
+    null,
+    null
+   ],
+   [
+    131,
+    3792,
+    null,
+    null,
+    null
+   ],
+   [
+    132,
+    3803,
+    null,
+    null,
+    null
+   ],
+   [
+    133,
+    3816,
+    null,
+    null,
+    null
+   ],
+   [
+    134,
+    3825,
+    null,
+    null,
+    null
+   ],
+   [
+    135,
+    3829,
+    null,
+    null,
+    null
+   ],
+   [
+    136,
+    3864,
+    null,
+    null,
+    null
+   ],
+   [
+    137,
+    3961,
+    null,
+    null,
+    null
+   ],
+   [
+    138,
+    4025,
+    null,
+    null,
+    null
+   ],
+   [
+    139,
+    4101,
+    null,
+    null,
+    null
+   ],
+   [
+    140,
+    4177,
+    56.06,
+    null,
+    null
+   ],
+   [
+    141,
+    4245,
+    56.06,
+    null,
+    null
+   ],
+   [
+    142,
+    4257,
+    56.06,
+    null,
+    null
+   ],
+   [
+    143,
+    4269,
+    56.06,
+    null,
+    null
+   ],
+   [
+    144,
+    4277,
+    56.06,
+    null,
+    null
+   ],
+   [
+    145,
+    4331,
+    52.87,
+    null,
+    null
+   ],
+   [
+    146,
+    4413,
+    52.87,
+    null,
+    null
+   ],
+   [
+    147,
+    4441,
+    52.87,
+    null,
+    null
+   ],
+   [
+    148,
+    4443,
+    52.87,
+    null,
+    null
+   ],
+   [
+    149,
+    4489,
+    50.06,
+    null,
+    null
+   ],
+   [
+    150,
+    4644,
+    50.06,
+    null,
+    null
+   ],
+   [
+    151,
+    4766,
+    46.81,
+    null,
+    null
+   ],
+   [
+    152,
+    4808,
+    25.77,
+    null,
+    null
+   ],
+   [
+    153,
+    4840,
+    25.77,
+    null,
+    null
+   ],
+   [
+    154,
+    4885,
+    25.77,
+    null,
+    null
+   ],
+   [
+    155,
+    4936,
+    24.81,
+    null,
+    null
+   ],
+   [
+    156,
+    5019,
+    23.3,
+    null,
+    null
+   ],
+   [
+    157,
+    5079,
+    23.3,
+    null,
+    null
+   ],
+   [
+    158,
+    5147,
+    22.5,
+    null,
+    null
+   ],
+   [
+    159,
+    5155,
+    22.5,
+    null,
+    null
+   ],
+   [
+    160,
+    5174,
+    22.5,
+    null,
+    null
+   ],
+   [
+    161,
+    5177,
+    22.5,
+    null,
+    null
+   ],
+   [
+    162,
+    5228,
+    20.67,
+    null,
+    null
+   ],
+   [
+    163,
+    5389,
+    19.15,
+    null,
+    null
+   ],
+   [
+    164,
+    5445,
+    17.57,
+    null,
+    null
+   ],
+   [
+    165,
+    5479,
+    17.57,
+    null,
+    null
+   ],
+   [
+    166,
+    5542,
+    17.57,
+    null,
+    null
+   ],
+   [
+    167,
+    5596,
+    14.45,
+    null,
+    null
+   ],
+   [
+    168,
+    5628,
+    14.45,
+    null,
+    null
+   ],
+   [
+    169,
+    5658,
+    14.45,
+    null,
+    null
+   ],
+   [
+    170,
+    5669,
+    12.93,
+    24.3,
+    24.3
+   ],
+   [
+    171,
+    5685,
+    12.93,
+    24.3,
+    24.3
+   ],
+   [
+    172,
+    5703,
+    12.93,
+    24.3,
+    24.3
+   ],
+   [
+    173,
+    5721,
+    12.93,
+    24.3,
+    24.3
+   ],
+   [
+    174,
+    5731,
+    12.93,
+    24.3,
+    24.3
+   ],
+   [
+    175,
+    5747,
+    12.93,
+    24.3,
+    24.3
+   ],
+   [
+    176,
+    5771,
+    11.22,
+    22.5,
+    22.5
+   ],
+   [
+    177,
+    5786,
+    11.22,
+    22.5,
+    22.5
+   ],
+   [
+    178,
+    5804,
+    10.55,
+    null,
+    null
+   ],
+   [
+    179,
+    5821,
+    10.55,
+    null,
+    null
+   ],
+   [
+    180,
+    5840,
+    10.55,
+    null,
+    null
+   ],
+   [
+    181,
+    5858,
+    9.03,
+    null,
+    null
+   ],
+   [
+    182,
+    5876,
+    9.03,
+    null,
+    null
+   ],
+   [
+    183,
+    5896,
+    9.47,
+    20.67,
+    20.67
+   ],
+   [
+    184,
+    5922,
+    9.47,
+    20.67,
+    20.67
+   ],
+   [
+    185,
+    5986,
+    8.05,
+    19.15,
+    19.15
+   ],
+   [
+    186,
+    6052,
+    7.21,
+    null,
+    null
+   ],
+   [
+    187,
+    6090,
+    7.21,
+    null,
+    null
+   ],
+   [
+    188,
+    6121,
+    7.21,
+    null,
+    null
+   ],
+   [
+    189,
+    6178,
+    6.23,
+    null,
+    null
+   ],
+   [
+    190,
+    6211,
+    6.23,
+    null,
+    null
+   ],
+   [
+    191,
+    6239,
+    5.09,
+    null,
+    null
+   ],
+   [
+    192,
+    6271,
+    5.09,
+    null,
+    null
+   ],
+   [
+    193,
+    6307,
+    5.09,
+    null,
+    null
+   ],
+   [
+    194,
+    6343,
+    4.61,
+    12.1,
+    12.1
+   ],
+   [
+    195,
+    6383,
+    4.61,
+    12.1,
+    12.1
+   ],
+   [
+    196,
+    6431,
+    3.96,
+    null,
+    null
+   ],
+   [
+    197,
+    6444,
+    3.96,
+    null,
+    null
+   ],
+   [
+    198,
+    6473,
+    3.96,
+    null,
+    null
+   ],
+   [
+    199,
+    6509,
+    3.3,
+    null,
+    null
+   ],
+   [
+    200,
+    6536,
+    3.3,
+    null,
+    null
+   ],
+   [
+    201,
+    6569,
+    3.3,
+    null,
+    null
+   ],
+   [
+    202,
+    6603,
+    2.67,
+    null,
+    null
+   ],
+   [
+    203,
+    6638,
+    2.67,
+    null,
+    null
+   ],
+   [
+    204,
+    6671,
+    2.67,
+    null,
+    null
+   ],
+   [
+    205,
+    6704,
+    2.04,
+    null,
+    null
+   ],
+   [
+    206,
+    6739,
+    2.04,
+    null,
+    null
+   ],
+   [
+    207,
+    6769,
+    1.43,
+    5.25,
+    5.25
+   ],
+   [
+    208,
+    6797,
+    1.44,
+    null,
+    null
+   ],
+   [
+    209,
+    6828,
+    1.44,
+    null,
+    null
+   ],
+   [
+    210,
+    6847,
+    1.44,
+    null,
+    null
+   ],
+   [
+    211,
+    6884,
+    0.8,
+    4.68,
+    4.68
+   ],
+   [
+    212,
+    6898,
+    0.8,
+    4.68,
+    4.68
+   ],
+   [
+    213,
+    6927,
+    0.8,
+    4.68,
+    4.68
+   ],
+   [
+    214,
+    6960,
+    0.8,
+    4.68,
+    4.68
+   ],
+   [
+    215,
+    6995,
+    0.24,
+    null,
+    null
+   ],
+   [
+    216,
+    7022,
+    0.24,
+    null,
+    null
+   ],
+   [
+    217,
+    7055,
+    0.24,
+    null,
+    null
+   ],
+   [
+    218,
+    7093,
+    0.24,
+    null,
+    null
+   ],
+   [
+    219,
+    7151,
+    0.26,
+    null,
+    null
+   ],
+   [
+    220,
+    7197,
+    0.26,
+    null,
+    null
+   ],
+   [
+    221,
+    7206,
+    0.26,
+    null,
+    null
+   ],
+   [
+    222,
+    7262,
+    0.28,
+    null,
+    null
+   ],
+   [
+    223,
+    7299,
+    0.28,
+    null,
+    null
+   ],
+   [
+    224,
+    7355,
+    0.9,
+    null,
+    null
+   ],
+   [
+    225,
+    7381,
+    0.9,
+    null,
+    null
+   ],
+   [
+    226,
+    7391,
+    0.9,
+    null,
+    null
+   ],
+   [
+    227,
+    7438,
+    0.9,
+    null,
+    null
+   ],
+   [
+    228,
+    7450,
+    0.9,
+    null,
+    null
+   ],
+   [
+    229,
+    7476,
+    0.9,
+    null,
+    null
+   ],
+   [
+    230,
+    7488,
+    0.9,
+    null,
+    null
+   ],
+   [
+    231,
+    7502,
+    0.9,
+    null,
+    null
+   ],
+   [
+    232,
+    7530,
+    0.95,
+    1.85,
+    1.86
+   ],
+   [
+    233,
+    7549,
+    0.95,
+    1.85,
+    1.86
+   ],
+   [
+    234,
+    7552,
+    0.95,
+    1.85,
+    1.86
+   ],
+   [
+    235,
+    7574,
+    0.95,
+    null,
+    null
+   ],
+   [
+    236,
+    7600,
+    0.95,
+    null,
+    null
+   ],
+   [
+    237,
+    7630,
+    0.95,
+    null,
+    null
+   ],
+   [
+    238,
+    7657,
+    0.95,
+    null,
+    null
+   ],
+   [
+    239,
+    7687,
+    0.95,
+    null,
+    null
+   ],
+   [
+    240,
+    7704,
+    0.95,
+    null,
+    null
+   ],
+   [
+    241,
+    7707,
+    0.95,
+    null,
+    null
+   ],
+   [
+    242,
+    7713,
+    0.95,
+    null,
+    null
+   ],
+   [
+    243,
+    7722,
+    0.95,
+    null,
+    null
+   ],
+   [
+    244,
+    7729,
+    0.95,
+    null,
+    null
+   ],
+   [
+    245,
+    7733,
+    0.95,
+    null,
+    null
+   ],
+   [
+    246,
+    7743,
+    0.95,
+    null,
+    null
+   ],
+   [
+    247,
+    7749,
+    0.99,
+    null,
+    null
+   ],
+   [
+    248,
+    7753,
+    0.99,
+    null,
+    null
+   ],
+   [
+    249,
+    7760,
+    0.99,
+    null,
+    null
+   ],
+   [
+    250,
+    7770,
+    0.99,
+    null,
+    null
+   ],
+   [
+    251,
+    7777,
+    0.99,
+    null,
+    null
+   ],
+   [
+    252,
+    7783,
+    0.99,
+    null,
+    null
+   ],
+   [
+    253,
+    7790,
+    0.99,
+    null,
+    null
+   ],
+   [
+    254,
+    7799,
+    0.99,
+    null,
+    null
+   ],
+   [
+    255,
+    7848,
+    0.99,
+    null,
+    null
+   ],
+   [
+    256,
+    7893,
+    1.03,
+    3.56,
+    3.58
+   ],
+   [
+    257,
+    7926,
+    1.03,
+    null,
+    null
+   ],
+   [
+    258,
+    7942,
+    1.03,
+    null,
+    null
+   ],
+   [
+    259,
+    7950,
+    1.03,
+    null,
+    null
+   ],
+   [
+    260,
+    7960,
+    1.03,
+    null,
+    null
+   ],
+   [
+    261,
+    7972,
+    1.03,
+    null,
+    null
+   ],
+   [
+    262,
+    7982,
+    1.03,
+    null,
+    null
+   ],
+   [
+    263,
+    7992,
+    1.03,
+    null,
+    null
+   ],
+   [
+    264,
+    8007,
+    1.06,
+    null,
+    null
+   ],
+   [
+    265,
+    8031,
+    1.06,
+    null,
+    null
+   ],
+   [
+    266,
+    8060,
+    1.06,
+    null,
+    null
+   ],
+   [
+    267,
+    8127,
+    1.1,
+    null,
+    null
+   ],
+   [
+    268,
+    8148,
+    1.1,
+    null,
+    null
+   ],
+   [
+    269,
+    8170,
+    1.1,
+    null,
+    null
+   ],
+   [
+    270,
+    8194,
+    1.1,
+    null,
+    null
+   ],
+   [
+    271,
+    8229,
+    1.12,
+    3.14,
+    3.15
+   ],
+   [
+    272,
+    8256,
+    1.12,
+    3.14,
+    3.15
+   ],
+   [
+    273,
+    8297,
+    1.85,
+    null,
+    null
+   ],
+   [
+    274,
+    8349,
+    1.85,
+    2.57,
+    2.58
+   ],
+   [
+    275,
+    8380,
+    1.85,
+    2.57,
+    2.58
+   ],
+   [
+    276,
+    8401,
+    2.47,
+    2.59,
+    2.6
+   ],
+   [
+    277,
+    8433,
+    2.47,
+    2.59,
+    2.6
+   ],
+   [
+    278,
+    8442,
+    2.47,
+    2.59,
+    2.6
+   ],
+   [
+    279,
+    8449,
+    2.47,
+    2.59,
+    2.6
+   ],
+   [
+    280,
+    8482,
+    2.49,
+    2.63,
+    2.64
+   ],
+   [
+    281,
+    8512,
+    2.49,
+    2.63,
+    2.64
+   ],
+   [
+    282,
+    8533,
+    2.49,
+    2.63,
+    2.64
+   ],
+   [
+    283,
+    8545,
+    2.49,
+    2.63,
+    2.64
+   ],
+   [
+    284,
+    8567,
+    2.51,
+    2.65,
+    2.66
+   ],
+   [
+    285,
+    8577,
+    2.51,
+    2.65,
+    2.66
+   ],
+   [
+    286,
+    8613,
+    2.51,
+    2.65,
+    2.66
+   ],
+   [
+    287,
+    8643,
+    2.51,
+    3.23,
+    3.24
+   ],
+   [
+    288,
+    8698,
+    2.53,
+    3.26,
+    3.27
+   ],
+   [
+    289,
+    8728,
+    2.53,
+    3.26,
+    3.27
+   ],
+   [
+    290,
+    8748,
+    2.53,
+    3.26,
+    3.27
+   ],
+   [
+    291,
+    8779,
+    2.55,
+    null,
+    null
+   ],
+   [
+    292,
+    8819,
+    2.55,
+    null,
+    null
+   ],
+   [
+    293,
+    8859,
+    2.57,
+    3.34,
+    3.35
+   ],
+   [
+    294,
+    8888,
+    2.57,
+    3.57,
+    3.58
+   ],
+   [
+    295,
+    8898,
+    2.57,
+    3.57,
+    3.58
+   ],
+   [
+    296,
+    8917,
+    2.57,
+    3.57,
+    3.58
+   ],
+   [
+    297,
+    8945,
+    2.57,
+    3.57,
+    3.58
+   ],
+   [
+    298,
+    8988,
+    2.59,
+    null,
+    null
+   ],
+   [
+    299,
+    9071,
+    2.63,
+    null,
+    null
+   ],
+   [
+    300,
+    9131,
+    2.63,
+    null,
+    null
+   ],
+   [
+    301,
+    9150,
+    2.65,
+    4.32,
+    4.33
+   ],
+   [
+    302,
+    9182,
+    2.65,
+    6.14,
+    6.15
+   ],
+   [
+    303,
+    9212,
+    2.65,
+    6.14,
+    6.15
+   ],
+   [
+    304,
+    9232,
+    2.65,
+    6.14,
+    6.15
+   ],
+   [
+    305,
+    9253,
+    2.68,
+    null,
+    null
+   ],
+   [
+    306,
+    9302,
+    2.68,
+    null,
+    null
+   ],
+   [
+    307,
+    9324,
+    2.68,
+    null,
+    null
+   ],
+   [
+    308,
+    9335,
+    2.68,
+    null,
+    null
+   ],
+   [
+    309,
+    9349,
+    2.7,
+    5.36,
+    5.37
+   ],
+   [
+    310,
+    9357,
+    2.7,
+    null,
+    null
+   ],
+   [
+    311,
+    9445,
+    2.7,
+    null,
+    null
+   ],
+   [
+    312,
+    9474,
+    2.72,
+    6.45,
+    6.45
+   ],
+   [
+    313,
+    9503,
+    2.72,
+    6.45,
+    6.45
+   ],
+   [
+    314,
+    9564,
+    2.74,
+    null,
+    null
+   ],
+   [
+    315,
+    9570,
+    2.74,
+    null,
+    null
+   ],
+   [
+    316,
+    9613,
+    2.74,
+    null,
+    null
+   ],
+   [
+    317,
+    9647,
+    2.74,
+    null,
+    null
+   ],
+   [
+    318,
+    9672,
+    2.76,
+    6.71,
+    6.71
+   ],
+   [
+    319,
+    9702,
+    2.76,
+    6.71,
+    6.71
+   ],
+   [
+    320,
+    9805,
+    2.8,
+    null,
+    null
+   ],
+   [
+    321,
+    9914,
+    2.83,
+    6.46,
+    6.46
+   ],
+   [
+    322,
+    10120,
+    3.28,
+    6.75,
+    6.75
+   ],
+   [
+    323,
+    10143,
+    3.28,
+    6.75,
+    6.75
+   ],
+   [
+    324,
+    10172,
+    3.93,
+    6.08,
+    6.08
+   ],
+   [
+    325,
+    10202,
+    3.93,
+    6.08,
+    6.08
+   ],
+   [
+    326,
+    10233,
+    3.93,
+    6.08,
+    6.08
+   ],
+   [
+    327,
+    10263,
+    3.93,
+    null,
+    null
+   ],
+   [
+    328,
+    10418,
+    3.93,
+    null,
+    null
+   ],
+   [
+    329,
+    10566,
+    3.93,
+    null,
+    null
+   ],
+   [
+    330,
+    10578,
+    3.93,
+    null,
+    null
+   ],
+   [
+    331,
+    10621,
+    3.93,
+    null,
+    null
+   ],
+   [
+    332,
+    10650,
+    3.41,
+    6.56,
+    6.56
+   ],
+   [
+    333,
+    10706,
+    3.41,
+    6.56,
+    6.56
+   ],
+   [
+    334,
+    10763,
+    3.05,
+    null,
+    null
+   ],
+   [
+    335,
+    10806,
+    3.05,
+    null,
+    null
+   ],
+   [
+    336,
+    10807,
+    3.05,
+    null,
+    null
+   ],
+   [
+    337,
+    10835,
+    3.05,
+    null,
+    null
+   ],
+   [
+    338,
+    10951,
+    3.05,
+    5.05,
+    5.07
+   ],
+   [
+    339,
+    10975,
+    3.07,
+    5.01,
+    5.02
+   ],
+   [
+    340,
+    10999,
+    3.07,
+    5.01,
+    5.02
+   ],
+   [
+    341,
+    11034,
+    3.07,
+    4.51,
+    4.52
+   ],
+   [
+    342,
+    11107,
+    3.07,
+    4.51,
+    4.52
+   ],
+   [
+    343,
+    11193,
+    3.07,
+    4.07,
+    4.08
+   ],
+   [
+    344,
+    11271,
+    3.07,
+    3.59,
+    3.61
+   ],
+   [
+    345,
+    11372,
+    3.07,
+    4.24,
+    4.25
+   ],
+   [
+    346,
+    11624,
+    3.0,
+    4.23,
+    4.25
+   ],
+   [
+    347,
+    11877,
+    2.93,
+    3.07,
+    3.08
+   ]
+  ]
+ },
+ "graph_search_ingress": {
+  "nodes": 33459,
+  "edges": 44644,
+  "note": "earliest-arrival Dijkstra over EVERY road (dispatch only ever evaluates the single A* fastest route)",
+  "unconstrained_min": {
+   "2": 9.4,
+   "3": 9.4,
+   "1": 9.9,
+   "0": 13.3
+  },
+  "constrained_margin30": {
+   "2": 10.7,
+   "1": 11.2,
+   "0": 14.6
+  },
+  "constrained_margin15": {
+   "2": 10.7,
+   "1": 11.2,
+   "0": 14.6
+  },
+  "constrained_margin0": {
+   "2": 9.4,
+   "3": 9.5,
+   "1": 10.0,
+   "0": 13.4
+  },
+  "constrained_erosion250_margin30": {
+   "2": 9.4,
+   "3": 9.5,
+   "1": 10.0,
+   "0": 13.4
+  },
+  "constrained_erosion0_margin30": {
+   "2": 9.4,
+   "3": 9.5,
+   "1": 10.0,
+   "0": 13.4
+  },
+  "nodes_reached_constrained": 33316
+ },
+ "graph_search_egress_home1": {
+  "depart_h": 0.491,
+  "zone_ids": [
+   "boulder_co-z1",
+   "boulder_co-z2",
+   "boulder_co-z3"
+  ],
+  "constrained_arrival_min": {
+   "0": 15.8,
+   "2": 17.2,
+   "1": 18.3
+  },
+  "constrained_erosion0_arrival_min": {
+   "0": 14.2,
+   "2": 17.2,
+   "1": 18.3
+  }
+ },
+ "sensitivity": [
+  {
+   "label": "baseline_certain_d15",
+   "deploy": 15.0,
+   "extra": {},
+   "crew_staged": false,
+   "coated": 0,
+   "coated_ids": [],
+   "violations": 0,
+   "overruns": 0,
+   "unserved_tick1": [
+    {
+     "client": "sim-c1",
+     "reason": "no_safe_corridor"
+    },
+    {
+     "client": "sim-c2",
+     "reason": "no_safe_corridor"
+    },
+    {
+     "client": "sim-c3",
+     "reason": "no_safe_corridor"
+    },
+    {
+     "client": "sim-c4",
+     "reason": "no_safe_corridor"
+    }
+   ],
+   "unserved_final": [
+    {
+     "client": "sim-c1",
+     "reason": "infeasible_deadline"
+    },
+    {
+     "client": "sim-c2",
+     "reason": "infeasible_deadline"
+    },
+    {
+     "client": "sim-c3",
+     "reason": "infeasible_deadline"
+    },
+    {
+     "client": "sim-c4",
+     "reason": "infeasible_deadline"
+    }
+   ],
+   "outcomes": {
+    "sim-c1": "abandoned_unsavable",
+    "sim-c2": "abandoned_unsavable",
+    "sim-c3": "abandoned_unsavable",
+    "sim-c4": "abandoned_unsavable"
+   }
+  },
+  {
+   "label": "margin_roads_15",
+   "deploy": 15.0,
+   "extra": {
+    "route_margin_roads_min": 15.0
+   },
+   "crew_staged": false,
+   "coated": 0,
+   "coated_ids": [],
+   "violations": 0,
+   "overruns": 0,
+   "unserved_tick1": [
+    {
+     "client": "sim-c1",
+     "reason": "no_safe_corridor"
+    },
+    {
+     "client": "sim-c2",
+     "reason": "no_safe_corridor"
+    },
+    {
+     "client": "sim-c3",
+     "reason": "no_safe_corridor"
+    },
+    {
+     "client": "sim-c4",
+     "reason": "no_safe_corridor"
+    }
+   ],
+   "unserved_final": [
+    {
+     "client": "sim-c1",
+     "reason": "infeasible_deadline"
+    },
+    {
+     "client": "sim-c2",
+     "reason": "infeasible_deadline"
+    },
+    {
+     "client": "sim-c3",
+     "reason": "infeasible_deadline"
+    },
+    {
+     "client": "sim-c4",
+     "reason": "infeasible_deadline"
+    }
+   ],
+   "outcomes": {
+    "sim-c1": "abandoned_unsavable",
+    "sim-c2": "abandoned_unsavable",
+    "sim-c3": "abandoned_unsavable",
+    "sim-c4": "abandoned_unsavable"
+   }
+  },
+  {
+   "label": "margin_roads_0",
+   "deploy": 15.0,
+   "extra": {
+    "route_margin_roads_min": 0.0
+   },
+   "crew_staged": false,
+   "coated": 3,
+   "coated_ids": [
+    "sim-c1",
+    "sim-c2",
+    "sim-c3"
+   ],
+   "violations": 0,
+   "overruns": 0,
+   "unserved_tick1": [
+    {
+     "client": "sim-c1",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c2",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c3",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c4",
+     "reason": "no_safe_egress"
+    }
+   ],
+   "unserved_final": [
+    {
+     "client": "sim-c4",
+     "reason": "infeasible_deadline"
+    }
+   ],
+   "outcomes": {
+    "sim-c1": "protected_then_impacted",
+    "sim-c2": "protected_then_impacted",
+    "sim-c3": "protected_then_impacted",
+    "sim-c4": "abandoned_unsavable"
+   }
+  },
+  {
+   "label": "erosion_250",
+   "deploy": 15.0,
+   "extra": {
+    "corridor_erosion_m": 250.0
+   },
+   "crew_staged": false,
+   "coated": 3,
+   "coated_ids": [
+    "sim-c1",
+    "sim-c2",
+    "sim-c3"
+   ],
+   "violations": 0,
+   "overruns": 0,
+   "unserved_tick1": [
+    {
+     "client": "sim-c1",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c2",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c3",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c4",
+     "reason": "no_safe_egress"
+    }
+   ],
+   "unserved_final": [
+    {
+     "client": "sim-c4",
+     "reason": "infeasible_deadline"
+    }
+   ],
+   "outcomes": {
+    "sim-c1": "protected_then_impacted",
+    "sim-c2": "protected_then_impacted",
+    "sim-c3": "protected_then_impacted",
+    "sim-c4": "abandoned_unsavable"
+   }
+  },
+  {
+   "label": "erosion_0",
+   "deploy": 15.0,
+   "extra": {
+    "corridor_erosion_m": 0.0
+   },
+   "crew_staged": false,
+   "coated": 4,
+   "coated_ids": [
+    "sim-c1",
+    "sim-c2",
+    "sim-c3",
+    "sim-c4"
+   ],
+   "violations": 0,
+   "overruns": 0,
+   "unserved_tick1": [
+    {
+     "client": "sim-c1",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c2",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c3",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c4",
+     "reason": "in_progress"
+    }
+   ],
+   "unserved_final": [],
+   "outcomes": {
+    "sim-c1": "protected_then_impacted",
+    "sim-c2": "protected_then_impacted",
+    "sim-c3": "protected_then_impacted",
+    "sim-c4": "protected_then_impacted"
+   }
+  },
+  {
+   "label": "erosion_0_margin_15",
+   "deploy": 15.0,
+   "extra": {
+    "corridor_erosion_m": 0.0,
+    "route_margin_roads_min": 15.0
+   },
+   "crew_staged": false,
+   "coated": 4,
+   "coated_ids": [
+    "sim-c1",
+    "sim-c2",
+    "sim-c3",
+    "sim-c4"
+   ],
+   "violations": 0,
+   "overruns": 0,
+   "unserved_tick1": [
+    {
+     "client": "sim-c1",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c2",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c3",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c4",
+     "reason": "in_progress"
+    }
+   ],
+   "unserved_final": [],
+   "outcomes": {
+    "sim-c1": "protected_then_impacted",
+    "sim-c2": "protected_then_impacted",
+    "sim-c3": "protected_then_impacted",
+    "sim-c4": "protected_then_impacted"
+   }
+  },
+  {
+   "label": "staged_at_home1",
+   "deploy": 15.0,
+   "extra": {},
+   "crew_staged": true,
+   "coated": 3,
+   "coated_ids": [
+    "sim-c1",
+    "sim-c2",
+    "sim-c3"
+   ],
+   "violations": 0,
+   "overruns": 0,
+   "unserved_tick1": [
+    {
+     "client": "sim-c1",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c2",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c3",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c4",
+     "reason": "no_safe_corridor"
+    }
+   ],
+   "unserved_final": [
+    {
+     "client": "sim-c4",
+     "reason": "infeasible_deadline"
+    }
+   ],
+   "outcomes": {
+    "sim-c1": "protected_then_impacted",
+    "sim-c2": "protected_then_impacted",
+    "sim-c3": "protected_then_impacted",
+    "sim-c4": "abandoned_unsavable"
+   }
+  },
+  {
+   "label": "staged_at_home1_erosion_0",
+   "deploy": 15.0,
+   "extra": {
+    "corridor_erosion_m": 0.0
+   },
+   "crew_staged": true,
+   "coated": 4,
+   "coated_ids": [
+    "sim-c1",
+    "sim-c2",
+    "sim-c3",
+    "sim-c4"
+   ],
+   "violations": 0,
+   "overruns": 0,
+   "unserved_tick1": [
+    {
+     "client": "sim-c1",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c2",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c3",
+     "reason": "in_progress"
+    },
+    {
+     "client": "sim-c4",
+     "reason": "in_progress"
+    }
+   ],
+   "unserved_final": [],
+   "outcomes": {
+    "sim-c1": "protected_then_impacted",
+    "sim-c2": "protected_then_impacted",
+    "sim-c3": "protected_then_impacted",
+    "sim-c4": "protected_then_impacted"
+   }
+  }
+ ]
+}

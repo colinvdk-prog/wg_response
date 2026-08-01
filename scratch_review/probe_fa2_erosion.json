@@ -1,0 +1,472 @@
+{
+ "fire": {
+  "map_center": [
+   39.955,
+   -105.16
+  ],
+  "hazard_wind_dir_deg": 270.0,
+  "requested_ignition": [
+   39.95496,
+   -105.25386
+  ],
+  "fire_origin": [
+   39.95496,
+   -105.25386
+  ],
+  "km_ignition_to_home": [
+   4.19,
+   3.11,
+   2.39,
+   1.7
+  ],
+  "t0": 1790000000.0,
+  "now": 1790000000.0
+ },
+ "p10_field": {
+  "cells_total": 40000,
+  "cell_m": 90.0,
+  "nrows": 200,
+  "ncols": 200,
+  "finite_cells": 12437,
+  "min_h": 0.0,
+  "min_cell": {
+   "r": 99,
+   "c": 10,
+   "lat": 39.9554,
+   "lon": -105.2544
+  },
+  "pct_of_finite_under_0_5h": 0.12,
+  "n_under_0_5h": 15,
+  "p10_equals_truth": false,
+  "blob_under_0_30h_n": 15,
+  "blob_sample": [
+   {
+    "r": 99,
+    "c": 10,
+    "lat": 39.9554,
+    "lon": -105.2544,
+    "h": 0.0
+   },
+   {
+    "r": 99,
+    "c": 11,
+    "lat": 39.9554,
+    "lon": -105.25334,
+    "h": 0.02
+   },
+   {
+    "r": 99,
+    "c": 12,
+    "lat": 39.9554,
+    "lon": -105.25229,
+    "h": 0.04
+   },
+   {
+    "r": 99,
+    "c": 13,
+    "lat": 39.9554,
+    "lon": -105.25123,
+    "h": 0.06
+   },
+   {
+    "r": 99,
+    "c": 14,
+    "lat": 39.9554,
+    "lon": -105.25018,
+    "h": 0.08
+   },
+   {
+    "r": 99,
+    "c": 15,
+    "lat": 39.9554,
+    "lon": -105.24912,
+    "h": 0.1
+   },
+   {
+    "r": 99,
+    "c": 16,
+    "lat": 39.9554,
+    "lon": -105.24807,
+    "h": 0.12
+   },
+   {
+    "r": 99,
+    "c": 17,
+    "lat": 39.9554,
+    "lon": -105.24701,
+    "h": 0.14
+   },
+   {
+    "r": 99,
+    "c": 18,
+    "lat": 39.9554,
+    "lon": -105.24596,
+    "h": 0.16
+   },
+   {
+    "r": 99,
+    "c": 19,
+    "lat": 39.9554,
+    "lon": -105.2449,
+    "h": 0.18
+   },
+   {
+    "r": 99,
+    "c": 20,
+    "lat": 39.9554,
+    "lon": -105.24385,
+    "h": 0.2
+   },
+   {
+    "r": 99,
+    "c": 21,
+    "lat": 39.9554,
+    "lon": -105.24279,
+    "h": 0.22
+   }
+  ],
+  "blob_km_to_home4": 0.584,
+  "blob_km_to_ignition": 0.066
+ },
+ "erosion_sources": {
+  "mid_route_shared": {
+   "500.0": {
+    "eroded_h": 0.24,
+    "src_cell": {
+     "r": 99,
+     "c": 22,
+     "h": 0.24,
+     "dist_m": 757,
+     "dr": 5,
+     "dc": -6
+    }
+   },
+   "250.0": {
+    "eroded_h": 2.092,
+    "src_cell": {
+     "r": 97,
+     "c": 30,
+     "h": 1.788,
+     "dist_m": 337,
+     "dr": 3,
+     "dc": 2
+    }
+   },
+   "90.0": {
+    "eroded_h": 3.422,
+    "src_cell": {
+     "r": 95,
+     "c": 27,
+     "h": 2.741,
+     "dist_m": 182,
+     "dr": 1,
+     "dc": -1
+    }
+   },
+   "0.0": {
+    "eroded_h": null,
+    "src_cell": {
+     "r": 94,
+     "c": 28,
+     "h": null,
+     "dist_m": 55,
+     "dr": 0,
+     "dc": 0
+    }
+   },
+   "own_cell_h": null
+  },
+  "mid_route_shared2": {
+   "500.0": {
+    "eroded_h": 0.24,
+    "src_cell": {
+     "r": 99,
+     "c": 22,
+     "h": 0.24,
+     "dist_m": 760,
+     "dr": 6,
+     "dc": -6
+    }
+   },
+   "250.0": {
+    "eroded_h": 2.092,
+    "src_cell": {
+     "r": 96,
+     "c": 25,
+     "h": 2.092,
+     "dist_m": 379,
+     "dr": 3,
+     "dc": -3
+    }
+   },
+   "90.0": {
+    "eroded_h": 3.422,
+    "src_cell": {
+     "r": 94,
+     "c": 27,
+     "h": 3.422,
+     "dist_m": 128,
+     "dr": 1,
+     "dc": -1
+    }
+   },
+   "0.0": {
+    "eroded_h": null,
+    "src_cell": {
+     "r": 93,
+     "c": 28,
+     "h": null,
+     "dist_m": 33,
+     "dr": 0,
+     "dc": 0
+    }
+   },
+   "own_cell_h": null
+  },
+  "at_home4_spur": {
+   "500.0": {
+    "eroded_h": 0.24,
+    "src_cell": {
+     "r": 99,
+     "c": 22,
+     "h": 0.24,
+     "dist_m": 701,
+     "dr": -5,
+     "dc": -6
+    }
+   },
+   "250.0": {
+    "eroded_h": 0.898,
+    "src_cell": {
+     "r": 101,
+     "c": 25,
+     "h": 1.476,
+     "dist_m": 377,
+     "dr": -3,
+     "dc": -3
+    }
+   },
+   "90.0": {
+    "eroded_h": 2.11,
+    "src_cell": {
+     "r": 103,
+     "c": 29,
+     "h": 3.116,
+     "dist_m": 73,
+     "dr": -1,
+     "dc": 1
+    }
+   },
+   "0.0": {
+    "eroded_h": 3.782,
+    "src_cell": {
+     "r": 104,
+     "c": 28,
+     "h": null,
+     "dist_m": 55,
+     "dr": 0,
+     "dc": 0
+    }
+   },
+   "own_cell_h": 3.782
+  },
+  "home4_itself": {
+   "500.0": {
+    "eroded_h": 0.264,
+    "src_cell": {
+     "r": 99,
+     "c": 23,
+     "h": 0.264,
+     "dist_m": 656,
+     "dr": -4,
+     "dc": -6
+    }
+   },
+   "250.0": {
+    "eroded_h": 1.496,
+    "src_cell": {
+     "r": 101,
+     "c": 26,
+     "h": 1.496,
+     "dist_m": 332,
+     "dr": -2,
+     "dc": -3
+    }
+   },
+   "90.0": {
+    "eroded_h": 2.15,
+    "src_cell": {
+     "r": 102,
+     "c": 28,
+     "h": 2.15,
+     "dist_m": 137,
+     "dr": -1,
+     "dc": -1
+    }
+   },
+   "0.0": {
+    "eroded_h": 3.116,
+    "src_cell": {
+     "r": 103,
+     "c": 29,
+     "h": 3.116,
+     "dist_m": 11,
+     "dr": 0,
+     "dc": 0
+    }
+   },
+   "own_cell_h": 3.116
+  },
+  "home1_itself": {
+   "500.0": {
+    "eroded_h": 2.931,
+    "src_cell": {
+     "r": 100,
+     "c": 51,
+     "h": 2.931,
+     "dist_m": 545,
+     "dr": 0,
+     "dc": -6
+    }
+   },
+   "250.0": {
+    "eroded_h": 3.002,
+    "src_cell": {
+     "r": 100,
+     "c": 54,
+     "h": 3.002,
+     "dist_m": 276,
+     "dr": 0,
+     "dc": -3
+    }
+   },
+   "90.0": {
+    "eroded_h": 3.047,
+    "src_cell": {
+     "r": 100,
+     "c": 56,
+     "h": 3.047,
+     "dist_m": 96,
+     "dr": 0,
+     "dc": -1
+    }
+   },
+   "0.0": {
+    "eroded_h": 3.068,
+    "src_cell": {
+     "r": 100,
+     "c": 57,
+     "h": 3.068,
+     "dist_m": 12,
+     "dr": 0,
+     "dc": 0
+    }
+   },
+   "own_cell_h": 3.068
+  },
+  "home2_itself": {
+   "500.0": {
+    "eroded_h": 2.589,
+    "src_cell": {
+     "r": 100,
+     "c": 39,
+     "h": 2.589,
+     "dist_m": 550,
+     "dr": 1,
+     "dc": -6
+    }
+   },
+   "250.0": {
+    "eroded_h": 2.678,
+    "src_cell": {
+     "r": 100,
+     "c": 42,
+     "h": 2.678,
+     "dist_m": 286,
+     "dr": 1,
+     "dc": -3
+    }
+   },
+   "90.0": {
+    "eroded_h": 2.719,
+    "src_cell": {
+     "r": 100,
+     "c": 44,
+     "h": 2.719,
+     "dist_m": 124,
+     "dr": 1,
+     "dc": -1
+    }
+   },
+   "0.0": {
+    "eroded_h": 3.152,
+    "src_cell": {
+     "r": 99,
+     "c": 45,
+     "h": 3.152,
+     "dist_m": 11,
+     "dr": 0,
+     "dc": 0
+    }
+   },
+   "own_cell_h": 3.152
+  },
+  "home3_itself": {
+   "500.0": {
+    "eroded_h": 1.119,
+    "src_cell": {
+     "r": 98,
+     "c": 31,
+     "h": 1.119,
+     "dist_m": 552,
+     "dr": -1,
+     "dc": -6
+    }
+   },
+   "250.0": {
+    "eroded_h": 2.489,
+    "src_cell": {
+     "r": 100,
+     "c": 34,
+     "h": 2.489,
+     "dist_m": 285,
+     "dr": 1,
+     "dc": -3
+    }
+   },
+   "90.0": {
+    "eroded_h": 2.529,
+    "src_cell": {
+     "r": 100,
+     "c": 36,
+     "h": 2.529,
+     "dist_m": 123,
+     "dr": 1,
+     "dc": -1
+    }
+   },
+   "0.0": {
+    "eroded_h": 3.136,
+    "src_cell": {
+     "r": 99,
+     "c": 37,
+     "h": 3.136,
+     "dist_m": 11,
+     "dr": 0,
+     "dc": 0
+    }
+   },
+   "own_cell_h": 3.136
+  }
+ },
+ "erosion_geometry": {
+  "radius_m": 500.0,
+  "cell_m": 90.0,
+  "k_cells": 6,
+  "chebyshev_half_width_m": 540.0,
+  "chebyshev_corner_reach_m": 763.7,
+  "over_reach_vs_radius_m": 263.7,
+  "window_cells": 169,
+  "note": "safety._erode_min_local uses a SQUARE Chebyshev window of ceil(radius/cell) cells: a 500 m radius reaches 764 m into the corners, 1.53x the stated radius, over 169 cells"
+ }
+}

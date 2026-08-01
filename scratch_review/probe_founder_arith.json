@@ -1,0 +1,334 @@
+[
+ {
+  "mode": "certain",
+  "deploy": 30.0,
+  "homes_span_m": 2535,
+  "truth_arrival_h": [
+   3.08,
+   3.16,
+   3.15,
+   3.12
+  ],
+  "tick1": [
+   {
+    "client": "sim-c1",
+    "p10_h": 3.07,
+    "p50_h": 3.08,
+    "service_window_min_at_tick1": 109.2
+   },
+   {
+    "client": "sim-c2",
+    "p10_h": 3.15,
+    "p50_h": 3.16,
+    "service_window_min_at_tick1": 114.0
+   },
+   {
+    "client": "sim-c3",
+    "p10_h": 3.14,
+    "p50_h": 3.15,
+    "service_window_min_at_tick1": 113.4
+   },
+   {
+    "client": "sim-c4",
+    "p10_h": 3.12,
+    "p50_h": 3.12,
+    "service_window_min_at_tick1": 112.2
+   }
+  ],
+  "unserved_tick1": [
+   {
+    "client": "sim-c1",
+    "reason": "no_safe_corridor"
+   },
+   {
+    "client": "sim-c2",
+    "reason": "no_safe_corridor"
+   },
+   {
+    "client": "sim-c3",
+    "reason": "no_safe_corridor"
+   },
+   {
+    "client": "sim-c4",
+    "reason": "no_safe_corridor"
+   }
+  ],
+  "crew_depot_to_homes_km": 7.25,
+  "coated": 0,
+  "coated_ids": [],
+  "violations": 0,
+  "outcomes": {
+   "sim-c1": "abandoned_unsavable",
+   "sim-c2": "abandoned_unsavable",
+   "sim-c3": "abandoned_unsavable",
+   "sim-c4": "abandoned_unsavable"
+  },
+  "unserved_final": [
+   {
+    "client": "sim-c1",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c2",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c3",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c4",
+    "reason": "infeasible_deadline"
+   }
+  ]
+ },
+ {
+  "mode": "certain",
+  "deploy": 15.0,
+  "homes_span_m": 2535,
+  "truth_arrival_h": [
+   3.08,
+   3.16,
+   3.15,
+   3.12
+  ],
+  "tick1": [
+   {
+    "client": "sim-c1",
+    "p10_h": 3.07,
+    "p50_h": 3.08,
+    "service_window_min_at_tick1": 124.2
+   },
+   {
+    "client": "sim-c2",
+    "p10_h": 3.15,
+    "p50_h": 3.16,
+    "service_window_min_at_tick1": 129.0
+   },
+   {
+    "client": "sim-c3",
+    "p10_h": 3.14,
+    "p50_h": 3.15,
+    "service_window_min_at_tick1": 128.4
+   },
+   {
+    "client": "sim-c4",
+    "p10_h": 3.12,
+    "p50_h": 3.12,
+    "service_window_min_at_tick1": 127.2
+   }
+  ],
+  "unserved_tick1": [
+   {
+    "client": "sim-c1",
+    "reason": "no_safe_corridor"
+   },
+   {
+    "client": "sim-c2",
+    "reason": "no_safe_corridor"
+   },
+   {
+    "client": "sim-c3",
+    "reason": "no_safe_corridor"
+   },
+   {
+    "client": "sim-c4",
+    "reason": "no_safe_corridor"
+   }
+  ],
+  "crew_depot_to_homes_km": 7.25,
+  "coated": 0,
+  "coated_ids": [],
+  "violations": 0,
+  "outcomes": {
+   "sim-c1": "abandoned_unsavable",
+   "sim-c2": "abandoned_unsavable",
+   "sim-c3": "abandoned_unsavable",
+   "sim-c4": "abandoned_unsavable"
+  },
+  "unserved_final": [
+   {
+    "client": "sim-c1",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c2",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c3",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c4",
+    "reason": "infeasible_deadline"
+   }
+  ]
+ },
+ {
+  "mode": "real",
+  "deploy": 30.0,
+  "homes_span_m": 382,
+  "truth_arrival_h": [
+   3.05,
+   3.13,
+   2.96,
+   2.87
+  ],
+  "tick1": [
+   {
+    "client": "sim-c1",
+    "p10_h": 1.79,
+    "p50_h": 5.44,
+    "service_window_min_at_tick1": 32.4
+   },
+   {
+    "client": "sim-c2",
+    "p10_h": 1.99,
+    "p50_h": 4.71,
+    "service_window_min_at_tick1": 44.4
+   },
+   {
+    "client": "sim-c3",
+    "p10_h": 0.9,
+    "p50_h": 4.26,
+    "service_window_min_at_tick1": -21.0
+   },
+   {
+    "client": "sim-c4",
+    "p10_h": 1.02,
+    "p50_h": 4.22,
+    "service_window_min_at_tick1": -13.8
+   }
+  ],
+  "unserved_tick1": [
+   {
+    "client": "sim-c1",
+    "reason": "no_safe_corridor"
+   },
+   {
+    "client": "sim-c2",
+    "reason": "no_safe_corridor"
+   },
+   {
+    "client": "sim-c3",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c4",
+    "reason": "infeasible_deadline"
+   }
+  ],
+  "crew_depot_to_homes_km": 7.44,
+  "coated": 0,
+  "coated_ids": [],
+  "violations": 0,
+  "outcomes": {
+   "sim-c1": "abandoned_unsavable",
+   "sim-c2": "abandoned_unsavable",
+   "sim-c3": "abandoned_unsavable",
+   "sim-c4": "abandoned_unsavable"
+  },
+  "unserved_final": [
+   {
+    "client": "sim-c1",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c2",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c3",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c4",
+    "reason": "infeasible_deadline"
+   }
+  ]
+ },
+ {
+  "mode": "real",
+  "deploy": 15.0,
+  "homes_span_m": 382,
+  "truth_arrival_h": [
+   3.05,
+   3.13,
+   2.96,
+   2.87
+  ],
+  "tick1": [
+   {
+    "client": "sim-c1",
+    "p10_h": 1.79,
+    "p50_h": 5.44,
+    "service_window_min_at_tick1": 47.4
+   },
+   {
+    "client": "sim-c2",
+    "p10_h": 1.99,
+    "p50_h": 4.71,
+    "service_window_min_at_tick1": 59.4
+   },
+   {
+    "client": "sim-c3",
+    "p10_h": 0.9,
+    "p50_h": 4.26,
+    "service_window_min_at_tick1": -6.0
+   },
+   {
+    "client": "sim-c4",
+    "p10_h": 1.02,
+    "p50_h": 4.22,
+    "service_window_min_at_tick1": 1.2
+   }
+  ],
+  "unserved_tick1": [
+   {
+    "client": "sim-c1",
+    "reason": "no_safe_corridor"
+   },
+   {
+    "client": "sim-c2",
+    "reason": "no_safe_corridor"
+   },
+   {
+    "client": "sim-c3",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c4",
+    "reason": "infeasible_slack"
+   }
+  ],
+  "crew_depot_to_homes_km": 7.44,
+  "coated": 0,
+  "coated_ids": [],
+  "violations": 0,
+  "outcomes": {
+   "sim-c1": "abandoned_unsavable",
+   "sim-c2": "abandoned_unsavable",
+   "sim-c3": "abandoned_unsavable",
+   "sim-c4": "abandoned_unsavable"
+  },
+  "unserved_final": [
+   {
+    "client": "sim-c1",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c2",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c3",
+    "reason": "infeasible_deadline"
+   },
+   {
+    "client": "sim-c4",
+    "reason": "infeasible_deadline"
+   }
+  ]
+ }
+]
