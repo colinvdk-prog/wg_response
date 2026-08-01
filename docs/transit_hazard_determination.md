@@ -77,6 +77,29 @@ lengths — engine flame lengths are deliberately wind-uncapped).
    cold-black term (SH). If the split lands the other way, the model is
    wrong.
 
+## The dissection verdict (code-truth review of every recorded catch)
+
+All six reproduced caught-crew events from the two flagged scenarios
+collapse to ONE physical event, identical across repeats: a crew arriving
+via a 99.1%-real-road route (nearest road node 58 m) at a WUI-edge TL6
+timber-litter cell whose N/NE/E neighbors are urban/non-burnable, on ground
+the front had swept **73 minutes earlier** — past even the engine's own
+45-min cold-black threshold — with **6.1 seconds of further driving** to
+clear ground; the flag cleared within one 15-min tick and never recurred.
+**Classification: fire-at-roadside / edge-of-burn-scar. Zero of six show
+the entrapment signature** (heavy enclosing fuel, long audited residence,
+no viable exit). Consistent with the model's falsifiable prediction: the
+Paradise events reclassify under BOTH the flux term (TL flame ~0.7 m) and
+the per-class residence term (73 min > even the stricter 60-min TL window).
+The audit's design is nonetheless correct to report them (carve-out-free by
+doctrine); what changes is the INTERPRETATION and, once the transit model
+ships, route selection.
+
+Two process discoveries from the dissection, tracked separately:
+`solver_budget_s` is a wall-clock deadline (the measured source of
+cross-run ±1-home nondeterminism), and the caught crew reached that cell
+after ~5.5 h of per-tick escape-ray retarget churn (hysteresis fix chipped).
+
 ## Honest limits (cannot be claimed away)
 
 Smoke/visibility — historically the actual killer on evacuation roads — is
