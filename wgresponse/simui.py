@@ -1904,10 +1904,76 @@ class SimSession:
         crew falls back to the original straight tier-0 leg). Contracts law:
         roads.route itself NEVER silently pretends a road route — a
         disconnected pair comes back as the straight leg with
-        on_roads=False, which the crew follows verbatim."""
+        on_roads=False, which the crew follows verbatim.
+
+        CORRIDOR HONESTY (cfg.route_alternatives > 1): the leg resolves
+        through the candidate policy at the CURRENT clock — crews departing
+        now drive the fastest candidate that passes the corridor law today,
+        re-chosen with fresh fire state at every departure. (Crew legs use
+        the ingress rule; live egress safety is owned by the SEM-10 sweep.)"""
         if self._roads is None or self._road_graph is None:
             return None
+        if int(getattr(self._cfg, "route_alternatives", 1) or 1) > 1:
+            return self._route_choose(a, b, "ingress", self._now_s)
         return self._roads.route(self._road_graph, a, b, self._cfg)
+
+    def _corridor_clock_s(self, p: LatLon) -> float:
+        """Earliest ERODED-P10 arrival (unix s) at p across all fires — the
+        exact grids the corridor law samples; UNREACHED when no fire reaches
+        the point. Feeds route-candidate generation (roads.route_candidates
+        node_clock_fn) so 'hot' means what the law means by hot."""
+        best = UNREACHED
+        for f in self._fires.values():
+            er = self._eroded_p10(f)
+            if er is None:
+                continue
+            rc = geo.latlon_to_rc(er.spec, p)
+            if rc is None:
+                continue
+            v = er.data[rc[0] * er.spec.ncols + rc[1]]
+            if v < best:
+                best = v
+        return best
+
+    def _route_choose(self, a: LatLon, b: LatLon, mode: str,
+                      depart_s: float):
+        """CORRIDOR HONESTY route choice (contracts route_alternatives;
+        founder 2026-07-29). Generates up to 3 candidates (fastest /
+        widest-clock / avoid-hot) and judges EVERY one with the unchanged
+        LegOracle corridor law on its own polyline:
+          ingress -> the FASTEST candidate whose latest-safe-depart T* covers
+                     depart_s (deadlines still matter on the way in);
+          egress  -> the SAFEST candidate (max T*; founder rule — safety
+                     routes are chosen to be safe from fire, not for speed).
+        When nothing passes, returns the fastest candidate — the caller's
+        law then rejects it exactly as the legacy single-route planner did
+        (candidates can only ADD feasible work, never mask a violation)."""
+        cands = self._roads.route_candidates(
+            self._road_graph, a, b, self._cfg, self._corridor_clock_s)
+        if len(cands) == 1:
+            return cands[0]
+        judged = []
+        for rr in cands:
+            spd = rr.dist_m / rr.time_s if rr.time_s > 0 else None
+            tstar = UNREACHED
+            if spd:
+                for f in self._fires.values():
+                    er = self._eroded_p10(f)
+                    if er is None:
+                        continue
+                    t = safety.LegOracle(
+                        a, b, spd, er, self._cfg, path=rr.polyline,
+                        margin_min=self._cfg.route_margin_roads_min
+                    ).latest_safe_depart_s
+                    if t < tstar:
+                        tstar = t
+            judged.append((rr, tstar))
+        if mode == "egress":
+            judged.sort(key=lambda rt: (-rt[1], rt[0].time_s))
+            return judged[0][0]
+        passing = sorted((rt for rt in judged if depart_s <= rt[1]),
+                         key=lambda rt: rt[0].time_s)
+        return passing[0][0] if passing else cands[0]
 
     def _plan_road_provider(self):
         """PLAN-ON-ROADS provider for dispatch.plan (cfg.dispatch_plan_on_roads;
@@ -1927,15 +1993,29 @@ class SimSession:
                 or self._roads is None or self._road_graph is None):
             return None
         cache = self._road_plan_cache
+        alts = int(getattr(self._cfg, "route_alternatives", 1) or 1)
 
-        def provider(a: LatLon, b: LatLon):
-            k = (round(a.lat, 3), round(a.lon, 3),
-                 round(b.lat, 3), round(b.lon, 3))
+        def provider(a: LatLon, b: LatLon, mode: str = "ingress"):
+            # CORRIDOR HONESTY: candidate choice depends on fire state and
+            # the plan clock, so the alt-mode cache key carries mode + tick
+            # time (within-plan reuse only — a stale choice must never
+            # outlive the fire state it was judged against). Legacy path
+            # keeps the original tick-free key, byte-identical.
+            if alts > 1:
+                k = (round(a.lat, 3), round(a.lon, 3),
+                     round(b.lat, 3), round(b.lon, 3), mode,
+                     round(self._now_s))
+            else:
+                k = (round(a.lat, 3), round(a.lon, 3),
+                     round(b.lat, 3), round(b.lon, 3))
             if k in cache:
                 return cache[k]
             if len(cache) >= _ROAD_PLAN_CACHE_MAX:
                 cache.clear()
-            rr = self._roads.route(self._road_graph, a, b, self._cfg)
+            if alts > 1:
+                rr = self._route_choose(a, b, mode, self._now_s)
+            else:
+                rr = self._roads.route(self._road_graph, a, b, self._cfg)
             cache[k] = rr
             return rr
 
@@ -2072,7 +2152,11 @@ class SimSession:
         if ens is None:
             return None
         if fire._eroded_src is not ens:
-            fire._eroded_p10 = geo.erode_min(ens.p10, self._cfg.corridor_erosion_m)
+            fire._eroded_p10 = geo.erode_min(
+                ens.p10, self._cfg.corridor_erosion_m,
+                shape=("euclidean"
+                       if getattr(self._cfg, "corridor_erosion_euclidean",
+                                  False) else "chebyshev"))
             fire._eroded_src = ens
         return fire._eroded_p10
 

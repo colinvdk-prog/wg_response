@@ -201,6 +201,10 @@ def main():
                     choices=("scattered", "cluster1", "cluster4", "cluster8"))
     ap.add_argument("--staging", default="default",
                     choices=("default", "near"))
+    ap.add_argument("--erosion-euclid", type=int, default=0,
+                    help="cfg.corridor_erosion_euclidean (CORRIDOR HONESTY)")
+    ap.add_argument("--route-alts", type=int, default=1,
+                    help="cfg.route_alternatives: 1 legacy, 2-3 candidates")
     ap.add_argument("--workers", type=int, default=10)
     args = ap.parse_args()
 
@@ -214,6 +218,10 @@ def main():
         cfg["dispatch_late_shift"] = False
     if args.slack is not None:
         cfg["slack_min"] = args.slack
+    if args.erosion_euclid:
+        cfg["corridor_erosion_euclidean"] = True
+    if args.route_alts and args.route_alts > 1:
+        cfg["route_alternatives"] = int(args.route_alts)
 
     scen = scenarios()
     if args.suite == "quick":
@@ -234,7 +242,9 @@ def main():
                                coat_early=args.coat_early, hold=args.hold,
                                slack=args.slack, clients=args.clients,
                                placement=args.placement,
-                               staging=args.staging),
+                               staging=args.staging,
+                               erosion_euclid=args.erosion_euclid,
+                               route_alts=args.route_alts),
                    stats=st, rows=rows)
     out = f"scratch_review/opt_ember_{args.tag}.json"
     json.dump(payload, open(out, "w"), indent=1)

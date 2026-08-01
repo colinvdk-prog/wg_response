@@ -141,6 +141,8 @@ the shipped values.
 | `egress_buffer_min` | 30.0 | Crew must be clear of the property this many minutes before **P10** arrival. |
 | `route_margin_min` | 60.0 | Margin required at every corridor sample point (minutes). |
 | `corridor_erosion_m` | 500.0 | Erosion radius applied to the P10 grid before corridor checks. |
+| `corridor_erosion_euclidean` | False | CORRIDOR HONESTY: True = true-metric disc erosion (honest radius). The legacy square window corner-reaches 1.53× the stated radius and was measured importing phantom arrivals onto road cells the fire never touches (founder-arithmetic trace 2026-07-29). Off = byte-identical legacy. |
+| `route_alternatives` | 1 | CORRIDOR HONESTY: 1 = legacy fastest-only routing. 2–3 = per-leg route candidates (fastest / widest-clock / avoid-hot) judged by the UNCHANGED corridor law; ingress adopts the fastest passing candidate, egress adopts the safest (max latest-safe-depart — founder rule: safety routes are chosen to be safe from fire, not for speed). |
 | `corridor_sample_m` | 300.0 | Sample spacing along travel legs. |
 | `ember_buffer_min` | 0.0 | Extra buffer on top of P10; default OFF, enable in wind events. |
 

@@ -174,11 +174,19 @@ def _erode_min_local(r: Raster, radius_m: float) -> Raster:
     return Raster(spec, out)
 
 
-def _erode(r: Raster, radius_m: float) -> Raster:
-    """geo.erode_min when available, else the local conservative fallback."""
+def _erode(r: Raster, radius_m: float, shape: str = "chebyshev") -> Raster:
+    """geo.erode_min when available, else the local conservative fallback.
+
+    ``shape`` threads the CORRIDOR HONESTY choice (contracts
+    corridor_erosion_euclidean): "euclidean" = true-metric disc (honest
+    radius), default "chebyshev" = legacy square. The local fallback stays
+    square regardless — strictly more conservative, never less."""
     g = _geo()
     if g is not None and hasattr(g, "erode_min"):
-        return g.erode_min(r, radius_m)
+        try:
+            return g.erode_min(r, radius_m, shape=shape)
+        except TypeError:
+            return g.erode_min(r, radius_m)
     return _erode_min_local(r, radius_m)
 
 

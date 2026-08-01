@@ -149,32 +149,83 @@ def raster_sample(r: Raster, p: LatLon) -> Optional[float]:
     return r.get(rc[0], rc[1])
 
 
-def erode_min(r: Raster, radius_m: float) -> Raster:
-    """Morphological MINIMUM filter over a square window of radius ceil(radius_m/cell_m) cells.
+def erode_min(r: Raster, radius_m: float, shape: str = "chebyshev") -> Raster:
+    """Morphological MINIMUM filter used to erode P10 arrival grids for
+    corridor safety: each output cell holds the earliest (minimum) arrival
+    within `radius_m`, so a corridor point inherits the worst arrival time
+    nearby. Window is clipped at grid borders; radius_m <= 0 returns an
+    independent copy.
 
-    Used to erode P10 arrival grids for corridor safety: each output cell holds the
-    earliest (minimum) arrival within the window, so a corridor point inherits the
-    worst arrival time within `radius_m`. Separable row/col passes, O(n*k).
-    Window is clipped at grid borders. radius_m <= 0 returns an independent copy.
+    shape="chebyshev" (default, legacy): square window of half-width
+    ceil(radius_m/cell_m) cells — separable row/col passes, O(n*k). The
+    square over-reaches: half-width is ceil'd (540 m for 500 m @ 90 m cells)
+    and corners reach sqrt(2)*k cells (764 m) — measured importing arrivals
+    from 757 m away onto road cells the fire never reaches
+    (docs: founder-arithmetic trace 2026-07-29, commit c05d622).
+
+    shape="euclidean": true metric disc — offset (dr, dc) participates iff
+    hypot(dr, dc) * cell_m <= radius_m. Implemented as per-row sliding-window
+    minima with disc-clipped half-widths per row offset, O(n*k). Same
+    conservative semantics (min over the neighborhood), honest radius.
     """
     spec = r.spec
-    k = math.ceil(radius_m / spec.cell_m) if radius_m > 0 else 0
-    if k <= 0:
-        return Raster(spec, list(r.data))
     nr, nc = spec.nrows, spec.ncols
-    tmp = [0.0] * (nr * nc)
-    for i in range(nr):
-        base = i * nc
-        row = r.data[base:base + nc]
-        for j in range(nc):
-            lo = j - k if j - k > 0 else 0
-            hi = j + k + 1 if j + k + 1 < nc else nc
-            tmp[base + j] = min(row[lo:hi])
-    out = [0.0] * (nr * nc)
-    for j in range(nc):
-        col = tmp[j::nc]
+    if radius_m <= 0:
+        return Raster(spec, list(r.data))
+    if shape == "chebyshev":
+        k = math.ceil(radius_m / spec.cell_m)
+        if k <= 0:
+            return Raster(spec, list(r.data))
+        tmp = [0.0] * (nr * nc)
         for i in range(nr):
-            lo = i - k if i - k > 0 else 0
-            hi = i + k + 1 if i + k + 1 < nr else nr
-            out[i * nc + j] = min(col[lo:hi])
+            base = i * nc
+            row = r.data[base:base + nc]
+            for j in range(nc):
+                lo = j - k if j - k > 0 else 0
+                hi = j + k + 1 if j + k + 1 < nc else nc
+                tmp[base + j] = min(row[lo:hi])
+        out = [0.0] * (nr * nc)
+        for j in range(nc):
+            col = tmp[j::nc]
+            for i in range(nr):
+                lo = i - k if i - k > 0 else 0
+                hi = i + k + 1 if i + k + 1 < nr else nr
+                out[i * nc + j] = min(col[lo:hi])
+        return Raster(spec, out)
+    if shape != "euclidean":
+        raise ValueError(f"unknown erode_min shape {shape!r}")
+    rad_cells = radius_m / spec.cell_m
+    kmax = int(rad_cells)                      # floor: honest metric reach
+    # Horizontal sliding-window minima at each disc-clipped half-width, built
+    # once per needed width and shared across the row offsets that use it.
+    widths = {}
+    for dr in range(-kmax, kmax + 1):
+        w = int(math.sqrt(max(0.0, rad_cells * rad_cells - dr * dr)))
+        widths[dr] = w
+    row_mins = {}                              # half-width -> flat row-min grid
+    for w in sorted(set(widths.values())):
+        if w == 0:
+            row_mins[w] = r.data
+            continue
+        g = [0.0] * (nr * nc)
+        for i in range(nr):
+            base = i * nc
+            row = r.data[base:base + nc]
+            for j in range(nc):
+                lo = j - w if j - w > 0 else 0
+                hi = j + w + 1 if j + w + 1 < nc else nc
+                g[base + j] = min(row[lo:hi])
+        row_mins[w] = g
+    out = [math.inf] * (nr * nc)
+    for dr in range(-kmax, kmax + 1):
+        g = row_mins[widths[dr]]
+        for i in range(nr):
+            src = i + dr
+            if not (0 <= src < nr):
+                continue
+            base, sbase = i * nc, src * nc
+            for j in range(nc):
+                v = g[sbase + j]
+                if v < out[base + j]:
+                    out[base + j] = v
     return Raster(spec, out)

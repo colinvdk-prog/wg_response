@@ -33,9 +33,13 @@ def variant_cfg(mode: str, deploy: float) -> dict:
     cfg = dict(BASE)
     cfg.update({"deploy_min": deploy, "dispatch_plan_on_roads": True,
                 "dispatch_hold_h": 24.0})
-    if mode == "certain":
+    if mode.startswith("certain"):
         cfg.update({"wind_perturb_frac": 0.0, "dir_perturb_deg": 0.0,
                     "spotting_enabled": False})
+    if mode.endswith("+fix"):
+        # CORRIDOR HONESTY: euclidean erosion + 3 route candidates
+        cfg.update({"corridor_erosion_euclidean": True,
+                    "route_alternatives": 3})
     return cfg
 
 
@@ -134,7 +138,7 @@ def run(mode: str, deploy: float) -> dict:
 
 def main():
     out = []
-    for mode in ("certain", "real"):
+    for mode in ("certain", "certain+fix", "real", "real+fix"):
         for deploy in (30.0, 15.0):
             r = run(mode, deploy)
             out.append(r)

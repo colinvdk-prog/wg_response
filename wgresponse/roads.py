@@ -573,6 +573,150 @@ def _beyond_cap_reason(g: RoadGraph, a: LatLon, b: LatLon,
             f"road_spur_max_m={cap:.0f} m")
 
 
+def _astar_excluding(g: RoadGraph, start: int, goal: int, blocked) -> object:
+    """A* identical to _astar but skipping BLOCKED intermediate nodes.
+
+    start/goal are always allowed (a threatened destination's own snap node is
+    legitimately hot — the corridor law, not the generator, owns the verdict).
+    Returns (node_path, edge_path) or None."""
+    if start == goal:
+        return [start], []
+    nodes = g.nodes
+    goal_ll = nodes[goal]
+    vmax = g._vmax_mps
+    g_score = {start: 0.0}
+    came: dict = {}
+    open_heap = [(geo.haversine_m(nodes[start], goal_ll) / vmax, start)]
+    closed = set()
+    while open_heap:
+        _f, cur = heapq.heappop(open_heap)
+        if cur == goal:
+            node_path = [cur]
+            edge_path = []
+            while cur != start:
+                cur, ei = came[cur]
+                node_path.append(cur)
+                edge_path.append(ei)
+            node_path.reverse()
+            edge_path.reverse()
+            return node_path, edge_path
+        if cur in closed:
+            continue
+        closed.add(cur)
+        gc = g_score[cur]
+        for other, ei in g.neighbors(cur):
+            if other in closed:
+                continue
+            if other != goal and other in blocked:
+                continue
+            e = g.edges[ei]
+            ng = gc + e.length_m / e.speed_mps
+            if ng < g_score.get(other, math.inf):
+                g_score[other] = ng
+                came[other] = (cur, ei)
+                heapq.heappush(
+                    open_heap,
+                    (ng + geo.haversine_m(nodes[other], goal_ll) / vmax, other))
+    return None
+
+
+def _dijkstra_widest(g: RoadGraph, start: int, goal: int, clock) -> object:
+    """WIDEST-CLOCK route: maximize the MINIMUM fire-arrival clock over the
+    path's nodes (founder 2026-07-29: safety routes are chosen to be safe
+    from fire, not for speed); ties prefer lower travel time, then node id.
+    `clock` is {node_id: arrival_seconds_or_inf}. Returns (node_path,
+    edge_path) or None. Deterministic bottleneck Dijkstra."""
+    if start == goal:
+        return [start], []
+    best_b = {start: clock.get(start, math.inf)}
+    best_t = {start: 0.0}
+    came: dict = {}
+    # max-heap on bottleneck -> negate; then time, then node id.
+    open_heap = [(-best_b[start], 0.0, start)]
+    done = set()
+    while open_heap:
+        nb, nt, cur = heapq.heappop(open_heap)
+        nb = -nb
+        if cur in done:
+            continue
+        done.add(cur)
+        if cur == goal:
+            node_path = [cur]
+            edge_path = []
+            while cur != start:
+                cur, ei = came[cur]
+                node_path.append(cur)
+                edge_path.append(ei)
+            node_path.reverse()
+            edge_path.reverse()
+            return node_path, edge_path
+        for other, ei in g.neighbors(cur):
+            if other in done:
+                continue
+            e = g.edges[ei]
+            ob = min(nb, clock.get(other, math.inf))
+            ot = nt + e.length_m / e.speed_mps
+            cb, ct = best_b.get(other, -math.inf), best_t.get(other, math.inf)
+            if ob > cb or (ob == cb and ot < ct):
+                best_b[other], best_t[other] = ob, ot
+                came[other] = (cur, ei)
+                heapq.heappush(open_heap, (-ob, ot, other))
+    return None
+
+
+def route_candidates(g: Optional[RoadGraph], a: LatLon, b: LatLon,
+                     cfg: ResponseConfig, node_clock_fn) -> list:
+    """Up to cfg.route_alternatives distinct route candidates for the a -> b
+    leg (contracts CORRIDOR HONESTY block): [fastest, avoid-hot fastest,
+    widest-clock]. The corridor LAW is not consulted here — candidates are
+    OPTIONS the unchanged law then judges; callers adopt per their leg rule
+    (ingress: fastest passing; egress: safest passing).
+
+    node_clock_fn(LatLon) -> earliest fire-arrival SECONDS at that point
+    (math.inf when unreached) — normally a lookup into the same eroded P10
+    grid the corridor law samples. Chord fallbacks return [fastest] only
+    (no graph to search). Deduped by node path; order is [fastest, ...]."""
+    fastest = route(g, a, b, cfg)
+    k = int(getattr(cfg, "route_alternatives", 1) or 1)
+    if k <= 1 or g is None or not fastest.on_roads or node_clock_fn is None:
+        return [fastest]
+    cap = cfg.road_spur_max_m
+    snap_a = g.nearest_node(a, cap)
+    snap_b = g.nearest_node(b, cap)
+    if snap_a is None or snap_b is None:
+        return [fastest]
+    start, goal = snap_a[0], snap_b[0]
+    clock: dict = {}
+    for nid, p in g.nodes.items():
+        try:
+            clock[nid] = float(node_clock_fn(p))
+        except Exception:
+            clock[nid] = math.inf
+    out = [fastest]
+    seen = set()
+    base = _astar(g, start, goal)
+    if base is not None:
+        seen.add(tuple(base[0]))
+    # widest-clock candidate (the founder's safety route)
+    widest = _dijkstra_widest(g, start, goal, clock)
+    if widest is not None and tuple(widest[0]) not in seen:
+        seen.add(tuple(widest[0]))
+        out.append(_assemble(g, a, b, snap_a, snap_b, widest, cfg))
+    # avoid-hot fastest: exclude nodes hotter than the fastest route's worst
+    # point + 30 min — "at least half an hour more corridor clock than the
+    # route we would have driven"
+    if k >= 3 and base is not None:
+        bottleneck = min((clock.get(n, math.inf) for n in base[0]),
+                         default=math.inf)
+        if math.isfinite(bottleneck):
+            cutoff = bottleneck + 1800.0
+            blocked = {nid for nid, t in clock.items() if t < cutoff}
+            alt = _astar_excluding(g, start, goal, blocked)
+            if alt is not None and tuple(alt[0]) not in seen:
+                out.append(_assemble(g, a, b, snap_a, snap_b, alt, cfg))
+    return out
+
+
 def route(g: Optional[RoadGraph], a: LatLon, b: LatLon,
           cfg: ResponseConfig) -> RoadRoute:
     """Road route a -> b (contracts seam, FOUNDER ROUND 3 law 2 ROADS
@@ -596,6 +740,14 @@ def route(g: Optional[RoadGraph], a: LatLon, b: LatLon,
         return _fallback(a, b, cfg,
                          f"snapped nodes {snap_a[0]} and {snap_b[0]} on "
                          f"disconnected road components")
+    return _assemble(g, a, b, snap_a, snap_b, found, cfg)
+
+
+def _assemble(g: RoadGraph, a: LatLon, b: LatLon, snap_a, snap_b,
+              found, cfg: ResponseConfig) -> RoadRoute:
+    """[spur -> road path -> spur] RoadRoute assembly shared by route() and
+    route_candidates() — one geometry/time model regardless of which search
+    produced the node path."""
     node_path, edge_path = found
     factor = cfg.fire_traffic_factor
     poly: list = [a]
@@ -605,7 +757,7 @@ def route(g: Optional[RoadGraph], a: LatLon, b: LatLon,
     _emit(poly, mask, g.nodes[node_path[0]], True)
     dist_m = snap_a[1]
     time_s = snap_a[1] * factor / SNAP_SPEED_MPS
-    # PHASE 2 — A* road path (real per-edge OSM geometry, spur=False).
+    # PHASE 2 — road path (real per-edge OSM geometry, spur=False).
     cur = node_path[0]
     for nxt, ei in zip(node_path[1:], edge_path):
         e = g.edges[ei]

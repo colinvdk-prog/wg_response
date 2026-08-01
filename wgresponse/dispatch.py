@@ -462,16 +462,25 @@ class _Ctx:
     def _lkey(p):
         return (round(p.lat, 7), round(p.lon, 7))
 
-    def _road_route(self, a, b):
+    def _road_route(self, a, b, mode: str = "ingress"):
         """Memoized road_provider lookup for the a->b leg; None when no
         provider, no route, or the route is the off-network chord fallback
-        (on_roads=False -> tier-0 is already the right model)."""
+        (on_roads=False -> tier-0 is already the right model).
+
+        ``mode`` (CORRIDOR HONESTY, contracts route_alternatives): "egress"
+        legs may resolve to a SAFER-not-faster candidate when the provider is
+        candidate-aware (founder rule: safety routes are chosen to be safe
+        from fire, not for speed). Legacy two-arg providers are called
+        without the hint — byte-identical."""
         if self.road_provider is None:
             return None
-        k = (self._lkey(a), self._lkey(b))
+        k = (self._lkey(a), self._lkey(b), mode)
         if k in self._rp_cache:
             return self._rp_cache[k]
-        rr = self.road_provider(a, b)
+        try:
+            rr = self.road_provider(a, b, mode=mode)
+        except TypeError:
+            rr = self.road_provider(a, b)
         if (rr is None or not getattr(rr, "on_roads", False)
                 or not getattr(rr, "time_s", 0.0)
                 or rr.time_s <= 0.0 or not getattr(rr, "dist_m", 0.0)
@@ -492,7 +501,7 @@ class _Ctx:
             self._tt[k] = v
         return v
 
-    def leg_latest_depart(self, a, b) -> float:
+    def leg_latest_depart(self, a, b, mode: str = "ingress") -> float:
         """Combined closed-form latest safe departure for the a->b leg: min
         over EVERY incident's eroded P10 raster of the per-raster
         safety.LegOracle T* (Sprint 2 B1). Sampled once per unique leg per
@@ -502,11 +511,14 @@ class _Ctx:
         PLAN-ON-ROADS: when the road provider yields a real route, the oracle
         samples along ITS polyline at the route's implied speed — the corridor
         law sees the exact ground the crew will drive (the chord-vs-road
-        mismatch caused ~73% of relocations + the residual overrun tail)."""
-        k = (self._lkey(a), self._lkey(b))
+        mismatch caused ~73% of relocations + the residual overrun tail).
+        ``mode`` reaches the candidate-aware provider so an egress leg's T*
+        is computed on the SAFEST candidate's polyline (the ground actually
+        driven), never a faster-but-hotter one."""
+        k = (self._lkey(a), self._lkey(b), mode)
         v = self._tstar.get(k)
         if v is None:
-            rr = self._road_route(a, b)
+            rr = self._road_route(a, b, mode)
             path = rr.polyline if rr is not None else None
             spd = (rr.dist_m / rr.time_s) if rr is not None else self.corr_speed
             # road legs use the leaner road margin (the chord margin's extra
@@ -527,17 +539,32 @@ class _Ctx:
         return depart_s <= self.leg_latest_depart(a, b)
 
     def egress(self, loc, depart_s):
-        """Nearest safely-reachable SafeZone at depart_s, checked against every
-        incident raster. Returns (safe, zone_id). Same zone ordering and
-        first-safe-wins semantics as safety.egress_choice (ascending
-        (travel_time, zone_id)); Sprint 2 B1 precomputes the per-(stop, zone)
-        T* once, so each call is O(#zones) comparisons."""
+        """Safely-reachable SafeZone at depart_s, checked against every
+        incident raster. Returns (safe, zone_id).
+
+        Legacy (route_alternatives <= 1): nearest-first — ascending
+        (travel_time, zone_id), first-safe-wins, exactly safety.egress_choice.
+        CORRIDOR HONESTY (route_alternatives > 1, founder rule "safety routes
+        are chosen to be safe from fire, not for speed"): zones are ordered
+        by DESCENDING latest-safe-depart T* (most escape clock first, travel
+        time and zone id as tie-breaks) and each zone's T* is computed on the
+        SAFEST route candidate (mode="egress"). Sprint 2 B1 memoization
+        unchanged: per-(stop, zone) T* computes once."""
         k = self._lkey(loc)
         zl = self._ezones.get(k)
         if zl is None:
-            zl = [(z.zone_id, self.leg_latest_depart(loc, z.loc))
-                  for z in sorted(self.safe_zones,
-                                  key=lambda z: (self.travel(loc, z.loc), z.zone_id))]
+            if int(getattr(self.cfg, "route_alternatives", 1) or 1) > 1:
+                rows = [(z.zone_id,
+                         self.leg_latest_depart(loc, z.loc, mode="egress"),
+                         self.travel(loc, z.loc))
+                        for z in self.safe_zones]
+                rows.sort(key=lambda r: (-r[1], r[2], r[0]))
+                zl = [(zid, tstar) for zid, tstar, _tt in rows]
+            else:
+                zl = [(z.zone_id, self.leg_latest_depart(loc, z.loc))
+                      for z in sorted(self.safe_zones,
+                                      key=lambda z: (self.travel(loc, z.loc),
+                                                     z.zone_id))]
             self._ezones[k] = zl
         for zid, tstar in zl:
             if depart_s <= tstar:
@@ -1361,7 +1388,11 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
                        and c.status not in _INELIGIBLE_STATUSES),
                       key=lambda c: c.crew_id)
 
-    rasters = [(iid, safety._erode(ens[iid].p10, cfg.corridor_erosion_m))
+    rasters = [(iid, safety._erode(
+                    ens[iid].p10, cfg.corridor_erosion_m,
+                    shape=("euclidean"
+                           if getattr(cfg, "corridor_erosion_euclidean", False)
+                           else "chebyshev")))
                for iid in sorted(ens)]
 
     # -- step 0: ONE job per client (Sprint 2 A7, Council-1 dispatch F4) ------

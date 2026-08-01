@@ -848,6 +848,18 @@ class ResponseConfig:
     egress_buffer_min: float = 30.0    # crew clear of property before P10 arrival
     route_margin_min: float = 60.0     # corridor sample margin
     corridor_erosion_m: float = 500.0  # erosion radius on P10 grid for corridor checks
+    # CORRIDOR HONESTY (founder-arithmetic trace 2026-07-29, commit c05d622;
+    # founder "perform 1" + "2-3 safety routes chosen to be safe from fire,
+    # not speed"): the legacy square erosion corner-reaches 1.53x the stated
+    # radius and imported phantom arrivals onto roads the fire never touches;
+    # dispatch evaluated exactly ONE fastest route per leg while a corridor-
+    # clean alternative (1.3 min slower) existed. Both fixes default OFF =
+    # byte-identical legacy.
+    corridor_erosion_euclidean: bool = False  # True: erode_min true-metric disc (honest radius)
+    route_alternatives: int = 1        # 1 = legacy fastest-only; 2-3 = fastest / avoid-hot /
+                                       # widest-clock candidates; ingress adopts the fastest
+                                       # candidate that passes the UNCHANGED corridor law,
+                                       # egress adopts the SAFEST (max latest-safe-depart)
     corridor_sample_m: float = 300.0
     ember_buffer_min: float = 0.0      # extra safety on top of P10 (default-OFF; enable in wind events)
     # --- gel product parameters (UNVERIFIED — pending supplier data) ---

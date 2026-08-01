@@ -680,7 +680,11 @@ class SimSessionManager:
             fire = session._fires.get(fid)
             if fire is None or fire.ens is None:
                 continue
-            eroded = geo.erode_min(fire.ens.p10, erosion_m)
+            eroded = geo.erode_min(
+                fire.ens.p10, erosion_m,
+                shape=("euclidean"
+                       if getattr(session._cfg, "corridor_erosion_euclidean",
+                                  False) else "chebyshev"))
             for h in self._ISO_LEADS_H:
                 ring = _trace_contour(eroded, fire.ens.t0_s + h * 3600.0,
                                       fire.origin)
