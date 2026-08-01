@@ -855,11 +855,19 @@ class ResponseConfig:
     # dispatch evaluated exactly ONE fastest route per leg while a corridor-
     # clean alternative (1.3 min slower) existed. Both fixes default OFF =
     # byte-identical legacy.
-    corridor_erosion_euclidean: bool = False  # True: erode_min true-metric disc (honest radius)
-    route_alternatives: int = 1        # 1 = legacy fastest-only; 2-3 = fastest / avoid-hot /
-                                       # widest-clock candidates; ingress adopts the fastest
-                                       # candidate that passes the UNCHANGED corridor law,
-                                       # egress adopts the SAFEST (max latest-safe-depart)
+    #
+    # ⚠ MEASURED VERDICT (screen A/B, same day): erode_min is a MIN filter,
+    # so the honest disc RELAXES the law — the square's unearned diagonal
+    # slop was absorbing the P10-vs-truth quantile gap (member 0 beats P10 in
+    # ~10% of cells by construction). Erosion-only: +12-18 belt homes, clean
+    # at 4 crews, 2 crews caught in burn at 8 crews @ radius 500 — ship only
+    # with a radius re-calibrated for 0 ground-truth violations. Route
+    # candidates as built: REJECTED (-1..+4 homes, +3 caught crews; the
+    # max-latest-depart egress rule optimizes when you must LEAVE, not how
+    # exposed the DRIVE is). Keep route_alternatives=1 until the choice rule
+    # judges in-transit exposure.
+    corridor_erosion_euclidean: bool = False  # True: erode_min true-metric disc (calibrate radius first)
+    route_alternatives: int = 1        # 1 = legacy fastest-only (KEEP: candidate rule rejected as built)
     corridor_sample_m: float = 300.0
     ember_buffer_min: float = 0.0      # extra safety on top of P10 (default-OFF; enable in wind events)
     # --- gel product parameters (UNVERIFIED — pending supplier data) ---
