@@ -1,0 +1,307 @@
+================================================================================================
+paradise_ca  grid 200x200 cell 90 m  (40000 cells)
+================================================================================================
+  group mix: TL= 32.6%  GR= 18.4%  GS= 14.5%  TU= 13.5%  NB= 11.4%  SH=  9.5%
+  top codes: 102(GR)=17.9%  122(GS)=12.5%  91(NB)=10.0%  184(TL)= 9.9%  183(TL)= 9.3%  165(TU)= 8.1%  186(TL)= 5.9%  144(SH)= 5.3%
+  road samples: 34284 (5137 edges, 4429 nodes)
+
+  --- nearest burnable within 0 m ---
+  road class               n  no-fuel  mix
+  residential          18036    58.6%  TL:24% GS:6% TU:5% GR:4% SH:2%
+  service               5510    53.0%  TL:16% GR:15% GS:10% TU:3% SH:3%
+  tertiary              5053    62.5%  TL:21% GS:6% TU:5% GR:5% SH:1%
+  unclassified          2797    46.4%  TL:25% GR:11% GS:9% SH:5% TU:4%
+  secondary             2174    77.4%  GS:7% TL:7% GR:5% TU:3% SH:1%
+  primary                714    82.6%  GS:7% TL:5% SH:3% TU:2% GR:1%
+
+  --- nearest burnable within 45 m ---
+  road class               n  no-fuel  mix
+  residential          18036    58.6%  TL:24% GS:6% TU:5% GR:4% SH:2%
+  service               5510    53.0%  TL:16% GR:15% GS:10% TU:3% SH:3%
+  tertiary              5053    62.5%  TL:21% GS:6% TU:5% GR:5% SH:1%
+  unclassified          2797    46.4%  TL:25% GR:11% GS:9% SH:5% TU:4%
+  secondary             2174    77.4%  GS:7% TL:7% GR:5% TU:3% SH:1%
+  primary                714    82.6%  GS:7% TL:5% SH:3% TU:2% GR:1%
+
+  --- nearest burnable within 90 m ---
+  road class               n  no-fuel  mix
+  residential          18036    10.4%  TL:54% GS:13% TU:11% GR:7% SH:3%
+  service               5510    23.5%  TL:30% GR:20% GS:16% TU:6% SH:3%
+  tertiary              5053    23.7%  TL:39% GS:12% GR:12% TU:12% SH:1%
+  unclassified          2797    18.9%  TL:38% GR:17% GS:13% TU:7% SH:6%
+  secondary             2174    42.7%  TL:20% GS:18% GR:9% TU:8% SH:3%
+  primary                714    73.0%  TL:11% GS:10% SH:4% TU:2% GR:1%
+
+  --- nearest burnable within 180 m ---
+  road class               n  no-fuel  mix
+  residential          18036     6.8%  TL:57% GS:14% TU:11% GR:7% SH:3%
+  service               5510    15.2%  TL:34% GR:21% GS:19% TU:8% SH:3%
+  tertiary              5053    21.9%  TL:39% GS:13% GR:13% TU:12% SH:1%
+  unclassified          2797    18.7%  TL:38% GR:17% GS:13% TU:7% SH:6%
+  secondary             2174    35.2%  TL:24% GS:19% GR:9% TU:9% SH:3%
+  primary                714    73.0%  TL:11% GS:10% SH:4% TU:2% GR:1%
+
+================================================================================================
+malibu_ca  grid 200x200 cell 90 m  (40000 cells)
+================================================================================================
+  group mix: NB= 39.9%  SH= 27.0%  GS= 20.4%  TL=  3.9%  GR=  3.1%  ??=  3.0%  TU=  2.8%
+  top codes: 98(NB)=30.5%  142(SH)=16.8%  122(GS)=14.3%  145(SH)=10.1%  91(NB)= 9.2%  121(GS)= 4.1%  -9999(??)= 3.0%  165(TU)= 2.7%
+  road samples: 78454 (16356 edges, 13440 nodes)
+
+  --- nearest burnable within 0 m ---
+  road class               n  no-fuel  mix
+  service              38869    74.4%  GS:14% SH:5% TL:3% GR:3% TU:1%
+  residential          23456    81.2%  GS:10% SH:4% TL:3% GR:1% TU:0%
+  tertiary              6578    75.6%  SH:11% GS:10% TL:2% TU:1% GR:1%
+  secondary             3700    80.3%  GS:9% SH:5% TL:4% GR:2% TU:0%
+  unclassified          2115    65.8%  SH:17% GS:10% GR:4% TL:2% TU:1%
+  primary               1246    68.1%  GS:17% SH:7% TL:5% GR:3% TU:1%
+  trunk                  866    93.1%  GS:4% TL:2% GR:1%
+  motorway_link          765   100.0%  
+  motorway               592   100.0%  
+  primary_link            85    75.3%  GS:24% GR:1%
+  secondary_link          74   100.0%  
+  trunk_link              60    95.0%  GS:5%
+  tertiary_link           48   100.0%  
+
+  --- nearest burnable within 45 m ---
+  road class               n  no-fuel  mix
+  service              38869    74.4%  GS:14% SH:5% TL:3% GR:3% TU:1%
+  residential          23456    81.2%  GS:10% SH:4% TL:3% GR:1% TU:0%
+  tertiary              6578    75.6%  SH:11% GS:10% TL:2% TU:1% GR:1%
+  secondary             3700    80.3%  GS:9% SH:5% TL:4% GR:2% TU:0%
+  unclassified          2115    65.8%  SH:17% GS:10% GR:4% TL:2% TU:1%
+  primary               1246    68.1%  GS:17% SH:7% TL:5% GR:3% TU:1%
+  trunk                  866    93.1%  GS:4% TL:2% GR:1%
+  motorway_link          765   100.0%  
+  motorway               592   100.0%  
+  primary_link            85    75.3%  GS:24% GR:1%
+  secondary_link          74   100.0%  
+  trunk_link              60    95.0%  GS:5%
+  tertiary_link           48   100.0%  
+
+  --- nearest burnable within 90 m ---
+  road class               n  no-fuel  mix
+  service              38869    54.5%  GS:27% SH:7% TL:6% GR:5% TU:1%
+  residential          23456    56.2%  GS:25% SH:8% TL:7% GR:4% TU:1%
+  tertiary              6578    45.5%  GS:24% SH:21% TL:5% GR:3% TU:3%
+  secondary             3700    59.4%  GS:17% SH:12% TL:7% GR:4% TU:1%
+  unclassified          2115    47.8%  SH:23% GS:18% GR:7% TL:4% TU:2%
+  primary               1246    29.8%  GS:36% SH:15% GR:9% TL:8% TU:1%
+  trunk                  866    53.7%  GS:30% GR:10% TL:6% SH:0%
+  motorway_link          765   100.0%  
+  motorway               592   100.0%  
+  primary_link            85     4.7%  GS:86% GR:9%
+  secondary_link          74   100.0%  
+  trunk_link              60    46.7%  GS:53%
+  tertiary_link           48    72.9%  GR:27%
+
+  --- nearest burnable within 180 m ---
+  road class               n  no-fuel  mix
+  service              38869    48.8%  GS:31% SH:7% GR:6% TL:6% TU:1%
+  residential          23456    49.9%  GS:29% SH:8% TL:8% GR:4% TU:1%
+  tertiary              6578    40.4%  GS:27% SH:21% TL:6% GR:4% TU:3%
+  secondary             3700    58.7%  GS:17% SH:12% TL:7% GR:4% TU:1%
+  unclassified          2115    45.6%  SH:23% GS:19% GR:7% TL:4% TU:2%
+  primary               1246    27.6%  GS:37% SH:15% GR:10% TL:8% TU:1%
+  trunk                  866    32.0%  GS:44% GR:14% TL:9% TU:0% SH:0%
+  motorway_link          765   100.0%  
+  motorway               592   100.0%  
+  primary_link            85     4.7%  GS:86% GR:9%
+  secondary_link          74   100.0%  
+  trunk_link              60    36.7%  GS:55% TL:8%
+  tertiary_link           48    72.9%  GR:27%
+
+================================================================================================
+santa_rosa_ca  grid 200x200 cell 90 m  (40000 cells)
+================================================================================================
+  group mix: NB= 28.0%  TL= 24.0%  TU= 18.7%  GR= 15.8%  GS=  8.4%  SH=  5.0%  SB=  0.0%
+  top codes: 91(NB)=24.1%  102(GR)=12.4%  162(TU)= 9.2%  185(TL)= 8.3%  183(TL)= 5.9%  188(TL)= 5.6%  122(GS)= 4.1%  161(TU)= 3.8%
+  road samples: 108169 (29731 edges, 24184 nodes)
+
+  --- nearest burnable within 0 m ---
+  road class               n  no-fuel  mix
+  service              58758    72.3%  TL:8% GR:8% GS:6% TU:5% SH:1% SB:0%
+  residential          34546    83.4%  TL:6% GR:4% GS:3% TU:2% SH:0% SB:0%
+  secondary             5771    92.5%  TL:2% TU:2% GS:2% GR:1% SH:0%
+  tertiary              4673    88.4%  TL:7% GR:3% GS:2% TU:1% SH:0%
+  motorway_link         1254    99.6%  GS:0% TL:0%
+  unclassified          1123    80.2%  TL:8% TU:5% GR:4% GS:2% SH:0%
+  motorway               911    99.0%  GR:1% TL:0%
+  primary                797    91.1%  GR:5% TL:3% GS:1%
+  secondary_link         128    95.3%  TL:5%
+  trunk                  124    83.9%  TL:7% GS:4% TU:3% SH:1% GR:1%
+  primary_link            50   100.0%  
+  tertiary_link           34    91.2%  GS:9%
+
+  --- nearest burnable within 45 m ---
+  road class               n  no-fuel  mix
+  service              58758    72.3%  TL:8% GR:8% GS:6% TU:5% SH:1% SB:0%
+  residential          34546    83.4%  TL:6% GR:4% GS:3% TU:2% SH:0% SB:0%
+  secondary             5771    92.5%  TL:2% TU:2% GS:2% GR:1% SH:0%
+  tertiary              4673    88.4%  TL:7% GR:3% GS:2% TU:1% SH:0%
+  motorway_link         1254    99.6%  GS:0% TL:0%
+  unclassified          1123    80.2%  TL:8% TU:5% GR:4% GS:2% SH:0%
+  motorway               911    99.0%  GR:1% TL:0%
+  primary                797    91.1%  GR:5% TL:3% GS:1%
+  secondary_link         128    95.3%  TL:5%
+  trunk                  124    83.9%  TL:7% GS:4% TU:3% SH:1% GR:1%
+  primary_link            50   100.0%  
+  tertiary_link           34    91.2%  GS:9%
+
+  --- nearest burnable within 90 m ---
+  road class               n  no-fuel  mix
+  service              58758    49.5%  TL:17% GR:14% GS:11% TU:7% SH:1% SB:0%
+  residential          34546    54.1%  TL:20% GR:11% GS:10% TU:4% SH:1% SB:0%
+  secondary             5771    72.8%  TL:9% GS:6% GR:6% TU:5% SH:1%
+  tertiary              4673    64.9%  TL:19% GR:8% GS:6% TU:1% SH:0% SB:0%
+  motorway_link         1254    95.1%  TL:2% GR:2% GS:1%
+  unclassified          1123    66.1%  TU:10% TL:9% GR:9% GS:5% SH:1%
+  motorway               911    92.5%  GR:5% TL:2% GS:1%
+  primary                797    57.1%  GR:17% TL:17% GS:9%
+  secondary_link         128    72.7%  TL:15% SB:9% TU:4%
+  trunk                  124    31.5%  TL:34% GR:12% TU:11% GS:10% SH:2%
+  primary_link            50    82.0%  TL:14% GR:4%
+  tertiary_link           34    70.6%  GS:29%
+
+  --- nearest burnable within 180 m ---
+  road class               n  no-fuel  mix
+  service              58758    38.8%  TL:21% GR:18% GS:13% TU:7% SH:1% SB:0%
+  residential          34546    39.5%  TL:27% GR:15% GS:13% TU:5% SH:1% SB:0%
+  secondary             5771    59.5%  TL:15% GR:10% GS:9% TU:6% SH:1%
+  tertiary              4673    51.4%  TL:26% GR:13% GS:8% TU:2% SH:0% SB:0%
+  motorway_link         1254    86.3%  TL:6% GR:5% GS:3%
+  unclassified          1123    63.1%  TU:10% TL:9% GR:9% GS:8% SH:1%
+  motorway               911    85.2%  GR:9% TL:3% GS:3%
+  primary                797    36.8%  TL:27% GR:21% GS:15%
+  secondary_link         128    64.8%  TL:19% SB:9% GR:4% TU:4%
+  trunk                  124    15.3%  TL:42% TU:18% GR:14% GS:10% SH:2%
+  primary_link            50    42.0%  TL:48% GR:6% GS:4%
+  tertiary_link           34    14.7%  TL:56% GS:29%
+
+================================================================================================
+boulder_co  grid 200x200 cell 90 m  (40000 cells)
+================================================================================================
+  group mix: GR= 48.4%  NB= 39.4%  GS=  4.4%  TL=  4.0%  TU=  2.8%  SH=  1.1%
+  top codes: 102(GR)=43.6%  91(NB)=34.9%  101(GR)= 4.8%  122(GS)= 3.1%  161(TU)= 2.8%  183(TL)= 2.6%  98(NB)= 2.3%  93(NB)= 1.7%
+  road samples: 144425 (44644 edges, 33459 nodes)
+
+  --- nearest burnable within 0 m ---
+  road class               n  no-fuel  mix
+  service              66442    81.8%  GR:12% TL:3% GS:2% TU:1% SH:0%
+  residential          45960    88.6%  GR:5% TL:4% GS:2% TU:0% SH:0%
+  tertiary              7977    86.6%  GR:8% TL:2% TU:1% GS:1% SH:0%
+  unclassified          6484    84.3%  GR:11% GS:3% TL:1% TU:1% SH:0%
+  secondary             5329    84.3%  GR:11% GS:2% TL:2% TU:0% SH:0%
+  primary               4508    88.2%  GR:8% TL:1% GS:1% TU:1% SH:0%
+  motorway              1966    85.3%  GR:10% GS:4% TL:0%
+  trunk                 1922    81.0%  GR:15% GS:2% SH:1% TL:1% TU:0%
+  motorway_link         1373    93.0%  GR:5% GS:2% TU:0% SH:0% TL:0%
+  primary_link           919    95.4%  GR:3% TL:1% GS:0%
+  trunk_link             918    94.8%  GR:4% GS:1% TL:0%
+  secondary_link         445    92.4%  GR:7% GS:0%
+  tertiary_link          182    76.9%  TL:16% GR:3% GS:2% TU:2%
+
+  --- nearest burnable within 45 m ---
+  road class               n  no-fuel  mix
+  service              66442    81.8%  GR:12% TL:3% GS:2% TU:1% SH:0%
+  residential          45960    88.6%  GR:5% TL:4% GS:2% TU:0% SH:0%
+  tertiary              7977    86.6%  GR:8% TL:2% TU:1% GS:1% SH:0%
+  unclassified          6484    84.3%  GR:11% GS:3% TL:1% TU:1% SH:0%
+  secondary             5329    84.3%  GR:11% GS:2% TL:2% TU:0% SH:0%
+  primary               4508    88.2%  GR:8% TL:1% GS:1% TU:1% SH:0%
+  motorway              1966    85.3%  GR:10% GS:4% TL:0%
+  trunk                 1922    81.0%  GR:15% GS:2% SH:1% TL:1% TU:0%
+  motorway_link         1373    93.0%  GR:5% GS:2% TU:0% SH:0% TL:0%
+  primary_link           919    95.4%  GR:3% TL:1% GS:0%
+  trunk_link             918    94.8%  GR:4% GS:1% TL:0%
+  secondary_link         445    92.4%  GR:7% GS:0%
+  tertiary_link          182    76.9%  TL:16% GR:3% GS:2% TU:2%
+
+  --- nearest burnable within 90 m ---
+  road class               n  no-fuel  mix
+  service              66442    54.2%  GR:28% TL:10% GS:5% TU:2% SH:1%
+  residential          45960    50.5%  GR:23% TL:20% GS:5% TU:1% SH:1%
+  tertiary              7977    52.5%  GR:28% TL:9% TU:5% GS:4% SH:1%
+  unclassified          6484    61.1%  GR:26% GS:6% TL:5% TU:1% SH:0%
+  secondary             5329    50.8%  GR:33% TL:9% GS:5% TU:2% SH:0%
+  primary               4508    58.2%  GR:24% TL:10% GS:5% TU:3% SH:1%
+  motorway              1966    31.9%  GR:50% GS:12% TL:3% TU:2% SH:0%
+  trunk                 1922    44.0%  GR:38% TL:7% GS:7% TU:2% SH:2%
+  motorway_link         1373    58.2%  GR:28% GS:7% TL:3% TU:3% SH:1%
+  primary_link           919    65.6%  TL:14% GR:13% GS:5% TU:2%
+  trunk_link             918    63.2%  GR:22% TL:10% GS:5% TU:1%
+  secondary_link         445    62.2%  GR:24% TL:7% TU:5% GS:1%
+  tertiary_link          182    40.1%  TL:37% GR:16% TU:4% GS:3%
+
+  --- nearest burnable within 180 m ---
+  road class               n  no-fuel  mix
+  service              66442    33.7%  GR:40% TL:16% GS:6% TU:3% SH:1%
+  residential          45960    25.3%  GR:35% TL:31% GS:7% TU:2% SH:1%
+  tertiary              7977    30.7%  GR:41% TL:15% TU:6% GS:6% SH:1%
+  unclassified          6484    42.8%  GR:37% TL:10% GS:8% TU:2% SH:0%
+  secondary             5329    33.9%  GR:42% TL:16% GS:6% TU:2% SH:0%
+  primary               4508    42.0%  GR:32% TL:15% GS:7% TU:3% SH:1%
+  motorway              1966    15.9%  GR:64% GS:13% TL:5% TU:2% SH:0%
+  trunk                 1922    28.9%  GR:47% TL:12% GS:7% TU:3% SH:2%
+  motorway_link         1373    35.3%  GR:47% GS:9% TL:5% TU:3% SH:1%
+  primary_link           919    46.1%  GR:24% TL:17% GS:9% TU:3%
+  trunk_link             918    42.9%  GR:31% TL:16% GS:7% TU:3%
+  secondary_link         445    39.8%  GR:33% TL:16% TU:7% GS:4%
+  tertiary_link          182    35.7%  TL:37% GR:20% TU:4% GS:3%
+
+================================================================================================
+park_city_ut  grid 200x200 cell 90 m  (40000 cells)
+================================================================================================
+  group mix: GS= 27.8%  SH= 23.0%  TU= 20.2%  NB= 11.2%  GR=  9.3%  TL=  8.6%
+  top codes: 147(SH)=21.4%  122(GS)=19.1%  91(NB)=10.4%  165(TU)=10.1%  161(TU)=10.0%  121(GS)= 8.7%  102(GR)= 7.2%  183(TL)= 5.4%
+  road samples: 53857 (9210 edges, 7554 nodes)
+
+  --- nearest burnable within 0 m ---
+  road class               n  no-fuel  mix
+  service              23227    43.1%  GS:23% TL:13% SH:8% GR:7% TU:6%
+  residential          20105    60.5%  GS:15% TL:12% SH:5% TU:4% GR:3%
+  tertiary              4666    70.9%  GS:15% TL:6% GR:4% SH:3% TU:0%
+  unclassified          2500    42.8%  GS:24% TU:14% SH:10% TL:5% GR:5%
+  motorway              1294    80.8%  GS:16% SH:2% TL:1% GR:1%
+  secondary              894    79.6%  GS:16% GR:2% TL:1% SH:1% TU:0%
+  motorway_link          604    86.3%  GS:12% GR:1% TL:1% SH:0%
+  trunk                  372    75.5%  GS:15% TL:5% SH:3% GR:2%
+  primary                147    78.2%  TL:11% GS:8% SH:3%
+
+  --- nearest burnable within 45 m ---
+  road class               n  no-fuel  mix
+  service              23227    43.1%  GS:23% TL:13% SH:8% GR:7% TU:6%
+  residential          20105    60.5%  GS:15% TL:12% SH:5% TU:4% GR:3%
+  tertiary              4666    70.9%  GS:15% TL:6% GR:4% SH:3% TU:0%
+  unclassified          2500    42.8%  GS:24% TU:14% SH:10% TL:5% GR:5%
+  motorway              1294    80.8%  GS:16% SH:2% TL:1% GR:1%
+  secondary              894    79.6%  GS:16% GR:2% TL:1% SH:1% TU:0%
+  motorway_link          604    86.3%  GS:12% GR:1% TL:1% SH:0%
+  trunk                  372    75.5%  GS:15% TL:5% SH:3% GR:2%
+  primary                147    78.2%  TL:11% GS:8% SH:3%
+
+  --- nearest burnable within 90 m ---
+  road class               n  no-fuel  mix
+  service              23227    13.2%  GS:35% TL:21% GR:12% SH:11% TU:7%
+  residential          20105    14.1%  TL:32% GS:29% SH:10% GR:9% TU:6%
+  tertiary              4666    24.9%  GS:35% TL:19% GR:11% SH:10% TU:1%
+  unclassified          2500    13.4%  GS:42% TU:15% SH:13% GR:9% TL:7%
+  motorway              1294    27.1%  GS:55% SH:10% GR:5% TL:3% TU:0%
+  secondary              894    45.2%  GS:38% GR:11% TL:3% SH:2% TU:1%
+  motorway_link          604    41.7%  GS:49% SH:4% GR:3% TL:2% TU:0%
+  trunk                  372    25.0%  GS:34% TL:22% SH:10% GR:9%
+  primary                147    27.2%  SH:30% GS:23% TL:18% GR:2%
+
+  --- nearest burnable within 180 m ---
+  road class               n  no-fuel  mix
+  service              23227     6.9%  GS:37% TL:23% GR:14% SH:12% TU:7%
+  residential          20105     9.0%  TL:34% GS:30% SH:10% GR:10% TU:6%
+  tertiary              4666    16.5%  GS:38% TL:22% GR:12% SH:10% TU:1%
+  unclassified          2500     8.9%  GS:45% TU:15% SH:13% GR:10% TL:8%
+  motorway              1294    17.9%  GS:61% SH:11% GR:6% TL:4% TU:0%
+  secondary              894    31.2%  GS:44% GR:15% TL:6% SH:2% TU:1%
+  motorway_link          604    27.0%  GS:57% SH:6% GR:5% TL:4% TU:0%
+  trunk                  372     7.5%  GS:36% TL:27% GR:18% SH:12%
+  primary                147     8.8%  SH:30% TL:27% GS:23% GR:12%
+

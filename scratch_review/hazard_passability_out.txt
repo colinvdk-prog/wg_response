@@ -1,0 +1,136 @@
+============================================================================================================
+PASSABILITY MATRIX — leading-edge / ESTABLISHED FRONT alongside the road
+far-lane travel, ONE 90-m cell of exposed run, crew speed = class free-flow / 1.4
+bands: PASS q<=5.0 & dose<=92.0 | CAUT q<=12.5 & dose<=290.0 | else IMPASS
+============================================================================================================
+
+### preset=moderate  fuel=representative
+fuel   model                          L(m)   eps |         track       service   residential   unclassifie      tertiary     secondary       primary         trunk      motorway
+GR     GR2 low load grass             1.82 0.901 | IMPASS 27.5/ 789 IMPASS 23.2/ 627 IMPASS 14.3/ 330 CAUT   12.1/ 265 CAUT   12.1/ 265 CAUT    9.7/ 198 CAUT    7.8/ 147 CAUT    7.8/ 147 PASS    4.2/  64
+GS     GS2 moderate grass-shrub       2.27 0.811 | IMPASS 28.8/ 838 IMPASS 24.7/ 684 IMPASS 15.7/ 375 IMPASS 13.4/ 303 IMPASS 13.4/ 303 CAUT   10.8/ 227 CAUT    8.7/ 170 CAUT    8.7/ 170 PASS    4.7/  75
+SH     SH2 moderate load shrub        1.95 0.381 | CAUT   12.2/ 267 CAUT   10.3/ 214 CAUT    6.4/ 114 CAUT    5.5/  91 CAUT    5.5/  91 PASS    4.4/  68 PASS    3.5/  51 PASS    3.5/  51 PASS    1.9/  22
+TU     TU5 very high timber-shrub     2.85 0.524 | IMPASS 21.2/ 558 IMPASS 18.6/ 469 CAUT   12.4/ 272 CAUT   10.6/ 222 CAUT   10.6/ 222 CAUT    8.6/ 168 CAUT    7.0/ 127 CAUT    7.0/ 127 PASS    3.8/  56
+TL     TL4 small downed logs          0.45 0.107 | PASS    0.9/   9 PASS    0.7/   6 PASS    0.4/   3 PASS    0.4/   2 PASS    0.4/   2 PASS    0.3/   2 PASS    0.2/   1 PASS    0.2/   1 PASS    0.1/   1
+SB     SB2 moderate load blowdown     2.20 0.508 | IMPASS 17.7/ 437 IMPASS 15.1/ 355 CAUT    9.6/ 193 CAUT    8.1/ 156 CAUT    8.1/ 156 CAUT    6.6/ 117 CAUT    5.3/  87 CAUT    5.3/  87 PASS    2.8/  38
+
+### preset=moderate  fuel=worst-in-class
+fuel   model                          L(m)   eps |         track       service   residential   unclassifie      tertiary     secondary       primary         trunk      motorway
+GR     GR7 high load dry grass        8.40 1.000 | IMPASS 55.4/2005 IMPASS 53.7/1924 IMPASS 46.5/1589 IMPASS 43.2/1441 IMPASS 43.2/1441 IMPASS 38.4/1230 IMPASS 33.3/1016 IMPASS 33.3/1016 IMPASS 20.2/ 522
+GS     GS4 high humid grass-shrub     7.07 0.931 | IMPASS 50.4/1769 IMPASS 48.4/1675 IMPASS 40.3/1313 IMPASS 36.9/1167 IMPASS 36.9/1167 IMPASS 32.1/ 971 IMPASS 27.4/ 784 IMPASS 27.4/ 784 IMPASS 16.1/ 386
+SH     SH5 high load shrub            6.89 1.000 | IMPASS 53.9/1934 IMPASS 51.6/1826 IMPASS 42.7/1420 IMPASS 39.0/1258 IMPASS 39.0/1258 IMPASS 33.9/1043 IMPASS 28.8/ 839 IMPASS 28.8/ 839 IMPASS 16.9/ 411
+TU     TU3 moderate timber-grass-sh   3.13 0.867 | IMPASS 36.8/1165 IMPASS 32.7/ 994 IMPASS 22.1/ 591 IMPASS 19.1/ 486 IMPASS 19.1/ 486 IMPASS 15.6/ 371 IMPASS 12.6/ 280 IMPASS 12.6/ 280 CAUT    6.9/ 124
+TL     TL9 very high load broadleaf   1.65 0.329 | CAUT    9.3/ 186 CAUT    7.8/ 146 PASS    4.7/  76 PASS    4.0/  61 PASS    4.0/  61 PASS    3.2/  45 PASS    2.6/  34 PASS    2.6/  34 PASS    1.4/  15
+SB     SB4 very high load blowdown    5.29 0.963 | IMPASS 49.3/1716 IMPASS 46.2/1575 IMPASS 35.7/1119 IMPASS 31.9/ 962 IMPASS 31.9/ 962 IMPASS 27.0/ 770 IMPASS 22.4/ 602 IMPASS 22.4/ 602 IMPASS 12.7/ 281
+
+### preset=high  fuel=representative
+fuel   model                          L(m)   eps |         track       service   residential   unclassifie      tertiary     secondary       primary         trunk      motorway
+GR     GR2 low load grass             2.84 0.995 | IMPASS 40.2/1310 IMPASS 35.3/1102 IMPASS 23.4/ 637 IMPASS 20.1/ 521 IMPASS 20.1/ 521 IMPASS 16.4/ 395 IMPASS 13.2/ 297 IMPASS 13.2/ 297 CAUT    7.2/ 131
+GS     GS2 moderate grass-shrub       3.33 0.969 | IMPASS 42.3/1402 IMPASS 37.8/1207 IMPASS 26.0/ 731 IMPASS 22.5/ 604 IMPASS 22.5/ 604 IMPASS 18.4/ 462 IMPASS 15.0/ 350 IMPASS 15.0/ 350 CAUT    8.2/ 156
+SH     SH2 moderate load shrub        2.68 0.599 | IMPASS 23.5/ 639 IMPASS 20.5/ 533 IMPASS 13.4/ 304 CAUT   11.5/ 247 CAUT   11.5/ 247 CAUT    9.3/ 187 CAUT    7.5/ 140 CAUT    7.5/ 140 PASS    4.1/  62
+TU     TU5 very high timber-shrub     3.87 0.738 | IMPASS 34.3/1059 IMPASS 31.2/ 932 IMPASS 22.2/ 593 IMPASS 19.4/ 495 IMPASS 19.4/ 495 IMPASS 16.0/ 384 IMPASS 13.1/ 293 IMPASS 13.1/ 293 CAUT    7.2/ 132
+TL     TL4 small downed logs          0.67 0.210 | PASS    2.7/  36 PASS    2.2/  27 PASS    1.3/  13 PASS    1.1/  10 PASS    1.1/  10 PASS    0.8/   8 PASS    0.7/   6 PASS    0.7/   6 PASS    0.4/   2
+SB     SB2 moderate load blowdown     3.38 0.798 | IMPASS 35.1/1092 IMPASS 31.4/ 942 IMPASS 21.7/ 574 IMPASS 18.8/ 474 IMPASS 18.8/ 474 IMPASS 15.4/ 363 CAUT   12.5/ 275 CAUT   12.5/ 275 CAUT    6.8/ 123
+
+### preset=high  fuel=worst-in-class
+fuel   model                          L(m)   eps |         track       service   residential   unclassifie      tertiary     secondary       primary         trunk      motorway
+GR     GR7 high load dry grass       13.12 1.000 | IMPASS 57.3/2100 IMPASS 56.5/2061 IMPASS 52.7/1877 IMPASS 50.6/1779 IMPASS 50.6/1779 IMPASS 47.2/1620 IMPASS 43.0/1430 IMPASS 43.0/1430 IMPASS 29.1/ 852
+GS     GS4 high humid grass-shrub     9.77 0.994 | IMPASS 55.9/2030 IMPASS 54.6/1967 IMPASS 48.7/1688 IMPASS 45.8/1557 IMPASS 45.8/1557 IMPASS 41.4/1360 IMPASS 36.5/1149 IMPASS 36.5/1149 IMPASS 22.9/ 616
+SH     SH5 high load shrub            9.56 1.000 | IMPASS 56.1/2041 IMPASS 54.7/1975 IMPASS 48.6/1686 IMPASS 45.7/1551 IMPASS 45.7/1551 IMPASS 41.2/1351 IMPASS 36.2/1137 IMPASS 36.2/1137 IMPASS 22.6/ 606
+TU     TU3 moderate timber-grass-sh   4.45 0.982 | IMPASS 47.9/1652 IMPASS 44.1/1483 IMPASS 32.6/ 990 IMPASS 28.8/ 837 IMPASS 28.8/ 837 IMPASS 24.0/ 657 IMPASS 19.7/ 506 IMPASS 19.7/ 506 CAUT   11.0/ 232
+TL     TL9 very high load broadleaf   2.43 0.568 | IMPASS 21.0/ 552 IMPASS 18.2/ 454 CAUT   11.7/ 253 CAUT   10.0/ 205 CAUT   10.0/ 205 CAUT    8.1/ 154 CAUT    6.5/ 115 CAUT    6.5/ 115 PASS    3.5/  51
+SB     SB4 very high load blowdown    8.23 1.000 | IMPASS 55.2/1998 IMPASS 53.5/1914 IMPASS 46.1/1571 IMPASS 42.8/1422 IMPASS 42.8/1422 IMPASS 37.9/1210 IMPASS 32.8/ 997 IMPASS 32.8/ 997 IMPASS 19.8/ 509
+
+### preset=extreme  fuel=representative
+fuel   model                          L(m)   eps |         track       service   residential   unclassifie      tertiary     secondary       primary         trunk      motorway
+GR     GR2 low load grass             4.35 1.000 | IMPASS 48.4/1675 IMPASS 44.5/1499 IMPASS 32.7/ 993 IMPASS 28.8/ 837 IMPASS 28.8/ 837 IMPASS 23.9/ 655 IMPASS 19.7/ 504 IMPASS 19.7/ 504 CAUT   10.9/ 230
+GS     GS2 moderate grass-shrub       4.70 0.999 | IMPASS 49.5/1726 IMPASS 45.9/1561 IMPASS 34.4/1063 IMPASS 30.4/ 903 IMPASS 30.4/ 903 IMPASS 25.5/ 712 IMPASS 21.0/ 551 IMPASS 21.0/ 551 CAUT   11.7/ 254
+SH     SH2 moderate load shrub        3.58 0.797 | IMPASS 35.9/1127 IMPASS 32.4/ 980 IMPASS 22.6/ 608 IMPASS 19.7/ 504 IMPASS 19.7/ 504 IMPASS 16.2/ 388 IMPASS 13.2/ 295 IMPASS 13.2/ 295 CAUT    7.2/ 132
+TU     TU5 very high timber-shrub     5.05 0.891 | IMPASS 45.0/1523 IMPASS 42.1/1390 IMPASS 32.1/ 971 IMPASS 28.6/ 831 IMPASS 28.6/ 831 IMPASS 24.1/ 661 IMPASS 20.0/ 515 IMPASS 20.0/ 515 CAUT   11.2/ 239
+TL     TL4 small downed logs          0.95 0.360 | CAUT    6.4/ 113 CAUT    5.2/  86 PASS    3.1/  42 PASS    2.6/  34 PASS    2.6/  34 PASS    2.1/  25 PASS    1.6/  18 PASS    1.6/  18 PASS    0.9/   8
+SB     SB2 moderate load blowdown     4.93 0.959 | IMPASS 48.2/1666 IMPASS 44.9/1516 IMPASS 34.1/1051 IMPASS 30.3/ 897 IMPASS 30.3/ 897 IMPASS 25.5/ 712 IMPASS 21.1/ 553 IMPASS 21.1/ 553 CAUT   11.8/ 256
+
+### preset=extreme  fuel=worst-in-class
+fuel   model                          L(m)   eps |         track       service   residential   unclassifie      tertiary     secondary       primary         trunk      motorway
+GR     GR7 high load dry grass       20.08 1.000 | IMPASS 58.1/2141 IMPASS 57.8/2123 IMPASS 55.9/2033 IMPASS 54.8/1980 IMPASS 54.8/1980 IMPASS 52.9/1887 IMPASS 50.2/1759 IMPASS 50.2/1759 IMPASS 38.7/1243
+GS     GS4 high humid grass-shrub    12.80 1.000 | IMPASS 57.2/2096 IMPASS 56.4/2056 IMPASS 52.4/1864 IMPASS 50.3/1764 IMPASS 50.3/1764 IMPASS 46.8/1601 IMPASS 42.5/1408 IMPASS 42.5/1408 IMPASS 28.6/ 831
+SH     SH5 high load shrub           12.90 1.000 | IMPASS 57.3/2097 IMPASS 56.5/2058 IMPASS 52.5/1868 IMPASS 50.4/1769 IMPASS 50.4/1769 IMPASS 46.9/1607 IMPASS 42.6/1415 IMPASS 42.6/1415 IMPASS 28.8/ 837
+TU     TU3 moderate timber-grass-sh   5.99 0.999 | IMPASS 52.5/1869 IMPASS 49.8/1740 IMPASS 39.8/1291 IMPASS 35.9/1126 IMPASS 35.9/1126 IMPASS 30.7/ 915 IMPASS 25.8/ 724 IMPASS 25.8/ 724 IMPASS 14.8/ 345
+TL     TL9 very high load broadleaf   3.40 0.794 | IMPASS 35.0/1089 IMPASS 31.4/ 940 IMPASS 21.6/ 573 IMPASS 18.8/ 474 IMPASS 18.8/ 474 IMPASS 15.4/ 363 CAUT   12.5/ 275 CAUT   12.5/ 275 CAUT    6.8/ 123
+SB     SB4 very high load blowdown   12.07 1.000 | IMPASS 57.1/2087 IMPASS 56.1/2043 IMPASS 51.8/1833 IMPASS 49.5/1726 IMPASS 49.5/1726 IMPASS 45.7/1554 IMPASS 41.3/1355 IMPASS 41.3/1355 IMPASS 27.3/ 782
+
+============================================================================================================
+SENSITIVITY: exposed-run length (representative fuels, 'high' preset, secondary road)
+============================================================================================================
+  GR   GR2 low load grass         1cell:IMPASS  395TDU( 9.5s)  2cell:IMPASS  790TDU(19.0s)  3cell:IMPASS 1185TDU(28.5s)  5cell:IMPASS 1975TDU(47.5s)
+  GS   GS2 moderate grass-shrub   1cell:IMPASS  462TDU( 9.5s)  2cell:IMPASS  925TDU(19.0s)  3cell:IMPASS 1387TDU(28.5s)  5cell:IMPASS 2312TDU(47.5s)
+  SH   SH2 moderate load shrub    1cell:CAUT    187TDU( 9.5s)  2cell:IMPASS  374TDU(19.0s)  3cell:IMPASS  561TDU(28.5s)  5cell:IMPASS  936TDU(47.5s)
+  TU   TU5 very high timber-shrub 1cell:IMPASS  384TDU( 9.5s)  2cell:IMPASS  767TDU(19.0s)  3cell:IMPASS 1151TDU(28.5s)  5cell:IMPASS 1918TDU(47.5s)
+  TL   TL4 small downed logs      1cell:PASS      8TDU( 9.5s)  2cell:PASS     15TDU(19.0s)  3cell:PASS     23TDU(28.5s)  5cell:PASS     38TDU(47.5s)
+  SB   SB2 moderate load blowdown 1cell:IMPASS  363TDU( 9.5s)  2cell:IMPASS  727TDU(19.0s)  3cell:IMPASS 1090TDU(28.5s)  5cell:IMPASS 1817TDU(47.5s)
+
+============================================================================================================
+SENSITIVITY: near lane vs far lane (high preset, residential 8 m)
+============================================================================================================
+  GR   near d= 2.5m q= 43.92 dose=  1473 IMPASS |  far d= 6.5m q= 23.43 dose=   637 IMPASS
+  GS   near d= 2.5m q= 45.57 dose=  1547 IMPASS |  far d= 6.5m q= 25.99 dose=   731 IMPASS
+  SH   near d= 2.5m q= 25.77 dose=   723 IMPASS |  far d= 6.5m q= 13.44 dose=   304 IMPASS
+  TU   near d= 2.5m q= 36.46 dose=  1149 IMPASS |  far d= 6.5m q= 22.21 dose=   593 IMPASS
+  TL   near d= 2.5m q=  3.20 dose=    45 PASS   |  far d= 6.5m q=  1.27 dose=    13 PASS
+  SB   near d= 2.5m q= 37.72 dose=  1202 IMPASS |  far d= 6.5m q= 21.65 dose=   574 IMPASS
+
+============================================================================================================
+RESIDUAL (post-frontal) PHASE — areal heat release of the heavy dead classes
+q_area = w_class * heat / t_res ; t_res = 384/sigma (Anderson per size class)
+============================================================================================================
+code model                               w10h   w100h     q10h    q100h  t_cold_surface
+ 101 GR1 short sparse grass             0.000   0.000      0.0      0.0          0.2 min
+ 102 GR2 low load grass                 0.000   0.000      0.0      0.0          0.2 min
+ 103 GR3 low load very coarse grass     0.090   0.000      7.9      0.0          3.5 min
+ 104 GR4 moderate load grass            0.000   0.000      0.0      0.0          0.2 min
+ 105 GR5 low load humid grass           0.000   0.000      0.0      0.0          0.2 min
+ 106 GR6 moderate load humid grass      0.000   0.000      0.0      0.0          0.2 min
+ 107 GR7 high load dry grass            0.000   0.000      0.0      0.0          0.2 min
+ 108 GR8 high load very coarse grass    0.224   0.000     19.7      0.0          3.5 min
+ 109 GR9 very high load humid grass     0.224   0.000     19.7      0.0          3.5 min
+ 121 GS1 low grass-shrub                0.000   0.000      0.0      0.0          0.2 min
+ 122 GS2 moderate grass-shrub           0.112   0.000      9.9      0.0          3.5 min
+ 123 GS3 moderate humid grass-shrub     0.056   0.000      4.9      0.0          3.5 min
+ 124 GS4 high humid grass-shrub         0.067   0.022      5.9      0.5         12.8 min
+ 141 SH1 low load dry shrub             0.056   0.000      4.9      0.0          3.5 min
+ 142 SH2 moderate load shrub            0.538   0.168     47.4      4.1         12.8 min
+ 143 SH3 moderate load humid shrub      0.672   0.000     59.2      0.0          3.5 min
+ 144 SH4 low load humid timber-shrub    0.258   0.045     22.7      1.1         12.8 min
+ 145 SH5 high load shrub                0.471   0.000     41.4      0.0          3.5 min
+ 146 SH6 low load humid shrub           0.325   0.000     28.6      0.0          3.5 min
+ 147 SH7 very high load shrub           1.188   0.493    104.6     11.9         12.8 min
+ 148 SH8 high load humid shrub          0.762   0.190     67.1      4.6         12.8 min
+ 149 SH9 very high load humid shrub     0.549   0.000     48.4      0.0          3.5 min
+ 161 TU1 light timber-grass-shrub       0.202   0.336     17.8      8.2         12.8 min
+ 162 TU2 moderate timber-shrub          0.403   0.280     35.5      6.8         12.8 min
+ 163 TU3 moderate timber-grass-shrub    0.034   0.056      3.0      1.4         12.8 min
+ 164 TU4 dwarf conifer with understor   0.000   0.000      0.0      0.0          0.2 min
+ 165 TU5 very high timber-shrub         0.897   0.672     79.0     16.3         12.8 min
+ 181 TL1 low load compact conifer lit   0.493   0.807     43.4     19.6         12.8 min
+ 182 TL2 low load broadleaf litter      0.516   0.493     45.4     11.9         12.8 min
+ 183 TL3 moderate conifer litter        0.493   0.628     43.4     15.2         12.8 min
+ 184 TL4 small downed logs              0.336   0.941     29.6     22.8         12.8 min
+ 185 TL5 high load conifer litter       0.561   0.986     49.3     23.9         12.8 min
+ 186 TL6 moderate load broadleaf litt   0.269   0.269     23.7      6.5         12.8 min
+ 187 TL7 large downed logs              0.314   1.816     27.6     44.0         12.8 min
+ 188 TL8 long-needle litter             0.314   0.247     27.6      6.0         12.8 min
+ 189 TL9 very high load broadleaf lit   0.740   0.930     65.1     22.5         12.8 min
+ 201 SB1 low load blowdown              0.672   2.466     59.2     59.8         12.8 min
+ 202 SB2 moderate load blowdown         0.953   0.897     83.9     21.7         12.8 min
+ 203 SB3 high load blowdown             0.617   0.672     54.3     16.3         12.8 min
+ 204 SB4 very high load blowdown        0.785   1.177     69.1     28.5         12.8 min
+
+============================================================================================================
+FLAME DEPTH / CELL — 'flame density' at the leading edge (D_f / 90 m cell)
+============================================================================================================
+ grp                        low                   moderate                       high                    extreme
+  GR    D=   3.19m    3.5% cell    D=  11.01m   12.2% cell    D=  25.00m   27.8% cell    D=  49.38m   54.9% cell
+  GS    D=   1.40m    1.6% cell    D=   4.34m    4.8% cell    D=   8.61m    9.6% cell    D=  15.37m   17.1% cell
+  SH    D=   1.84m    2.0% cell    D=   5.04m    5.6% cell    D=   9.00m   10.0% cell    D=  14.62m   16.2% cell
+  TU    D=   0.40m    0.4% cell    D=   1.32m    1.5% cell    D=   2.68m    3.0% cell    D=   4.43m    4.9% cell
+  TL    D=   0.12m    0.1% cell    D=   0.34m    0.4% cell    D=   0.66m    0.7% cell    D=   1.17m    1.3% cell
+  SB    D=   0.58m    0.6% cell    D=   2.03m    2.3% cell    D=   4.60m    5.1% cell    D=   9.28m   10.3% cell

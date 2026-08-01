@@ -1,0 +1,100 @@
+====================================================================================================
+crew speed 9.471 m/s (34.1 km/h); one 90 m cell = 9.50 s exposure
+PASS: q<=5.0 kW/m2 AND dose<=92.0 TDU   CAUTION: q<=12.5 AND dose<=290.0
+====================================================================================================
+
+### fuel selection: representative
+ grp model                      |            low            |         moderate          |           high            |          extreme         
+                                |   L(m)  d_pass  d_caut    |   L(m)  d_pass  d_caut    |   L(m)  d_pass  d_caut    |   L(m)  d_pass  d_caut   
+  GR GR2 low load grass         |    1.00     5.6     2.0   |    1.82    19.2     7.5   |    2.84    33.1    13.0   |    4.35    50.9    20.0  
+  GS GS2 moderate grass-shrub   |    1.27     5.8     2.0   |    2.27    21.6     8.4   |    3.33    37.8    14.8   |    4.70    54.9    21.6  
+  SH SH2 moderate load shrub    |    1.13     1.6     0.0   |    1.95     8.5     2.9   |    2.68    18.7     7.1   |    3.58    33.4    12.9  
+  TU TU5 very high timber-shrub |    1.80     5.0     1.2   |    2.85    17.3     6.4   |    3.87    33.4    12.9   |    5.05    52.7    20.6  
+  TL TL4 small downed logs      |    0.26     0.0     0.0   |    0.45     0.3     0.0   |    0.67     1.5     0.0   |    0.95     3.9     1.3  
+  SB SB2 moderate load blowdown |    1.19     2.3     0.0   |    2.20    12.9     4.8   |    3.38    31.6    12.2   |    4.93    55.4    21.7  
+
+### fuel selection: tile-p90 (heaviest model >=3% of a cached tile)
+ grp model                      |            low            |         moderate          |           high            |          extreme         
+                                |   L(m)  d_pass  d_caut    |   L(m)  d_pass  d_caut    |   L(m)  d_pass  d_caut    |   L(m)  d_pass  d_caut   
+  GR GR2 low load grass         |    1.00     5.6     2.0   |    1.82    19.2     7.5   |    2.84    33.1    13.0   |    4.35    50.9    20.0  
+  GS GS2 moderate grass-shrub   |    1.27     5.8     2.0   |    2.27    21.6     8.4   |    3.33    37.8    14.8   |    4.70    54.9    21.6  
+  SH SH5 high load shrub        |    4.18    46.3    18.1   |    6.89    80.6    31.6   |    9.56   112.0    43.9   |   12.90   151.2    59.3  
+  TU TU5 very high timber-shrub |    1.80     5.0     1.2   |    2.85    17.3     6.4   |    3.87    33.4    12.9   |    5.05    52.7    20.6  
+  TL TL5 high load conifer litt |    0.41     0.0     0.0   |    0.73     1.4     0.0   |    1.10     4.5     1.5   |    1.58    10.6     4.0  
+  SB SB2 moderate load blowdown |    1.19     2.3     0.0   |    2.20    12.9     4.8   |    3.38    31.6    12.2   |    4.93    55.4    21.7  
+
+### fuel selection: worst-in-class
+ grp model                      |            low            |         moderate          |           high            |          extreme         
+                                |   L(m)  d_pass  d_caut    |   L(m)  d_pass  d_caut    |   L(m)  d_pass  d_caut    |   L(m)  d_pass  d_caut   
+  GR GR7 high load dry grass    |    4.56    49.6    19.4   |    8.40    98.4    38.6   |   13.12   153.7    60.3   |   20.08   235.3    92.3  
+  GS GS4 high humid grass-shrub |    4.17    28.8    10.9   |    7.07    77.1    30.1   |    9.77   113.8    44.6   |   12.80   150.0    58.8  
+  SH SH5 high load shrub        |    4.18    46.3    18.1   |    6.89    80.6    31.6   |    9.56   112.0    43.9   |   12.90   151.2    59.3  
+  TU TU3 moderate timber-grass- |    1.80     9.9     3.6   |    3.13    31.8    12.4   |    4.45    51.2    20.1   |    5.99    70.1    27.5  
+  TL TL9 very high load broadle |    0.93     1.0     0.0   |    1.65     6.2     1.9   |    2.43    16.1     6.0   |    3.40    31.6    12.2  
+  SB SB4 very high load blowdow |    2.75    18.9     7.1   |    5.29    59.7    23.4   |    8.23    96.4    37.8   |   12.07   141.4    55.5  
+
+====================================================================================================
+EXPRESSED IN 90-m RASTER CELLS (what the corridor sampler can actually see)
+d_cells = ceil((d_required - road_half_width_assumed) / 90) ; road half+shoulder taken as 6.5 m (residential far lane)
+====================================================================================================
+
+### representative
+ grp |         low         |      moderate       |        high         |       extreme      
+  GR |  pass>=0c caut>=0c  |  pass>=1c caut>=1c  |  pass>=1c caut>=1c  |  pass>=1c caut>=1c 
+  GS |  pass>=0c caut>=0c  |  pass>=1c caut>=1c  |  pass>=1c caut>=1c  |  pass>=1c caut>=1c 
+  SH |  pass>=0c caut>=0c  |  pass>=1c caut>=0c  |  pass>=1c caut>=1c  |  pass>=1c caut>=1c 
+  TU |  pass>=0c caut>=0c  |  pass>=1c caut>=0c  |  pass>=1c caut>=1c  |  pass>=1c caut>=1c 
+  TL |  pass>=0c caut>=0c  |  pass>=0c caut>=0c  |  pass>=0c caut>=0c  |  pass>=0c caut>=0c 
+  SB |  pass>=0c caut>=0c  |  pass>=1c caut>=0c  |  pass>=1c caut>=1c  |  pass>=1c caut>=1c 
+
+### worst-in-class
+ grp |         low         |      moderate       |        high         |       extreme      
+  GR |  pass>=1c caut>=1c  |  pass>=2c caut>=1c  |  pass>=2c caut>=1c  |  pass>=3c caut>=1c 
+  GS |  pass>=1c caut>=1c  |  pass>=1c caut>=1c  |  pass>=2c caut>=1c  |  pass>=2c caut>=1c 
+  SH |  pass>=1c caut>=1c  |  pass>=1c caut>=1c  |  pass>=2c caut>=1c  |  pass>=2c caut>=1c 
+  TU |  pass>=1c caut>=0c  |  pass>=1c caut>=1c  |  pass>=1c caut>=1c  |  pass>=1c caut>=1c 
+  TL |  pass>=0c caut>=0c  |  pass>=0c caut>=0c  |  pass>=1c caut>=0c  |  pass>=1c caut>=1c 
+  SB |  pass>=1c caut>=1c  |  pass>=1c caut>=1c  |  pass>=1c caut>=1c  |  pass>=2c caut>=1c 
+
+====================================================================================================
+FLUX vs SEPARATION, representative fuels, 'high' preset
+====================================================================================================
+ grp     L   eps |       3m       6m      10m      20m      45m      90m     135m     180m
+  GR  2.84 0.995 |    40.23    23.43    15.99     8.23     3.69     1.85     1.23     0.92
+  GS  3.33 0.969 |    42.34    25.99    18.01     9.36     4.21     2.11     1.41     1.05
+  SH  2.68 0.599 |    23.48    13.44     9.13     4.68     2.10     1.05     0.70     0.53
+  TU  3.87 0.738 |    34.30    22.21    15.67     8.25     3.72     1.86     1.24     0.93
+  TL  0.67 0.210 |     2.70     1.27     0.83     0.41     0.18     0.09     0.06     0.05
+  SB  3.38 0.798 |    35.09    21.65    15.03     7.82     3.52     1.76     1.18     0.88
+
+same, worst-in-class, 'extreme' preset
+ grp     L   eps |       3m       6m      10m      20m      45m      90m     135m     180m
+  GR 20.08 1.000 |    58.15    55.93    52.63    41.66    23.96    12.80     8.65     6.52
+  GS 12.80 1.000 |    57.23    52.41    46.33    31.69    16.09     8.28     5.55     4.17
+  SH 12.90 1.000 |    57.26    52.50    46.47    31.87    16.20     8.34     5.59     4.20
+  TU  5.99 0.999 |    52.52    39.79    30.17    16.84     7.75     3.90     2.60     1.95
+  TL  3.40 0.794 |    35.02    21.64    15.03     7.83     3.52     1.76     1.18     0.88
+  SB 12.07 1.000 |    57.05    51.76    45.26    30.37    15.23     7.81     5.23     3.93
+
+====================================================================================================
+STANDING (crew working) vs TRANSIT separation — the honest multiplier
+====================================================================================================
+ grp preset         L     4xL     8xL   d(7kW)  d_transit(1cell)  ratio to d7
+  GR moderate    1.82     7.3    14.6     13.7               7.5         0.55
+  GS moderate    2.27     9.1    18.2     15.3               8.4         0.55
+  SH moderate    1.95     7.8    15.6      5.9               2.9         0.49
+  TU moderate    2.85    11.4    22.8     12.2               6.4         0.53
+  TL moderate    0.45     1.8     3.6      0.0               0.0          nan
+  SB moderate    2.20     8.8    17.6      9.1               4.8         0.52
+  GR high        2.84    11.4    22.7     23.6              13.0         0.55
+  GS high        3.33    13.3    26.6     26.9              14.8         0.55
+  SH high        2.68    10.7    21.5     13.2               7.1         0.53
+  TU high        3.87    15.5    31.0     23.7              12.9         0.54
+  TL high        0.67     2.7     5.4      1.0               0.0         0.00
+  SB high        3.38    13.5    27.1     22.4              12.2         0.55
+  GR extreme     4.35    17.4    34.8     36.2              20.0         0.55
+  GS extreme     4.70    18.8    37.6     39.1              21.6         0.55
+  SH extreme     3.58    14.3    28.7     23.7              12.9         0.55
+  TU extreme     5.05    20.2    40.4     37.5              20.6         0.55
+  TL extreme     0.95     3.8     7.6      2.7               1.3         0.48
+  SB extreme     4.93    19.7    39.5     39.4              21.7         0.55
