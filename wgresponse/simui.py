@@ -1480,6 +1480,12 @@ class SimSession:
             cfg.corridor_erosion_tiered = True
         if "escape_hysteresis_margin_min" not in overrides:
             cfg.escape_hysteresis_margin_min = SIM_ESCAPE_HYSTERESIS_MIN
+        # TRANSIT-HAZARD STAGE 1 (validated 2026-07-30: per-class windows
+        # provably active, byte-identical outcomes at 4 and 8 crews, 0
+        # viol/ovt — no harm proven; the benefit regime is escape through
+        # cooling grass, which this suite does not exercise).
+        if "transit_cold_black_by_class" not in overrides:
+            cfg.transit_cold_black_by_class = True
 
         # FIRE ZONE placement law: clients ALWAYS live in the central
         # ~18 km community window; on the standard tile that IS the tile

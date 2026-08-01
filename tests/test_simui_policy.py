@@ -483,7 +483,8 @@ def test_homes_mode_withdrawal_still_fires(tmp_path):
     s = SimSession(KEY, 16, 1, seed="m1",
                    cfg_overrides=dict(FAST_TIGHT,
                                       corridor_erosion_tiered=False,
-                                      escape_hysteresis_margin_min=0.0),
+                                      escape_hysteresis_margin_min=0.0,
+                                      transit_cold_black_by_class=False),
                    tile_dir=d, roads_module=None)
     assert s._cfg.dispatch_objective == "homes", "test must run the real default"
     loc = LOCATIONS[KEY]

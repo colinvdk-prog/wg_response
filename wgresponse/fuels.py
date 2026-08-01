@@ -184,6 +184,12 @@ def cold_black_minutes(code: int) -> float:
         return 60.0                             # stricter: downed logs
     if 201 <= code <= 204:                      # SB slash-blowdown
         return 90.0                             # heaviest 100-h loads
+    if not is_burnable(code):
+        # Non-burnable cells never carry a finite front arrival, so the
+        # window is unreachable behind the burned-cell guard — but a future
+        # caller outside that guard must not inherit a 90-min claim about
+        # pavement. Flat legacy window, explicit.
+        return 45.0
     return 90.0                                 # unknown burnable: fail long
 
 

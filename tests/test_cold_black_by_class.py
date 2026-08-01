@@ -46,10 +46,10 @@ def test_flag_on_reads_cell_fuel():
     assert s._cold_black_pass_s(p) == 5.0 * 60.0
     s._tile.fuel.data[idx] = 186.0            # TL6
     assert s._cold_black_pass_s(p) == 60.0 * 60.0
-    s._tile.fuel.data[idx] = 91.0             # NB urban: unknown branch
+    s._tile.fuel.data[idx] = 91.0             # NB urban: explicit flat
     # (irrelevant in practice — NB cells never carry a finite nominal
     # arrival, so the burned-test never reaches the window there)
-    assert s._cold_black_pass_s(p) == 90.0 * 60.0
+    assert s._cold_black_pass_s(p) == 45.0 * 60.0
 
 
 def test_off_tile_point_falls_back_flat():
@@ -68,6 +68,12 @@ def test_sim_defaults_flip_calibrated_stack():
     assert s._cfg.corridor_erosion_shrub_m == 200.0
     assert s._cfg.corridor_erosion_slow_m == 150.0
     assert s._cfg.escape_hysteresis_margin_min == 20.0
+    assert s._cfg.transit_cold_black_by_class is True
+
+
+def test_cold_black_nonburnable_flat_window():
+    assert cold_black_minutes(91) == 45.0     # NB urban: explicit flat
+    assert cold_black_minutes(98) == 45.0     # water
 
 
 def test_sim_defaults_explicit_overrides_win():
