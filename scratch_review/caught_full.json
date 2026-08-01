@@ -1,0 +1,706 @@
+{
+ "a_4crew": {
+  "tag": "a",
+  "attempt": 2,
+  "n_crews": 4,
+  "overrides": {
+   "deploy_min": 10,
+   "dispatch_plan_on_roads": true,
+   "dispatch_hold_h": 24,
+   "corridor_erosion_euclidean": true,
+   "route_alternatives": 3
+  },
+  "seed": "paradise_ca|+0|8000|high",
+  "crews_caught": [
+   "sim-g1",
+   "sim-g2",
+   "sim-g4"
+  ],
+  "per_crew_tick_list": {
+   "sim-g1": [
+    48
+   ],
+   "sim-g2": [
+    48
+   ],
+   "sim-g4": [
+    48
+   ]
+  },
+  "cfg_echo": {
+   "deploy_min": 10,
+   "egress_buffer_min": 30.0,
+   "corridor_erosion_m": 500.0,
+   "corridor_erosion_euclidean": true,
+   "route_alternatives": 3,
+   "dispatch_plan_on_roads": true,
+   "dispatch_hold_h": 24,
+   "cell_m": 90.0,
+   "roads_on": true
+  },
+  "events": [
+   {
+    "tick": 48,
+    "sim_elapsed_h": 12.0,
+    "crew_id": "sim-g1",
+    "reason": "burned",
+    "status": "egressing",
+    "mode": "egress",
+    "lat": 39.740699,
+    "lon": -121.589656,
+    "cell": {
+     "r": 142,
+     "c": 109,
+     "code": 186,
+     "cls": "TL",
+     "name": "TL6 moderate load broadleaf litter"
+    },
+    "neighbors": [
+     {
+      "dr": -1,
+      "dc": -1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     },
+     {
+      "dr": -1,
+      "dc": 0,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": -1,
+      "dc": 1,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": 0,
+      "dc": -1,
+      "code": 184,
+      "cls": "TL",
+      "name": "TL4 small downed logs"
+     },
+     {
+      "dr": 0,
+      "dc": 1,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": 1,
+      "dc": -1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     },
+     {
+      "dr": 1,
+      "dc": 0,
+      "code": 122,
+      "cls": "GS",
+      "name": "GS2 moderate grass-shrub"
+     },
+     {
+      "dr": 1,
+      "dc": 1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     }
+    ],
+    "nominal_arrival_s": 1790038822.97959,
+    "eroded_p10_s": 1790011708.675485,
+    "burn_residence_s": 4377.0,
+    "p10_minus_nominal_gap_s": -27114.3,
+    "on_road": {
+     "nearest_road_node_dist_m": 57.6,
+     "arriving_leg_on_roads": true,
+     "arriving_leg_kind": "egress",
+     "arriving_leg_dist_m": 5625.0,
+     "arriving_leg_edge_counts": {
+      "spur": 2,
+      "road": 217
+     },
+     "arriving_leg_pct_road_edges": 99.1,
+     "note": "this crew arrived at the catch cell THIS tick via the logged leg -- SEM-10's relocate_to() clears cs._leg the same tick it re-targets a crew, so the post-tick leg is always None at audit time; this is the leg that actually carried it here."
+    },
+    "pending_route_clear": {
+     "available": true,
+     "cleared": true,
+     "transit_s": 6.1
+    },
+    "straight_line_clear": {
+     "dist_m": 69.4,
+     "r": 142,
+     "c": 110
+    },
+    "egress_zone_id_after": "paradise_ca-z2",
+    "relocate_reason_now": "zone_overrun",
+    "anchor_zone_id": "paradise_ca-z1"
+   },
+   {
+    "tick": 48,
+    "sim_elapsed_h": 12.0,
+    "crew_id": "sim-g2",
+    "reason": "burned",
+    "status": "egressing",
+    "mode": "egress",
+    "lat": 39.740699,
+    "lon": -121.589656,
+    "cell": {
+     "r": 142,
+     "c": 109,
+     "code": 186,
+     "cls": "TL",
+     "name": "TL6 moderate load broadleaf litter"
+    },
+    "neighbors": [
+     {
+      "dr": -1,
+      "dc": -1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     },
+     {
+      "dr": -1,
+      "dc": 0,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": -1,
+      "dc": 1,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": 0,
+      "dc": -1,
+      "code": 184,
+      "cls": "TL",
+      "name": "TL4 small downed logs"
+     },
+     {
+      "dr": 0,
+      "dc": 1,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": 1,
+      "dc": -1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     },
+     {
+      "dr": 1,
+      "dc": 0,
+      "code": 122,
+      "cls": "GS",
+      "name": "GS2 moderate grass-shrub"
+     },
+     {
+      "dr": 1,
+      "dc": 1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     }
+    ],
+    "nominal_arrival_s": 1790038822.97959,
+    "eroded_p10_s": 1790011708.675485,
+    "burn_residence_s": 4377.0,
+    "p10_minus_nominal_gap_s": -27114.3,
+    "on_road": {
+     "nearest_road_node_dist_m": 57.6,
+     "arriving_leg_on_roads": true,
+     "arriving_leg_kind": "egress",
+     "arriving_leg_dist_m": 5625.0,
+     "arriving_leg_edge_counts": {
+      "spur": 2,
+      "road": 217
+     },
+     "arriving_leg_pct_road_edges": 99.1,
+     "note": "this crew arrived at the catch cell THIS tick via the logged leg -- SEM-10's relocate_to() clears cs._leg the same tick it re-targets a crew, so the post-tick leg is always None at audit time; this is the leg that actually carried it here."
+    },
+    "pending_route_clear": {
+     "available": true,
+     "cleared": true,
+     "transit_s": 6.1
+    },
+    "straight_line_clear": {
+     "dist_m": 69.4,
+     "r": 142,
+     "c": 110
+    },
+    "egress_zone_id_after": "paradise_ca-z2",
+    "relocate_reason_now": "zone_overrun",
+    "anchor_zone_id": "paradise_ca-z2"
+   },
+   {
+    "tick": 48,
+    "sim_elapsed_h": 12.0,
+    "crew_id": "sim-g4",
+    "reason": "burned",
+    "status": "egressing",
+    "mode": "egress",
+    "lat": 39.740699,
+    "lon": -121.589656,
+    "cell": {
+     "r": 142,
+     "c": 109,
+     "code": 186,
+     "cls": "TL",
+     "name": "TL6 moderate load broadleaf litter"
+    },
+    "neighbors": [
+     {
+      "dr": -1,
+      "dc": -1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     },
+     {
+      "dr": -1,
+      "dc": 0,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": -1,
+      "dc": 1,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": 0,
+      "dc": -1,
+      "code": 184,
+      "cls": "TL",
+      "name": "TL4 small downed logs"
+     },
+     {
+      "dr": 0,
+      "dc": 1,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": 1,
+      "dc": -1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     },
+     {
+      "dr": 1,
+      "dc": 0,
+      "code": 122,
+      "cls": "GS",
+      "name": "GS2 moderate grass-shrub"
+     },
+     {
+      "dr": 1,
+      "dc": 1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     }
+    ],
+    "nominal_arrival_s": 1790038822.97959,
+    "eroded_p10_s": 1790011708.675485,
+    "burn_residence_s": 4377.0,
+    "p10_minus_nominal_gap_s": -27114.3,
+    "on_road": {
+     "nearest_road_node_dist_m": 57.6,
+     "arriving_leg_on_roads": true,
+     "arriving_leg_kind": "egress",
+     "arriving_leg_dist_m": 5625.0,
+     "arriving_leg_edge_counts": {
+      "spur": 2,
+      "road": 217
+     },
+     "arriving_leg_pct_road_edges": 99.1,
+     "note": "this crew arrived at the catch cell THIS tick via the logged leg -- SEM-10's relocate_to() clears cs._leg the same tick it re-targets a crew, so the post-tick leg is always None at audit time; this is the leg that actually carried it here."
+    },
+    "pending_route_clear": {
+     "available": true,
+     "cleared": true,
+     "transit_s": 6.1
+    },
+    "straight_line_clear": {
+     "dist_m": 69.4,
+     "r": 142,
+     "c": 110
+    },
+    "egress_zone_id_after": "paradise_ca-z2",
+    "relocate_reason_now": "zone_overrun",
+    "anchor_zone_id": "paradise_ca-z1"
+   }
+  ]
+ },
+ "b_8crew": {
+  "tag": "b",
+  "attempt": 1,
+  "n_crews": 8,
+  "overrides": {
+   "corridor_erosion_euclidean": true
+  },
+  "seed": "paradise_ca|+0|8000|high",
+  "crews_caught": [
+   "sim-g1",
+   "sim-g4",
+   "sim-g8"
+  ],
+  "per_crew_tick_list": {
+   "sim-g1": [
+    48
+   ],
+   "sim-g4": [
+    48
+   ],
+   "sim-g8": [
+    48
+   ]
+  },
+  "cfg_echo": {
+   "deploy_min": 30.0,
+   "egress_buffer_min": 30.0,
+   "corridor_erosion_m": 500.0,
+   "corridor_erosion_euclidean": true,
+   "route_alternatives": 1,
+   "dispatch_plan_on_roads": false,
+   "dispatch_hold_h": 0.0,
+   "cell_m": 90.0,
+   "roads_on": true
+  },
+  "events": [
+   {
+    "tick": 48,
+    "sim_elapsed_h": 12.0,
+    "crew_id": "sim-g1",
+    "reason": "burned",
+    "status": "egressing",
+    "mode": "egress",
+    "lat": 39.740699,
+    "lon": -121.589656,
+    "cell": {
+     "r": 142,
+     "c": 109,
+     "code": 186,
+     "cls": "TL",
+     "name": "TL6 moderate load broadleaf litter"
+    },
+    "neighbors": [
+     {
+      "dr": -1,
+      "dc": -1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     },
+     {
+      "dr": -1,
+      "dc": 0,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": -1,
+      "dc": 1,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": 0,
+      "dc": -1,
+      "code": 184,
+      "cls": "TL",
+      "name": "TL4 small downed logs"
+     },
+     {
+      "dr": 0,
+      "dc": 1,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": 1,
+      "dc": -1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     },
+     {
+      "dr": 1,
+      "dc": 0,
+      "code": 122,
+      "cls": "GS",
+      "name": "GS2 moderate grass-shrub"
+     },
+     {
+      "dr": 1,
+      "dc": 1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     }
+    ],
+    "nominal_arrival_s": 1790038822.97959,
+    "eroded_p10_s": 1790011708.675485,
+    "burn_residence_s": 4377.0,
+    "p10_minus_nominal_gap_s": -27114.3,
+    "on_road": {
+     "nearest_road_node_dist_m": 57.6,
+     "arriving_leg_on_roads": true,
+     "arriving_leg_kind": "egress",
+     "arriving_leg_dist_m": 5625.0,
+     "arriving_leg_edge_counts": {
+      "spur": 2,
+      "road": 217
+     },
+     "arriving_leg_pct_road_edges": 99.1,
+     "note": "this crew arrived at the catch cell THIS tick via the logged leg -- SEM-10's relocate_to() clears cs._leg the same tick it re-targets a crew, so the post-tick leg is always None at audit time; this is the leg that actually carried it here."
+    },
+    "pending_route_clear": {
+     "available": true,
+     "cleared": true,
+     "transit_s": 6.1
+    },
+    "straight_line_clear": {
+     "dist_m": 69.4,
+     "r": 142,
+     "c": 110
+    },
+    "egress_zone_id_after": "paradise_ca-z2",
+    "relocate_reason_now": "zone_overrun",
+    "anchor_zone_id": "paradise_ca-z1"
+   },
+   {
+    "tick": 48,
+    "sim_elapsed_h": 12.0,
+    "crew_id": "sim-g4",
+    "reason": "burned",
+    "status": "egressing",
+    "mode": "egress",
+    "lat": 39.740699,
+    "lon": -121.589656,
+    "cell": {
+     "r": 142,
+     "c": 109,
+     "code": 186,
+     "cls": "TL",
+     "name": "TL6 moderate load broadleaf litter"
+    },
+    "neighbors": [
+     {
+      "dr": -1,
+      "dc": -1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     },
+     {
+      "dr": -1,
+      "dc": 0,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": -1,
+      "dc": 1,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": 0,
+      "dc": -1,
+      "code": 184,
+      "cls": "TL",
+      "name": "TL4 small downed logs"
+     },
+     {
+      "dr": 0,
+      "dc": 1,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": 1,
+      "dc": -1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     },
+     {
+      "dr": 1,
+      "dc": 0,
+      "code": 122,
+      "cls": "GS",
+      "name": "GS2 moderate grass-shrub"
+     },
+     {
+      "dr": 1,
+      "dc": 1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     }
+    ],
+    "nominal_arrival_s": 1790038822.97959,
+    "eroded_p10_s": 1790011708.675485,
+    "burn_residence_s": 4377.0,
+    "p10_minus_nominal_gap_s": -27114.3,
+    "on_road": {
+     "nearest_road_node_dist_m": 57.6,
+     "arriving_leg_on_roads": true,
+     "arriving_leg_kind": "egress",
+     "arriving_leg_dist_m": 5625.0,
+     "arriving_leg_edge_counts": {
+      "spur": 2,
+      "road": 217
+     },
+     "arriving_leg_pct_road_edges": 99.1,
+     "note": "this crew arrived at the catch cell THIS tick via the logged leg -- SEM-10's relocate_to() clears cs._leg the same tick it re-targets a crew, so the post-tick leg is always None at audit time; this is the leg that actually carried it here."
+    },
+    "pending_route_clear": {
+     "available": true,
+     "cleared": true,
+     "transit_s": 6.1
+    },
+    "straight_line_clear": {
+     "dist_m": 69.4,
+     "r": 142,
+     "c": 110
+    },
+    "egress_zone_id_after": "paradise_ca-z2",
+    "relocate_reason_now": "zone_overrun",
+    "anchor_zone_id": "paradise_ca-z1"
+   },
+   {
+    "tick": 48,
+    "sim_elapsed_h": 12.0,
+    "crew_id": "sim-g8",
+    "reason": "burned",
+    "status": "egressing",
+    "mode": "egress",
+    "lat": 39.740699,
+    "lon": -121.589656,
+    "cell": {
+     "r": 142,
+     "c": 109,
+     "code": 186,
+     "cls": "TL",
+     "name": "TL6 moderate load broadleaf litter"
+    },
+    "neighbors": [
+     {
+      "dr": -1,
+      "dc": -1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     },
+     {
+      "dr": -1,
+      "dc": 0,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": -1,
+      "dc": 1,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": 0,
+      "dc": -1,
+      "code": 184,
+      "cls": "TL",
+      "name": "TL4 small downed logs"
+     },
+     {
+      "dr": 0,
+      "dc": 1,
+      "code": 91,
+      "cls": "NB",
+      "name": "NB1 urban"
+     },
+     {
+      "dr": 1,
+      "dc": -1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     },
+     {
+      "dr": 1,
+      "dc": 0,
+      "code": 122,
+      "cls": "GS",
+      "name": "GS2 moderate grass-shrub"
+     },
+     {
+      "dr": 1,
+      "dc": 1,
+      "code": 102,
+      "cls": "GR",
+      "name": "GR2 low load grass"
+     }
+    ],
+    "nominal_arrival_s": 1790038822.97959,
+    "eroded_p10_s": 1790011708.675485,
+    "burn_residence_s": 4377.0,
+    "p10_minus_nominal_gap_s": -27114.3,
+    "on_road": {
+     "nearest_road_node_dist_m": 57.6,
+     "arriving_leg_on_roads": true,
+     "arriving_leg_kind": "egress",
+     "arriving_leg_dist_m": 5625.0,
+     "arriving_leg_edge_counts": {
+      "spur": 2,
+      "road": 217
+     },
+     "arriving_leg_pct_road_edges": 99.1,
+     "note": "this crew arrived at the catch cell THIS tick via the logged leg -- SEM-10's relocate_to() clears cs._leg the same tick it re-targets a crew, so the post-tick leg is always None at audit time; this is the leg that actually carried it here."
+    },
+    "pending_route_clear": {
+     "available": true,
+     "cleared": true,
+     "transit_s": 6.1
+    },
+    "straight_line_clear": {
+     "dist_m": 69.4,
+     "r": 142,
+     "c": 110
+    },
+    "egress_zone_id_after": "paradise_ca-z2",
+    "relocate_reason_now": "zone_overrun",
+    "anchor_zone_id": "paradise_ca-z2"
+   }
+  ]
+ }
+}
