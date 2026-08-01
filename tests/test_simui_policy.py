@@ -476,7 +476,14 @@ def test_homes_mode_withdrawal_still_fires(tmp_path):
     d = _checkerboard_dir(tmp_path)
     # homes is the DEFAULT — do NOT override dispatch_objective (the value
     # demos' _session pins it to 'value'); everything else matches FAST_TIGHT.
-    s = SimSession(KEY, 16, 1, seed="m1", cfg_overrides=dict(FAST_TIGHT),
+    # CORRIDOR pinned to LEGACY (calibrated-stack sim-default flip
+    # 2026-07-30): this test's arm/rug-pull choreography was derived under
+    # the uniform corridor field; its subject is the WITHDRAWAL LAW, not
+    # corridor defaults, so it pins the old field rather than re-deriving.
+    s = SimSession(KEY, 16, 1, seed="m1",
+                   cfg_overrides=dict(FAST_TIGHT,
+                                      corridor_erosion_tiered=False,
+                                      escape_hysteresis_margin_min=0.0),
                    tile_dir=d, roads_module=None)
     assert s._cfg.dispatch_objective == "homes", "test must run the real default"
     loc = LOCATIONS[KEY]

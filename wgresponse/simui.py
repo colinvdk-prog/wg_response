@@ -199,7 +199,7 @@ from wgresponse.contracts import (
     validate_config,
 )
 from wgresponse.crews import CrewTracker
-from wgresponse.fuels import is_burnable
+from wgresponse.fuels import cold_black_minutes, is_burnable
 from wgresponse.sim import (
     SafetyAudit,
     ServicedStop,
@@ -322,6 +322,9 @@ SIM_ROAD_SPUR_MAX_M = 8000.0
 #: (configure() precedence, exactly like the extended-zone horizon floor and
 #: the road-spur ceiling).
 SIM_EMBER_THREAT_RADIUS_M = 200.0
+#: CALIBRATED CORRIDOR STACK sim default (founder flip 2026-07-30): escape-
+#: target hysteresis threshold (minutes). See the configure() block.
+SIM_ESCAPE_HYSTERESIS_MIN = 20.0
 
 
 def _edge_kinds_from_route(rr, n_edges: int) -> list:
@@ -1464,6 +1467,20 @@ class SimSession:
         if "ember_threat_radius_m" not in overrides:
             cfg.ember_threat_radius_m = SIM_EMBER_THREAT_RADIUS_M
 
+        # CALIBRATED CORRIDOR STACK (founder "flip calibrated stack"
+        # 2026-07-30; calibration commit d7f490f, Grok 0-mismatch verify):
+        # the SIMULATOR defaults to fuel-tiered erosion (contracts radii
+        # 550/200/150 — FAST=550 is the validated grass floor; 500 burned
+        # two crews on the paradise catch scenario) + escape-target
+        # hysteresis 20 min (provably free: byte-identical outcomes, kills
+        # the 5.5 h retarget zigzag). Explicit cfg_overrides ALWAYS win;
+        # ResponseConfig defaults stay OFF so the live product path is
+        # untouched.
+        if "corridor_erosion_tiered" not in overrides:
+            cfg.corridor_erosion_tiered = True
+        if "escape_hysteresis_margin_min" not in overrides:
+            cfg.escape_hysteresis_margin_min = SIM_ESCAPE_HYSTERESIS_MIN
+
         # FIRE ZONE placement law: clients ALWAYS live in the central
         # ~18 km community window; on the standard tile that IS the tile
         # (window=None keeps the pre-fire-zone bytes), on extended tiles the
@@ -2168,6 +2185,23 @@ class SimSession:
             fire._eroded_src = ens
         return fire._eroded_p10
 
+    def _cold_black_pass_s(self, p) -> float:
+        """Cold-black window (seconds) at point p for the SEM-10 route-
+        selection carve-out. Legacy: the flat 45-min _COLD_BLACK_PASS_S.
+        Under cfg.transit_cold_black_by_class (TRANSIT-HAZARD STAGE 1): the
+        point's own fuel class sets the window (fuels.cold_black_minutes —
+        grass minutes, timber STRICTER than the flat rule). Off-tile or
+        unreadable fuel falls back to the flat window. The 10c audit never
+        consults this."""
+        if not getattr(self._cfg, "transit_cold_black_by_class", False):
+            return _COLD_BLACK_PASS_S
+        rc = geo.latlon_to_rc(self._tile.spec, p)
+        if rc is None:
+            return _COLD_BLACK_PASS_S
+        code = int(self._tile.fuel.data[rc[0] * self._tile.spec.ncols
+                                        + rc[1]])
+        return cold_black_minutes(code) * 60.0
+
     def _escape_switch_ok(self, cs, now: float, lead_s: float,
                           new_loc, new_id: str) -> bool:
         """ESCAPE-TARGET HYSTERESIS (contracts escape_hysteresis_margin_min):
@@ -2361,7 +2395,7 @@ class SimSession:
             #   unchanged — standing in ANY front-passed cell still reports —
             #   this only lets a black-stranded crew LEAVE.
             if ((not math.isinf(nom)) and nom <= pass_t and dt > 0.0
-                    and (pass_t - nom) < _COLD_BLACK_PASS_S):
+                    and (pass_t - nom) < self._cold_black_pass_s(q)):
                 burned = True
             m = math.inf
             if not math.isinf(p10):
@@ -2427,7 +2461,7 @@ class SimSession:
                 pass_t = now + d / max(speed_mps, 0.1)
                 nom, _p10 = self._crew_exposure(q)
                 if ((not math.isinf(nom)) and nom <= pass_t
-                        and (pass_t - nom) < _COLD_BLACK_PASS_S):
+                        and (pass_t - nom) < self._cold_black_pass_s(q)):
                     break        # the FRONT is here at pass time: ray ends
                 last_ok = q
                 d += 550.0

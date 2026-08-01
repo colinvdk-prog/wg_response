@@ -208,6 +208,9 @@ def main():
                          "(e.g. '550,200,150'); empty = off")
     ap.add_argument("--escape-hyst", type=float, default=0.0,
                     help="cfg.escape_hysteresis_margin_min (churn fix); 0=off")
+    ap.add_argument("--cold-black", type=int, default=-1,
+                    help="cfg.transit_cold_black_by_class (stage 1): 1=on, "
+                         "0=force off, -1=leave to session defaults")
     ap.add_argument("--route-alts", type=int, default=1,
                     help="cfg.route_alternatives: 1 legacy, 2-3 candidates")
     ap.add_argument("--workers", type=int, default=10)
@@ -235,6 +238,8 @@ def main():
                     "corridor_erosion_slow_m": slow_m})
     if args.escape_hyst:
         cfg["escape_hysteresis_margin_min"] = float(args.escape_hyst)
+    if args.cold_black >= 0:
+        cfg["transit_cold_black_by_class"] = bool(args.cold_black)
 
     scen = scenarios()
     if args.suite == "quick":
@@ -259,7 +264,8 @@ def main():
                                erosion_euclid=args.erosion_euclid,
                                route_alts=args.route_alts,
                                tiered=args.tiered,
-                               escape_hyst=args.escape_hyst),
+                               escape_hyst=args.escape_hyst,
+                               cold_black=args.cold_black),
                    stats=st, rows=rows)
     out = f"scratch_review/opt_ember_{args.tag}.json"
     json.dump(payload, open(out, "w"), indent=1)

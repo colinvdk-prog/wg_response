@@ -891,6 +891,14 @@ class ResponseConfig:
     # alternative to a burned-route current target always wins). 0 = off,
     # legacy re-pick-every-tick, byte-identical.
     escape_hysteresis_margin_min: float = 0.0
+    # TRANSIT-HAZARD STAGE 1 (founder "perform stage 1" 2026-07-30;
+    # docs/transit_hazard_determination.md): per-fuel-class cold-black
+    # windows replace the flat 45-min carve-out in SEM-10 ROUTE SELECTION
+    # (fuels.cold_black_minutes: grass 5-10 min, grass-shrub 10-20, shrub
+    # 20-30, timber-understory 45, timber-litter 60, slash 90 — grass opens,
+    # timber stricter). The 10c audit is never consulted here and never
+    # relaxed. False = flat 45 min, byte-identical.
+    transit_cold_black_by_class: bool = False
     # --- gel product parameters (UNVERIFIED — pending supplier data) ---
     gel_window_h: float = 72.0         # operational window after application (outer weathering/wash-off horizon still UNVERIFIED)
     gel_full_strength_h: float = 72.0  # == gel_window_h: GraphGel is Class A at 1/8" DRY — flat effectiveness, no decay ramp (product data 2026-07-11)

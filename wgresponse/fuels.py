@@ -156,6 +156,37 @@ def is_grass_shrub(code: int) -> bool:
     return 121 <= code <= 124
 
 
+def cold_black_minutes(code: int) -> float:
+    """Per-class COLD-BLACK window (minutes) — stage 1 of the transit-hazard
+    model (docs/transit_hazard_determination.md, founder 2026-07-30).
+
+    How long after the flaming front's arrival a cell of this fuel remains
+    actively hazardous for TRANSIT ROUTE SELECTION (the SEM-10 carve-out;
+    the 10c audit never consults this). Derived as max(class floor,
+    3 x Anderson 1969 residence t_r = 384/sigma of the heaviest-loaded
+    timelag class present) — the same t_r formula the engine already uses in
+    rothermel.surface_ros_from_bed. The legacy flat 45 min is numerically
+    the residence time of a 1000-hour log: right for downed timber, 9x too
+    long for cured grass. Grass opens up; timber gets STRICTER (snag /
+    hazard-tree floor the surface model cannot see) — honest in both
+    directions. Unknown burnable codes fail safe to the LONGEST window."""
+    if 101 <= code <= 109:                      # GR grass
+        # GR3/GR8/GR9 carry a 10-h load (t_r 3.5 min); the rest are 1-h only
+        return 10.0 if code in (103, 108, 109) else 5.0
+    if 121 <= code <= 124:                      # GS grass-shrub
+        return 20.0 if code == 124 else 10.0    # GS4 carries 100-h load
+    if 141 <= code <= 149:                      # SH shrub
+        # SH2/4/7/8 carry 100-h load; the rest are live-woody-stem beds
+        return 30.0 if code in (142, 144, 147, 148) else 20.0
+    if 161 <= code <= 165:                      # TU timber-understory
+        return 45.0                             # snag floor (unchanged)
+    if 181 <= code <= 189:                      # TL timber-litter
+        return 60.0                             # stricter: downed logs
+    if 201 <= code <= 204:                      # SB slash-blowdown
+        return 90.0                             # heaviest 100-h loads
+    return 90.0                                 # unknown burnable: fail long
+
+
 def is_shrub(code: int) -> bool:
     """True iff `code` is a SHRUB FBFM40 model (SH1-9, codes 141-149).
 
