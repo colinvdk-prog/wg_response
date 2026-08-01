@@ -203,6 +203,11 @@ def main():
                     choices=("default", "near"))
     ap.add_argument("--erosion-euclid", type=int, default=0,
                     help="cfg.corridor_erosion_euclidean (CORRIDOR HONESTY)")
+    ap.add_argument("--tiered", default="",
+                    help="fuel-tiered erosion 'FAST,SHRUB,SLOW' radii in m "
+                         "(e.g. '550,200,150'); empty = off")
+    ap.add_argument("--escape-hyst", type=float, default=0.0,
+                    help="cfg.escape_hysteresis_margin_min (churn fix); 0=off")
     ap.add_argument("--route-alts", type=int, default=1,
                     help="cfg.route_alternatives: 1 legacy, 2-3 candidates")
     ap.add_argument("--workers", type=int, default=10)
@@ -222,6 +227,14 @@ def main():
         cfg["corridor_erosion_euclidean"] = True
     if args.route_alts and args.route_alts > 1:
         cfg["route_alternatives"] = int(args.route_alts)
+    if args.tiered:
+        fast_m, shrub_m, slow_m = (float(x) for x in args.tiered.split(","))
+        cfg.update({"corridor_erosion_tiered": True,
+                    "corridor_erosion_fast_m": fast_m,
+                    "corridor_erosion_shrub_m": shrub_m,
+                    "corridor_erosion_slow_m": slow_m})
+    if args.escape_hyst:
+        cfg["escape_hysteresis_margin_min"] = float(args.escape_hyst)
 
     scen = scenarios()
     if args.suite == "quick":
@@ -244,7 +257,9 @@ def main():
                                placement=args.placement,
                                staging=args.staging,
                                erosion_euclid=args.erosion_euclid,
-                               route_alts=args.route_alts),
+                               route_alts=args.route_alts,
+                               tiered=args.tiered,
+                               escape_hyst=args.escape_hyst),
                    stats=st, rows=rows)
     out = f"scratch_review/opt_ember_{args.tag}.json"
     json.dump(payload, open(out, "w"), indent=1)

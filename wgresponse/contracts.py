@@ -868,8 +868,29 @@ class ResponseConfig:
     # judges in-transit exposure.
     corridor_erosion_euclidean: bool = False  # True: erode_min true-metric disc (calibrate radius first)
     route_alternatives: int = 1        # 1 = legacy fastest-only (KEEP: candidate rule rejected as built)
+    # FUEL-TIERED EROSION (founder 2026-07-30: "in chaparral which will burn
+    # slower 100m is likely sufficient" — the uniform radius does three jobs;
+    # see spread.tiered_eroded_p10 + docs/transit_hazard_determination.md).
+    # Each SOURCE cell's arrival projects by its own fuel class; per-tier
+    # euclidean discs, min-combined. Default OFF = uniform legacy erosion,
+    # byte-identical. Radii are the calibration sweep's to set; the caught-
+    # crew event lived on TL ground, so the slow tier is validated against
+    # exactly that scenario before any flip.
+    corridor_erosion_tiered: bool = False
+    corridor_erosion_fast_m: float = 550.0   # GR/GS + unclassified burnable (position error dominates)
+    corridor_erosion_shrub_m: float = 200.0  # SH: flame-standoff-scale halo (~112 m needed at high wind)
+    corridor_erosion_slow_m: float = 150.0   # TU/TL/SB: short flames, slow spread; snags are temporal
     corridor_sample_m: float = 300.0
     ember_buffer_min: float = 0.0      # extra safety on top of P10 (default-OFF; enable in wind events)
+    # ESCAPE-TARGET HYSTERESIS (founder 2026-07-30 "fix escape target churn";
+    # caught-crew dissection: a threatened crew was re-targeted to a fresh
+    # escape ray nearly every tick for ~5.5 h — zigzag, not transit — before
+    # one leg ended on the burn edge). When > 0: a fleeing crew keeps driving
+    # to its adopted target unless the proposed target improves the ROUTED
+    # destination margin by more than this many minutes (a clean-route
+    # alternative to a burned-route current target always wins). 0 = off,
+    # legacy re-pick-every-tick, byte-identical.
+    escape_hysteresis_margin_min: float = 0.0
     # --- gel product parameters (UNVERIFIED — pending supplier data) ---
     gel_window_h: float = 72.0         # operational window after application (outer weathering/wash-off horizon still UNVERIFIED)
     gel_full_strength_h: float = 72.0  # == gel_window_h: GraphGel is Class A at 1/8" DRY — flat effectiveness, no decay ramp (product data 2026-07-11)

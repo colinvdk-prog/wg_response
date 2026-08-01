@@ -2152,13 +2152,60 @@ class SimSession:
         if ens is None:
             return None
         if fire._eroded_src is not ens:
-            fire._eroded_p10 = geo.erode_min(
-                ens.p10, self._cfg.corridor_erosion_m,
-                shape=("euclidean"
-                       if getattr(self._cfg, "corridor_erosion_euclidean",
-                                  False) else "chebyshev"))
+            if getattr(self._cfg, "corridor_erosion_tiered", False):
+                # FUEL-TIERED EROSION: the session owns the fuel tile, so
+                # the one memoized eroded raster every consumer shares (SEM-10
+                # sweep, LegOracle judge, dispatch via the eroded_rasters
+                # seam, server overlay) is the tiered field.
+                fire._eroded_p10 = spread.tiered_eroded_p10(
+                    ens.p10, self._tile.fuel, self._cfg)
+            else:
+                fire._eroded_p10 = geo.erode_min(
+                    ens.p10, self._cfg.corridor_erosion_m,
+                    shape=("euclidean"
+                           if getattr(self._cfg, "corridor_erosion_euclidean",
+                                      False) else "chebyshev"))
             fire._eroded_src = ens
         return fire._eroded_p10
+
+    def _escape_switch_ok(self, cs, now: float, lead_s: float,
+                          new_loc, new_id: str) -> bool:
+        """ESCAPE-TARGET HYSTERESIS (contracts escape_hysteresis_margin_min):
+        True = adopt the proposed escape target; False = keep driving to the
+        current one. Once fleeing, a crew switches only when the proposal
+        improves the ROUTED destination margin by more than the threshold,
+        or trades a burned-crossing route for a clean one — re-picking every
+        tick zigzagged a crew between near-equal escape rays for ~5.5 h
+        (caught-crew dissection, commit 26db201). Committed motion beats
+        oscillation. Threshold 0 = legacy always-switch, byte-identical."""
+        hyst_s = self._cfg.escape_hysteresis_margin_min * 60.0
+        if (hyst_s <= 0.0 or cs.egress_loc is None
+                or new_id == cs.egress_zone_id):
+            return True
+        b_cur, _e, _w, _t, dm_cur = self._route_metrics(
+            cs.pos, cs.egress_loc, now, cs.speed, lead_s)
+        b_new, _e2, _w2, _t2, dm_new = self._route_metrics(
+            cs.pos, new_loc, now, cs.speed, lead_s)
+        if b_cur and not b_new:
+            return True                 # clean route beats burned route
+        if b_new and not b_cur:
+            return False
+        return (dm_new - dm_cur) > hyst_s
+
+    def _plan_eroded_rasters(self):
+        """eroded_rasters seam for dispatch.plan (FUEL-TIERED EROSION): the
+        session's memoized per-fire eroded fields — tiered when the flag is
+        on, so planner, SEM-10 sweep, route judge and overlay all see ONE
+        corridor field. None when tiering is off (plan()'s legacy internal
+        erosion, byte-identical)."""
+        if not getattr(self._cfg, "corridor_erosion_tiered", False):
+            return None
+        out = {}
+        for iid, f in self._fires.items():
+            er = self._eroded_p10(f)
+            if er is not None:
+                out[iid] = er
+        return out
 
     def _crew_exposure(self, pos):
         """(min_nominal_arrival_s, min_eroded_p10_arrival_s) at `pos` across all
@@ -2539,8 +2586,11 @@ class SimSession:
                     # SEM-10d: retarget along the LEAST-BAD ROUTED choice
                     # (lawful-route zone, else max-worst-margin zone/escape
                     # ray) — never blindly at the nearest catalog zone.
+                    # ESCAPE-TARGET HYSTERESIS: only when meaningfully better.
                     nloc, nid = self._best_escape(cs.pos, now, cs.speed, lead_s)
-                    if nid != cs.egress_zone_id:
+                    if (nid != cs.egress_zone_id
+                            and self._escape_switch_ok(cs, now, lead_s,
+                                                       nloc, nid)):
                         cs.retarget_egress(nloc, nid)
             if cs._mode == "deploy":
                 # A committed deploy is governed by the departure-deadline
@@ -2573,6 +2623,14 @@ class SimSession:
                 if not _b and dm_cur >= 0.0:
                     continue                    # keep fleeing to the same target
             zone_loc, zone_id = self._best_escape(cs.pos, now, cs.speed, lead_s)
+            # ESCAPE-TARGET HYSTERESIS (founder churn fix): when the current
+            # target is unlawful but the best alternative is not MEANINGFULLY
+            # better, keep committed motion instead of zigzagging between
+            # near-equal bad options (the audit still owns the scoreboard).
+            if (cid in self._relocating
+                    and not self._escape_switch_ok(cs, now, lead_s,
+                                                   zone_loc, zone_id)):
+                continue
             if zone_id == "escape" and not self._area_escape_alarmed:
                 self._notes.append(
                     "CREW SAFETY (SEMANTICS 10d area escape): no catalog safe "
@@ -2712,7 +2770,8 @@ class SimSession:
         buf_s = cfg.dispatch_hold_weather_buffer_h * 3600.0
         probe_now = dispatch.plan(crew_args, jobs, ens_map, plan_zones, cfg,
                                   now, None, forecasts=forecasts,
-                                  road_provider=self._plan_road_provider())
+                                  road_provider=self._plan_road_provider(),
+                                  eroded_rasters=self._plan_eroded_rasters())
         # The probe must encode deferral + buffer through job.eta — plan()
         # RE-DERIVES every job's windows from eta via
         # safety.derive_job_windows (field edits are overwritten):
@@ -2740,7 +2799,8 @@ class SimSession:
                 deferred.append(j)
         probe_hold = dispatch.plan(crew_args, deferred, ens_map, plan_zones,
                                    cfg, now, None, forecasts=forecasts,
-                                   road_provider=self._plan_road_provider())
+                                   road_provider=self._plan_road_provider(),
+                                   eroded_rasters=self._plan_eroded_rasters())
         def served_ids(p):
             return {s.client_id for cp in p.plans.values() for s in cp.stops}
         s_now = served_ids(probe_now)
@@ -3068,7 +3128,8 @@ class SimSession:
                 plan = dispatch.plan(crew_args, plan_jobs, ens_map,
                                      plan_zones, cfg, now,
                                      incumbent, forecasts=forecasts,
-                                     road_provider=self._plan_road_provider())
+                                     road_provider=self._plan_road_provider(),
+                                     eroded_rasters=self._plan_eroded_rasters())
                 self._adopt(plan, plan_jobs, now, eligible_ids)
                 for uj in plan.unserved:
                     self._unserved_reason[uj.client_id] = uj.reason

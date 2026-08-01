@@ -83,6 +83,7 @@ from wgresponse.fuels import (
     is_burnable,
     is_grass,
     is_grass_shrub,
+    is_shrub,
     is_timber_litter,
     is_timber_understory,
 )
@@ -857,6 +858,68 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
 # the EnsembleArrival instance (a plain dataclass, no __slots__): the eroded
 # quantile rasters for a given radius, computed once per (ensemble, radius).
 _EMBER_ERODE_ATTR = "_ember_erode_cache"
+
+
+def tiered_eroded_p10(p10, fuel, cfg):
+    """FUEL-TIERED corridor erosion (contracts corridor_erosion_tiered;
+    founder 2026-07-30 "in chaparral which will burn slower 100m is likely
+    sufficient"): each SOURCE cell's P10 arrival projects over a radius set
+    by ITS OWN fuel class, and the eroded field is the elementwise MIN of
+    the per-tier erosions. Rationale (docs/transit_hazard_determination.md):
+    the single uniform radius was doing three jobs at once —
+      FAST tier  (GR/GS + any unclassified burnable, fail-safe): spread rate
+                 dominates — a wind-driven grass fire's position error grows
+                 hundreds of meters per tick, so its halo stays wide
+                 (cfg.corridor_erosion_fast_m).
+      SHRUB tier (SH): slow spread but the LONGEST surface flame lengths —
+                 halo sized by flame standoff (cfg.corridor_erosion_shrub_m).
+      SLOW tier  (TU/TL/SB): slow spread, short flames; hazards there are
+                 temporal (snags — the cold-black windows), not spatial
+                 (cfg.corridor_erosion_slow_m).
+    Always metric (euclidean) discs — honest radii are the point of tiering.
+    Non-burnable cells never carry finite arrivals and fall out naturally.
+    SPEC-MISMATCH FAIL-SAFE: if the fuel raster's grid differs from the
+    arrival raster's, returns the UNIFORM erosion at the WIDEST tier radius
+    (never a silently thinner shield)."""
+    from wgresponse import geo as _geo
+    fast_m = float(getattr(cfg, "corridor_erosion_fast_m", 550.0))
+    shrub_m = float(getattr(cfg, "corridor_erosion_shrub_m", 200.0))
+    slow_m = float(getattr(cfg, "corridor_erosion_slow_m", 150.0))
+    widest = max(fast_m, shrub_m, slow_m)
+    fs = getattr(fuel, "spec", None)
+    ps = p10.spec
+    if (fs is None or fs.nrows != ps.nrows or fs.ncols != ps.ncols
+            or fs.cell_m != ps.cell_m):
+        return _geo.erode_min(p10, widest, shape="euclidean")
+    inf = math.inf
+    n = ps.nrows * ps.ncols
+    masked = {"fast": [inf] * n, "shrub": [inf] * n, "slow": [inf] * n}
+    for i in range(n):
+        v = p10.data[i]
+        if not math.isfinite(v):
+            continue
+        code = int(fuel.data[i])
+        if is_shrub(code):
+            masked["shrub"][i] = v
+        elif (is_timber_understory(code) or is_timber_litter(code)
+              or 201 <= code <= 204):
+            masked["slow"][i] = v
+        else:
+            # grass, grass-shrub, and any unclassified burnable: fail-safe
+            # into the widest tier
+            masked["fast"][i] = v
+    out = None
+    for key, radius in (("fast", fast_m), ("shrub", shrub_m),
+                        ("slow", slow_m)):
+        er = _geo.erode_min(Raster(ps, masked[key]), radius,
+                            shape="euclidean")
+        if out is None:
+            out = er.data
+        else:
+            for i in range(n):
+                if er.data[i] < out[i]:
+                    out[i] = er.data[i]
+    return Raster(ps, out)
 
 
 def _ember_eroded(ens: EnsembleArrival, radius_m: float):

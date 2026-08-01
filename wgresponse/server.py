@@ -674,17 +674,17 @@ class SimSessionManager:
         if cached is not None and cached[0] == key:
             return cached[1]
         session = entry.session
-        erosion_m = session._cfg.corridor_erosion_m
         rings = []
         for fid in list(session._fire_order):
             fire = session._fires.get(fid)
             if fire is None or fire.ens is None:
                 continue
-            eroded = geo.erode_min(
-                fire.ens.p10, erosion_m,
-                shape=("euclidean"
-                       if getattr(session._cfg, "corridor_erosion_euclidean",
-                                  False) else "chebyshev"))
+            # One corridor field everywhere: reuse the session's memoized
+            # eroded accessor (respects the euclidean AND fuel-tiered flags)
+            # so the overlay shows exactly what the law enforces.
+            eroded = session._eroded_p10(fire)
+            if eroded is None:
+                continue
             for h in self._ISO_LEADS_H:
                 ring = _trace_contour(eroded, fire.ens.t0_s + h * 3600.0,
                                       fire.origin)

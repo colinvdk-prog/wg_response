@@ -291,11 +291,12 @@ class ThreatMonitor:
         failed_incidents: set = set()
         roster_seen: dict = {}          # incident_id -> {client_id} registry returned
         extreme_flags: dict = {}        # incident_id -> bool (extreme spread regime)
+        eroded_map: dict = {}           # incident_id -> tiered eroded raster
         for inc in active:
             try:
                 self._assess_incident(inc, now_s, assessments, ensembles,
                                       clients_seen, etas, notes, roster_seen,
-                                      forecasts, extreme_flags)
+                                      forecasts, extreme_flags, eroded_map)
             except _ProviderFailure as pf:
                 failed_incidents.add(inc.incident_id)
                 notes.append(
@@ -413,7 +414,8 @@ class ThreatMonitor:
         operator_events.extend(self._drain_alert_operator_events(notes))
 
         plan = self._maybe_dispatch(now_s, ensembles, clients_seen, etas,
-                                    notes, forecasts)
+                                    notes, forecasts,
+                                    eroded_map=(eroded_map or None))
 
         degraded = (not feeds_healthy) or bool(failed_incidents) or any(
             ev.kind in ("degraded", "feed_blind", "provider_error")
@@ -585,7 +587,8 @@ class ThreatMonitor:
                          clients_seen: dict, etas: dict, notes: list,
                          roster_seen: Optional[dict] = None,
                          forecasts: Optional[dict] = None,
-                         extreme_flags: Optional[dict] = None) -> None:
+                         extreme_flags: Optional[dict] = None,
+                         eroded_map: Optional[dict] = None) -> None:
         """Spread one incident and append per-client ThreatAssessments.
 
         Domain = bbox around (ignition geometry + protected clients within the
@@ -707,6 +710,12 @@ class ThreatMonitor:
                                       incident_id=inc.incident_id,
                                       perimeter=perimeter,
                                       perimeter_at_s=perimeter_at_s)
+        if (eroded_map is not None
+                and getattr(self._cfg, "corridor_erosion_tiered", False)):
+            # FUEL-TIERED EROSION: built here because this is where the fuel
+            # tile lives; dispatch consumes it via the eroded_rasters seam.
+            eroded_map[inc.incident_id] = spread.tiered_eroded_p10(
+                ens.p10, tile.fuel, self._cfg)
         ens.incident_id = inc.incident_id
         ensembles[inc.incident_id] = ens
         for client in near:
@@ -751,7 +760,8 @@ class ThreatMonitor:
     def _maybe_dispatch(self, now_s: float, ensembles: dict,
                         clients_seen: dict, etas: dict,
                         notes: list,
-                        forecasts: Optional[dict] = None) -> Optional[object]:
+                        forecasts: Optional[dict] = None,
+                        eroded_map: Optional[dict] = None) -> Optional[object]:
         """Build DispatchJobs for pairs in an active alert state and call the
         injected dispatcher. Returns the DispatchPlan or None; the returned
         plan becomes the incumbent (warm start) for the next cycle.
@@ -801,6 +811,24 @@ class ThreatMonitor:
 
         def _call_plan():
             # ALL assessed ensembles (dispatch F1) — never filter to job ids.
+            # eroded_map (FUEL-TIERED EROSION): pre-eroded corridor rasters
+            # built where the fuel tile lives (_assess_incident); None when
+            # tiering is off. Stub dispatchers degrade kwarg-by-kwarg.
+            try:
+                return self._dispatcher.plan(crews, jobs, dict(ensembles),
+                                             list(self._safe_zones), self._cfg,
+                                             now_s, incumbent=self._incumbent,
+                                             forecasts=dict(forecasts or {}),
+                                             eroded_rasters=eroded_map)
+            except TypeError as exc:
+                if "eroded_rasters" not in str(exc):
+                    if "forecasts" not in str(exc):
+                        raise
+                    # Legacy dispatcher seam (pre-C5 stub): weatherless.
+                    return self._dispatcher.plan(
+                        crews, jobs, dict(ensembles),
+                        list(self._safe_zones), self._cfg,
+                        now_s, incumbent=self._incumbent)
             try:
                 return self._dispatcher.plan(crews, jobs, dict(ensembles),
                                              list(self._safe_zones), self._cfg,

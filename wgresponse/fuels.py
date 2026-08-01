@@ -156,6 +156,22 @@ def is_grass_shrub(code: int) -> bool:
     return 121 <= code <= 124
 
 
+def is_shrub(code: int) -> bool:
+    """True iff `code` is a SHRUB FBFM40 model (SH1-9, codes 141-149).
+
+    Used by the fuel-TIERED corridor erosion (contracts
+    corridor_erosion_tiered): shrub/chaparral spreads slowly relative to
+    grass (small position-error halo) but carries the LONGEST flame lengths
+    of the surface classes (SH5 ~9.6 m -> ~112 m standing standoff), so it
+    gets its own erosion tier sized by flame standoff, not spread rate."""
+    return 141 <= code <= 149
+
+
+def is_slash(code: int) -> bool:
+    """True iff `code` is a SLASH-BLOWDOWN FBFM40 model (SB1-4, 201-204)."""
+    return 201 <= code <= 204
+
+
 def is_timber_understory(code: int) -> bool:
     """True iff `code` is a TIMBER-UNDERSTORY FBFM40 model (TU1-5, codes 161-165).
 

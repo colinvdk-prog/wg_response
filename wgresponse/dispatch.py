@@ -1332,7 +1332,8 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
          cfg: ResponseConfig, now_s: float,
          incumbent: "DispatchPlan | None" = None,
          forecasts: "dict | None" = None,
-         road_provider=None) -> DispatchPlan:
+         road_provider=None,
+         eroded_rasters: "dict | None" = None) -> DispatchPlan:
     """Build a DispatchPlan for `crews` over `jobs` at unix time now_s.
 
     ens: incident_id -> EnsembleArrival; each incident's P10 raster is eroded
@@ -1388,11 +1389,19 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
                        and c.status not in _INELIGIBLE_STATUSES),
                       key=lambda c: c.crew_id)
 
-    rasters = [(iid, safety._erode(
-                    ens[iid].p10, cfg.corridor_erosion_m,
-                    shape=("euclidean"
-                           if getattr(cfg, "corridor_erosion_euclidean", False)
-                           else "chebyshev")))
+    # FUEL-TIERED EROSION seam: a caller that owns the fuel tile (simui /
+    # threat) may hand pre-eroded rasters (incident_id -> Raster); the
+    # planner itself stays fuel-blind. None = legacy internal erosion,
+    # byte-identical. Incidents missing from the provided map fall back to
+    # the internal erosion (never an unshielded corridor).
+    _shape = ("euclidean"
+              if getattr(cfg, "corridor_erosion_euclidean", False)
+              else "chebyshev")
+    rasters = [(iid,
+                (eroded_rasters[iid]
+                 if eroded_rasters is not None and iid in eroded_rasters
+                 else safety._erode(ens[iid].p10, cfg.corridor_erosion_m,
+                                    shape=_shape)))
                for iid in sorted(ens)]
 
     # -- step 0: ONE job per client (Sprint 2 A7, Council-1 dispatch F4) ------
