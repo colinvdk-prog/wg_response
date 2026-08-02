@@ -102,7 +102,8 @@ def _burnable_point(session):
 
 def test_locations_registry_shape():
     assert sorted(LOCATIONS) == ["boulder_co", "malibu_ca", "paradise_ca",
-                                 "park_city_ut", "santa_rosa_ca"]
+                                 "park_city_ut", "rancho_santa_fe_ca",
+                                 "santa_rosa_ca"]
     for key, loc in LOCATIONS.items():
         assert loc.key == key
         assert loc.tile_path == f"data/tiles/{key}.wgt"
@@ -120,6 +121,8 @@ def test_design_doc_centers_pinned():
     assert LOCATIONS["boulder_co"].center == LatLon(39.955, -105.16)
     assert LOCATIONS["park_city_ut"].center == LatLon(40.72, -111.55)
     assert LOCATIONS["boulder_co"].hazard_wind_dir_deg == 270.0  # Marshall W
+    assert LOCATIONS["rancho_santa_fe_ca"].center == LatLon(33.020, -117.200)
+    assert LOCATIONS["rancho_santa_fe_ca"].hazard_wind_dir_deg == 60.0  # Witch Creek NE
 
 
 # ---------------------------------------------------------------------------

@@ -905,6 +905,14 @@ class ResponseConfig:
     gel_effectiveness: float = 0.85    # P(save) multiplier (PLACEHOLDER — Class A rating is not a survival probability)
     gel_env_model_enabled: bool = False  # wgdefense-style temp/RH/wind-scaled coating life
     # --- travel ---
+    # ⚠ CONTRADICTED BY OWN DATA (calibration review 2026-07-31): the repo's
+    # measured road-network circuity on the sim tiles is 1.96-2.43, so this
+    # 1.35 makes tier-0 CHORD travel ~2.4x optimistic. The error is silently
+    # absorbed by route_margin_min=60 on chord legs (that margin's extra
+    # width exists to cover exactly this — see the route_margin_roads_min
+    # note); plan-on-roads legs use real geometry and are unaffected. Do NOT
+    # tighten route_margin_min without recalibrating circuity first (chip
+    # filed); the pair moves together or not at all.
     circuity: float = 1.35
     fire_traffic_factor: float = 1.4
     road_speed_mps: float = 17.9       # ~40 mph blended class speed
