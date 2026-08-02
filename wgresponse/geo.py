@@ -28,6 +28,28 @@ def m_per_deg_lon(lat_deg: float) -> float:
 # Great-circle primitives
 # ---------------------------------------------------------------------------
 
+def point_in_poly(p: LatLon, poly) -> bool:
+    """True iff p lies inside the simple polygon `poly` (sequence of LatLon
+    vertices, closed implicitly). Even-odd ray cast in plain lat/lon space —
+    adequate for the km-scale planning polygons it serves (community
+    boundaries on a sim tile); NOT a geodesic operation. Points exactly on
+    an edge may fall either side (irrelevant at 90 m cell granularity).
+    Empty/short poly (< 3 vertices) is False."""
+    n = len(poly)
+    if n < 3:
+        return False
+    inside = False
+    j = n - 1
+    for i in range(n):
+        yi, xi = poly[i].lat, poly[i].lon
+        yj, xj = poly[j].lat, poly[j].lon
+        if ((yi > p.lat) != (yj > p.lat)) and (
+                p.lon < (xj - xi) * (p.lat - yi) / (yj - yi) + xi):
+            inside = not inside
+        j = i
+    return inside
+
+
 def haversine_m(a: LatLon, b: LatLon) -> float:
     """Great-circle distance between two points, meters."""
     phi1 = math.radians(a.lat)

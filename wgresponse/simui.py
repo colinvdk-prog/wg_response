@@ -325,6 +325,12 @@ SIM_EMBER_THREAT_RADIUS_M = 200.0
 #: CALIBRATED CORRIDOR STACK sim default (founder flip 2026-07-30): escape-
 #: target hysteresis threshold (minutes). See the configure() block.
 SIM_ESCAPE_HYSTERESIS_MIN = 20.0
+#: SEM-10e sim default (moderate-wind census attribution 2026-08-02):
+#: proactive pre-pocket escape lead (minutes). 120 fires ~8 ticks ahead of
+#: the imminent flag — on the measured paradise 8000/6000 m traces that is
+#: 5-7 ticks BEFORE the last clean-at-arrival road out of the SW pocket
+#: burns over (the flag itself came 2-3 ticks AFTER). See configure() block.
+SIM_ESCAPE_PROACTIVE_LEAD_MIN = 120.0
 
 
 def _edge_kinds_from_route(rr, n_edges: int) -> list:
@@ -499,6 +505,13 @@ class SimLocation:
     hazard_wind_dir_deg: float
     tile_path: str
     safe_zones: tuple
+    #: Optional CITY-LIMITS placement polygon (founder 2026-08-02 "rancho
+    #: santa fe needs to be 100 homes within the city limits"): when
+    #: non-empty, the seeded WUI client draw is restricted to cells whose
+    #: centers fall inside this polygon (geo.point_in_poly). Empty (default)
+    #: = whole-tile WUI band, byte-identical for every existing location.
+    #: PLANNING-GRADE community boundaries, not surveyed parcels.
+    bounds_poly: tuple = ()
 
 
 LOCATIONS = {
@@ -573,6 +586,16 @@ LOCATIONS = {
             # Del Mar Heights Rd x El Camino Real, ~8.4 km SSW
             SafeZone("rancho_santa_fe_ca-z3", LatLon(32.950, -117.235),
                      "Del Mar Heights / El Camino Real"),
+        ),
+        # RSF proper (planning-grade 92067 core: the Covenant + village +
+        # RSF Farms + Fairbanks Ranch edge; excludes Encinitas/Olivenhain
+        # north, 4S/Rancho Bernardo east, Del Mar Heights south, Solana
+        # Beach west). Clients seed ONLY inside this boundary.
+        bounds_poly=(
+            LatLon(33.048, -117.228), LatLon(33.048, -117.185),
+            LatLon(33.037, -117.160), LatLon(33.008, -117.152),
+            LatLon(32.984, -117.168), LatLon(32.980, -117.208),
+            LatLon(32.996, -117.230), LatLon(33.025, -117.235),
         )),
     # Gambel-oak/aspen mountain WUI; prefrontal SW flow is the hazard wind.
     "park_city_ut": SimLocation(
@@ -748,7 +771,8 @@ def _burnable_adjacent_cells(tile: TerrainTile) -> list:
 
 
 def place_clients(tile: TerrainTile, n: int, seed: object,
-                  notes: Optional[list] = None, window=None) -> list:
+                  notes: Optional[list] = None, window=None,
+                  bounds_poly=()) -> list:
     """n ClientProperty records on seeded-random DISTINCT WUI cells.
 
     client_id sim-c<k> (k = 1..n, placement order); loc = cell center;
@@ -765,11 +789,21 @@ def place_clients(tile: TerrainTile, n: int, seed: object,
         raise ValueError("n must be >= 1")
 
     def _in_window(rc):
-        return window is None or window.contains(
-            geo.rc_to_latlon(tile.spec, rc[0], rc[1]))
+        p = geo.rc_to_latlon(tile.spec, rc[0], rc[1])
+        if window is not None and not window.contains(p):
+            return False
+        # CITY-LIMITS polygon (SimLocation.bounds_poly): empty = whole band,
+        # byte-identical legacy; non-empty restricts the draw (and the
+        # burnable-adjacent fallback below, which uses this same predicate).
+        if bounds_poly and not geo.point_in_poly(p, bounds_poly):
+            return False
+        return True
 
     rng = seeded_rng("simui-clients", str(seed))
     pool = [rc for rc in wui_cells(tile) if _in_window(rc)]
+    if bounds_poly and notes is not None:
+        notes.append(f"client placement bounded to the location's city-limits "
+                     f"polygon ({len(pool)} candidate WUI cells)")
     chosen = rng.sample(pool, min(n, len(pool)))
     if len(chosen) < n:
         taken = set(chosen)
@@ -1506,6 +1540,14 @@ class SimSession:
         # cooling grass, which this suite does not exercise).
         if "transit_cold_black_by_class" not in overrides:
             cfg.transit_cold_black_by_class = True
+        # SEM-10e PROACTIVE PRE-POCKET ESCAPE (moderate-wind census
+        # attribution 2026-08-02): the SIMULATOR defaults idle crews to
+        # decamping ahead of a closing road pocket when a durable clean exit
+        # still exists (contracts escape_proactive_lead_min; ResponseConfig
+        # default stays 0.0 so the live product path is byte-identical).
+        # Explicit cfg_overrides ALWAYS win.
+        if "escape_proactive_lead_min" not in overrides:
+            cfg.escape_proactive_lead_min = SIM_ESCAPE_PROACTIVE_LEAD_MIN
 
         # FIRE ZONE placement law: clients ALWAYS live in the central
         # ~18 km community window; on the standard tile that IS the tile
@@ -1531,9 +1573,10 @@ class SimSession:
                     value_usd=1_200_000.0, graphgel_enrolled=True,
                     priority_weight=1.0))
         else:
-            self._clients = place_clients(tile, n_clients,
-                                          seed=f"{location_key}|{seed}",
-                                          notes=self._notes, window=window)
+            self._clients = place_clients(
+                tile, n_clients, seed=f"{location_key}|{seed}",
+                notes=self._notes, window=window,
+                bounds_poly=getattr(self._loc, "bounds_poly", ()))
         self._client_by_id = {c.client_id: c for c in self._clients}
         # Honest-model note (never silent): the WUI band deliberately includes
         # the developed side of the interface, and the overflow pool can land
@@ -2543,6 +2586,70 @@ class SimSession:
         zfb = self._nearest_zone(pos, zones)
         return zfb.loc, zfb.zone_id
 
+    def _proactive_escape_zone(self, pos, now, speed_mps: float,
+                               lead_s: float, pro_s: float):
+        """SEM-10e candidate (contracts escape_proactive_lead_min): the zone
+        an IDLE crew should decamp to AHEAD of the escape law's imminent
+        flag, or None when no qualifying exit exists (then current behavior
+        stands — this hook NEVER least-bad hops; that stays with the
+        imminent law). Measured motivation (moderate-wind census attribution,
+        paradise 8000 m): z1's imminent flag fired at t30 but the last
+        fully-lawful road out of the SW pocket died at t12 and the last
+        clean-at-arrival one at t27 — the arrival field knew all three times
+        from ignition.
+
+        DURABLE: only zones whose own eroded-P10 arrival is beyond the SAME
+        proactive horizon (inf = never reached; a zone merely outside the
+        45-min window is the treadmill the census trace measured — hop,
+        idle, re-flag, hop, each cycle with less room). CLEAN: prefer the
+        fully-lawful longevity pick (_reachable_zone: route not burned,
+        worst margin >= 0); else accept a route that is not burned AND never
+        crosses a nominal-passed cell at its pass time (STRICTER than the
+        10d cold-black carve-out — a proactive move must not buy audit
+        overrun ticks riding old black; a cornered crew under the imminent
+        law still may) with a lawful DESTINATION (dm >= 0 — pessimistic-
+        exposed transit is what egressing crews already ride under 10d).
+        Longevity-first both times: forever zones nearest-first, else latest
+        P10, zone_id tiebreaks — deterministic."""
+        bar = now + self._cfg.egress_buffer_min * 60.0 + lead_s + pro_s
+        durable = []
+        for z in sorted(self._loc.safe_zones, key=lambda z: z.zone_id):
+            _nom, zp10 = self._crew_exposure(z.loc)
+            if math.isinf(zp10) or zp10 >= bar:
+                durable.append((z, zp10))
+        if not durable:
+            return None
+        z = self._reachable_zone(pos, [z for z, _ in durable], now,
+                                 speed_mps, lead_s)
+        if z is not None:
+            return z
+        lawful = []
+        for z, zp10 in durable:
+            burned, _e, _w, _t, dm = self._route_metrics(
+                pos, z.loc, now, speed_mps, lead_s)
+            if burned or dm < 0.0:
+                continue
+            # strict nominal-crossing reject (window-free burned test): the
+            # 10c audit flags a crew STANDING on any front-passed cell no
+            # matter how cold, so a proactive route may not touch one.
+            crosses = False
+            for q, dt in self._route_points_with_times(pos, z.loc, speed_mps):
+                if dt <= 0.0:
+                    continue
+                qnom, _qp10 = self._crew_exposure(q)
+                if (not math.isinf(qnom)) and qnom <= now + dt:
+                    crosses = True
+                    break
+            if crosses:
+                continue
+            lawful.append((z, zp10, geo.haversine_m(pos, z.loc)))
+        if not lawful:
+            return None
+        forever = [c for c in lawful if math.isinf(c[1])]
+        if forever:
+            return min(forever, key=lambda c: (c[2], c[0].zone_id))[0]
+        return max(lawful, key=lambda c: (c[1], -c[2], c[0].zone_id))[0]
+
     def _overrun_withdraw(self, cid, now) -> None:
         """SAFETY SEMANTICS 10a: a DEPLOYING crew whose cell the fire has
         overrun aborts its in-progress gel deploy via the existing withdrawal
@@ -2621,6 +2728,7 @@ class SimSession:
                 "impossible (fail-closed)")
         self._no_safe_zone = fail_closed
         buffer_s = self._cfg.egress_buffer_min * 60.0
+        pro_s = getattr(self._cfg, "escape_proactive_lead_min", 0.0) * 60.0
         for cid in _idsort(self._crew_sims):
             cs = self._crew_sims[cid]
             if cs.status == CrewStatus.INBOUND:
@@ -2669,6 +2777,33 @@ class SimSession:
             # the buffer + one tick of proactive lead so it leaves ahead of the
             # zero-lead audit line).
             if not (burned or imminent):
+                # SEM-10e PROACTIVE PRE-POCKET ESCAPE (contracts
+                # escape_proactive_lead_min): an IDLE crew inside the
+                # proactive horizon leaves NOW — while a durable clean exit
+                # still exists — instead of waiting for the imminent flag,
+                # which the moderate-wind census measured firing 2-3 ticks
+                # AFTER the last lawful road out of the paradise pocket
+                # burned over (4 crews then idled 11 ticks in the flaming
+                # front). No qualifying exit -> unchanged behavior; the
+                # imminent law below still owns the emergency.
+                if (pro_s > 0.0 and cs._mode == "idle"
+                        and (not math.isinf(p10))
+                        and p10 < now + buffer_s + lead_s + pro_s):
+                    z = self._proactive_escape_zone(cs.pos, now, cs.speed,
+                                                    lead_s, pro_s)
+                    if z is not None and cs.pos != z.loc:
+                        for d in cs.relocate_to(z.loc, z.zone_id):
+                            self._assigned.discard(d)
+                            self._superseded.discard(d)
+                            self._stop_rule.pop(d, None)
+                        self._n_relocations += 1
+                        self._notes.append(
+                            f"crew {cid} proactive escape — the pessimistic "
+                            f"front reaches this cell within "
+                            f"{(buffer_s + lead_s + pro_s) / 3600.0:.2g}h "
+                            f"and a durable exit is still clean (relocating "
+                            f"to {z.zone_id})")
+                        self._relocating[cid] = "proactive_escape"
                 continue
             # SEM-10d ROUTED RELOCATION: the LEAST-EXPOSURE ROUTED choice —
             # never a blind nearest-zone hop through the front (the founder's
