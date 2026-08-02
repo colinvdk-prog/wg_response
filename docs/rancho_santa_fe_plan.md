@@ -979,3 +979,37 @@ live configuration for RSF must be set explicitly, not inherited.
 | `docs/calibration/hindcast_oos_2026-07-28.md` | out-of-sample coverage, per-fuel late-miss, extreme-regime signature |
 | `docs/transit_hazard_determination.md` | cold-black windows, passability, the smoke limit |
 | `docs/HOA_40_PLAYBOOK.md`, `docs/DISPATCH_OPTIMIZATION.md` | the 40-home protocol this plan scales from |
+
+---
+
+## Addendum (2026-08-02): city-limits placement — numbers improve
+
+Founder directive: the 100 homes must sit **within RSF city limits**. A
+planning-grade boundary polygon (92067 core: Covenant / village / RSF Farms
+/ Fairbanks edge) now constrains every RSF client draw engine-wide (commit
+822dec2; verified 1,800/1,800 seeded homes inside across the rerun). Mean
+home spacing tightens from 877 m to **356 m (2.46x denser)** — and every
+scattered number improves:
+
+| Crews | Whole-tile (superseded) | **City-limits (plan of record)** |
+|---|---|---|
+| 8  | 69.7% | **74.2%** |
+| 10 | 69.5% | **76.8%** |
+| 12 | 70.1% | **78.0%** |
+
+All 90 city-limits runs: **0 violations, 0 overruns**. Winner (12 crews)
+splits: moderate **87.3%** / high **84.2%** / extreme **62.0%**; the
+due-east (+30 deg) approach remains the hard sector (63.9% vs 81-88%);
+ignition distance is nearly irrelevant at this density (77.1 vs 78.9%).
+
+**Crew-scaling correction:** at city density the response is no longer
+purely clock-bound — 8->12 crews buys **+3.8 pp** (was +0.4 flat on the
+whole tile). The 10-crew recommendation STANDS (+2.6 pp over 8 crews;
+the 12th and 11th crews add a further +1.2 pp — a defensible surge tier,
+no longer a pure contingency).
+
+Caveats: the cluster-placement comparison rows do NOT respect the polygon
+(the cluster generator bypasses the bounded draw — follow-up chip filed);
+they are retained only as whole-tile artifacts. The rerun also bundled the
+SEM-10e proactive-escape sim default landed by the parallel fix session —
+isolated at 0.2 pp (noise), so the deltas above are density-driven.

@@ -1,0 +1,18 @@
+{
+ "map": "rancho_santa_fe_ca",
+ "seed": "rsf|+0|6000|moderate",
+ "n_clients": 100,
+ "bounds_poly_vertices": 8,
+ "n_inside_poly": 100,
+ "n_total": 100,
+ "all_inside_poly": true,
+ "mean_nn_spacing_m": 354.1,
+ "min_nn_spacing_m": 90.0,
+ "max_nn_spacing_m": 890.6,
+ "prior_whole_tile_mean_nn_spacing_m": 876.8,
+ "notes": [
+  "client placement bounded to the location's city-limits polygon (5383 candidate WUI cells)",
+  "48 of 100 homes sit on developed (non-burnable 91/92/93/98/99) cells \u2014 now covered by the ~200 m ember-threat radius where fire reaches an adjacent burnable cell (they alert + dispatch); isolated homes with no burnable neighbour in range remain unthreatened (a surface fire cannot burn the developed cell itself; ember/structure spread not modeled)",
+  "road graph loaded for rancho_santa_fe_ca (29025 nodes) \u2014 crews follow road routes for ingress and egress; departure decisions use max(tier-0, road) egress time"
+ ]
+}

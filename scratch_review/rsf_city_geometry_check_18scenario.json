@@ -1,0 +1,28 @@
+{
+ "map": "rancho_santa_fe_ca",
+ "method": "mean nearest-neighbor haversine distance per scenario draw (100 homes), averaged over the 18-scenario grid (each scenario has an independent seeded draw)",
+ "per_scenario_mean_nn_m": {
+  "rsf|+0|6000|moderate": 354.1,
+  "rsf|+30|6000|moderate": 342.5,
+  "rsf|-30|6000|moderate": 338.8,
+  "rsf|+0|8000|moderate": 357.9,
+  "rsf|+30|8000|moderate": 395.5,
+  "rsf|-30|8000|moderate": 393.7,
+  "rsf|+0|6000|high": 330.9,
+  "rsf|+30|6000|high": 340.2,
+  "rsf|-30|6000|high": 370.6,
+  "rsf|+0|8000|high": 347.3,
+  "rsf|+30|8000|high": 333.8,
+  "rsf|-30|8000|high": 365.6,
+  "rsf|+0|6000|extreme": 340.4,
+  "rsf|+30|6000|extreme": 341.7,
+  "rsf|-30|6000|extreme": 391.4,
+  "rsf|+0|8000|extreme": 382.5,
+  "rsf|+30|8000|extreme": 327.4,
+  "rsf|-30|8000|extreme": 355.9
+ },
+ "avg_mean_nn_m_new_city_limits": 356.1,
+ "prior_whole_tile_avg_mean_nn_m": 876.8,
+ "all_scenarios_all_100_inside_poly": true,
+ "densification_ratio": 2.46
+}
