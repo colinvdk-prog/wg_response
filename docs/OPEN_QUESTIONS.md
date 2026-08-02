@@ -111,10 +111,16 @@ semantics (post-L-1); WFIGS perimeter-content freshness by source.
 adapter docstrings.
 
 ### T-7 — Travel-model calibration — eng
-`circuity=1.35` (literature 1.3±0.1; canyon terrain 1.5–2.0) and
-`fire_traffic_factor=1.4` (pure heuristic, no source) are uncalibrated.
-**Unblocks:** one-time offline script sampling ~200 OSRM routes per service area to
-fit local circuity; after-action GPS traces for the traffic factor.
+**Circuity RESOLVED 2026-08-02** for the global default: measured on all six sim
+tiles from the cached OSM graphs (`scratch_review/circuity_calibration.py`, 300
+routed pairs/tile x 2 populations) — pooled median 1.63–1.76, shipped as the
+calibrated pair `circuity=1.7` + `route_margin_min=56` (was 1.35/60; end-of-leg
+conservatism preserved at the 8.5 km representative leg). STILL OPEN: per-area
+circuity (per-map medians span 1.42 boulder_co – 2.48 paradise_ca, so one global
+constant over/under-prices by tile — values are in `circuity_calibration.json`)
+and `fire_traffic_factor=1.4` (pure heuristic, no source).
+**Unblocks:** a config seam for per-area circuity; after-action GPS traces for the
+traffic factor.
 
 ### T-8 — Slope-source reconciliation — eng
 3DEP ImageServer `Slope Degrees` (visualization mosaic) vs LANDFIRE `LF2020_SlpD`

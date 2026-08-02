@@ -846,7 +846,19 @@ class ResponseConfig:
     # --- crew safety (user-specified operational rules) ---
     deploy_min: float = 30.0           # gel application time on site
     egress_buffer_min: float = 30.0    # crew clear of property before P10 arrival
-    route_margin_min: float = 60.0     # corridor sample margin
+    # CHORD corridor sample margin — CALIBRATED PAIR with circuity
+    # (2026-08-02, scratch_review/circuity_calibration.py): 56 = 60 -
+    # dt(L_rep), where dt(L) = L*(1.7-1.35)*fire_traffic_factor/
+    # road_speed_mps = 3.9 min at the representative chord leg L_rep =
+    # 8.5 km (pooled planner-leg median). Raising circuity 1.35->1.7 shifts
+    # every chord pass/arrival time later; shaving the margin by the same
+    # minutes keeps the END-OF-LEG total conservatism (t_model + margin) of
+    # the old (1.35, 60) pair at L_rep (within 8 s). Shorter legs keep >=56
+    # of the old 60 (their travel error was never the load-bearing part);
+    # longer legs come out strictly MORE conservative (+2.8 min at the p90
+    # 14.9 km leg) — exactly the canyon tail the old pair under-priced.
+    # The pair moves together or not at all; see the circuity comment.
+    route_margin_min: float = 56.0
     corridor_erosion_m: float = 500.0  # erosion radius on P10 grid for corridor checks
     # CORRIDOR HONESTY (founder-arithmetic trace 2026-07-29, commit c05d622;
     # founder "perform 1" + "2-3 safety routes chosen to be safe from fire,
@@ -905,15 +917,23 @@ class ResponseConfig:
     gel_effectiveness: float = 0.85    # P(save) multiplier (PLACEHOLDER — Class A rating is not a survival probability)
     gel_env_model_enabled: bool = False  # wgdefense-style temp/RH/wind-scaled coating life
     # --- travel ---
-    # ⚠ CONTRADICTED BY OWN DATA (calibration review 2026-07-31): the repo's
-    # measured road-network circuity on the sim tiles is 1.96-2.43, so this
-    # 1.35 makes tier-0 CHORD travel ~2.4x optimistic. The error is silently
-    # absorbed by route_margin_min=60 on chord legs (that margin's extra
-    # width exists to cover exactly this — see the route_margin_roads_min
-    # note); plan-on-roads legs use real geometry and are unaffected. Do NOT
-    # tighten route_margin_min without recalibrating circuity first (chip
-    # filed); the pair moves together or not at all.
-    circuity: float = 1.35
+    # MEASURED 2026-08-02 (scratch_review/circuity_calibration.py: 300
+    # routed pairs x 6 tiles x 2 populations, roads.route dist_m /
+    # haversine, spur cap 2000 m, PYTHONHASHSEED=0). Pooled MEDIANS: 1.63
+    # (planner-representative WUI+safe-zone legs) / 1.76 (uniform on-tile
+    # pairs) -> 1.7. The calibration review's "1.96-2.43" were MEANS
+    # (pooled mean measured 1.95-2.14, Paradise 2.5-2.7) — the p90 3.0-3.3
+    # tail stays route_margin_min's job, not the multiplier's. Per-map
+    # medians span 1.42 (boulder_co) to 2.48 (paradise_ca uniform): one
+    # global constant over-conserves flat tiles and still under-prices
+    # canyon tiles — per-area circuity (DISPATCH_REVIEW item 1b) remains
+    # the follow-up; per-map values live in circuity_calibration.json.
+    # Effective chord corridor speed is now road_speed/(circuity*fire_
+    # traffic) = 7.52 m/s (was 9.47). CALIBRATED PAIR with route_margin_min
+    # (60 -> 56 in the same commit): the old 1.35 was optimistic and the
+    # chord margin's extra width silently absorbed it; do not retune either
+    # knob alone. Plan-on-roads legs use real geometry — unaffected.
+    circuity: float = 1.7
     fire_traffic_factor: float = 1.4
     road_speed_mps: float = 17.9       # ~40 mph blended class speed
     # --- spread / forecast ---
@@ -966,13 +986,16 @@ class ResponseConfig:
     # engine flips only after live road graphs + validation.
     dispatch_plan_on_roads: bool = False
     # Corridor margin for ROAD-sampled legs (plan-on-roads only). The chord
-    # margin (route_margin_min=60) was calibrated to ALSO absorb the flat
-    # travel model's -21..-33% mountain-road optimism (Council-1 F2); with the
-    # corridor sampled along the ACTUAL road at the route's own speed that
-    # compensator double-counts, so road legs use this leaner margin — equal
-    # to the egress buffer — covering residual travel variability (traffic,
-    # closures) only. Sweep-measured at 15-min crews: 874 vs 775 homes with
-    # margin 60, per-tick violations 0 at both. Chord legs keep 60.
+    # margin (route_margin_min — 60 before the 2026-08-02 pair calibration)
+    # was calibrated to ALSO absorb the flat travel model's -21..-33%
+    # mountain-road optimism (Council-1 F2); with the corridor sampled along
+    # the ACTUAL road at the route's own speed that compensator double-
+    # counts, so road legs use this leaner margin — equal to the egress
+    # buffer — covering residual travel variability (traffic, closures)
+    # only. Sweep-measured at 15-min crews: 874 vs 775 homes with margin 60,
+    # per-tick violations 0 at both. Chord legs keep route_margin_min (now
+    # 56, paired with measured circuity 1.7 — the optimism it absorbed is
+    # priced in the multiplier instead).
     route_margin_roads_min: float = 30.0
     # FOUNDER ROUND 5 — COATING HOLD (2026-07-12): "if fire is more than 24
     # hours away, do not coat homes; place crews on alert and preposition as

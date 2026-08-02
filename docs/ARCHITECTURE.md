@@ -106,15 +106,20 @@ A crew must be off the property 30 minutes before the pessimistic arrival, and g
 takes 30 minutes to apply, so service must start >= 60 minutes before P10 arrival.
 `ember_buffer_min` (default 0) adds on top during wind events.
 
-**Rule 3 — corridor erosion + the 60-minute route margin:** every travel leg
+**Rule 3 — corridor erosion + the 56-minute route margin:** every travel leg
 (ingress AND egress-to-safe-zone) is checked against the **ERODED** P10 arrival grid:
 a morphological min filter over `corridor_erosion_m` (500 m), so `D(cell)` = earliest
 time fire could be within 500 m of the cell. At each sample point (every
 `corridor_sample_m` = 300 m along the leg) the eroded arrival time must exceed the
-crew's pass time by `route_margin_min` (60 min). The route margin is deliberately
-2x the on-property margin: a crew on the road cannot shelter, and Tier-0 straight-line
-legs do not know real road geometry (the 500 m erosion is the belt-and-braces for
-that too). This is the PERIL trigger-buffer construct applied to crews instead of
+crew's pass time by `route_margin_min` (56 min) on chord legs. The route margin is
+deliberately nearly 2x the on-property margin: a crew on the road cannot shelter, and
+straight-line legs still carry residual geometry error beyond the measured circuity
+(the 500 m erosion is the belt-and-braces for that too). The (`circuity`,
+`route_margin_min`) pair was calibrated together 2026-08-02: (1.35, 60) -> (1.7, 56)
+prices the measured road-network circuity in the multiplier and preserves the old
+end-of-leg conservatism at the representative 8.5 km chord leg. Road-sampled legs
+under plan-on-roads use the leaner `route_margin_roads_min` (30 min) — their geometry
+is honest. This is the PERIL trigger-buffer construct applied to crews instead of
 evacuees.
 
 **Rule 4 — stop feasibility:** a plan stop is feasible only if ALL of:

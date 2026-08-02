@@ -653,6 +653,12 @@ is load-bearing for a reason not visible at its definition site. **Anyone who tu
 between the engine and a 2.43× travel-time error.** That coupling deserves a comment at
 `route_margin_min` itself.
 
+> **[RESOLVED 2026-08-02]** — measured on all six tiles and shipped as the
+> calibrated pair `circuity=1.7` + `route_margin_min=56`; the 1.96–2.43 figures
+> were per-leg **means** (pooled medians 1.63–1.76). Full resolution note in the
+> "Just below the line" section; measurement of record
+> `scratch_review/circuity_calibration.py` (+ JSON). Per-area circuity stays open.
+
 ### 4.4 Road width — ABSENT
 
 Not modeled anywhere. `RoadEdge` (`roads.py:185-206`) carries exactly
@@ -972,6 +978,15 @@ optimism, a fact documented at `route_margin_roads_min` rather than at
 first fixing circuity silently removes the engine's only protection against a 2.43×
 travel-time error.** This is not top-5 because it is currently compensated — but it is a
 one-line comment away from being safe, and it should be written today.
+
+> **[RESOLVED 2026-08-02.]** Measured properly on all six tiles
+> (`scratch_review/circuity_calibration.py`: 300 routed pairs/tile, uniform +
+> planner-representative populations): pooled **median** 1.63–1.76, pooled mean
+> 1.95–2.14 — the 1.96–2.43 above were **means** (Paradise mean 2.5–2.7 confirmed).
+> Shipped as the calibrated pair **`circuity=1.7` + `route_margin_min=56`**
+> (= 60 − 3.9 min at the representative 8.5 km leg; end-of-leg conservatism
+> preserved, long legs strictly more conservative). The coupling warning now
+> lives at `route_margin_min` itself. Per-area circuity stays open (T-7).
 
 Also below the line: road width absent (§4.4, a stage-2 precondition); the ±45 m
 quantization never priced by a 30 m replay (§5.2); the NB-cell census measured on one

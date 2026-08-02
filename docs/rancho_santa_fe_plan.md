@@ -886,6 +886,11 @@ steps has been run**.
 - **`circuity = 1.35` is contradicted by the repo's own measurement of
   1.96–2.43.** It is compensated by `route_margin_min = 60`, invisibly.
   Nobody may tune that margin down before circuity is fixed.
+  *[RESOLVED 2026-08-02: shipped as the calibrated pair (1.7, 56) — pooled
+  median across all six tiles; the 1.96–2.43 figures were means. See
+  `scratch_review/circuity_calibration.py` + the `contracts.py` circuity
+  comment. Rancho Santa Fe itself measures LOW (median 1.55), so this
+  plan's travel figures were conservative, not optimistic.]*
 - **The suite is red at HEAD**: `test_locations_registry_shape` still pins
   five locations after RSF made six. Trivial, and it should be closed before
   anything ships from this branch.

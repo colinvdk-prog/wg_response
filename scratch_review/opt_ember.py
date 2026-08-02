@@ -213,15 +213,29 @@ def main():
                          "0=force off, -1=leave to session defaults")
     ap.add_argument("--route-alts", type=int, default=1,
                     help="cfg.route_alternatives: 1 legacy, 2-3 candidates")
+    ap.add_argument("--roads", type=int, default=1,
+                    help="cfg.dispatch_plan_on_roads (1 = bench default; "
+                         "0 = tier-0 chord planner — the surface the "
+                         "circuity/route_margin_min pair calibrates)")
+    ap.add_argument("--circuity", type=float, default=None,
+                    help="cfg.circuity override (None = engine default)")
+    ap.add_argument("--route-margin", type=float, default=None,
+                    help="cfg.route_margin_min override (None = engine "
+                         "default; pair with --circuity — the knobs move "
+                         "together)")
     ap.add_argument("--workers", type=int, default=10)
     args = ap.parse_args()
 
     cfg = dict(BASE)
     cfg.update({"deploy_min": args.deploy,
-                "dispatch_plan_on_roads": True,
+                "dispatch_plan_on_roads": bool(args.roads),
                 "dispatch_hold_h": args.hold,
                 "egress_buffer_min": args.egress,
                 "ember_threat_radius_m": args.ember_radius})
+    if args.circuity is not None:
+        cfg["circuity"] = args.circuity
+    if args.route_margin is not None:
+        cfg["route_margin_min"] = args.route_margin
     if args.coat_early:
         cfg["dispatch_late_shift"] = False
     if args.slack is not None:
@@ -263,6 +277,8 @@ def main():
                                staging=args.staging,
                                erosion_euclid=args.erosion_euclid,
                                route_alts=args.route_alts,
+                               roads=args.roads, circuity=args.circuity,
+                               route_margin=args.route_margin,
                                tiered=args.tiered,
                                escape_hyst=args.escape_hyst,
                                cold_black=args.cold_black),

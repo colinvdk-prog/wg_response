@@ -1748,8 +1748,22 @@ def test_homes_urgency_weight_never_serves_fewer_than_pure_count():
 # count-max). The round-4 mis-tuning fix makes the emitted set urgency-BLIND, so
 # the count-max set is exactly this pre-urgency (pure count-max) set again -- the
 # harness must never protect FEWER homes.
-_HOMES_SERVED_24_PRE_URGENCY = [4, 5, 4, 4, 4, 6, 3, 5, 4, 3, 5, 5, 4, 5, 6, 4,
-                                6, 5, 3, 5, 4, 4, 5, 4]
+#
+# RE-PINNED 2026-08-02 (travel-pair calibration, circuity 1.35->1.7 +
+# route_margin_min 60->56): this test's subject is the urgency-blind refactor,
+# NOT the travel model, but the counts are priced through travel times, so the
+# baseline was re-captured at the calibrated pair. Attribution before re-pin:
+# the old pair reproduced the previous list EXACTLY ([..., 5, ...] at 1, etc.),
+# the new counts are deterministic across repeat solves, and 7/24 instances
+# serve exactly one FEWER home ((i, old, new): (1,5,4) (3,4,3) (5,6,5)
+# (14,6,5) (16,6,5) (19,5,4) (20,4,3)) — with ~26% slower honest chords the
+# marginal home no longer fits the 1.0-3.2 h P10 deadlines; the old counts
+# promised homes the crews could not actually have driven to in time. The
+# urgency-blindness property itself is pinned LIVE (budget-free, byte-identity
+# across weights) by test_homes_urgency_weight_never_serves_fewer_than_pure_
+# count above and is unaffected.
+_HOMES_SERVED_24_PRE_URGENCY = [4, 4, 4, 3, 4, 5, 3, 5, 4, 3, 5, 5, 4, 5, 5, 4,
+                                5, 5, 3, 4, 3, 4, 5, 4]
 
 
 def test_homes_24_instances_never_fewer_than_pure_count_baseline():

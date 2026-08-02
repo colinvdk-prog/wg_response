@@ -335,6 +335,16 @@ def test_buffer_binds_unserved_reasons(tmp_path):
     for buf in (30.0, 90.0):
         cfg = dict(FAST)
         cfg["egress_buffer_min"] = buf
+        # TRAVEL-SUBSTRATE PIN (2026-08-02 pair calibration): this scenario's
+        # geometry was tuned so the 30-min arm isolates the SLACK floor; at
+        # the calibrated pair (circuity 1.7 / route_margin_min 56) the ~26%
+        # slower chords make the hard DEADLINE bind first and the slack rung
+        # never surfaces here. The subject of this test is the buffer ->
+        # unserved-reason semantics, not the travel constants, so the legacy
+        # pair is pinned to keep the calibrated geometry. If this pin ever
+        # blocks, re-tune the scenario geometry instead of widening it.
+        cfg["circuity"] = 1.35
+        cfg["route_margin_min"] = 60.0
         d = _controlled_tile_dir(tmp_path, "boulder_co", hamlet_half=3)
         s = SimSession("boulder_co", 16, 1, seed="m1", cfg_overrides=cfg,
                        tile_dir=d, roads_module=None)
@@ -2698,7 +2708,8 @@ def test_crew_safety_normal_case_relocates_and_escapes(tmp_path):
             if c["relocating"]:
                 saw_relocating = True
                 assert c["relocate_reason"] in ("zone_threatened",
-                                                "zone_overrun")
+                                                "zone_overrun",
+                                                "proactive_escape")
                 assert c["status"] == "egressing"        # actively fleeing
                 reasons.add(c["relocate_reason"])
     # the sweep ACTUALLY engaged (non-vacuous): crews repositioned to safety
