@@ -1,0 +1,422 @@
+{
+ "axis_tables": {
+  "v_base_a": {
+   "file": "scratch_review/opt_ember_v_base_a.json",
+   "tag": "v_base_a",
+   "suite": "full",
+   "params": {
+    "crews": 4,
+    "deploy": 15.0,
+    "egress": 30.0,
+    "ember_radius": 200.0,
+    "coat_early": 0,
+    "hold": 24.0,
+    "slack": null
+   },
+   "pooled_belt": {
+    "gelled": 380,
+    "total": 903,
+    "pct": 42.1
+   },
+   "self_check_vs_recorded_e1000": "OK",
+   "tables": {
+    "by_map": {
+     "boulder_co": {
+      "gelled": 57,
+      "total": 113,
+      "pct": 50.4
+     },
+     "malibu_ca": {
+      "gelled": 53,
+      "total": 203,
+      "pct": 26.1
+     },
+     "paradise_ca": {
+      "gelled": 138,
+      "total": 231,
+      "pct": 59.7
+     },
+     "park_city_ut": {
+      "gelled": 68,
+      "total": 227,
+      "pct": 30.0
+     },
+     "santa_rosa_ca": {
+      "gelled": 64,
+      "total": 129,
+      "pct": 49.6
+     }
+    },
+    "by_wind_off": {
+     "-40": {
+      "gelled": 124,
+      "total": 269,
+      "pct": 46.1
+     },
+     "+0": {
+      "gelled": 147,
+      "total": 321,
+      "pct": 45.8
+     },
+     "+40": {
+      "gelled": 109,
+      "total": 313,
+      "pct": 34.8
+     }
+    },
+    "by_dist": {
+     "6000": {
+      "gelled": 179,
+      "total": 446,
+      "pct": 40.1
+     },
+     "8000": {
+      "gelled": 201,
+      "total": 457,
+      "pct": 44.0
+     }
+    },
+    "by_intensity": {
+     "high": {
+      "gelled": 232,
+      "total": 431,
+      "pct": 53.8
+     },
+     "extreme": {
+      "gelled": 148,
+      "total": 472,
+      "pct": 31.4
+     }
+    }
+   }
+  },
+  "v_c8d10": {
+   "file": "scratch_review/opt_ember_v_c8d10.json",
+   "tag": "v_c8d10",
+   "suite": "full",
+   "params": {
+    "crews": 8,
+    "deploy": 10.0,
+    "egress": 30.0,
+    "ember_radius": 200.0,
+    "coat_early": 0,
+    "hold": 24.0,
+    "slack": null,
+    "clients": 40,
+    "placement": "scattered"
+   },
+   "pooled_belt": {
+    "gelled": 435,
+    "total": 903,
+    "pct": 48.2
+   },
+   "self_check_vs_recorded_e1000": "OK",
+   "tables": {
+    "by_map": {
+     "boulder_co": {
+      "gelled": 59,
+      "total": 113,
+      "pct": 52.2
+     },
+     "malibu_ca": {
+      "gelled": 69,
+      "total": 203,
+      "pct": 34.0
+     },
+     "paradise_ca": {
+      "gelled": 144,
+      "total": 231,
+      "pct": 62.3
+     },
+     "park_city_ut": {
+      "gelled": 92,
+      "total": 227,
+      "pct": 40.5
+     },
+     "santa_rosa_ca": {
+      "gelled": 71,
+      "total": 129,
+      "pct": 55.0
+     }
+    },
+    "by_wind_off": {
+     "-40": {
+      "gelled": 149,
+      "total": 269,
+      "pct": 55.4
+     },
+     "+0": {
+      "gelled": 161,
+      "total": 321,
+      "pct": 50.2
+     },
+     "+40": {
+      "gelled": 125,
+      "total": 313,
+      "pct": 39.9
+     }
+    },
+    "by_dist": {
+     "6000": {
+      "gelled": 203,
+      "total": 446,
+      "pct": 45.5
+     },
+     "8000": {
+      "gelled": 232,
+      "total": 457,
+      "pct": 50.8
+     }
+    },
+    "by_intensity": {
+     "high": {
+      "gelled": 258,
+      "total": 431,
+      "pct": 59.9
+     },
+     "extreme": {
+      "gelled": 177,
+      "total": 472,
+      "pct": 37.5
+     }
+    }
+   }
+  },
+  "flip_c4": {
+   "file": "scratch_review/opt_ember_flip_c4.json",
+   "tag": "flip_c4",
+   "suite": "screen",
+   "params": {
+    "crews": 4,
+    "deploy": 10.0,
+    "egress": 30.0,
+    "ember_radius": 200.0,
+    "coat_early": 0,
+    "hold": 24.0,
+    "slack": null,
+    "clients": 40,
+    "placement": "scattered",
+    "staging": "default",
+    "erosion_euclid": 0,
+    "route_alts": 1,
+    "tiered": "",
+    "escape_hyst": 0.0,
+    "cold_black": -1
+   },
+   "pooled_belt": {
+    "gelled": 164,
+    "total": 321,
+    "pct": 51.1
+   },
+   "self_check_vs_recorded_e1000": "OK",
+   "tables": {
+    "by_map": {
+     "boulder_co": {
+      "gelled": 34,
+      "total": 53,
+      "pct": 64.2
+     },
+     "malibu_ca": {
+      "gelled": 23,
+      "total": 67,
+      "pct": 34.3
+     },
+     "paradise_ca": {
+      "gelled": 54,
+      "total": 84,
+      "pct": 64.3
+     },
+     "park_city_ut": {
+      "gelled": 30,
+      "total": 82,
+      "pct": 36.6
+     },
+     "santa_rosa_ca": {
+      "gelled": 23,
+      "total": 35,
+      "pct": 65.7
+     }
+    },
+    "by_wind_off": {
+     "+0": {
+      "gelled": 164,
+      "total": 321,
+      "pct": 51.1
+     }
+    },
+    "by_dist": {
+     "6000": {
+      "gelled": 80,
+      "total": 150,
+      "pct": 53.3
+     },
+     "8000": {
+      "gelled": 84,
+      "total": 171,
+      "pct": 49.1
+     }
+    },
+    "by_intensity": {
+     "high": {
+      "gelled": 94,
+      "total": 155,
+      "pct": 60.6
+     },
+     "extreme": {
+      "gelled": 70,
+      "total": 166,
+      "pct": 42.2
+     }
+    }
+   }
+  },
+  "flip_c8": {
+   "file": "scratch_review/opt_ember_flip_c8.json",
+   "tag": "flip_c8",
+   "suite": "screen",
+   "params": {
+    "crews": 8,
+    "deploy": 10.0,
+    "egress": 30.0,
+    "ember_radius": 200.0,
+    "coat_early": 0,
+    "hold": 24.0,
+    "slack": null,
+    "clients": 40,
+    "placement": "scattered",
+    "staging": "default",
+    "erosion_euclid": 0,
+    "route_alts": 1,
+    "tiered": "",
+    "escape_hyst": 0.0,
+    "cold_black": -1
+   },
+   "pooled_belt": {
+    "gelled": 181,
+    "total": 321,
+    "pct": 56.4
+   },
+   "self_check_vs_recorded_e1000": "OK",
+   "tables": {
+    "by_map": {
+     "boulder_co": {
+      "gelled": 38,
+      "total": 53,
+      "pct": 71.7
+     },
+     "malibu_ca": {
+      "gelled": 26,
+      "total": 67,
+      "pct": 38.8
+     },
+     "paradise_ca": {
+      "gelled": 55,
+      "total": 84,
+      "pct": 65.5
+     },
+     "park_city_ut": {
+      "gelled": 39,
+      "total": 82,
+      "pct": 47.6
+     },
+     "santa_rosa_ca": {
+      "gelled": 23,
+      "total": 35,
+      "pct": 65.7
+     }
+    },
+    "by_wind_off": {
+     "+0": {
+      "gelled": 181,
+      "total": 321,
+      "pct": 56.4
+     }
+    },
+    "by_dist": {
+     "6000": {
+      "gelled": 90,
+      "total": 150,
+      "pct": 60.0
+     },
+     "8000": {
+      "gelled": 91,
+      "total": 171,
+      "pct": 53.2
+     }
+    },
+    "by_intensity": {
+     "high": {
+      "gelled": 107,
+      "total": 155,
+      "pct": 69.0
+     },
+     "extreme": {
+      "gelled": 74,
+      "total": 166,
+      "pct": 44.6
+     }
+    }
+   }
+  }
+ },
+ "wind_speed_curve": {
+  "4": {
+   "low": {
+    "gelled": 189,
+    "total": 215,
+    "pct": 87.9,
+    "source": "scratch_review/census_wind_low_c4.json"
+   },
+   "moderate": {
+    "gelled": 173,
+    "total": 217,
+    "pct": 79.7,
+    "source": "scratch_review/census_wind_moderate_c4.json"
+   },
+   "high": {
+    "gelled": 94,
+    "total": 155,
+    "pct": 60.6,
+    "source": "scratch_review/opt_ember_flip_c4.json"
+   },
+   "extreme": {
+    "gelled": 70,
+    "total": 166,
+    "pct": 42.2,
+    "source": "scratch_review/opt_ember_flip_c4.json"
+   }
+  },
+  "8": {
+   "low": {
+    "gelled": 191,
+    "total": 215,
+    "pct": 88.8,
+    "source": "scratch_review/census_wind_low_c8.json"
+   },
+   "moderate": {
+    "gelled": 182,
+    "total": 217,
+    "pct": 83.9,
+    "source": "scratch_review/census_wind_moderate_c8.json"
+   },
+   "high": {
+    "gelled": 107,
+    "total": 155,
+    "pct": 69.0,
+    "source": "scratch_review/opt_ember_flip_c8.json"
+   },
+   "extreme": {
+    "gelled": 74,
+    "total": 166,
+    "pct": 44.6,
+    "source": "scratch_review/opt_ember_flip_c8.json"
+   }
+  }
+ },
+ "wind_mph": {
+  "low": 8.0,
+  "moderate": 18.0,
+  "high": 28.0,
+  "extreme": 40.0
+ }
+}

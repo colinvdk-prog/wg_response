@@ -101,35 +101,35 @@
   },
   {
    "anchor": "camp",
-   "engine": 470.8840149238302,
+   "engine": 458.4299036978851,
    "fuel_label": "GR2",
    "metric": "area ac/h over 1.5 h",
    "notes": "",
    "observed": 6600.0,
    "point_ros_kmh": 1.9372758600545137,
-   "ratio": 0.071346062867247,
+   "ratio": 0.06945907631786138,
    "spotting": true
   },
   {
    "anchor": "camp",
-   "engine": 774.527107670683,
+   "engine": 806.5519651088276,
    "fuel_label": "SH5",
    "metric": "area ac/h over 1.5 h",
    "notes": "",
    "observed": 6600.0,
    "point_ros_kmh": 4.375096815514211,
-   "ratio": 0.11735259207131561,
+   "ratio": 0.12220484319830721,
    "spotting": true
   },
   {
    "anchor": "camp",
-   "engine": 779.8645839103738,
+   "engine": 792.318695136319,
    "fuel_label": "GR2/SH5 mix",
    "metric": "area ac/h over 1.5 h",
    "notes": "",
    "observed": 6600.0,
    "point_ros_kmh": 0.0,
-   "ratio": 0.11816130059248088,
+   "ratio": 0.12004828714186651,
    "spotting": true
   }
  ],

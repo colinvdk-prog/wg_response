@@ -1,0 +1,2544 @@
+{
+ "tag": "wind_low_c4",
+ "intensity": "low",
+ "wind_mph": 8.0,
+ "params": {
+  "crews": 4,
+  "deploy": 10.0,
+  "egress": 30.0,
+  "ember_radius": 200.0,
+  "hold": 24.0,
+  "clients": 40,
+  "placement": "scattered",
+  "staging": "default"
+ },
+ "stats": {
+  "front": [
+   128,
+   135,
+   94.81481481481481
+  ],
+  "e300": [
+   151,
+   163,
+   92.63803680981596
+  ],
+  "e500": [
+   163,
+   176,
+   92.61363636363636
+  ],
+  "e1000": [
+   189,
+   215,
+   87.90697674418605
+  ],
+  "viol": 0,
+  "ov_ticks": 0,
+  "min_margin_h": 0.67,
+  "coated_total": 334,
+  "homes_total": 400
+ },
+ "rows": [
+  {
+   "seed": "malibu_ca|+0|6000|low",
+   "map": "malibu_ca",
+   "inten": "low",
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.9296,
+   "homes": [
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 270.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1658.2,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1466.3,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 254.7,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1211.8,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 576.1,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1127.7,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 649.5,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 450.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    }
+   ]
+  },
+  {
+   "seed": "malibu_ca|+0|8000|low",
+   "map": "malibu_ca",
+   "inten": "low",
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.6689,
+   "homes": [
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1223.7,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 270.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 450.3,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1169.3,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 900.7,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 201.2,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 324.7,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1476.0,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 201.4,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 990.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 649.0,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 576.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    }
+   ]
+  },
+  {
+   "seed": "paradise_ca|+0|6000|low",
+   "map": "paradise_ca",
+   "inten": "low",
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 3.3838,
+   "homes": [
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 180.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 127.2,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 449.9,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1289.3,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 829.2,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 508.7,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 458.9,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 0.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 603.9,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1050.3,
+     "outcome": "saved"
+    }
+   ]
+  },
+  {
+   "seed": "paradise_ca|+0|8000|low",
+   "map": "paradise_ca",
+   "inten": "low",
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 1.4335,
+   "homes": [
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 955.9,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 459.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 829.4,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 540.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 180.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 127.2,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 508.6,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 848.8,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1048.9,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1660.2,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 270.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 90.0,
+     "outcome": "saved"
+    }
+   ]
+  },
+  {
+   "seed": "santa_rosa_ca|+0|6000|low",
+   "map": "santa_rosa_ca",
+   "inten": "low",
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 2.311,
+   "homes": [
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 703.3,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1272.5,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 402.4,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 854.3,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1098.3,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 270.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 815.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 848.9,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 324.4,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 508.7,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1406.7,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 636.3,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1173.2,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 956.3,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1184.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    }
+   ]
+  },
+  {
+   "seed": "santa_rosa_ca|+0|8000|low",
+   "map": "santa_rosa_ca",
+   "inten": "low",
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 3.0366,
+   "homes": [
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 648.9,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1211.6,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1375.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 725.5,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1330.0,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1288.5,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1528.4,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1098.2,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 603.9,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 284.5,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 180.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    }
+   ]
+  },
+  {
+   "seed": "boulder_co|+0|6000|low",
+   "map": "boulder_co",
+   "inten": "low",
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.9726,
+   "homes": [
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 720.0,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 956.1,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 270.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1084.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 649.4,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 0.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 828.8,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 0.0,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 402.7,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1170.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 324.2,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 0.0,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1006.4,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1296.7,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 402.2,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 576.7,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 90.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 509.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    }
+   ]
+  },
+  {
+   "seed": "boulder_co|+0|8000|low",
+   "map": "boulder_co",
+   "inten": "low",
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 1.4016,
+   "homes": [
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 654.9,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 849.0,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 90.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 685.8,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 449.7,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 90.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1146.6,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 90.0,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 0.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 0.0,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1145.5,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 201.3,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 0.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1289.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1654.6,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 829.2,
+     "outcome": "not_threatened"
+    }
+   ]
+  },
+  {
+   "seed": "park_city_ut|+0|6000|low",
+   "map": "park_city_ut",
+   "inten": "low",
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 1.8296,
+   "homes": [
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1653.4,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 484.4,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 284.7,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 201.4,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 525.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 829.6,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 648.3,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1591.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1208.5,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 324.7,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 768.7,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 201.3,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    }
+   ]
+  },
+  {
+   "seed": "park_city_ut|+0|8000|low",
+   "map": "park_city_ut",
+   "inten": "low",
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 2.4792,
+   "homes": [
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 0.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 886.1,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 484.4,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 201.2,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 270.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 829.1,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 127.2,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 0.0,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 201.4,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 324.3,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 201.1,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1084.9,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 127.4,
+     "outcome": "protected_then_impacted"
+    }
+   ]
+  }
+ ]
+}

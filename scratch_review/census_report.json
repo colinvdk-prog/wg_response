@@ -1,0 +1,1558 @@
+{
+ "totals": {
+  "simulation_runs": 8080,
+  "home_instances": 336687,
+  "full_suite_invocations": {
+   "bench": 104,
+   "opt_ember": 7,
+   "probes": 3,
+   "combined": 114
+  }
+ },
+ "corpora": {
+  "bench_sweep_era": {
+   "corpus": "bench sweep era",
+   "n_files": 107,
+   "runs": 6264,
+   "homes": 263643,
+   "full_suite_files": 104,
+   "detail": [
+    {
+     "file": "scratch_review/bench_CD015.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_CD020.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_CD025.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_CD025_churn01.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_CD025_ils80.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_CD025_val0.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_CD025_val10.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_CD030.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_CD030c.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_CD050.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_C_E.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_C_E120.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_C_cc.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_C_churn01.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_C_commit10.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_C_edd.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_C_ils160.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_C_ils240.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_C_ils320.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_D030.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_D100.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_D300.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_alerted.json",
+     "shape": "list-of-rows",
+     "scenarios": 5,
+     "homes": 171,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/bench_baseline.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_baseline2.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_cap12.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_cap8.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_ch_oos30.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1800,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_ch_oos60.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3600,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_coldblack_pertick.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_crew3_15min.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_crew5.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_crew6.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_dens_10.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 600,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_dens_120.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 7200,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_dens_20.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1200,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_dens_30.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1800,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_dens_40.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_dens_60.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3600,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_dens_80.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 4800,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_dep10.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_dep15.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_dep20.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_dep20_ce.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_dep30.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_destfirst_pertick.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_edd.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_final_pertick.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_flat_15.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_flat_base.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_flat_ce.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_flat_oos_30_3.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1800,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_flat_oos_60_4.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3600,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_hoa_40_2.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_hoa_40_6.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_hoa_40_8.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_hold24.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_hold24_30_3.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1800,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_hold24_60_4.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3600,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_hyst_pertick.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_ils80.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_interface.json",
+     "shape": "list-of-rows",
+     "scenarios": 17,
+     "homes": 592,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/bench_leastexpo_pertick.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_longevity15.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_longevity5.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_noroads15.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_noshift.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_noshift2.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_o_30_3_C.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1800,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_o_30_3_D.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1800,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_o_60_4_C.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3600,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_o_60_4_D.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3600,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_oos_30_3_base.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1800,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_oos_30_3_fin.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1800,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_oos_50_6_base.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3000,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_oos_50_6_fin.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3000,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_oos_60_4_base.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3600,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_oos_60_4_fin.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3600,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_pertick_check.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_planroads15.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_pr_final.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_pr_m30.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_pr_m45.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_pr_oos30.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1800,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_pr_oos60.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3600,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_prefix_pertick.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_recheck.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_recheck2.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_replan10.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_replan5.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_roads_corronly.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_roads_travelonly.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_seq_ff.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_seq_ff_30.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1800,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_seq_ff_60.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3600,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_seq_urg.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_smoke.json",
+     "shape": "dict.rows",
+     "scenarios": 2,
+     "homes": 80,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/bench_v_20_2_C.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1200,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_v_20_2_base.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1200,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_v_25_4_C.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1500,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_v_25_4_base.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 1500,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_v_40_6_C.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_v_40_6_base.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_v_50_6_C.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3000,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_v_50_6_base.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 3000,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_v_80_5_C.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 4800,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/bench_v_80_5_base.json",
+     "shape": "dict.rows",
+     "scenarios": 60,
+     "homes": 4800,
+     "full_suite": true
+    }
+   ]
+  },
+  "ember_optimization_era": {
+   "corpus": "ember optimization era",
+   "n_files": 67,
+   "runs": 1620,
+   "homes": 65600,
+   "full_suite_files": 7,
+   "by_suite": {
+    "full": 7,
+    "screen": 60
+   },
+   "detail": [
+    {
+     "file": "scratch_review/opt_ember_cb_c4.json",
+     "tag": "cb_c4",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_cb_c8.json",
+     "tag": "cb_c8",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_ch_base.json",
+     "tag": "ch_base",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_ch_c8d10.json",
+     "tag": "ch_c8d10",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_ch_d10.json",
+     "tag": "ch_d10",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_ch_eros_c8d10.json",
+     "tag": "ch_eros_c8d10",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_ch_erosion_only.json",
+     "tag": "ch_erosion_only",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_flip_c4.json",
+     "tag": "flip_c4",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_flip_c4b.json",
+     "tag": "flip_c4b",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_flip_c8.json",
+     "tag": "flip_c8",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_g_base.json",
+     "tag": "g_base",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_g_e1000_early.json",
+     "tag": "g_e1000_early",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_g_e1000_h0.json",
+     "tag": "g_e1000_h0",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_g_early.json",
+     "tag": "g_early",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_g_ember1000.json",
+     "tag": "g_ember1000",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_g_ember500.json",
+     "tag": "g_ember500",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_g_hold0.json",
+     "tag": "g_hold0",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_g_hold12.json",
+     "tag": "g_hold12",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_hy20_c8.json",
+     "tag": "hy20_c8",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_l_c10.json",
+     "tag": "l_c10",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_l_c12.json",
+     "tag": "l_c12",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_l_c12r0.json",
+     "tag": "l_c12r0",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_l_c16.json",
+     "tag": "l_c16",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_l_c24.json",
+     "tag": "l_c24",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_l_c6.json",
+     "tag": "l_c6",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_l_c8r4.json",
+     "tag": "l_c8r4",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_n20.json",
+     "tag": "n20",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 400,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_n60.json",
+     "tag": "n60",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 1200,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_n80.json",
+     "tag": "n80",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 1600,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_o_base.json",
+     "tag": "o_base",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_o_c6d12.json",
+     "tag": "o_c6d12",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_o_c8d10.json",
+     "tag": "o_c8d10",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_o_crews6.json",
+     "tag": "o_crews6",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_o_crews8.json",
+     "tag": "o_crews8",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_o_deploy10.json",
+     "tag": "o_deploy10",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_o_deploy12.json",
+     "tag": "o_deploy12",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_o_egress15.json",
+     "tag": "o_egress15",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_o_egress20.json",
+     "tag": "o_egress20",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_p_c1_base.json",
+     "tag": "p_c1_base",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_p_c1_c8d10.json",
+     "tag": "p_c1_c8d10",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_p_c4_base.json",
+     "tag": "p_c4_base",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_p_c4_c8d10.json",
+     "tag": "p_c4_c8d10",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_pi_base.json",
+     "tag": "pi_base",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_pi_c8d10.json",
+     "tag": "pi_c8d10",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_rad550_c4.json",
+     "tag": "rad550_c4",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_rad550_c8.json",
+     "tag": "rad550_c8",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_rad600_c4.json",
+     "tag": "rad600_c4",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_rad600_c8.json",
+     "tag": "rad600_c8",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_s_c10.json",
+     "tag": "s_c10",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_s_c4.json",
+     "tag": "s_c4",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_s_c8.json",
+     "tag": "s_c8",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_te_a_c4.json",
+     "tag": "te_a_c4",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_te_a_c8.json",
+     "tag": "te_a_c8",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_te_b_c4.json",
+     "tag": "te_b_c4",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_te_b_c8.json",
+     "tag": "te_b_c8",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_te_c_c8.json",
+     "tag": "te_c_c8",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_tehy_a_c4.json",
+     "tag": "tehy_a_c4",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_tehy_a_c8.json",
+     "tag": "tehy_a_c8",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_tehy_b_c8.json",
+     "tag": "tehy_b_c8",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_v_base_a.json",
+     "tag": "v_base_a",
+     "suite": "full",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/opt_ember_v_base_b.json",
+     "tag": "v_base_b",
+     "suite": "full",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/opt_ember_v_c6d12.json",
+     "tag": "v_c6d12",
+     "suite": "full",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/opt_ember_v_c8d10.json",
+     "tag": "v_c8d10",
+     "suite": "full",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/opt_ember_v_d10.json",
+     "tag": "v_d10",
+     "suite": "full",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/opt_ember_x_base.json",
+     "tag": "x_base",
+     "suite": "full",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/opt_ember_x_base_unpinned.json",
+     "tag": "x_base_unpinned",
+     "suite": "screen",
+     "scenarios": 20,
+     "homes": 800,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/opt_ember_x_c8d10.json",
+     "tag": "x_c8d10",
+     "suite": "full",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    }
+   ]
+  },
+  "probes": {
+   "corpus": "probes",
+   "n_files": 6,
+   "runs": 196,
+   "homes": 7444,
+   "full_suite_files": 3,
+   "detail": [
+    {
+     "file": "scratch_review/probe_fa2_deploy30.json",
+     "tag": null,
+     "suite": null,
+     "scenarios": 3,
+     "homes": 12,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/probe_founder_arith.json",
+     "tag": null,
+     "suite": null,
+     "scenarios": 8,
+     "homes": 32,
+     "full_suite": false
+    },
+    {
+     "file": "scratch_review/probe_impacted.json",
+     "tag": null,
+     "suite": null,
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/probe_leadtime_lead_base.json",
+     "tag": "lead_base",
+     "suite": "full",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/probe_leadtime_lead_c8d10.json",
+     "tag": "lead_c8d10",
+     "suite": "full",
+     "scenarios": 60,
+     "homes": 2400,
+     "full_suite": true
+    },
+    {
+     "file": "scratch_review/probe_leadtime_lead_smoke.json",
+     "tag": "lead_smoke",
+     "suite": "quick",
+     "scenarios": 5,
+     "homes": 200,
+     "full_suite": false
+    }
+   ]
+  }
+ },
+ "analysis_artifacts_not_counted": {
+  "defens": [
+   {
+    "file": "scratch_review/defens_boulder_co.json",
+    "bytes": 103273,
+    "location": "boulder_co",
+    "name": "Boulder / Superior, CO",
+    "n_sites": 472,
+    "scenarios": 12,
+    "pct_allow": 90.7
+   },
+   {
+    "file": "scratch_review/defens_paradise_ca.json",
+    "bytes": 105688,
+    "location": "paradise_ca",
+    "name": "Paradise / Magalia, CA",
+    "n_sites": 480,
+    "scenarios": 12,
+    "pct_allow": 85.4
+   }
+  ],
+  "opt_ember_smoke": [
+   {
+    "file": "scratch_review/opt_ember_smoke_base.json",
+    "tag": "smoke_base",
+    "suite": "quick",
+    "scenarios": 5,
+    "homes": 200,
+    "full_suite": false
+   },
+   {
+    "file": "scratch_review/opt_ember_smoke_cluster4.json",
+    "tag": "smoke_cluster4",
+    "suite": "quick",
+    "scenarios": 5,
+    "homes": 200,
+    "full_suite": false
+   },
+   {
+    "file": "scratch_review/opt_ember_smoke_near.json",
+    "tag": "smoke_near",
+    "suite": "quick",
+    "scenarios": 5,
+    "homes": 200,
+    "full_suite": false
+   },
+   {
+    "file": "scratch_review/opt_ember_smoke_tiered.json",
+    "tag": "smoke_tiered",
+    "suite": "quick",
+    "scenarios": 5,
+    "homes": 200,
+    "full_suite": false
+   }
+  ],
+  "caught": [
+   {
+    "file": "scratch_review/caught_dissect.json",
+    "bytes": 15558,
+    "sub_runs": {
+     "a_4crew_roads_erosion_hold24_alt3": 4,
+     "b_8crew_erosion_only": 8
+    }
+   },
+   {
+    "file": "scratch_review/caught_full.json",
+    "bytes": 15923,
+    "sub_runs": {
+     "a_4crew": 4,
+     "b_8crew": 8
+    }
+   }
+  ],
+  "hazard_text": [
+   {
+    "file": "scratch_review/hazard_passability_out.txt",
+    "bytes": 16367
+   },
+   {
+    "file": "scratch_review/hazard_roadside_out.txt",
+    "bytes": 18155
+   },
+   {
+    "file": "scratch_review/hazard_separation_out.txt",
+    "bytes": 9106
+   }
+  ],
+  "probe_non_row_diagnostics": [
+   {
+    "file": "scratch_review/probe_fa2_altroute.json",
+    "top_level_keys": [
+     "depart_h",
+     "legs",
+     "note"
+    ],
+    "note": "no per-scenario rows/homes -- single diagnostic dump"
+   },
+   {
+    "file": "scratch_review/probe_fa2_corridor.json",
+    "top_level_keys": [
+     "config",
+     "egress",
+     "graph_search_egress_home1",
+     "graph_search_ingress",
+     "ingress",
+     "ingress_profile_c1",
+     "sensitivity"
+    ],
+    "note": "no per-scenario rows/homes -- single diagnostic dump"
+   },
+   {
+    "file": "scratch_review/probe_fa2_erosion.json",
+    "top_level_keys": [
+     "erosion_geometry",
+     "erosion_sources",
+     "fire",
+     "p10_field"
+    ],
+    "note": "no per-scenario rows/homes -- single diagnostic dump"
+   }
+  ],
+  "other_loose_json": [
+   {
+    "file": "scratch_review/extreme_signature.json",
+    "bytes": 7876,
+    "shape": "list len=22"
+   },
+   {
+    "file": "scratch_review/feed_candidates.json",
+    "bytes": 3671,
+    "shape": "list len=15"
+   },
+   {
+    "file": "scratch_review/gust_sweep.json",
+    "bytes": 1163,
+    "shape": "list len=5"
+   }
+  ]
+ },
+ "hindcast_replay_observation_comparisons": {
+  "label": "observation-comparisons (hindcast replay vs REAL historical fire perimeters) -- NOT simulations, counted separately from simulation_runs",
+  "files": {
+   "tools_hindcast_data_replay_results": {
+    "file": "tools/hindcast_data/replay_results.json",
+    "pairs": 15,
+    "cells": 63377,
+    "skips": 1
+   },
+   "scratch_review_hindcast_oos_data_replay_b0_5": {
+    "file": "scratch_review/hindcast_oos_data/replay_b0.5.json",
+    "pairs": 27,
+    "cells": 113670,
+    "skips": 4
+   }
+  },
+  "combined_pairs": 42,
+  "combined_cells": 177047,
+  "other_replay_b_variants_not_counted": [
+   {
+    "file": "scratch_review/hindcast_oos_data/replay_b0.0.json",
+    "pairs": 27,
+    "note": "exists but not in the task's named scope; not summed into the counted total"
+   },
+   {
+    "file": "scratch_review/hindcast_oos_data/replay_b0.25.json",
+    "pairs": 27,
+    "note": "exists but not in the task's named scope; not summed into the counted total"
+   },
+   {
+    "file": "scratch_review/hindcast_oos_data/replay_b0.75.json",
+    "pairs": 27,
+    "note": "exists but not in the task's named scope; not summed into the counted total"
+   },
+   {
+    "file": "scratch_review/hindcast_oos_data/replay_b1.0.json",
+    "pairs": 27,
+    "note": "exists but not in the task's named scope; not summed into the counted total"
+   }
+  ]
+ }
+}
