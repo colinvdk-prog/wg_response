@@ -554,6 +554,26 @@ LOCATIONS = {
             # US-36 / Broomfield, ~8.6 km SE
             SafeZone("boulder_co-z3", LatLon(39.92, -105.07), "US-36 / Broomfield"),
         )),
+    # Witch Creek (2007) corridor: NE Santa Ana through Del Dios / San
+    # Pasqual onto estate-scale WUI (eucalyptus/chaparral, large parcels).
+    # Safe zones sit COASTWARD (downwind-safe for the NE hazard wind, the
+    # real evacuation direction). PLANNING-GRADE anchors — plausible highway
+    # /arterial nodes, not field-verified staging areas.
+    "rancho_santa_fe_ca": SimLocation(
+        key="rancho_santa_fe_ca", name="Rancho Santa Fe / Covenant, CA",
+        center=LatLon(33.020, -117.200), hazard_wind_dir_deg=60.0,
+        tile_path="data/tiles/rancho_santa_fe_ca.wgt",
+        safe_zones=(
+            # I-5 x Via de la Valle (Del Mar), ~6.2 km SW
+            SafeZone("rancho_santa_fe_ca-z1", LatLon(32.977, -117.244),
+                     "I-5 / Via de la Valle"),
+            # Encinitas Blvd x El Camino Real, ~6.4 km NW
+            SafeZone("rancho_santa_fe_ca-z2", LatLon(33.047, -117.261),
+                     "Encinitas Blvd / El Camino Real"),
+            # Del Mar Heights Rd x El Camino Real, ~8.4 km SSW
+            SafeZone("rancho_santa_fe_ca-z3", LatLon(32.950, -117.235),
+                     "Del Mar Heights / El Camino Real"),
+        )),
     # Gambel-oak/aspen mountain WUI; prefrontal SW flow is the hazard wind.
     "park_city_ut": SimLocation(
         key="park_city_ut", name="Park City / Summit Park, UT",

@@ -81,6 +81,30 @@
         "ways_fetched": 5570
       }
     },
+    "rancho_santa_fe_ca": {
+      "bbox_wsen": [
+        -117.29653,
+        32.93651,
+        -117.10347,
+        33.100939
+      ],
+      "checked_utc": "2026-08-02T05:55:30Z",
+      "fetched_utc": "2026-08-02T05:55:30Z",
+      "name": "Rancho Santa Fe / Covenant, CA",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 379,
+        "components": 70,
+        "edges": 35386,
+        "fetch_seconds": 12.6,
+        "file_kb": 3360.9,
+        "largest_component_node_pct": 98.71,
+        "nodes": 29025,
+        "raw_way_nodes": 137195,
+        "self_loops_dropped": 350,
+        "ways_fetched": 22317
+      }
+    },
     "santa_rosa_ca": {
       "bbox_wsen": [
         -122.787244,

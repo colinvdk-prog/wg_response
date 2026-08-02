@@ -68,13 +68,18 @@ from wgresponse.terrain import (M_PER_DEG_LAT, LfpsTerrain,  # noqa: E402
                                 _default_http_get, _m_per_deg_lon,
                                 load_ascii_tile, save_ascii_tile)
 
-#: The five SIMULATOR_DESIGN.md locations: (key, display name, lat, lon).
+#: The SIMULATOR_DESIGN.md locations: (key, display name, lat, lon).
+#: KEEP IN SYNC with wgresponse.simui.LOCATIONS (the roads fetcher imports
+#: that registry directly; this tuple is standalone so the tile tool stays
+#: importable without the sim package's heavier deps).
 LOCATIONS = (
     ("malibu_ca",     "Malibu / Santa Monica Mtns, CA", 34.055, -118.72),
     ("paradise_ca",   "Paradise / Magalia, CA",         39.775, -121.60),
     ("santa_rosa_ca", "Santa Rosa NE / Mark West, CA",  38.50,  -122.65),
     ("boulder_co",    "Boulder / Superior, CO",         39.955, -105.16),
     ("park_city_ut",  "Park City / Summit Park, UT",    40.72,  -111.55),
+    # Witch Creek corridor estate WUI (founder 2026-07-31)
+    ("rancho_santa_fe_ca", "Rancho Santa Fe / Covenant, CA", 33.020, -117.200),
 )
 HALF_M = 9000.0        # bbox half-width in meters -> ~18 x 18 km per location
 CELL_M = 90.0          # simulator grid step (LANDFIRE native 30 m, NN-resampled)

@@ -161,6 +161,48 @@
         "wui_developed_cells_r3": 4239
       }
     },
+    "rancho_santa_fe_ca": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -117.296422,
+        32.939152,
+        -117.103578,
+        33.100848
+      ],
+      "cell_m": 90.0,
+      "center_lat": 33.02,
+      "center_lon": -117.2,
+      "checked_utc": "2026-08-02T05:59:35Z",
+      "fetched_utc": "2026-08-02T05:59:35Z",
+      "layers": "LF2024_FBFM40;LF2020_SlpD;LF2020_Asp;LF2020_Elev",
+      "name": "Rancho Santa Fe / Covenant, CA",
+      "status": "fetched",
+      "summary": {
+        "burnable_pct": 43.52,
+        "bytes": 823560,
+        "cell_m": 90.0,
+        "codes_outside_namespace": {},
+        "developed_91_93_pct": 47.81,
+        "elev_max_m": 470.0,
+        "elev_min_m": 0.0,
+        "fetch_seconds": 193.4,
+        "file": "data/tiles/rancho_santa_fe_ca.wgt",
+        "ncols": 200,
+        "nodata_pct": 0.0,
+        "nrows": 200,
+        "slope_max_deg": 44.0,
+        "top_codes": [
+          "91 NB1 47.8%",
+          "122 GS2 17.4%",
+          "121 GS1 9.3%",
+          "98 NB8 8.2%",
+          "145 SH5 5.0%",
+          "101 GR1 3.5%"
+        ],
+        "water_98_pct": 8.19,
+        "wui_developed_cells_r3": 17667
+      }
+    },
     "santa_rosa_ca": {
       "bbox_wsen": [
         -122.753306,
