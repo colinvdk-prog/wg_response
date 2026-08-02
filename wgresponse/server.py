@@ -118,6 +118,15 @@ SCENARIOS = {
         "location": "boulder_co", "clients": 40, "crews": 2, "crews_1h": 1,
         "intensity": "extreme", "ign_bearing": 270.0, "ign_dist_m": 6500.0,
     },
+    # Rancho Santa Fe, CA — Witch Creek-style NE Santa Ana: ignition in the
+    # grass-shrub NE of the Covenant, running SW into 100 protected estates
+    # with the plan-of-record fleet (docs/rancho_santa_fe_plan.md: 10 crews,
+    # clock-bound response; measured ~62% ember-belt even at extreme).
+    "rancho_santa_fe_santa_ana": {
+        "location": "rancho_santa_fe_ca", "clients": 100, "crews": 10,
+        "crews_1h": 2, "intensity": "extreme", "ign_bearing": 60.0,
+        "ign_dist_m": 7000.0,
+    },
 }
 
 
