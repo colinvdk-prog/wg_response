@@ -1,0 +1,60 @@
+{
+ "seed": "paradise_ca|+0|6000|moderate",
+ "map": "paradise_ca",
+ "dist": 6000.0,
+ "inten": "moderate",
+ "preset": "none",
+ "cfg_overrides": {},
+ "crews": 8,
+ "n_ticks": 60,
+ "recheck_max_viol": 5,
+ "recheck_ov_ticks": 1,
+ "min_margin_h": 0.6204,
+ "overrun_events": [
+  {
+   "tick": 42,
+   "crew_id": "sim-g1",
+   "reason": "burned",
+   "status": "egressing",
+   "mode": "egress",
+   "nominal_arrival_s": 1790023091.0819952,
+   "eroded_p10_s": 1790005569.5993562
+  },
+  {
+   "tick": 42,
+   "crew_id": "sim-g2",
+   "reason": "burned",
+   "status": "egressing",
+   "mode": "egress",
+   "nominal_arrival_s": 1790023091.0819952,
+   "eroded_p10_s": 1790005569.5993562
+  },
+  {
+   "tick": 42,
+   "crew_id": "sim-g4",
+   "reason": "burned",
+   "status": "egressing",
+   "mode": "egress",
+   "nominal_arrival_s": 1790023091.0819952,
+   "eroded_p10_s": 1790005569.5993562
+  },
+  {
+   "tick": 42,
+   "crew_id": "sim-g7",
+   "reason": "burned",
+   "status": "egressing",
+   "mode": "egress",
+   "nominal_arrival_s": 1790023091.0819952,
+   "eroded_p10_s": 1790005569.5993562
+  },
+  {
+   "tick": 42,
+   "crew_id": "sim-g8",
+   "reason": "burned",
+   "status": "egressing",
+   "mode": "egress",
+   "nominal_arrival_s": 1790023091.0819952,
+   "eroded_p10_s": 1790005569.5993562
+  }
+ ]
+}
