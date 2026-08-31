@@ -1,0 +1,79 @@
+{
+ "source": "C:\\Users\\colin\\wg_response\\tools\\hindcast_data\\replay_results.json",
+ "n_raw": 15,
+ "overall": {
+  "n_pairs": 14,
+  "n_cells": 60062,
+  "covered_possible": 44157,
+  "late_miss": 15905,
+  "early_miss": 0,
+  "covered_possible_frac": 0.7351903033532017,
+  "late_miss_frac": 0.2648096966467983,
+  "early_miss_frac": 0.0,
+  "published_style_median_head_ratio": 1.772430374926548,
+  "true_median_head_ratio": 1.6114046836968245,
+  "pit_hist": [
+   24314,
+   3063,
+   3115,
+   739,
+   3238,
+   2529,
+   23064
+  ],
+  "labels": [
+   "default"
+  ],
+  "names": [
+   "Butler",
+   "Dillon",
+   "Gifford",
+   "Madre"
+  ]
+ },
+ "by_label": {
+  "default": {
+   "n_pairs": 14,
+   "n_cells": 60062,
+   "covered_possible": 44157,
+   "late_miss": 15905,
+   "early_miss": 0,
+   "covered_possible_frac": 0.7351903033532017,
+   "late_miss_frac": 0.2648096966467983,
+   "early_miss_frac": 0.0,
+   "published_style_median_head_ratio": 1.772430374926548,
+   "true_median_head_ratio": 1.6114046836968245,
+   "pit_hist": [
+    24314,
+    3063,
+    3115,
+    739,
+    3238,
+    2529,
+    23064
+   ],
+   "labels": [
+    "default"
+   ],
+   "names": [
+    "Butler",
+    "Dillon",
+    "Gifford",
+    "Madre"
+   ]
+  }
+ },
+ "published_calibration_blend_pct": 73.5,
+ "overall_coverage_pct": 73.51903033532017,
+ "delta_vs_published_pp": 0.01903033532016707,
+ "git_HEAD": {
+  "n_pairs": 14,
+  "n_cells": 60062,
+  "covered_possible": 41334,
+  "coverage_pct": 68.81888714994506,
+  "late_pct": 31.181112850054944,
+  "med_head_code": 1.3205166308440048,
+  "note": "pre-gust-blend; matches calibration_review blend=0.0 row 68.8%"
+ },
+ "working_tree_note": "working copy of replay_results.json is MODIFIED vs HEAD and currently pools to 73.52% (blend 0.5 published row). A11 refers to git HEAD."
+}

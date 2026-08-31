@@ -1,0 +1,255 @@
+{
+ "parsed_claude_json": {
+  "n_rows": 64,
+  "n_current": 32,
+  "n_legacy": 32,
+  "n_current_with_exemption": 2,
+  "n_legacy_with_exemption": 9,
+  "tot_off_ticks": 106,
+  "tot_off_current": 2,
+  "tot_off_legacy": 104,
+  "tot_burned_ticks": 77,
+  "current_exemptions": [
+   {
+    "map": "malibu_ca",
+    "dist": 6000.0,
+    "crews": 4,
+    "inten": "moderate",
+    "preset": "current",
+    "off_ticks": 1,
+    "burned_ticks": 0,
+    "violations": 0,
+    "modes": {
+     "egress": 1
+    },
+    "worst": [
+     [
+      0,
+      "sim-g2",
+      "egress",
+      "egressing",
+      15.0
+     ]
+    ]
+   },
+   {
+    "map": "malibu_ca",
+    "dist": 6000.0,
+    "crews": 4,
+    "inten": "extreme",
+    "preset": "current",
+    "off_ticks": 1,
+    "burned_ticks": 0,
+    "violations": 0,
+    "modes": {
+     "egress": 1
+    },
+    "worst": [
+     [
+      0,
+      "sim-g1",
+      "egress",
+      "egressing",
+      -5.3
+     ]
+    ]
+   }
+  ],
+  "worst_leads": [
+   {
+    "map": "paradise_ca",
+    "dist": 8000.0,
+    "crews": 4,
+    "inten": "moderate",
+    "preset": "legacy",
+    "tick": 41,
+    "crew": "sim-g1",
+    "mode": "egress",
+    "status": "egressing",
+    "lead_min": -333.4
+   },
+   {
+    "map": "paradise_ca",
+    "dist": 8000.0,
+    "crews": 4,
+    "inten": "moderate",
+    "preset": "legacy",
+    "tick": 41,
+    "crew": "sim-g2",
+    "mode": "egress",
+    "status": "egressing",
+    "lead_min": -333.4
+   },
+   {
+    "map": "paradise_ca",
+    "dist": 8000.0,
+    "crews": 4,
+    "inten": "moderate",
+    "preset": "legacy",
+    "tick": 41,
+    "crew": "sim-g4",
+    "mode": "egress",
+    "status": "egressing",
+    "lead_min": -333.4
+   },
+   {
+    "map": "paradise_ca",
+    "dist": 8000.0,
+    "crews": 8,
+    "inten": "moderate",
+    "preset": "legacy",
+    "tick": 41,
+    "crew": "sim-g1",
+    "mode": "egress",
+    "status": "egressing",
+    "lead_min": -333.4
+   },
+   {
+    "map": "paradise_ca",
+    "dist": 8000.0,
+    "crews": 8,
+    "inten": "moderate",
+    "preset": "legacy",
+    "tick": 41,
+    "crew": "sim-g4",
+    "mode": "egress",
+    "status": "egressing",
+    "lead_min": -333.4
+   },
+   {
+    "map": "paradise_ca",
+    "dist": 6000.0,
+    "crews": 4,
+    "inten": "moderate",
+    "preset": "legacy",
+    "tick": 42,
+    "crew": "sim-g1",
+    "mode": "egress",
+    "status": "egressing",
+    "lead_min": -322.2
+   },
+   {
+    "map": "paradise_ca",
+    "dist": 6000.0,
+    "crews": 4,
+    "inten": "moderate",
+    "preset": "legacy",
+    "tick": 42,
+    "crew": "sim-g4",
+    "mode": "egress",
+    "status": "egressing",
+    "lead_min": -322.2
+   },
+   {
+    "map": "paradise_ca",
+    "dist": 8000.0,
+    "crews": 4,
+    "inten": "moderate",
+    "preset": "legacy",
+    "tick": 42,
+    "crew": "sim-g1",
+    "mode": "egress",
+    "status": "egressing",
+    "lead_min": -297.3
+   },
+   {
+    "map": "paradise_ca",
+    "dist": 8000.0,
+    "crews": 4,
+    "inten": "moderate",
+    "preset": "legacy",
+    "tick": 42,
+    "crew": "sim-g2",
+    "mode": "egress",
+    "status": "egressing",
+    "lead_min": -297.3
+   },
+   {
+    "map": "paradise_ca",
+    "dist": 6000.0,
+    "crews": 4,
+    "inten": "moderate",
+    "preset": "legacy",
+    "tick": 37,
+    "crew": "sim-g1",
+    "mode": "egress",
+    "status": "egressing",
+    "lead_min": -250.4
+   },
+   {
+    "map": "paradise_ca",
+    "dist": 6000.0,
+    "crews": 4,
+    "inten": "moderate",
+    "preset": "legacy",
+    "tick": 37,
+    "crew": "sim-g4",
+    "mode": "egress",
+    "status": "egressing",
+    "lead_min": -250.4
+   },
+   {
+    "map": "paradise_ca",
+    "dist": 6000.0,
+    "crews": 8,
+    "inten": "moderate",
+    "preset": "legacy",
+    "tick": 37,
+    "crew": "sim-g1",
+    "mode": "egress",
+    "status": "egressing",
+    "lead_min": -250.4
+   }
+  ],
+  "worst_lead_min": -333.4
+ },
+ "rerun": {
+  "scenario": "paradise_ca d=8000 c4 extreme legacy",
+  "violations": 0,
+  "burned_ticks": 0,
+  "off_ticks": 5,
+  "modes": {
+   "egress": 5
+  },
+  "coated": null,
+  "worst": [
+   [
+    13,
+    "sim-g2",
+    "egress",
+    "egressing",
+    24.3
+   ],
+   [
+    13,
+    "sim-g4",
+    "egress",
+    "egressing",
+    24.3
+   ],
+   [
+    17,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -189.5
+   ],
+   [
+    22,
+    "sim-g2",
+    "egress",
+    "egressing",
+    -227.4
+   ],
+   [
+    22,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -227.4
+   ]
+  ],
+  "hundreds_past_p10": true,
+  "min_lead": -227.4
+ }
+}

@@ -1,0 +1,987 @@
+{
+ "floor": {
+  "U10_mps": 10.0,
+  "fuels": [
+   {
+    "code": 102,
+    "name": "GR2 low load grass",
+    "mx_dead": 0.15,
+    "midflame_mps": 3.1487327270089063,
+    "floor_frac": 0.1,
+    "floor_kmh": 3.6,
+    "rows": [
+     {
+      "m_dead": 0.03,
+      "roth_mps": 0.464205536773172,
+      "roth_kmh": 1.6711399323834193,
+      "floored_kmh": 3.6,
+      "inflation": 2.154218165839407,
+      "intensity_kwm": 1470.1344154980777,
+      "flame_m": 2.219657378894746
+     },
+     {
+      "m_dead": 0.06,
+      "roth_mps": 0.380163864152768,
+      "roth_kmh": 1.3685899109499648,
+      "floored_kmh": 3.6,
+      "inflation": 2.630444643202996,
+      "intensity_kwm": 1054.034980165902,
+      "flame_m": 1.9046492654372849
+     },
+     {
+      "m_dead": 0.1,
+      "roth_mps": 0.3147484650543053,
+      "roth_kmh": 1.1330944741954991,
+      "floored_kmh": 3.6,
+      "inflation": 3.177140196148262,
+      "intensity_kwm": 784.6829944063235,
+      "flame_m": 1.6628805486532499
+     },
+     {
+      "m_dead": 0.15,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 3.6,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.2,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 3.6,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.25,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 3.6,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.3,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 3.6,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.4,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 3.6,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.6,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 3.6,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     }
+    ]
+   },
+   {
+    "code": 104,
+    "name": "GR4 moderate load grass",
+    "mx_dead": 0.15,
+    "midflame_mps": 3.634630984364723,
+    "floor_frac": 0.1,
+    "floor_kmh": 3.6,
+    "rows": [
+     {
+      "m_dead": 0.03,
+      "roth_mps": 1.1525960775490627,
+      "roth_kmh": 4.149345879176626,
+      "floored_kmh": 4.149345879176626,
+      "inflation": 1.0,
+      "intensity_kwm": 7073.958736396472,
+      "flame_m": 4.572423653312362
+     },
+     {
+      "m_dead": 0.06,
+      "roth_mps": 0.9424959587949293,
+      "roth_kmh": 3.3929854516617457,
+      "floored_kmh": 3.6,
+      "inflation": 1.0610125069168415,
+      "intensity_kwm": 5061.71460216203,
+      "flame_m": 3.9199328146960672
+     },
+     {
+      "m_dead": 0.1,
+      "roth_mps": 0.7801493246831317,
+      "roth_kmh": 2.808537568859274,
+      "floored_kmh": 3.6,
+      "inflation": 1.2818058906942766,
+      "intensity_kwm": 3771.0993471471807,
+      "flame_m": 3.4235523289259455
+     },
+     {
+      "m_dead": 0.15,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 3.6,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.2,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 3.6,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.25,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 3.6,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.3,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 3.6,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.4,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 3.6,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.6,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 3.6,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     }
+    ]
+   },
+   {
+    "code": 122,
+    "name": "GS2 moderate grass-shrub",
+    "mx_dead": 0.15,
+    "midflame_mps": 3.4169206646169137,
+    "floor_frac": 0.06999999999999999,
+    "floor_kmh": 2.52,
+    "rows": [
+     {
+      "m_dead": 0.03,
+      "roth_mps": 0.27474202269053016,
+      "roth_kmh": 0.9890712816859086,
+      "floored_kmh": 2.52,
+      "inflation": 2.547844676780592,
+      "intensity_kwm": 1605.3644895855243,
+      "flame_m": 2.311349299124302
+     },
+     {
+      "m_dead": 0.06,
+      "roth_mps": 0.24217829024984813,
+      "roth_kmh": 0.8718418448994533,
+      "floored_kmh": 2.52,
+      "inflation": 2.890432496149142,
+      "intensity_kwm": 1273.5033787115294,
+      "flame_m": 2.077790466194771
+     },
+     {
+      "m_dead": 0.1,
+      "roth_mps": 0.15321815163864422,
+      "roth_kmh": 0.5515853458991192,
+      "floored_kmh": 2.52,
+      "inflation": 4.568649291964491,
+      "intensity_kwm": 523.6909219663513,
+      "flame_m": 1.3806265585549768
+     },
+     {
+      "m_dead": 0.15,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 2.52,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.2,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 2.52,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.25,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 2.52,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.3,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 2.52,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.4,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 2.52,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.6,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 2.52,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     }
+    ]
+   },
+   {
+    "code": 165,
+    "name": "TU5 very high timber-shrub",
+    "mx_dead": 0.25,
+    "midflame_mps": 3.1487327270089063,
+    "floor_frac": 0.05,
+    "floor_kmh": 1.8,
+    "rows": [
+     {
+      "m_dead": 0.03,
+      "roth_mps": 0.08904395808598227,
+      "roth_kmh": 0.3205582491095362,
+      "floored_kmh": 1.8,
+      "inflation": 5.615204116568942,
+      "intensity_kwm": 2946.3137897064084,
+      "flame_m": 3.056117457936781
+     },
+     {
+      "m_dead": 0.06,
+      "roth_mps": 0.07517779521865021,
+      "roth_kmh": 0.27064006278714076,
+      "floored_kmh": 1.8,
+      "inflation": 6.6509000236809195,
+      "intensity_kwm": 2200.1898591522713,
+      "flame_m": 2.671981060696
+     },
+     {
+      "m_dead": 0.1,
+      "roth_mps": 0.06463742208739615,
+      "roth_kmh": 0.23269471951462614,
+      "floored_kmh": 1.8,
+      "inflation": 7.735457013182717,
+      "intensity_kwm": 1725.0916349322874,
+      "flame_m": 2.389105347476825
+     },
+     {
+      "m_dead": 0.15,
+      "roth_mps": 0.05520520095409623,
+      "roth_kmh": 0.19873872343474644,
+      "floored_kmh": 1.8,
+      "inflation": 9.057117651211085,
+      "intensity_kwm": 1348.2711796797253,
+      "flame_m": 2.133041170962157
+     },
+     {
+      "m_dead": 0.2,
+      "roth_mps": 0.04199399663925965,
+      "roth_kmh": 0.15117838790133475,
+      "floored_kmh": 1.8,
+      "inflation": 11.906463780886156,
+      "intensity_kwm": 832.2026326400013,
+      "flame_m": 1.7084689165350448
+     },
+     {
+      "m_dead": 0.25,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 1.8,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.3,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 1.8,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.4,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 1.8,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.6,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 1.8,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     }
+    ]
+   },
+   {
+    "code": 183,
+    "name": "TL3 moderate conifer litter",
+    "mx_dead": 0.2,
+    "midflame_mps": 2.547998412469395,
+    "floor_frac": 0.03,
+    "floor_kmh": 1.08,
+    "rows": [
+     {
+      "m_dead": 0.03,
+      "roth_mps": 0.015674324919845096,
+      "roth_kmh": 0.056427569711442346,
+      "floored_kmh": 1.08,
+      "inflation": 19.13958027118432,
+      "intensity_kwm": 43.02872635144795,
+      "flame_m": 0.43735148798307216
+     },
+     {
+      "m_dead": 0.06,
+      "roth_mps": 0.011532427904650684,
+      "roth_kmh": 0.04151674045674246,
+      "floored_kmh": 1.08,
+      "inflation": 26.013602901347333,
+      "intensity_kwm": 26.04379879218203,
+      "flame_m": 0.3471568147609908
+     },
+     {
+      "m_dead": 0.1,
+      "roth_mps": 0.009328732004940382,
+      "roth_kmh": 0.033583435217785375,
+      "floored_kmh": 1.08,
+      "inflation": 32.15871137054035,
+      "intensity_kwm": 19.441601285542838,
+      "flame_m": 0.30347186756887534
+     },
+     {
+      "m_dead": 0.15,
+      "roth_mps": 0.00665709739103962,
+      "roth_kmh": 0.023965550607742633,
+      "floored_kmh": 1.08,
+      "inflation": 45.06468545943112,
+      "intensity_kwm": 11.428273953805041,
+      "flame_m": 0.2376691418548914
+     },
+     {
+      "m_dead": 0.2,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 1.08,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.25,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 1.08,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.3,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 1.08,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.4,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 1.08,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     },
+     {
+      "m_dead": 0.6,
+      "roth_mps": 0.0,
+      "roth_kmh": 0.0,
+      "floored_kmh": 1.08,
+      "inflation": Infinity,
+      "intensity_kwm": 0.0,
+      "flame_m": 0.0
+     }
+    ]
+   }
+  ],
+  "extinction_override": [
+   {
+    "code": 102,
+    "name": "GR2 low load grass",
+    "mx": 0.15,
+    "m_dead": 0.15,
+    "roth_kmh": 0.0,
+    "floored_kmh": 3.6,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 102,
+    "name": "GR2 low load grass",
+    "mx": 0.15,
+    "m_dead": 0.2,
+    "roth_kmh": 0.0,
+    "floored_kmh": 3.6,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 102,
+    "name": "GR2 low load grass",
+    "mx": 0.15,
+    "m_dead": 0.25,
+    "roth_kmh": 0.0,
+    "floored_kmh": 3.6,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 102,
+    "name": "GR2 low load grass",
+    "mx": 0.15,
+    "m_dead": 0.3,
+    "roth_kmh": 0.0,
+    "floored_kmh": 3.6,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 102,
+    "name": "GR2 low load grass",
+    "mx": 0.15,
+    "m_dead": 0.4,
+    "roth_kmh": 0.0,
+    "floored_kmh": 3.6,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 102,
+    "name": "GR2 low load grass",
+    "mx": 0.15,
+    "m_dead": 0.6,
+    "roth_kmh": 0.0,
+    "floored_kmh": 3.6,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 104,
+    "name": "GR4 moderate load grass",
+    "mx": 0.15,
+    "m_dead": 0.15,
+    "roth_kmh": 0.0,
+    "floored_kmh": 3.6,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 104,
+    "name": "GR4 moderate load grass",
+    "mx": 0.15,
+    "m_dead": 0.2,
+    "roth_kmh": 0.0,
+    "floored_kmh": 3.6,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 104,
+    "name": "GR4 moderate load grass",
+    "mx": 0.15,
+    "m_dead": 0.25,
+    "roth_kmh": 0.0,
+    "floored_kmh": 3.6,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 104,
+    "name": "GR4 moderate load grass",
+    "mx": 0.15,
+    "m_dead": 0.3,
+    "roth_kmh": 0.0,
+    "floored_kmh": 3.6,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 104,
+    "name": "GR4 moderate load grass",
+    "mx": 0.15,
+    "m_dead": 0.4,
+    "roth_kmh": 0.0,
+    "floored_kmh": 3.6,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 104,
+    "name": "GR4 moderate load grass",
+    "mx": 0.15,
+    "m_dead": 0.6,
+    "roth_kmh": 0.0,
+    "floored_kmh": 3.6,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 122,
+    "name": "GS2 moderate grass-shrub",
+    "mx": 0.15,
+    "m_dead": 0.15,
+    "roth_kmh": 0.0,
+    "floored_kmh": 2.52,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 122,
+    "name": "GS2 moderate grass-shrub",
+    "mx": 0.15,
+    "m_dead": 0.2,
+    "roth_kmh": 0.0,
+    "floored_kmh": 2.52,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 122,
+    "name": "GS2 moderate grass-shrub",
+    "mx": 0.15,
+    "m_dead": 0.25,
+    "roth_kmh": 0.0,
+    "floored_kmh": 2.52,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 122,
+    "name": "GS2 moderate grass-shrub",
+    "mx": 0.15,
+    "m_dead": 0.3,
+    "roth_kmh": 0.0,
+    "floored_kmh": 2.52,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 122,
+    "name": "GS2 moderate grass-shrub",
+    "mx": 0.15,
+    "m_dead": 0.4,
+    "roth_kmh": 0.0,
+    "floored_kmh": 2.52,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 122,
+    "name": "GS2 moderate grass-shrub",
+    "mx": 0.15,
+    "m_dead": 0.6,
+    "roth_kmh": 0.0,
+    "floored_kmh": 2.52,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 165,
+    "name": "TU5 very high timber-shrub",
+    "mx": 0.25,
+    "m_dead": 0.25,
+    "roth_kmh": 0.0,
+    "floored_kmh": 1.8,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 165,
+    "name": "TU5 very high timber-shrub",
+    "mx": 0.25,
+    "m_dead": 0.3,
+    "roth_kmh": 0.0,
+    "floored_kmh": 1.8,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 165,
+    "name": "TU5 very high timber-shrub",
+    "mx": 0.25,
+    "m_dead": 0.4,
+    "roth_kmh": 0.0,
+    "floored_kmh": 1.8,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 165,
+    "name": "TU5 very high timber-shrub",
+    "mx": 0.25,
+    "m_dead": 0.6,
+    "roth_kmh": 0.0,
+    "floored_kmh": 1.8,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 183,
+    "name": "TL3 moderate conifer litter",
+    "mx": 0.2,
+    "m_dead": 0.2,
+    "roth_kmh": 0.0,
+    "floored_kmh": 1.08,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 183,
+    "name": "TL3 moderate conifer litter",
+    "mx": 0.2,
+    "m_dead": 0.25,
+    "roth_kmh": 0.0,
+    "floored_kmh": 1.08,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 183,
+    "name": "TL3 moderate conifer litter",
+    "mx": 0.2,
+    "m_dead": 0.3,
+    "roth_kmh": 0.0,
+    "floored_kmh": 1.08,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 183,
+    "name": "TL3 moderate conifer litter",
+    "mx": 0.2,
+    "m_dead": 0.4,
+    "roth_kmh": 0.0,
+    "floored_kmh": 1.08,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   },
+   {
+    "code": 183,
+    "name": "TL3 moderate conifer litter",
+    "mx": 0.2,
+    "m_dead": 0.6,
+    "roth_kmh": 0.0,
+    "floored_kmh": 1.08,
+    "intensity_kwm": 0.0,
+    "flame_m": 0.0
+   }
+  ]
+ },
+ "moisture": {
+  "crossings": {
+   "GR/GS": {
+    "mx": 0.15,
+    "rh_at_25C": 76.38591020521251
+   },
+   "TL3": {
+    "mx": 0.2,
+    "rh_at_25C": 88.32821477266972
+   },
+   "TU5": {
+    "mx": 0.25,
+    "rh_at_25C": 97.58425949534812
+   }
+  },
+  "rh_vs_T_GRGS": {
+   "5": 73.52755898333437,
+   "10": 74.2475889152721,
+   "15": 74.96388508272251,
+   "25": 76.38591020521251,
+   "30": 77.09193119911647,
+   "40": 78.49465382416543
+  },
+  "per_file": [
+   {
+    "file": "091081edbd234610ae4a270f.json",
+    "n": 216,
+    "median": 0.10634683049999996,
+    "mx": 0.26911344569999984,
+    "frac_gt_015": 0.30092592592592593,
+    "frac_gt_020": 0.1527777777777778
+   },
+   {
+    "file": "1b0219ee52984fef9927c266.json",
+    "n": 408,
+    "median": 0.07419964573,
+    "mx": 0.20774526289999995,
+    "frac_gt_015": 0.031862745098039214,
+    "frac_gt_020": 0.0024509803921568627
+   },
+   {
+    "file": "286b7f1d89454a5d9d815235.json",
+    "n": 120,
+    "median": 0.04357292224,
+    "mx": 0.07228773604,
+    "frac_gt_015": 0.0,
+    "frac_gt_020": 0.0
+   },
+   {
+    "file": "6aa4c355ad18472faaab78ba.json",
+    "n": 216,
+    "median": 0.09625960480999998,
+    "mx": 0.25114852559999984,
+    "frac_gt_015": 0.18981481481481483,
+    "frac_gt_020": 0.0787037037037037
+   },
+   {
+    "file": "735ffadd9f454188a66b3359.json",
+    "n": 624,
+    "median": 0.10600533915000002,
+    "mx": 0.2744641,
+    "frac_gt_015": 0.28685897435897434,
+    "frac_gt_020": 0.16666666666666666
+   },
+   {
+    "file": "75b0c6d710d4476ab6913d78.json",
+    "n": 264,
+    "median": 0.04975332394,
+    "mx": 0.19516361720000003,
+    "frac_gt_015": 0.03787878787878788,
+    "frac_gt_020": 0.0
+   },
+   {
+    "file": "7820bfdb1edd43fe9b6e2bd2.json",
+    "n": 288,
+    "median": 0.05409529615,
+    "mx": 0.136393424,
+    "frac_gt_015": 0.0,
+    "frac_gt_020": 0.0
+   },
+   {
+    "file": "78d35d3bf7914961ae36c6d1.json",
+    "n": 52584,
+    "median": 0.13187938204999997,
+    "mx": 0.28400293000000004,
+    "frac_gt_015": 0.4095162026471931,
+    "frac_gt_020": 0.19939525330899133
+   },
+   {
+    "file": "79bbb8a2e93c45149dd255a7.json",
+    "n": 240,
+    "median": 0.05690274964,
+    "mx": 0.14268307779999997,
+    "frac_gt_015": 0.0,
+    "frac_gt_020": 0.0
+   },
+   {
+    "file": "84fd3d7e6b0449cda729ed31.json",
+    "n": 192,
+    "median": 0.06078014961999999,
+    "mx": 0.15790981500000004,
+    "frac_gt_015": 0.005208333333333333,
+    "frac_gt_020": 0.0
+   },
+   {
+    "file": "a60ca689bd594a2d9bdccc55.json",
+    "n": 672,
+    "median": 0.12160344800000003,
+    "mx": 0.27861705999999997,
+    "frac_gt_015": 0.38839285714285715,
+    "frac_gt_020": 0.24404761904761904
+   },
+   {
+    "file": "db5448a6fcac4041a8176f81.json",
+    "n": 312,
+    "median": 0.06199330524999999,
+    "mx": 0.14334625359999997,
+    "frac_gt_015": 0.0,
+    "frac_gt_020": 0.0
+   }
+  ],
+  "pooled": {
+   "n": 56136,
+   "median": 0.12839418650000003,
+   "mean": 0.13832377363003803,
+   "frac_gt_015": 0.3937580162462591,
+   "frac_gt_020": 0.19246116574034489,
+   "frac_gt_025": 0.05019951546244834,
+   "n_files": 12
+  }
+ },
+ "gr2_gs2_at_extinction": [
+  {
+   "code": 102,
+   "name": "GR2 low load grass",
+   "mx": 0.15,
+   "m_dead": 0.15,
+   "roth_kmh": 0.0,
+   "floored_kmh": 3.6,
+   "intensity_kwm": 0.0,
+   "flame_m": 0.0
+  },
+  {
+   "code": 102,
+   "name": "GR2 low load grass",
+   "mx": 0.15,
+   "m_dead": 0.2,
+   "roth_kmh": 0.0,
+   "floored_kmh": 3.6,
+   "intensity_kwm": 0.0,
+   "flame_m": 0.0
+  },
+  {
+   "code": 102,
+   "name": "GR2 low load grass",
+   "mx": 0.15,
+   "m_dead": 0.25,
+   "roth_kmh": 0.0,
+   "floored_kmh": 3.6,
+   "intensity_kwm": 0.0,
+   "flame_m": 0.0
+  },
+  {
+   "code": 102,
+   "name": "GR2 low load grass",
+   "mx": 0.15,
+   "m_dead": 0.3,
+   "roth_kmh": 0.0,
+   "floored_kmh": 3.6,
+   "intensity_kwm": 0.0,
+   "flame_m": 0.0
+  },
+  {
+   "code": 102,
+   "name": "GR2 low load grass",
+   "mx": 0.15,
+   "m_dead": 0.4,
+   "roth_kmh": 0.0,
+   "floored_kmh": 3.6,
+   "intensity_kwm": 0.0,
+   "flame_m": 0.0
+  },
+  {
+   "code": 102,
+   "name": "GR2 low load grass",
+   "mx": 0.15,
+   "m_dead": 0.6,
+   "roth_kmh": 0.0,
+   "floored_kmh": 3.6,
+   "intensity_kwm": 0.0,
+   "flame_m": 0.0
+  },
+  {
+   "code": 122,
+   "name": "GS2 moderate grass-shrub",
+   "mx": 0.15,
+   "m_dead": 0.15,
+   "roth_kmh": 0.0,
+   "floored_kmh": 2.52,
+   "intensity_kwm": 0.0,
+   "flame_m": 0.0
+  },
+  {
+   "code": 122,
+   "name": "GS2 moderate grass-shrub",
+   "mx": 0.15,
+   "m_dead": 0.2,
+   "roth_kmh": 0.0,
+   "floored_kmh": 2.52,
+   "intensity_kwm": 0.0,
+   "flame_m": 0.0
+  },
+  {
+   "code": 122,
+   "name": "GS2 moderate grass-shrub",
+   "mx": 0.15,
+   "m_dead": 0.25,
+   "roth_kmh": 0.0,
+   "floored_kmh": 2.52,
+   "intensity_kwm": 0.0,
+   "flame_m": 0.0
+  },
+  {
+   "code": 122,
+   "name": "GS2 moderate grass-shrub",
+   "mx": 0.15,
+   "m_dead": 0.3,
+   "roth_kmh": 0.0,
+   "floored_kmh": 2.52,
+   "intensity_kwm": 0.0,
+   "flame_m": 0.0
+  },
+  {
+   "code": 122,
+   "name": "GS2 moderate grass-shrub",
+   "mx": 0.15,
+   "m_dead": 0.4,
+   "roth_kmh": 0.0,
+   "floored_kmh": 2.52,
+   "intensity_kwm": 0.0,
+   "flame_m": 0.0
+  },
+  {
+   "code": 122,
+   "name": "GS2 moderate grass-shrub",
+   "mx": 0.15,
+   "m_dead": 0.6,
+   "roth_kmh": 0.0,
+   "floored_kmh": 2.52,
+   "intensity_kwm": 0.0,
+   "flame_m": 0.0
+  }
+ ]
+}
