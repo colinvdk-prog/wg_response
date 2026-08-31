@@ -176,3 +176,16 @@ Final tally: 14 findings weakening claimed numbers (3 critical / 5 high /
 4 medium / 2 low-medium), 9 confirmations under attack. Verdict unchanged:
 shadow YES with record restated; clients NO — blocked by A3 (extinction
 override), A7 (non-percentile P10), A13 (live ember radius 0).
+
+## CLOSEOUT — B1 final + A8 test-scope refinement + disclosures
+
+B1 FINAL: all 14 mutated knobs caught BEHAVIORALLY with test_docs deselected
+(per-knob failure list in the transcript). A8 refinement: a test guarding
+the 10c superset property EXISTS (test_crew_overrun_audit_zero_exposure_
+byte_identical_superset) but pins the ZERO-exposure case — the one case the
+_mode=="idle" filter cannot matter. "The invariant is tested exactly where
+it cannot fail." Disclosures: (1) initial A8 scoreboard wording corrected
+(addendum; harnesses take per-tick max — B9); (2) the reviewer's own
+flag-inventory cross-check subagent never returned — safety.py/dispatch.py/
+simui.py SEM-10 audited directly, but an independent default-off-knob-on-
+safety-path inventory remains open for the pass-2 verifier.
