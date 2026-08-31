@@ -1,0 +1,1413 @@
+[
+ {
+  "map": "paradise_ca",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 14,
+  "burned_ticks": 18,
+  "modes": {
+   "egress": 14
+  },
+  "violations": 0,
+  "coated": null,
+  "worst": [
+   [
+    37,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -250.4
+   ],
+   [
+    37,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -250.4
+   ],
+   [
+    38,
+    "sim-g1",
+    "egress",
+    "egressing",
+    13.1
+   ],
+   [
+    38,
+    "sim-g4",
+    "egress",
+    "egressing",
+    13.1
+   ],
+   [
+    39,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -126.1
+   ],
+   [
+    39,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -126.1
+   ],
+   [
+    40,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -60.7
+   ],
+   [
+    40,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -60.7
+   ],
+   [
+    41,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -39.2
+   ],
+   [
+    41,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -39.2
+   ],
+   [
+    42,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -322.2
+   ],
+   [
+    42,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -322.2
+   ],
+   [
+    54,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -248.9
+   ],
+   [
+    54,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -248.9
+   ]
+  ]
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 1,
+  "burned_ticks": 0,
+  "modes": {
+   "egress": 1
+  },
+  "violations": 0,
+  "coated": null,
+  "worst": [
+   [
+    12,
+    "sim-g1",
+    "egress",
+    "egressing",
+    13.2
+   ]
+  ]
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 35,
+  "burned_ticks": 45,
+  "modes": {
+   "egress": 35
+  },
+  "violations": 0,
+  "coated": null,
+  "worst": [
+   [
+    37,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -250.4
+   ],
+   [
+    37,
+    "sim-g2",
+    "egress",
+    "egressing",
+    -250.4
+   ],
+   [
+    37,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -250.4
+   ],
+   [
+    37,
+    "sim-g5",
+    "egress",
+    "egressing",
+    -250.4
+   ],
+   [
+    37,
+    "sim-g7",
+    "egress",
+    "egressing",
+    -250.4
+   ],
+   [
+    38,
+    "sim-g1",
+    "egress",
+    "egressing",
+    13.1
+   ],
+   [
+    38,
+    "sim-g2",
+    "egress",
+    "egressing",
+    13.1
+   ],
+   [
+    38,
+    "sim-g4",
+    "egress",
+    "egressing",
+    13.1
+   ],
+   [
+    38,
+    "sim-g5",
+    "egress",
+    "egressing",
+    13.1
+   ],
+   [
+    38,
+    "sim-g7",
+    "egress",
+    "egressing",
+    13.1
+   ],
+   [
+    39,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -126.1
+   ],
+   [
+    39,
+    "sim-g2",
+    "egress",
+    "egressing",
+    -126.1
+   ],
+   [
+    39,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -126.1
+   ],
+   [
+    39,
+    "sim-g5",
+    "egress",
+    "egressing",
+    -126.1
+   ]
+  ]
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 3,
+  "burned_ticks": 0,
+  "modes": {
+   "egress": 3
+  },
+  "violations": 0,
+  "coated": null,
+  "worst": [
+   [
+    13,
+    "sim-g1",
+    "egress",
+    "egressing",
+    24.3
+   ],
+   [
+    23,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -247.3
+   ],
+   [
+    26,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -142.4
+   ]
+  ]
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 15,
+  "burned_ticks": 6,
+  "modes": {
+   "egress": 15
+  },
+  "violations": 0,
+  "coated": null,
+  "worst": [
+   [
+    36,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -203.3
+   ],
+   [
+    36,
+    "sim-g2",
+    "egress",
+    "egressing",
+    -203.3
+   ],
+   [
+    36,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -203.3
+   ],
+   [
+    39,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -116.7
+   ],
+   [
+    39,
+    "sim-g2",
+    "egress",
+    "egressing",
+    -116.7
+   ],
+   [
+    39,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -116.7
+   ],
+   [
+    40,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -34.7
+   ],
+   [
+    40,
+    "sim-g2",
+    "egress",
+    "egressing",
+    -34.7
+   ],
+   [
+    40,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -34.7
+   ],
+   [
+    41,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -333.4
+   ],
+   [
+    41,
+    "sim-g2",
+    "egress",
+    "egressing",
+    -333.4
+   ],
+   [
+    41,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -333.4
+   ],
+   [
+    42,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -297.3
+   ],
+   [
+    42,
+    "sim-g2",
+    "egress",
+    "egressing",
+    -297.3
+   ]
+  ]
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 5,
+  "burned_ticks": 0,
+  "modes": {
+   "egress": 5
+  },
+  "violations": 0,
+  "coated": null,
+  "worst": [
+   [
+    13,
+    "sim-g2",
+    "egress",
+    "egressing",
+    24.3
+   ],
+   [
+    13,
+    "sim-g4",
+    "egress",
+    "egressing",
+    24.3
+   ],
+   [
+    17,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -189.5
+   ],
+   [
+    22,
+    "sim-g2",
+    "egress",
+    "egressing",
+    -227.4
+   ],
+   [
+    22,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -227.4
+   ]
+  ]
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 20,
+  "burned_ticks": 8,
+  "modes": {
+   "egress": 20
+  },
+  "violations": 0,
+  "coated": null,
+  "worst": [
+   [
+    36,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -203.3
+   ],
+   [
+    36,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -203.3
+   ],
+   [
+    36,
+    "sim-g5",
+    "egress",
+    "egressing",
+    -203.3
+   ],
+   [
+    36,
+    "sim-g7",
+    "egress",
+    "egressing",
+    -203.3
+   ],
+   [
+    39,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -116.7
+   ],
+   [
+    39,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -116.7
+   ],
+   [
+    39,
+    "sim-g5",
+    "egress",
+    "egressing",
+    -116.7
+   ],
+   [
+    39,
+    "sim-g7",
+    "egress",
+    "egressing",
+    -116.7
+   ],
+   [
+    40,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -34.7
+   ],
+   [
+    40,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -34.7
+   ],
+   [
+    40,
+    "sim-g5",
+    "egress",
+    "egressing",
+    -34.7
+   ],
+   [
+    40,
+    "sim-g7",
+    "egress",
+    "egressing",
+    -34.7
+   ],
+   [
+    41,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -333.4
+   ],
+   [
+    41,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -333.4
+   ]
+  ]
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "paradise_ca",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 10,
+  "burned_ticks": 0,
+  "modes": {
+   "egress": 10
+  },
+  "violations": 0,
+  "coated": null,
+  "worst": [
+   [
+    13,
+    "sim-g1",
+    "egress",
+    "egressing",
+    24.3
+   ],
+   [
+    13,
+    "sim-g2",
+    "egress",
+    "egressing",
+    24.3
+   ],
+   [
+    13,
+    "sim-g4",
+    "egress",
+    "egressing",
+    24.3
+   ],
+   [
+    13,
+    "sim-g7",
+    "egress",
+    "egressing",
+    24.3
+   ],
+   [
+    13,
+    "sim-g8",
+    "egress",
+    "egressing",
+    24.3
+   ],
+   [
+    22,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -227.4
+   ],
+   [
+    22,
+    "sim-g2",
+    "egress",
+    "egressing",
+    -227.4
+   ],
+   [
+    22,
+    "sim-g4",
+    "egress",
+    "egressing",
+    -227.4
+   ],
+   [
+    22,
+    "sim-g7",
+    "egress",
+    "egressing",
+    -227.4
+   ],
+   [
+    22,
+    "sim-g8",
+    "egress",
+    "egressing",
+    -227.4
+   ]
+  ]
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 1,
+  "burned_ticks": 0,
+  "modes": {
+   "egress": 1
+  },
+  "violations": 0,
+  "coated": null,
+  "worst": [
+   [
+    0,
+    "sim-g2",
+    "egress",
+    "egressing",
+    15.0
+   ]
+  ]
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 1,
+  "burned_ticks": 0,
+  "modes": {
+   "egress": 1
+  },
+  "violations": 0,
+  "coated": null,
+  "worst": [
+   [
+    0,
+    "sim-g2",
+    "egress",
+    "egressing",
+    13.9
+   ]
+  ]
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 1,
+  "burned_ticks": 0,
+  "modes": {
+   "egress": 1
+  },
+  "violations": 0,
+  "coated": null,
+  "worst": [
+   [
+    0,
+    "sim-g1",
+    "egress",
+    "egressing",
+    -5.3
+   ]
+  ]
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "malibu_ca",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "santa_rosa_ca",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 6000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 6000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 8000.0,
+  "crews": 4,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "moderate",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "current",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ },
+ {
+  "map": "boulder_co",
+  "dist": 8000.0,
+  "crews": 8,
+  "inten": "extreme",
+  "preset": "legacy",
+  "off_ticks": 0,
+  "burned_ticks": 0,
+  "modes": {},
+  "violations": 0,
+  "coated": null,
+  "worst": []
+ }
+]

@@ -1,0 +1,528 @@
+{
+  "watch_summary": {
+    "live": true,
+    "aoi_desc": "zones file aoi_socal_shadow.json (socal_wui_arc; union bbox -119.3,33.6,-117.5,34.6; 4 safe zone(s))",
+    "poll_period_s": 300.0,
+    "cycles_run": 351,
+    "started_at_s": 1787712568.9372928,
+    "last_cycle_t_s": 1788214195.4267356,
+    "now_s": 1788214195.4267356,
+    "last_cycle_age_s": 2116.2141065597534,
+    "uptime_h": 139.34069151189593,
+    "expected_cycles_at_period": 1672.088298142751,
+    "cycle_efficiency": 0.20991714396295244,
+    "mean_cycle_interval_s": 1429.1352975579068,
+    "restored": false,
+    "degraded": false,
+    "n_crews": 0,
+    "n_clients": 12,
+    "client_ids_prefix": [
+      "mock-client-"
+    ],
+    "client_states": {
+      "impacted": 1,
+      "none": 9,
+      "watch": 2
+    },
+    "n_incidents": 26,
+    "n_events": 19,
+    "event_states": {
+      "notice_72h": 5,
+      "watch": 6,
+      "cleared": 4,
+      "extreme_24h": 3,
+      "impacted": 1
+    },
+    "n_operator_events": 0,
+    "n_failsafe_events": 0,
+    "startup_notes": [
+      "wind gust blend ACTIVE: effective wind = sustained + 0.5 x (gust - sustained) [hindcast-calibrated]",
+      "grass ROS floor ACTIVE: grass-class head ROS >= 0.1 x U10 [hindcast-validated: calibration 91.5% / OOS-normal ~100% coverage, 0% early-miss]",
+      "extreme-regime posture ARMED: burnable domain >= 0.6 grass-class (GR+GS) + effective wind >= 4 m/s within 24 h -> ladder evaluates on pessimistic (p10) arrival + message banner",
+      "FirmsFeed skipped \u2014 no FIRMS_MAP_KEY in the environment (hotspot layer off; free key in ~5 min: https://firms.modaps.eosdis.nasa.gov/api/area/)",
+      "terrain: live LANDFIRE via LFPS (zip+tile cache: /tmp/wgstate/terrain_cache; job email ops@thewildfireguardian.com \u2014 override with env LFPS_EMAIL)"
+    ],
+    "runtime_notes": [
+      "excluded 14 stale incident(s) from alerting/dispatch (updated_at older than 168 h \u2014 SAFETY SEMANTICS 9): firis:100 (age 2423 h), firis:102 (age 2451 h), firis:1309 (age 573 h), firis:1317 (age 552 h), firis:143 (age 1895 h), firis:148 (age 1846 h), firis:188 (age 1323 h), firis:20 (age 3603 h), firis:203 (age 1272 h), firis:220 (age 1171 h), firis:224 (age 1128 h), firis:44 (age 3072 h), firis:63 (age 2635 h), firis:81 (age 2521 h)"
+    ],
+    "safe_zones": [
+      "UNVERIFIED Zuma Beach lot / PCH",
+      "UNVERIFIED I-5 / SR-14 junction",
+      "UNVERIFIED Rose Bowl lots / Pasadena",
+      "UNVERIFIED San Bernardino I-10/I-215"
+    ],
+    "plan_unserved": [
+      {
+        "client_id": "mock-client-004",
+        "incident_id": "b42a7aa5-34f4-471c-895d-e1ec55adb0d6",
+        "reason": "capacity"
+      },
+      {
+        "client_id": "mock-client-006",
+        "incident_id": "b42a7aa5-34f4-471c-895d-e1ec55adb0d6",
+        "reason": "capacity"
+      }
+    ],
+    "plan_breakdown": {
+      "value_usd": 0.0,
+      "travel_cost_usd": 0.0,
+      "churn_penalty_usd": 0.0,
+      "drive_h": 0.0,
+      "served": 0,
+      "unserved": 2,
+      "churn_weight": 0.0,
+      "mean_stop_score_usd": 1.0,
+      "lambda_travel_usd_per_h": 1e-05,
+      "candidate": "warm",
+      "seed": "warm",
+      "guardrail": "",
+      "solver_s": 160.79804673499893,
+      "dedup_dropped_jobs": 0
+    },
+    "terrain_note": "terrain: live LANDFIRE via LFPS (zip+tile cache: /tmp/wgstate/terrain_cache; job email ops@thewildfireguardian.com \u2014 override with env LFPS_EMAIL)",
+    "healthz": {
+      "ok": true,
+      "degraded": false,
+      "last_cycle_t_s": 1788214195.4267356,
+      "last_cycle_age_s": 2115.9189453125,
+      "cycles_run": 351,
+      "operator_event_count": 0
+    },
+    "api_state_unauthenticated": true,
+    "top_keys": [
+      "aoi",
+      "aoi_desc",
+      "bbox",
+      "clients",
+      "crews",
+      "cycles_run",
+      "degraded",
+      "events",
+      "incidents",
+      "last_cycle_age_s",
+      "last_cycle_t_s",
+      "live",
+      "notes",
+      "now_s",
+      "operator_events",
+      "operator_log",
+      "plan",
+      "poll_period_s",
+      "restored",
+      "safe_zones",
+      "started_at_s",
+      "startup_notes"
+    ]
+  },
+  "sim_healthz": {
+    "http": 200,
+    "secs": 0.179,
+    "content_type": null,
+    "bytes": 12,
+    "json": {
+      "ok": true
+    }
+  },
+  "sim_state_preview": {
+    "ok": null,
+    "error": null,
+    "live": null
+  },
+  "sim_state_raw_head": "{}",
+  "rsf": {
+    "rsf_city_c8_scatter.json": {
+      "n_rows": 18,
+      "n_homes": 1800,
+      "sample_home_keys": [
+        "dist",
+        "front",
+        "gelled",
+        "outcome"
+      ],
+      "outcomes": {
+        "protected_then_impacted": 522,
+        "saved": 841,
+        "abandoned_unsavable": 383,
+        "not_threatened": 41,
+        "monitoring": 13
+      },
+      "viol": 0,
+      "ovt": 0,
+      "min_margin": 0.2506,
+      "row0_keys": [
+        "homes",
+        "inten",
+        "map",
+        "min_margin_h",
+        "ov_ticks",
+        "seed",
+        "viol"
+      ],
+      "row0_home0": {
+        "gelled": true,
+        "front": true,
+        "dist": 90.0,
+        "outcome": "protected_then_impacted"
+      }
+    },
+    "rsf_city_c10_scatter.json": {
+      "n_rows": 18,
+      "n_homes": 1800,
+      "sample_home_keys": [
+        "dist",
+        "front",
+        "gelled",
+        "outcome"
+      ],
+      "outcomes": {
+        "protected_then_impacted": 533,
+        "saved": 877,
+        "abandoned_unsavable": 336,
+        "not_threatened": 41,
+        "monitoring": 13
+      },
+      "viol": 0,
+      "ovt": 0,
+      "min_margin": 0.2755,
+      "row0_keys": [
+        "homes",
+        "inten",
+        "map",
+        "min_margin_h",
+        "ov_ticks",
+        "seed",
+        "viol"
+      ],
+      "row0_home0": {
+        "gelled": true,
+        "front": true,
+        "dist": 90.0,
+        "outcome": "protected_then_impacted"
+      }
+    },
+    "rsf_city_c10_cluster.json": {
+      "n_rows": 18,
+      "n_homes": 1800,
+      "sample_home_keys": [
+        "dist",
+        "front",
+        "gelled",
+        "outcome"
+      ],
+      "outcomes": {
+        "not_threatened": 1374,
+        "protected_then_impacted": 79,
+        "saved": 271,
+        "abandoned_unsavable": 73,
+        "monitoring": 3
+      },
+      "viol": 0,
+      "ovt": 0,
+      "min_margin": 0.6932,
+      "row0_keys": [
+        "homes",
+        "inten",
+        "map",
+        "min_margin_h",
+        "ov_ticks",
+        "seed",
+        "viol"
+      ],
+      "row0_home0": {
+        "gelled": false,
+        "front": false,
+        "dist": null,
+        "outcome": "not_threatened"
+      }
+    },
+    "rsf_city_c12_scatter.json": {
+      "n_rows": 18,
+      "n_homes": 1800,
+      "sample_home_keys": [
+        "dist",
+        "front",
+        "gelled",
+        "outcome"
+      ],
+      "outcomes": {
+        "protected_then_impacted": 544,
+        "saved": 887,
+        "abandoned_unsavable": 315,
+        "not_threatened": 41,
+        "monitoring": 13
+      },
+      "viol": 0,
+      "ovt": 0,
+      "min_margin": 0.2755,
+      "row0_keys": [
+        "homes",
+        "inten",
+        "map",
+        "min_margin_h",
+        "ov_ticks",
+        "seed",
+        "viol"
+      ],
+      "row0_home0": {
+        "gelled": true,
+        "front": true,
+        "dist": 90.0,
+        "outcome": "protected_then_impacted"
+      }
+    },
+    "rsf_grid_rsf_c8_scatter.json": {
+      "n_rows": 18,
+      "n_homes": 1800,
+      "sample_home_keys": [
+        "dist",
+        "front",
+        "gelled",
+        "outcome"
+      ],
+      "outcomes": {
+        "saved": 608,
+        "not_threatened": 849,
+        "protected_then_impacted": 120,
+        "abandoned_unsavable": 191,
+        "monitoring": 30,
+        "in_progress": 2
+      },
+      "viol": 0,
+      "ovt": 0,
+      "min_margin": 0.3713,
+      "row0_keys": [
+        "homes",
+        "inten",
+        "map",
+        "min_margin_h",
+        "ov_ticks",
+        "seed",
+        "viol"
+      ],
+      "row0_home0": {
+        "gelled": true,
+        "front": false,
+        "dist": null,
+        "outcome": "saved"
+      }
+    },
+    "rsf_grid_rsf_c10_scatter.json": {
+      "n_rows": 18,
+      "n_homes": 1800,
+      "sample_home_keys": [
+        "dist",
+        "front",
+        "gelled",
+        "outcome"
+      ],
+      "outcomes": {
+        "saved": 613,
+        "not_threatened": 849,
+        "protected_then_impacted": 120,
+        "abandoned_unsavable": 186,
+        "monitoring": 30,
+        "in_progress": 2
+      },
+      "viol": 0,
+      "ovt": 0,
+      "min_margin": 0.3713,
+      "row0_keys": [
+        "homes",
+        "inten",
+        "map",
+        "min_margin_h",
+        "ov_ticks",
+        "seed",
+        "viol"
+      ],
+      "row0_home0": {
+        "gelled": true,
+        "front": false,
+        "dist": null,
+        "outcome": "saved"
+      }
+    },
+    "rsf_grid_rsf_c12_scatter.json": {
+      "n_rows": 18,
+      "n_homes": 1800,
+      "sample_home_keys": [
+        "dist",
+        "front",
+        "gelled",
+        "outcome"
+      ],
+      "outcomes": {
+        "saved": 619,
+        "not_threatened": 849,
+        "protected_then_impacted": 120,
+        "abandoned_unsavable": 180,
+        "monitoring": 30,
+        "in_progress": 2
+      },
+      "viol": 0,
+      "ovt": 0,
+      "min_margin": 0.3713,
+      "row0_keys": [
+        "homes",
+        "inten",
+        "map",
+        "min_margin_h",
+        "ov_ticks",
+        "seed",
+        "viol"
+      ],
+      "row0_home0": {
+        "gelled": true,
+        "front": false,
+        "dist": null,
+        "outcome": "saved"
+      }
+    }
+  },
+  "axis_by_inten": {},
+  "wind_extra": {
+    "census_wind_low_c4.json": {
+      "mph": 8.0,
+      "e1000_pct": 87.90697674418605,
+      "e1000": [
+        189,
+        215,
+        87.90697674418605
+      ],
+      "viol": 0,
+      "ovt": 0
+    },
+    "census_wind_low_c8.json": {
+      "mph": 8.0,
+      "e1000_pct": 88.83720930232558,
+      "e1000": [
+        191,
+        215,
+        88.83720930232558
+      ],
+      "viol": 0,
+      "ovt": 0
+    },
+    "census_wind_moderate_c4.json": {
+      "mph": 18.0,
+      "e1000_pct": 79.72350230414746,
+      "e1000": [
+        173,
+        217,
+        79.72350230414746
+      ],
+      "viol": 4,
+      "ovt": 14
+    },
+    "census_wind_moderate_c8.json": {
+      "mph": 18.0,
+      "e1000_pct": 83.87096774193549,
+      "e1000": [
+        182,
+        217,
+        83.87096774193549
+      ],
+      "viol": 9,
+      "ovt": 13
+    }
+  },
+  "gel_and_cfg": {
+    "ref_25C_50rh_0mps": 6.0,
+    "hot_35C_20rh_5mps": 1.638413996073016,
+    "fire_33C_12rh_8mps": 1.4727808168726282,
+    "extreme_38C_8rh_15mps": 1.0,
+    "cfg.gel_window_h": 72.0,
+    "cfg.gel_full_strength_h": 72.0,
+    "cfg.gel_effectiveness": 0.85,
+    "cfg.gel_env_model_enabled": false,
+    "cfg.ember_threat_radius_m": 0.0,
+    "cfg.deploy_min": 30.0,
+    "cfg.dispatch_hold_h": 0.0,
+    "cfg.circuity": 1.7,
+    "cfg.route_margin_min": 56.0
+  },
+  "aug_window_bins": [
+    {
+      "dt_h": "(0,6]",
+      "n_pairs": 0,
+      "n_cells": 0,
+      "cover_pct": null,
+      "late_pct": null,
+      "p90_unreached_pct": null
+    },
+    {
+      "dt_h": "(6,12]",
+      "n_pairs": 5,
+      "n_cells": 27089,
+      "cover_pct": 69.79216656207316,
+      "late_pct": 30.207833437926833,
+      "p90_unreached_pct": 0.0
+    },
+    {
+      "dt_h": "(12,24]",
+      "n_pairs": 4,
+      "n_cells": 24164,
+      "cover_pct": 99.20129117695747,
+      "late_pct": 0.7987088230425426,
+      "p90_unreached_pct": 0.0
+    },
+    {
+      "dt_h": "(24,48]",
+      "n_pairs": 6,
+      "n_cells": 33130,
+      "cover_pct": 99.98792635073951,
+      "late_pct": 0.012073649260488983,
+      "p90_unreached_pct": 0.0
+    },
+    {
+      "dt_h": "(48,96]",
+      "n_pairs": 3,
+      "n_cells": 50698,
+      "cover_pct": 99.98027535602982,
+      "late_pct": 0.01972464397017634,
+      "p90_unreached_pct": 0.0039449287940352675
+    }
+  ],
+  "july_window_bins_floor": [
+    {
+      "dt_h": "(0,6]",
+      "n_pairs": 0,
+      "n_cells": 0,
+      "cover_pct": null,
+      "late_pct": null,
+      "p90_unreached_pct": null
+    },
+    {
+      "dt_h": "(6,12]",
+      "n_pairs": 1,
+      "n_cells": 4943,
+      "cover_pct": 99.85838559579203,
+      "late_pct": 0.14161440420797086,
+      "p90_unreached_pct": 0.0
+    },
+    {
+      "dt_h": "(12,24]",
+      "n_pairs": 5,
+      "n_cells": 46211,
+      "cover_pct": 54.08452532946701,
+      "late_pct": 45.915474670532994,
+      "p90_unreached_pct": 12.202722295557335
+    },
+    {
+      "dt_h": "(24,48]",
+      "n_pairs": 1,
+      "n_cells": 6468,
+      "cover_pct": 99.98453927025356,
+      "late_pct": 0.015460729746444033,
+      "p90_unreached_pct": 0.0
+    },
+    {
+      "dt_h": "(48,96]",
+      "n_pairs": 1,
+      "n_cells": 2627,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "p90_unreached_pct": 0.0
+    }
+  ]
+}

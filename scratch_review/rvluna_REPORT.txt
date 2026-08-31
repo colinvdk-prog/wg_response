@@ -1,0 +1,238 @@
+# LUNA independent assessment
+
+## Executive grade
+
+| Area | Grade | Result |
+|---|---:|---|
+| Rothermel/Byram core | B+ | Equations and SI/imperial conversions are internally correct; external numerical anchoring is weak. |
+| Arrival-time solver | D | Two material MTT errors: frozen departure-time weather and source-cell-only edge rates. |
+| Geometry/raster operations | B+ | Orientation, indexing, polygon casting, and both erosion shapes are correct in normal domains. |
+| Crew-safety arithmetic | C- | LegOracle math is correct, but off-raster routes fail open. |
+| Hindcast evidence | C- | Arithmetic reconciles, but “coverage” is only an upper bound on P10 adequacy and 0% early miss is structural. |
+| Physics test protection | C | Strong exact regression protection, weak independent scientific validation. |
+
+No repository source or test file was modified. One audit script was added under the permitted scratch namespace: [rvluna_hindcast_pool.ps1](C:/Users/colin/wg_response/scratch_review/rvluna_hindcast_pool.ps1).
+
+## (a) Concrete bugs and errors, severity-ranked
+
+### 1. CRITICAL — corridor safety treats missing forecast coverage as safe
+
+[LegOracle skips every sample whose raster lookup is outside the grid](C:/Users/colin/wg_response/wgresponse/safety.py:353). If all samples are outside, `latest_safe_depart_s` remains infinity and the route is accepted without any fire information. This is deliberately pinned by [test_corridor_outside_raster_is_safe](C:/Users/colin/wg_response/tests/test_safety.py:235), which places a lethal raster in another region and expects the unmodeled route to pass.
+
+Minimal repro already present in the suite:
+
+- Arrival raster: uniformly lethal at `NOW`, centered near 40°N, 100°W.
+- Route: 34.1°N, 117.1°W to 34.1°N, 117.05°W.
+- Result: `safe=True`, `worst_margin_h=inf`.
+
+There is no dispatch-side invariant that every road polyline and safe zone stays inside every incident raster. A route that exits a clipped fire domain therefore becomes progressively less constrained precisely where the model has no data. This contradicts the broader “absence is not clearance” safety posture.
+
+### 2. HIGH — weather changes are not integrated across an edge; burned cells are never reconsidered
+
+A cell is processed once using the weather bucket at its arrival time, at [spread.py:617](C:/Users/colin/wg_response/wgresponse/spread.py:617). The full edge then uses that single rate at [spread.py:641](C:/Users/colin/wg_response/wgresponse/spread.py:641), even if traversal spans later weather buckets. The cell is never reactivated when wind changes.
+
+Arithmetic demonstration for a 90 m edge:
+
+- ROS is 0.01 m/s for the first hour, then 1.0 m/s.
+- Current code, source ignited at `T0`: `90 / 0.01 = 9,000 s`, arrival at 2.5 h.
+- Piecewise propagation: 36 m burns during hour one; remaining 54 m burns in 54 s, arrival at 3,654 s.
+- Error: 5,346 s late on one edge.
+
+At flank/backing rates or before a wind event, a traversal can span many hours. The claim that hourly non-FIFO effects are negligible is therefore unjustified. This is dangerous-polarity error: late P10, late alerts, and later crew deadlines.
+
+### 3. HIGH — heterogeneous edge cost ignores the destination cell’s ROS
+
+The solver computes parameters only for source cell `idx` at [spread.py:618](C:/Users/colin/wg_response/wgresponse/spread.py:618), then applies that source rate over the entire center-to-center edge at [spread.py:640](C:/Users/colin/wg_response/wgresponse/spread.py:640). The project’s own MTT specification requires an A/B rate average at [spread_model.md:269](C:/Users/colin/wg_response/docs/research/spread_model.md:269).
+
+For a 90 m interface with directional ROS `R_A=0.1 m/s` and `R_B=1.0 m/s`:
+
+- Current A→B cost: 900 s.
+- Current B→A cost: 90 s.
+- Documented arithmetic-mean cost: `90 / 0.55 = 163.6 s` in either direction.
+- Half-cell serial integration would give 495 s, also symmetric.
+
+Thus the implemented travel metric depends on which side of a fuel boundary ignites first. Fuel mosaics can gain almost a full slow-cell or fast-cell traversal at each boundary. None of the three legacy fingerprint scenarios samples a heterogeneous burnable interface.
+
+### 4. HIGH — the 73.5% “coverage” and 0% early-miss claims are one-sided by construction
+
+Hindcast scoring defines early miss as `p90 < T0` at [hindcast_lib.py:640](C:/Users/colin/wg_response/tools/hindcast_lib.py:640). All perimeter seeds are assigned `T0` at [spread.py:482](C:/Users/colin/wg_response/wgresponse/spread.py:482), and every traversal cost is nonnegative. Therefore every exterior modeled arrival satisfies `p90 ≥ p10 ≥ T0`; `p90 < T0` is impossible.
+
+Consequently, the “possible coverage” condition at [hindcast_lib.py:645](C:/Users/colin/wg_response/tools/hindcast_lib.py:645),
+
+`p10 ≤ T1 and p90 ≥ T0`,
+
+collapses algebraically to only `p10 ≤ T1`. The committed artifact confirms this identity: `cover` and `p10_nec` are exactly equal at [gust_sweep.json:24](C:/Users/colin/wg_response/scratch_review/gust_sweep.json:24).
+
+Interpretation:
+
+- 26.5% is a valid lower bound on definite late misses.
+- 73.5% is an upper bound on cells whose P10 might not be late; the true burn could have occurred anywhere in `(T0,T1]`.
+- 0% early miss supplies no evidence against overprediction.
+- P90 is effectively unvalidated by the headline statistic.
+
+The PIT histogram and head/area ratios contain some overprediction information, but the headline table does not.
+
+### 5. MEDIUM — spread combines equivalent wind speeds instead of Rothermel φ vectors
+
+The spread path derives a slope-equivalent wind at [spread.py:579](C:/Users/colin/wg_response/wgresponse/spread.py:579), vector-adds it to midflame wind, then feeds the magnitude back through the wind equation. The correct helper instead combines `φ_w` and `φ_s` at [rothermel.py:381](C:/Users/colin/wg_response/wgresponse/rothermel.py:381).
+
+Because `φ_w=C·U^B` is nonlinear, vector-adding speeds is not equivalent to vector-adding spread factors. The source itself acknowledges approximately +8% aligned and −10% opposing-slope errors. The latter is dangerous-polarity late bias. This should be treated as a physics deviation, not merely an integrator convention.
+
+### 6. MEDIUM — ensemble count and perturbation magnitude contradict the contract/handoff
+
+The contract defines default `ensemble_n=6` as “perturbed members (+1 nominal)” at [contracts.py:954](C:/Users/colin/wg_response/wgresponse/contracts.py:954). The implementation treats six as the total count at [spread.py:790](C:/Users/colin/wg_response/wgresponse/spread.py:790), producing one nominal plus five perturbed members.
+
+Wind and moisture perturbations also receive an unconditional `×0.5` at [spread.py:803](C:/Users/colin/wg_response/wgresponse/spread.py:803). With five stratified draws, the extrema are `u=±0.8`; default wind variation is therefore only:
+
+`±0.8 × 0.25 × 0.5 = ±10%`,
+
+not the handoff’s ±25% at maximum lead. Direction reaches only ±24°, not ±30°, because its five strata also stop at ±0.8.
+
+This may be the calibrated historical behavior, but it is not the declared configuration semantic and can materially mislead safety-band tuning.
+
+### 7. MEDIUM — safety-critical configuration validation is incomplete
+
+`validate_config` checks only five conditions at [contracts.py:1116](C:/Users/colin/wg_response/wgresponse/contracts.py:1116). It accepts, among others:
+
+- `circuity=0`, which divides by zero at [safety.py:198](C:/Users/colin/wg_response/wgresponse/safety.py:198);
+- negative `route_margin_min`, weakening the corridor law;
+- negative erosion/sample radii;
+- `wind_gust_blend < 0` or `> 1`;
+- nonpositive horizon or road speed.
+
+The live CLI accepts any float for `--gust-blend`, and simulator configuration can apply arbitrary `ResponseConfig` fields before this incomplete validator runs. Invalid safety configuration can therefore fail open, suppress wind, or crash.
+
+### 8. LOW — the numerical ROS floor can spread through an extinguished fuel cell
+
+The traversal floor is `1e-4 m/s` at [spread.py:91](C:/Users/colin/wg_response/wgresponse/spread.py:91) and is applied after directional ROS at [spread.py:641](C:/Users/colin/wg_response/wgresponse/spread.py:641). A burnable cell whose Rothermel reaction intensity is exactly zero therefore still propagates.
+
+At the permitted 30 m native resolution:
+
+`30 m / 0.0001 m/s = 300,000 s = 83.33 h`,
+
+which is inside the default 96 h horizon. It can produce a one-cell false burned halo through fuel that is at or above moisture of extinction. The polarity is conservative, but it is not physically or semantically “no spread.” Zero ROS should produce infinite traversal cost; the floor should apply only to small positive numerical values.
+
+### 9. LOW — raster access silently wraps negative indices
+
+`Raster.get` directly indexes `data[r*ncols+c]` at [contracts.py:459](C:/Users/colin/wg_response/wgresponse/contracts.py:459), and `set` does the same. Python negative indices wrap rather than fail. For a 2×2 raster, `get(-1,0)` returns the first value of the last row instead of rejecting the coordinate.
+
+Current geo/spread callers normally bounds-check first, so this is an API boundary hazard rather than a demonstrated operational failure.
+
+### 10. LOW — reported “median” head ratio is the upper middle observation
+
+For an even number of scored windows, pooling selects `sorted_values[len//2]` at [hindcast_lib.py:693](C:/Users/colin/wg_response/tools/hindcast_lib.py:693). With 14 windows this is the eighth observation, not the conventional mean of observations seven and eight. The published 1.7724× is therefore an upper-middle order statistic, not a standard median.
+
+## (b) Claims that survived attack
+
+### Reproduction record
+
+Fresh execution was blocked before repository code ran:
+
+- `py -3 tools\hindcast_harness.py replay ...` → `No installed Python found!`, exit 112.
+- `py -3 -m pytest tests\ -q` → the same error, exit 112.
+- `py --list-paths` reported no installed interpreter.
+
+Therefore:
+
+- The 73.5% result was not reproduced end-to-end in this environment.
+- The suite was not collected, so no failure can be attributed to the other reviewers’ dirty files.
+- This is an environment failure, not evidence of a model or test failure.
+
+The committed arithmetic was independently recomputed with PowerShell:
+
+- 60,062 burnable cells.
+- 44,157 covered-possible cells.
+- 15,905 definite late misses.
+- 73.519030% coverage, 26.480970% late, 0% early.
+- 1.772430× reported head statistic.
+
+Those values exactly match [gust_sweep.json:24](C:/Users/colin/wg_response/scratch_review/gust_sweep.json:24) through [gust_sweep.json:29](C:/Users/colin/wg_response/scratch_review/gust_sweep.json:29). The committed default/blend-zero replay separately pools to 68.818887%, so the 73.5% row is specifically the blend-0.5 sweep, not the checked-in default replay.
+
+### Core Rothermel and unit arithmetic
+
+Static rederivation found no coefficient or unit error in the core:
+
+- kg/m²→lb/ft² is correct at [rothermel.py:41](C:/Users/colin/wg_response/wgresponse/rothermel.py:41).
+- Reaction velocity and optimum packing equations match the Albini-adjusted form at [rothermel.py:174](C:/Users/colin/wg_response/wgresponse/rothermel.py:174).
+- Wind and slope factors, live extinction moisture, dynamic curing, and characteristic SAV weighting are internally consistent.
+- Anderson residence time `384/σ`, Byram intensity, and the SI conversion are correct at [rothermel.py:317](C:/Users/colin/wg_response/wgresponse/rothermel.py:317).
+- Flame length is correctly `0.0775·I^0.46` at [rothermel.py:322](C:/Users/colin/wg_response/wgresponse/rothermel.py:322).
+- Anderson ellipse L/B converts m/s to mph and caps at eight at [rothermel.py:393](C:/Users/colin/wg_response/wgresponse/rothermel.py:393).
+- The rear-focus directional ellipse is correct at [rothermel.py:398](C:/Users/colin/wg_response/wgresponse/rothermel.py:398).
+
+Caveat: [midflame_wind_mps](C:/Users/colin/wg_response/wgresponse/rothermel.py:332) always uses the unsheltered WAF. It has no canopy adjustment for TU/TL fuels. That is a disclosed model omission and generally biases wind-driven timber spread early rather than late.
+
+### Spread mechanics that are correct
+
+- Rook, diagonal, and knight distances are exactly `1`, `√2`, and `√5` cells at [spread.py:239](C:/Users/colin/wg_response/wgresponse/spread.py:239), [spread.py:242](C:/Users/colin/wg_response/wgresponse/spread.py:242), and [spread.py:249](C:/Users/colin/wg_response/wgresponse/spread.py:249).
+- Row-positive is south and compass bearings are correctly derived.
+- Meteorological wind direction is rotated 180° to the spread-to direction.
+- The grass/timber realism floor is applied before ellipse directionality, while the small numerical floor is applied afterward.
+- Gust blending is present in both paths: memoized at [spread.py:559](C:/Users/colin/wg_response/wgresponse/spread.py:559) and reference at [spread.py:593](C:/Users/colin/wg_response/wgresponse/spread.py:593). Both use sustained plus blend times nonnegative gust excess before ensemble wind scaling.
+
+### Geometry
+
+- `point_in_poly` is a standard even/odd ray cast and safely avoids horizontal-edge division at [geo.py:31](C:/Users/colin/wg_response/wgresponse/geo.py:31). Edge membership remains intentionally undefined.
+- Grid orientation is correct: north/west inclusive, south/east exclusive; cell-center round trips use consistent row/column orientation at [geo.py:152](C:/Users/colin/wg_response/wgresponse/geo.py:152).
+- Chebyshev erosion correctly uses the documented ceil-radius square.
+- Euclidean erosion uses only cell-center offsets inside the metric disc at [geo.py:219](C:/Users/colin/wg_response/wgresponse/geo.py:219).
+- Both erosion modes clip correctly at grid borders and preserve minimum-filter monotonicity.
+
+### Safety arithmetic
+
+- `latest_departure = P10 − (egress buffer + ember buffer)` is correct at [safety.py:224](C:/Users/colin/wg_response/wgresponse/safety.py:224).
+- Latest service start subtracts deployment duration exactly once at [safety.py:231](C:/Users/colin/wg_response/wgresponse/safety.py:231).
+- LegOracle accumulates path distance monotonically and converts it to pass-time offsets at [safety.py:346](C:/Users/colin/wg_response/wgresponse/safety.py:346).
+- Its closed form `T*=min(arrival−margin−distance/speed)` is correct at [safety.py:362](C:/Users/colin/wg_response/wgresponse/safety.py:362).
+- Nonpositive explicit leg speed is rejected at [safety.py:334](C:/Users/colin/wg_response/wgresponse/safety.py:334).
+
+### Requested mph check
+
+Simulator intensity presets are labeled in mph at [simui.py:233](C:/Users/colin/wg_response/wgresponse/simui.py:233), converted with the exact `0.44704` factor at [simui.py:220](C:/Users/colin/wg_response/wgresponse/simui.py:220), and passed as m/s at [simui.py:1977](C:/Users/colin/wg_response/wg_response/wgresponse/simui.py:1977). No mph/m/s bug was found there.
+
+### Byte-identity test quality
+
+Three sampled pins are genuine exact-output checks:
+
+- Flat wind: [test_spread.py:1193](C:/Users/colin/wg_response/tests/test_spread.py:1193).
+- Pure upslope/no wind: [test_spread.py:1203](C:/Users/colin/wg_response/tests/test_spread.py:1203).
+- Wind switch: [test_spread.py:1219](C:/Users/colin/wg_response/tests/test_spread.py:1219).
+
+They hash every raster float and would catch changes to many conversions, bearings, coefficients, lattice distances, and bucket behavior. They are real regression protection.
+
+They are not independent physics validation:
+
+- Their expected values were generated from prior versions of the same implementation.
+- All three use homogeneous burnable fuel, so none detects the omitted destination-cell rate.
+- The wind-switch pin freezes the current non-integrated edge behavior; a correct temporal-integrator fix will deliberately break it.
+- Memo/reference identity only proves that two paths agree, not that their shared equations are correct.
+- Rothermel anchors explicitly use broad order-of-magnitude ranges rather than BehavePlus/pyretechnics numerical fixtures at [test_rothermel.py:1](C:/Users/colin/wg_response/tests/test_rothermel.py:1).
+- The suite actively pins the unsafe off-raster policy as correct.
+
+Verdict on pins: strong software-regression guard, insufficient protection against a shared physics error.
+
+The known ledger’s gel blocker also survives: `gel_window_h=72` remains unverified at [contracts.py:928](C:/Users/colin/wg_response/wgresponse/contracts.py:928), and `gel_effectiveness=0.85` remains an explicit placeholder at [contracts.py:930](C:/Users/colin/wg_response/wgresponse/contracts.py:930). The live engine’s developed-cell threat radius also remains zero at [contracts.py:1066](C:/Users/colin/wg_response/wgresponse/contracts.py:1066).
+
+## (c) Top three recommended fixes
+
+1. Replace the MTT edge kernel.
+
+   Use both source and destination directional ROS, integrate traversal across weather boundaries, and use an event-expanded/FIFO-safe formulation that allows an already-burning cell to accelerate when weather changes. Correct the φ-vector wind/slope combination in the same change. Add independent two-cell fixtures for slow→fast fuel, fast→slow fuel, wind increase during traversal, wind decrease, and opposing wind/slope.
+
+2. Make safety rasters fail closed at their boundaries.
+
+   Require every corridor sample to fall inside every required incident raster. If not, reject the route as `forecast_domain_incomplete`, expand the terrain/arrival domain to include the entire road polyline and safe zone, then recompute. `None` rasters must be unavailable/error states, never “everywhere safe.” Extend `validate_config` to enforce finite nonnegative margins/radii/horizons and strictly positive travel denominators.
+
+3. Rebuild the validation gates around independent quantities.
+
+   Replace the headline “coverage” label with “fraction not definitely late by T1,” report that it is an upper bound on P10 adequacy, and remove 0% early miss as evidence. Score overprediction with head/area ratios and shorter intra-day perimeter windows. Add exact reference outputs from BehavePlus/pyretechnics for several FBFM40 fuels and mixed-fuel/time-varying MTT fixtures. Rebaseline byte hashes only after these independent expectations pass.
+
+## (d) Overall fitness judgment
+
+**Shadow alerting now: conditionally fit, grade C.** Internal shadow/dry-notify operation can continue because it does not expose clients or crews to automated decisions and can accumulate the missing forecast evidence. Outputs must be labeled experimental; 73.5% must be described as an upper bound on P10 adequacy, not calibrated interval coverage. Shadow telemetry should explicitly count off-domain clients/routes and weather-transition edge exposure.
+
+**Client alerting after only the existing ledger blockers: not fit, grade D+.** Closing gel, persistence, smoke, and live ember-radius blockers would still leave two dangerous late-arrival errors in the core spread solver and an inadequately validated P10 band. Client notification timing would remain vulnerable at weather changes and fuel boundaries.
+
+**Crew dispatch/routing: not fit.** The off-raster fail-open rule is an independent life-safety blocker. No operational crew route should be approved until complete raster coverage is enforced and the corrected spread kernel has been re-hindcasted.
+
+A controlled client-notification pilot becomes defensible only after the three fixes above, fresh green execution of the full suite, independent physics fixtures, and a new out-of-sample hindcast showing the corrected P10 late-bound performance.

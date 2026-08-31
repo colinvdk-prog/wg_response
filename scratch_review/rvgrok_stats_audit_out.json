@@ -1,0 +1,2856 @@
+{
+  "august_as_deployed_cell": {
+    "n_pairs": 18,
+    "n_cells": 135081,
+    "coverage_possible_pct": 93.78891183808233,
+    "coverage_certain_pct": 0.0,
+    "late_miss_pct": 6.211088161917664,
+    "early_miss_pct": 0.0,
+    "never_reached_pct": 0.01332533813045506,
+    "p90_unreached_pct": 0.0014805931256061178,
+    "p50_in_window_pct": 90.29989413759152,
+    "p10_not_after_window_pct": 93.78891183808233,
+    "p10_before_window_pct": 0.0,
+    "nonburnable_n": 2601,
+    "median_head_ratio": 1.8804254837669052,
+    "mean_head_ratio": 2.866456050371336,
+    "by_fuel": {
+      "GS": {
+        "n": 58432,
+        "late": 3121,
+        "late_pct": 5.341251369112815,
+        "poss": 55311
+      },
+      "SH": {
+        "n": 26955,
+        "late": 3632,
+        "late_pct": 13.474309033574476,
+        "poss": 23323
+      },
+      "GR": {
+        "n": 41857,
+        "late": 1535,
+        "late_pct": 3.6672480110853622,
+        "poss": 40322
+      },
+      "NB": {
+        "n": 2601,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 0
+      },
+      "TL": {
+        "n": 3018,
+        "late": 91,
+        "late_pct": 3.015241882041087,
+        "poss": 2927
+      },
+      "TU": {
+        "n": 4819,
+        "late": 11,
+        "late_pct": 0.22826312512969496,
+        "poss": 4808
+      }
+    },
+    "sum_check": {
+      "late_plus_early": 0.06211088161917664,
+      "late_eq_one_minus_cover": 2.0816681711721685e-17,
+      "p10_nec_eq_cover": 0.0
+    }
+  },
+  "august_as_deployed_pair": {
+    "n_pairs": 18,
+    "coverage_possible_pct": 95.65519222989664,
+    "late_miss_pct": 4.344807770103364,
+    "early_miss_pct": 0.0,
+    "p50_in_window_pct": 92.46350873188314,
+    "p10_before_window_pct": 0.0,
+    "p90_unreached_pct": 0.020275750202757504,
+    "median_of_pair_head_ratios": 1.8804254837669052,
+    "median_of_pair_coverage_pct": 100.0
+  },
+  "august_calibration_cell": {
+    "n_pairs": 18,
+    "n_cells": 135081,
+    "coverage_possible_pct": 77.18850171378654,
+    "coverage_certain_pct": 0.0,
+    "late_miss_pct": 22.811498286213457,
+    "early_miss_pct": 0.0,
+    "never_reached_pct": 0.264285872920692,
+    "p90_unreached_pct": 8.449744967834114,
+    "p50_in_window_pct": 62.062762342594446,
+    "p10_not_after_window_pct": 77.18850171378654,
+    "p10_before_window_pct": 0.0,
+    "nonburnable_n": 2601,
+    "median_head_ratio": 1.0981267472114393,
+    "mean_head_ratio": 1.2102637069661633,
+    "by_fuel": {
+      "GS": {
+        "n": 58432,
+        "late": 9895,
+        "late_pct": 16.93421412924425,
+        "poss": 48537
+      },
+      "SH": {
+        "n": 26955,
+        "late": 7929,
+        "late_pct": 29.41569282136895,
+        "poss": 19026
+      },
+      "GR": {
+        "n": 41857,
+        "late": 11759,
+        "late_pct": 28.09326994290083,
+        "poss": 30098
+      },
+      "NB": {
+        "n": 2601,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 0
+      },
+      "TL": {
+        "n": 3018,
+        "late": 693,
+        "late_pct": 22.962226640159045,
+        "poss": 2325
+      },
+      "TU": {
+        "n": 4819,
+        "late": 538,
+        "late_pct": 11.164141938161444,
+        "poss": 4281
+      }
+    },
+    "sum_check": {
+      "late_plus_early": 0.22811498286213458,
+      "late_eq_one_minus_cover": 2.7755575615628914e-17,
+      "p10_nec_eq_cover": 0.0
+    }
+  },
+  "august_calibration_pair": {
+    "n_pairs": 18,
+    "coverage_possible_pct": 75.96102017471853,
+    "late_miss_pct": 24.03897982528147,
+    "early_miss_pct": 0.0,
+    "p50_in_window_pct": 65.79591838201583,
+    "p10_before_window_pct": 0.0,
+    "p90_unreached_pct": 2.6672276923741047,
+    "median_of_pair_head_ratios": 1.0981267472114393,
+    "median_of_pair_coverage_pct": 85.13986594412741
+  },
+  "august_published_pooled": {
+    "calibration": {
+      "n_pairs": 18,
+      "n_cells": 135081,
+      "coverage_possible": 77.18850171378654,
+      "late_miss": 22.811498286213457,
+      "early_miss": 0.0,
+      "p50_in_window": 62.062762342594446,
+      "median_head_ratio": 1.0981267472114393
+    },
+    "as-deployed": {
+      "n_pairs": 18,
+      "n_cells": 135081,
+      "coverage_possible": 93.78891183808234,
+      "late_miss": 6.211088161917664,
+      "early_miss": 0.0,
+      "p50_in_window": 90.29989413759152,
+      "median_head_ratio": 1.8804254837669052
+    }
+  },
+  "august_pairs": [
+    {
+      "name": "Tartar-ID",
+      "t0": "2026-08-01 12:29",
+      "dt_h": 48.08555555555556,
+      "cells": 49812,
+      "cell_share_pct": 36.87565238634597,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 49812,
+      "never_reached": 0,
+      "obs_head_km": 32.266976926883004,
+      "p50_head_km": 38.217056401559766,
+      "head_ratio": 1.1844015163911898,
+      "obs_rate_kmh": 0.6710326324420524,
+      "obs_new_ac": 100998.39414554862,
+      "modeled_new_ac_p50": 250692.58557938604,
+      "notes": []
+    },
+    {
+      "name": "ColemanCreek-OR",
+      "t0": "2026-08-01 05:23",
+      "dt_h": 24.783333333333335,
+      "cells": 16853,
+      "cell_share_pct": 12.476217972919951,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 16851,
+      "never_reached": 0,
+      "obs_head_km": 7.0424446558474605,
+      "p50_head_km": 20.352484670484774,
+      "head_ratio": 2.889974386037349,
+      "obs_rate_kmh": 0.28416051065961506,
+      "obs_new_ac": 63481.73351597415,
+      "modeled_new_ac_p50": 614284.8642173321,
+      "notes": []
+    },
+    {
+      "name": "Tartar-ID",
+      "t0": "2026-08-03 12:34",
+      "dt_h": 13.623333333333333,
+      "cells": 14424,
+      "cell_share_pct": 10.678037621871322,
+      "cover_pct": 99.9930671103716,
+      "late_pct": 0.006932889628397116,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 14422,
+      "never_reached": 1,
+      "obs_head_km": 7.7593363118246135,
+      "p50_head_km": 8.626865015751665,
+      "head_ratio": 1.1118044983570319,
+      "obs_rate_kmh": 0.5695622445675028,
+      "obs_new_ac": 29116.60007204312,
+      "modeled_new_ac_p50": 97455.64429145388,
+      "notes": []
+    },
+    {
+      "name": "Bug-CA",
+      "t0": "2026-08-10 23:32",
+      "dt_h": 9.48611111111111,
+      "cells": 13594,
+      "cell_share_pct": 10.063591474744783,
+      "cover_pct": 45.24054730027954,
+      "late_pct": 54.75945269972046,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 3760,
+      "never_reached": 3,
+      "obs_head_km": 10.173583439476968,
+      "p50_head_km": 6.972531821368763,
+      "head_ratio": 0.6853565278005157,
+      "obs_rate_kmh": 1.072471460676928,
+      "obs_new_ac": 27945.69122196096,
+      "modeled_new_ac_p50": 45977.687513226265,
+      "notes": []
+    },
+    {
+      "name": "Stallion-NV",
+      "t0": "2026-08-10 22:02",
+      "dt_h": 11.530277777777778,
+      "cells": 9677,
+      "cell_share_pct": 7.163849838245201,
+      "cover_pct": 94.40942440839103,
+      "late_pct": 5.59057559160897,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 7249,
+      "never_reached": 0,
+      "obs_head_km": 12.474012987006226,
+      "p50_head_km": 13.671708013265937,
+      "head_ratio": 1.0960152139898611,
+      "obs_rate_kmh": 1.0818484365612857,
+      "obs_new_ac": 19475.116429571703,
+      "modeled_new_ac_p50": 24046.664828866848,
+      "notes": []
+    },
+    {
+      "name": "Stallion-NV",
+      "t0": "2026-08-11 17:42",
+      "dt_h": 38.793055555555554,
+      "cells": 9117,
+      "cell_share_pct": 6.749283763075488,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 9117,
+      "never_reached": 0,
+      "obs_head_km": 3.33,
+      "p50_head_km": 12.700208659703193,
+      "head_ratio": 3.8138764743853435,
+      "obs_rate_kmh": 0.08584010597543948,
+      "obs_new_ac": 18280.18893641093,
+      "modeled_new_ac_p50": 91907.33774029532,
+      "notes": []
+    },
+    {
+      "name": "Bug-CA",
+      "t0": "2026-08-11 09:02",
+      "dt_h": 12.966666666666667,
+      "cells": 6539,
+      "cell_share_pct": 4.840799224169202,
+      "cover_pct": 97.0637712188408,
+      "late_pct": 2.9362287811591985,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 6187,
+      "never_reached": 5,
+      "obs_head_km": 6.096794239598382,
+      "p50_head_km": 6.046767731606698,
+      "head_ratio": 0.9917946209063832,
+      "obs_rate_kmh": 0.4701897871155564,
+      "obs_new_ac": 14062.91552252526,
+      "modeled_new_ac_p50": 93674.70956016293,
+      "notes": []
+    },
+    {
+      "name": "Bug-CA",
+      "t0": "2026-08-09 23:00",
+      "dt_h": 24.54722222222222,
+      "cells": 2660,
+      "cell_share_pct": 1.9691888570561367,
+      "cover_pct": 99.84962406015038,
+      "late_pct": 0.15037593984962405,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 2641,
+      "never_reached": 0,
+      "obs_head_km": 8.211729415902598,
+      "p50_head_km": 14.725386242812107,
+      "head_ratio": 1.7932137674063335,
+      "obs_rate_kmh": 0.33452784765473975,
+      "obs_new_ac": 5540.30033679902,
+      "modeled_new_ac_p50": 99144.955521316,
+      "notes": []
+    },
+    {
+      "name": "Bug-CA",
+      "t0": "2026-08-09 06:25",
+      "dt_h": 16.583333333333332,
+      "cells": 2456,
+      "cell_share_pct": 1.8181683582443127,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 2456,
+      "never_reached": 0,
+      "obs_head_km": 5.111809855618653,
+      "p50_head_km": 8.922718195706956,
+      "head_ratio": 1.7455105819124979,
+      "obs_rate_kmh": 0.3082498405398183,
+      "obs_new_ac": 4981.866885221374,
+      "modeled_new_ac_p50": 40249.24113897815,
+      "notes": []
+    },
+    {
+      "name": "SandCreek-MT",
+      "t0": "2026-08-05 18:52",
+      "dt_h": 33.5,
+      "cells": 1766,
+      "cell_share_pct": 1.307363729910202,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 1766,
+      "never_reached": 0,
+      "obs_head_km": 4.468388971430308,
+      "p50_head_km": 14.796175181444696,
+      "head_ratio": 3.3112997270487217,
+      "obs_rate_kmh": 0.1333847454158301,
+      "obs_new_ac": 3562.76538999359,
+      "modeled_new_ac_p50": 79619.80025199719,
+      "notes": []
+    },
+    {
+      "name": "Stallion-NV",
+      "t0": "2026-08-11 09:34",
+      "dt_h": 8.140277777777778,
+      "cells": 1606,
+      "cell_share_pct": 1.1889162798617126,
+      "cover_pct": 88.85429638854296,
+      "late_pct": 11.145703611457035,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 1206,
+      "never_reached": 0,
+      "obs_head_km": 4.529602631578183,
+      "p50_head_km": 4.910570231653347,
+      "head_ratio": 1.0841061856992142,
+      "obs_rate_kmh": 0.5564432511066868,
+      "obs_new_ac": 3216.4966189436514,
+      "modeled_new_ac_p50": 26160.305419784392,
+      "notes": []
+    },
+    {
+      "name": "Ptarmigan-WA",
+      "t0": "2026-08-07 06:02",
+      "dt_h": 24.9,
+      "cells": 1386,
+      "cell_share_pct": 1.0260510360450397,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 1386,
+      "never_reached": 0,
+      "obs_head_km": 2.8260573242593647,
+      "p50_head_km": 10.783862944232924,
+      "head_ratio": 3.8158684368014693,
+      "obs_rate_kmh": 0.11349627808270542,
+      "obs_new_ac": 2838.202990455568,
+      "modeled_new_ac_p50": 67718.56260654671,
+      "notes": []
+    },
+    {
+      "name": "Ptarmigan-WA",
+      "t0": "2026-08-08 06:56",
+      "dt_h": 44.5,
+      "cells": 1348,
+      "cell_share_pct": 0.9979197666585234,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 1348,
+      "never_reached": 0,
+      "obs_head_km": 1.8089776118017602,
+      "p50_head_km": 9.879524280045066,
+      "head_ratio": 5.461385600126338,
+      "obs_rate_kmh": 0.040651182287680006,
+      "obs_new_ac": 2726.1159894220614,
+      "modeled_new_ac_p50": 96424.8441926636,
+      "notes": []
+    },
+    {
+      "name": "SandCreek-MT",
+      "t0": "2026-08-07 19:45",
+      "dt_h": 10.416666666666666,
+      "cells": 1152,
+      "cell_share_pct": 0.8528216403491239,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 1152,
+      "never_reached": 0,
+      "obs_head_km": 3.628015986734347,
+      "p50_head_km": 6.822213716969001,
+      "head_ratio": 1.8804254837669052,
+      "obs_rate_kmh": 0.3482895347264974,
+      "obs_new_ac": 2309.7928427261813,
+      "modeled_new_ac_p50": 32136.944439178136,
+      "notes": []
+    },
+    {
+      "name": "Tartar-ID",
+      "t0": "2026-08-01 04:05",
+      "dt_h": 8.405,
+      "cells": 1060,
+      "cell_share_pct": 0.7847143565712424,
+      "cover_pct": 98.20754716981132,
+      "late_pct": 1.7924528301886793,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 1005,
+      "never_reached": 0,
+      "obs_head_km": 3.1189902212094225,
+      "p50_head_km": 5.095144747698538,
+      "head_ratio": 1.6335879199142982,
+      "obs_rate_kmh": 0.37108747426643934,
+      "obs_new_ac": 2165.6809842545304,
+      "modeled_new_ac_p50": 7836.082304396014,
+      "notes": []
+    },
+    {
+      "name": "SandCreek-MT",
+      "t0": "2026-08-07 04:22",
+      "dt_h": 15.383333333333333,
+      "cells": 745,
+      "cell_share_pct": 0.5515209392882788,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 745,
+      "never_reached": 0,
+      "obs_head_km": 1.173456432936477,
+      "p50_head_km": 5.031152949374526,
+      "head_ratio": 4.28746462856272,
+      "obs_rate_kmh": 0.07628102489294541,
+      "obs_new_ac": 1495.1605316433775,
+      "modeled_new_ac_p50": 34967.14121527417,
+      "notes": []
+    },
+    {
+      "name": "Border2-WA",
+      "t0": "2026-08-08 06:00",
+      "dt_h": 71.3175,
+      "cells": 548,
+      "cell_share_pct": 0.4056825164160763,
+      "cover_pct": 98.17518248175182,
+      "late_pct": 1.8248175182481752,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 2,
+      "p50_in": 537,
+      "never_reached": 9,
+      "obs_head_km": 1.6521803775617239,
+      "p50_head_km": 9.229718305560576,
+      "head_ratio": 5.586386590053642,
+      "obs_rate_kmh": 0.02316654926997895,
+      "obs_new_ac": 1661.2894796037526,
+      "modeled_new_ac_p50": 62068.176822304056,
+      "notes": []
+    },
+    {
+      "name": "SandCreek-MT",
+      "t0": "2026-08-03 03:01",
+      "dt_h": 63.844722222222224,
+      "cells": 338,
+      "cell_share_pct": 0.2502202382274339,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 338,
+      "never_reached": 0,
+      "obs_head_km": 1.7727944043232988,
+      "p50_head_km": 16.35178889296214,
+      "head_ratio": 9.223736747524232,
+      "obs_rate_kmh": 0.02776728197129266,
+      "obs_new_ac": 676.5251133808052,
+      "modeled_new_ac_p50": 81521.27616238703,
+      "notes": []
+    }
+  ],
+  "august_loo": [
+    {
+      "dropped": "Bug-CA",
+      "dropped_cells": 13594,
+      "dropped_share_pct": 10.063591474744783,
+      "dropped_late_pct": 54.75945269972046,
+      "rest_n_pairs": 17,
+      "rest_cells": 121487,
+      "rest_cover_pct": 99.22131586095631,
+      "rest_late_pct": 0.7786841390436836
+    },
+    {
+      "dropped": "Stallion-NV",
+      "dropped_cells": 1606,
+      "dropped_share_pct": 1.1889162798617126,
+      "dropped_late_pct": 11.145703611457035,
+      "rest_n_pairs": 17,
+      "rest_cells": 133475,
+      "rest_cover_pct": 93.84828619591684,
+      "rest_late_pct": 6.151713804083162
+    },
+    {
+      "dropped": "SandCreek-MT",
+      "dropped_cells": 338,
+      "dropped_share_pct": 0.2502202382274339,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 17,
+      "rest_cells": 134743,
+      "rest_cover_pct": 93.77333145321093,
+      "rest_late_pct": 6.226668546789073
+    },
+    {
+      "dropped": "Border2-WA",
+      "dropped_cells": 548,
+      "dropped_share_pct": 0.4056825164160763,
+      "dropped_late_pct": 1.8248175182481752,
+      "rest_n_pairs": 17,
+      "rest_cells": 134533,
+      "rest_cover_pct": 93.77104502241086,
+      "rest_late_pct": 6.228954977589142
+    },
+    {
+      "dropped": "SandCreek-MT",
+      "dropped_cells": 745,
+      "dropped_share_pct": 0.5515209392882788,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 17,
+      "rest_cells": 134336,
+      "rest_cover_pct": 93.75446641257741,
+      "rest_late_pct": 6.245533587422583
+    },
+    {
+      "dropped": "Tartar-ID",
+      "dropped_cells": 1060,
+      "dropped_share_pct": 0.7847143565712424,
+      "dropped_late_pct": 1.7924528301886793,
+      "rest_n_pairs": 17,
+      "rest_cells": 134021,
+      "rest_cover_pct": 93.75396393102574,
+      "rest_late_pct": 6.2460360689742656
+    },
+    {
+      "dropped": "Stallion-NV",
+      "dropped_cells": 9677,
+      "dropped_share_pct": 7.163849838245201,
+      "dropped_late_pct": 5.59057559160897,
+      "rest_n_pairs": 17,
+      "rest_cells": 125404,
+      "rest_cover_pct": 93.74102899429046,
+      "rest_late_pct": 6.258971005709547
+    },
+    {
+      "dropped": "SandCreek-MT",
+      "dropped_cells": 1152,
+      "dropped_share_pct": 0.8528216403491239,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 17,
+      "rest_cells": 133929,
+      "rest_cover_pct": 93.73548671310918,
+      "rest_late_pct": 6.264513286890814
+    },
+    {
+      "dropped": "Ptarmigan-WA",
+      "dropped_cells": 1348,
+      "dropped_share_pct": 0.9979197666585234,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 17,
+      "rest_cells": 133733,
+      "rest_cover_pct": 93.72630539956481,
+      "rest_late_pct": 6.273694600435195
+    },
+    {
+      "dropped": "Ptarmigan-WA",
+      "dropped_cells": 1386,
+      "dropped_share_pct": 1.0260510360450397,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 17,
+      "rest_cells": 133695,
+      "rest_cover_pct": 93.72452223344179,
+      "rest_late_pct": 6.275477766558211
+    },
+    {
+      "dropped": "SandCreek-MT",
+      "dropped_cells": 1766,
+      "dropped_share_pct": 1.307363729910202,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 17,
+      "rest_cells": 133315,
+      "rest_cover_pct": 93.70663466226607,
+      "rest_late_pct": 6.293365337733939
+    },
+    {
+      "dropped": "Bug-CA",
+      "dropped_cells": 2456,
+      "dropped_share_pct": 1.8181683582443127,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 17,
+      "rest_cells": 132625,
+      "rest_cover_pct": 93.67389255419415,
+      "rest_late_pct": 6.326107445805844
+    },
+    {
+      "dropped": "Bug-CA",
+      "dropped_cells": 2660,
+      "dropped_share_pct": 1.9691888570561367,
+      "dropped_late_pct": 0.15037593984962405,
+      "rest_n_pairs": 17,
+      "rest_cells": 132421,
+      "rest_cover_pct": 93.66716759426374,
+      "rest_late_pct": 6.332832405736251
+    },
+    {
+      "dropped": "Bug-CA",
+      "dropped_cells": 6539,
+      "dropped_share_pct": 4.840799224169202,
+      "dropped_late_pct": 2.9362287811591985,
+      "rest_n_pairs": 17,
+      "rest_cells": 128542,
+      "rest_cover_pct": 93.62231799723048,
+      "rest_late_pct": 6.377682002769523
+    },
+    {
+      "dropped": "Stallion-NV",
+      "dropped_cells": 9117,
+      "dropped_share_pct": 6.749283763075488,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 17,
+      "rest_cells": 125964,
+      "rest_cover_pct": 93.33936680321362,
+      "rest_late_pct": 6.660633196786383
+    },
+    {
+      "dropped": "Tartar-ID",
+      "dropped_cells": 14424,
+      "dropped_share_pct": 10.678037621871322,
+      "dropped_late_pct": 0.006932889628397116,
+      "rest_n_pairs": 17,
+      "rest_cells": 120657,
+      "rest_cover_pct": 93.04723306563233,
+      "rest_late_pct": 6.95276693436767
+    },
+    {
+      "dropped": "ColemanCreek-OR",
+      "dropped_cells": 16853,
+      "dropped_share_pct": 12.476217972919951,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 17,
+      "rest_cells": 118228,
+      "rest_cover_pct": 92.90354230808269,
+      "rest_late_pct": 7.096457691917313
+    },
+    {
+      "dropped": "Tartar-ID",
+      "dropped_cells": 49812,
+      "dropped_share_pct": 36.87565238634597,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 17,
+      "rest_cells": 85269,
+      "rest_cover_pct": 90.16055072769706,
+      "rest_late_pct": 9.839449272302947
+    }
+  ],
+  "august_hhi": {
+    "hhi": 0.18653022601548577,
+    "eff_n": 5.361061428816259,
+    "largest_share_pct": 36.87565238634597,
+    "top3_share_pct": 60.02990798113724
+  },
+  "august_window_bins": [
+    {
+      "dt_h": "(0,6]",
+      "n_pairs": 0,
+      "n_cells": 0,
+      "cover_pct": null,
+      "late_pct": null,
+      "p90_unreached_pct": null
+    },
+    {
+      "dt_h": "(6,12]",
+      "n_pairs": 5,
+      "n_cells": 27089,
+      "cover_pct": 69.79216656207316,
+      "late_pct": 30.207833437926833,
+      "p90_unreached_pct": 0.0
+    },
+    {
+      "dt_h": "(12,24]",
+      "n_pairs": 4,
+      "n_cells": 24164,
+      "cover_pct": 99.20129117695747,
+      "late_pct": 0.7987088230425426,
+      "p90_unreached_pct": 0.0
+    },
+    {
+      "dt_h": "(24,48]",
+      "n_pairs": 6,
+      "n_cells": 33130,
+      "cover_pct": 99.98792635073951,
+      "late_pct": 0.012073649260488983,
+      "p90_unreached_pct": 0.0
+    },
+    {
+      "dt_h": "(48,96]",
+      "n_pairs": 3,
+      "n_cells": 50698,
+      "cover_pct": 99.98027535602982,
+      "late_pct": 0.01972464397017634,
+      "p90_unreached_pct": 0.0039449287940352675
+    }
+  ],
+  "august_fuel_late": {
+    "GS": {
+      "n": 58432,
+      "late": 3121,
+      "late_pct": 5.341251369112815,
+      "cover_pct": 94.65874863088719
+    },
+    "SH": {
+      "n": 26955,
+      "late": 3632,
+      "late_pct": 13.474309033574476,
+      "cover_pct": 86.52569096642553
+    },
+    "GR": {
+      "n": 41857,
+      "late": 1535,
+      "late_pct": 3.6672480110853622,
+      "cover_pct": 96.33275198891464
+    },
+    "TL": {
+      "n": 3018,
+      "late": 91,
+      "late_pct": 3.015241882041087,
+      "cover_pct": 96.98475811795892
+    },
+    "TU": {
+      "n": 4819,
+      "late": 11,
+      "late_pct": 0.22826312512969496,
+      "cover_pct": 99.7717368748703
+    }
+  },
+  "august_structural": {
+    "label": "aug_as_deployed",
+    "n_cells": 135081,
+    "early_miss": 0,
+    "p10_before_window": 0,
+    "covered_certain": 0,
+    "p90_unreached": 2,
+    "early_miss_pct": 0.0,
+    "p10_before_pct": 0.0,
+    "certain_pct": 0.0,
+    "p90_unreached_pct": 0.0014805931256061178,
+    "late_equals_one_minus_cover": true,
+    "pairs_where_late_plus_cover_ne_n": []
+  },
+  "august_excluded": [
+    {
+      "incident": "LittleGiant-WA",
+      "t0": 1784390916.524,
+      "t1": 1784552400.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "LittleGiant-WA",
+      "t0": 1784552400.0,
+      "t1": 1784669400.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "LittleGiant-WA",
+      "t0": 1784669400.0,
+      "t1": 1784722500.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "LittleGiant-WA",
+      "t0": 1784722500.0,
+      "t1": 1784927220.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "Crosswhite-OR",
+      "t0": 1784219100.0,
+      "t1": 1784270580.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "Crosswhite-OR",
+      "t0": 1784270580.0,
+      "t1": 1784883840.0,
+      "why": "dt 170.3h outside (0, horizon-6]"
+    },
+    {
+      "incident": "Crosswhite-OR",
+      "t0": 1784883840.0,
+      "t1": 1785039240.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "Crosswhite-OR",
+      "t0": 1785039240.0,
+      "t1": 1785397080.0,
+      "why": "dt 99.4h outside (0, horizon-6]"
+    },
+    {
+      "incident": "Grasshopper-OR",
+      "t0": 1785038348.0,
+      "t1": 1785216300.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "Grasshopper-OR",
+      "t0": 1785216300.0,
+      "t1": 1785302160.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "Grasshopper-OR",
+      "t0": 1785302160.0,
+      "t1": 1785389220.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "Grasshopper-OR",
+      "t0": 1785389220.0,
+      "t1": 1785557580.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "Ptarmigan-WA",
+      "t0": 1784751946.0,
+      "t1": 1786082520.0,
+      "why": "dt 369.6h outside (0, horizon-6]"
+    },
+    {
+      "incident": "Ptarmigan-WA",
+      "t0": 1786332360.0,
+      "t1": 1786665600.0,
+      "why": "dt 92.6h outside (0, horizon-6]"
+    },
+    {
+      "incident": "Stallion-NV",
+      "t0": 1786609800.0,
+      "t1": 1787020200.0,
+      "why": "dt 114.0h outside (0, horizon-6]"
+    },
+    {
+      "incident": "BaldMountain-OR",
+      "t0": 1784867053.0,
+      "t1": 1785134760.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "BaldMountain-OR",
+      "t0": 1785134760.0,
+      "t1": 1785227100.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "BaldMountain-OR",
+      "t0": 1785227100.0,
+      "t1": 1785556080.0,
+      "why": "dt 91.4h outside (0, horizon-6]"
+    },
+    {
+      "incident": "BaldMountain-OR",
+      "t0": 1785556080.0,
+      "t1": 1785651000.0,
+      "why": "NON-MONOTONE pair: only 0% of the T0 interior is inside T1 (partial mapping upload?) \u2014 pair UNSCORED"
+    },
+    {
+      "incident": "Sinlahekin-WA",
+      "t0": 1596239700.0,
+      "t1": 1785121542.0,
+      "why": "dt 52467.2h outside (0, horizon-6]"
+    },
+    {
+      "incident": "Sinlahekin-WA",
+      "t0": 1785121542.0,
+      "t1": 1785145140.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "Sinlahekin-WA",
+      "t0": 1785145140.0,
+      "t1": 1785182400.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "Sinlahekin-WA",
+      "t0": 1785182400.0,
+      "t1": 1785235140.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "ColemanCreek-OR",
+      "t0": 1785106384.605,
+      "t1": 1785186661.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "ColemanCreek-OR",
+      "t0": 1785186661.0,
+      "t1": 1785300900.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "ColemanCreek-OR",
+      "t0": 1785300900.0,
+      "t1": 1785561780.0,
+      "why": "t0 before 2026-08-01 (pre-cutoff)"
+    },
+    {
+      "incident": "Border2-WA",
+      "t0": 1784647383.0,
+      "t1": 1785758283.0,
+      "why": "dt 308.6h outside (0, horizon-6]"
+    },
+    {
+      "incident": "Border2-WA",
+      "t0": 1785758283.0,
+      "t1": 1786168857.0,
+      "why": "dt 114.0h outside (0, horizon-6]"
+    },
+    {
+      "incident": "Border2-WA",
+      "t0": 1786425600.0,
+      "t1": 1786827480.0,
+      "why": "dt 111.6h outside (0, horizon-6]"
+    },
+    {
+      "incident": "Tartar-ID",
+      "t0": 1784993637.0,
+      "t1": 1785557100.0,
+      "why": "dt 156.5h outside (0, horizon-6]"
+    }
+  ],
+  "july_b05_cell": {
+    "n_pairs": 8,
+    "n_cells": 60249,
+    "coverage_possible_pct": 48.63981144915268,
+    "coverage_certain_pct": 0.0,
+    "late_miss_pct": 51.36018855084732,
+    "early_miss_pct": 0.0,
+    "never_reached_pct": 32.00717024348952,
+    "p90_unreached_pct": 3.724543145944331,
+    "p50_in_window_pct": 45.13269929791366,
+    "p10_not_after_window_pct": 48.63981144915268,
+    "p10_before_window_pct": 0.0,
+    "nonburnable_n": 3519,
+    "median_head_ratio": 1.2621459876795713,
+    "mean_head_ratio": 1.845851779597941,
+    "by_fuel": {
+      "GR": {
+        "n": 16502,
+        "late": 8612,
+        "late_pct": 52.1876136225912,
+        "poss": 7890
+      },
+      "GS": {
+        "n": 26925,
+        "late": 17287,
+        "late_pct": 64.20427112349118,
+        "poss": 9638
+      },
+      "NB": {
+        "n": 3519,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 0
+      },
+      "SH": {
+        "n": 8740,
+        "late": 4122,
+        "late_pct": 47.162471395881006,
+        "poss": 4618
+      },
+      "TL": {
+        "n": 3609,
+        "late": 566,
+        "late_pct": 15.683014685508452,
+        "poss": 3043
+      },
+      "TU": {
+        "n": 4473,
+        "late": 357,
+        "late_pct": 7.981220657276995,
+        "poss": 4116
+      }
+    },
+    "sum_check": {
+      "late_plus_early": 0.5136018855084732,
+      "late_eq_one_minus_cover": 0.0,
+      "p10_nec_eq_cover": 0.0
+    }
+  },
+  "july_b05_pair": {
+    "n_pairs": 8,
+    "coverage_possible_pct": 83.11398954180642,
+    "late_miss_pct": 16.88601045819358,
+    "early_miss_pct": 0.0,
+    "p50_in_window_pct": 80.09327163558424,
+    "p10_before_window_pct": 0.0,
+    "p90_unreached_pct": 0.8683835850848195,
+    "median_of_pair_head_ratios": 1.2621459876795713,
+    "median_of_pair_coverage_pct": 95.80844912077526
+  },
+  "july_b05_pairs": [
+    {
+      "name": "PorcupineRidge-OR",
+      "t0": "2026-07-17 04:53",
+      "dt_h": 12.95,
+      "cells": 33888,
+      "cell_share_pct": 56.246576706667334,
+      "cover_pct": 17.180122757318223,
+      "late_pct": 82.81987724268177,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 2218,
+      "p50_in": 4745,
+      "never_reached": 19282,
+      "obs_head_km": 22.464872579206855,
+      "p50_head_km": 1.71236678313964,
+      "head_ratio": 0.07622419299740792,
+      "obs_rate_kmh": 1.7347391953055487,
+      "obs_new_ac": 73951.4004854456,
+      "modeled_new_ac_p50": 9677.511607089331,
+      "notes": []
+    },
+    {
+      "name": "KaiserCanyon-WA",
+      "t0": "2026-07-19 23:58",
+      "dt_h": 35.63333333333333,
+      "cells": 6468,
+      "cell_share_pct": 10.735447891251306,
+      "cover_pct": 86.96660482374769,
+      "late_pct": 13.03339517625232,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 26,
+      "p50_in": 5197,
+      "never_reached": 2,
+      "obs_head_km": 5.916772769001696,
+      "p50_head_km": 7.467831010407238,
+      "head_ratio": 1.2621459876795713,
+      "obs_rate_kmh": 0.16604600848461262,
+      "obs_new_ac": 13468.4541063297,
+      "modeled_new_ac_p50": 65977.21098334758,
+      "notes": []
+    },
+    {
+      "name": "KaiserCanyon-WA",
+      "t0": "2026-07-21 11:36",
+      "dt_h": 23.915555555555557,
+      "cells": 6281,
+      "cell_share_pct": 10.425069295755947,
+      "cover_pct": 92.1668524120363,
+      "late_pct": 7.8331475879637,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 5705,
+      "never_reached": 0,
+      "obs_head_km": 3.3409280147887053,
+      "p50_head_km": 4.942630878388553,
+      "head_ratio": 1.4794185497292573,
+      "obs_rate_kmh": 0.13969685993820083,
+      "obs_new_ac": 12813.94608243762,
+      "modeled_new_ac_p50": 56539.885807044346,
+      "notes": []
+    },
+    {
+      "name": "KaiserCanyon-WA",
+      "t0": "2026-07-19 12:47",
+      "dt_h": 11.18361111111111,
+      "cells": 4943,
+      "cell_share_pct": 8.204285548307857,
+      "cover_pct": 69.14829051183492,
+      "late_pct": 30.85170948816508,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 3089,
+      "never_reached": 0,
+      "obs_head_km": 3.2048088866576747,
+      "p50_head_km": 3.6723970373585697,
+      "head_ratio": 1.1459020388540384,
+      "obs_rate_kmh": 0.2865629763783222,
+      "obs_new_ac": 10027.783485319036,
+      "modeled_new_ac_p50": 21046.335997630675,
+      "notes": []
+    },
+    {
+      "name": "Brewer-OR",
+      "t0": "2026-07-19 05:16",
+      "dt_h": 23.1,
+      "cells": 3273,
+      "cell_share_pct": 5.4324553104615845,
+      "cover_pct": 99.45004582951421,
+      "late_pct": 0.5499541704857929,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 3114,
+      "never_reached": 0,
+      "obs_head_km": 3.463538652880894,
+      "p50_head_km": 3.87,
+      "head_ratio": 1.1173543557196974,
+      "obs_rate_kmh": 0.1499367382199521,
+      "obs_new_ac": 6555.088006870229,
+      "modeled_new_ac_p50": 19721.30752112744,
+      "notes": []
+    },
+    {
+      "name": "Brewer-OR",
+      "t0": "2026-07-17 04:53",
+      "dt_h": 48.38111111111111,
+      "cells": 2627,
+      "cell_share_pct": 4.360238344204883,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 2574,
+      "never_reached": 0,
+      "obs_head_km": 4.597053404083969,
+      "p50_head_km": 5.6521146485187295,
+      "head_ratio": 1.2295081548318443,
+      "obs_rate_kmh": 0.09501752437075009,
+      "obs_new_ac": 5260.082834215255,
+      "modeled_new_ac_p50": 33435.95271901288,
+      "notes": []
+    },
+    {
+      "name": "Stookey-UT",
+      "t0": "2026-07-14 03:45",
+      "dt_h": 23.1,
+      "cells": 1934,
+      "cell_share_pct": 3.2100117844279574,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 1933,
+      "never_reached": 0,
+      "obs_head_km": 2.3051247254758254,
+      "p50_head_km": 10.142884205195285,
+      "head_ratio": 4.4001455075718665,
+      "obs_rate_kmh": 0.09978894915479763,
+      "obs_new_ac": 3881.012410785152,
+      "modeled_new_ac_p50": 56031.4911952138,
+      "notes": []
+    },
+    {
+      "name": "Stookey-UT",
+      "t0": "2026-07-13 11:23",
+      "dt_h": 16.366666666666667,
+      "cells": 835,
+      "cell_share_pct": 1.3859151189231356,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 835,
+      "never_reached": 0,
+      "obs_head_km": 2.5006399181009646,
+      "p50_head_km": 10.142884205195285,
+      "head_ratio": 4.056115449399845,
+      "obs_rate_kmh": 0.15278858970066994,
+      "obs_new_ac": 1677.3019083228248,
+      "modeled_new_ac_p50": 42082.66422731193,
+      "notes": []
+    }
+  ],
+  "july_b05_hhi": {
+    "hhi": 0.35156677893157334,
+    "eff_n": 2.8444098246115384,
+    "largest_share_pct": 56.24657670666733,
+    "top3_share_pct": 77.40709389367458
+  },
+  "july_b05_loo": [
+    {
+      "dropped": "PorcupineRidge-OR",
+      "dropped_cells": 33888,
+      "dropped_share_pct": 56.246576706667334,
+      "dropped_late_pct": 82.81987724268177,
+      "rest_n_pairs": 7,
+      "rest_cells": 26361,
+      "rest_cover_pct": 89.08235651151321,
+      "rest_late_pct": 10.91764348848678
+    },
+    {
+      "dropped": "Stookey-UT",
+      "dropped_cells": 835,
+      "dropped_share_pct": 1.3859151189231356,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 7,
+      "rest_cells": 59414,
+      "rest_cover_pct": 47.9179991247854,
+      "rest_late_pct": 52.0820008752146
+    },
+    {
+      "dropped": "Stookey-UT",
+      "dropped_cells": 1934,
+      "dropped_share_pct": 3.2100117844279574,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 7,
+      "rest_cells": 58315,
+      "rest_cover_pct": 46.93646574637743,
+      "rest_late_pct": 53.06353425362257
+    },
+    {
+      "dropped": "KaiserCanyon-WA",
+      "dropped_cells": 4943,
+      "dropped_share_pct": 8.204285548307857,
+      "dropped_late_pct": 30.85170948816508,
+      "rest_n_pairs": 7,
+      "rest_cells": 55306,
+      "rest_cover_pct": 46.806856398944056,
+      "rest_late_pct": 53.19314360105595
+    },
+    {
+      "dropped": "Brewer-OR",
+      "dropped_cells": 2627,
+      "dropped_share_pct": 4.360238344204883,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 7,
+      "rest_cells": 57622,
+      "rest_cover_pct": 46.29828884800944,
+      "rest_late_pct": 53.70171115199056
+    },
+    {
+      "dropped": "Brewer-OR",
+      "dropped_cells": 3273,
+      "dropped_share_pct": 5.4324553104615845,
+      "dropped_late_pct": 0.5499541704857929,
+      "rest_n_pairs": 7,
+      "rest_cells": 56976,
+      "rest_cover_pct": 45.721005335579896,
+      "rest_late_pct": 54.27899466442011
+    },
+    {
+      "dropped": "KaiserCanyon-WA",
+      "dropped_cells": 6468,
+      "dropped_share_pct": 10.735447891251306,
+      "dropped_late_pct": 13.03339517625232,
+      "rest_n_pairs": 7,
+      "rest_cells": 53781,
+      "rest_cover_pct": 44.03041966493743,
+      "rest_late_pct": 55.96958033506256
+    },
+    {
+      "dropped": "KaiserCanyon-WA",
+      "dropped_cells": 6281,
+      "dropped_share_pct": 10.425069295755947,
+      "dropped_late_pct": 7.8331475879637,
+      "rest_n_pairs": 7,
+      "rest_cells": 53968,
+      "rest_cover_pct": 43.5739697598577,
+      "rest_late_pct": 56.42603024014231
+    }
+  ],
+  "july_floor_cell": {
+    "n_pairs": 8,
+    "n_cells": 60249,
+    "coverage_possible_pct": 64.76953974339823,
+    "coverage_certain_pct": 0.0,
+    "late_miss_pct": 35.23046025660177,
+    "early_miss_pct": 0.0,
+    "never_reached_pct": 7.030822088333416,
+    "p90_unreached_pct": 9.359491443841392,
+    "p50_in_window_pct": 63.90645487891915,
+    "p10_not_after_window_pct": 64.76953974339823,
+    "p10_before_window_pct": 0.0,
+    "nonburnable_n": 3519,
+    "median_head_ratio": 3.3878573783358723,
+    "mean_head_ratio": 2.9110484016916454,
+    "by_fuel": {
+      "GS": {
+        "n": 26925,
+        "late": 13571,
+        "late_pct": 50.40297121634169,
+        "poss": 13354
+      },
+      "SH": {
+        "n": 8740,
+        "late": 3004,
+        "late_pct": 34.37070938215103,
+        "poss": 5736
+      },
+      "GR": {
+        "n": 16502,
+        "late": 4412,
+        "late_pct": 26.736153193552298,
+        "poss": 12090
+      },
+      "TL": {
+        "n": 3609,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 3609
+      },
+      "NB": {
+        "n": 3519,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 0
+      },
+      "TU": {
+        "n": 4473,
+        "late": 239,
+        "late_pct": 5.343170131902526,
+        "poss": 4234
+      }
+    },
+    "sum_check": {
+      "late_plus_early": 0.3523046025660177,
+      "late_eq_one_minus_cover": 0.0,
+      "p10_nec_eq_cover": 0.0
+    }
+  },
+  "july_floor_pair": {
+    "n_pairs": 8,
+    "coverage_possible_pct": 92.15384884716032,
+    "late_miss_pct": 7.846151152839674,
+    "early_miss_pct": 0.0,
+    "p50_in_window_pct": 91.93180100625942,
+    "p10_before_window_pct": 0.0,
+    "p90_unreached_pct": 2.0800135741265344,
+    "median_of_pair_head_ratios": 3.3878573783358723,
+    "median_of_pair_coverage_pct": 100.0
+  },
+  "july_floor_pairs": [
+    {
+      "name": "PorcupineRidge-OR",
+      "t0": "2026-07-17 04:53",
+      "dt_h": 12.95,
+      "cells": 33888,
+      "cell_share_pct": 56.246576706667334,
+      "cover_pct": 37.387865911237014,
+      "late_pct": 62.612134088762986,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 5639,
+      "p50_in": 12164,
+      "never_reached": 4235,
+      "obs_head_km": 22.464872579206855,
+      "p50_head_km": 10.440387923827352,
+      "head_ratio": 0.46474280621964514,
+      "obs_rate_kmh": 1.7347391953055487,
+      "obs_new_ac": 73951.4004854456,
+      "modeled_new_ac_p50": 52488.74134111905,
+      "notes": []
+    },
+    {
+      "name": "KaiserCanyon-WA",
+      "t0": "2026-07-19 23:58",
+      "dt_h": 35.63333333333333,
+      "cells": 6468,
+      "cell_share_pct": 10.735447891251306,
+      "cover_pct": 99.98453927025355,
+      "late_pct": 0.015460729746444033,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 6467,
+      "never_reached": 1,
+      "obs_head_km": 5.916772769001696,
+      "p50_head_km": 11.66568043450531,
+      "head_ratio": 1.9716289419837894,
+      "obs_rate_kmh": 0.16604600848461262,
+      "obs_new_ac": 13468.4541063297,
+      "modeled_new_ac_p50": 158761.2291960121,
+      "notes": []
+    },
+    {
+      "name": "KaiserCanyon-WA",
+      "t0": "2026-07-21 11:36",
+      "dt_h": 23.915555555555557,
+      "cells": 6281,
+      "cell_share_pct": 10.425069295755947,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 6281,
+      "never_reached": 0,
+      "obs_head_km": 3.3409280147887053,
+      "p50_head_km": 9.961174629530394,
+      "head_ratio": 2.9815591911699366,
+      "obs_rate_kmh": 0.13969685993820083,
+      "obs_new_ac": 12813.94608243762,
+      "modeled_new_ac_p50": 140364.95015138792,
+      "notes": []
+    },
+    {
+      "name": "KaiserCanyon-WA",
+      "t0": "2026-07-19 12:47",
+      "dt_h": 11.18361111111111,
+      "cells": 4943,
+      "cell_share_pct": 8.204285548307857,
+      "cover_pct": 99.85838559579203,
+      "late_pct": 0.14161440420797086,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 4922,
+      "never_reached": 0,
+      "obs_head_km": 3.2048088866576747,
+      "p50_head_km": 8.260901887808618,
+      "head_ratio": 2.5776581942843997,
+      "obs_rate_kmh": 0.2865629763783222,
+      "obs_new_ac": 10027.783485319036,
+      "modeled_new_ac_p50": 79567.75985866021,
+      "notes": []
+    },
+    {
+      "name": "Brewer-OR",
+      "t0": "2026-07-19 05:16",
+      "dt_h": 23.1,
+      "cells": 3273,
+      "cell_share_pct": 5.4324553104615845,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 3273,
+      "never_reached": 0,
+      "obs_head_km": 3.463538652880894,
+      "p50_head_km": 12.065707604612339,
+      "head_ratio": 3.483635903579812,
+      "obs_rate_kmh": 0.1499367382199521,
+      "obs_new_ac": 6555.088006870229,
+      "modeled_new_ac_p50": 88498.6919767228,
+      "notes": []
+    },
+    {
+      "name": "Brewer-OR",
+      "t0": "2026-07-17 04:53",
+      "dt_h": 48.38111111111111,
+      "cells": 2627,
+      "cell_share_pct": 4.360238344204883,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 2627,
+      "never_reached": 0,
+      "obs_head_km": 4.597053404083969,
+      "p50_head_km": 15.57416129362991,
+      "head_ratio": 3.3878573783358723,
+      "obs_rate_kmh": 0.09501752437075009,
+      "obs_new_ac": 5260.082834215255,
+      "modeled_new_ac_p50": 114312.72862545725,
+      "notes": []
+    },
+    {
+      "name": "Stookey-UT",
+      "t0": "2026-07-14 03:45",
+      "dt_h": 23.1,
+      "cells": 1934,
+      "cell_share_pct": 3.2100117844279574,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 1934,
+      "never_reached": 0,
+      "obs_head_km": 2.3051247254758254,
+      "p50_head_km": 10.062305898749052,
+      "head_ratio": 4.365189348559864,
+      "obs_rate_kmh": 0.09978894915479763,
+      "obs_new_ac": 3881.012410785152,
+      "modeled_new_ac_p50": 71831.7552337584,
+      "notes": []
+    },
+    {
+      "name": "Stookey-UT",
+      "t0": "2026-07-13 11:23",
+      "dt_h": 16.366666666666667,
+      "cells": 835,
+      "cell_share_pct": 1.3859151189231356,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "early": 0,
+      "certain": 0,
+      "p10_before": 0,
+      "p90_unreached": 0,
+      "p50_in": 835,
+      "never_reached": 0,
+      "obs_head_km": 2.5006399181009646,
+      "p50_head_km": 10.142884205195285,
+      "head_ratio": 4.056115449399845,
+      "obs_rate_kmh": 0.15278858970066994,
+      "obs_new_ac": 1677.3019083228248,
+      "modeled_new_ac_p50": 48337.51919569955,
+      "notes": []
+    }
+  ],
+  "july_floor_hhi": {
+    "hhi": 0.35156677893157334,
+    "eff_n": 2.8444098246115384,
+    "largest_share_pct": 56.24657670666733,
+    "top3_share_pct": 77.40709389367458
+  },
+  "july_floor_ex_porcupine_cell": {
+    "n_pairs": 7,
+    "n_cells": 26361,
+    "coverage_possible_pct": 99.96965213762755,
+    "coverage_certain_pct": 0.0,
+    "late_miss_pct": 0.030347862372444145,
+    "early_miss_pct": 0.0,
+    "never_reached_pct": 0.003793482796555518,
+    "p90_unreached_pct": 0.0,
+    "p50_in_window_pct": 99.91654337847578,
+    "p10_not_after_window_pct": 99.96965213762755,
+    "p10_before_window_pct": 0.0,
+    "nonburnable_n": 460,
+    "median_head_ratio": 3.3878573783358723,
+    "mean_head_ratio": 3.260520629616217,
+    "by_fuel": {
+      "GS": {
+        "n": 9582,
+        "late": 6,
+        "late_pct": 0.06261740763932373,
+        "poss": 9576
+      },
+      "SH": {
+        "n": 4247,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 4247
+      },
+      "GR": {
+        "n": 4726,
+        "late": 2,
+        "late_pct": 0.04231908590774439,
+        "poss": 4724
+      },
+      "TL": {
+        "n": 3608,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 3608
+      },
+      "NB": {
+        "n": 460,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 0
+      },
+      "TU": {
+        "n": 4198,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 4198
+      }
+    },
+    "sum_check": {
+      "late_plus_early": 0.00030347862372444144,
+      "late_eq_one_minus_cover": 4.320545657354735e-17,
+      "p10_nec_eq_cover": 0.0
+    }
+  },
+  "july_floor_ex_porcupine_pair": {
+    "n_pairs": 7,
+    "coverage_possible_pct": 99.97756069514936,
+    "late_miss_pct": 0.022439304850630698,
+    "early_miss_pct": 0.0,
+    "p50_in_window_pct": 99.93709943680423,
+    "p10_before_window_pct": 0.0,
+    "p90_unreached_pct": 0.0,
+    "median_of_pair_head_ratios": 3.3878573783358723,
+    "median_of_pair_coverage_pct": 100.0
+  },
+  "july_floor_loo": [
+    {
+      "dropped": "PorcupineRidge-OR",
+      "dropped_cells": 33888,
+      "dropped_share_pct": 56.246576706667334,
+      "dropped_late_pct": 62.612134088762986,
+      "rest_n_pairs": 7,
+      "rest_cells": 26361,
+      "rest_cover_pct": 99.96965213762755,
+      "rest_late_pct": 0.030347862372444145
+    },
+    {
+      "dropped": "Stookey-UT",
+      "dropped_cells": 835,
+      "dropped_share_pct": 1.3859151189231356,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 7,
+      "rest_cells": 59414,
+      "rest_cover_pct": 64.27441343791025,
+      "rest_late_pct": 35.725586562089745
+    },
+    {
+      "dropped": "Stookey-UT",
+      "dropped_cells": 1934,
+      "dropped_share_pct": 3.2100117844279574,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 7,
+      "rest_cells": 58315,
+      "rest_cover_pct": 63.601131784275054,
+      "rest_late_pct": 36.398868215724946
+    },
+    {
+      "dropped": "Brewer-OR",
+      "dropped_cells": 2627,
+      "dropped_share_pct": 4.360238344204883,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 7,
+      "rest_cells": 57622,
+      "rest_cover_pct": 63.163375099788276,
+      "rest_late_pct": 36.836624900211724
+    },
+    {
+      "dropped": "Brewer-OR",
+      "dropped_cells": 3273,
+      "dropped_share_pct": 5.4324553104615845,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 7,
+      "rest_cells": 56976,
+      "rest_cover_pct": 62.74571749508565,
+      "rest_late_pct": 37.25428250491435
+    },
+    {
+      "dropped": "KaiserCanyon-WA",
+      "dropped_cells": 4943,
+      "dropped_share_pct": 8.204285548307857,
+      "dropped_late_pct": 0.14161440420797086,
+      "rest_n_pairs": 7,
+      "rest_cells": 55306,
+      "rest_cover_pct": 61.63345749104979,
+      "rest_late_pct": 38.366542508950204
+    },
+    {
+      "dropped": "KaiserCanyon-WA",
+      "dropped_cells": 6281,
+      "dropped_share_pct": 10.425069295755947,
+      "dropped_late_pct": 0.0,
+      "rest_n_pairs": 7,
+      "rest_cells": 53968,
+      "rest_cover_pct": 60.66928550252001,
+      "rest_late_pct": 39.33071449747999
+    },
+    {
+      "dropped": "KaiserCanyon-WA",
+      "dropped_cells": 6468,
+      "dropped_share_pct": 10.735447891251306,
+      "dropped_late_pct": 0.015460729746444033,
+      "rest_n_pairs": 7,
+      "rest_cells": 53781,
+      "rest_cover_pct": 60.53438946839962,
+      "rest_late_pct": 39.46561053160038
+    }
+  ],
+  "july_pack_cell": {
+    "n_pairs": 8,
+    "n_cells": 60249,
+    "coverage_possible_pct": 65.45336852063934,
+    "coverage_certain_pct": 0.0,
+    "late_miss_pct": 34.54663147936065,
+    "early_miss_pct": 0.0,
+    "never_reached_pct": 5.321250145230627,
+    "p90_unreached_pct": 10.544573353914588,
+    "p50_in_window_pct": 64.07077295888729,
+    "p10_not_after_window_pct": 65.45336852063934,
+    "p10_before_window_pct": 0.0,
+    "nonburnable_n": 3519,
+    "median_head_ratio": 3.717334750700605,
+    "mean_head_ratio": 3.244230099884086,
+    "by_fuel": {
+      "GS": {
+        "n": 26925,
+        "late": 13333,
+        "late_pct": 49.51903435468895,
+        "poss": 13592
+      },
+      "SH": {
+        "n": 8740,
+        "late": 2914,
+        "late_pct": 33.34096109839817,
+        "poss": 5826
+      },
+      "GR": {
+        "n": 16502,
+        "late": 4332,
+        "late_pct": 26.25136347109441,
+        "poss": 12170
+      },
+      "TL": {
+        "n": 3609,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 3609
+      },
+      "NB": {
+        "n": 3519,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 0
+      },
+      "TU": {
+        "n": 4473,
+        "late": 235,
+        "late_pct": 5.2537446903644085,
+        "poss": 4238
+      }
+    },
+    "sum_check": {
+      "late_plus_early": 0.3454663147936065,
+      "late_eq_one_minus_cover": 5.551115123125783e-17,
+      "p10_nec_eq_cover": 0.0
+    }
+  },
+  "july_b05_ex_porcupine_cell": {
+    "n_pairs": 7,
+    "n_cells": 26361,
+    "coverage_possible_pct": 89.08235651151321,
+    "coverage_certain_pct": 0.0,
+    "late_miss_pct": 10.91764348848678,
+    "early_miss_pct": 0.0,
+    "never_reached_pct": 0.007586965593111036,
+    "p90_unreached_pct": 0.09863055271044346,
+    "p50_in_window_pct": 85.1523083342817,
+    "p10_not_after_window_pct": 89.08235651151321,
+    "p10_before_window_pct": 0.0,
+    "nonburnable_n": 460,
+    "median_head_ratio": 1.2621459876795713,
+    "mean_head_ratio": 2.0986557205408745,
+    "by_fuel": {
+      "GR": {
+        "n": 4726,
+        "late": 683,
+        "late_pct": 14.45196783749471,
+        "poss": 4043
+      },
+      "GS": {
+        "n": 9582,
+        "late": 1291,
+        "late_pct": 13.473178877061157,
+        "poss": 8291
+      },
+      "NB": {
+        "n": 460,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 0
+      },
+      "SH": {
+        "n": 4247,
+        "late": 252,
+        "late_pct": 5.93360018836826,
+        "poss": 3995
+      },
+      "TL": {
+        "n": 3608,
+        "late": 565,
+        "late_pct": 15.659645232815965,
+        "poss": 3043
+      },
+      "TU": {
+        "n": 4198,
+        "late": 87,
+        "late_pct": 2.0724154359218674,
+        "poss": 4111
+      }
+    },
+    "sum_check": {
+      "late_plus_early": 0.10917643488486779,
+      "late_eq_one_minus_cover": 4.163336342344337e-17,
+      "p10_nec_eq_cover": 0.0
+    }
+  },
+  "july_structural_b05": {
+    "label": "july_b05",
+    "n_cells": 60249,
+    "early_miss": 0,
+    "p10_before_window": 0,
+    "covered_certain": 0,
+    "p90_unreached": 2244,
+    "early_miss_pct": 0.0,
+    "p10_before_pct": 0.0,
+    "certain_pct": 0.0,
+    "p90_unreached_pct": 3.724543145944331,
+    "late_equals_one_minus_cover": true,
+    "pairs_where_late_plus_cover_ne_n": []
+  },
+  "july_structural_floor": {
+    "label": "july_floor",
+    "n_cells": 60249,
+    "early_miss": 0,
+    "p10_before_window": 0,
+    "covered_certain": 0,
+    "p90_unreached": 5639,
+    "early_miss_pct": 0.0,
+    "p10_before_pct": 0.0,
+    "certain_pct": 0.0,
+    "p90_unreached_pct": 9.359491443841392,
+    "late_equals_one_minus_cover": true,
+    "pairs_where_late_plus_cover_ne_n": []
+  },
+  "july_window_bins_floor": [
+    {
+      "dt_h": "(0,6]",
+      "n_pairs": 0,
+      "n_cells": 0,
+      "cover_pct": null,
+      "late_pct": null,
+      "p90_unreached_pct": null
+    },
+    {
+      "dt_h": "(6,12]",
+      "n_pairs": 1,
+      "n_cells": 4943,
+      "cover_pct": 99.85838559579203,
+      "late_pct": 0.14161440420797086,
+      "p90_unreached_pct": 0.0
+    },
+    {
+      "dt_h": "(12,24]",
+      "n_pairs": 5,
+      "n_cells": 46211,
+      "cover_pct": 54.08452532946701,
+      "late_pct": 45.915474670532994,
+      "p90_unreached_pct": 12.202722295557335
+    },
+    {
+      "dt_h": "(24,48]",
+      "n_pairs": 1,
+      "n_cells": 6468,
+      "cover_pct": 99.98453927025356,
+      "late_pct": 0.015460729746444033,
+      "p90_unreached_pct": 0.0
+    },
+    {
+      "dt_h": "(48,96]",
+      "n_pairs": 1,
+      "n_cells": 2627,
+      "cover_pct": 100.0,
+      "late_pct": 0.0,
+      "p90_unreached_pct": 0.0
+    }
+  ],
+  "july_fuel_late_b05": {
+    "GR": {
+      "n": 16502,
+      "late": 8612,
+      "late_pct": 52.1876136225912,
+      "cover_pct": 47.8123863774088
+    },
+    "GS": {
+      "n": 26925,
+      "late": 17287,
+      "late_pct": 64.20427112349118,
+      "cover_pct": 35.79572887650882
+    },
+    "SH": {
+      "n": 8740,
+      "late": 4122,
+      "late_pct": 47.162471395881006,
+      "cover_pct": 52.837528604118994
+    },
+    "TL": {
+      "n": 3609,
+      "late": 566,
+      "late_pct": 15.683014685508452,
+      "cover_pct": 84.31698531449155
+    },
+    "TU": {
+      "n": 4473,
+      "late": 357,
+      "late_pct": 7.981220657276995,
+      "cover_pct": 92.01877934272301
+    }
+  },
+  "july_fuel_late_floor": {
+    "GS": {
+      "n": 26925,
+      "late": 13571,
+      "late_pct": 50.40297121634169,
+      "cover_pct": 49.59702878365831
+    },
+    "SH": {
+      "n": 8740,
+      "late": 3004,
+      "late_pct": 34.37070938215103,
+      "cover_pct": 65.62929061784897
+    },
+    "GR": {
+      "n": 16502,
+      "late": 4412,
+      "late_pct": 26.736153193552298,
+      "cover_pct": 73.2638468064477
+    },
+    "TL": {
+      "n": 3609,
+      "late": 0,
+      "late_pct": 0.0,
+      "cover_pct": 100.0
+    },
+    "TU": {
+      "n": 4473,
+      "late": 239,
+      "late_pct": 5.343170131902526,
+      "cover_pct": 94.65682986809747
+    }
+  },
+  "cal_b05_cell": {
+    "n_pairs": 14,
+    "n_cells": 60062,
+    "coverage_possible_pct": 73.51903033532017,
+    "coverage_certain_pct": 0.0,
+    "late_miss_pct": 26.480969664679833,
+    "early_miss_pct": 0.0,
+    "never_reached_pct": 0.008324731111185108,
+    "p90_unreached_pct": 0.013319569777896174,
+    "p50_in_window_pct": 68.98205187972428,
+    "p10_not_after_window_pct": 73.51903033532017,
+    "p10_before_window_pct": 0.0,
+    "nonburnable_n": 3315,
+    "median_head_ratio": 1.772430374926548,
+    "mean_head_ratio": 2.1881525421399552,
+    "by_fuel": {
+      "TU": {
+        "n": 4334,
+        "late": 1071,
+        "late_pct": 24.711582833410244,
+        "poss": 3263
+      },
+      "NB": {
+        "n": 3315,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 0
+      },
+      "GR": {
+        "n": 8241,
+        "late": 3921,
+        "late_pct": 47.579177284310155,
+        "poss": 4320
+      },
+      "SH": {
+        "n": 34337,
+        "late": 6008,
+        "late_pct": 17.497160497422605,
+        "poss": 28329
+      },
+      "TL": {
+        "n": 237,
+        "late": 123,
+        "late_pct": 51.89873417721519,
+        "poss": 114
+      },
+      "GS": {
+        "n": 12913,
+        "late": 4782,
+        "late_pct": 37.03244792070007,
+        "poss": 8131
+      }
+    },
+    "sum_check": {
+      "late_plus_early": 0.2648096966467983,
+      "late_eq_one_minus_cover": 0.0,
+      "p10_nec_eq_cover": 0.0
+    }
+  },
+  "cal_floor_cell": {
+    "n_pairs": 14,
+    "n_cells": 60062,
+    "coverage_possible_pct": 91.48546501947988,
+    "coverage_certain_pct": 0.0,
+    "late_miss_pct": 8.514534980520128,
+    "early_miss_pct": 0.0,
+    "never_reached_pct": 0.008324731111185108,
+    "p90_unreached_pct": 0.0,
+    "p50_in_window_pct": 87.37304785055443,
+    "p10_not_after_window_pct": 91.48546501947988,
+    "p10_before_window_pct": 0.0,
+    "nonburnable_n": 3315,
+    "median_head_ratio": 2.7757032085377555,
+    "mean_head_ratio": 4.963471892896471,
+    "by_fuel": {
+      "TU": {
+        "n": 4334,
+        "late": 356,
+        "late_pct": 8.214120904476234,
+        "poss": 3978
+      },
+      "NB": {
+        "n": 3315,
+        "late": 0,
+        "late_pct": 0.0,
+        "poss": 0
+      },
+      "GR": {
+        "n": 8241,
+        "late": 750,
+        "late_pct": 9.100837277029486,
+        "poss": 7491
+      },
+      "SH": {
+        "n": 34337,
+        "late": 3296,
+        "late_pct": 9.598974866761802,
+        "poss": 31041
+      },
+      "TL": {
+        "n": 237,
+        "late": 34,
+        "late_pct": 14.345991561181435,
+        "poss": 203
+      },
+      "GS": {
+        "n": 12913,
+        "late": 678,
+        "late_pct": 5.250522729032758,
+        "poss": 12235
+      }
+    },
+    "sum_check": {
+      "late_plus_early": 0.08514534980520129,
+      "late_eq_one_minus_cover": 1.3877787807814457e-17,
+      "p10_nec_eq_cover": 0.0
+    }
+  },
+  "cal_structural_floor": {
+    "label": "cal_floor",
+    "n_cells": 60062,
+    "early_miss": 0,
+    "p10_before_window": 0,
+    "covered_certain": 0,
+    "p90_unreached": 0,
+    "early_miss_pct": 0.0,
+    "p10_before_pct": 0.0,
+    "certain_pct": 0.0,
+    "p90_unreached_pct": 0.0,
+    "late_equals_one_minus_cover": true,
+    "pairs_where_late_plus_cover_ne_n": []
+  },
+  "gust_shape": "list",
+  "gust_keys": [
+    "n",
+    "cover",
+    "p10_nec",
+    "late",
+    "early",
+    "p50_in",
+    "head",
+    "blend"
+  ],
+  "selection_aug": {
+    "n_discovered": 94,
+    "n_kept": 61,
+    "n_dropped": 33,
+    "kept_acres": {
+      "n": 61,
+      "min": 1056.3563448023474,
+      "p50": 8993.233563429923,
+      "mean": 41646.45027579929,
+      "max": 355120.7213417288,
+      "ge_1000": 61,
+      "ge_10000": 28,
+      "single_row": 0,
+      "span0": 0
+    },
+    "dropped_acres": {
+      "n": 33,
+      "min": 1000.0,
+      "p50": 5070.307011909555,
+      "mean": 30782.1254305246,
+      "max": 575163.4523846689,
+      "ge_1000": 33,
+      "ge_10000": 7,
+      "single_row": 18,
+      "span0": 28
+    },
+    "drop_reasons": {
+      "n_rows<=1 (no pair)": 18,
+      "other_or_filter": 5,
+      "span_h=0": 10
+    },
+    "kept_names": [
+      "MP18",
+      "GANN",
+      "Bug",
+      "GRASSHOPPER",
+      "Hagen",
+      "Bald Mountain",
+      "Coleman Creek",
+      "Paradise",
+      "AUSTIN",
+      "0445 CROSSWHITE",
+      "Wrights Spring",
+      "FOX",
+      "0587 SHINGLE",
+      "McCully",
+      "Bench",
+      "Bologna",
+      "0658 ROUND BUTTE",
+      "Picture Rock",
+      "Olive Butte",
+      "LITTLE GIANT",
+      "Modrite",
+      "AUTUMN LANE",
+      "THREE QUEENS",
+      "HUDSPETH",
+      "SINLAHEKIN",
+      "MITRE ROCK",
+      "HIGH LAVA",
+      "OLD TRAILS",
+      "Border 2",
+      "BRADEEN HILL",
+      "PTARMIGAN",
+      "Luna",
+      "NUNAMAKER ROAD",
+      "FAIRVIEW",
+      "KING",
+      "Upper Smith",
+      "Moose Mountain",
+      "Tartar",
+      "Silver",
+      "Skillet",
+      "Sand Creek",
+      "Bobcat Lakes",
+      "Moose",
+      "Silvertip",
+      "Black Bear",
+      "Camp Creek",
+      "Windmill",
+      "Elder 1",
+      "Hawk",
+      "Stallion",
+      "McConnell",
+      "Ward",
+      "Black Canyon",
+      "Widemouth 2",
+      "Slough Canyon",
+      "Tom Creek",
+      "Rocky Canyon",
+      "Elk",
+      "Gold Mountain",
+      "Rio Blanco",
+      "Post"
+    ],
+    "dropped_names_sample": [
+      {
+        "name": "BIG GRASS",
+        "acres": 575163.4523846689,
+        "n_rows": 1,
+        "span_h": 0.0,
+        "state": "US-OR"
+      },
+      {
+        "name": "Lee",
+        "acres": 123222.92691542949,
+        "n_rows": 2,
+        "span_h": 0.0,
+        "state": "US-CO"
+      },
+      {
+        "name": "Aspen Acres",
+        "acres": 102003.46033741273,
+        "n_rows": 2,
+        "span_h": 0.0,
+        "state": "US-CO"
+      },
+      {
+        "name": "Colwash",
+        "acres": 39102.90278649851,
+        "n_rows": 8,
+        "span_h": 0.0,
+        "state": "US-WA"
+      },
+      {
+        "name": "LYONS FERRY",
+        "acres": 33930.99,
+        "n_rows": 1,
+        "span_h": 0.0,
+        "state": "US-WA"
+      },
+      {
+        "name": "Timber",
+        "acres": 15897.538118981658,
+        "n_rows": 1,
+        "span_h": 0.0,
+        "state": "US-CA"
+      },
+      {
+        "name": "Calico",
+        "acres": 15316.267680210662,
+        "n_rows": 1,
+        "span_h": 0.0,
+        "state": "US-NV"
+      },
+      {
+        "name": "Brushy Canyon",
+        "acres": 9980.569528819533,
+        "n_rows": 1,
+        "span_h": 0.0,
+        "state": "US-UT"
+      },
+      {
+        "name": "S-1 VYA",
+        "acres": 9692.44990251417,
+        "n_rows": 2,
+        "span_h": 1.0,
+        "state": "US-NV"
+      },
+      {
+        "name": "CROOKED",
+        "acres": 8603.936149079424,
+        "n_rows": 1,
+        "span_h": 0.0,
+        "state": "US-ID"
+      },
+      {
+        "name": "Plaskett",
+        "acres": 8241.082588513942,
+        "n_rows": 1,
+        "span_h": 0.0,
+        "state": "US-CA"
+      },
+      {
+        "name": "LITTLE GOOSE",
+        "acres": 7563.5,
+        "n_rows": 2,
+        "span_h": 0.0,
+        "state": "US-WA"
+      },
+      {
+        "name": "Johnson Canyon",
+        "acres": 6889.74571178815,
+        "n_rows": 1,
+        "span_h": 0.0,
+        "state": "US-UT"
+      },
+      {
+        "name": "RA 6 ADA CO CLAREMONT",
+        "acres": 6813.61136343596,
+        "n_rows": 1,
+        "span_h": 0.0,
+        "state": "US-ID"
+      },
+      {
+        "name": "Slough Grass",
+        "acres": 6400.0,
+        "n_rows": 2,
+        "span_h": 29.545902777777776,
+        "state": "US-MT"
+      },
+      {
+        "name": "MITCHELL SPRINGS",
+        "acres": 5444.419709924838,
+        "n_rows": 2,
+        "span_h": 9.293740277753935,
+        "state": "US-OR"
+      },
+      {
+        "name": "MM115 HWY 20",
+        "acres": 5070.307011909555,
+        "n_rows": 2,
+        "span_h": 0.0,
+        "state": "US-ID"
+      },
+      {
+        "name": "Eggo",
+        "acres": 4225.0,
+        "n_rows": 1,
+        "span_h": 0.0,
+        "state": "US-OR"
+      },
+      {
+        "name": "Burnt Creek",
+        "acres": 4168.619899882307,
+        "n_rows": 2,
+        "span_h": 8427.483333333334,
+        "state": "US-OR"
+      },
+      {
+        "name": "Big Buffalo",
+        "acres": 3597.0,
+        "n_rows": 3,
+        "span_h": 4.361112912495931e-05,
+        "state": "US-MT"
+      },
+      {
+        "name": "Fred Mt",
+        "acres": 3481.88329612558,
+        "n_rows": 3,
+        "span_h": 0.0,
+        "state": "US-NV"
+      },
+      {
+        "name": "Grotto",
+        "acres": 3177.3158203439143,
+        "n_rows": 2,
+        "span_h": 0.0,
+        "state": "US-ID"
+      },
+      {
+        "name": "Mutual Aid Inc 20344",
+        "acres": 2589.04,
+        "n_rows": 1,
+        "span_h": 0.0,
+        "state": "US-WA"
+      },
+      {
+        "name": "Big Rock",
+        "acres": 2481.5488765333785,
+        "n_rows": 1,
+        "span_h": 0.0,
+        "state": "US-ID"
+      },
+      {
+        "name": "ANTELOPE",
+        "acres": 2410.24,
+        "n_rows": 1,
+        "span_h": 0.0,
+        "state": "US-CA"
+      }
+    ],
+    "kept_detail": [
+      {
+        "name": "0445 CROSSWHITE",
+        "acres": 355120.7213417288,
+        "n_rows": 34,
+        "span_h": 359.51666666666665,
+        "state": "US-OR"
+      },
+      {
+        "name": "Coleman Creek",
+        "acres": 309828.6681538017,
+        "n_rows": 41,
+        "span_h": 24.783333333333335,
+        "state": "US-OR"
+      },
+      {
+        "name": "Bald Mountain",
+        "acres": 308721.1972699391,
+        "n_rows": 41,
+        "span_h": 184.2,
+        "state": "US-OR"
+      },
+      {
+        "name": "SINLAHEKIN",
+        "acres": 166867.85750758377,
+        "n_rows": 34,
+        "span_h": 714.4375,
+        "state": "US-WA"
+      },
+      {
+        "name": "Tartar",
+        "acres": 158026.6904337258,
+        "n_rows": 17,
+        "span_h": 118.45,
+        "state": "US-ID"
+      },
+      {
+        "name": "LITTLE GIANT",
+        "acres": 146042.3034561018,
+        "n_rows": 48,
+        "span_h": 502.93333333333334,
+        "state": "US-WA"
+      },
+      {
+        "name": "GRASSHOPPER",
+        "acres": 93960.74371068508,
+        "n_rows": 82,
+        "span_h": 718.0333333333333,
+        "state": "US-OR"
+      },
+      {
+        "name": "Bug",
+        "acres": 93846.72525551132,
+        "n_rows": 21,
+        "span_h": 211.81666666666666,
+        "state": "US-CA"
+      },
+      {
+        "name": "FOX",
+        "acres": 79008.09379672928,
+        "n_rows": 16,
+        "span_h": 181.91666666666666,
+        "state": "US-OR"
+      },
+      {
+        "name": "0587 SHINGLE",
+        "acres": 73183.44278264341,
+        "n_rows": 12,
+        "span_h": 471.92861111111114,
+        "state": "US-OR"
+      },
+      {
+        "name": "Widemouth 2",
+        "acres": 68354.13754657705,
+        "n_rows": 5,
+        "span_h": 62.583333333333336,
+        "state": "US-UT"
+      },
+      {
+        "name": "Bench",
+        "acres": 67237.76455482733,
+        "n_rows": 9,
+        "span_h": 190.2,
+        "state": "US-OR"
+      },
+      {
+        "name": "Hagen",
+        "acres": 61125.33690375538,
+        "n_rows": 61,
+        "span_h": 710.6825,
+        "state": "US-OR"
+      },
+      {
+        "name": "Modrite",
+        "acres": 57788.175353809755,
+        "n_rows": 44,
+        "span_h": 72.13333333333334,
+        "state": "US-WA"
+      },
+      {
+        "name": "Wrights Spring",
+        "acres": 55134.464934912685,
+        "n_rows": 29,
+        "span_h": 588.3333333333334,
+        "state": "US-OR"
+      },
+      {
+        "name": "Stallion",
+        "acres": 40690.65817063921,
+        "n_rows": 7,
+        "span_h": 160.93333333333334,
+        "state": "US-NV"
+      },
+      {
+        "name": "Gold Mountain",
+        "acres": 39744.25773653962,
+        "n_rows": 15,
+        "span_h": 34138.4,
+        "state": "US-CO"
+      },
+      {
+        "name": "Sand Creek",
+        "acres": 34189.30162529645,
+        "n_rows": 30,
+        "span_h": 565.6333333333333,
+        "state": "US-MT"
+      },
+      {
+        "name": "McConnell",
+        "acres": 32648.03558348798,
+        "n_rows": 7,
+        "span_h": 98.99972222222222,
+        "state": "US-NV"
+      },
+      {
+        "name": "PTARMIGAN",
+        "acres": 25166.19,
+        "n_rows": 12,
+        "span_h": 404.0516666666667,
+        "state": "US-WA"
+      },
+      {
+        "name": "Border 2",
+        "acres": 22539.81,
+        "n_rows": 17,
+        "span_h": 583.6825,
+        "state": "US-WA"
+      },
+      {
+        "name": "NUNAMAKER ROAD",
+        "acres": 20206.28,
+        "n_rows": 4,
+        "span_h": 27.65296805553966,
+        "state": "US-WA"
+      },
+      {
+        "name": "Rocky Canyon",
+        "acres": 16464.067602721472,
+        "n_rows": 3,
+        "span_h": 59.964444444444446,
+        "state": "US-UT"
+      },
+      {
+        "name": "Hawk",
+        "acres": 15084.86656547618,
+        "n_rows": 9,
+        "span_h": 204.65,
+        "state": "US-NV"
+      },
+      {
+        "name": "AUSTIN",
+        "acres": 11682.30553434094,
+        "n_rows": 40,
+        "span_h": 483.04833333333335,
+        "state": "US-OR"
+      },
+      {
+        "name": "McCully",
+        "acres": 11231.014592781728,
+        "n_rows": 10,
+        "span_h": 170.3672222222222,
+        "state": "US-OR"
+      },
+      {
+        "name": "Bobcat Lakes",
+        "acres": 10802.196168704604,
+        "n_rows": 28,
+        "span_h": 675.85,
+        "state": "US-MT"
+      },
+      {
+        "name": "GANN",
+        "acres": 10374.027170266681,
+        "n_rows": 22,
+        "span_h": 25.08861111111111,
+        "state": "US-CA"
+      },
+      {
+        "name": "Camp Creek",
+        "acres": 9612.669584517353,
+        "n_rows": 6,
+        "span_h": 128.38333333333333,
+        "state": "US-MT"
+      },
+      {
+        "name": "Paradise",
+        "acres": 9466.284642579389,
+        "n_rows": 41,
+        "span_h": 712.2825,
+        "state": "US-OR"
+      },
+      {
+        "name": "THREE QUEENS",
+        "acres": 8993.233563429923,
+        "n_rows": 38,
+        "span_h": 551.4166666666666,
+        "state": "US-WA"
+      },
+      {
+        "name": "Ward",
+        "acres": 8781.692141574904,
+        "n_rows": 3,
+        "span_h": 42.38333333333333,
+        "state": "US-NV"
+      },
+      {
+        "name": "MP18",
+        "acres": 7610.464407575269,
+        "n_rows": 42,
+        "span_h": 114.7525,
+        "state": "US-CA"
+      },
+      {
+        "name": "Elk",
+        "acres": 7404.82075293541,
+        "n_rows": 18,
+        "span_h": 298.0833333333333,
+        "state": "US-CO"
+      },
+      {
+        "name": "Silvertip",
+        "acres": 7247.006388,
+        "n_rows": 12,
+        "span_h": 644.8,
+        "state": "US-MT"
+      },
+      {
+        "name": "HUDSPETH",
+        "acres": 6725.956729088255,
+        "n_rows": 35,
+        "span_h": 288.5964247222079,
+        "state": "US-WA"
+      },
+      {
+        "name": "Moose",
+        "acres": 5983.101994610752,
+        "n_rows": 24,
+        "span_h": 643.1666666666666,
+        "state": "US-MT"
+      },
+      {
+        "name": "AUTUMN LANE",
+        "acres": 5878.450885962074,
+        "n_rows": 39,
+        "span_h": 89.15583333333333,
+        "state": "US-WA"
+      },
+      {
+        "name": "Moose Mountain",
+        "acres": 5486.924871395437,
+        "n_rows": 18,
+        "span_h": 482.31666666666666,
+        "state": "US-ID"
+      },
+      {
+        "name": "Luna",
+        "acres": 5470.403081295288,
+        "n_rows": 12,
+        "span_h": 608.45,
+        "state": "US-WA"
+      },
+      {
+        "name": "Tom Creek",
+        "acres": 4991.269526547814,
+        "n_rows": 4,
+        "span_h": 51.038333333333334,
+        "state": "US-UT"
+      },
+      {
+        "name": "Bologna",
+        "acres": 4771.0,
+        "n_rows": 5,
+        "span_h": 53.21611111111111,
+        "state": "US-OR"
+      },
+      {
+        "name": "Slough Canyon",
+        "acres": 4742.049184372984,
+        "n_rows": 4,
+        "span_h": 49.016666666666666,
+        "state": "US-UT"
+      },
+      {
+        "name": "Upper Smith",
+        "acres": 4576.362804772188,
+        "n_rows": 20,
+        "span_h": 680.5333333333333,
+        "state": "US-ID"
+      },
+      {
+        "name": "MITRE ROCK",
+        "acres": 4518.492734370413,
+        "n_rows": 21,
+        "span_h": 120.9575,
+        "state": "US-WA"
+      },
+      {
+        "name": "BRADEEN HILL",
+        "acres": 4423.959873862251,
+        "n_rows": 13,
+        "span_h": 310.1333333333333,
+        "state": "US-WA"
+      },
+      {
+        "name": "Post",
+        "acres": 4342.7490542955165,
+        "n_rows": 4,
+        "span_h": 48.55,
+        "state": "US-CO"
+      },
+      {
+        "name": "Windmill",
+        "acres": 4253.099534487476,
+        "n_rows": 6,
+        "span_h": 51.158055555555556,
+        "state": "US-MT"
+      },
+      {
+        "name": "OLD TRAILS",
+        "acres": 3620.5418509788587,
+        "n_rows": 19,
+        "span_h": 107.18333333333334,
+        "state": "US-WA"
+      },
+      {
+        "name": "Black Canyon",
+        "acres": 3549.299080468515,
+        "n_rows": 13,
+        "span_h": 363.6430555555556,
+        "state": "US-UT"
+      },
+      {
+        "name": "Skillet",
+        "acres": 3384.341425537982,
+        "n_rows": 53,
+        "span_h": 459.00666666666666,
+        "state": "US-MT"
+      },
+      {
+        "name": "Olive Butte",
+        "acres": 3091.8690466013577,
+        "n_rows": 3,
+        "span_h": 47.083333333333336,
+        "state": "US-OR"
+      },
+      {
+        "name": "HIGH LAVA",
+        "acres": 2893.600279357534,
+        "n_rows": 20,
+        "span_h": 507.25,
+        "state": "US-WA"
+      },
+      {
+        "name": "KING",
+        "acres": 2508.1756710707064,
+        "n_rows": 3,
+        "span_h": 68.05,
+        "state": "US-WA"
+      },
+      {
+        "name": "Silver",
+        "acres": 2424.245960490723,
+        "n_rows": 4,
+        "span_h": 49.0,
+        "state": "US-ID"
+      },
+      {
+        "name": "Black Bear",
+        "acres": 2144.6078097990166,
+        "n_rows": 8,
+        "span_h": 89.18333333333334,
+        "state": "US-MT"
+      },
+      {
+        "name": "Picture Rock",
+        "acres": 1625.0,
+        "n_rows": 3,
+        "span_h": 267.7497222222222,
+        "state": "US-OR"
+      },
+      {
+        "name": "Rio Blanco",
+        "acres": 1387.7401447448178,
+        "n_rows": 12,
+        "span_h": 168.0,
+        "state": "US-CO"
+      },
+      {
+        "name": "Elder 1",
+        "acres": 1235.2369764812215,
+        "n_rows": 4,
+        "span_h": 47.45,
+        "state": "US-MT"
+      },
+      {
+        "name": "0658 ROUND BUTTE",
+        "acres": 1163.1267251638428,
+        "n_rows": 4,
+        "span_h": 166.11666666666667,
+        "state": "US-OR"
+      },
+      {
+        "name": "FAIRVIEW",
+        "acres": 1056.3563448023474,
+        "n_rows": 3,
+        "span_h": 33.03333333333333,
+        "state": "US-WA"
+      }
+    ]
+  }
+}
