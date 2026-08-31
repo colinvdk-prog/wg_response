@@ -1,0 +1,449 @@
+{
+  "summary": {
+    "watch_health": {
+      "http_status": 200,
+      "requested_at_utc": "2026-08-31T23:21:46.660Z",
+      "received_at_utc": "2026-08-31T23:21:46.876Z",
+      "json": {
+        "ok": true,
+        "degraded": false,
+        "last_cycle_t_s": 1788215666.9265664,
+        "last_cycle_age_s": 2840.6818521022797,
+        "cycles_run": 352,
+        "operator_event_count": 0
+      },
+      "derived_last_cycle_age_s_at_receipt": 2839.9494335651398,
+      "last_cycle_utc": "2026-08-31T22:34:26.926Z"
+    },
+    "simulator_health": {
+      "http_status": 200,
+      "requested_at_utc": "2026-08-31T23:21:46.876Z",
+      "received_at_utc": "2026-08-31T23:21:47.072Z",
+      "json": {
+        "ok": true
+      }
+    },
+    "watcher_state_unauthenticated": {
+      "http_status": 200,
+      "requested_at_utc": "2026-08-31T23:21:47.072Z",
+      "received_at_utc": "2026-08-31T23:21:47.159Z",
+      "body_bytes_utf8": 51118,
+      "top_level_fields": [
+        "live",
+        "aoi",
+        "bbox",
+        "aoi_desc",
+        "poll_period_s",
+        "cycles_run",
+        "started_at_s",
+        "restored",
+        "startup_notes",
+        "safe_zones",
+        "crews",
+        "events",
+        "operator_log",
+        "now_s",
+        "last_cycle_t_s",
+        "last_cycle_age_s",
+        "degraded",
+        "operator_events",
+        "notes",
+        "incidents",
+        "clients",
+        "plan"
+      ],
+      "cadence_staleness_related_fields": [
+        {
+          "path": "$.poll_period_s",
+          "value": 300
+        },
+        {
+          "path": "$.cycles_run",
+          "value": 352
+        },
+        {
+          "path": "$.started_at_s",
+          "value": 1787712568.9372928
+        },
+        {
+          "path": "$.restored",
+          "value": false
+        },
+        {
+          "path": "$.operator_log[0].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[1].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[2].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[3].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[6].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[7].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[8].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[9].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[10].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[11].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[12].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[13].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[14].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[15].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[16].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[17].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[18].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[19].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[20].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[21].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[22].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[23].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[24].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[25].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[26].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[27].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[28].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[29].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[30].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[31].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[32].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[33].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[34].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[35].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[36].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[37].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[38].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[39].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[40].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[52].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[53].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[54].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[55].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[60].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[61].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[62].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[63].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[64].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[65].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[66].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[67].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[68].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[69].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[70].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[71].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[72].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[73].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[74].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[75].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[76].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[77].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[78].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[79].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[80].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[81].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[82].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[83].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[84].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[85].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[86].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[87].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[88].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[89].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[90].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[91].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[92].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[93].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[94].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[95].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[96].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[97].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[98].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.operator_log[99].detail.blind_cycles",
+          "value": 1
+        },
+        {
+          "path": "$.last_cycle_t_s",
+          "value": 1788215666.9265664
+        },
+        {
+          "path": "$.last_cycle_age_s",
+          "value": 2840.9231448173523
+        },
+        {
+          "path": "$.degraded",
+          "value": false
+        },
+        {
+          "path": "$.plan.objective_breakdown.solver_s",
+          "value": 160.8033974649734
+        }
+      ]
+    }
+  },
+  "raw_responses": {
+    "watcher_health": {
+      "url": "https://y372zmpfuj.us-west-2.awsapprunner.com/healthz",
+      "requested_at_utc": "2026-08-31T23:21:46.660Z",
+      "received_at_utc": "2026-08-31T23:21:46.876Z",
+      "received_epoch_s": 1788218506.876,
+      "http_status": 200,
+      "body": "{\"ok\": true, \"degraded\": false, \"last_cycle_t_s\": 1788215666.9265664, \"last_cycle_age_s\": 2840.6818521022797, \"cycles_run\": 352, \"operator_event_count\": 0}"
+    },
+    "simulator_health": {
+      "url": "https://m897yqgsmt.us-west-2.awsapprunner.com/healthz",
+      "requested_at_utc": "2026-08-31T23:21:46.876Z",
+      "received_at_utc": "2026-08-31T23:21:47.072Z",
+      "received_epoch_s": 1788218507.072,
+      "http_status": 200,
+      "body": "{\"ok\": true}"
+    },
+    "watcher_state": {
+      "url": "https://y372zmpfuj.us-west-2.awsapprunner.com/api/state",
+      "requested_at_utc": "2026-08-31T23:21:47.072Z",
+      "received_at_utc": "2026-08-31T23:21:47.159Z",
+      "received_epoch_s": 1788218507.159,
+      "http_status": 200,
+      "body": "{\"live\": true, \"aoi\": {\"west\": -119.3, \"south\": 33.6, \"east\": -117.5, \"north\": 34.6}, \"bbox\": {\"west\": -119.3, \"south\": 33.6, \"east\": -117.5, \"north\": 34.6}, \"aoi_desc\": \"zones file aoi_socal_shadow.json (socal_wui_arc; union bbox -119.3,33.6,-117.5,34.6; 4 safe zone(s))\", \"poll_period_s\": 300.0, \"cycles_run\": 352, \"started_at_s\": 1787712568.9372928, \"restored\": false, \"startup_notes\": [\"wind gust blend ACTIVE: effective wind = sustained + 0.5 x (gust - sustained) [hindcast-calibrated]\", \"grass ROS floor ACTIVE: grass-class head ROS >= 0.1 x U10 [hindcast-validated: calibration 91.5% / OOS-normal ~100% coverage, 0% early-miss]\", \"extreme-regime posture ARMED: burnable domain >= 0.6 grass-class (GR+GS) + effective wind >= 4 m/s within 24 h -> ladder evaluates on pessimistic (p10) arrival + message banner\", \"FirmsFeed skipped \\u2014 no FIRMS_MAP_KEY in the environment (hotspot layer off; free key in ~5 min: https://firms.modaps.eosdis.nasa.gov/api/area/)\", \"terrain: live LANDFIRE via LFPS (zip+tile cache: /tmp/wgstate/terrain_cache; job email ops@thewildfireguardian.com \\u2014 override with env LFPS_EMAIL)\"], \"safe_zones\": [{\"zone_id\": \"SHADOW-z1-zuma\", \"lat\": 34.021, \"lon\": -118.831, \"name\": \"UNVERIFIED Zuma Beach lot / PCH\"}, {\"zone_id\": \"SHADOW-z2-i5sr14\", \"lat\": 34.339, \"lon\": -118.509, \"name\": \"UNVERIFIED I-5 / SR-14 junction\"}, {\"zone_id\": \"SHADOW-z3-rosebowl\", \"lat\": 34.1613, \"lon\": -118.1676, \"name\": \"UNVERIFIED Rose Bowl lots / Pasadena\"}, {\"zone_id\": \"SHADOW-z4-sanberdo\", \"lat\": 34.074, \"lon\": -117.312, \"name\": \"UNVERIFIED San Bernardino I-10/I-215\"}], \"crews\": [], \"events\": [{\"t_s\": 1787712568.9372928, \"client_id\": \"mock-client-006\", \"incident_id\": \"be948e91-346d-4e3d-866f-3933eb07e14d\", \"prev\": \"none\", \"state\": \"notice_72h\", \"eta_p50_h\": 58.653736830088825, \"eta_p10_h\": 53.475640905764365, \"message\": \"Projected fire arrival at Mock Client 6: ~59h (median), 53h (pessimistic) \\u2014 HANGER (be948e91-346\\u2026). Advance notice \\u2014 crews being scheduled.\"}, {\"t_s\": 1787718742.625769, \"client_id\": \"mock-client-006\", \"incident_id\": \"be948e91-346d-4e3d-866f-3933eb07e14d\", \"prev\": \"notice_72h\", \"state\": \"watch\", \"eta_p50_h\": 57.49596892244286, \"eta_p10_h\": 52.93785718520483, \"message\": \"Monitoring Mock Client 6 for HANGER (be948e91-346\\u2026): projected fire arrival ~57h (median), 53h (pessimistic). Under continuous watch; crews scheduled as needed.\"}, {\"t_s\": 1787772448.9244251, \"client_id\": \"mock-client-006\", \"incident_id\": \"be948e91-346d-4e3d-866f-3933eb07e14d\", \"prev\": \"watch\", \"state\": \"cleared\", \"eta_p50_h\": null, \"eta_p10_h\": null, \"message\": \"All clear for Mock Client 6: no projected fire arrival within the 72h alert window for HANGER (be948e91-346\\u2026).\"}, {\"t_s\": 1787774428.2315583, \"client_id\": \"mock-client-006\", \"incident_id\": \"90ca1d11-a0d9-48c7-9c87-d27bba39b509\", \"prev\": \"none\", \"state\": \"extreme_24h\", \"eta_p50_h\": 15.053400317695406, \"eta_p10_h\": 12.66557297958268, \"message\": \"EXTREME alert for Mock Client 6 \\u2014 LAC-304450 (90ca1d11-a0d\\u2026): projected fire arrival ~15h (median), 13h (pessimistic). Crew dispatch underway \\u2014 ensure property access now.\"}, {\"t_s\": 1787780996.3325386, \"client_id\": \"mock-client-004\", \"incident_id\": \"90ca1d11-a0d9-48c7-9c87-d27bba39b509\", \"prev\": \"none\", \"state\": \"notice_72h\", \"eta_p50_h\": 71.24073896156418, \"eta_p10_h\": 61.71144770834181, \"message\": \"Projected fire arrival at Mock Client 4: ~71h (median), 62h (pessimistic) \\u2014 LAC-304450 (90ca1d11-a0d\\u2026). Advance notice \\u2014 crews being scheduled.\"}, {\"t_s\": 1787782470.7244225, \"client_id\": \"mock-client-004\", \"incident_id\": \"90ca1d11-a0d9-48c7-9c87-d27bba39b509\", \"prev\": \"notice_72h\", \"state\": \"watch\", \"eta_p50_h\": 71.24073896156418, \"eta_p10_h\": 61.71144770834181, \"message\": \"Monitoring Mock Client 4 for LAC-304450 (90ca1d11-a0d\\u2026): projected fire arrival ~71h (median), 62h (pessimistic). Under continuous watch; crews scheduled as needed.\"}, {\"t_s\": 1787816336.5306153, \"client_id\": \"mock-client-006\", \"incident_id\": \"90ca1d11-a0d9-48c7-9c87-d27bba39b509\", \"prev\": \"extreme_24h\", \"state\": \"watch\", \"eta_p50_h\": 32.283377769125835, \"eta_p10_h\": 27.268427924513816, \"message\": \"Monitoring Mock Client 6 for LAC-304450 (90ca1d11-a0d\\u2026): projected fire arrival ~32h (median), 27h (pessimistic). Under continuous watch; crews scheduled as needed.\"}, {\"t_s\": 1787854212.3244286, \"client_id\": \"mock-client-004\", \"incident_id\": \"90ca1d11-a0d9-48c7-9c87-d27bba39b509\", \"prev\": \"watch\", \"state\": \"cleared\", \"eta_p50_h\": 81.67790071633127, \"eta_p10_h\": 80.18473950121138, \"message\": \"All clear for Mock Client 4: no projected fire arrival within the 72h alert window for LAC-304450 (90ca1d11-a0d\\u2026).\"}, {\"t_s\": 1787909561.829113, \"client_id\": \"mock-client-006\", \"incident_id\": \"90ca1d11-a0d9-48c7-9c87-d27bba39b509\", \"prev\": \"watch\", \"state\": \"extreme_24h\", \"eta_p50_h\": 23.844167858163516, \"eta_p10_h\": 21.794373114572632, \"message\": \"EXTREME alert for Mock Client 6 \\u2014 LAC-304450 (90ca1d11-a0d\\u2026): projected fire arrival ~24h (median), 22h (pessimistic). Crew dispatch underway \\u2014 ensure property access now.\"}, {\"t_s\": 1787930285.6266353, \"client_id\": \"mock-client-000\", \"incident_id\": \"5a2db248-4450-48d2-925c-0b1404f927a8\", \"prev\": \"none\", \"state\": \"extreme_24h\", \"eta_p50_h\": 0.0, \"eta_p10_h\": 0.0, \"message\": \"EXTREME alert for Mock Client 0 \\u2014 SUMMIT (5a2db248-445\\u2026): fire projected AT the property NOW \\u2014 do not approach; crews withdrawing.\"}, {\"t_s\": 1787932122.628243, \"client_id\": \"mock-client-000\", \"incident_id\": \"5a2db248-4450-48d2-925c-0b1404f927a8\", \"prev\": \"extreme_24h\", \"state\": \"impacted\", \"eta_p50_h\": 0.0, \"eta_p10_h\": 0.0, \"message\": \"Projected fire arrival time has passed at Mock Client 0 (SUMMIT (5a2db248-445\\u2026)). Crews are clear; post-impact assessment to follow.\"}, {\"t_s\": 1788036727.3345857, \"client_id\": \"mock-client-006\", \"incident_id\": \"90ca1d11-a0d9-48c7-9c87-d27bba39b509\", \"prev\": \"extreme_24h\", \"state\": \"cleared\", \"eta_p50_h\": null, \"eta_p10_h\": null, \"message\": \"All clear for Mock Client 6: no projected fire arrival within the 72h alert window for LAC-304450 (90ca1d11-a0d\\u2026).\"}, {\"t_s\": 1788072389.8300824, \"client_id\": \"mock-client-004\", \"incident_id\": \"b42a7aa5-34f4-471c-895d-e1ec55adb0d6\", \"prev\": \"none\", \"state\": \"notice_72h\", \"eta_p50_h\": 71.83589113487137, \"eta_p10_h\": 68.88408610800901, \"message\": \"Projected fire arrival at Mock Client 4: ~72h (median), 69h (pessimistic) \\u2014 LAC-309685 (b42a7aa5-34f\\u2026). Advance notice \\u2014 crews being scheduled.\"}, {\"t_s\": 1788072389.8300824, \"client_id\": \"mock-client-006\", \"incident_id\": \"b42a7aa5-34f4-471c-895d-e1ec55adb0d6\", \"prev\": \"none\", \"state\": \"notice_72h\", \"eta_p50_h\": 54.01859092798498, \"eta_p10_h\": 51.492773560550475, \"message\": \"Projected fire arrival at Mock Client 6: ~54h (median), 51h (pessimistic) \\u2014 LAC-309685 (b42a7aa5-34f\\u2026). Advance notice \\u2014 crews being scheduled.\"}, {\"t_s\": 1788073788.4267504, \"client_id\": \"mock-client-004\", \"incident_id\": \"b42a7aa5-34f4-471c-895d-e1ec55adb0d6\", \"prev\": \"notice_72h\", \"state\": \"watch\", \"eta_p50_h\": 71.83589113480515, \"eta_p10_h\": 68.88408610800901, \"message\": \"Monitoring Mock Client 4 for DELL (b42a7aa5-34f\\u2026): projected fire arrival ~72h (median), 69h (pessimistic). Under continuous watch; crews scheduled as needed.\"}, {\"t_s\": 1788073788.4267504, \"client_id\": \"mock-client-006\", \"incident_id\": \"b42a7aa5-34f4-471c-895d-e1ec55adb0d6\", \"prev\": \"notice_72h\", \"state\": \"watch\", \"eta_p50_h\": 54.01859092798498, \"eta_p10_h\": 51.492773560550475, \"message\": \"Monitoring Mock Client 6 for DELL (b42a7aa5-34f\\u2026): projected fire arrival ~54h (median), 51h (pessimistic). Under continuous watch; crews scheduled as needed.\"}, {\"t_s\": 1788160710.3244245, \"client_id\": \"mock-client-004\", \"incident_id\": \"b42a7aa5-34f4-471c-895d-e1ec55adb0d6\", \"prev\": \"watch\", \"state\": \"cleared\", \"eta_p50_h\": 82.60348751048247, \"eta_p10_h\": 67.72466437518597, \"message\": \"All clear for Mock Client 4: no projected fire arrival within the 72h alert window for DELL (b42a7aa5-34f\\u2026).\"}, {\"t_s\": 1788205149.5266576, \"client_id\": \"mock-client-004\", \"incident_id\": \"b42a7aa5-34f4-471c-895d-e1ec55adb0d6\", \"prev\": \"cleared\", \"state\": \"notice_72h\", \"eta_p50_h\": 71.37851535240809, \"eta_p10_h\": 52.01348408354653, \"message\": \"Projected fire arrival at Mock Client 4: ~71h (median), 52h (pessimistic) \\u2014 DELL (b42a7aa5-34f\\u2026). Advance notice \\u2014 crews being scheduled.\"}, {\"t_s\": 1788206683.2296777, \"client_id\": \"mock-client-004\", \"incident_id\": \"b42a7aa5-34f4-471c-895d-e1ec55adb0d6\", \"prev\": \"notice_72h\", \"state\": \"watch\", \"eta_p50_h\": 71.37851535240809, \"eta_p10_h\": 52.01348408354653, \"message\": \"Monitoring Mock Client 4 for DELL (b42a7aa5-34f\\u2026): projected fire arrival ~71h (median), 52h (pessimistic). Under continuous watch; crews scheduled as needed.\"}], \"operator_log\": [{\"t_s\": 1787839658.132981, \"kind\": \"degraded\", \"message\": \"pair (mock-client-007, c501227f-762e-4466-afd3-a9eb188d9b75) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"c501227f-762e-4466-afd3-a9eb188d9b75\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787839658.132981, \"kind\": \"degraded\", \"message\": \"pair (mock-client-008, c501227f-762e-4466-afd3-a9eb188d9b75) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"c501227f-762e-4466-afd3-a9eb188d9b75\", \"detail\": {\"client_id\": \"mock-client-008\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787839658.132981, \"kind\": \"degraded\", \"message\": \"pair (mock-client-009, c501227f-762e-4466-afd3-a9eb188d9b75) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"c501227f-762e-4466-afd3-a9eb188d9b75\", \"detail\": {\"client_id\": \"mock-client-009\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787839658.132981, \"kind\": \"degraded\", \"message\": \"pair (mock-client-010, c501227f-762e-4466-afd3-a9eb188d9b75) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"c501227f-762e-4466-afd3-a9eb188d9b75\", \"detail\": {\"client_id\": \"mock-client-010\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"provider_error\", \"message\": \"weather provider failed for incident 1a85a18b-10e0-4c1c-90ed-a2653ce4c285: HTTP Error 503: Service Unavailable\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"step\": \"weather\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"provider_error\", \"message\": \"weather provider failed for incident 4a60b81e-97a6-47ea-b021-5a4ee0e44173: HTTP Error 503: Service Unavailable\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"step\": \"weather\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-000, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-000\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-001, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-001\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-004, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-004\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-006, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-006\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-007, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-008, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-008\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-011, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-011\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"recovered\", \"message\": \"pair (mock-client-000, c501227f-762e-4466-afd3-a9eb188d9b75) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"c501227f-762e-4466-afd3-a9eb188d9b75\", \"detail\": {\"client_id\": \"mock-client-000\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"recovered\", \"message\": \"pair (mock-client-002, c501227f-762e-4466-afd3-a9eb188d9b75) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"c501227f-762e-4466-afd3-a9eb188d9b75\", \"detail\": {\"client_id\": \"mock-client-002\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"recovered\", \"message\": \"pair (mock-client-003, c501227f-762e-4466-afd3-a9eb188d9b75) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"c501227f-762e-4466-afd3-a9eb188d9b75\", \"detail\": {\"client_id\": \"mock-client-003\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"recovered\", \"message\": \"pair (mock-client-007, c501227f-762e-4466-afd3-a9eb188d9b75) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"c501227f-762e-4466-afd3-a9eb188d9b75\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"recovered\", \"message\": \"pair (mock-client-008, c501227f-762e-4466-afd3-a9eb188d9b75) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"c501227f-762e-4466-afd3-a9eb188d9b75\", \"detail\": {\"client_id\": \"mock-client-008\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"recovered\", \"message\": \"pair (mock-client-009, c501227f-762e-4466-afd3-a9eb188d9b75) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"c501227f-762e-4466-afd3-a9eb188d9b75\", \"detail\": {\"client_id\": \"mock-client-009\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"recovered\", \"message\": \"pair (mock-client-010, c501227f-762e-4466-afd3-a9eb188d9b75) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"c501227f-762e-4466-afd3-a9eb188d9b75\", \"detail\": {\"client_id\": \"mock-client-010\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-000, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-000\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-002, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-002\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-003, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-003\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-007, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-008, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-008\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-009, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-009\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787841092.5294938, \"kind\": \"degraded\", \"message\": \"pair (mock-client-010, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-010\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-000, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-000\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-001, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-001\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-004, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-004\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-006, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-006\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-007, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-008, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-008\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-011, 1a85a18b-10e0-4c1c-90ed-a2653ce4c285) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"1a85a18b-10e0-4c1c-90ed-a2653ce4c285\", \"detail\": {\"client_id\": \"mock-client-011\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-000, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-000\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-002, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-002\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-003, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-003\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-007, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-008, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-008\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-009, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-009\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787842506.627303, \"kind\": \"recovered\", \"message\": \"pair (mock-client-010, 4a60b81e-97a6-47ea-b021-5a4ee0e44173) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"client_id\": \"mock-client-010\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1787845429.832733, \"kind\": \"provider_error\", \"message\": \"terrain provider failed for incident 4238e817-9188-4ce7-9327-43600e3022d2: <urlopen error [Errno 111] Connection refused>\", \"incident_id\": \"4238e817-9188-4ce7-9327-43600e3022d2\", \"detail\": {\"step\": \"terrain\"}}, {\"t_s\": 1787852805.6244516, \"kind\": \"extreme_regime\", \"message\": \"incident LAC-303234 ENTERED EXTREME SPREAD REGIME: cured-grass fuelscape with wind \\u2014 forecasts may under-run observed spread; alert ladder evaluating on the pessimistic (p10) arrival\", \"incident_id\": \"c501227f-762e-4466-afd3-a9eb188d9b75\", \"detail\": {\"extreme_regime\": true}}, {\"t_s\": 1787865293.9260137, \"kind\": \"extreme_regime\", \"message\": \"incident LAC-303969 ENTERED EXTREME SPREAD REGIME: cured-grass fuelscape with wind \\u2014 forecasts may under-run observed spread; alert ladder evaluating on the pessimistic (p10) arrival\", \"incident_id\": \"4a60b81e-97a6-47ea-b021-5a4ee0e44173\", \"detail\": {\"extreme_regime\": true}}, {\"t_s\": 1787866609.9285495, \"kind\": \"extreme_regime\", \"message\": \"incident LAC-306006 ENTERED EXTREME SPREAD REGIME: cured-grass fuelscape with wind \\u2014 forecasts may under-run observed spread; alert ladder evaluating on the pessimistic (p10) arrival\", \"incident_id\": \"b5e685b7-733b-4f17-8a93-46237dd4b106\", \"detail\": {\"extreme_regime\": true}}, {\"t_s\": 1787870836.4261944, \"kind\": \"extreme_regime\", \"message\": \"incident EAGLE ENTERED EXTREME SPREAD REGIME: cured-grass fuelscape with wind \\u2014 forecasts may under-run observed spread; alert ladder evaluating on the pessimistic (p10) arrival\", \"incident_id\": \"4f45fcde-d462-453d-a4fa-436229280199\", \"detail\": {\"extreme_regime\": true}}, {\"t_s\": 1787885618.9265761, \"kind\": \"extreme_regime\", \"message\": \"incident LAC-306404 ENTERED EXTREME SPREAD REGIME: cured-grass fuelscape with wind \\u2014 forecasts may under-run observed spread; alert ladder evaluating on the pessimistic (p10) arrival\", \"incident_id\": \"a986dcd9-b92a-44f6-b676-fbc21deb146d\", \"detail\": {\"extreme_regime\": true}}, {\"t_s\": 1787887186.6337202, \"kind\": \"extreme_regime\", \"message\": \"incident LAC-306430 ENTERED EXTREME SPREAD REGIME: cured-grass fuelscape with wind \\u2014 forecasts may under-run observed spread; alert ladder evaluating on the pessimistic (p10) arrival\", \"incident_id\": \"a626c6aa-e4de-4ea4-9d87-d1438080c6d2\", \"detail\": {\"extreme_regime\": true}}, {\"t_s\": 1788020111.624428, \"kind\": \"extreme_regime\", \"message\": \"incident BAR ENTERED EXTREME SPREAD REGIME: cured-grass fuelscape with wind \\u2014 forecasts may under-run observed spread; alert ladder evaluating on the pessimistic (p10) arrival\", \"incident_id\": \"c1c061ce-6123-4f0b-b222-cd0d21e27f90\", \"detail\": {\"extreme_regime\": true}}, {\"t_s\": 1788071096.5265553, \"kind\": \"extreme_regime\", \"message\": \"incident LAC-309642 ENTERED EXTREME SPREAD REGIME: cured-grass fuelscape with wind \\u2014 forecasts may under-run observed spread; alert ladder evaluating on the pessimistic (p10) arrival\", \"incident_id\": \"923fcf6f-1932-43bc-8575-2dfed3342a25\", \"detail\": {\"extreme_regime\": true}}, {\"t_s\": 1788131788.5270872, \"kind\": \"extreme_regime\", \"message\": \"incident LAC-310605 ENTERED EXTREME SPREAD REGIME: cured-grass fuelscape with wind \\u2014 forecasts may under-run observed spread; alert ladder evaluating on the pessimistic (p10) arrival\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"extreme_regime\": true}}, {\"t_s\": 1788134943.7249079, \"kind\": \"provider_error\", \"message\": \"weather provider failed for incident 911a4732-04bb-47c9-9fa0-d16f870588e2: HTTP Error 503: Service Unavailable\", \"incident_id\": \"911a4732-04bb-47c9-9fa0-d16f870588e2\", \"detail\": {\"step\": \"weather\"}}, {\"t_s\": 1788134943.7249079, \"kind\": \"degraded\", \"message\": \"pair (mock-client-000, 911a4732-04bb-47c9-9fa0-d16f870588e2) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"911a4732-04bb-47c9-9fa0-d16f870588e2\", \"detail\": {\"client_id\": \"mock-client-000\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788134943.7249079, \"kind\": \"degraded\", \"message\": \"pair (mock-client-007, 911a4732-04bb-47c9-9fa0-d16f870588e2) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"911a4732-04bb-47c9-9fa0-d16f870588e2\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788136399.9299214, \"kind\": \"recovered\", \"message\": \"pair (mock-client-000, 911a4732-04bb-47c9-9fa0-d16f870588e2) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"911a4732-04bb-47c9-9fa0-d16f870588e2\", \"detail\": {\"client_id\": \"mock-client-000\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788136399.9299214, \"kind\": \"recovered\", \"message\": \"pair (mock-client-007, 911a4732-04bb-47c9-9fa0-d16f870588e2) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"911a4732-04bb-47c9-9fa0-d16f870588e2\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788144075.026652, \"kind\": \"extreme_regime\", \"message\": \"incident LAC-310842 ENTERED EXTREME SPREAD REGIME: cured-grass fuelscape with wind \\u2014 forecasts may under-run observed spread; alert ladder evaluating on the pessimistic (p10) arrival\", \"incident_id\": \"c38b8ecf-9a53-4993-8209-41f1b5114bbe\", \"detail\": {\"extreme_regime\": true}}, {\"t_s\": 1788208215.0358207, \"kind\": \"provider_error\", \"message\": \"weather provider failed for incident 238812c8-32ca-479f-b7bc-9f6a1a861f62: HTTP Error 503: Service Unavailable\", \"incident_id\": \"238812c8-32ca-479f-b7bc-9f6a1a861f62\", \"detail\": {\"step\": \"weather\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"provider_error\", \"message\": \"weather provider failed for incident 3438752a-5ac7-424a-a66a-da1ed48c89bb: The read operation timed out\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"step\": \"weather\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"provider_error\", \"message\": \"weather provider failed for incident 3f8f13bb-69d1-4508-89d4-cc2b708c0c05: HTTP Error 503: Service Unavailable\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"step\": \"weather\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-000, 238812c8-32ca-479f-b7bc-9f6a1a861f62) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"238812c8-32ca-479f-b7bc-9f6a1a861f62\", \"detail\": {\"client_id\": \"mock-client-000\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-004, 238812c8-32ca-479f-b7bc-9f6a1a861f62) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"238812c8-32ca-479f-b7bc-9f6a1a861f62\", \"detail\": {\"client_id\": \"mock-client-004\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-006, 238812c8-32ca-479f-b7bc-9f6a1a861f62) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"238812c8-32ca-479f-b7bc-9f6a1a861f62\", \"detail\": {\"client_id\": \"mock-client-006\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-007, 238812c8-32ca-479f-b7bc-9f6a1a861f62) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"238812c8-32ca-479f-b7bc-9f6a1a861f62\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-000, 3f8f13bb-69d1-4508-89d4-cc2b708c0c05) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"client_id\": \"mock-client-000\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-002, 3f8f13bb-69d1-4508-89d4-cc2b708c0c05) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"client_id\": \"mock-client-002\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-003, 3f8f13bb-69d1-4508-89d4-cc2b708c0c05) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"client_id\": \"mock-client-003\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-007, 3f8f13bb-69d1-4508-89d4-cc2b708c0c05) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-009, 3f8f13bb-69d1-4508-89d4-cc2b708c0c05) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"client_id\": \"mock-client-009\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-010, 3f8f13bb-69d1-4508-89d4-cc2b708c0c05) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"client_id\": \"mock-client-010\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-000, 3438752a-5ac7-424a-a66a-da1ed48c89bb) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-000\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-002, 3438752a-5ac7-424a-a66a-da1ed48c89bb) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-002\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-003, 3438752a-5ac7-424a-a66a-da1ed48c89bb) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-003\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-004, 3438752a-5ac7-424a-a66a-da1ed48c89bb) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-004\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-006, 3438752a-5ac7-424a-a66a-da1ed48c89bb) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-006\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-007, 3438752a-5ac7-424a-a66a-da1ed48c89bb) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-008, 3438752a-5ac7-424a-a66a-da1ed48c89bb) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-008\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-009, 3438752a-5ac7-424a-a66a-da1ed48c89bb) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-009\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-010, 3438752a-5ac7-424a-a66a-da1ed48c89bb) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-010\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788208215.0358207, \"kind\": \"degraded\", \"message\": \"pair (mock-client-011, 3438752a-5ac7-424a-a66a-da1ed48c89bb) unassessed for 1 cycle(s); alert state FROZEN at none \\u2014 absence is not clearance\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-011\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-000, 238812c8-32ca-479f-b7bc-9f6a1a861f62) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"238812c8-32ca-479f-b7bc-9f6a1a861f62\", \"detail\": {\"client_id\": \"mock-client-000\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-004, 238812c8-32ca-479f-b7bc-9f6a1a861f62) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"238812c8-32ca-479f-b7bc-9f6a1a861f62\", \"detail\": {\"client_id\": \"mock-client-004\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-006, 238812c8-32ca-479f-b7bc-9f6a1a861f62) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"238812c8-32ca-479f-b7bc-9f6a1a861f62\", \"detail\": {\"client_id\": \"mock-client-006\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-007, 238812c8-32ca-479f-b7bc-9f6a1a861f62) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"238812c8-32ca-479f-b7bc-9f6a1a861f62\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-000, 3f8f13bb-69d1-4508-89d4-cc2b708c0c05) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"client_id\": \"mock-client-000\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-002, 3f8f13bb-69d1-4508-89d4-cc2b708c0c05) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"client_id\": \"mock-client-002\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-003, 3f8f13bb-69d1-4508-89d4-cc2b708c0c05) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"client_id\": \"mock-client-003\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-007, 3f8f13bb-69d1-4508-89d4-cc2b708c0c05) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-009, 3f8f13bb-69d1-4508-89d4-cc2b708c0c05) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"client_id\": \"mock-client-009\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-010, 3f8f13bb-69d1-4508-89d4-cc2b708c0c05) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"detail\": {\"client_id\": \"mock-client-010\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-000, 3438752a-5ac7-424a-a66a-da1ed48c89bb) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-000\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-002, 3438752a-5ac7-424a-a66a-da1ed48c89bb) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-002\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-003, 3438752a-5ac7-424a-a66a-da1ed48c89bb) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-003\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-004, 3438752a-5ac7-424a-a66a-da1ed48c89bb) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-004\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-006, 3438752a-5ac7-424a-a66a-da1ed48c89bb) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-006\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-007, 3438752a-5ac7-424a-a66a-da1ed48c89bb) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-007\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-008, 3438752a-5ac7-424a-a66a-da1ed48c89bb) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-008\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-009, 3438752a-5ac7-424a-a66a-da1ed48c89bb) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-009\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-010, 3438752a-5ac7-424a-a66a-da1ed48c89bb) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-010\", \"blind_cycles\": 1, \"state\": \"none\"}}, {\"t_s\": 1788209718.629766, \"kind\": \"recovered\", \"message\": \"pair (mock-client-011, 3438752a-5ac7-424a-a66a-da1ed48c89bb) assessed again after 1 blind cycle(s); ladder resumed from none\", \"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"detail\": {\"client_id\": \"mock-client-011\", \"blind_cycles\": 1, \"state\": \"none\"}}], \"now_s\": 1788215666.9265664, \"last_cycle_t_s\": 1788215666.9265664, \"last_cycle_age_s\": 2840.9231448173523, \"degraded\": false, \"operator_events\": [], \"notes\": [\"excluded 14 stale incident(s) from alerting/dispatch (updated_at older than 168 h \\u2014 SAFETY SEMANTICS 9): firis:100 (age 2424 h), firis:102 (age 2451 h), firis:1309 (age 573 h), firis:1317 (age 552 h), firis:143 (age 1896 h), firis:148 (age 1846 h), firis:188 (age 1323 h), firis:20 (age 3603 h), firis:203 (age 1272 h), firis:220 (age 1171 h), firis:224 (age 1128 h), firis:44 (age 3072 h), firis:63 (age 2636 h), firis:81 (age 2522 h)\"], \"incidents\": [{\"incident_id\": \"0313ab6a-e46a-46d2-b716-ea1fb512986b\", \"name\": \"LAC-308049\", \"source\": \"wfigs\", \"lat\": 34.46618489614698, \"lon\": -118.33491223697695, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1787984067.793}, {\"incident_id\": \"15834d0a-f53e-44f7-b209-9032cf16d672\", \"name\": \"MAPLE\", \"source\": \"wfigs\", \"lat\": 34.4958048824732, \"lon\": -118.62401228773614, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788051581.603}, {\"incident_id\": \"1dcc11fb-c659-4f40-bcd9-67bf89c5259d\", \"name\": \"LAC-307747\", \"source\": \"wfigs\", \"lat\": 34.57662492176203, \"lon\": -118.10289220739946, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1787967517.787}, {\"incident_id\": \"2071a5c3-e7b1-441c-a936-17f14f97802a\", \"name\": \"LAC-307633\", \"source\": \"wfigs\", \"lat\": 33.92815484167505, \"lon\": -118.25431217890615, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1787962257.64}, {\"incident_id\": \"22d2b780-7d5c-4169-967a-b885e1d9febe\", \"name\": \"LAC-311309\", \"source\": \"wfigs\", \"lat\": 34.02853486330679, \"lon\": -118.06790215570145, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788187353.58}, {\"incident_id\": \"238812c8-32ca-479f-b7bc-9f6a1a861f62\", \"name\": \"HENRY\", \"source\": \"wfigs\", \"lat\": 34.417354878393255, \"lon\": -118.54891226857644, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1787960913.063}, {\"incident_id\": \"313c2af0-34ef-4083-8fcf-3ce9156ccaf9\", \"name\": \"LAC-309106\", \"source\": \"wfigs\", \"lat\": 33.96463484997592, \"lon\": -118.17852216913298, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788044312.31}, {\"incident_id\": \"3438752a-5ac7-424a-a66a-da1ed48c89bb\", \"name\": \"LAC-310759\", \"source\": \"wfigs\", \"lat\": 34.00655485438764, \"lon\": -118.18275217324452, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788138361.087}, {\"incident_id\": \"3f8f13bb-69d1-4508-89d4-cc2b708c0c05\", \"name\": \"LAC-310605\", \"source\": \"wfigs\", \"lat\": 34.06150488306665, \"lon\": -117.78318211019501, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788131586.157}, {\"incident_id\": \"5a2db248-4450-48d2-925c-0b1404f927a8\", \"name\": \"SUMMIT\", \"source\": \"wfigs\", \"lat\": 34.45499493264975, \"lon\": -117.68602212633354, \"acreage\": 2690.0, \"containment_pct\": 100.0, \"updated_at_s\": 1787929597.3}, {\"incident_id\": \"5f75a986-feeb-4fb5-8762-7a3e2885b43d\", \"name\": \"CATE\", \"source\": \"wfigs\", \"lat\": 34.39234488011661, \"lon\": -118.47261225374478, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788027179.82}, {\"incident_id\": \"6d16d4a4-ff04-497c-a58d-25dcbe053e46\", \"name\": \"LAC-309508\", \"source\": \"wfigs\", \"lat\": 33.894974841709136, \"lon\": -118.18795216509612, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788061763.19}, {\"incident_id\": \"911a4732-04bb-47c9-9fa0-d16f870588e2\", \"name\": \"LILY\", \"source\": \"wfigs\", \"lat\": 34.4842249270575, \"lon\": -117.8381421547036, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788117880.04}, {\"incident_id\": \"923fcf6f-1932-43bc-8575-2dfed3342a25\", \"name\": \"LAC-309642\", \"source\": \"wfigs\", \"lat\": 34.13799488247386, \"lon\": -117.94463214383556, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788069831.717}, {\"incident_id\": \"a2d1de1c-9ebf-4e66-b1cf-8ab1c5ab0b03\", \"name\": \"ARCHER\", \"source\": \"wfigs\", \"lat\": 34.43791589299327, \"lon\": -118.33622423479827, \"acreage\": 0.1, \"containment_pct\": null, \"updated_at_s\": 1787961480.243}, {\"incident_id\": \"a6a81cc5-be3c-4084-9dbb-8f8439cf8c56\", \"name\": \"DYLAN\", \"source\": \"wfigs\", \"lat\": 34.46677489675316, \"lon\": -118.32561223546885, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788028401.9}, {\"incident_id\": \"b42a7aa5-34f4-471c-895d-e1ec55adb0d6\", \"name\": \"DELL\", \"source\": \"wfigs\", \"lat\": 34.1480248395992, \"lon\": -118.71650227387718, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788072367.96}, {\"incident_id\": \"b78353ab-36bc-40c1-8082-c917e4513ad9\", \"name\": \"LAC-311580\", \"source\": \"wfigs\", \"lat\": 34.03268485742766, \"lon\": -118.18019217494101, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788200935.663}, {\"incident_id\": \"c1c061ce-6123-4f0b-b222-cd0d21e27f90\", \"name\": \"BAR\", \"source\": \"wfigs\", \"lat\": 34.02869487514915, \"lon\": -117.85826212026832, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788018961.577}, {\"incident_id\": \"c38b8ecf-9a53-4993-8209-41f1b5114bbe\", \"name\": \"LAC-310842\", \"source\": \"wfigs\", \"lat\": 34.023544874817, \"lon\": -117.85391211911197, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788142395.39}, {\"incident_id\": \"caba7cbf-7b08-4b6f-b9c6-cf8593daa6df\", \"name\": \"LAC-308047\", \"source\": \"wfigs\", \"lat\": 33.92815484167505, \"lon\": -118.25431217890615, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1787983329.45}, {\"incident_id\": \"d34bcc28-fdc1-422f-9ae0-8329522db798\", \"name\": \"LAND\", \"source\": \"wfigs\", \"lat\": 34.469874904846804, \"lon\": -118.19250221338478, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1787963539.273}, {\"incident_id\": \"d3d9d8d4-fdde-46f8-9aff-e41f9eee4138\", \"name\": \"DILLON\", \"source\": \"wfigs\", \"lat\": 34.4792518997292, \"lon\": -118.29786823187835, \"acreage\": 0.1, \"containment_pct\": null, \"updated_at_s\": 1788103120.467}, {\"incident_id\": \"dd1c0830-43f5-4b4d-a7a4-7ef105cc0e21\", \"name\": \"LAC-308327\", \"source\": \"wfigs\", \"lat\": 33.92572483784454, \"lon\": -118.31781218934782, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788009482.897}, {\"incident_id\": \"e05e7706-3734-4931-83de-0314d8458bce\", \"name\": \"LAC-310676\", \"source\": \"wfigs\", \"lat\": 33.99361485331011, \"lon\": -118.17641217112785, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1788134242.403}, {\"incident_id\": \"eb3502cb-d3df-4070-aabe-1c256fa52695\", \"name\": \"LAC-307701\", \"source\": \"wfigs\", \"lat\": 33.9257448376336, \"lon\": -118.32161218998544, \"acreage\": null, \"containment_pct\": null, \"updated_at_s\": 1787965428.517}], \"clients\": [{\"client_id\": \"mock-client-000\", \"name\": \"Mock Client 0\", \"lat\": 34.14984454676013, \"lon\": -118.20621352973943, \"state\": \"impacted\", \"eta_p50_s\": 1786439500.5966, \"eta_p10_s\": 1786242342.5150352}, {\"client_id\": \"mock-client-001\", \"name\": \"Mock Client 1\", \"lat\": 33.969755315499306, \"lon\": -118.91489935987266, \"state\": \"none\", \"eta_p50_s\": null, \"eta_p10_s\": null}, {\"client_id\": \"mock-client-002\", \"name\": \"Mock Client 2\", \"lat\": 33.81975169790199, \"lon\": -117.96142338780476, \"state\": \"none\", \"eta_p50_s\": null, \"eta_p10_s\": null}, {\"client_id\": \"mock-client-003\", \"name\": \"Mock Client 3\", \"lat\": 33.67539857245696, \"lon\": -118.22020707025573, \"state\": \"none\", \"eta_p50_s\": null, \"eta_p10_s\": null}, {\"client_id\": \"mock-client-004\", \"name\": \"Mock Client 4\", \"lat\": 34.076593622163244, \"lon\": -118.62529363125839, \"state\": \"watch\", \"eta_p50_s\": 1788407480.6173472, \"eta_p10_s\": 1788399587.0880768}, {\"client_id\": \"mock-client-005\", \"name\": \"Mock Client 5\", \"lat\": 33.6821242882364, \"lon\": -118.80918885161307, \"state\": \"none\", \"eta_p50_s\": null, \"eta_p10_s\": null}, {\"client_id\": \"mock-client-006\", \"name\": \"Mock Client 6\", \"lat\": 34.299604362138254, \"lon\": -118.67855524616338, \"state\": \"watch\", \"eta_p50_s\": 1788370495.47646, \"eta_p10_s\": 1788369369.714713}, {\"client_id\": \"mock-client-007\", \"name\": \"Mock Client 7\", \"lat\": 34.08848894552758, \"lon\": -118.23245742140332, \"state\": \"none\", \"eta_p50_s\": null, \"eta_p10_s\": null}, {\"client_id\": \"mock-client-008\", \"name\": \"Mock Client 8\", \"lat\": 33.79016799913057, \"lon\": -118.42508321203917, \"state\": \"none\", \"eta_p50_s\": null, \"eta_p10_s\": null}, {\"client_id\": \"mock-client-009\", \"name\": \"Mock Client 9\", \"lat\": 33.896614619132905, \"lon\": -118.13095666991121, \"state\": \"none\", \"eta_p50_s\": null, \"eta_p10_s\": null}, {\"client_id\": \"mock-client-010\", \"name\": \"Mock Client 10\", \"lat\": 33.95787944493902, \"lon\": -117.99188018484458, \"state\": \"none\", \"eta_p50_s\": null, \"eta_p10_s\": null}, {\"client_id\": \"mock-client-011\", \"name\": \"Mock Client 11\", \"lat\": 33.787484997728185, \"lon\": -118.6294481987282, \"state\": \"none\", \"eta_p50_s\": null, \"eta_p10_s\": null}], \"plan\": {\"computed_at_s\": 1788215666.9265664, \"plans\": {}, \"unserved\": [{\"client_id\": \"mock-client-004\", \"incident_id\": \"b42a7aa5-34f4-471c-895d-e1ec55adb0d6\", \"reason\": \"capacity\"}, {\"client_id\": \"mock-client-006\", \"incident_id\": \"b42a7aa5-34f4-471c-895d-e1ec55adb0d6\", \"reason\": \"capacity\"}], \"objective\": 0.0, \"objective_breakdown\": {\"value_usd\": 0.0, \"travel_cost_usd\": 0.0, \"churn_penalty_usd\": 0.0, \"drive_h\": 0.0, \"served\": 0, \"unserved\": 2, \"churn_weight\": 0.0, \"mean_stop_score_usd\": 1.0, \"lambda_travel_usd_per_h\": 1e-05, \"candidate\": \"warm\", \"seed\": \"warm\", \"guardrail\": \"\", \"solver_s\": 160.8033974649734, \"dedup_dropped_jobs\": 0}, \"churn_from_incumbent\": 0.0}}"
+    }
+  }
+}

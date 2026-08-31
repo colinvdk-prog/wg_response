@@ -1,0 +1,522 @@
+{
+    "derivation_engine":  "PowerShell ConvertFrom-Json; Python unavailable (py -3 exit 112)",
+    "A1":  {
+               "scored_pairs":  18,
+               "all_variant_rows_including_zero_cell":  19,
+               "early_miss_sum":  0,
+               "p10_before_window_sum":  0,
+               "covered_certain_sum":  0,
+               "rows_cover_ne_p10_not_after":  0,
+               "rows_late_plus_cover_ne_n":  0,
+               "pooled_cover_eq_p10_not_after":  true,
+               "pooled_late_plus_cover_eq_n":  true,
+               "head_ratio_n":  18,
+               "mean_head_ratio":  2.8664560503713359,
+               "true_median_head_ratio":  1.8368196255866196,
+               "tartar_48h":  {
+                                  "name":  "Tartar-ID",
+                                  "dt_h":  48.085555555555558,
+                                  "cells":  49812,
+                                  "head_ratio":  1.18440151639119,
+                                  "observed_area_ac":  100998.39414554862,
+                                  "modeled_area_ac":  250692.58557938604,
+                                  "area_ratio":  2.4821442726912406
+                              },
+               "bug_12_97h":  {
+                                  "name":  "Bug-CA",
+                                  "dt_h":  12.966666666666669,
+                                  "cells":  6539,
+                                  "head_ratio":  0.99179462090638315,
+                                  "observed_area_ac":  14062.91552252526,
+                                  "modeled_area_ac":  93674.709560162926,
+                                  "area_ratio":  6.66111585539425
+                              }
+           },
+    "A2":  {
+               "bins":  {
+                            "(0,6]":  {
+                                          "pairs":  0,
+                                          "cells":  0,
+                                          "covered":  0,
+                                          "late":  0,
+                                          "coverage_pct":  null,
+                                          "late_pct":  null,
+                                          "cell_share_pct":  0
+                                      },
+                            "(6,12]":  {
+                                           "pairs":  5,
+                                           "cells":  27089,
+                                           "covered":  18906,
+                                           "late":  8183,
+                                           "coverage_pct":  69.792166562073163,
+                                           "late_pct":  30.207833437926833,
+                                           "cell_share_pct":  20.053893589772063
+                                       },
+                            "(12,24]":  {
+                                            "pairs":  4,
+                                            "cells":  24164,
+                                            "covered":  23971,
+                                            "late":  193,
+                                            "coverage_pct":  99.201291176957454,
+                                            "late_pct":  0.79870882304254265,
+                                            "cell_share_pct":  17.888526143573117
+                                        },
+                            "(24,48]":  {
+                                            "pairs":  6,
+                                            "cells":  33130,
+                                            "covered":  33126,
+                                            "late":  4,
+                                            "coverage_pct":  99.987926350739514,
+                                            "late_pct":  0.012073649260488983,
+                                            "cell_share_pct":  24.526025125665342
+                                        },
+                            "(48,96]":  {
+                                            "pairs":  3,
+                                            "cells":  50698,
+                                            "covered":  50688,
+                                            "late":  10,
+                                            "coverage_pct":  99.980275356029821,
+                                            "late_pct":  0.019724643970176339,
+                                            "cell_share_pct":  37.531555140989482
+                                        }
+                        },
+               "over_12h_combined":  {
+                                         "pairs":  13,
+                                         "cells":  107992,
+                                         "covered":  107785,
+                                         "late":  207,
+                                         "coverage_pct":  99.808319134750718,
+                                         "late_pct":  0.19168086524927772
+                                     },
+               "no_pair_at_or_under_6h":  true,
+               "pair_concentration":  {
+                                          "hhi":  0.1865302260154858,
+                                          "effective_n_inverse_hhi":  5.3610614288162592,
+                                          "largest_share_pct":  36.875652386345969,
+                                          "top3_share_pct":  60.029907981137242
+                                      },
+               "incident_concentration":  {
+                                              "incidents":  7,
+                                              "hhi":  0.30827447471326158,
+                                              "effective_n_inverse_hhi":  3.2438624733044796,
+                                              "largest":  {
+                                                              "incident":  "{DB5448A6-FCAC-4041-A817-6F8198161DBA}",
+                                                              "name":  "Tartar-ID",
+                                                              "cells":  65296,
+                                                              "share":  0.48338404364788534
+                                                          },
+                                              "shares":  [
+                                                             {
+                                                                 "incident":  "{DB5448A6-FCAC-4041-A817-6F8198161DBA}",
+                                                                 "name":  "Tartar-ID",
+                                                                 "cells":  65296,
+                                                                 "share":  0.48338404364788534
+                                                             },
+                                                             {
+                                                                 "incident":  "{286B7F1D-8945-4A5D-9D81-5235C18AF1FE}",
+                                                                 "name":  "Bug-CA",
+                                                                 "cells":  25249,
+                                                                 "share":  0.18691747914214435
+                                                             },
+                                                             {
+                                                                 "incident":  "{75B0C6D7-10D4-476A-B691-3D78231B4997}",
+                                                                 "name":  "Stallion-NV",
+                                                                 "cells":  20400,
+                                                                 "share":  0.15102049881182403
+                                                             },
+                                                             {
+                                                                 "incident":  "{79BBB8A2-E93C-4514-9DD2-55A7DE7F260C}",
+                                                                 "name":  "ColemanCreek-OR",
+                                                                 "cells":  16853,
+                                                                 "share":  0.12476217972919952
+                                                             },
+                                                             {
+                                                                 "incident":  "{84FD3D7E-6B04-49CD-A729-ED3178A49C42}",
+                                                                 "name":  "SandCreek-MT",
+                                                                 "cells":  4001,
+                                                                 "share":  0.029619265477750387
+                                                             },
+                                                             {
+                                                                 "incident":  "{735FFADD-9F45-4188-A66B-335931316E23}",
+                                                                 "name":  "Ptarmigan-WA",
+                                                                 "cells":  2734,
+                                                                 "share":  0.020239708027035629
+                                                             },
+                                                             {
+                                                                 "incident":  "{A60CA689-BD59-4A2D-9BDC-CC551CEAFCA4}",
+                                                                 "name":  "Border2-WA",
+                                                                 "cells":  548,
+                                                                 "share":  0.0040568251641607631
+                                                             }
+                                                         ]
+                                          },
+               "drop_bug_9_486h_pair":  {
+                                            "pairs":  17,
+                                            "cells":  121487,
+                                            "covered":  120541,
+                                            "late":  946,
+                                            "coverage_pct":  99.22131586095631,
+                                            "late_pct":  0.77868413904368372
+                                        },
+               "drop_all_bug_incident_pairs":  {
+                                                   "pairs":  14,
+                                                   "cells":  109832,
+                                                   "covered":  109082,
+                                                   "late":  750,
+                                                   "coverage_pct":  99.317138903051941,
+                                                   "late_pct":  0.68286109694806618
+                                               },
+               "drop_all_tartar_incident_pairs":  {
+                                                      "pairs":  15,
+                                                      "cells":  69785,
+                                                      "covered":  61415,
+                                                      "late":  8370,
+                                                      "coverage_pct":  88.006018485347852,
+                                                      "late_pct":  11.993981514652146
+                                                  },
+               "short_6_12_without_bug_pair":  {
+                                                   "pairs":  4,
+                                                   "cells":  13495,
+                                                   "covered":  12756,
+                                                   "late":  739,
+                                                   "coverage_pct":  94.523897739903674,
+                                                   "late_pct":  5.4761022600963321
+                                               },
+               "bug_share_of_6_12_late_pct":  90.969082243675913
+           },
+    "A3":  {
+               "pool":  {
+                            "pairs":  8,
+                            "cells":  60249,
+                            "covered":  39023,
+                            "late":  21226,
+                            "coverage_pct":  64.769539743398227,
+                            "late_pct":  35.230460256601766
+                        },
+               "pair_mean_cover_pct":  92.153848847160319,
+               "pair_mean_late_pct":  7.846151152839675,
+               "median_pair_cover_pct":  100,
+               "distinct_incidents":  4,
+               "incident_mean_cover_pct":  84.3356619333824,
+               "incident_mean_late_pct":  15.664338066617606,
+               "incident_rows":  [
+                                     {
+                                         "incident":  "{A32B1A1F-AF64-4903-9B75-8BCB276EB1DE}",
+                                         "name":  "Stookey-UT",
+                                         "pairs":  2,
+                                         "cells":  2769,
+                                         "cover_pct":  100,
+                                         "late_pct":  0
+                                     },
+                                     {
+                                         "incident":  "{B5597100-D6C9-49F9-BC74-6B8FC4432E92}",
+                                         "name":  "KaiserCanyon-WA",
+                                         "pairs":  3,
+                                         "cells":  17692,
+                                         "cover_pct":  99.95478182229256,
+                                         "late_pct":  0.045218177707438391
+                                     },
+                                     {
+                                         "incident":  "{CCEFD7D4-FEBD-496D-855E-CA0C9944BF0C}",
+                                         "name":  "Brewer-OR",
+                                         "pairs":  2,
+                                         "cells":  5900,
+                                         "cover_pct":  100,
+                                         "late_pct":  0
+                                     },
+                                     {
+                                         "incident":  "{EE6FCF97-7637-4721-B125-741098779D99}",
+                                         "name":  "PorcupineRidge-OR",
+                                         "pairs":  1,
+                                         "cells":  33888,
+                                         "cover_pct":  37.387865911237014,
+                                         "late_pct":  62.612134088762986
+                                     }
+                                 ],
+               "pair_concentration":  {
+                                          "hhi":  0.35156677893157334,
+                                          "effective_n_inverse_hhi":  2.8444098246115384,
+                                          "largest_share_pct":  56.246576706667327,
+                                          "top3_share_pct":  77.407093893674585
+                                      },
+               "largest_pair":  {
+                                    "name":  "PorcupineRidge-OR",
+                                    "cells":  33888,
+                                    "share_pct":  56.246576706667334,
+                                    "coverage_pct":  37.387865911237014
+                                },
+               "incident_concentration":  {
+                                              "incidents":  4,
+                                              "hhi":  0.41429884240180731,
+                                              "effective_n_inverse_hhi":  2.4137166162539043,
+                                              "largest":  {
+                                                              "incident":  "{EE6FCF97-7637-4721-B125-741098779D99}",
+                                                              "name":  "PorcupineRidge-OR",
+                                                              "cells":  33888,
+                                                              "share":  0.56246576706667328
+                                                          },
+                                              "shares":  [
+                                                             {
+                                                                 "incident":  "{EE6FCF97-7637-4721-B125-741098779D99}",
+                                                                 "name":  "PorcupineRidge-OR",
+                                                                 "cells":  33888,
+                                                                 "share":  0.56246576706667328
+                                                             },
+                                                             {
+                                                                 "incident":  "{B5597100-D6C9-49F9-BC74-6B8FC4432E92}",
+                                                                 "name":  "KaiserCanyon-WA",
+                                                                 "cells":  17692,
+                                                                 "share":  0.2936480273531511
+                                                             },
+                                                             {
+                                                                 "incident":  "{CCEFD7D4-FEBD-496D-855E-CA0C9944BF0C}",
+                                                                 "name":  "Brewer-OR",
+                                                                 "cells":  5900,
+                                                                 "share":  0.097926936546664678
+                                                             },
+                                                             {
+                                                                 "incident":  "{A32B1A1F-AF64-4903-9B75-8BCB276EB1DE}",
+                                                                 "name":  "Stookey-UT",
+                                                                 "cells":  2769,
+                                                                 "share":  0.045959269033510927
+                                                             }
+                                                         ]
+                                          }
+           },
+    "A4":  {
+               "candidates_all":  94,
+               "kept_array_count":  61,
+               "kept_true_count":  61,
+               "dropped_count":  33,
+               "dropped_n_rows_le_1":  18,
+               "dropped_n_rows_gt_1_and_span_zero":  10,
+               "dropped_other":  5,
+               "rule_n_rows_ge_3_and_span_ge_6_mismatches":  0,
+               "big_grass":  {
+                                 "kept":  false,
+                                 "state":  "US-OR",
+                                 "n_rows":  1,
+                                 "max_acres":  575163.45238466887,
+                                 "span_h":  0,
+                                 "t_min":  1787541000,
+                                 "t_max":  1787541000
+                             }
+           },
+    "A5":  {
+               "scenarios":  60,
+               "homes_total":  2400,
+               "truth_reached":  1082,
+               "gelled":  1056,
+               "gelled_and_truth_reached":  632,
+               "gelled_and_never_truth_reached":  424,
+               "gelled_never_reached_share_of_gelled_pct":  40.151515151515149,
+               "thresholds":  {
+                                  "gt_6h":  {
+                                                "n":  598,
+                                                "pct":  94.620253164556956
+                                            },
+                                  "gt_24h":  {
+                                                 "n":  394,
+                                                 "pct":  62.341772151898731
+                                             },
+                                  "gt_72h":  {
+                                                 "n":  47,
+                                                 "pct":  7.4367088607594933
+                                             }
+                              },
+               "arrival_h":  {
+                                 "min":  1.536,
+                                 "p10_type7":  9.9005,
+                                 "p50_type7":  32.975,
+                                 "p90_type7":  69.5968,
+                                 "mean":  36.177713607594931,
+                                 "max":  90.662
+                             },
+               "gel_life_hand_trace_due_to_python_unavailable":  [
+                                                                     {
+                                                                         "temp_c":  25,
+                                                                         "rh_pct":  50,
+                                                                         "wind_mps":  0,
+                                                                         "raw_h":  6,
+                                                                         "returned_h":  6
+                                                                     },
+                                                                     {
+                                                                         "temp_c":  35,
+                                                                         "rh_pct":  20,
+                                                                         "wind_mps":  5,
+                                                                         "raw_h":  1.638413996073016,
+                                                                         "returned_h":  1.638413996073016
+                                                                     },
+                                                                     {
+                                                                         "temp_c":  33,
+                                                                         "rh_pct":  12,
+                                                                         "wind_mps":  8,
+                                                                         "raw_h":  1.4727808168726282,
+                                                                         "returned_h":  1.4727808168726282
+                                                                     },
+                                                                     {
+                                                                         "temp_c":  38,
+                                                                         "rh_pct":  8,
+                                                                         "wind_mps":  15,
+                                                                         "raw_h":  0.699331249926029,
+                                                                         "returned_h":  1
+                                                                     }
+                                                                 ]
+           },
+    "A6":  {
+               "wind_curve_raw_row_rederivation":  {
+                                                       "low_c4":  {
+                                                                      "scenarios":  10,
+                                                                      "homes":  400,
+                                                                      "belt_total":  215,
+                                                                      "belt_gelled":  189,
+                                                                      "belt_pct":  87.906976744186053,
+                                                                      "violations":  0,
+                                                                      "overrun_ticks":  0
+                                                                  },
+                                                       "low_c8":  {
+                                                                      "scenarios":  10,
+                                                                      "homes":  400,
+                                                                      "belt_total":  215,
+                                                                      "belt_gelled":  191,
+                                                                      "belt_pct":  88.837209302325576,
+                                                                      "violations":  0,
+                                                                      "overrun_ticks":  0
+                                                                  },
+                                                       "moderate_c4":  {
+                                                                           "scenarios":  10,
+                                                                           "homes":  400,
+                                                                           "belt_total":  217,
+                                                                           "belt_gelled":  173,
+                                                                           "belt_pct":  79.723502304147459,
+                                                                           "violations":  4,
+                                                                           "overrun_ticks":  14
+                                                                       },
+                                                       "moderate_c8":  {
+                                                                           "scenarios":  10,
+                                                                           "homes":  400,
+                                                                           "belt_total":  217,
+                                                                           "belt_gelled":  182,
+                                                                           "belt_pct":  83.870967741935488,
+                                                                           "violations":  9,
+                                                                           "overrun_ticks":  13
+                                                                       },
+                                                       "high_c4":  {
+                                                                       "scenarios":  10,
+                                                                       "homes":  400,
+                                                                       "belt_total":  155,
+                                                                       "belt_gelled":  94,
+                                                                       "belt_pct":  60.645161290322584,
+                                                                       "violations":  0,
+                                                                       "overrun_ticks":  0
+                                                                   },
+                                                       "extreme_c4":  {
+                                                                          "scenarios":  10,
+                                                                          "homes":  400,
+                                                                          "belt_total":  166,
+                                                                          "belt_gelled":  70,
+                                                                          "belt_pct":  42.168674698795179,
+                                                                          "violations":  0,
+                                                                          "overrun_ticks":  0
+                                                                      },
+                                                       "high_c8":  {
+                                                                       "scenarios":  10,
+                                                                       "homes":  400,
+                                                                       "belt_total":  155,
+                                                                       "belt_gelled":  107,
+                                                                       "belt_pct":  69.032258064516128,
+                                                                       "violations":  0,
+                                                                       "overrun_ticks":  0
+                                                                   },
+                                                       "extreme_c8":  {
+                                                                          "scenarios":  10,
+                                                                          "homes":  400,
+                                                                          "belt_total":  166,
+                                                                          "belt_gelled":  74,
+                                                                          "belt_pct":  44.578313253012048,
+                                                                          "violations":  0,
+                                                                          "overrun_ticks":  0
+                                                                      }
+                                                   },
+               "rsf_raw_row_rederivation":  {
+                                                "c8":  {
+                                                           "scenarios":  18,
+                                                           "homes":  1800,
+                                                           "belt_total":  1365,
+                                                           "belt_gelled":  1013,
+                                                           "belt_pct":  74.212454212454219,
+                                                           "violations":  0,
+                                                           "overrun_ticks":  0,
+                                                           "params":  {
+                                                                          "crews":  8,
+                                                                          "deploy":  10.0,
+                                                                          "egress":  30.0,
+                                                                          "ember_radius":  200.0,
+                                                                          "coat_early":  0,
+                                                                          "hold":  24.0,
+                                                                          "slack":  null,
+                                                                          "clients":  100,
+                                                                          "placement":  "scattered",
+                                                                          "staging":  "default"
+                                                                      },
+                                                           "recorded_stats_e1000":  [
+                                                                                        1013,
+                                                                                        1365,
+                                                                                        74.21245421245422
+                                                                                    ]
+                                                       },
+                                                "c10":  {
+                                                            "scenarios":  18,
+                                                            "homes":  1800,
+                                                            "belt_total":  1365,
+                                                            "belt_gelled":  1048,
+                                                            "belt_pct":  76.776556776556774,
+                                                            "violations":  0,
+                                                            "overrun_ticks":  0,
+                                                            "params":  {
+                                                                           "crews":  10,
+                                                                           "deploy":  10.0,
+                                                                           "egress":  30.0,
+                                                                           "ember_radius":  200.0,
+                                                                           "coat_early":  0,
+                                                                           "hold":  24.0,
+                                                                           "slack":  null,
+                                                                           "clients":  100,
+                                                                           "placement":  "scattered",
+                                                                           "staging":  "default"
+                                                                       },
+                                                            "recorded_stats_e1000":  [
+                                                                                         1048,
+                                                                                         1365,
+                                                                                         76.77655677655677
+                                                                                     ]
+                                                        },
+                                                "c12":  {
+                                                            "scenarios":  18,
+                                                            "homes":  1800,
+                                                            "belt_total":  1365,
+                                                            "belt_gelled":  1065,
+                                                            "belt_pct":  78.021978021978029,
+                                                            "violations":  0,
+                                                            "overrun_ticks":  0,
+                                                            "params":  {
+                                                                           "crews":  12,
+                                                                           "deploy":  10.0,
+                                                                           "egress":  30.0,
+                                                                           "ember_radius":  200.0,
+                                                                           "coat_early":  0,
+                                                                           "hold":  24.0,
+                                                                           "slack":  null,
+                                                                           "clients":  100,
+                                                                           "placement":  "scattered",
+                                                                           "staging":  "default"
+                                                                       },
+                                                            "recorded_stats_e1000":  [
+                                                                                         1065,
+                                                                                         1365,
+                                                                                         78.02197802197803
+                                                                                     ]
+                                                        }
+                                            }
+           }
+}
