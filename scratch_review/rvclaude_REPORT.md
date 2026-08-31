@@ -150,3 +150,29 @@ buffers are doing the protecting); (3) the live default cannot alert the
 majority of sellable homes (A13). The safety architecture is otherwise the
 strongest part of the codebase; fix its one advertised-but-absent property
 (10c sweep-independence) before it is needed.
+
+## ADDENDUM — A8 finalized (64-scenario sweep) + one self-correction
+
+Sweep (rvclaude_audit_carveout.py + rvclaude_run_sweep.py, 64 scenarios):
+106 exempted imminent-non-idle crew-ticks (104 legacy preset / **2 under
+the shipped CURRENT defaults** — legacy amplifies, does not create), all
+mode='egress'; worst -333.4 min (5.6 h) past eroded-P10, three crews at
+once; six crews simultaneously at -250 min in one scenario. Exposure
+concentrates at MODERATE intensity (the known idle-crew-gap regime).
+
+SELF-CORRECTION: the main report's "scoreboard reads violations=0" leaned
+on a final-tick snapshot read; scoreboard.violations is instantaneous and
+the benchmark harnesses already take per-tick maxima (opt_ember.py:147-154,
+bench_dispatch.py:67-68 documents the trap) — so the 77 BURNED crew-ticks
+WOULD be reported by the real harness. **B9 CONFIRM: the repo anticipated
+the snapshot trap.** The finding survives sharper: the 106 exempted ticks
+never enter _crew_overruns at ANY tick (simui.py ~3629 filters them before
+the list is built) — per-tick max cannot see past a mode-based exemption.
+SEMANTICS 10c's "independent of the sweep ... can never silently read 0"
+is measurably false. Fix: drop the _mode=="idle" restriction or amend the
+contract; the two must not stay in contradiction.
+
+Final tally: 14 findings weakening claimed numbers (3 critical / 5 high /
+4 medium / 2 low-medium), 9 confirmations under attack. Verdict unchanged:
+shadow YES with record restated; clients NO — blocked by A3 (extinction
+override), A7 (non-percentile P10), A13 (live ember radius 0).
