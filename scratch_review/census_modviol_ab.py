@@ -83,6 +83,9 @@ PRESETS = {
         # SEM-10e (2026-08-02): pinned OFF so 'legacy' keeps meaning the
         # full pre-flip revert after the proactive-escape sim default landed.
         "escape_proactive_lead_min": 0.0,
+        # fix-program item 1 (2026-09-03): the sim now arms corridor
+        # fail-closed by default; legacy pins it OFF for the same reason.
+        "corridor_fail_closed": False,
     },
     "corridor_only": {
         "corridor_erosion_tiered": False,

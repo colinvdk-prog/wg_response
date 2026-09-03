@@ -24,8 +24,12 @@ Safety rules implemented here (contracts SAFETY SEMANTICS 2-4):
   latest_service_start_s = latest_depart_s - deploy_min*60
   corridor legs are checked against the ERODED P10 arrival raster: at every
   sample (each corridor_sample_m along the leg) the eroded arrival time must
-  exceed the crew's pass time by route_margin_min. Cells outside the raster or
-  UNREACHED are safe.
+  exceed the crew's pass time by route_margin_min. Legacy (both knobs OFF):
+  cells outside the raster or UNREACHED impose no bound. FAIL-CLOSED
+  (contracts corridor_fail_closed / corridor_unreached_bound, tri-model review
+  2026-08-31 item 1): such samples are BOUNDED by the earliest arrival the
+  fire could carry to them through a boundary cell it actually reaches
+  (_boundary_runs / _bound_arrival_s), and a leg with no raster is unsafe.
 
 geo.py is built concurrently by a sibling cluster: geo.haversine_m /
 geo.sample_polyline / geo.erode_min are resolved lazily with stdlib fallbacks
@@ -35,6 +39,7 @@ the GridSpec formula spelled out in contracts (M_PER_DEG_LAT-based), locally.
 from __future__ import annotations
 
 import math
+import weakref
 
 from wgresponse.contracts import (
     UNREACHED,
@@ -277,6 +282,125 @@ def derive_job_windows(job: DispatchJob, cfg: ResponseConfig,
 
 
 # ---------------------------------------------------------------------------
+# Fail-closed corridor bounds (contracts corridor_fail_closed /
+# corridor_unreached_bound; tri-model review 2026-08-31, fix-program item 1)
+# ---------------------------------------------------------------------------
+
+#: Boundary cells are grouped into runs of this many consecutive cells so the
+#: per-sample bound costs O(perimeter / run) instead of O(perimeter).
+_BOUNDARY_RUN_LEN = 8
+#: Fraction of the flat-earth (equirectangular) distance kept as a rigor
+#: slack: the local-metre frame under-/over-states a spherical distance by
+#: well under 1% at the <100 km scales a corridor leg spans.
+_FLAT_EARTH_SLACK = 0.99
+_BOUNDARY_RUNS_MEMO = weakref.WeakKeyDictionary()   # Raster -> list[run]
+
+
+def _boundary_runs(raster: Raster) -> list:
+    """Reached boundary RUNS of `raster`, memoised per raster object.
+
+    Walks the four grid edges; consecutive boundary cells with a FINITE
+    arrival form a run of at most _BOUNDARY_RUN_LEN cells (an UNREACHED cell
+    ends the run, so every cell of a run is reached and every run endpoint is
+    a reached cell). Each run is (t_min_s, lat0, lon0, lat1, lon1): the run's
+    earliest arrival and the CENTERS of its first and last cell, i.e. the
+    segment every cell centre of the run lies on. Empty when the fire never
+    reaches the domain boundary within the horizon — the fire is contained
+    in the domain and nothing can arrive from outside it."""
+    runs = _BOUNDARY_RUNS_MEMO.get(raster)
+    if runs is not None:
+        return runs
+    spec = raster.spec
+    nr, nc = spec.nrows, spec.ncols
+    d = raster.data
+    runs = []
+
+    def _edge(cells):
+        run = []
+
+        def _flush():
+            if not run:
+                return
+            tmin = min(v for _rc, v in run)
+            (r0, c0), _v0 = run[0]
+            (r1, c1), _v1 = run[-1]
+            p0 = _rc_center(spec, r0, c0)
+            p1 = _rc_center(spec, r1, c1)
+            runs.append((tmin, p0.lat, p0.lon, p1.lat, p1.lon))
+            run.clear()
+
+        for rc in cells:
+            v = d[rc[0] * nc + rc[1]]
+            if math.isinf(v):
+                _flush()
+                continue
+            run.append((rc, v))
+            if len(run) >= _BOUNDARY_RUN_LEN:
+                _flush()
+        _flush()
+
+    _edge([(0, c) for c in range(nc)])
+    if nr > 1:
+        _edge([(nr - 1, c) for c in range(nc)])
+    _edge([(r, 0) for r in range(1, nr - 1)])
+    if nc > 1:
+        _edge([(r, nc - 1) for r in range(1, nr - 1)])
+    _BOUNDARY_RUNS_MEMO[raster] = runs
+    return runs
+
+
+def _bound_arrival_s(p: LatLon, runs: list, ros_mps: float,
+                     cell_m: float) -> float:
+    """Rigorous LOWER bound (never later than the truth) on the fire's arrival
+    at `p` carried through the domain boundary:
+
+        min over runs of  t_min + max(0, dist(p, run segment) * 0.99
+                                            - 0.71 * cell_m) / ros_mps
+
+    The 0.71-cell slack covers cell extent (arrival is stamped at the cell
+    centre; the cell's edge sits up to half a diagonal nearer p) and the 0.99
+    the flat-earth error of the local equirectangular frame, so the bound is
+    never later than the exact minimum over the run's cells of
+    arrival(cell) + haversine(p, cell) / ros_mps. Its conservatism is
+    bounded too: pairing a run's earliest arrival with its nearest point can
+    place the bound at most (_BOUNDARY_RUN_LEN - 1) cells / ros_mps earlier
+    than that exact minimum (~7 min at 100 m cells and 1.7 m/s; ~2 min at
+    30 m) — well inside the 30-56 min corridor margins it feeds. UNREACHED
+    when there is no run (fire contained) or ros_mps <= 0."""
+    if not runs or ros_mps <= 0.0:
+        return UNREACHED
+    kx = _M_PER_DEG_LAT * math.cos(math.radians(p.lat))
+    ky = _M_PER_DEG_LAT
+    slack = 0.71 * cell_m
+    best = UNREACHED
+    for tmin, la0, lo0, la1, lo1 in runs:
+        x0 = (lo0 - p.lon) * kx
+        y0 = (la0 - p.lat) * ky
+        x1 = (lo1 - p.lon) * kx
+        y1 = (la1 - p.lat) * ky
+        dx = x1 - x0
+        dy = y1 - y0
+        l2 = dx * dx + dy * dy
+        if l2 > 0.0:
+            t = -(x0 * dx + y0 * dy) / l2
+            if t < 0.0:
+                t = 0.0
+            elif t > 1.0:
+                t = 1.0
+            cx = x0 + t * dx
+            cy = y0 + t * dy
+        else:
+            cx, cy = x0, y0
+        dist = math.hypot(cx, cy) * _FLAT_EARTH_SLACK - slack
+        if dist < 0.0:
+            dist = 0.0
+        tb = tmin + dist / ros_mps
+        if tb < best:
+            best = tb
+    return best
+
+
+# ---------------------------------------------------------------------------
 # Corridor checks (contracts SAFETY SEMANTICS 3)
 # ---------------------------------------------------------------------------
 
@@ -297,8 +421,18 @@ class LegOracle:
 
         latest_safe_depart_s (T*) = min_i (arrival_i - margin - d_i/speed)
 
-    over samples with a finite arrival — samples outside the raster or
-    UNREACHED impose no bound (T* = +inf when nothing constrains the leg).
+    over samples with a finite arrival — in the LEGACY law samples outside the
+    raster or UNREACHED impose no bound (T* = +inf when nothing constrains
+    the leg).
+
+    FAIL-CLOSED (contracts corridor_fail_closed, tri-model review 2026-08-31
+    item 1): an off-raster sample gets the boundary bound
+    _bound_arrival_s(p, _boundary_runs(eroded_p10), corridor_offraster_ros_mps)
+    — the earliest the fire could reach p through a boundary cell it actually
+    reaches — instead of being skipped; with corridor_unreached_bound the same
+    bound covers in-domain UNREACHED samples (the truncation case). No reached
+    boundary cell => legacy skip. eroded_p10=None under fail-closed => the leg
+    is UNVERIFIABLE: T* = -inf and every verdict is unsafe.
 
     verdict(depart_s) replays the exact Sprint-1 corridor_safe loop over the
     precomputed samples — same floats, same operations, same order — so the
@@ -313,7 +447,8 @@ class LegOracle:
     scale; property-tested with a 1 ms guard band).
     """
 
-    __slots__ = ("n_pts", "samples", "margin_s", "latest_safe_depart_s")
+    __slots__ = ("n_pts", "samples", "margin_s", "latest_safe_depart_s",
+                 "unverifiable")
 
     def __init__(self, a: LatLon, b: LatLon, speed_mps: float,
                  eroded_p10: "Raster | None", cfg: ResponseConfig,
@@ -335,6 +470,20 @@ class LegOracle:
             raise ValueError("speed_mps must be > 0")
         m = cfg.route_margin_min if margin_min is None else margin_min
         self.margin_s = m * 60.0
+        fail_closed = bool(getattr(cfg, "corridor_fail_closed", False))
+        unreached_bound = bool(getattr(cfg, "corridor_unreached_bound", False))
+        self.unverifiable = False
+        runs = None
+        ros_max = 0.0
+        cell_m = 0.0
+        if eroded_p10 is None:
+            # No forecast raster: legacy = everywhere-unreached = safe;
+            # fail-closed = no forecast, no verdict.
+            self.unverifiable = fail_closed
+        elif fail_closed or unreached_bound:
+            runs = _boundary_runs(eroded_p10)
+            ros_max = float(getattr(cfg, "corridor_offraster_ros_mps", 1.7))
+            cell_m = float(eroded_p10.spec.cell_m)
         samples = []                      # (orig index, point, arrival_s, dt_s)
         n_pts = 0
         if eroded_p10 is not None:
@@ -350,7 +499,15 @@ class LegOracle:
                     cum_m += _haversine_m(prev, p)
                 prev = p
                 v = _raster_value_at(eroded_p10, p)
-                if v is None or math.isinf(v):   # outside raster or UNREACHED
+                if v is None:                    # outside the raster
+                    if not (fail_closed and runs):
+                        continue
+                    v = _bound_arrival_s(p, runs, ros_max, cell_m)
+                elif math.isinf(v):              # UNREACHED in-domain
+                    if not (unreached_bound and runs):
+                        continue
+                    v = _bound_arrival_s(p, runs, ros_max, cell_m)
+                if math.isinf(v):
                     continue
                 # dt = cum_m / speed matches the in-loop `depart + cum/speed`
                 # rounding exactly (the quotient is rounded once either way).
@@ -362,12 +519,17 @@ class LegOracle:
             t = v - self.margin_s - dt
             if t < tstar:
                 tstar = t
-        self.latest_safe_depart_s = tstar
+        self.latest_safe_depart_s = -math.inf if self.unverifiable else tstar
 
     def verdict(self, depart_s: float) -> CorridorVerdict:
         """Exact CorridorVerdict for a departure at unix depart_s — identical
         samples, arithmetic, and first-failure reason string as the Sprint-1
         corridor_safe loop."""
+        if self.unverifiable:
+            return CorridorVerdict(
+                False, "corridor unverifiable: no forecast raster for the leg "
+                       "(fail-closed, contracts corridor_fail_closed)",
+                -math.inf)
         margin_s = self.margin_s
         worst_h = UNREACHED
         safe = True
@@ -392,14 +554,17 @@ def corridor_safe(a: LatLon, b: LatLon, depart_s: float, speed_mps: float,
 
     Samples every cfg.corridor_sample_m; at each sample the eroded P10 arrival
     must be >= pass_time + cfg.route_margin_min*60. Samples outside the raster
-    or with UNREACHED arrival are safe. Returns:
+    or with UNREACHED arrival are safe in the legacy law and BOUNDED under
+    cfg.corridor_fail_closed / corridor_unreached_bound (see LegOracle).
+    Returns:
       safe            — all samples clear the margin
       reason          — first-failure description ('' when safe)
       worst_margin_h  — min(arrival - pass_time) over sampled cells, HOURS
                         (UNREACHED when no sampled cell has a finite arrival);
                         safe <=> worst_margin_h*60 >= route_margin_min.
     eroded_p10=None (no forecast raster available) is treated as everywhere-
-    unreached, i.e. safe.
+    unreached, i.e. safe — except under cfg.corridor_fail_closed, where a leg
+    with no raster is UNVERIFIABLE and every verdict is unsafe.
 
     Sprint 2 B1: implemented as LegOracle(a, b, speed, raster, cfg)
     .verdict(depart_s) — ONE shared sample->verdict path, byte-identical to the

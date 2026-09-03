@@ -236,6 +236,25 @@ def test_healthz_surfaces_cycle_age_and_count(ctx, monkeypatch):
                     "operator_event_count": 1}
 
 
+def test_healthz_surfaces_staleness_slo(ctx):
+    """STALENESS SLO (tri-model review 2026-08-31 live-ops finding: the loop
+    ran 33-47 min stale while degraded=false): the daemon's cycle_stale /
+    stale_after_s / last_cycle_duration_s / poll_period_s pass through the
+    open endpoint — surfaced, still a 200 (no restart storm on a slow loop)."""
+    ctx.srv.app.state_provider = lambda: {
+        "degraded": False, "last_cycle_t_s": 1_780_000_000.0,
+        "last_cycle_age_s": 2_400.0, "cycles_run": 3,
+        "cycle_stale": True, "stale_after_s": 900.0,
+        "last_cycle_duration_s": 1_440.2, "poll_period_s": 300.0,
+        "operator_events": []}
+    status, body = ctx.get_json("/healthz")
+    assert status == 200
+    assert body["cycle_stale"] is True
+    assert body["stale_after_s"] == 900.0
+    assert body["last_cycle_duration_s"] == 1_440.2
+    assert body["poll_period_s"] == 300.0
+
+
 def test_healthz_ignores_malformed_cycle_keys(ctx):
     """Garbage-typed watch keys are dropped, never 500s (open endpoint)."""
     ctx.srv.app.state_provider = lambda: {

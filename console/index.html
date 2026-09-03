@@ -398,12 +398,26 @@ function render(d) {
   const opEvents = d.operator_events || [];
   const degraded = !!d.degraded || opEvents.some(e =>
     e && (e.kind === "degraded" || e.kind === "feed_blind" || e.kind === "provider_error"));
+  // STALENESS SLO (tri-model review 2026-08-31 live-ops finding: the loop
+  // ran 33-47 min stale with degraded=false): a cycle older than
+  // stale_after_s is banner-worthy on its own — a slow or stalled loop is
+  // an unmissable condition even when every provider answered.
+  const stale = !!d.cycle_stale;
   const bar = $("degradedbar");
-  bar.style.display = degraded ? "block" : "none";
+  bar.style.display = (degraded || stale) ? "block" : "none";
   if (degraded) {
     const lastOp = opEvents.length ? opEvents[opEvents.length - 1] : null;
     bar.textContent = "DEGRADED — forecasts may be stale" +
-      (lastOp && lastOp.message ? " · " + lastOp.message : "");
+      (lastOp && lastOp.message ? " · " + lastOp.message : "") +
+      (stale ? " · STALE" : "");
+  } else if (stale) {
+    const ageMin = (typeof d.last_cycle_age_s === "number")
+      ? Math.round(d.last_cycle_age_s / 60) : null;
+    const durMin = (typeof d.last_cycle_duration_s === "number")
+      ? (d.last_cycle_duration_s / 60).toFixed(1) : null;
+    bar.textContent = "STALE — last cycle " +
+      (ageMin != null ? ageMin + " min ago" : "too old") +
+      " (loop slow or stalled" + (durMin != null ? "; last cycle took " + durMin + " min" : "") + ")";
   }
   $("subtitle").textContent = (d.name ? "scenario: " + d.name : "live operations") +
     (FILE ? "  [OFFLINE SIM FILE]" : (d.demo ? "  [DEMO REPLAY]" : ""));

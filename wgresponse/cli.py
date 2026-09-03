@@ -147,6 +147,34 @@ def _build_parser() -> argparse.ArgumentParser:
                          "domains (GR+GS >= 60%% burnable) with wind evaluate "
                          "the alert ladder on the pessimistic (p10) arrival "
                          "+ banner (docs/calibration/hindcast_oos_2026-07-28)")
+    # FIX PROGRAM (docs/TRI_MODEL_REVIEW_2026-08-31.md): the review's engine
+    # remedies, each a default-OFF contracts knob the operator arms here.
+    pw.add_argument("--ember-radius", type=float, default=0.0,
+                    help="cfg.ember_threat_radius_m: adjacency/ember threat "
+                         "radius (m) for homes on developed non-burnable "
+                         "cells — 0 = off (the live detection hole the "
+                         "review measured at 63%% of RSF-class WUI homes); "
+                         "recommended 200 (300 for RSF-class WUI)")
+    pw.add_argument("--fail-closed", action="store_true",
+                    help="arm corridor_fail_closed + corridor_unreached_bound: "
+                         "off-raster / unreached corridor samples are "
+                         "BOUNDED through reached boundary cells, never "
+                         "skipped; a leg with no forecast raster is unsafe "
+                         "(fix-program item 1)")
+    pw.add_argument("--floor-gate", action="store_true",
+                    help="cfg.ros_floor_extinction_gate: the ROS floor only "
+                         "raises a positive Rothermel ROS — fuel at/above its "
+                         "moisture of extinction stays out (item 2)")
+    pw.add_argument("--grass-only", action="store_true",
+                    help="cfg.ros_floor_grass_only: floor GR/GS only, never "
+                         "TU/TL timber (item 2)")
+    pw.add_argument("--model-error", type=float, default=0.0,
+                    help="cfg.model_error_sd_log: ensemble model-error term, "
+                         "sd(log head ROS) per perturbed member — "
+                         "hindcast-PIT-calibrated (item 3); 0 = off")
+    pw.add_argument("--p50-bound", action="store_true",
+                    help="cfg.ensemble_p50_nominal_bound: the ladder median "
+                         "never trails the nominal run (item 3, N4)")
     pw.add_argument("--dry-notify", action="store_true",
                     help="force log-only notifications (no SES even when "
                          "WGRESP_NOTIFY_SES=1)")
@@ -587,6 +615,7 @@ class _WatchDaemon:
 
     EVENTS_KEEP = 200      # AlertEvents retained for the console feed
     OP_LOG_KEEP = 100      # OperatorEvents retained across cycles
+    STALE_PERIODS = 3.0    # cycle older than this many poll periods => stale
 
     def __init__(self, monitor, engine, registry, tracker, store, cfg, aoi,
                  period_s, aoi_desc="", safe_zones=(), clock=time.time,
@@ -665,7 +694,15 @@ class _WatchDaemon:
         now = float(self._clock())
         if self.started_at_s is None:
             self.started_at_s = now
+        t_wall = time.monotonic()
         res = self._monitor.cycle(now)
+        # CADENCE TELEMETRY (tri-model review 2026-08-31, live-ops finding):
+        # the loop was measured at ~21% of its target cadence (24-min cycles
+        # against a 5-min period, 33-47 min stale) while healthz said
+        # degraded=false — a slow loop and a stalled one were
+        # indistinguishable. state()/healthz now carry the last cycle's wall
+        # duration and a staleness flag.
+        self.last_cycle_duration_s = time.monotonic() - t_wall
         self.cycles_run += 1
         self.last_result = res
         self._events = (self._events + list(res.events))[-self.EVENTS_KEEP:]
@@ -769,10 +806,21 @@ class _WatchDaemon:
                         "notes": ["no cycle has completed yet"],
                         "incidents": [], "clients": [], "plan": None})
             return out
+        age_s = max(0.0, now - res.t_s)
+        stale_after_s = self.STALE_PERIODS * self._period_s
         out.update({
             "now_s": res.t_s,
             "last_cycle_t_s": res.t_s,
-            "last_cycle_age_s": max(0.0, now - res.t_s),
+            "last_cycle_age_s": age_s,
+            "last_cycle_duration_s": getattr(self, "last_cycle_duration_s",
+                                             None),
+            # STALENESS SLO (review live-ops finding): a cycle older than
+            # STALE_PERIODS poll periods is stale whatever `degraded` says —
+            # the console banner and /healthz surface it; the daemon is not
+            # restarted on it (state lives on local disk; a restart storm on
+            # a merely slow loop would silence alerting entirely).
+            "cycle_stale": age_s > stale_after_s,
+            "stale_after_s": stale_after_s,
             "degraded": bool(res.degraded),
             "operator_events": list(res.operator_events),
             "notes": list(res.notes),
@@ -858,7 +906,7 @@ def _cmd_watch(args) -> int:
     from wgresponse import dispatch as dispatch_mod
     from wgresponse import server as server_mod
     from wgresponse.alerts import AlertEngine
-    from wgresponse.contracts import ResponseConfig
+    from wgresponse.contracts import ResponseConfig, validate_config
     from wgresponse.persist import StateStore
     from wgresponse.threat import ThreatMonitor
     from wgresponse.weather import NwsWeather
@@ -887,9 +935,10 @@ def _cmd_watch(args) -> int:
         cfg = dataclasses.replace(
             cfg, grass_ros_floor_frac=float(args.grass_floor))
         startup_note_floor = (
-            f"grass ROS floor ACTIVE: grass-class head ROS >= "
-            f"{float(args.grass_floor):g} x U10 [hindcast-validated: "
-            f"calibration 91.5% / OOS-normal ~100% coverage, 0% early-miss]")
+            f"fuel-class ROS floor ACTIVE: head ROS >= "
+            f"{float(args.grass_floor):g} x U10 (GR; GS/TU/TL at reduced "
+            f"ratios) [record restated by the 2026-08-31 tri-model review: "
+            f"buys P10 adequacy through area inflation; see --floor-gate]")
     startup_note_regime = None
     if getattr(args, "extreme_regime", False):
         # EXTREME SPREAD REGIME (contracts knob block): cured-grass domains
@@ -901,6 +950,58 @@ def _cmd_watch(args) -> int:
             f"effective wind >= {cfg.extreme_regime_wind_mps:g} m/s within "
             f"{cfg.extreme_regime_lookahead_h:g} h -> ladder evaluates on "
             f"pessimistic (p10) arrival + message banner")
+    # FIX PROGRAM knobs (docs/TRI_MODEL_REVIEW_2026-08-31.md): each is a
+    # default-OFF contracts knob; the startup note is the operator's record
+    # of what this daemon runs.
+    startup_notes_fix: list = []
+    if getattr(args, "ember_radius", 0.0):
+        cfg = dataclasses.replace(
+            cfg, ember_threat_radius_m=float(args.ember_radius))
+        startup_notes_fix.append(
+            f"ember/adjacency threat radius ACTIVE: a home on a developed "
+            f"non-burnable cell inherits the earliest burnable arrival within "
+            f"{float(args.ember_radius):g} m (FOUNDER ROUND 4 law 6; review "
+            f"item 6)")
+    if getattr(args, "fail_closed", False):
+        cfg = dataclasses.replace(cfg, corridor_fail_closed=True,
+                                  corridor_unreached_bound=True)
+        startup_notes_fix.append(
+            "corridor law FAIL-CLOSED: off-raster and unreached corridor "
+            "samples are bounded through reached boundary cells at "
+            f"{cfg.corridor_offraster_ros_mps:g} m/s; a leg with no forecast "
+            "raster is unsafe (review item 1)")
+    if getattr(args, "floor_gate", False):
+        cfg = dataclasses.replace(cfg, ros_floor_extinction_gate=True)
+        startup_notes_fix.append(
+            "ROS floor EXTINCTION-GATED: fuel at/above its moisture of "
+            "extinction stays out; Byram intensity follows the floored ROS "
+            "(review item 2)")
+    if getattr(args, "grass_only", False):
+        cfg = dataclasses.replace(cfg, ros_floor_grass_only=True)
+        startup_notes_fix.append(
+            "ROS floor restricted to GR/GS grass classes (TU/TL timber "
+            "unfloored; review item 2)")
+    if getattr(args, "model_error", 0.0):
+        cfg = dataclasses.replace(
+            cfg, model_error_sd_log=float(args.model_error))
+        startup_notes_fix.append(
+            f"ensemble MODEL-ERROR term ACTIVE: sd(log) "
+            f"{float(args.model_error):g} on every perturbed member's head "
+            f"ROS — p10/p90 are calibrated percentiles, not the sample "
+            f"minimum/maximum (review item 3)")
+    if getattr(args, "p50_bound", False):
+        cfg = dataclasses.replace(cfg, ensemble_p50_nominal_bound=True)
+        startup_notes_fix.append(
+            "ladder MEDIAN BOUND ACTIVE: p50 never trails the nominal run "
+            "(review N4)")
+    problems = validate_config(cfg)
+    if problems:
+        # The review found validate_config never ran on this path and
+        # accepted every unsound value it was handed; a daemon must not
+        # start on a config that disables a safety law.
+        for p in problems:
+            print(f"error: config: {p}", file=sys.stderr)
+        return 2
 
     period_s = (float(args.period) if args.period and args.period > 0
                 else cfg.poll_period_s)
@@ -914,6 +1015,7 @@ def _cmd_watch(args) -> int:
         startup_notes.append(startup_note_floor)
     if startup_note_regime:
         startup_notes.append(startup_note_regime)
+    startup_notes += startup_notes_fix
     feeds_stack, feed_notes = _live_feed_stack(os.environ.get("FIRMS_MAP_KEY"))
     startup_notes += feed_notes
     terrain, terrain_notes = _watch_terrain(args, state_dir)

@@ -69,6 +69,11 @@ def test_sim_defaults_flip_calibrated_stack():
     assert s._cfg.corridor_erosion_slow_m == 150.0
     assert s._cfg.escape_hysteresis_margin_min == 20.0
     assert s._cfg.transit_cold_black_by_class is True
+    # fix-program item 1 (2026-09-03): the sim bounds off-raster corridor
+    # samples; the in-tile UNREACHED bound is the LIVE daemon's (the sim tile
+    # is its whole world)
+    assert s._cfg.corridor_fail_closed is True
+    assert s._cfg.corridor_unreached_bound is False
 
 
 def test_cold_black_nonburnable_flat_window():
@@ -89,3 +94,8 @@ def test_engine_defaults_stay_off():
     assert cfg.corridor_erosion_tiered is False
     assert cfg.escape_hysteresis_margin_min == 0.0
     assert cfg.transit_cold_black_by_class is False
+    assert cfg.corridor_fail_closed is False
+    assert cfg.corridor_unreached_bound is False
+    assert cfg.ros_floor_extinction_gate is False
+    assert cfg.model_error_sd_log == 0.0
+    assert cfg.ensemble_p50_nominal_bound is False

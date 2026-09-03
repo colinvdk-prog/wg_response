@@ -64,6 +64,7 @@ import heapq
 import logging
 import math
 import os
+from statistics import NormalDist
 
 from wgresponse import geo, rothermel
 from wgresponse.contracts import (
@@ -190,11 +191,38 @@ def _ros_floor_frac(code: int, cfg) -> float:
         return base
     if is_grass_shrub(code):
         return base * _FLOOR_RATIO_GS
+    if getattr(cfg, "ros_floor_grass_only", False):
+        # ROS-FLOOR CLASS SET (contracts ros_floor_grass_only): the timber
+        # tiers are not floored — the review measured the "grass" floor
+        # lifting TU/TL 19-45x Rothermel with no evidence base for it.
+        return 0.0
     if is_timber_understory(code):
         return base * _FLOOR_RATIO_TU
     if is_timber_litter(code):
         return base * _FLOOR_RATIO_TL
     return 0.0
+
+
+def _floored(head_ros: float, intensity: float, floor: float,
+             gate: bool) -> tuple:
+    """(head_ros, intensity_kwm) after the fuel-class floor `floor` (m/s).
+
+    gate=False is the as-deployed floor: head_ros = max(head_ros, floor),
+    intensity untouched — so fuel Rothermel says is OUT (ros 0 at/above the
+    moisture of extinction) walks at the floor with ZERO intensity and flame
+    (tri-model review 2026-08-31, finding A3).
+
+    gate=True (contracts ros_floor_extinction_gate): the floor may only RAISE
+    a positive ROS — an out cell stays out — and where it binds, Byram
+    intensity (I = H*w*R, linear in R) rises by the same factor so the
+    spotting seam sees the same fire the front does."""
+    if gate:
+        if 0.0 < head_ros < floor:
+            return floor, intensity * (floor / head_ros)
+        return head_ros, intensity
+    if head_ros < floor:
+        return floor, intensity
+    return head_ros, intensity
 
 
 def _spot_distance(mean_m: float, incident_id: str, member_k: int,
@@ -312,8 +340,14 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     t0_s: float, cfg: ResponseConfig, moisture_scale: float = 1.0,
                     wind_scale: float = 1.0, dir_offset_deg: float = 0.0,
                     perimeter: list = None, perimeter_at_s: float = None,
-                    incident_id: str = "", member_k: int = 0) -> Raster:
+                    incident_id: str = "", member_k: int = 0,
+                    ros_scale: float = 1.0) -> Raster:
     """Fire arrival-time raster (absolute unix SECONDS per cell; UNREACHED=inf).
+
+    ros_scale (ENSEMBLE MODEL-ERROR TERM, contracts model_error_sd_log): a
+    member-wide multiplicative scale on the head ROS (and, linearly, Byram
+    intensity) applied AFTER the fuel-class floor. 1.0 (default, the nominal
+    member, knob off) skips the multiply — byte-identical.
 
     ignition: list[LatLon] seed points (hotspots / origin / legacy perimeter
     vertices), all seeded at t0_s (unix seconds). Points outside the tile are
@@ -488,6 +522,7 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     slope_d = tile.slope_deg.data
     aspect_d = tile.aspect_deg.data
     spotting = bool(cfg.spotting_enabled)
+    floor_gate = bool(getattr(cfg, "ros_floor_extinction_gate", False))
 
     def _max_spread_vector(u_wind: float, u_slope: float, wdir: float,
                            aspect: float):
@@ -521,17 +556,20 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             source cell (SEMANTICS 11) — NOT here — because cells sharing a
             ROS-memo key must draw independent landing distances."""
         lb = rothermel.ellipse_lb(res.effective_wind_mps)
-        spot = None
-        if spotting and wind10 > 0.0 and res.intensity_kwm > 0.0:
-            u20 = wind10 / 1.15
-            mean_m = _SPOT_A * res.intensity_kwm ** _SPOT_FLIN_EXP * u20 ** _SPOT_WS_EXP
-            spot = (mean_m, (wdir + 180.0) % 360.0, u20)
         head_ros = res.ros_mps
+        intensity = res.intensity_kwm
         ff = _ros_floor_frac(code, cfg)
         if ff > 0.0 and wind10 > 0.0:
-            floor = ff * wind10
-            if head_ros < floor:
-                head_ros = floor
+            head_ros, intensity = _floored(head_ros, intensity, ff * wind10,
+                                           floor_gate)
+        if ros_scale != 1.0:
+            head_ros = head_ros * ros_scale
+            intensity = intensity * ros_scale
+        spot = None
+        if spotting and wind10 > 0.0 and intensity > 0.0:
+            u20 = wind10 / 1.15
+            mean_m = _SPOT_A * intensity ** _SPOT_FLIN_EXP * u20 ** _SPOT_WS_EXP
+            spot = (mean_m, (wdir + 180.0) % 360.0, u20)
         return (head_ros, lb, brg, spot)
 
     # B3 ROS memo (module docstring; replaces the (cell_idx, hour) cache that
@@ -638,6 +676,14 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                 if not passable:
                     continue
             ros = rothermel.directional_ros_mps(head, lb, ebrg - brg)
+            if ros <= 0.0:
+                # Fuel that cannot carry fire (dead moisture at/above the
+                # moisture of extinction => Rothermel 0) never relaxes a
+                # neighbour. The 1e-4 m/s divisor floor below is a
+                # traversal-time guard for tiny positive rates, not a
+                # spread rate: at 30 m cells it put an "out" cell 83 h away,
+                # inside the 96 h horizon (tri-model review, code finding).
+                continue
             t_v = t_u + (dist_cells * cell_m) / max(ros, _ROS_FLOOR_MPS)
             if t_v < best[nidx] and t_v <= horizon_end_s:
                 best[nidx] = t_v
@@ -724,9 +770,13 @@ def _stratified_member_draws(incident_id: str, m: int) -> list:
     keys = []
     for k in range(1, m + 1):
         rng = seeded_rng("ensemble-v2", incident_id, k)
-        keys.append((rng.random(), rng.random(), rng.random()))
-    draws = [[0.0, 0.0, 0.0] for _ in range(m)]
-    for d in range(3):
+        # The fourth key (MODEL-ERROR dimension, contracts model_error_sd_log)
+        # is drawn AFTER the three legacy keys from the same member RNG, so
+        # the wind/moisture/direction strata are byte-identical to the
+        # three-dimension law every pinned ensemble was generated under.
+        keys.append((rng.random(), rng.random(), rng.random(), rng.random()))
+    draws = [[0.0, 0.0, 0.0, 0.0] for _ in range(m)]
+    for d in range(4):
         order = sorted(range(m), key=lambda i: keys[i][d])
         for rank, i in enumerate(order):
             draws[i][d] = 2.0 * (rank + 0.5) / m - 1.0
@@ -798,17 +848,27 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                                incident_id=incident_id, member_k=0)]
     draws = _stratified_member_draws(incident_id, n_members - 1)
     dir_lead = min(1.0, (cfg.horizon_h * 0.5) / _DIR_RAMP_SATURATION_H)
+    sd_log = float(getattr(cfg, "model_error_sd_log", 0.0) or 0.0)
+    p50_bound = bool(getattr(cfg, "ensemble_p50_nominal_bound", False))
     for k in range(1, n_members):
-        u_w, u_m, u_d = draws[k - 1]
+        u_w, u_m, u_d, u_e = draws[k - 1]
         w_scale = max(0.05, 1.0 + u_w * cfg.wind_perturb_frac * 0.5)
         m_scale = max(0.05, 1.0 + u_m * cfg.moisture_perturb_frac * 0.5)
         d_off = u_d * cfg.dir_perturb_deg * dir_lead
+        r_scale = 1.0
+        if sd_log > 0.0:
+            # MODEL-ERROR TERM (contracts model_error_sd_log): member k's
+            # head ROS is scaled by exp(sd * z_k), z_k the standard-normal
+            # quantile of its stratum midpoint — a lognormal, median-unbiased
+            # spread of the engine's own speed error around the nominal run.
+            r_scale = math.exp(sd_log * NormalDist().inv_cdf(0.5 * (u_e + 1.0)))
         members.append(compute_arrival(tile, pts, wx, t0_s, cfg,
                                        moisture_scale=m_scale, wind_scale=w_scale,
                                        dir_offset_deg=d_off,
                                        perimeter=perimeter,
                                        perimeter_at_s=perimeter_at_s,
-                                       incident_id=incident_id, member_k=k))
+                                       incident_id=incident_id, member_k=k,
+                                       ros_scale=r_scale))
 
     ncells = tile.spec.nrows * tile.spec.ncols
     if len(members) == 1:
@@ -841,7 +901,11 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             # unchanged everywhere else), never drops p10 below the earliest
             # member, and preserves p10 <= p50 <= p90 (it can only lower p10).
             p10d[i] = q10 if q10 <= nom[i] else nom[i]
-            p50d[i] = _quantile(vals, 0.50)
+            q50 = _quantile(vals, 0.50)
+            # LADDER MEDIAN BOUND (contracts ensemble_p50_nominal_bound): the
+            # median may never trail the nominal run either — the same rule
+            # as p10, applied to the value the alert ladder evaluates.
+            p50d[i] = (q50 if q50 <= nom[i] else nom[i]) if p50_bound else q50
             p90d[i] = _quantile(vals, 0.90)
     return EnsembleArrival(
         spec=tile.spec,

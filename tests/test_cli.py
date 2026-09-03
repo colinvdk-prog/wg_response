@@ -328,6 +328,12 @@ def test_watch_daemon_state_carries_cycle_and_console_keys(tmp_path):
     assert state["last_cycle_age_s"] >= 0.0
     assert state["degraded"] is False
     assert state["poll_period_s"] == 300.0
+    # STALENESS SLO + cadence telemetry (tri-model review live-ops finding)
+    assert state["cycle_stale"] is False
+    assert state["stale_after_s"] == 3.0 * 300.0
+    assert state["last_cycle_duration_s"] >= 0.0
+    daemon._clock = lambda: res.t_s + 4.0 * 300.0     # four periods later
+    assert daemon.state()["cycle_stale"] is True
     assert state["bbox"] == {"west": AOI.west, "south": AOI.south,
                              "east": AOI.east, "north": AOI.north}
     assert state["incidents"][0]["incident_id"] == "inc-1"

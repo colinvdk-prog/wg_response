@@ -353,7 +353,15 @@ def test_buffer_binds_unserved_reasons(tmp_path):
         s.set_speed(2.0)
         for _ in range(10):
             st = s.tick()
-            assert st["scoreboard"]["violations"] == 0
+            # Subject: the buffer -> unserved-reason semantics. No serviced
+            # stop may depart past its rule; the 10c crew-overrun backstop
+            # (counting IMMINENT exposure in every mode since 2026-09-03,
+            # tri-model review A8) separately reports a DEPLOYING crew whose
+            # cell sits inside the 90-min buffer at one tick — a genuine
+            # late-withdrawal exposure this assertion used to hide.
+            assert all(a["violation"] is False for a in st["audit"]), st["audit"]
+            assert st["scoreboard"]["violations"] == len(st["crew_overruns"])
+            assert all(o["reason"] == "imminent" for o in st["crew_overruns"])
         reasons[buf] = st["scoreboard"]["unserved_by_reason"]
     assert "infeasible_slack" in reasons[30.0]
     assert "infeasible_deadline" in reasons[90.0]

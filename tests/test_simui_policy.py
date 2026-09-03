@@ -499,7 +499,12 @@ def test_homes_mode_withdrawal_still_fires(tmp_path):
     # confirm it is still the in-flight stop on the next (re-anchor) tick
     _inject_spot_fire(s, st, cur)
     st2 = s.tick()
-    assert st2["scoreboard"]["violations"] == 0, st2["audit"]
+    # no serviced stop departed past its rule; the 10c backstop (counting
+    # IMMINENT exposure in every mode since 2026-09-03, review A8) may
+    # already report the still-deploying victim crew inside the collapsed
+    # p10 — that is the rug-pull this test engineers, one tick early
+    assert all(a["violation"] is False for a in st2["audit"]), st2["audit"]
+    assert st2["scoreboard"]["violations"] == len(st2["crew_overruns"])
     crew_mid = next(c for c in st2["crews"] if c["crew_id"] == crew["crew_id"])
     assert (crew_mid["status"] == "deploying" and crew_mid["itinerary"]
             and crew_mid["itinerary"][0]["client_id"] == victim), (
@@ -576,7 +581,18 @@ def test_speed_600x_coarse_jumps_audit_still_clean(tmp_path):
     s.set_speed(600.0)
     for _ in range(6):
         st = s.tick()
-        assert st["scoreboard"]["violations"] == 0, st["audit"]
+        # The subject here is the serviced-stop DEPARTURE audit under coarse
+        # jumps: no stop may depart past its rule. Since 2026-09-03 the 10c
+        # crew-overrun backstop counts IMMINENT exposure in every crew mode
+        # (tri-model review A8), and at 150 h per tick it catches an
+        # EGRESSING crew standing in a cell whose eroded-P10 passed days ago
+        # while the nominal front never arrives — a real exposure row this
+        # test used to hide, not a departure violation. The scoreboard folds
+        # the two; assert each on its own terms.
         for a in st["audit"]:
-            assert a["violation"] is False
+            assert a["violation"] is False, a
+        assert st["scoreboard"]["violations"] == len(st["crew_overruns"]), \
+            (st["audit"], st["crew_overruns"])
+        for o in st["crew_overruns"]:
+            assert o["reason"] == "imminent" and o["mode"] != "idle", o
     assert st["sim_now_s"] - st["t0_s"] >= 6 * 600.0 * 900.0

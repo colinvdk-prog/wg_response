@@ -234,10 +234,30 @@ def main():
                     help="cfg.route_margin_min override (None = engine "
                          "default; pair with --circuity — the knobs move "
                          "together)")
+    ap.add_argument("--legacy-stack", type=int, default=0,
+                    help="1 = pin EVERY sim-auto safety knob OFF (tiered "
+                         "erosion, escape hysteresis, per-class cold-black, "
+                         "proactive escape, corridor fail-closed) so a "
+                         "'knob off' run really is off. Tri-model review "
+                         "2026-08-31 A9: '--escape-hyst 0' / '--cold-black "
+                         "-1' / '--tiered \"\"' OMIT the override key and "
+                         "SimSession.configure then auto-enables the stack, "
+                         "so several archived 0.00 pp A/Bs could not be "
+                         "reproduced as on/off pairs under current defaults.")
+    ap.add_argument("--fail-closed", type=int, default=-1,
+                    help="cfg.corridor_fail_closed (fix-program item 1): "
+                         "1=on, 0=off, -1=session default (sim: on)")
     ap.add_argument("--workers", type=int, default=10)
     args = ap.parse_args()
 
     cfg = dict(BASE)
+    if args.legacy_stack:
+        # applied FIRST so an explicit flag below can still turn one back on
+        cfg.update({"corridor_erosion_tiered": False,
+                    "escape_hysteresis_margin_min": 0.0,
+                    "transit_cold_black_by_class": False,
+                    "escape_proactive_lead_min": 0.0,
+                    "corridor_fail_closed": False})
     cfg.update({"deploy_min": args.deploy,
                 "dispatch_plan_on_roads": bool(args.roads),
                 "dispatch_hold_h": args.hold,
@@ -265,6 +285,8 @@ def main():
         cfg["escape_hysteresis_margin_min"] = float(args.escape_hyst)
     if args.cold_black >= 0:
         cfg["transit_cold_black_by_class"] = bool(args.cold_black)
+    if args.fail_closed >= 0:
+        cfg["corridor_fail_closed"] = bool(args.fail_closed)
 
     scen = scenarios()
     if args.suite == "quick":
@@ -292,7 +314,9 @@ def main():
                                route_margin=args.route_margin,
                                tiered=args.tiered,
                                escape_hyst=args.escape_hyst,
-                               cold_black=args.cold_black),
+                               cold_black=args.cold_black,
+                               legacy_stack=args.legacy_stack,
+                               fail_closed=args.fail_closed),
                    stats=st, rows=rows)
     out = f"scratch_review/opt_ember_{args.tag}.json"
     json.dump(payload, open(out, "w"), indent=1)

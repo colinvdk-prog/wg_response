@@ -796,6 +796,14 @@ class _Handler(BaseHTTPRequestHandler):
         age = state.get("last_cycle_age_s")
         if isinstance(age, (int, float)):
             info["last_cycle_age_s"] = float(age)
+        # STALENESS SLO (tri-model review 2026-08-31 live-ops finding: the
+        # loop ran 33-47 min stale with degraded=false). Surfaced, not a
+        # 503 — see cli._WatchDaemon.state().
+        for key in ("cycle_stale", "stale_after_s", "last_cycle_duration_s",
+                    "poll_period_s"):
+            v = state.get(key)
+            if isinstance(v, bool) or isinstance(v, (int, float)):
+                info[key] = v
         cycles = state.get("cycles_run")
         if isinstance(cycles, (int, float)) and not isinstance(cycles, bool):
             info["cycles_run"] = int(cycles)

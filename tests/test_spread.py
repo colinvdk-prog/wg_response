@@ -1268,16 +1268,20 @@ def test_stratified_member_draws_law():
     draws = spread._stratified_member_draws("inc-1", m)
     assert draws == spread._stratified_member_draws("inc-1", m)  # deterministic
     mids = [2.0 * (j + 0.5) / m - 1.0 for j in range(m)]
-    for dim in range(3):
+    # four dimensions since the MODEL-ERROR term (contracts
+    # model_error_sd_log, 2026-09-03): wind, moisture, direction + the
+    # model-error stratum, drawn after the legacy three so those stay
+    # byte-identical (tests/test_ros_floor_physics.py pins that).
+    for dim in range(4):
         assert sorted(d[dim] for d in draws) == pytest.approx(mids)
-    assert all(len(d) == 3 for d in draws)
+    assert all(len(d) == 4 for d in draws)
     # different incident => different stratum assignment somewhere (seeded on
     # ('ensemble-v2', incident_id, k))
     assert any(spread._stratified_member_draws("inc-2", m)[i] != draws[i]
                for i in range(m))
     # degenerate sizes
     assert spread._stratified_member_draws("inc-1", 0) == []
-    assert spread._stratified_member_draws("inc-1", 1) == [(0.0, 0.0, 0.0)]
+    assert spread._stratified_member_draws("inc-1", 1) == [(0.0, 0.0, 0.0, 0.0)]
 
 
 def test_ensemble_seeded_on_incident_and_member_never_t0():

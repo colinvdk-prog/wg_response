@@ -1548,6 +1548,14 @@ class SimSession:
         # Explicit cfg_overrides ALWAYS win.
         if "escape_proactive_lead_min" not in overrides:
             cfg.escape_proactive_lead_min = SIM_ESCAPE_PROACTIVE_LEAD_MIN
+        # CORRIDOR FAIL-CLOSED (tri-model review 2026-08-31, fix-program item
+        # 1): the SIMULATOR bounds off-raster corridor samples instead of
+        # skipping them. corridor_unreached_bound stays OFF here on purpose —
+        # the sim tile IS its world (nothing arrives from outside it), so an
+        # in-tile UNREACHED cell is honestly unreached; the LIVE daemon arms
+        # both via --fail-closed. Explicit cfg_overrides ALWAYS win.
+        if "corridor_fail_closed" not in overrides:
+            cfg.corridor_fail_closed = True
 
         # FIRE ZONE placement law: clients ALWAYS live in the central
         # ~18 km community window; on the standard tile that IS the tile
@@ -3606,18 +3614,20 @@ class SimSession:
         self._min_margin_h = min_margin
 
         # SAFETY SEMANTICS 10c backstop: flag any ARRIVED crew genuinely CAUGHT.
-        # BURNED (nominal front already at the cell) counts in ANY mode — the
-        # crew is physically in the fire. IMMINENT (eroded-P10 within the buffer,
-        # not yet burned) counts only for an IDLE crew — one that is NOT escaping
-        # (the founder's exact bug: idle crews sitting in the fire's path). An
-        # en_route / egressing crew crossing a wide buffer band is actively
-        # fleeing to safety, not caught, so it is NOT flagged for mere imminence
-        # (the sweep has already turned every unsafe deploying / travelling crew
-        # onto an egress leg before this audit, so the only idle crews left in an
-        # imminent cell are ones with nowhere safe to go — genuinely stuck).
-        # Independent of the sweep by construction (still fires with relocation
-        # disabled), so the scoreboard can never silently read 0 while a crew
-        # sits in the burn. Empty (byte-identical audit) when nothing is caught.
+        # BURNED (nominal front already at the cell) and IMMINENT (eroded-P10
+        # within the egress buffer, not yet burned) both count IN EVERY MODE.
+        # Until 2026-09-03 the imminent branch required cs._mode == "idle"
+        # ("a fleeing crew is not caught") — the tri-model review's finding
+        # A8: 106 crew-ticks in the 64-scenario sweep, up to 5.6 h past
+        # eroded-P10, all in egress mode, never entered the count, and the
+        # only guarding test pinned the zero-exposure case. A lawful route
+        # never stands on an imminent cell at its pass time (the corridor
+        # margin equals the egress buffer), so anything counted here is a real
+        # exposure the sweep failed to prevent; the row's `mode` attributes
+        # idle vs moving exposure. Independent of the sweep by construction
+        # (still fires with relocation disabled), so the scoreboard can never
+        # silently read 0 while a crew sits in the burn. Empty (byte-identical
+        # audit) when nothing is exposed.
         overruns = []
         for cid in _idsort(self._crew_sims):
             cs = self._crew_sims[cid]
@@ -3626,7 +3636,7 @@ class SimSession:
             nom, p10 = self._crew_exposure(cs.pos)
             burned = (not math.isinf(nom)) and nom <= now
             imminent = (not math.isinf(p10)) and p10 < now + buffer_s
-            if not (burned or (imminent and cs._mode == "idle")):
+            if not (burned or imminent):
                 continue
             overruns.append({
                 "crew_id": cid, "kind": "crew_overrun",

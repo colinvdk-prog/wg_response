@@ -117,9 +117,19 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
        operator alarm (fail-closed, like no_safe_egress).
    (c) AUDIT COUNTS OVERRUN (the no-reship invariant): the audit ALSO flags a
        violation for any crew whose current cell is burned (nominal arrival <=
-       now) or imminent (eroded-P10 < now + egress_buffer_min). scoreboard
-       violations can therefore NEVER read 0 while a crew is in the burn. Strict
-       superset of the old audit — byte-identical when no crew is exposed.
+       now) or imminent (eroded-P10 < now + egress_buffer_min) — IN EVERY CREW
+       MODE (idle, en route, deploying, egressing). scoreboard violations can
+       therefore NEVER read 0 while a crew is in the burn. Strict superset of
+       the old audit — byte-identical when no crew is exposed.
+       2026-09-03 (tri-model review finding A8): the shipped audit exempted
+       non-idle crews from the IMMINENT branch ("a fleeing crew is not
+       caught"), so 106 crew-ticks in the 64-scenario sweep — up to 5.6 h past
+       eroded-P10, all in egress mode — never entered the count, and the only
+       guarding test pinned the zero-exposure case. The exemption is GONE. A
+       lawful route never stands on an imminent cell at its pass time (the
+       corridor margin equals the egress buffer), so anything counted here is
+       a real exposure the sweep failed to prevent; rows carry `mode` so the
+       scoreboard can attribute idle vs moving exposure, but both COUNT.
    Crew telemetry gains relocating/relocate_reason so the UI shows a crew
    repositioning ("zone threatened"). This is EXTENSION, not weakening: same
    eroded-P10 transform, same egress_buffer_min threshold.
@@ -443,7 +453,7 @@ class Raster:
     """Flat row-major float grid bound to a GridSpec. Defined in contracts so every
     module shares one shape; geo.py provides constructors/utilities."""
 
-    __slots__ = ("spec", "data")
+    __slots__ = ("spec", "data", "__weakref__")   # weakref: per-raster memo tables (safety.py)
 
     def __init__(self, spec: GridSpec, data: Optional[list] = None, fill: float = 0.0):
         self.spec = spec
@@ -456,9 +466,18 @@ class Raster:
             self.data = data
 
     def get(self, r: int, c: int) -> float:
+        # A negative index would silently wrap to the far edge of the row
+        # above (tri-model review 2026-08-31, code finding): out-of-grid
+        # cells are an error here, never a value.
+        if r < 0 or c < 0 or r >= self.spec.nrows or c >= self.spec.ncols:
+            raise IndexError(f"raster cell ({r}, {c}) outside "
+                             f"{self.spec.nrows}x{self.spec.ncols} grid")
         return self.data[r * self.spec.ncols + c]
 
     def set(self, r: int, c: int, v: float) -> None:
+        if r < 0 or c < 0 or r >= self.spec.nrows or c >= self.spec.ncols:
+            raise IndexError(f"raster cell ({r}, {c}) outside "
+                             f"{self.spec.nrows}x{self.spec.ncols} grid")
         self.data[r * self.spec.ncols + c] = v
 
 
@@ -893,6 +912,33 @@ class ResponseConfig:
     corridor_erosion_shrub_m: float = 200.0  # SH: flame-standoff-scale halo (~112 m needed at high wind)
     corridor_erosion_slow_m: float = 150.0   # TU/TL/SB: short flames, slow spread; snags are temporal
     corridor_sample_m: float = 300.0
+    # CORRIDOR FAIL-CLOSED (tri-model review 2026-08-31, fix-program item 1):
+    # the leg oracle SKIPPED samples off the spread raster and samples the
+    # search never reached (UNREACHED) — "no bound" read as SAFE. Measured:
+    # 4.0% false-clears over 720 realistic geometries, worst 7.85 h of lost
+    # escape margin; egress legs 24-84% unsampled beyond the 2 km client-hull
+    # domain; and domain truncation MANUFACTURES the UNREACHED value the law
+    # trusted (2,024/2,024 cells behind a 2-cell non-burnable wall at the
+    # domain edge). When corridor_fail_closed is ON an off-raster sample is
+    # BOUNDED, not skipped: the fire can only leave the domain through a
+    # boundary cell it actually reaches, so the earliest arrival at an
+    # outside point p is >= min over reached boundary cells b of
+    #     arrival(b) + dist(p, b) / corridor_offraster_ros_mps
+    # (a plausible sustained MAXIMUM head ROS — the same 1.7 m/s, ~6 km/h
+    # Tubbs-class run, the threat radius uses). The oracle evaluates that
+    # bound over boundary RUNS (min arrival per run + distance to the run
+    # segment): a rigorous LOWER bound on the true minimum, i.e. never later
+    # than the truth. No reached boundary cell (fire contained in the domain
+    # within the horizon) => the legacy skip. A leg with NO raster at all is
+    # unsafe (no forecast = no verdict). corridor_unreached_bound applies the
+    # same bound to IN-DOMAIN UNREACHED samples — the truncation case — for
+    # the LIVE path, whose domain is a small window on a real world; the
+    # simulator's tile IS its world (nothing arrives from outside it), so the
+    # sim arms only corridor_fail_closed. Both default OFF = byte-identical
+    # legacy; the watch daemon arms them via --fail-closed.
+    corridor_fail_closed: bool = False
+    corridor_unreached_bound: bool = False
+    corridor_offraster_ros_mps: float = 1.7
     ember_buffer_min: float = 0.0      # extra safety on top of P10 (default-OFF; enable in wind events)
     # ESCAPE-TARGET HYSTERESIS (founder 2026-07-30 "fix escape target churn";
     # caught-crew dissection: a threatened crew was re-targeted to a fresh
@@ -976,6 +1022,27 @@ class ResponseConfig:
     blind_alarm_cycles: int = 1        # unassessed cycles before OperatorEvent('degraded')
     registry_ttl_s: float = 300.0      # client-registry cache TTL (kills per-incident re-scans)
     dir_perturb_deg: float = 30.0      # ensemble wind-direction perturbation at max lead (model F2)
+    # ENSEMBLE MODEL-ERROR TERM (tri-model review 2026-08-31, finding A7):
+    # the wind/moisture/direction perturbations are INPUT-uncertainty terms
+    # (and the speed/moisture ones are damped to the horizon mean, i.e. the
+    # realized wind spread is +/-wind_perturb_frac*0.5 at any member count),
+    # so the band was 8x narrower than the measured head-ratio error
+    # (sd(log) 0.71) and p10 was in effect the sample minimum, not a
+    # percentile. When > 0, every perturbed member k also carries a
+    # multiplicative head-ROS scale exp(sd * z_k), z_k the stratified
+    # standard-normal quantile of a fourth Latin-hypercube dimension
+    # (nominal member untouched; seeding law unchanged — the first three
+    # dimensions' draws are byte-identical). Value = the hindcast PIT
+    # calibration's (docs/calibration/); 0.0 = off, byte-identical.
+    model_error_sd_log: float = 0.0
+    # LADDER MEDIAN BOUND (same review, finding N4): with direction
+    # perturbation the median member arrives at a head-axis client via its
+    # flank, so the p50 the alert ladder evaluates sat ~4.2x the engine's own
+    # nominal arrival. When ON, p50 = min(Hazen p50, nominal) per cell — the
+    # median may never trail the best-estimate run (the exact rule p10
+    # already obeys); p10 <= p50 <= p90 is preserved. Default OFF =
+    # byte-identical ladder; the watch daemon arms it via --p50-bound.
+    ensemble_p50_nominal_bound: bool = False
     dispatch_objective: str = "homes"  # 'homes' = max count (founder triage law) | 'value' = legacy $-weighted
     dispatch_urgency_weight: float = 0.30   # INERT in the shipped planner (urgency retired from the objective — SEMANTICS 7; kept for the _urgency_reorder utility)
     dispatch_value_weight: float = 0.05     # homes-mode value tiebreak (< urgency; count stays primary)
@@ -1066,7 +1133,23 @@ class ResponseConfig:
     ember_threat_radius_m: float = 0.0      # eta_at adjacency fallback for developed-cell homes (0 = off/byte-identical; sim sets ~200)
     crew_reinforce_1h_min: float = 60.0     # out-of-region '1h away' crews arrive this many min after first ignition (SEMANTICS 9)
     crew_reinforce_3h_min: float = 180.0    # out-of-region '3h away' crews arrive this many min after first ignition (SEMANTICS 9)
-    grass_ros_floor_frac: float = 0.0       # sim-only grass head-ROS floor = frac*U10 (Cruz-Alexander; 0=off/live-identical; sim ~0.10 GR/0.07 GS)
+    grass_ros_floor_frac: float = 0.0       # fuel-class head-ROS floor = frac*U10 (Cruz-Alexander; 0=off/byte-identical; sim 0.10, LIVE watcher armed 0.10 via --grass-floor since 2026-07-28)
+    # ROS-FLOOR PHYSICS (tri-model review 2026-08-31, finding A3): the floor
+    # as deployed overrides the MOISTURE OF EXTINCTION — fuel Rothermel says
+    # is OUT (dead moisture at/above mx, ros 0) is walked at frac*U10 with
+    # zero intensity and zero flame (39.4% of the cached August fire-hours
+    # sat in that regime). When ON, the floor only ever RAISES a positive
+    # Rothermel ROS (fire that can spread, spreads faster; fire that cannot
+    # spread stays out) and the cell's Byram intensity scales with the raised
+    # ROS (I = H*w*R is linear in R) so the spotting seam sees the same fire
+    # the front does. Default OFF = the as-deployed floor, byte-identical;
+    # the calibration A/B (docs/calibration/) decides the live flip.
+    ros_floor_extinction_gate: bool = False
+    # ROS-FLOOR CLASS SET (same review): the "grass" floor also lifts TU/TL
+    # timber to 19-45x Rothermel. True restricts the floor to GR/GS (the
+    # Cruz-Alexander evidence base); the TU/TL ratios become 0. Default OFF =
+    # all four legacy classes, byte-identical.
+    ros_floor_grass_only: bool = False
     # EXTREME SPREAD REGIME (docs/calibration/hindcast_oos_2026-07-28.md):
     # blow-up windows (Porcupine Ridge 22.5 km/12.9 h = 13x under-forecast)
     # are NOT separated by red-flag weather in reanalysis (they occurred at
@@ -1114,16 +1197,204 @@ def assert_valid_transition(prev: AlertState, new: AlertState) -> None:
 
 
 def validate_config(cfg: ResponseConfig) -> "list[str]":
-    """Return a list of human-readable config problems (empty = valid)."""
+    """Return a list of human-readable config problems (empty = valid).
+
+    Tri-model review 2026-08-31 (docs/TRI_MODEL_REVIEW_2026-08-31.md, code
+    finding 7 / scratch_review/rv2code_r7_quick.py): the prior 5-check version
+    accepted 22/22 deliberately unsound configs (e.g. a NEGATIVE
+    corridor_erosion_m silently DISABLES the corridor shield instead of
+    eroding it). This function now bounds every knob it can from its own
+    documented meaning: sign/range on every duration, radius, speed, count
+    and fraction; [0,1]/[0,100]/[0,180]/[0,3] caps where the field is a
+    fraction, percent, angle, or the calibrated model-error term; ordering
+    constraints between paired knobs; enum-membership for the two dispatch
+    strings; and bool/int type discipline via dataclasses introspection.
+    Every check here passes on the class default AND must keep doing so —
+    this validator must never reject ResponseConfig()."""
+    import dataclasses as _dc
     problems = []
+
+    # --- alert ladder ---
+    if cfg.notice_h <= 0:
+        problems.append("notice_h must be > 0")
+    if cfg.extreme_h <= 0:
+        problems.append("extreme_h must be > 0")
     if cfg.extreme_h >= cfg.notice_h:
         problems.append("extreme_h must be < notice_h")
-    if cfg.deploy_min <= 0 or cfg.egress_buffer_min < 0:
-        problems.append("deploy_min must be > 0 and egress_buffer_min >= 0")
+    if cfg.extreme_p10_h <= 0:
+        problems.append("extreme_p10_h must be > 0")
+    if cfg.extreme_p10_h > cfg.extreme_h:
+        problems.append("extreme_p10_h must be <= extreme_h (the stricter, "
+                        "earlier-triggering P10 threshold)")
+    if cfg.clear_cycles < 1:
+        problems.append("clear_cycles must be >= 1 (0 defeats the clear-streak hysteresis)")
+    if cfg.clear_margin_h < 0:
+        problems.append("clear_margin_h must be >= 0")
+
+    # --- crew safety / route margins (minutes; sanity-capped at 24h -- no
+    # per-stop/per-leg safety margin is plausibly longer than that) ---
+    MAX_MARGIN_MIN = 1440.0
+    if cfg.deploy_min <= 0 or cfg.deploy_min > MAX_MARGIN_MIN:
+        problems.append(f"deploy_min must be > 0 and <= {MAX_MARGIN_MIN:g} minutes")
+    if cfg.egress_buffer_min < 0 or cfg.egress_buffer_min > MAX_MARGIN_MIN:
+        problems.append(f"egress_buffer_min must be within [0, {MAX_MARGIN_MIN:g}] minutes")
+    if cfg.route_margin_min < 0 or cfg.route_margin_min > MAX_MARGIN_MIN:
+        problems.append(f"route_margin_min must be within [0, {MAX_MARGIN_MIN:g}] minutes")
+    if cfg.route_margin_roads_min < 0 or cfg.route_margin_roads_min > MAX_MARGIN_MIN:
+        problems.append(f"route_margin_roads_min must be within [0, {MAX_MARGIN_MIN:g}] minutes")
+    if cfg.slack_min < 0 or cfg.slack_min > MAX_MARGIN_MIN:
+        problems.append(f"slack_min must be within [0, {MAX_MARGIN_MIN:g}] minutes")
+    if cfg.ember_buffer_min < 0 or cfg.ember_buffer_min > MAX_MARGIN_MIN:
+        problems.append(f"ember_buffer_min must be within [0, {MAX_MARGIN_MIN:g}] minutes")
+    if cfg.escape_hysteresis_margin_min < 0:
+        problems.append("escape_hysteresis_margin_min must be >= 0")
+    if cfg.escape_proactive_lead_min < 0:
+        problems.append("escape_proactive_lead_min must be >= 0")
+
+    # --- corridor erosion / sampling ---
+    if cfg.corridor_erosion_m < 0:
+        problems.append("corridor_erosion_m must be >= 0 (negative DILATES the "
+                        "corridor instead of eroding it)")
+    if cfg.corridor_erosion_fast_m <= 0:
+        problems.append("corridor_erosion_fast_m must be > 0")
+    if cfg.corridor_erosion_shrub_m <= 0:
+        problems.append("corridor_erosion_shrub_m must be > 0")
+    if cfg.corridor_erosion_slow_m <= 0:
+        problems.append("corridor_erosion_slow_m must be > 0")
+    MAX_CORRIDOR_SAMPLE_M = 5000.0
+    if cfg.corridor_sample_m <= 0 or cfg.corridor_sample_m > MAX_CORRIDOR_SAMPLE_M:
+        problems.append(f"corridor_sample_m must be > 0 and <= {MAX_CORRIDOR_SAMPLE_M:g} m")
+    if cfg.corridor_offraster_ros_mps <= 0:
+        problems.append("corridor_offraster_ros_mps must be > 0")
+    if cfg.route_alternatives < 1:
+        problems.append("route_alternatives must be >= 1")
+
+    # --- gel product parameters ---
     if cfg.gel_window_h <= 0:
         problems.append("gel_window_h must be > 0")
+    if cfg.gel_full_strength_h <= 0:
+        problems.append("gel_full_strength_h must be > 0")
+    if cfg.gel_window_h > 0 and cfg.gel_full_strength_h > cfg.gel_window_h:
+        problems.append("gel_full_strength_h must be <= gel_window_h")
+    if not (0.0 <= cfg.gel_effectiveness <= 1.0):
+        problems.append("gel_effectiveness must be within [0, 1]")
+
+    # --- travel ---
+    if cfg.circuity < 1.0:
+        problems.append("circuity must be >= 1 (a routed path cannot be shorter than the chord)")
+    if cfg.fire_traffic_factor < 1.0:
+        problems.append("fire_traffic_factor must be >= 1")
+    if cfg.road_speed_mps <= 0:
+        problems.append("road_speed_mps must be > 0")
+
+    # --- spread / forecast ---
+    if cfg.horizon_h <= 0:
+        problems.append("horizon_h must be > 0")
     if cfg.ensemble_n < 1:
         problems.append("ensemble_n must be >= 1")
+    if not (0.0 <= cfg.wind_perturb_frac <= 1.0):
+        problems.append("wind_perturb_frac must be within [0, 1]")
+    if not (0.0 <= cfg.moisture_perturb_frac <= 1.0):
+        problems.append("moisture_perturb_frac must be within [0, 1]")
     if cfg.grid_cell_m < 30.0:
         problems.append("grid_cell_m below LANDFIRE native 30 m is fabricated precision")
+    if cfg.grid_max_cells < 1000:
+        problems.append("grid_max_cells must be >= 1000")
+    if not (0.0 <= cfg.live_herb_frac <= 1.0):
+        problems.append("live_herb_frac must be within [0, 1]")
+    if not (0.0 <= cfg.live_woody_frac <= 1.0):
+        problems.append("live_woody_frac must be within [0, 1]")
+    if not (0.0 <= cfg.dir_perturb_deg <= 180.0):
+        problems.append("dir_perturb_deg must be within [0, 180] degrees")
+    if not (0.0 <= cfg.model_error_sd_log <= 3.0):
+        problems.append("model_error_sd_log must be within [0, 3]")
+
+    # --- dispatch ---
+    if cfg.replan_period_s <= 0:
+        problems.append("replan_period_s must be > 0")
+    if cfg.commitment_horizon_min < 0:
+        problems.append("commitment_horizon_min must be >= 0")
+    if not (0.0 <= cfg.churn_penalty_frac <= 1.0):
+        problems.append("churn_penalty_frac must be within [0, 1]")
+    if not (0.0 <= cfg.adoption_threshold_frac <= 1.0):
+        problems.append("adoption_threshold_frac must be within [0, 1]")
+    if cfg.solver_budget_s < 0:
+        problems.append("solver_budget_s must be >= 0")
+    if cfg.ils_iterations < 0:
+        problems.append("ils_iterations must be >= 0")
+    if cfg.dispatch_objective not in ("homes", "value"):
+        problems.append("dispatch_objective must be 'homes' or 'value'")
+    if cfg.dispatch_sequence not in ("auto", "fire_first", "urgency"):
+        problems.append("dispatch_sequence must be 'auto', 'fire_first', or 'urgency'")
+    if cfg.dispatch_urgency_weight < 0:
+        problems.append("dispatch_urgency_weight must be >= 0")
+    if cfg.dispatch_value_weight < 0:
+        problems.append("dispatch_value_weight must be >= 0")
+    if cfg.dispatch_hold_h < 0:
+        problems.append("dispatch_hold_h must be >= 0")
+    if cfg.dispatch_hold_weather_buffer_h < 0:
+        problems.append("dispatch_hold_weather_buffer_h must be >= 0")
+
+    # --- crew tracking / shifts ---
+    if cfg.beacon_stale_s <= 0:
+        problems.append("beacon_stale_s must be > 0")
+    if cfg.crew_shift_max_on_h < 0:
+        problems.append("crew_shift_max_on_h must be >= 0")
+    if cfg.crew_shift_rest_h < 0:
+        problems.append("crew_shift_rest_h must be >= 0")
+    if cfg.crew_reinforce_1h_min < 0:
+        problems.append("crew_reinforce_1h_min must be >= 0")
+    if cfg.crew_reinforce_3h_min < 0:
+        problems.append("crew_reinforce_3h_min must be >= 0")
+    if (cfg.crew_reinforce_1h_min >= 0 and cfg.crew_reinforce_3h_min >= 0
+            and cfg.crew_reinforce_1h_min > cfg.crew_reinforce_3h_min):
+        problems.append("crew_reinforce_1h_min must be <= crew_reinforce_3h_min")
+
+    # --- feeds / ops ---
+    if cfg.poll_period_s <= 0:
+        problems.append("poll_period_s must be > 0")
+    if cfg.registry_ttl_s < 0:
+        problems.append("registry_ttl_s must be >= 0")
+    if cfg.blind_alarm_cycles < 0:
+        problems.append("blind_alarm_cycles must be >= 0")
+    if cfg.incident_stale_h <= 0:
+        problems.append("incident_stale_h must be > 0")
+    if cfg.history_ticks < 0:
+        problems.append("history_ticks must be >= 0")
+    if cfg.road_spur_max_m < 0:
+        problems.append("road_spur_max_m must be >= 0")
+
+    # --- ensemble / ladder bias knobs ---
+    if not (0.0 <= cfg.wind_gust_blend <= 1.0):
+        problems.append("wind_gust_blend must be within [0, 1]")
+    if cfg.ember_threat_radius_m < 0:
+        problems.append("ember_threat_radius_m must be >= 0")
+    if not (0.0 <= cfg.grass_ros_floor_frac <= 1.0):
+        problems.append("grass_ros_floor_frac must be within [0, 1]")
+
+    # --- extreme spread regime ---
+    if not (0.0 <= cfg.extreme_regime_grass_frac <= 1.0):
+        problems.append("extreme_regime_grass_frac must be within [0, 1]")
+    if cfg.extreme_regime_wind_mps < 0:
+        problems.append("extreme_regime_wind_mps must be >= 0")
+    if cfg.extreme_regime_lookahead_h <= 0:
+        problems.append("extreme_regime_lookahead_h must be > 0")
+
+    # --- containment gate ---
+    if not (0.0 <= cfg.containment_watch_ceiling_pct <= 100.0):
+        problems.append("containment_watch_ceiling_pct must be within [0, 100]")
+    if cfg.containment_no_growth_h < 0:
+        problems.append("containment_no_growth_h must be >= 0")
+
+    # --- type discipline: bool-typed fields must hold bool, int-typed fields
+    # must hold int (and not bool -- bool is an int subclass in Python) ---
+    for fld in _dc.fields(cfg):
+        v = getattr(cfg, fld.name)
+        if fld.type == "bool":
+            if not isinstance(v, bool):
+                problems.append(f"{fld.name} must be a bool, got {type(v).__name__}")
+        elif fld.type == "int":
+            if isinstance(v, bool) or not isinstance(v, int):
+                problems.append(f"{fld.name} must be an int, got {type(v).__name__}")
+
     return problems
