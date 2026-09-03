@@ -1,0 +1,7784 @@
+{
+ "map": "paradise_ca",
+ "dist": 8000.0,
+ "crews": 8,
+ "preset": "none",
+ "cfg_overrides": {},
+ "calls": [
+  {
+   "kind": "notes",
+   "tick": 0,
+   "notes": [
+    "13 of 40 homes sit on developed (non-burnable 91/92/93/98/99) cells \u2014 now covered by the ~200 m ember-threat radius where fire reaches an adjacent burnable cell (they alert + dispatch); isolated homes with no burnable neighbour in range remain unthreatened (a surface fire cannot burn the developed cell itself; ember/structure spread not modeled)",
+    "road graph loaded for paradise_ca (4429 nodes) \u2014 crews follow road routes for ingress and egress; departure decisions use max(tier-0, road) egress time",
+    "COATING HOLD RELEASED \u2014 deferring past the 24h line (with the 6h weather buffer) would sacrifice 5 home(s) (sim-c15, sim-c22, sim-c24, sim-c28\u2026) \u2014 coating begins now"
+   ]
+  },
+  {
+   "kind": "relocate_to",
+   "tick": 6,
+   "crew": "sim-g2",
+   "target": "paradise_ca-z2",
+   "target_pos": [
+    39.685,
+    -121.62
+   ]
+  },
+  {
+   "kind": "notes",
+   "tick": 6,
+   "notes": [
+    "crew sim-g2 proactive escape \u2014 the pessimistic front reaches this cell within 2.8h and a durable exit is still clean (relocating to paradise_ca-z2)"
+   ]
+  },
+  {
+   "kind": "relocate_to",
+   "tick": 12,
+   "crew": "sim-g2",
+   "target": "paradise_ca-z1",
+   "target_pos": [
+    39.71,
+    -121.705
+   ]
+  },
+  {
+   "kind": "notes",
+   "tick": 12,
+   "notes": [
+    "crew sim-g2 proactive escape \u2014 the pessimistic front reaches this cell within 2.8h and a durable exit is still clean (relocating to paradise_ca-z1)"
+   ]
+  },
+  {
+   "kind": "relocate_to",
+   "tick": 22,
+   "crew": "sim-g1",
+   "target": "paradise_ca-z2",
+   "target_pos": [
+    39.685,
+    -121.62
+   ]
+  },
+  {
+   "kind": "relocate_to",
+   "tick": 22,
+   "crew": "sim-g2",
+   "target": "paradise_ca-z2",
+   "target_pos": [
+    39.685,
+    -121.62
+   ]
+  },
+  {
+   "kind": "relocate_to",
+   "tick": 22,
+   "crew": "sim-g5",
+   "target": "paradise_ca-z2",
+   "target_pos": [
+    39.685,
+    -121.62
+   ]
+  },
+  {
+   "kind": "relocate_to",
+   "tick": 22,
+   "crew": "sim-g7",
+   "target": "paradise_ca-z2",
+   "target_pos": [
+    39.685,
+    -121.62
+   ]
+  },
+  {
+   "kind": "notes",
+   "tick": 22,
+   "notes": [
+    "crew sim-g1 proactive escape \u2014 the pessimistic front reaches this cell within 2.8h and a durable exit is still clean (relocating to paradise_ca-z2)",
+    "crew sim-g2 proactive escape \u2014 the pessimistic front reaches this cell within 2.8h and a durable exit is still clean (relocating to paradise_ca-z2)",
+    "crew sim-g5 proactive escape \u2014 the pessimistic front reaches this cell within 2.8h and a durable exit is still clean (relocating to paradise_ca-z2)",
+    "crew sim-g7 proactive escape \u2014 the pessimistic front reaches this cell within 2.8h and a durable exit is still clean (relocating to paradise_ca-z2)"
+   ]
+  }
+ ],
+ "crew_rows": [
+  {
+   "tick": 0,
+   "crew": "sim-g1",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.757631,
+    -121.625157
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 34.46,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 0,
+   "crew": "sim-g2",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.75228,
+    -121.595614
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 16.57,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 0,
+   "crew": "sim-g3",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.717038,
+    -121.532101
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 114.87,
+   "p10_tick": 49.21,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 0,
+   "crew": "sim-g4",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.697148,
+    -121.699234
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": 56.75,
+   "p10_tick": 42.8,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 0,
+   "crew": "sim-g5",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.767407,
+    -121.600473
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 24.82,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 0,
+   "crew": "sim-g6",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.725941,
+    -121.535236
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 117.71,
+   "p10_tick": 48.73,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 0,
+   "crew": "sim-g7",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.755848,
+    -121.62461
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 36.44,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 0,
+   "crew": "sim-g8",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.734844,
+    -121.616257
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": 38.34,
+   "p10_tick": 23.77,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 1,
+   "crew": "sim-g1",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.77048,
+    -121.629991
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 16.51,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 1,
+   "crew": "sim-g2",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.729708,
+    -121.602243
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 20.26,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 1,
+   "crew": "sim-g3",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.751346,
+    -121.494726
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 269.01,
+   "p10_tick": 115.91,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 1,
+   "crew": "sim-g4",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.745882,
+    -121.648715
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": 52.56,
+   "p10_tick": 30.09,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 1,
+   "crew": "sim-g5",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.774995,
+    -121.570851
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 8.48,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 1,
+   "crew": "sim-g6",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.709753,
+    -121.531067
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 119.52,
+   "p10_tick": 53.32,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 1,
+   "crew": "sim-g7",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.740494,
+    -121.627452
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 57.22,
+   "p10_tick": 44.79,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 1,
+   "crew": "sim-g8",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.712182,
+    -121.618391
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": 43.99,
+   "p10_tick": 21.22,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 2,
+   "crew": "sim-g1",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.77037,
+    -121.611144
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 16.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 2,
+   "crew": "sim-g2",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.742938,
+    -121.600457
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": 31.94,
+   "p10_tick": 28.94,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 2,
+   "crew": "sim-g3",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.746469,
+    -121.49219
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 2,
+   "crew": "sim-g4",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.725941,
+    -121.636264
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 36.31,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 2,
+   "crew": "sim-g5",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.782598,
+    -121.590918
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 5.97,
+   "burned": false,
+   "imminent": true
+  },
+  {
+   "tick": 2,
+   "crew": "sim-g6",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.699696,
+    -121.550613
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 73.44,
+   "p10_tick": 26.15,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 2,
+   "crew": "sim-g7",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.725941,
+    -121.644683
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 51.87,
+   "p10_tick": 40.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 2,
+   "crew": "sim-g8",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.722248,
+    -121.618115
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 20.17,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 3,
+   "crew": "sim-g1",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.757507,
+    -121.569902
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 28.28,
+   "p10_tick": 9.64,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 3,
+   "crew": "sim-g2",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.721085,
+    -121.575235
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": 46.04,
+   "p10_tick": 15.97,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 3,
+   "crew": "sim-g3",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.770472,
+    -121.509991
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 84.71,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 3,
+   "crew": "sim-g4",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.732416,
+    -121.626785
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 32.29,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 3,
+   "crew": "sim-g5",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.769977,
+    -121.607766
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 16.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 3,
+   "crew": "sim-g6",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.702982,
+    -121.549853
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 25.72,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 3,
+   "crew": "sim-g7",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.721085,
+    -121.652053
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 49.58,
+   "p10_tick": 41.59,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 3,
+   "crew": "sim-g8",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.721231,
+    -121.620643
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 22.4,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 4,
+   "crew": "sim-g1",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.769648,
+    -121.573038
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 23.05,
+   "p10_tick": 8.66,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 4,
+   "crew": "sim-g2",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.723513,
+    -121.578388
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 14.46,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 4,
+   "crew": "sim-g3",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.790692,
+    -121.499262
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 193.88,
+   "p10_tick": 83.94,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 4,
+   "crew": "sim-g4",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.75019,
+    -121.593788
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": 30.06,
+   "p10_tick": 16.57,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 4,
+   "crew": "sim-g5",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.769572,
+    -121.612531
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 17.69,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 4,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 4,
+   "crew": "sim-g7",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.747155,
+    -121.657164
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 22.88,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 4,
+   "crew": "sim-g8",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.718901,
+    -121.615729
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": 36.06,
+   "p10_tick": 18.61,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 5,
+   "crew": "sim-g1",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.744581,
+    -121.647524
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 57.85,
+   "p10_tick": 32.14,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 5,
+   "crew": "sim-g2",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.734051,
+    -121.584516
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 14.55,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 5,
+   "crew": "sim-g3",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.733252,
+    -121.526272
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 146.13,
+   "p10_tick": 53.94,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 5,
+   "crew": "sim-g4",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.75951,
+    -121.610026
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": 41.53,
+   "p10_tick": 25.9,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 5,
+   "crew": "sim-g5",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.733073,
+    -121.691683
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.9,
+   "p10_tick": 23.26,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 5,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 5,
+   "crew": "sim-g7",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.735274,
+    -121.688474
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 22.83,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 5,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.718901,
+    -121.615729
+   ],
+   "egress_zone": "",
+   "relocating": false,
+   "nom_tick": 36.06,
+   "p10_tick": 18.61,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 6,
+   "crew": "sim-g1",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.733762,
+    -121.690559
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.81,
+   "p10_tick": 22.91,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 6,
+   "crew": "sim-g2",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.734051,
+    -121.584516
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": true,
+   "nom_tick": null,
+   "p10_tick": 14.55,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 6,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 6,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 6,
+   "crew": "sim-g5",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.743828,
+    -121.67569
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 21.82,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 6,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 6,
+   "crew": "sim-g7",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.785028,
+    -121.65942
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 20.14,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 6,
+   "crew": "sim-g8",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.713922,
+    -121.61553
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": 41.06,
+   "p10_tick": 19.2,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 7,
+   "crew": "sim-g1",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.781885,
+    -121.662673
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 61.98,
+   "p10_tick": 20.8,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 7,
+   "crew": "sim-g2",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.70017,
+    -121.612301
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": true,
+   "nom_tick": null,
+   "p10_tick": 20.93,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 7,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 7,
+   "crew": "sim-g4",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.750615,
+    -121.631706
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 34.22,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 7,
+   "crew": "sim-g5",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.734245,
+    -121.673179
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 28.2,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 7,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 7,
+   "crew": "sim-g7",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.780385,
+    -121.664065
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 56.45,
+   "p10_tick": 18.82,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 7,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 8,
+   "crew": "sim-g1",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.812546,
+    -121.63723
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 115.33,
+   "p10_tick": 20.73,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 8,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 8,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 8,
+   "crew": "sim-g4",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.733226,
+    -121.584685
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 14.55,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 8,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 8,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 8,
+   "crew": "sim-g7",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.739767,
+    -121.680696
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 23.07,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 8,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 9,
+   "crew": "sim-g1",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.765243,
+    -121.674909
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 18.75,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 9,
+   "crew": "sim-g2",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.75221,
+    -121.61585
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 40.0,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 9,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 9,
+   "crew": "sim-g4",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.732326,
+    -121.612502
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": 30.68,
+   "p10_tick": 22.54,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 9,
+   "crew": "sim-g5",
+   "mode": "deploy",
+   "status": "deploying",
+   "pos": [
+    39.743748,
+    -121.647825
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 55.4,
+   "p10_tick": 32.61,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 9,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 9,
+   "crew": "sim-g7",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.737506,
+    -121.669207
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.3,
+   "p10_tick": 27.83,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 9,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 10,
+   "crew": "sim-g1",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.746354,
+    -121.665064
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 41.24,
+   "p10_tick": 21.38,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 10,
+   "crew": "sim-g2",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.7328,
+    -121.698047
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 23.7,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 10,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 10,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 10,
+   "crew": "sim-g5",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.731115,
+    -121.683409
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 45.86,
+   "p10_tick": 25.72,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 10,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 10,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 10,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 11,
+   "crew": "sim-g1",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.728537,
+    -121.685942
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 46.37,
+   "p10_tick": 26.63,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 11,
+   "crew": "sim-g2",
+   "mode": "travel",
+   "status": "en_route",
+   "pos": [
+    39.791616,
+    -121.653127
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": 18.22,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 11,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 11,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 11,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 11,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 11,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 11,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 12,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 12,
+   "crew": "sim-g2",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.791616,
+    -121.653127
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": true,
+   "nom_tick": null,
+   "p10_tick": 18.22,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 12,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 12,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 12,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 12,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 12,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 12,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 13,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 13,
+   "crew": "sim-g2",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.732741,
+    -121.695444
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": true,
+   "nom_tick": null,
+   "p10_tick": 23.69,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 13,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 13,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 13,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 13,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 13,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 13,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 14,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 14,
+   "crew": "sim-g2",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.744268,
+    -121.654406
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": true,
+   "nom_tick": null,
+   "p10_tick": 26.85,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 14,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 14,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 14,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 14,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 14,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 14,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 15,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 15,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 15,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 15,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 15,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 15,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 15,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 15,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 16,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 16,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 16,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 16,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 16,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 16,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 16,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 16,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 17,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 17,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 17,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 17,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 17,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 17,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 17,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 17,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 18,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 18,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 18,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 18,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 18,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 18,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 18,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 18,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 19,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 19,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 19,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 19,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 19,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 19,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 19,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 19,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 20,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 20,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 20,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 20,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 20,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 20,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 20,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 20,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 21,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 21,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 21,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 21,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 21,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 21,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 21,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z1",
+   "relocating": false,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 21,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 22,
+   "crew": "sim-g1",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": true,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 22,
+   "crew": "sim-g2",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": true,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 22,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 22,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 22,
+   "crew": "sim-g5",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": true,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 22,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 22,
+   "crew": "sim-g7",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": true,
+   "nom_tick": 47.57,
+   "p10_tick": 33.86,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 22,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 23,
+   "crew": "sim-g1",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.75221,
+    -121.615458
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": true,
+   "nom_tick": null,
+   "p10_tick": 40.21,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 23,
+   "crew": "sim-g2",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.75221,
+    -121.615458
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": true,
+   "nom_tick": null,
+   "p10_tick": 40.21,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 23,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 23,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 23,
+   "crew": "sim-g5",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.75221,
+    -121.615458
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": true,
+   "nom_tick": null,
+   "p10_tick": 40.21,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 23,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 23,
+   "crew": "sim-g7",
+   "mode": "egress",
+   "status": "egressing",
+   "pos": [
+    39.75221,
+    -121.615458
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": true,
+   "nom_tick": null,
+   "p10_tick": 40.21,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 23,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 24,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 24,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 24,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 24,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 24,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 24,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 24,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 24,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 25,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 25,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 25,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 25,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 25,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 25,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 25,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 25,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 26,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 26,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 26,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 26,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 26,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 26,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 26,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 26,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 27,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 27,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 27,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 27,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 27,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 27,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 27,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 27,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 28,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 28,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 28,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 28,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 28,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 28,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 28,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 28,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 29,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 29,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 29,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 29,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 29,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 29,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 29,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 29,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 30,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 30,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 30,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 30,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 30,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 30,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 30,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 30,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 31,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 31,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 31,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 31,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 31,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 31,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 31,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 31,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 32,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 32,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 32,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 32,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 32,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 32,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 32,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 32,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 33,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 33,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 33,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 33,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 33,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 33,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 33,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 33,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 34,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 34,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 34,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 34,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 34,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 34,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 34,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 34,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 35,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 35,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 35,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 35,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 35,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 35,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 35,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 35,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 36,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 36,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 36,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 36,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 36,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 36,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 36,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 36,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 37,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 37,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 37,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 37,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 37,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 37,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 37,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 37,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 38,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 38,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 38,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 38,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 38,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 38,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 38,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 38,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 39,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 39,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 39,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 39,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 39,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 39,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 39,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 39,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 40,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 40,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 40,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 40,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 40,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 40,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 40,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 40,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 41,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 41,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 41,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 41,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 41,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 41,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 41,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 41,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 42,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 42,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 42,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 42,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 42,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 42,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 42,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 42,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 43,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 43,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 43,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 43,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 43,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 43,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 43,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 43,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 44,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 44,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 44,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 44,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 44,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 44,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 44,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 44,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 45,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 45,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 45,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 45,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 45,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 45,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 45,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 45,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 46,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 46,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 46,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 46,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 46,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 46,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 46,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 46,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 47,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 47,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 47,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 47,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 47,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 47,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 47,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 47,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 48,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 48,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 48,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 48,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 48,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 48,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 48,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 48,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 49,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 49,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 49,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 49,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 49,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 49,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 49,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 49,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 50,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 50,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 50,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 50,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 50,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 50,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 50,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 50,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 51,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 51,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 51,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 51,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 51,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 51,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 51,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 51,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 52,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 52,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 52,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 52,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 52,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 52,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 52,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 52,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 53,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 53,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 53,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 53,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 53,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 53,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 53,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 53,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 54,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 54,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 54,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 54,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 54,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 54,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 54,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 54,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 55,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 55,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 55,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 55,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 55,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 55,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 55,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 55,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 56,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 56,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 56,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 56,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 56,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 56,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 56,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 56,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 57,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 57,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 57,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 57,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 57,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 57,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 57,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 57,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 58,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 58,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 58,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 58,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 58,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 58,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 58,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 58,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 59,
+   "crew": "sim-g1",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 59,
+   "crew": "sim-g2",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 59,
+   "crew": "sim-g3",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 59,
+   "crew": "sim-g4",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 59,
+   "crew": "sim-g5",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 59,
+   "crew": "sim-g6",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "egress_zone": "paradise_ca-z3",
+   "relocating": false,
+   "nom_tick": 168.95,
+   "p10_tick": 76.42,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 59,
+   "crew": "sim-g7",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  },
+  {
+   "tick": 59,
+   "crew": "sim-g8",
+   "mode": "idle",
+   "status": "available",
+   "pos": [
+    39.685,
+    -121.62
+   ],
+   "egress_zone": "paradise_ca-z2",
+   "relocating": false,
+   "nom_tick": null,
+   "p10_tick": null,
+   "burned": false,
+   "imminent": false
+  }
+ ]
+}

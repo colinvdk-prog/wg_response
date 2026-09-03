@@ -36,6 +36,23 @@ def test_rsf_clients_all_inside_city_limits():
     assert any("city-limits polygon" in n for n in s._notes)
 
 
+def test_rsf_cluster_locs_stay_inside_city_limits():
+    # The scratch_review cluster axis hands EXACT coordinates to SimSession
+    # via client_locs (the onboarding/bench seam), which never calls
+    # place_clients() — so cluster_locs must apply the city-limits polygon
+    # itself. Unbounded draw from the whole-tile WUI band lands outside
+    # (the rsf_city_c10/c12 cluster-run bug); bounded draw must not.
+    from scratch_review.opt_ember import cluster_locs
+    poly = LOCATIONS["rancho_santa_fe_ca"].bounds_poly
+    unbounded = cluster_locs("rancho_santa_fe_ca", 100, 8, "city-test")
+    assert not all(geo.point_in_poly(p, poly) for p in unbounded)
+    bounded = cluster_locs("rancho_santa_fe_ca", 100, 8, "city-test",
+                           bounds_poly=poly)
+    assert len(bounded) == 100
+    for p in bounded:
+        assert geo.point_in_poly(p, poly), (p.lat, p.lon)
+
+
 def test_rsf_bounds_are_meaningfully_smaller_than_tile():
     # the polygon must actually constrain: candidate pool well under the
     # full WUI band, yet comfortably above 100 homes

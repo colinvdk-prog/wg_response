@@ -27,16 +27,26 @@ from wgresponse.contracts import seeded_rng  # noqa: E402
 from wgresponse.simui import LOCATIONS, load_tile, wui_cells  # noqa: E402
 
 
-def cluster_locs(key: str, n: int, k: int, seed: str):
+def cluster_locs(key: str, n: int, k: int, seed: str, bounds_poly=()):
     """n homes in k tight WUI clusters (founder placement axis: 'homes set up
     in clusters' / 'chosen to reduce travel'). Anchors are farthest-point
     sampled from the map's WUI band (clusters spread across the community,
     deterministic via seeded_rng — hash-seed independent); each cluster is
     the n/k nearest WUI-band cells to its anchor (90 m grid => intra-cluster
     spacing ~90-250 m, near-zero drive time). k=1 => a single 40-home
-    cluster, travel between homes effectively eliminated."""
+    cluster, travel between homes effectively eliminated. `bounds_poly`
+    (SimLocation.bounds_poly; empty = whole band, byte-identical legacy)
+    restricts anchors AND members with the same geo.point_in_poly predicate
+    place_clients() applies — required here because these exact coordinates
+    enter SimSession via client_locs, which bypasses place_clients()."""
     tile, _syn = load_tile(key, cell_m=90.0)
     band = [geo.rc_to_latlon(tile.spec, r, c) for (r, c) in wui_cells(tile)]
+    if bounds_poly:
+        band = [p for p in band if geo.point_in_poly(p, bounds_poly)]
+        if len(band) < n:
+            raise ValueError(
+                f"{key}: city-limits polygon holds only {len(band)} WUI "
+                f"cells; cannot seat {n} clustered homes")
     rng = seeded_rng("cluster", key, seed, n, k)
     anchors = [band[rng.randrange(len(band))]]
     while len(anchors) < k:
@@ -107,7 +117,8 @@ def run_one(job):
     locs = None
     if placement and placement != "scattered":
         k = {"cluster1": 1, "cluster4": 4, "cluster8": 8}[placement]
-        locs = cluster_locs(sc["map"], n_clients, k, sc["seed"])
+        locs = cluster_locs(sc["map"], n_clients, k, sc["seed"],
+                            bounds_poly=getattr(loc, "bounds_poly", ()))
     crew_starts = None
     if staging == "near":
         # founder assumption "all crews within 30 minutes or less": crews

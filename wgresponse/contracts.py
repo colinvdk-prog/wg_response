@@ -903,6 +903,19 @@ class ResponseConfig:
     # alternative to a burned-route current target always wins). 0 = off,
     # legacy re-pick-every-tick, byte-identical.
     escape_hysteresis_margin_min: float = 0.0
+    # SEM-10e PROACTIVE PRE-POCKET ESCAPE (moderate-wind census attribution
+    # 2026-08-02, paradise 8000/6000 m: the sweep's escape flag fires at
+    # eroded-P10 within egress_buffer + one tick (~45 min), but the lawful
+    # roads OUT of the Paradise SW pocket burned over 2-3 ticks BEFORE that
+    # flag — the persisted arrival field knew both times from ignition, and
+    # the crews spent the gap least-bad hopping until 4 of them sat idle in
+    # the flaming front for 11 ticks). When > 0: an IDLE crew whose cell the
+    # eroded-P10 front reaches within (egress_buffer + sweep lead + THIS many
+    # minutes) decamps NOW — but ONLY along a route that is clean at arrival
+    # to a zone that outlives the same horizon (never a least-bad hop, never
+    # through a nominal-passed cell; when no such exit exists behavior is
+    # unchanged and the imminent law stands). 0 = off, byte-identical.
+    escape_proactive_lead_min: float = 0.0
     # TRANSIT-HAZARD STAGE 1 (founder "perform stage 1" 2026-07-30;
     # docs/transit_hazard_determination.md): per-fuel-class cold-black
     # windows replace the flat 45-min carve-out in SEM-10 ROUTE SELECTION

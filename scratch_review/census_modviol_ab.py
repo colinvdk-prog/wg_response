@@ -80,6 +80,9 @@ PRESETS = {
         "corridor_erosion_tiered": False,
         "escape_hysteresis_margin_min": 0.0,
         "transit_cold_black_by_class": False,
+        # SEM-10e (2026-08-02): pinned OFF so 'legacy' keeps meaning the
+        # full pre-flip revert after the proactive-escape sim default landed.
+        "escape_proactive_lead_min": 0.0,
     },
     "corridor_only": {
         "corridor_erosion_tiered": False,

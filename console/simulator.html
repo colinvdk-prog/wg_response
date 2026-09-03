@@ -1994,7 +1994,7 @@ function render(st) {
       (c.inbound && c.arrival_eta_s != null
         ? `<br>▸ inbound — arrives in ${Math.max(0, Math.ceil(c.arrival_eta_s / 60))} min` : "") +
       (c.relocating
-        ? `<br>⟳ REPOSITIONING — ${c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened"}` : "") +
+        ? `<br>⟳ REPOSITIONING — ${c.relocate_reason === "proactive_escape" ? "proactive escape" : c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened"}` : "") +
       (overrunIds[c.crew_id]
         ? `<br>⚠ CAUGHT IN FIRE (${overrunIds[c.crew_id].reason || ""})` : ""));
     // SEMANTICS 9/10: paint the persistent marker element for this crew's state
@@ -2163,7 +2163,7 @@ function render(st) {
     if (c.inbound)
       badges += ` <span class="chip inb" title="out-of-region reinforcement mobilizing on the first ignition (SEMANTICS 9) — excluded from dispatch until it arrives">inbound · ${regionTag}${inbMin != null ? " · " + inbMin + "m" : ""}</span>`;
     if (c.relocating)
-      badges += ` <span class="chip amber" title="continuous crew safety (SEMANTICS 10a): the fire threatened this crew's position — it is repositioning to a currently-safe zone">⟳ repositioning — ${c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened"}</span>`;
+      badges += ` <span class="chip amber" title="continuous crew safety (SEMANTICS 10a/10e): the fire threatens (or is projected to reach) this crew's position — it is repositioning to a currently-safe zone">⟳ repositioning — ${c.relocate_reason === "proactive_escape" ? "proactive escape" : c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened"}</span>`;
     if (overrunIds[c.crew_id])
       badges += ` <span class="chip caught" title="SEMANTICS 10c: a crew is standing in the fire (the founder's G1/G2 bug) — audited so violations can never read 0 while a crew is in the burn">⚠ CAUGHT IN FIRE (${overrunIds[c.crew_id].reason || ""})</span>`;
     let tail = "";

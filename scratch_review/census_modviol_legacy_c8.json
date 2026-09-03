@@ -14,7 +14,8 @@
   "cfg_overrides": {
    "corridor_erosion_tiered": false,
    "escape_hysteresis_margin_min": 0.0,
-   "transit_cold_black_by_class": false
+   "transit_cold_black_by_class": false,
+   "escape_proactive_lead_min": 0.0
   }
  },
  "stats": {
@@ -51,7 +52,7 @@
    "inten": "moderate",
    "viol": 0,
    "ov_ticks": 0,
-   "min_margin_h": 0.5327,
+   "min_margin_h": 0.5632,
    "homes": [
     {
      "gelled": true,

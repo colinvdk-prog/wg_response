@@ -14,34 +14,35 @@
   "cfg_overrides": {
    "corridor_erosion_tiered": false,
    "escape_hysteresis_margin_min": 0.0,
-   "transit_cold_black_by_class": false
+   "transit_cold_black_by_class": false,
+   "escape_proactive_lead_min": 0.0
   }
  },
  "stats": {
   "front": [
-   108,
+   105,
    151,
-   71.52317880794702
+   69.5364238410596
   ],
   "e300": [
-   137,
+   134,
    182,
-   75.27472527472527
+   73.62637362637362
   ],
   "e500": [
-   143,
+   140,
    190,
-   75.26315789473684
+   73.6842105263158
   ],
   "e1000": [
-   160,
+   157,
    217,
-   73.73271889400921
+   72.35023041474655
   ],
   "viol": 5,
   "ov_ticks": 13,
-  "min_margin_h": 0.31,
-  "coated_total": 275,
+  "min_margin_h": 0.5,
+  "coated_total": 272,
   "homes_total": 400
  },
  "rows": [
@@ -2051,7 +2052,7 @@
    "inten": "moderate",
    "viol": 0,
    "ov_ticks": 0,
-   "min_margin_h": 0.3087,
+   "min_margin_h": 0.6496,
    "homes": [
     {
      "gelled": false,
@@ -2090,16 +2091,16 @@
      "outcome": "saved"
     },
     {
-     "gelled": true,
+     "gelled": false,
      "front": true,
      "dist": 0.0,
-     "outcome": "protected_then_impacted"
+     "outcome": "abandoned_unsavable"
     },
     {
-     "gelled": true,
+     "gelled": false,
      "front": true,
      "dist": 90.0,
-     "outcome": "protected_then_impacted"
+     "outcome": "abandoned_unsavable"
     },
     {
      "gelled": true,
@@ -2216,10 +2217,10 @@
      "outcome": "saved"
     },
     {
-     "gelled": true,
+     "gelled": false,
      "front": true,
      "dist": 0.0,
-     "outcome": "protected_then_impacted"
+     "outcome": "abandoned_unsavable"
     },
     {
      "gelled": true,
