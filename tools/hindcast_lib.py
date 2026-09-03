@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import json
 import math
+import statistics
 import urllib.parse
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
@@ -114,16 +115,52 @@ class HindcastIncident:
 @dataclass
 class PairMetrics:
     """Scores for one (T0 -> T1) replay. All cell counts are cells of the
-    replay grid; areas derive from cell_m^2. Coverage semantics (interval-
-    censored observation — the true burn time of a newly-burned cell is only
-    known to lie in (T0, T1]):
-      covered_certain   [p10,p90] contains ALL of [T0,T1]  (true time surely in band)
-      covered_possible  [p10,p90] intersects [T0,T1]       (true time may be in band)
-      late_miss         p10 > T1   (band entirely after the window — engine
-                        definitively LATE for that cell; the dangerous polarity)
-      early_miss        p90 < T0   (band entirely before the window)
-      never_reached     p10 = inf  (no pessimistic arrival within the horizon
-                        at all — counted inside late_miss as its worst case)
+    replay grid; areas derive from cell_m^2. Interval-censored observation:
+    a perimeter pair only brackets each newly-burned cell's true burn time
+    inside (T0, T1].
+
+    HONEST (two-sided) fields:
+      late_miss         p10 > T1  (band entirely after the window — engine
+                        definitively LATE for that cell; the DANGEROUS
+                        polarity: a late p10 delays crew deadlines and
+                        EXTREME triggers).
+      never_reached     p10 = inf (no pessimistic arrival within the horizon
+                        at all — counted inside late_miss as its worst case).
+      p10_not_after_window  p10 <= T1 — NECESSARY for p10 <= true burn time;
+                        this is the real, one-sided statistic the old
+                        `covered_possible` field silently was. pool_metrics
+                        reports its pooled fraction as `p10_adequacy_frac`.
+      head_m_p10/p50/p90/nominal, modeled_new_area_ac_p10/p50 vs
+                        obs_head_m / obs_new_area_ac give two-sided
+                        head-ratio / area-ratio statistics (>1 = engine runs
+                        farther/bigger than observed; <1 = engine short).
+      null_new_covered  isotropic-dilation null-model score — see the
+                        module-level `squared_edt` / `null_model_covered`
+                        docstrings and pool_metrics' `null_adequacy_frac`.
+      pit_hist          PIT bin counts (approx, at window midpoint) — never
+                        reported before this fix even though it was always
+                        computed; pool_metrics adds an extreme-mass +
+                        flatness summary.
+
+    DEPRECATED (tri-model review 2026-08-31,
+    docs/TRI_MODEL_REVIEW_2026-08-31.md fix-program item 5) — kept ONLY for
+    JSON compatibility with old readers, computed exactly as before, but
+    NEVER presented as calibration evidence (see docs/calibration/SCORECARD.md):
+      covered_certain   [p10,p90] contains ALL of [T0,T1]. Needs p10<=T0,
+                        which is ~0 BY CONSTRUCTION (the engine seeds at T0;
+                        no member can arrive before its own seed) — measured
+                        ~0 in every pool ever scored.
+      covered_possible  [p10,p90] intersects [T0,T1]. Because the engine
+                        seeds at T0, p90 >= T0 ALWAYS holds for any reached
+                        cell, so this collapses EXACTLY to `p10 <= T1`
+                        (= p10_not_after_window) — a ONE-SIDED statistic
+                        dressed as a two-sided interval check.
+      early_miss        p90 < T0. STRUCTURALLY IMPOSSIBLE: the engine never
+                        reports an arrival before its own T0 seed, so
+                        p90 >= T0 always and this field is 0 in every pool
+                        ever scored (mutation-tested: even a 10x-wind config
+                        still scores 0 here). "0% early-miss" is a tautology
+                        of the replay design, not evidence of calibration.
     """
     incident: str = ""
     name: str = ""
@@ -149,9 +186,22 @@ class PairMetrics:
     obs_head_m: float = 0.0
     head_m_p50: float = 0.0
     head_m_p10: float = 0.0
+    head_m_p90: float = 0.0
     head_m_nominal: float = 0.0
     obs_new_area_ac: float = 0.0
     modeled_new_area_ac_p50: float = 0.0
+    modeled_new_area_ac_p10: float = 0.0
+    # NULL-MODEL SCORE (tri-model review 2026-08-31, item 5; ported from the
+    # PASS-2 independent verification scratch_review/rv2sci_a2_null.py):
+    # isotropic (Euclidean nearest-first) dilation of the engine-T0 interior
+    # out to the SAME cell count as the engine's own p10 new-area budget
+    # (modeled_new_area_ac_p10, i.e. cells with p10<=T1 excluding engine_t0)
+    # — a physics-free "just grow a circle at the engine's own area budget"
+    # baseline. null_new_covered = how many of the truly newly-burned
+    # burnable cells that equal-area circle would have covered. Compare
+    # against p10_not_after_window at the SAME denominator (n_new_burnable):
+    # skill = p10_adequacy / null_adequacy — see pool_metrics.
+    null_new_covered: int = 0
     by_fuel_class: dict = field(default_factory=dict)  # class -> {n, late, cert, poss}
     notes: list = field(default_factory=list)
 
@@ -165,9 +215,34 @@ class PairMetrics:
     def head_ratio_p10(self) -> float:
         return self.head_m_p10 / self.obs_head_m if self.obs_head_m > 0 else 0.0
 
+    def head_ratio_p90(self) -> float:
+        return self.head_m_p90 / self.obs_head_m if self.obs_head_m > 0 else 0.0
+
+    def head_ratio_nominal(self) -> float:
+        return self.head_m_nominal / self.obs_head_m if self.obs_head_m > 0 else 0.0
+
     def area_ratio_p50(self) -> float:
         return (self.modeled_new_area_ac_p50 / self.obs_new_area_ac
                 if self.obs_new_area_ac > 0 else 0.0)
+
+    def area_ratio_p10(self) -> float:
+        return (self.modeled_new_area_ac_p10 / self.obs_new_area_ac
+                if self.obs_new_area_ac > 0 else 0.0)
+
+    def null_adequacy(self) -> float:
+        return self.frac(self.null_new_covered)
+
+    def p10_adequacy(self) -> float:
+        """The honest rename of the old covered_possible: P(p10 <= T1)."""
+        return self.frac(self.p10_not_after_window)
+
+    def skill(self):
+        """Engine p10-adequacy / null-model adequacy at equal modeled area.
+        > 1 = the physics beats an equal-area isotropic circle; None when
+        the null model covered nothing (avoid a /0 — not the same as 0
+        skill)."""
+        na = self.null_adequacy()
+        return (self.p10_adequacy() / na) if na > 0 else None
 
 
 @dataclass
@@ -327,6 +402,105 @@ def fuel_class(code: int) -> str:
         if code in rng:
             return label
     return "??"
+
+
+# ---------------------------------------------------------------------------
+# Null-model baseline (tri-model review 2026-08-31, fix-program item 5):
+# isotropic (Euclidean nearest-first) dilation of the engine-T0 interior,
+# ported from the PASS-2 independent verification
+# scratch_review/rv2sci_a2_null.py (`edt2` / `_dt1`) so this baseline uses
+# the SAME exact distance transform that was checked there. That script
+# pools a global radius across all pairs via interpolation over a fixed
+# radius list; here each pair gets its OWN exact budget-matched dilation
+# (the smallest isotropic region reaching the SAME cell count as the
+# engine's p10 new-area), which is a more precise per-pair statement of the
+# identical idea, not a different method.
+# ---------------------------------------------------------------------------
+
+def _dt1(fv: list) -> list:
+    """1-D lower envelope of parabolas (Felzenszwalb & Huttenlocher 2004).
+    Internal helper for squared_edt; ported line-for-line from
+    scratch_review/rv2sci_a2_null.py's `_dt1` (verified there against a
+    from-scratch PASS-2 reimplementation)."""
+    n = len(fv)
+    d = [0.0] * n
+    v = [0] * n
+    z = [0.0] * (n + 1)
+    k = 0
+    v[0] = 0
+    z[0] = -math.inf
+    z[1] = math.inf
+    for q in range(1, n):
+        if fv[q] == math.inf:
+            continue
+        while True:
+            p = v[k]
+            if fv[p] == math.inf:
+                if k > 0:
+                    k -= 1
+                    continue
+                else:
+                    break
+            s = ((fv[q] + q * q) - (fv[p] + p * p)) / (2.0 * q - 2.0 * p)
+            if s <= z[k] and k > 0:
+                k -= 1
+            else:
+                break
+        p = v[k]
+        s = (-math.inf if fv[p] == math.inf
+             else ((fv[q] + q * q) - (fv[p] + p * p)) / (2.0 * q - 2.0 * p))
+        k += 1
+        v[k] = q
+        z[k] = s
+        z[k + 1] = math.inf
+    k = 0
+    for q in range(n):
+        while z[k + 1] < q:
+            k += 1
+        p = v[k]
+        d[q] = math.inf if fv[p] == math.inf else (q - p) * (q - p) + fv[p]
+    return d
+
+
+def squared_edt(seed_mask: set, nrows: int, ncols: int) -> list:
+    """Exact squared Euclidean distance transform, in CELL units: for every
+    cell of an nrows x ncols row-major grid, the squared distance to the
+    nearest cell in `seed_mask`. Two 1-D passes (columns then rows) of the
+    Felzenszwalb-Huttenlocher lower envelope — O(nrows*ncols), exact (no
+    approximation, unlike a BFS/chamfer distance). `seed_mask` must be
+    non-empty. Ported from scratch_review/rv2sci_a2_null.py's `edt2`."""
+    n = nrows * ncols
+    binary = [(i in seed_mask) for i in range(n)]
+    f = [0.0 if binary[i] else math.inf for i in range(n)]
+    for c in range(ncols):
+        col = _dt1([f[r * ncols + c] for r in range(nrows)])
+        for r in range(nrows):
+            f[r * ncols + c] = col[r]
+    for r in range(nrows):
+        row = _dt1(f[r * ncols:(r + 1) * ncols])
+        f[r * ncols:(r + 1) * ncols] = row
+    return f
+
+
+def null_model_covered(seed_mask: set, burnable: list, target_cells,
+                       nrows: int, ncols: int, budget_n: int) -> int:
+    """How many cells of `target_cells` fall inside the smallest isotropic
+    (Euclidean nearest-first) dilation of `seed_mask` that reaches
+    `budget_n` BURNABLE non-seed cells — the physics-free "just grow a
+    circle to the engine's own area budget" null baseline. Deterministic
+    tie-break for cells equidistant from the seed: (distance, cell index)
+    ascending, so re-runs are byte-identical. Non-burnable cells and seed
+    cells themselves can never be selected into the dilated region (mirrors
+    the engine, which can never report an arrival for a non-burnable cell).
+    Returns 0 if `seed_mask` is empty or `budget_n` <= 0 (no dilation)."""
+    if not seed_mask or budget_n <= 0:
+        return 0
+    d2 = squared_edt(seed_mask, nrows, ncols)
+    candidates = sorted(
+        (i for i in range(nrows * ncols) if i not in seed_mask and burnable[i]),
+        key=lambda i: (d2[i], i))
+    dilated = set(candidates[:budget_n])
+    return sum(1 for i in target_cells if i in dilated)
 
 
 # ---------------------------------------------------------------------------
@@ -617,6 +791,7 @@ def score_pair(tile: TerrainTile, ens, snap0: PerimeterSnapshot,
     mid = 0.5 * (t0_s + t1_s)
     pit_bins = [0] * (n_members + 1)
     by_class: dict = {}
+    new_burnable_idx: list = []     # feeds the null-model dilation below
     for i in new_cells:
         code = int(round(fdata[i]))
         cls = fuel_class(code)
@@ -626,6 +801,7 @@ def score_pair(tile: TerrainTile, ens, snap0: PerimeterSnapshot,
             m.n_new_nonburnable += 1
             continue
         m.n_new_burnable += 1
+        new_burnable_idx.append(i)
         lo, hi = p10[i], p90[i]
         if hi == UNREACHED and lo != UNREACHED:
             m.p90_unreached += 1
@@ -669,16 +845,80 @@ def score_pair(tile: TerrainTile, ens, snap0: PerimeterSnapshot,
 
     m.head_m_p50 = _model_head(p50)
     m.head_m_p10 = _model_head(p10)
+    m.head_m_p90 = _model_head(p90)
     m.head_m_nominal = _model_head(nominal)
     n_model_new = sum(1 for i in range(len(p50))
                       if p50[i] <= t1_s and p50[i] != UNREACHED
                       and i not in engine_t0)
     m.modeled_new_area_ac_p50 = n_model_new * cell_ac
+    n_model_new_p10 = sum(1 for i in range(len(p10))
+                          if p10[i] <= t1_s and p10[i] != UNREACHED
+                          and i not in engine_t0)
+    m.modeled_new_area_ac_p10 = n_model_new_p10 * cell_ac
+
+    # NULL MODEL (tri-model review item 5): isotropic dilation of engine_t0
+    # to the SAME cell count as the engine's own p10 new-area budget — see
+    # null_model_covered's docstring and PairMetrics.null_new_covered.
+    if engine_t0 and n_model_new_p10 > 0 and new_burnable_idx:
+        burnable_grid = [is_burnable(int(round(v))) for v in fdata]
+        m.null_new_covered = null_model_covered(
+            engine_t0, burnable_grid, new_burnable_idx,
+            spec.nrows, spec.ncols, n_model_new_p10)
     return m
 
 
 def pool_metrics(pairs: list) -> dict:
-    """Cell-weighted pooled coverage over scored pairs (n_new_burnable > 0)."""
+    """Cell-weighted pooled scorecard over scored pairs (n_new_burnable > 0).
+
+    Two-sided, honest metrics (tri-model review 2026-08-31, fix-program item
+    5 — full definitions in docs/calibration/SCORECARD.md):
+      p10_adequacy_frac        P(p10 <= T1), cell-weighted — the honest
+                               rename of the old `covered_possible_frac`
+                               (identical value; see the PairMetrics
+                               docstring for why they coincide exactly).
+      late_miss_frac           the DANGEROUS polarity (p10 > T1).
+      never_reached_frac       p10 = inf, the worst case of late_miss.
+      median_head_ratio_*, median_area_ratio_*   TRUE medians via
+                               statistics.median. The published record used
+                               sorted[n//2], the UPPER-MIDDLE value on an
+                               even n, not the median — always overstated,
+                               always in the flattering direction.
+      pit_summary               PIT histogram extreme-bin mass + a
+                               chi-square-vs-uniform flatness statistic.
+                               pit_hist was always computed by score_pair
+                               but never surfaced in the report before this
+                               fix.
+      null_adequacy_frac, skill  the engine's p10-adequacy against a
+                               physics-free isotropic-dilation baseline at
+                               the SAME modeled area budget (see
+                               null_model_covered). skill > 1 means the
+                               physics beats an equal-area circle; skill is
+                               None when the null model covered nothing.
+      window_length_bins        dt_h <= 6 / 6-12 / 12-24 / > 24, each with
+                               its own pairs/cells/p10_adequacy/late_miss.
+                               The published August 93.8% headline is a
+                               long-window average (dt>12h scored ~99.8%;
+                               the only dt<=12h bin the corpus has scored
+                               was ~69.8%) — score dt<=12h as the primary
+                               bin, not the pooled-all-windows number.
+      n_incidents, equal_incident_mean_p10_adequacy,
+      loo_incident_p10_adequacy_min/max, largest_incident_share_of_*
+                               incident concentration: cell count is NOT
+                               inferential sample size — a pooled 18-pair
+                               corpus can be 3-4 effective incidents, and a
+                               single incident's pairs can carry most of the
+                               late-miss mass.
+
+    DEPRECATED keys retained ONLY for JSON compatibility (never present
+    these as calibration evidence — see PairMetrics' docstring and
+    docs/calibration/SCORECARD.md): covered_certain_frac,
+    covered_possible_frac, early_miss_frac. `deprecated_metrics` carries a
+    one-line reason for each, for readers who load this dict directly.
+
+    Every key from the pre-fix schema is still present with the same
+    meaning (old readers do not break); `median_head_ratio_p50`'s VALUE
+    changed because it was computed with the sorted[n//2] bug — see above.
+    """
     scored = [p for p in pairs if p.n_new_burnable > 0]
     tot = sum(p.n_new_burnable for p in scored)
     if tot == 0:
@@ -689,8 +929,6 @@ def pool_metrics(pairs: list) -> dict:
     for p in scored:
         for k, v in enumerate(p.pit_hist):
             pit[k] += v
-    head_ratios = sorted(p.head_ratio_p50() for p in scored if p.obs_head_m > 0)
-    med_head = head_ratios[len(head_ratios) // 2] if head_ratios else 0.0
     by_fuel: dict = {}
     for p in scored:
         for cls, rec in p.by_fuel_class.items():
@@ -698,7 +936,102 @@ def pool_metrics(pairs: list) -> dict:
                                            "poss": 0})
             for k in agg:
                 agg[k] += rec.get(k, 0)
+
+    # -- TRUE medians (statistics.median, not sorted[n//2]) --
+    def _median(vals: list) -> float:
+        return statistics.median(vals) if vals else 0.0
+
+    head_p50 = [p.head_ratio_p50() for p in scored if p.obs_head_m > 0]
+    head_p10 = [p.head_ratio_p10() for p in scored if p.obs_head_m > 0]
+    head_nom = [p.head_ratio_nominal() for p in scored if p.obs_head_m > 0]
+    area_p50 = [p.area_ratio_p50() for p in scored if p.obs_new_area_ac > 0]
+    area_p10 = [p.area_ratio_p10() for p in scored if p.obs_new_area_ac > 0]
+
+    # -- PIT summary: extreme-bin mass + a chi-square flatness statistic --
+    pit_total = sum(pit)
+    if n_bins and pit_total:
+        lo_frac = pit[0] / pit_total
+        hi_frac = pit[-1] / pit_total
+        expected = pit_total / n_bins
+        chi2 = (sum((v - expected) ** 2 / expected for v in pit)
+                if expected > 0 else 0.0)
+    else:
+        lo_frac = hi_frac = chi2 = 0.0
+    pit_summary = {
+        "n_bins": n_bins,
+        "n_total": pit_total,
+        "lo_bin_frac": lo_frac,          # observed burn before EVERY member (engine late)
+        "hi_bin_frac": hi_frac,          # observed burn after EVERY member (engine early)
+        "extreme_bins_frac": lo_frac + hi_frac,
+        "chi2_flatness": chi2,           # 0 = perfectly flat/uniform PIT; larger = worse
+        "chi2_df": max(0, n_bins - 1),
+    }
+
+    # -- null-model skill at equal area --
+    p10_adequacy_frac = s("p10_not_after_window") / tot
+    null_adequacy_frac = s("null_new_covered") / tot
+    skill = (p10_adequacy_frac / null_adequacy_frac
+             if null_adequacy_frac > 0 else None)
+
+    # -- per-window-length bins --
+    def _bin_label(dt_h: float) -> str:
+        if dt_h <= 6.0:
+            return "<=6h"
+        if dt_h <= 12.0:
+            return "6-12h"
+        if dt_h <= 24.0:
+            return "12-24h"
+        return ">24h"
+
+    bin_order = ["<=6h", "6-12h", "12-24h", ">24h"]
+    bins = {lbl: {"pairs": 0, "cells": 0, "p10_ok": 0, "late": 0}
+            for lbl in bin_order}
+    for p in scored:
+        b = bins[_bin_label(p.dt_h)]
+        b["pairs"] += 1
+        b["cells"] += p.n_new_burnable
+        b["p10_ok"] += p.p10_not_after_window
+        b["late"] += p.late_miss
+    window_length_bins = [
+        {"label": lbl,
+         "pairs": bins[lbl]["pairs"],
+         "cells": bins[lbl]["cells"],
+         "p10_adequacy": (bins[lbl]["p10_ok"] / bins[lbl]["cells"]
+                          if bins[lbl]["cells"] else 0.0),
+         "late_miss": (bins[lbl]["late"] / bins[lbl]["cells"]
+                       if bins[lbl]["cells"] else 0.0)}
+        for lbl in bin_order]
+
+    # -- incident concentration (cell count is not inferential N) --
+    by_incident: dict = {}
+    for p in scored:
+        agg = by_incident.setdefault(p.incident,
+                                     {"cells": 0, "p10_ok": 0, "late": 0})
+        agg["cells"] += p.n_new_burnable
+        agg["p10_ok"] += p.p10_not_after_window
+        agg["late"] += p.late_miss
+    n_incidents = len(by_incident)
+    equal_incident_mean = (
+        statistics.mean(agg["p10_ok"] / agg["cells"]
+                        for agg in by_incident.values() if agg["cells"] > 0)
+        if by_incident else 0.0)
+    loo_vals = []
+    total_p10_ok = s("p10_not_after_window")
+    for agg in by_incident.values():
+        rest_cells = tot - agg["cells"]
+        if rest_cells > 0:
+            loo_vals.append((total_p10_ok - agg["p10_ok"]) / rest_cells)
+    loo_min = min(loo_vals) if loo_vals else None
+    loo_max = max(loo_vals) if loo_vals else None
+    total_late = s("late_miss")
+    largest_cells = max((agg["cells"] for agg in by_incident.values()),
+                        default=0)
+    largest_late = max((agg["late"] for agg in by_incident.values()),
+                       default=0)
+
     return {
+        # -- pre-fix schema, unchanged keys/meanings (median_head_ratio_p50's
+        # VALUE is now a true median -- see the docstring above) --
         "n_pairs": len(scored),
         "n_cells": tot,
         "nonburnable_frac": s("n_new_nonburnable") /
@@ -713,8 +1046,41 @@ def pool_metrics(pairs: list) -> dict:
         "p10_not_after_window_frac": s("p10_not_after_window") / tot,
         "p10_before_window_frac": s("p10_before_window") / tot,
         "pit_hist": pit,
-        "median_head_ratio_p50": med_head,
+        "median_head_ratio_p50": _median(head_p50),
         "by_fuel_class": by_fuel,
+        # -- new honest metrics (fix-program item 5) --
+        "p10_adequacy_frac": p10_adequacy_frac,
+        "median_head_ratio_p10": _median(head_p10),
+        "median_head_ratio_nominal": _median(head_nom),
+        "median_area_ratio_p50": _median(area_p50),
+        "median_area_ratio_p10": _median(area_p10),
+        "pit_summary": pit_summary,
+        "null_adequacy_frac": null_adequacy_frac,
+        "skill": skill,
+        "window_length_bins": window_length_bins,
+        "n_incidents": n_incidents,
+        "equal_incident_mean_p10_adequacy": equal_incident_mean,
+        "loo_incident_p10_adequacy_min": loo_min,
+        "loo_incident_p10_adequacy_max": loo_max,
+        "largest_incident_share_of_cells": (largest_cells / tot) if tot else 0.0,
+        "largest_incident_share_of_late_miss": (largest_late / total_late
+                                                if total_late else 0.0),
+        # -- deprecated-metric notes (values above unchanged; read the notes) --
+        "deprecated_metrics": {
+            "covered_certain_frac": (
+                "p10<=T0 is structurally ~0 in this replay design (no "
+                "modeled arrival can precede the T0 seed) -- not "
+                "calibration evidence, kept for JSON compatibility only."),
+            "covered_possible_frac": (
+                "identical value to p10_adequacy_frac (p90>=T0 always, "
+                "since the engine seeds at T0) -- a ONE-SIDED statistic, "
+                "not a two-sided [p10,p90] interval check. Use "
+                "p10_adequacy_frac instead."),
+            "early_miss_frac": (
+                "p90<T0 is structurally impossible in this replay design "
+                "(p90>=T0 always) -- always 0, proves nothing about "
+                "ensemble width or centering."),
+        },
     }
 
 
@@ -888,7 +1254,6 @@ def recommendations(pooled: dict, pooled_wide: dict, anchors: list) -> list:
 
     p10_nec = pooled["p10_not_after_window_frac"]
     late = pooled["late_miss_frac"]
-    early = pooled["early_miss_frac"]
     recs.append(
         f"P10 pessimism (F8 target >= {P10_COVERAGE_TARGET:.0%} of observed "
         f"arrivals at/after p10): best measurable bound {p10_nec:.0%} "
@@ -925,18 +1290,17 @@ def recommendations(pooled: dict, pooled_wide: dict, anchors: list) -> list:
             f"censored windows cannot prove the sufficient side. Needed: "
             f"shorter-dt pairs (FIRIS intra-day perimeters) before changing "
             f"any perturbation knob.")
-    if late > 3.0 * max(early, 0.01) and late > 0.10:
+    if late > 0.10:
         recs.append(
-            f"LATE-dominant misses ({late:.0%} late vs {early:.0%} early): "
-            f"the dangerous polarity (a late p10 delays crew deadlines and "
-            f"EXTREME triggers). Consistent with the F3 slow finding.")
-    elif early > 3.0 * max(late, 0.01) and early > 0.10:
-        recs.append(
-            f"EARLY-dominant misses ({early:.0%} early vs {late:.0%} late): "
-            f"the engine over-runs observed growth on these pairs — do NOT "
-            f"add any ROS multiplier; consider whether suppression (which "
-            f"the model ignores) explains the residual before narrowing "
-            f"anything.")
+            f"LATE-dominant misses: {late:.0%} of newly-burned cells score "
+            f"late_miss (p10 > T1) — the dangerous, missed-alert polarity: "
+            f"a late p10 delays crew deadlines and EXTREME triggers. "
+            f"(early_miss is RETIRED as a comparison baseline: it is "
+            f"structurally forced to ~0 by this replay's T0-seeded design "
+            f"— no modeled arrival can precede its own seed — so '0% "
+            f"early' is not evidence the ensemble is well-centered or too "
+            f"wide; see the deprecated-metrics appendix.) Consistent with "
+            f"the F3 slow finding.")
     pit = pooled.get("pit_hist") or []
     if len(pit) >= 3 and n:
         lo_mass = pit[0] / n
@@ -1019,14 +1383,23 @@ def _pct(x: float) -> str:
     return f"{100.0 * x:.1f}%"
 
 
+def _pct_or_dash(x) -> str:
+    return _pct(x) if x is not None else "—"
+
+
 def render_report(incidents: list, pairs: list, pairs_wide: list,
                   anchors: list, fetch_summary: dict,
-                  cfg: ResponseConfig, wx_note: str = "") -> str:
+                  cfg: ResponseConfig, wx_note: str = "",
+                  variant_label: str = "", variant_config: dict = None) -> str:
     """The docs/calibration/hindcast_first_pass.md content. Pure string
     building from measured inputs — regenerating with identical inputs yields
     identical bytes (no wall-clock). `wx_note` is an optional measured
     parenthetical about the replay weather (e.g. observed wind maxima),
-    computed by the caller from the cached series — never hardcoded here."""
+    computed by the caller from the cached series — never hardcoded here.
+    `variant_label`/`variant_config` are the optional calibration-matrix
+    header (tools/hindcast_harness.py `replay --label` / the 7 config
+    flags) — printed near the top when present; omitted (as before) when
+    this is the shipped-default run."""
     L = []
     add = L.append
     add("# Hindcast first pass — engine vs observed perimeter growth")
@@ -1036,6 +1409,15 @@ def render_report(incidents: list, pairs: list, pairs_wide: list,
         "`tools/hindcast_data/` so the replay re-runs offline and "
         "deterministically. **Recommendations only — this document changes "
         "no engine behavior.**")
+    add("")
+    add("Metric definitions, which polarity is dangerous, and why "
+        "`covered_certain` / `covered_possible` / `early_miss` were "
+        "retired: see `docs/calibration/SCORECARD.md`.")
+    if variant_label or variant_config:
+        cfg_bits = ", ".join(f"{k}={v}" for k, v in (variant_config or {}).items())
+        add("")
+        add(f"**Config variant:** label=`{variant_label or '(none)'}`"
+            + (f" — {cfg_bits}" if cfg_bits else "") + ".")
     add("")
     add("## Method")
     add("")
@@ -1065,22 +1447,39 @@ def render_report(incidents: list, pairs: list, pairs_wide: list,
         f"{cfg.moisture_perturb_frac}, dir_perturb_deg={cfg.dir_perturb_deg}"
         f", spotting={'ON' if cfg.spotting_enabled else 'OFF'}), observed "
         "weather as the forecast.")
-    add("- **Scoring under censoring:** a perimeter pair only brackets each "
-        "newly-burned cell's true burn time inside (T0, T1], so coverage is "
-        "a CERTAIN/POSSIBLE **bound pair**: certain = band [p10,p90] "
-        "contains all of [T0,T1]; possible = band intersects it. "
-        "`late_miss` = p10 > T1 (band entirely after the window — the "
-        "dangerous, missed-alert polarity), `early_miss` = p90 < T0. "
-        "STRUCTURAL NOTE: because the window opens exactly at the seed time "
-        "and no member can arrive before the seed, `p10 <= T0` (and hence "
-        "the certain bound and the 'sufficient' p10 column) is ~0 BY "
-        "CONSTRUCTION — those columns are kept for schema honesty but carry "
-        "no information; the informative statistics are the possible bound, "
-        "the necessary p10 bound (p10 <= T1), late/early misses, and the "
-        "PIT histogram (approximated at the window midpoint). Cells whose "
-        "LANDFIRE code is non-burnable (urban etc.) can never receive a "
-        "modeled arrival — they are counted and reported, never silently "
-        "dropped.")
+    add("- **Scoring under censoring (CORRECTED 2026-08-31 — tri-model "
+        "review, fix-program item 5; full definitions in "
+        "docs/calibration/SCORECARD.md):** a perimeter pair only brackets "
+        "each newly-burned cell's true burn time inside (T0, T1]. "
+        "`late_miss` = p10 > T1 (band entirely after the window — engine "
+        "definitively LATE; the DANGEROUS, missed-alert polarity) is the "
+        "honest statistic. `covered_certain`, `covered_possible`, and "
+        "`early_miss` are DEPRECATED: because the engine seeds at T0, no "
+        "modeled arrival can precede T0, so p90 >= T0 ALWAYS holds. That "
+        "makes `early_miss` (p90 < T0) STRUCTURALLY IMPOSSIBLE (~0 in "
+        "every pool ever scored — a tautology of the replay design, not "
+        "evidence the ensemble is well-centered) and collapses "
+        "`covered_possible` (band intersects [T0,T1]) EXACTLY onto "
+        "`p10 <= T1` — a ONE-SIDED statistic reported honestly below as "
+        "`p10_adequacy`. `covered_certain` needs `p10 <= T0`, which is "
+        "likewise ~0 by the same construction. All three still appear, "
+        "clearly labelled, in a deprecated appendix table for schema "
+        "continuity — never as calibration evidence. The informative "
+        "statistics are p10_adequacy, late_miss, head-ratio and area-ratio "
+        "at p10/p50/p90/nominal, the PIT histogram (approximated at the "
+        "window midpoint, summarized by extreme-bin mass + a flatness "
+        "statistic), the null-model skill, window-length bins, and "
+        "incident concentration. Cells whose LANDFIRE code is non-burnable "
+        "(urban etc.) can never receive a modeled arrival — they are "
+        "counted and reported, never silently dropped.")
+    add("- **Null-model baseline:** an isotropic (Euclidean nearest-first) "
+        "dilation of the engine-T0 interior, grown to the SAME cell count "
+        "as the engine's own p10 new-area budget (`squared_edt` / "
+        "`null_model_covered` in tools/hindcast_lib.py, ported from the "
+        "tri-model review's independent verification script "
+        "`scratch_review/rv2sci_a2_null.py`) — a physics-free 'just grow a "
+        "circle' control. `skill` = p10_adequacy / null_adequacy at that "
+        "equal area; skill > 1x means the physics beats the circle.")
     add("- **Head run:** farthest newly-burned boundary cell from the T0 "
         "boundary (straight-line, metric grid), observed vs the modeled "
         "p50/p10 burned region at T1. Boundary sets are strided to caps, so "
@@ -1102,77 +1501,151 @@ def render_report(incidents: list, pairs: list, pairs_wide: list,
     else:
         add("*(none — live pulls unavailable this run; see Reachability)*")
     add("")
-    add("## Coverage — per pair (shipped default config)")
+    add("## Per-pair scorecard (shipped default config)")
     add("")
     scored = [p for p in pairs if p.n_new_burnable > 0]
     if scored:
-        add("| incident | T0 (UTC) | dt h | cell m | new cells (burnable/NB) | "
-            "coverage [certain..possible] | p10<=T1 (nec.) | p10<=T0 (suf.) | "
-            "p50 in win | late miss | early miss | never | head ratio "
-            "p50/p10 | area ratio p50 |")
-        add("|" + "---|" * 14)
+        header = ["incident", "T0 (UTC)", "dt h", "cell m",
+                  "new cells (burnable/NB)", "p10 adequacy (p10<=T1)",
+                  "late miss", "never", "head ratio p50/p10/nom",
+                  "area ratio p50/p10", "null adeq", "skill"]
+        add("| " + " | ".join(header) + " |")
+        add("|" + "---|" * len(header))
         for p in pairs:
             t0 = datetime.fromtimestamp(p.t0_s, tz=timezone.utc)
             if p.n_new_burnable == 0:
                 note = p.notes[0] if p.notes else "no scorable growth"
-                add(f"| {p.name} | {t0:%m-%d %H:%M} | {p.dt_h:.1f} | "
-                    f"{p.cell_m:.0f} | {p.n_new} ({p.n_new_burnable}/"
-                    f"{p.n_new_nonburnable}) | — {note} | | | | | | | |")
+                cells = [p.name, f"{t0:%m-%d %H:%M}", f"{p.dt_h:.1f}",
+                         f"{p.cell_m:.0f}",
+                         f"{p.n_new} ({p.n_new_burnable}/"
+                         f"{p.n_new_nonburnable})", f"— {note}",
+                         "", "", "", "", "", ""]
+                add("| " + " | ".join(cells) + " |")
                 continue
-            add(f"| {p.name} | {t0:%m-%d %H:%M} | {p.dt_h:.1f} | "
-                f"{p.cell_m:.0f} | {p.n_new} ({p.n_new_burnable}/"
-                f"{p.n_new_nonburnable}) | "
-                f"[{_pct(p.frac(p.covered_certain))} .. "
-                f"{_pct(p.frac(p.covered_possible))}] | "
-                f"{_pct(p.frac(p.p10_not_after_window))} | "
-                f"{_pct(p.frac(p.p10_before_window))} | "
-                f"{_pct(p.frac(p.p50_in_window))} | "
-                f"{_pct(p.frac(p.late_miss))} | "
-                f"{_pct(p.frac(p.early_miss))} | "
-                f"{_pct(p.frac(p.never_reached))} | "
-                f"{p.head_ratio_p50():.2f}/{p.head_ratio_p10():.2f} | "
-                f"{p.area_ratio_p50():.2f} |")
+            sk = p.skill()
+            cells = [
+                p.name, f"{t0:%m-%d %H:%M}", f"{p.dt_h:.1f}",
+                f"{p.cell_m:.0f}",
+                f"{p.n_new} ({p.n_new_burnable}/{p.n_new_nonburnable})",
+                _pct(p.p10_adequacy()), _pct(p.frac(p.late_miss)),
+                _pct(p.frac(p.never_reached)),
+                f"{p.head_ratio_p50():.2f}/{p.head_ratio_p10():.2f}/"
+                f"{p.head_ratio_nominal():.2f}",
+                f"{p.area_ratio_p50():.2f}/{p.area_ratio_p10():.2f}",
+                _pct(p.null_adequacy()),
+                (f"{sk:.2f}x" if sk is not None else "—"),
+            ]
+            add("| " + " | ".join(cells) + " |")
     else:
         add("*(no scorable pairs this run — see Reachability)*")
+    add("")
+    add("### Deprecated one-sided metrics (appendix — not calibration evidence)")
+    add("")
+    add("Kept for JSON/schema compatibility with old readers only. "
+        "`covered_certain` / `covered_possible` / `early_miss` are all "
+        "~0-or-collapsed BY CONSTRUCTION in this replay design (the engine "
+        "seeds at T0, so no modeled arrival can precede T0) — see the "
+        "PairMetrics docstring and `docs/calibration/SCORECARD.md`. Do NOT "
+        "read this table as a two-sided [p10,p90] interval calibration "
+        "check.")
+    add("")
+    if scored:
+        add("| incident | dt h | coverage [certain..possible] (deprecated) | "
+            "p10<=T0 'sufficient' (deprecated, ~0 by construction) | "
+            "early miss (deprecated, ~0 by construction) |")
+        add("|---|---|---|---|---|")
+        for p in pairs:
+            if p.n_new_burnable == 0:
+                continue
+            add(f"| {p.name} | {p.dt_h:.1f} | "
+                f"[{_pct(p.frac(p.covered_certain))} .. "
+                f"{_pct(p.frac(p.covered_possible))}] | "
+                f"{_pct(p.frac(p.p10_before_window))} | "
+                f"{_pct(p.frac(p.early_miss))} |")
+    else:
+        add("*(no scorable pairs this run)*")
     add("")
     pooled = pool_metrics(pairs)
     pooled_wide = pool_metrics(pairs_wide)
     if pooled.get("n_cells"):
         add("### Pooled (cell-weighted)")
         add("")
-        add(f"- pairs scored: **{pooled['n_pairs']}**, newly-burned burnable "
-            f"cells: **{pooled['n_cells']:,}** (plus "
+        add(f"- pairs scored: **{pooled['n_pairs']}** across "
+            f"**{pooled['n_incidents']}** distinct incidents, newly-burned "
+            f"burnable cells: **{pooled['n_cells']:,}** (plus "
             f"{_pct(pooled['nonburnable_frac'])} of new cells non-burnable "
             f"in LANDFIRE — structure-to-structure spread the surface model "
-            f"cannot represent).")
-        add(f"- coverage in [p10, p90]: **[{_pct(pooled['covered_certain_frac'])}"
-            f" .. {_pct(pooled['covered_possible_frac'])}]** "
-            f"(certain..possible under censoring; the certain side is "
-            f"structurally ~0 here — see Method).")
-        add(f"- p10 pessimistic bound pair: sufficient "
-            f"**{_pct(pooled['p10_before_window_frac'])}** (structural ~0), "
-            f"necessary **{_pct(pooled['p10_not_after_window_frac'])}** "
-            f"(F8 target: >= {P10_COVERAGE_TARGET:.0%}).")
-        add(f"- p50 inside window: {_pct(pooled['p50_in_window_frac'])}; "
-            f"late misses **{_pct(pooled['late_miss_frac'])}** (of which "
-            f"never-reached {_pct(pooled['never_reached_frac'])}), early "
-            f"misses {_pct(pooled['early_miss_frac'])}.")
-        add(f"- p90-unreached (band open-ended to inf, so 'covered' is "
-            f"trivially satisfiable on the late side): "
-            f"{_pct(pooled['p90_unreached_frac'])} of cells.")
-        add(f"- median head-run ratio (p50): "
-            f"**{pooled['median_head_ratio_p50']:.2f}x** observed.")
-        add(f"- PIT histogram (midpoint approx, rank 0..n): "
-            f"{pooled['pit_hist']} — mass at rank 0 = observed burn before "
-            f"every member (engine late); mass at max rank = after every "
-            f"member (engine early).")
+            f"cannot represent). Cell count is NOT inferential sample size "
+            f"— see Incident concentration below.")
+        add(f"- **p10 adequacy** (P(p10 <= T1); the honest one-sided stat "
+            f"the deprecated `covered_possible` silently was): "
+            f"**{_pct(pooled['p10_adequacy_frac'])}** (F8 target >= "
+            f"{P10_COVERAGE_TARGET:.0%}). Equal-incident mean: "
+            f"{_pct(pooled['equal_incident_mean_p10_adequacy'])}. "
+            f"Leave-one-incident-out range: "
+            f"[{_pct_or_dash(pooled['loo_incident_p10_adequacy_min'])} .. "
+            f"{_pct_or_dash(pooled['loo_incident_p10_adequacy_max'])}].")
+        add(f"- **late misses (the DANGEROUS polarity):** "
+            f"**{_pct(pooled['late_miss_frac'])}** (of which never-reached "
+            f"{_pct(pooled['never_reached_frac'])}). p50 inside window: "
+            f"{_pct(pooled['p50_in_window_frac'])}.")
+        skill_txt = (f"**{pooled['skill']:.2f}x**"
+                    if pooled['skill'] is not None
+                    else "**n/a** (null model covered 0 cells)")
+        add(f"- **null-model skill** (p10_adequacy / isotropic-dilation-"
+            f"at-equal-area baseline): {skill_txt} — null baseline "
+            f"adequacy {_pct(pooled['null_adequacy_frac'])} at the "
+            f"engine's own p10 area budget. > 1x = the physics beats a "
+            f"physics-free equal-area circle.")
+        add(f"- **true medians** (statistics.median, not the deprecated "
+            f"upper-middle `sorted[n//2]`): head ratio p50 "
+            f"**{pooled['median_head_ratio_p50']:.2f}x**, p10 "
+            f"{pooled['median_head_ratio_p10']:.2f}x, nominal "
+            f"{pooled['median_head_ratio_nominal']:.2f}x; area ratio p50 "
+            f"{pooled['median_area_ratio_p50']:.2f}x, p10 "
+            f"{pooled['median_area_ratio_p10']:.2f}x.")
+        ps = pooled["pit_summary"]
+        add(f"- **PIT histogram** ({ps['n_bins']} bins, midpoint approx): "
+            f"{pooled['pit_hist']} — extreme-bin mass "
+            f"{_pct(ps['extreme_bins_frac'])} (rank-0 "
+            f"{_pct(ps['lo_bin_frac'])} = observed burn before every "
+            f"member [engine late], top-rank {_pct(ps['hi_bin_frac'])} = "
+            f"after every member [engine early]); flatness "
+            f"chi2={ps['chi2_flatness']:.1f} on {ps['chi2_df']} df (0 = "
+            f"perfectly flat/well-calibrated; large = under-dispersed).")
         if pooled_wide.get("n_cells"):
             add(f"- widened variant (wind_perturb 0.50 / dir 45 deg): "
-                f"coverage [{_pct(pooled_wide['covered_certain_frac'])} .. "
-                f"{_pct(pooled_wide['covered_possible_frac'])}], p10 bounds "
-                f"[{_pct(pooled_wide['p10_before_window_frac'])}, "
-                f"{_pct(pooled_wide['p10_not_after_window_frac'])}], late "
-                f"{_pct(pooled_wide['late_miss_frac'])}.")
+                f"p10 adequacy {_pct(pooled_wide['p10_adequacy_frac'])}, "
+                f"late {_pct(pooled_wide['late_miss_frac'])}.")
+        add("")
+        add("### Window-length bins")
+        add("")
+        add("Score **dt<=12h as the primary bin** — the pooled-all-windows "
+            "average over-weights long, well-fought windows (see Incident "
+            "concentration below and `docs/calibration/SCORECARD.md`).")
+        add("")
+        add("| dt window | pairs | cells | p10 adequacy | late miss |")
+        add("|---|---|---|---|---|")
+        for b in pooled["window_length_bins"]:
+            if b["pairs"] == 0:
+                add(f"| {b['label']} | 0 | 0 | — | — |")
+                continue
+            add(f"| {b['label']} | {b['pairs']} | {b['cells']:,} | "
+                f"{_pct(b['p10_adequacy'])} | {_pct(b['late_miss'])} |")
+        add("")
+        add("### Incident concentration")
+        add("")
+        add(f"- **{pooled['n_incidents']}** distinct incidents contribute "
+            f"the {pooled['n_cells']:,} pooled cells. The largest single "
+            f"incident carries **"
+            f"{_pct(pooled['largest_incident_share_of_cells'])}** of all "
+            f"scored cells and **"
+            f"{_pct(pooled['largest_incident_share_of_late_miss'])}** of "
+            f"all late-miss cells — a pooled percentage can be dominated "
+            f"by one fire's behavior, not a representative sample. Use the "
+            f"equal-incident mean and leave-one-out range above alongside "
+            f"the cell-weighted headline; cell count is not inferential "
+            f"sample size.")
         add("")
         add("### Reading these numbers (interpretation caveats)")
         add("")

@@ -418,7 +418,207 @@ def test_pool_metrics_weighting_and_empty():
     assert pooled["p10_not_after_window_frac"] == pytest.approx(25 / 40)
     assert pooled["late_miss_frac"] == pytest.approx(15 / 40)
     assert pooled["pit_hist"] == [10, 30]
-    assert pooled["median_head_ratio_p50"] == pytest.approx(1.0)
+    # TRI-MODEL REVIEW 2026-08-31 fix: head ratios here are [0.5, 1.0]; the
+    # TRUE median (statistics.median) of two values is their average, 0.75.
+    # This assertion used to read 1.0 because pool_metrics computed
+    # sorted[n//2] (the UPPER-MIDDLE value on an even n) instead of the
+    # median — exactly the published-record bug the fix corrects, so the
+    # expectation here is deliberately updated, not preserved.
+    assert pooled["median_head_ratio_p50"] == pytest.approx(0.75)
+    # honest rename of covered_possible (== p10_not_after_window_frac by
+    # construction in REAL score_pair output — see
+    # test_score_pair_late_never_and_possible_counts_precise; this fixture
+    # hand-sets covered_possible independently of p10_not_after_window, so
+    # that identity is not asserted here)
+    assert pooled["p10_adequacy_frac"] == pytest.approx(25 / 40)
+    assert set(pooled["deprecated_metrics"]) == {
+        "covered_certain_frac", "covered_possible_frac", "early_miss_frac"}
+    # no null-model coverage was computed for these hand-built pairs
+    # (null_new_covered defaults to 0) -> skill is undefined, not 0
+    assert pooled["null_adequacy_frac"] == 0.0
+    assert pooled["skill"] is None
+
+
+# ---------------------------------------------------------------------------
+# TRI-MODEL REVIEW 2026-08-31 fix-program item 5: the honest scorecard
+# (true medians, null-model dilation, PIT summary, window-length bins,
+# incident concentration) — see docs/calibration/SCORECARD.md.
+# ---------------------------------------------------------------------------
+
+def test_pool_metrics_true_medians_not_upper_middle():
+    """statistics.median for every ratio family, not sorted[n//2] (the old
+    upper-middle selector overstated the published head-ratio median by
+    2-10%, always in the flattering direction)."""
+    heads_p50 = [100.0, 200.0, 300.0, 900.0]
+    heads_p10 = [50.0, 150.0, 250.0, 850.0]
+    heads_nom = [80.0, 180.0, 280.0, 880.0]
+    areas_p50 = [10.0, 20.0, 30.0, 90.0]
+    areas_p10 = [5.0, 15.0, 25.0, 85.0]
+    pairs = [H.PairMetrics(n_new_burnable=1, p10_not_after_window=1,
+                           obs_head_m=1000.0, head_m_p50=heads_p50[i],
+                           head_m_p10=heads_p10[i],
+                           head_m_nominal=heads_nom[i],
+                           obs_new_area_ac=100.0,
+                           modeled_new_area_ac_p50=areas_p50[i],
+                           modeled_new_area_ac_p10=areas_p10[i])
+             for i in range(4)]
+    pooled = H.pool_metrics(pairs)
+    # true median of 4 sorted ratios = average of the middle two
+    assert pooled["median_head_ratio_p50"] == pytest.approx((0.2 + 0.3) / 2)
+    assert pooled["median_head_ratio_p10"] == pytest.approx((0.15 + 0.25) / 2)
+    assert pooled["median_head_ratio_nominal"] == pytest.approx((0.18 + 0.28) / 2)
+    assert pooled["median_area_ratio_p50"] == pytest.approx((0.2 + 0.3) / 2)
+    assert pooled["median_area_ratio_p10"] == pytest.approx((0.15 + 0.25) / 2)
+    # the deprecated upper-middle selector (sorted[n//2] on n=4 -> index 2)
+    # would have picked the THIRD ratio, strictly ABOVE the true median here
+    old_upper_middle = sorted(p.head_ratio_p50() for p in pairs)[4 // 2]
+    assert old_upper_middle == pytest.approx(0.3)
+    assert pooled["median_head_ratio_p50"] < old_upper_middle
+
+
+def test_squared_edt_matches_euclidean_distance():
+    """Single-cell seed -> squared_edt is exactly the squared Euclidean
+    distance from that cell (Felzenszwalb-Huttenlocher two-pass transform,
+    ported from the reviewed scratch_review/rv2sci_a2_null.py `edt2`)."""
+    nrows, ncols = 11, 11
+    seed = {5 * ncols + 5}
+    d2 = H.squared_edt(seed, nrows, ncols)
+    for r, c in [(5, 5), (4, 5), (5, 6), (4, 4), (0, 0), (2, 5)]:
+        assert d2[r * ncols + c] == pytest.approx((r - 5) ** 2 + (c - 5) ** 2)
+
+
+def test_null_model_covered_square_t0_known_dilation():
+    """A 3x3 SQUARE T0 region in a 15x15 all-burnable grid has EXACTLY 12
+    cells at squared-distance 1 (the 4-connected unit ring around each
+    edge; diagonal-adjacent corners are at distance 2, strictly farther).
+    Budget=12 dilates to exactly that ring, unambiguously (no ties need
+    breaking since precisely 12 cells share the minimum distance). Of five
+    target cells, exactly the two on the unit ring should be covered."""
+    nrows, ncols = 15, 15
+    t0 = {r * ncols + c for r in range(6, 9) for c in range(6, 9)}
+    burnable = [True] * (nrows * ncols)
+
+    def idx(r, c):
+        return r * ncols + c
+
+    # d2==1 (covered at budget=12): directly above/right of an edge cell
+    covered_targets = [idx(5, 7), idx(7, 9)]
+    # d2==2 (diagonal corners) and d2==9 (far): NOT covered at budget=12
+    uncovered_targets = [idx(5, 5), idx(9, 9), idx(7, 11)]
+    targets = covered_targets + uncovered_targets
+    n_covered = H.null_model_covered(t0, burnable, targets, nrows, ncols, 12)
+    assert n_covered == len(covered_targets) == 2
+    # the T0 seed itself can never be "covered" (it is not newly-burned)
+    assert H.null_model_covered(t0, burnable, [idx(7, 7)], nrows, ncols,
+                                nrows * ncols) == 0
+    # zero budget / empty seed dilate to nothing
+    assert H.null_model_covered(t0, burnable, targets, nrows, ncols, 0) == 0
+    assert H.null_model_covered(set(), burnable, targets, nrows, ncols, 12) == 0
+
+
+def test_null_model_covered_excludes_nonburnable_and_ties_by_index():
+    """Non-burnable cells can never be dilated into (mirrors the engine,
+    which never reports an arrival for a non-burnable cell), and ties at
+    equal distance break deterministically by ascending cell index."""
+    nrows, ncols = 15, 15
+    seed = {7 * ncols + 7}
+
+    def idx(r, c):
+        return r * ncols + c
+
+    burnable = [True] * (nrows * ncols)
+    # the four unit-distance neighbors, ascending by index: (6,7),(7,6),(7,8),(8,7)
+    assert idx(6, 7) < idx(7, 6) < idx(7, 8) < idx(8, 7)
+    n = H.null_model_covered(seed, burnable, [idx(6, 7)], nrows, ncols, 1)
+    assert n == 1        # budget=1 selects the smallest-index unit neighbor
+    burnable[idx(6, 7)] = False
+    n2 = H.null_model_covered(seed, burnable, [idx(6, 7)], nrows, ncols, 1)
+    assert n2 == 0       # excluded from candidates even though closest
+    n3 = H.null_model_covered(seed, burnable, [idx(7, 6)], nrows, ncols, 1)
+    assert n3 == 1        # budget now lands on the next-smallest index
+
+
+def test_pool_metrics_pit_summary_extremes_and_flatness():
+    a = H.PairMetrics(n_new_burnable=100, p10_not_after_window=100,
+                      pit_hist=[40, 5, 5, 50])
+    pooled = H.pool_metrics([a])
+    ps = pooled["pit_summary"]
+    assert ps["n_bins"] == 4
+    assert ps["n_total"] == 100
+    assert ps["lo_bin_frac"] == pytest.approx(0.4)
+    assert ps["hi_bin_frac"] == pytest.approx(0.5)
+    assert ps["extreme_bins_frac"] == pytest.approx(0.9)
+    assert ps["chi2_df"] == 3
+    # chi2 = sum((observed-expected)^2/expected), expected=100/4=25
+    assert ps["chi2_flatness"] == pytest.approx(66.0)
+    # a perfectly flat/uniform PIT histogram has chi2 == 0
+    uniform = H.pool_metrics([H.PairMetrics(n_new_burnable=100,
+                                            p10_not_after_window=100,
+                                            pit_hist=[25, 25, 25, 25])])
+    assert uniform["pit_summary"]["chi2_flatness"] == pytest.approx(0.0)
+    assert ps["chi2_flatness"] > uniform["pit_summary"]["chi2_flatness"]
+
+
+def test_pool_metrics_window_length_bins():
+    mk = lambda dt, n, late: H.PairMetrics(dt_h=dt, n_new_burnable=n,
+                                           p10_not_after_window=n - late,
+                                           late_miss=late)
+    pairs = [mk(3.0, 100, 50),       # <=6h bin (boundary: dt_h<=6.0)
+             mk(6.0, 999, 0),        # also <=6h (inclusive boundary)
+             mk(9.0, 200, 20),       # 6-12h bin
+             mk(18.0, 300, 3),       # 12-24h bin
+             mk(48.0, 400, 1)]       # >24h bin
+    pooled = H.pool_metrics(pairs)
+    bins = {b["label"]: b for b in pooled["window_length_bins"]}
+    assert [b["label"] for b in pooled["window_length_bins"]] == [
+        "<=6h", "6-12h", "12-24h", ">24h"]
+    assert bins["<=6h"]["pairs"] == 2
+    assert bins["<=6h"]["cells"] == 100 + 999
+    assert bins["<=6h"]["late_miss"] == pytest.approx(50 / 1099)
+    assert bins["6-12h"]["pairs"] == 1 and bins["6-12h"]["cells"] == 200
+    assert bins["6-12h"]["p10_adequacy"] == pytest.approx(180 / 200)
+    assert bins["12-24h"]["cells"] == 300
+    assert bins[">24h"]["cells"] == 400
+    assert bins[">24h"]["p10_adequacy"] == pytest.approx(399 / 400)
+
+
+def test_pool_metrics_equal_incident_mean_and_leave_one_out():
+    # incident A: 2 pairs, cell-weighted p10_adequacy = (250+200)/900 = 0.5
+    # incident B: 1 pair, 95/100 = 0.95
+    a1 = H.PairMetrics(incident="A", n_new_burnable=500,
+                       p10_not_after_window=250, late_miss=250)
+    a2 = H.PairMetrics(incident="A", n_new_burnable=400,
+                       p10_not_after_window=200, late_miss=200)
+    b1 = H.PairMetrics(incident="B", n_new_burnable=100,
+                       p10_not_after_window=95, late_miss=5)
+    pooled = H.pool_metrics([a1, a2, b1])
+    assert pooled["n_incidents"] == 2
+    # overall cell-weighted = (250+200+95)/1000 = 0.545
+    assert pooled["p10_adequacy_frac"] == pytest.approx(0.545)
+    # equal-incident mean = (0.5 + 0.95) / 2 = 0.725 -- deliberately DIFFERENT
+    # from the cell-weighted number: A's 900 cells dominate the pool while
+    # counting equally with B's 100 cells here (the exact "cell count is not
+    # inferential sample size" finding).
+    assert pooled["equal_incident_mean_p10_adequacy"] == pytest.approx(0.725)
+    # leave A out -> only B remains: 95/100=0.95; leave B out -> only A: 0.5
+    assert pooled["loo_incident_p10_adequacy_min"] == pytest.approx(0.5)
+    assert pooled["loo_incident_p10_adequacy_max"] == pytest.approx(0.95)
+    # incident concentration: A has 900/1000 = 90% of cells and 450/455 of
+    # all late-miss cells (250+200 of a 250+200+5 pooled total)
+    assert pooled["largest_incident_share_of_cells"] == pytest.approx(0.9)
+    assert pooled["largest_incident_share_of_late_miss"] == pytest.approx(
+        450 / 455)
+
+
+def test_pool_metrics_leave_one_out_single_incident_is_none():
+    """With only one incident, leaving it out leaves zero cells -- the
+    leave-one-out range is undefined (None), not a divide-by-zero crash."""
+    a = H.PairMetrics(incident="ONLY", n_new_burnable=10,
+                      p10_not_after_window=9, late_miss=1)
+    pooled = H.pool_metrics([a])
+    assert pooled["n_incidents"] == 1
+    assert pooled["loo_incident_p10_adequacy_min"] is None
+    assert pooled["loo_incident_p10_adequacy_max"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -578,6 +778,15 @@ def test_recommendations_tiny_wide_gain_is_a_level_problem():
 
 
 def test_render_report_sections_and_byte_stability():
+    # EXPECTATION REGENERATED (tri-model review 2026-08-31 fix-program item
+    # 5): render_report was rewritten to retire covered_certain/covered_
+    # possible/early_miss from the narrative into a clearly-labelled
+    # "Deprecated one-sided metrics" appendix, rename the per-pair/pooled
+    # table to the honest p10_adequacy framing, and add the null-model
+    # skill, window-length bins, and incident-concentration sections. The
+    # required-substrings list below is regenerated against that new
+    # output; text1 == text2 (byte-stability / no-wall-clock) is unchanged
+    # and is still the point of this test.
     cfg = ResponseConfig()
     anchors = H.run_anchor(
         dataclasses.replace(H.TUBBS, cell_m=200.0, width_km=8.0,
@@ -595,7 +804,12 @@ def test_render_report_sections_and_byte_stability():
                      "WFIGS_Daily_Perimeters_Public",
                      "## Reachability / degradation log",
                      "BLOCKED: example",
-                     "no scorable pairs this run"):
+                     "no scorable pairs this run",
+                     "docs/calibration/SCORECARD.md",
+                     "DEPRECATED",
+                     "Deprecated one-sided metrics",
+                     "Null-model baseline",
+                     "STRUCTURALLY IMPOSSIBLE"):
         assert required in text1, f"report missing: {required}"
     assert "Tubbs" in text1 or "tubbs" in text1
 
@@ -621,10 +835,23 @@ def test_render_report_with_pairs_tables():
                                                             rings=[])])
     text = H.render_report([inc], [p], [p], [], {}, ResponseConfig())
     assert "| Demo |" in text
-    assert "0.50/0.75" in text                   # head ratios p50/p10
+    assert "0.50/0.75" in text                   # head ratios p50/p10/nom
     assert "### Pooled (cell-weighted)" in text
     assert "By FBFM40 fuel class" in text
     assert "non-burnable" in text
+    # TRI-MODEL REVIEW 2026-08-31 fix-program item 5: the honest scorecard
+    assert "p10 adequacy" in text
+    assert "null adeq" in text and "skill" in text
+    assert "### Deprecated one-sided metrics" in text
+    assert "### Window-length bins" in text
+    assert "### Incident concentration" in text
+    assert "null-model skill" in text
+    # the deprecated coverage/early-miss framing must not appear in the
+    # PRIMARY per-pair table any more -- only inside the labelled appendix
+    main_table, appendix = text.split("### Deprecated one-sided metrics", 1)
+    assert "coverage [certain..possible]" not in main_table
+    assert "coverage [certain..possible]" in appendix
+    assert "p10<=T0 'sufficient'" in appendix
 
 
 # ---------------------------------------------------------------------------

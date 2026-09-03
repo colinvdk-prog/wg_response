@@ -321,16 +321,36 @@ def _load_all_incidents(data_dir: str) -> list:
     return out
 
 
+def _variant_config_kwargs(args) -> dict:
+    """The 7 calibration-sweep ResponseConfig fields the `replay` CLI can
+    override (tri-model review 2026-08-31, fix-program item 5) — all 7
+    already exist on ResponseConfig (wgresponse/contracts.py); nothing new
+    is added there. Shared by cmd_replay and the results-file header so a
+    calibration matrix can identify which variant produced a given file."""
+    return {
+        "wind_gust_blend": args.gust_blend,
+        "grass_ros_floor_frac": args.grass_floor,
+        "ros_floor_extinction_gate": args.floor_gate,
+        "ros_floor_grass_only": args.grass_only,
+        "model_error_sd_log": args.model_error,
+        "ensemble_p50_nominal_bound": args.p50_bound,
+        "spotting_enabled": args.spotting,
+    }
+
+
 def cmd_replay(args) -> int:
     os.makedirs(args.data_dir, exist_ok=True)
-    cfg = dataclasses.replace(ResponseConfig(), wind_gust_blend=getattr(args, 'gust_blend', 0.0))
+    cfg_kwargs = _variant_config_kwargs(args)
+    cfg = dataclasses.replace(ResponseConfig(), **cfg_kwargs)
     wide_cfg = dataclasses.replace(cfg, **_WIDE_VARIANT)
+    out_path = os.path.join(args.data_dir, args.out)
     incidents = _load_all_incidents(args.data_dir)
     if not incidents:
         print("[replay] no cached incidents — run fetch first "
               "(or accept the honest-degradation path: anchors only)")
-        _write_json(os.path.join(args.data_dir, "replay_results.json"),
-                    {"schema": "hindcast-replay/1", "pairs": [],
+        _write_json(out_path,
+                    {"schema": "hindcast-replay/2", "label": args.label,
+                     "config": cfg_kwargs, "pairs": [],
                      "pairs_wide": [], "skips": ["no cached incidents"]})
         return 0
     pairs, pairs_wide, skips = [], [], []
@@ -362,14 +382,17 @@ def cmd_replay(args) -> int:
             pairs_wide.append(H.replay_pair(tile, wx, a, b, wide_cfg,
                                             inc.irwin, name=inc.name,
                                             label="wide"))
-    _write_json(os.path.join(args.data_dir, "replay_results.json"),
-                {"schema": "hindcast-replay/1",
+    _write_json(out_path,
+                {"schema": "hindcast-replay/2", "label": args.label,
+                 "config": cfg_kwargs,
                  "pairs": [dataclasses.asdict(p) for p in pairs],
                  "pairs_wide": [dataclasses.asdict(p) for p in pairs_wide],
                  "skips": skips})
     pooled = H.pool_metrics(pairs)
     print(f"[replay] scored {pooled.get('n_pairs', 0)} pairs / "
-          f"{pooled.get('n_cells', 0)} cells; skips: {len(skips)}")
+          f"{pooled.get('n_cells', 0)} cells; skips: {len(skips)}; "
+          f"wrote {out_path}"
+          + (f" (label={args.label!r})" if args.label else ""))
     for s in skips:
         print("[replay] skip:", s)
     return 0
@@ -423,7 +446,7 @@ def _wx_note(data_dir: str) -> str:
 
 def cmd_report(args) -> int:
     data_dir = args.data_dir
-    replay_path = os.path.join(data_dir, "replay_results.json")
+    replay_path = os.path.join(data_dir, args.results)
     anchors_path = os.path.join(data_dir, "anchor_results.json")
     rd = _read_json(replay_path) if os.path.exists(replay_path) else {}
     ad = _read_json(anchors_path) if os.path.exists(anchors_path) else {}
@@ -439,11 +462,14 @@ def cmd_report(args) -> int:
         fetch_summary.setdefault("notes", []).append(f"replay skip: {s}")
     wx_note = _wx_note(data_dir)
     text = H.render_report(incidents, pairs, pairs_wide, anchors,
-                           fetch_summary, ResponseConfig(), wx_note=wx_note)
+                           fetch_summary, ResponseConfig(), wx_note=wx_note,
+                           variant_label=rd.get("label", ""),
+                           variant_config=rd.get("config"))
     os.makedirs(os.path.dirname(args.report), exist_ok=True)
     with open(args.report, "w", encoding="utf-8", newline="\n") as f:
         f.write(text)
-    print(f"[report] wrote {args.report} ({len(text.splitlines())} lines)")
+    print(f"[report] wrote {args.report} ({len(text.splitlines())} lines) "
+          f"from {replay_path}")
     return 0
 
 
@@ -484,6 +510,34 @@ def main(argv=None) -> int:
                     help="hard cap on live GETs for this invocation")
     ap.add_argument("--gust-blend", type=float, default=0.0,
                     help="cfg.wind_gust_blend for the replay (calibration sweep)")
+    ap.add_argument("--grass-floor", type=float, default=0.0,
+                    help="cfg.grass_ros_floor_frac for the replay (calibration sweep)")
+    ap.add_argument("--floor-gate", action="store_true",
+                    help="cfg.ros_floor_extinction_gate=True (moisture-of-"
+                         "extinction gate on the grass ROS floor)")
+    ap.add_argument("--grass-only", action="store_true",
+                    help="cfg.ros_floor_grass_only=True (restrict the ROS "
+                         "floor to GR/GS, no TU/TL lift)")
+    ap.add_argument("--model-error", type=float, default=0.0,
+                    help="cfg.model_error_sd_log for the replay (ensemble "
+                         "model-error term, tri-model review finding A7)")
+    ap.add_argument("--p50-bound", action="store_true",
+                    help="cfg.ensemble_p50_nominal_bound=True (ladder p50 "
+                         "never trails the nominal member)")
+    ap.add_argument("--spotting", action="store_true",
+                    help="cfg.spotting_enabled=True for the replay")
+    ap.add_argument("--out", default="replay_results.json",
+                    help="`replay` results filename inside --data-dir "
+                         "(default replay_results.json; pair with --label "
+                         "to run a calibration-matrix variant without "
+                         "clobbering the default file)")
+    ap.add_argument("--label", default="",
+                    help="free-text config-variant name stored in the "
+                         "`replay` results file header (e.g. 'grass_floor')")
+    ap.add_argument("--results", default="replay_results.json",
+                    help="`report` reads this results filename inside "
+                         "--data-dir (point at a --out variant file to "
+                         "render it instead of the default)")
     ap.add_argument("--irwin", default="",
                     help="comma-separated IRWIN ids to fetch (override "
                          "automatic selection)")
