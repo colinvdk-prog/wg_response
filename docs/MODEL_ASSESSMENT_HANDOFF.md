@@ -55,13 +55,21 @@ default path is fingerprint-pinned.
 ## 3. As-deployed configuration
 
 Live watcher StartCommand (verify via `aws apprunner describe-service`,
-service `wg-response-watch`, us-west-2): `--gust-blend 0.5 --grass-floor
-0.10 --extreme-regime` on image tag `gf1`-lineage. Engine `ResponseConfig`
-defaults keep every calibrated knob OFF. The public simulator additionally
-defaults (sim sessions only): fuel-tiered corridor erosion (FAST 550 m
-GR/GS, SHRUB 200 m, SLOW 150 m, euclidean discs), escape-target hysteresis
-20 min, per-fuel-class cold-black windows, `deploy_min` 15 (3-person crews),
-ember_threat_radius 200 m, spotting + grass floor on.
+service `wg-response-watch`, us-west-2), image tag `fix1` (2026-09-03,
+fix program docs/FIX_PROGRAM_2026-09-03.md): `--gust-blend 0.5
+--grass-floor 0.10 --extreme-regime --fail-closed --ember-radius 200
+--p50-bound`. The floor-physics and model-error flags (`--floor-gate
+--grass-only --model-error`) follow the hindcast calibration matrix. Engine
+`ResponseConfig` defaults keep every calibrated knob OFF. The public
+simulator additionally defaults (sim sessions only): fuel-tiered corridor
+erosion (FAST 550 m GR/GS, SHRUB 200 m, SLOW 150 m, euclidean discs),
+escape-target hysteresis 20 min, per-fuel-class cold-black windows,
+proactive pre-pocket escape 120 min, corridor fail-closed (off-raster
+bound only — the tile is the sim's world), `deploy_min` 15 (3-person
+crews), ember_threat_radius 200 m, spotting + grass floor on. The 10c
+crew-overrun audit counts imminent exposure in every crew mode (both
+paths). Previous lineage: `gf1` = `--gust-blend 0.5 --grass-floor 0.10
+--extreme-regime` (the configuration the tri-model review assessed).
 
 ## 4. Validation record (the numbers under review)
 

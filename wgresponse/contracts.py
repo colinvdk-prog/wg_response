@@ -1223,17 +1223,26 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("extreme_h must be < notice_h")
     if cfg.extreme_p10_h <= 0:
         problems.append("extreme_p10_h must be > 0")
-    if cfg.extreme_p10_h > cfg.extreme_h:
-        problems.append("extreme_p10_h must be <= extreme_h (the stricter, "
-                        "earlier-triggering P10 threshold)")
+    # SAFETY SEMANTICS 1 is an OR of two independent rungs (p50 <= extreme_h,
+    # p10 <= extreme_p10_h); no ordering between them is required — p10 <=
+    # p50 always, so a p10 rung wider than extreme_h is still meaningful. A
+    # rung beyond the forecast horizon, however, can never fire (arrivals
+    # past the horizon are UNREACHED), which is what catches the review's
+    # extreme_p10_h=999 case.
+    if cfg.horizon_h > 0 and cfg.extreme_p10_h > cfg.horizon_h:
+        problems.append("extreme_p10_h must be <= horizon_h (a P10 rung past "
+                        "the forecast horizon can never fire)")
     if cfg.clear_cycles < 1:
         problems.append("clear_cycles must be >= 1 (0 defeats the clear-streak hysteresis)")
     if cfg.clear_margin_h < 0:
         problems.append("clear_margin_h must be >= 0")
 
-    # --- crew safety / route margins (minutes; sanity-capped at 24h -- no
-    # per-stop/per-leg safety margin is plausibly longer than that) ---
-    MAX_MARGIN_MIN = 1440.0
+    # --- crew safety / route margins (minutes). The cap is a MAGNITUDE guard
+    # against unit errors (the review's egress_buffer_min=1e9), not a
+    # physical bound: simulator drills and the withdrawal-law tests use
+    # day-scale buffers on purpose ("brutal tightening" rug-pulls), so the
+    # guard sits at one week. ---
+    MAX_MARGIN_MIN = 10_080.0
     if cfg.deploy_min <= 0 or cfg.deploy_min > MAX_MARGIN_MIN:
         problems.append(f"deploy_min must be > 0 and <= {MAX_MARGIN_MIN:g} minutes")
     if cfg.egress_buffer_min < 0 or cfg.egress_buffer_min > MAX_MARGIN_MIN:
