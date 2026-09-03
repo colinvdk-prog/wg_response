@@ -11,6 +11,9 @@ set -u
 cd "$(dirname "$0")/.." || exit 1
 export PYTHONIOENCODING=utf-8 PYTHONHASHSEED=0
 mkdir -p scratch_review/calmatrix
+# the harness joins --out onto --data-dir; an ABSOLUTE Windows-style path
+# (C:/...) overrides that join, and Python on Windows cannot read /c/... paths
+ROOT=$(cygpath -m "$PWD")
 which=${1:-both}
 filter=${2:-}
 
@@ -30,6 +33,11 @@ VARIANTS=(
   "D_gate_me071|--grass-floor 0.10 --floor-gate --model-error 0.71"
   "E_gategrass_me050|--grass-floor 0.10 --floor-gate --grass-only --model-error 0.5"
   "G_gate_p50|--grass-floor 0.10 --floor-gate --p50-bound"
+  "H_nofloor_me050|--model-error 0.5"
+  "H_nofloor_me071|--model-error 0.71"
+  "E_gategrass_me071|--grass-floor 0.10 --floor-gate --grass-only --model-error 0.71"
+  "I_gategrass05_me050|--grass-floor 0.05 --floor-gate --grass-only --model-error 0.5"
+  "I_gategrass05_me071|--grass-floor 0.05 --floor-gate --grass-only --model-error 0.71"
 )
 
 for corpus in aug oos; do
@@ -39,7 +47,7 @@ for corpus in aug oos; do
     label=${v%%|*}
     flags=${v#*|}
     [[ -z "$filter" || "$label" == *"$filter"* ]] || continue
-    out="scratch_review/calmatrix/${corpus}_${label}.json"
+    out="$ROOT/scratch_review/calmatrix/${corpus}_${label}.json"
     if [[ -s "$out" ]]; then
       echo "skip $corpus $label (exists)"
       continue

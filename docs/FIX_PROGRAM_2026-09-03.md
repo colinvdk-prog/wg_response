@@ -149,4 +149,74 @@ on/off delta the review found unmeasurable is now measured. Files:
 
 ### Hindcast calibration matrix (items 2, 3, 5)
 
-(pending — see `docs/calibration/` when the matrix lands)
+Runner `scratch_review/calmatrix_run.sh`, table
+`docs/calibration/calibration_matrix_2026-09-03.md` (built by
+`scratch_review/calmatrix_report.py` from `scratch_review/calmatrix/`).
+Corpora: August 2026 (12 incidents; harness pairing = 27 pairs / 145,760
+cells / 11 incidents scored — NOT the review-era 18-window table, so the
+comparison is variant-vs-variant on identical pairs) and July OOS.
+
+**Decision rule, written down before the last rows landed** (so the
+choice is not post-hoc): the live watcher runs the variant that
+(1) minimises PIT extreme-bin mass — the honesty of the band — subject to
+(2) pooled late-miss no worse than the as-deployed floor's (~6%) and
+(3) the least median p10 area inflation among those; skill over the
+equal-area circle breaks ties. A variant that meets (1)-(3) on August but
+fails (2) on July is rejected.
+
+**What the first six rows already established.** The extinction gate is
+free (B_gate ≡ A_deployed to three figures on this corpus — the out-fuel
+hours were not where the fires ran); the timber flooring is the inflation
+engine (grass-only halves median p10 area 19.4× → 10.7× for −0.6 pp
+adequacy); and the PIT split shows the floor did not calibrate the engine
+— it flipped the bias sign: with no floor 53% of newly burned cells burn
+EARLIER than every member (too slow / too narrow), with the floor 69% burn
+LATER than every member (too fast). The model-error term flattens the PIT
+(81% → 59% → 50% extreme mass at sd 0 / 0.5 / 0.71) but on top of the
+floor it only widens an already-overshooting band (23-25× area).
+
+**The full matrix (14 variants × 2 corpora).** August, key rows —
+adequacy / late / median p10 area / skill / PIT extreme (early/late) /
+6-12 h bin:
+
+| variant | Aug | July (OOS, the blow-up corpus) |
+|---|---|---|
+| A as deployed (floor 0.10 all classes) | 94.2 / 5.8 / 19.4× / 1.07 / 81% (12/69) / 71% | 76.9 / 23.1 / 12.4× / 1.00 / 92% (32/60) / 88% |
+| B + extinction gate | identical to A | identical to A |
+| C gate + grass-only | 93.6 / 6.4 / 10.7× / 1.08 / 79% / 69% | 68.2 / 31.8 / 9.5× / 0.95 / 91% / 63% |
+| E gate + grass-only + band 0.50 | 96.9 / 3.1 / 11.9× / 1.08 / 56% (10/47) / 84% | 70.7 / 29.3 / 11.3× / 0.94 / 79% (37/43) / 66% |
+| I HALF floor 0.05 gate grass-only + band 0.71 | 94.1 / 5.9 / 11.0× / 1.09 / **40%** (14/26) / 69% | 68.0 / 32.0 / 10.4× / 0.94 / 67% / 62% |
+| H no floor + band 0.71 | 90.5 / 9.5 / 8.2× / 1.23 / 53% (34/18) / 53% | 63.3 / 36.7 / 8.3× / 0.98 / 67% (46/21) / 58% |
+| **D gate + band 0.71 (CHOSEN)** | **98.8 / 1.2 / 24.7× / 1.06 / 50% (6/44) / 94%** | **83.1 / 16.9 / 14.2× / 0.99 / 72% (22/50) / 99%** |
+| D gate + band 0.50 | 97.2 / 2.8 / 22.7× / 1.07 / 59% / 85% | 81.5 / 18.5 / 13.6× / 1.00 / 80% / 98% |
+
+**Decision (the rule applied).** Late-miss no worse than the deployed
+floor on BOTH corpora admits only the all-class gated floor with the
+error band (D family) — every grass-only or half-floor variant, however
+attractive on August, loses 6-9 pp of adequacy on the July blow-ups,
+where the engine has NO directional skill over a circle of equal area
+(skill ≈ 1.0 for every variant: on those fires coverage is area budget,
+not physics, and the timber floor's contribution there is area). Among
+the compliant variants the 0.71 band (the review's measured head-ratio
+error) has the flattest PIT. The live watcher therefore runs
+`--grass-floor 0.10 --floor-gate --model-error 0.71` (with the
+already-armed `--gust-blend 0.5 --extreme-regime --fail-closed
+--ember-radius 200 --p50-bound`): late-miss 5.8% → 1.2% (Aug) and 23.1% →
+16.9% (July); the 6-12 h bin — the P10 rung's own horizon — 71% → 94% and
+88% → 99%; PIT extreme mass 81% → 50% and 92% → 72%; P10 is now the 10th
+percentile of a band whose width is the measured error, not the sample
+minimum of a ±12.5% wind spread. The price, stated plainly: median p10
+area +27% (Aug) / +14% (July) over an already 19×/12× over-prediction.
+What the matrix could NOT deliver: a variant that is both honest and
+tight. The half-floor + band point (I) is the best-calibrated band in the
+matrix on August (40% extreme mass, near-symmetric) and would be the
+choice on physics alone; it is held back solely by the July blow-ups,
+i.e. by the extreme-regime problem the review already isolated (n=1
+positive example). When the extreme-regime posture can carry those fires
+on its own, the floor should be re-cut toward I.
+
+**The full table** (all metrics, both corpora):
+`docs/calibration/calibration_matrix_2026-09-03.md`. Raw results:
+`scratch_review/calmatrix/`. Integrity: every file's stored label/config
+is checked against its filename by the report script (three July files
+were regenerated after a driver-editing race corrupted them).

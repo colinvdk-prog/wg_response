@@ -57,9 +57,11 @@ default path is fingerprint-pinned.
 Live watcher StartCommand (verify via `aws apprunner describe-service`,
 service `wg-response-watch`, us-west-2), image tag `fix1` (2026-09-03,
 fix program docs/FIX_PROGRAM_2026-09-03.md): `--gust-blend 0.5
---grass-floor 0.10 --extreme-regime --fail-closed --ember-radius 200
---p50-bound`. The floor-physics and model-error flags (`--floor-gate
---grass-only --model-error`) follow the hindcast calibration matrix. Engine
+--grass-floor 0.10 --floor-gate --model-error 0.71 --extreme-regime
+--fail-closed --ember-radius 200 --p50-bound` — the floor-physics and
+model-error flags were chosen by the hindcast calibration matrix
+(docs/calibration/calibration_matrix_2026-09-03.md; grass-only and
+half-strength floors rejected by the July blow-up corpus). Engine
 `ResponseConfig` defaults keep every calibrated knob OFF. The public
 simulator additionally defaults (sim sessions only): fuel-tiered corridor
 erosion (FAST 550 m GR/GS, SHRUB 200 m, SLOW 150 m, euclidean discs),
