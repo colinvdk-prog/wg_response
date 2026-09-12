@@ -74,6 +74,18 @@ tile + zip cache to S3 (loud-never-fatal; download on a fresh container).
 Watcher env `WGRESP_STATE_S3=s3://bucket/prefix`. See
 `docs/DURABLE_STATE.md`.
 
+Live proof (2026-09-11): after the first `fix3b` cycle the bucket held
+`state.json` (51 KB) plus 30 terrain objects (170 MB). The `fix3c` restart
+reported `restored: true`, `restored_from_s3: true`, `last_download: hit` —
+the alert ladder, notified ledger and incumbent plan came back into a fresh
+container instead of starting empty; the terrain cache's restore shows in
+that container's first-cycle breakdown (below). Infra: private, encrypted
+bucket `wg-response-state-296920174396`; instance role
+`wg-response-apprunner-instance` (ListBucket/Get/Put/Delete on that bucket
+only), attached to the watcher service. A missing flag on the `watch`
+parser rolled the first `--phi-vector` deploy back (App Runner health check)
+— fixed, with a test that parses the exact production start command.
+
 ## Measurements
 
 ### Regime-conditional floor (matrix round 2, `scratch_review/calmatrix2_run.sh`)
@@ -121,8 +133,8 @@ the honest band can run outside the regime. Raw results:
 |---|---|---|---|
 | D071 (deployed) | 98.8 / 1.2 / 0.0 / 24.7× / 50% / 94% | 83.1 / 16.9 / 0.0 / 14.2× / 0.99 / 99% |
 | N = D071 + φ-vector | 97.7 / 2.3 / 0.0 / 23.7× / 51% / 88% | 82.8 / 17.2 / 0.1 / 14.1× / 1.00 / 97% |
-| M = D071 + piecewise | (pending) | (pending) |
-| O = D071 + both | (pending) | (pending) |
+| M = D071 + piecewise | 98.8 / 1.2 / 0.0 / 24.6× / 50% / 94% | 83.3 / 16.7 / 0.0 / 14.2× / 1.00 / 99% |
+| O = D071 + both | 97.6 / 2.4 / 0.0 / 23.6× / 50% / 88% | 82.6 / 17.4 / 0.2 / 14.1× / 1.00 / 97% |
 
 φ-vector: rule-compliant on both corpora (late-miss far below the
 as-deployed floor's 5.8 / 23.1; PIT unchanged; area 4% lower) and
@@ -131,6 +143,16 @@ aligned slopes was contributing a little August coverage, while the
 opposed-slope case the correction exists for (the old rule up to 1.9× too
 slow — the downslope Santa Ana geometry of Rancho Santa Fe) is absent from
 both corpora. Unit-level effect sizes are in `tests/test_spread_physics2.py`.
+
+Piecewise integration: statistically indistinguishable from the deployed
+configuration on BOTH corpora (±0.2 pp; never-reached 0.0% — the
+push-past-the-horizon risk the implementer flagged does not materialise at
+corpus scale), so the frozen departure-hour weather was not moving the P10
+field on these fires. It is a correctness fix without a scorecard effect,
+and at 3.7–7× the spread cost it stays OFF on the live path (the phase
+telemetry puts spread at ~450 s per 25-incident cycle; piecewise would make
+the loop 25–40 minutes). Full table:
+`docs/calibration/calibration_matrix_2026-09-11.md`.
 **Armed live** on 2026-09-11 (`--phi-vector`): rule-compliant, cost-free, and
 the only variant that corrects the anti-safe opposed-slope bias the RSF
 Santa Ana geometry depends on; the restart doubled as the first S3-restore
@@ -166,3 +188,12 @@ staleness SLO. The next lever, if the period ever has to be met, is
 reusing an incident's ensemble across cycles when its seed geometry and
 weather epoch are unchanged (~14 s per 300k-cell incident today) — not
 built; the telemetry now makes that decision measurable.
+
+Cold restart WITH the mirror (`fix3c` container, cycle 1, 25 incidents):
+**563 s (9.4 min)** — terrain 87 s (~4.6 s per incident, S3 download),
+spread 455 s, weather 11 s, feeds 2 s; `cycle_stale` false. A restart now
+costs one 9-minute cycle instead of one 59-minute cycle. The φ-vector path
+adds ~110 s of spread per cycle on this AOI (346 → 455 s; the phi
+combination sits in the memoised cell path but adds a bed lookup per
+unique key) — the steady state is ~9 min with it armed, inside the
+15-minute SLO.

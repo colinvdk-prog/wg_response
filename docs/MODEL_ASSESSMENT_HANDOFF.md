@@ -55,7 +55,7 @@ default path is fingerprint-pinned.
 ## 3. As-deployed configuration
 
 Live watcher StartCommand (verify via `aws apprunner describe-service`,
-service `wg-response-watch`, us-west-2), image tag `fix3` (2026-09-11,
+service `wg-response-watch`, us-west-2), image tag `fix3c` (2026-09-11,
 docs/FIX_PROGRAM_2026-09-11.md): `--gust-blend 0.5 --grass-floor 0.10
 --floor-gate --model-error 0.71 --extreme-regime --fail-closed
 --ember-radius 200 --p50-bound --solver-evals 20000 --phi-vector`, env

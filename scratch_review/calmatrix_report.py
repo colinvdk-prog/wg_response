@@ -89,9 +89,13 @@ HEADER = ("| variant | pairs / cells / incidents | p10 adequacy | late miss "
 
 def main():
     which = sys.argv[1] if len(sys.argv) > 1 else "both"
-    out = ["# Hindcast calibration matrix — 2026-09-03",
+    dest_name = sys.argv[2] if len(sys.argv) > 2 else "calibration_matrix_2026-09-03.md"
+    stamp = dest_name.replace("calibration_matrix_", "").replace(".md", "")
+    out = [f"# Hindcast calibration matrix — {stamp}",
            "",
-           "Fix-program items 2/3/5 (docs/FIX_PROGRAM_2026-09-03.md): which ROS-floor",
+           "Round 1 (2026-09-03) fix-program items 2/3/5 and round 2 (2026-09-11: the",
+           "regime-conditional floor J/L and the physics knobs M/N/O on the deployed",
+           "configuration; docs/FIX_PROGRAM_2026-09-11.md): which ROS-floor",
            "physics and which ensemble model-error term the live watcher should run,",
            "judged on the two-sided scorecard (docs/calibration/SCORECARD.md). Every",
            "variant carries the as-deployed gust blend 0.5. Pairing = the harness's",
