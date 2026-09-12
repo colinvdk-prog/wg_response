@@ -58,13 +58,14 @@ Live watcher StartCommand (verify via `aws apprunner describe-service`,
 service `wg-response-watch`, us-west-2), image tag `fix3` (2026-09-11,
 docs/FIX_PROGRAM_2026-09-11.md): `--gust-blend 0.5 --grass-floor 0.10
 --floor-gate --model-error 0.71 --extreme-regime --fail-closed
---ember-radius 200 --p50-bound --solver-evals 20000`, env
+--ember-radius 200 --p50-bound --solver-evals 20000 --phi-vector`, env
 `WGRESP_STATE_S3=s3://wg-response-state-296920174396/watch` (alert state +
 LANDFIRE cache mirrored across restarts; instance role
 `wg-response-apprunner-instance`). Built but NOT armed live:
-`--regime-floor` (the regime detector trips on 2/18 July blow-up pairs),
-`edge_weather_piecewise`, `slope_phi_vector` (matrix round 2 verdicts in
-that doc). Engine `ResponseConfig` defaults keep every calibrated knob OFF.
+`--regime-floor` (the regime detector trips on 2/18 July blow-up pairs) and
+`edge_weather_piecewise` (3.7-7x spread cost: unaffordable on 1 vCPU; matrix
+round 2 verdicts in that doc). `--phi-vector` IS armed (rule-compliant,
+cost-free, corrects the opposed-slope bias). Engine `ResponseConfig` defaults keep every calibrated knob OFF.
 The public simulator additionally defaults (sim sessions only): fuel-tiered
 corridor erosion (FAST 550 m GR/GS, SHRUB 200 m, SLOW 150 m, euclidean
 discs), escape-target hysteresis 20 min, per-fuel-class cold-black windows,

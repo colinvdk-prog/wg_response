@@ -19,7 +19,9 @@ FIELDS = set(H.PairMetrics.__dataclass_fields__)
 ORDER = ["F_nofloor", "H_nofloor_me050", "H_nofloor_me071", "A_deployed",
          "B_gate", "C_gate_grass", "D_gate_me035", "D_gate_me050",
          "D_gate_me071", "E_gategrass_me050", "E_gategrass_me071",
-         "I_gategrass05_me050", "I_gategrass05_me071", "G_gate_p50"]
+         "I_gategrass05_me050", "I_gategrass05_me071", "G_gate_p50",
+         "J_regime_I071", "L_regime_I_noband",
+         "M_D071_piecewise", "N_D071_phi", "O_D071_both"]
 DESC = {
     "F_nofloor": "gust blend 0.5, no ROS floor (the raw engine + blend)",
     "H_nofloor_me050": "F + model-error sd(log) 0.50 (physics + honest band, no floor)",
@@ -35,6 +37,11 @@ DESC = {
     "I_gategrass05_me050": "HALF floor 0.05, gated, GR/GS only + model-error sd(log) 0.50",
     "I_gategrass05_me071": "HALF floor 0.05, gated, GR/GS only + model-error sd(log) 0.71",
     "G_gate_p50": "B + p50 nominal bound (ladder median; p10 metrics unchanged by construction)",
+    "J_regime_I071": "ROUND 2: I + regime-conditional floor 0.10 on regime pairs (fix program 2026-09-11)",
+    "L_regime_I_noband": "ROUND 2: J without the model-error band",
+    "M_D071_piecewise": "ROUND 2: D071 (deployed) + edge-weather piecewise integration",
+    "N_D071_phi": "ROUND 2: D071 (deployed) + phi-vector slope/wind combination",
+    "O_D071_both": "ROUND 2: D071 (deployed) + both physics knobs",
 }
 
 
@@ -62,7 +69,7 @@ def row(label, m):
         return "-" if v is None else (f"{v:.1%}" if key != "cells" else str(v))
 
     return (f"| {label} | {m['n_pairs']} / {m['n_cells']:,} / {m.get('n_incidents', '-')} "
-            f"| {m['p10_adequacy_frac']:.1%} | {m['late_miss_frac']:.1%} "
+            f"| {m['p10_adequacy_frac']:.1%} | {m['late_miss_frac']:.1%} (never reached {m.get('never_reached_frac', 0):.1%}) "
             f"| {m.get('median_area_ratio_p10', 0):.2f}x | {m.get('null_adequacy_frac', 0):.1%} "
             f"| {m.get('skill', 0):.2f}x | {pit.get('extreme_bins_frac', 0):.1%} "
             f"({pit.get('lo_bin_frac', 0):.0%} early / {pit.get('hi_bin_frac', 0):.0%} late) "
@@ -114,7 +121,8 @@ def main():
                 out.append(row(label, rows[label]))
         out.append("")
     text = "\n".join(out) + "\n"
-    dest = ROOT / "docs" / "calibration" / "calibration_matrix_2026-09-03.md"
+    dest = ROOT / "docs" / "calibration" / (sys.argv[2] if len(sys.argv) > 2
+                                            else "calibration_matrix_2026-09-03.md")
     dest.write_text(text, encoding="utf-8")
     print(text)
     print(f"wrote {dest}")

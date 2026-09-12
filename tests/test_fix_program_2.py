@@ -140,6 +140,35 @@ def _ignite_burnable(s, dist0_m=6000.0, intensity="high"):
     raise RuntimeError("no burnable ignition cell found")
 
 
+# ------------------------------------------------- the production start command
+
+PRODUCTION_WATCH_ARGS = (
+    "watch --aoi data/aoi_socal_shadow.json --state-dir /tmp/wgstate "
+    "--registry mock --dry-notify --gust-blend 0.5 --grass-floor 0.10 "
+    "--floor-gate --model-error 0.71 --extreme-regime --fail-closed "
+    "--ember-radius 200 --p50-bound --solver-evals 20000 --phi-vector "
+    "--host 0.0.0.0 --port 8080").split()
+
+
+def test_watch_parser_accepts_the_production_start_command():
+    """Every flag the live App Runner StartCommand carries must parse — a
+    flag missing from the watch parser makes the daemon exit 2 before it
+    listens, App Runner's health check fails and the deploy rolls back
+    (2026-09-11: --phi-vector existed on the hindcast harness but not on
+    watch). Keep this list identical to docs/MODEL_ASSESSMENT_HANDOFF.md §3."""
+    from wgresponse.cli import _build_parser
+    args = _build_parser().parse_args(PRODUCTION_WATCH_ARGS)
+    assert args.cmd == "watch" and args.phi_vector is True
+    assert args.solver_evals == 20000 and args.model_error == 0.71
+    assert args.floor_gate and args.fail_closed and args.p50_bound
+    # the knobs that are built but deliberately NOT armed live
+    assert args.edge_piecewise is False and args.regime_floor == 0.0
+    # every optional watch flag is parseable together
+    extra = PRODUCTION_WATCH_ARGS + ["--edge-piecewise", "--regime-floor", "0.10",
+                                     "--grass-only"]
+    assert _build_parser().parse_args(extra).edge_piecewise is True
+
+
 # ------------------------------------------------------- solver determinism
 
 def test_budget_object_modes():

@@ -176,6 +176,15 @@ def _build_parser() -> argparse.ArgumentParser:
                     help="cfg.model_error_sd_log: ensemble model-error term, "
                          "sd(log head ROS) per perturbed member — "
                          "hindcast-PIT-calibrated (item 3); 0 = off")
+    pw.add_argument("--edge-piecewise", action="store_true",
+                    help="cfg.edge_weather_piecewise: hour-crossing edge "
+                         "traversals integrate each hour's rate (review "
+                         "held item; 3.7-7x spread cost — see the fix "
+                         "program 2026-09-11 before arming live)")
+    pw.add_argument("--phi-vector", action="store_true",
+                    help="cfg.slope_phi_vector: phi-factor vector slope/wind "
+                         "combination (corrects the opposed-slope bias, "
+                         "cost-free; fix program 2026-09-11)")
     pw.add_argument("--solver-evals", type=int, default=0,
                     help="cfg.solver_budget_evals: deterministic dispatch "
                          "budget as a consult COUNT (0 = wall clock); the "
@@ -1015,6 +1024,17 @@ def _cmd_watch(args) -> int:
             f"{float(args.model_error):g} on every perturbed member's head "
             f"ROS — p10/p90 are calibrated percentiles, not the sample "
             f"minimum/maximum (review item 3)")
+    if getattr(args, "edge_piecewise", False):
+        cfg = dataclasses.replace(cfg, edge_weather_piecewise=True)
+        startup_notes_fix.append(
+            "edge-weather PIECEWISE integration ACTIVE: hour-crossing "
+            "traversals follow each hour's rate (3.7-7x spread cost)")
+    if getattr(args, "phi_vector", False):
+        cfg = dataclasses.replace(cfg, slope_phi_vector=True)
+        startup_notes_fix.append(
+            "phi-vector slope/wind combination ACTIVE: max-spread magnitude, "
+            "bearing and effective wind from the Rothermel phi-factor vector "
+            "sum (corrects the opposed-slope slow bias)")
     if getattr(args, "solver_evals", 0):
         cfg = dataclasses.replace(cfg, solver_budget_evals=int(args.solver_evals))
         startup_notes_fix.append(

@@ -114,3 +114,55 @@ pairs would be fitting the out-of-sample test. The detector signature
 needs more blow-up windows (the monthly review accumulates them) before
 the honest band can run outside the regime. Raw results:
 `scratch_review/calmatrix/{aug,oos}_{J_regime_I071,L_regime_I_noband}.json`.
+
+### Physics knobs on the deployed configuration (D071 ± knob)
+
+| variant | Aug adeq / late / never / area / PIT / 6-12 h | July adeq / late / never / area / skill / 6-12 h |
+|---|---|---|---|
+| D071 (deployed) | 98.8 / 1.2 / 0.0 / 24.7× / 50% / 94% | 83.1 / 16.9 / 0.0 / 14.2× / 0.99 / 99% |
+| N = D071 + φ-vector | 97.7 / 2.3 / 0.0 / 23.7× / 51% / 88% | 82.8 / 17.2 / 0.1 / 14.1× / 1.00 / 97% |
+| M = D071 + piecewise | (pending) | (pending) |
+| O = D071 + both | (pending) | (pending) |
+
+φ-vector: rule-compliant on both corpora (late-miss far below the
+as-deployed floor's 5.8 / 23.1; PIT unchanged; area 4% lower) and
+statistically neutral (±1 pp): the speed-space rule's +35.6% overshoot on
+aligned slopes was contributing a little August coverage, while the
+opposed-slope case the correction exists for (the old rule up to 1.9× too
+slow — the downslope Santa Ana geometry of Rancho Santa Fe) is absent from
+both corpora. Unit-level effect sizes are in `tests/test_spread_physics2.py`.
+**Armed live** on 2026-09-11 (`--phi-vector`): rule-compliant, cost-free, and
+the only variant that corrects the anti-safe opposed-slope bias the RSF
+Santa Ana geometry depends on; the restart doubled as the first S3-restore
+test of item 5.
+
+### Live cycle budget — the first phase breakdown ever measured (fix3b, cycle 1)
+
+| phase | seconds | share |
+|---|---|---|
+| feeds (WFIGS/FIRIS/CAL FIRE fetch + fuse) | 2.3 | 0.1% |
+| assess: LANDFIRE terrain (24 incidents, cold cache, ~215 s per LFPS job) | 3,182 | **89.6%** |
+| assess: spread (24 incidents, up to 301k cells each, 6 members + model-error) | 344 | 9.7% |
+| assess: weather | 13 | 0.4% |
+| alerts + dispatch | ~0 | — |
+| **cycle** | **3,551 (59 min)** | |
+
+The review's 20–25-minute loops were never the physics: they were LANDFIRE
+job fetches on a cache that App Runner wipes at every restart (~37 in
+August). After this first cold cycle the mirror holds `state.json` plus 30
+terrain objects (170 MB) in `s3://wg-response-state-296920174396/watch/`, so
+a restart restores instead of refetching. Spread costs ~14 s per 300k-cell
+incident: a warm cycle is ~6 minutes for this AOI — at the 5-minute period
+— and piecewise integration's 3.7–7× spread multiplier would put it at
+25–40 minutes on 1 vCPU, which settles that knob for the live path
+regardless of its scorecard (see below).
+
+Warm-cache steady state (same container, cycle 2, 25 incidents): **440 s
+(7.3 min)** — terrain 69 s, spread 346 s, weather 13 s, feeds 5 s;
+`cycle_stale` false. The cycle-budget verdict: the 20–59-minute loops were
+cold-cache terrain refetches, now mirrored; the steady state is ~7 minutes
+for this AOI, above the 5-minute poll period but inside the 15-minute
+staleness SLO. The next lever, if the period ever has to be met, is
+reusing an incident's ensemble across cycles when its seed geometry and
+weather epoch are unchanged (~14 s per 300k-cell incident today) — not
+built; the telemetry now makes that decision measurable.
