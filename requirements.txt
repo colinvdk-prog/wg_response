@@ -16,6 +16,7 @@ tifffile
 numpy
 imagecodecs
 
-# DynamoClientRegistry live table scans (wg-consumer-profiles). Imported
-# lazily; tests inject scan_fn and never need it.
+# DynamoClientRegistry live table scans (wg-consumer-profiles) AND the
+# optional S3 state/terrain mirror (env WGRESP_STATE_S3, docs/DURABLE_STATE.md).
+# Imported lazily; tests inject scan_fn / a fake S3 client and never need it.
 boto3

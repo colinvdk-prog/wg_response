@@ -42,7 +42,38 @@ Durability discipline:
     pair re-alerts, which is the safe failure direction.)
   * NO WALL-CLOCK READS — persist stamps nothing itself; every timestamp in
     the payload comes from the caller (daemon clock / event times), keeping
-    the module deterministic under injected clocks.
+    the module deterministic under injected clocks (that includes the S3
+    mirror status stamp: save(now_s=...) or it stays None).
+  * OPTIONAL S3 MIRROR (durable state off /tmp) — see below.
+
+S3 MIRROR (tri-model review 2026-08-31 fix program, "durable state off
+/tmp"): the live watcher runs on App Runner with its state dir on /tmp, so
+every container restart (~37 in August) wiped the ladder/ledger/plan and the
+restarted process could re-fire notifications. StateStore(dir, s3_uri=...)
+mirrors the state file to ONE S3 object:
+
+    s3://<bucket>/<prefix>/state.json     (S3_STATE_OBJECT)
+
+    save()  local atomic write FIRST (unchanged, still the authority), THEN
+            put_object. A failed upload is a LOUD ERROR and save() still
+            returns success — the mirror is a convenience for the NEXT
+            container, never a correctness dependency of this one.
+    load()  when the LOCAL file is absent (fresh container) and a mirror is
+            configured, get_object -> write it to the local path (same
+            tmp+fsync+replace discipline) and then run the normal tolerant
+            load. A missing object is "first run" (info); ANY other S3
+            failure is a loud ERROR + start fresh; a corrupt object lands on
+            disk and the existing tolerant load rejects it loudly. load()
+            still NEVER raises.
+    mirror_status()  ops surface: enabled/uri/key, last upload ok + the
+            caller-supplied timestamp, last error, and whether THIS process
+            restored from S3.
+
+boto3 is an OPTIONAL dependency (requirements.txt, the clients.py pattern):
+the client is INJECTABLE (s3_client=), imported LAZILY on first S3 use, and
+its absence is a clear RuntimeError raised ONLY on the S3 path — i.e. only
+when a mirror was actually configured. Nothing about the local-disk path
+changes when s3_uri is None. Operator contract: docs/DURABLE_STATE.md.
 
 Payload shapes (all times unix seconds, per contracts):
   alert_records   {(client_id, incident_id): contracts.AlertRecord}
@@ -77,6 +108,10 @@ logger = logging.getLogger(__name__)
 
 SCHEMA_VERSION = 1
 STATE_FILENAME = "wgresponse_state.json"
+# The mirrored object's name under the configured prefix. Deliberately NOT
+# the local filename: the S3 key is the operator-facing contract
+# (docs/DURABLE_STATE.md); the local name is an implementation detail.
+S3_STATE_OBJECT = "state.json"
 
 _PairKey = Tuple[str, str]
 _LedgerKey = Tuple[str, str, str]
@@ -203,6 +238,178 @@ def _encode_growth(growth: Optional[dict]) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# S3 mirror (shared by StateStore and terrain.LfpsTerrain's tile cache)
+# ---------------------------------------------------------------------------
+
+def parse_s3_uri(uri: str) -> Tuple[str, str]:
+    """``s3://bucket/some/prefix`` -> ``("bucket", "some/prefix")``.
+
+    The prefix is optional (``s3://bucket`` -> ``("bucket", "")``) and never
+    carries leading/trailing slashes. Raises ValueError on anything that is
+    not an s3:// URI — a mis-typed WGRESP_STATE_S3 must fail LOUDLY at
+    startup rather than silently degrade to "no mirror", which is the exact
+    failure mode the durable-state fix exists to prevent."""
+    s = str(uri).strip()
+    if not s.lower().startswith("s3://"):
+        raise ValueError(
+            "S3 URI must look like s3://bucket/prefix — got %r" % (uri,))
+    rest = s[len("s3://"):].strip()
+    bucket, _, prefix = rest.partition("/")
+    bucket = bucket.strip()
+    if not bucket or any(ch.isspace() for ch in bucket):
+        raise ValueError("S3 URI has no usable bucket name: %r" % (uri,))
+    return bucket, prefix.strip("/")
+
+
+def _is_missing_object(exc: BaseException) -> bool:
+    """True when a boto3 error means "that key is not there" (first run).
+
+    Duck-typed on purpose: botocore is NOT imported (it is an optional
+    dependency and tests inject a fake client), so this reads the
+    botocore-shaped ``response`` dict and the exception class name. Only key
+    ABSENCE counts — NoSuchBucket / AccessDenied / throttling are REAL
+    failures and must stay loud, so an explicit error Code is AUTHORITATIVE
+    (NoSuchBucket also answers HTTP 404: reading the status first would
+    silently swallow a mis-typed bucket as "first run")."""
+    resp = getattr(exc, "response", None)
+    if isinstance(resp, dict):
+        code = str((resp.get("Error") or {}).get("Code") or "")
+        if code:
+            return code in ("NoSuchKey", "NotFound", "404")
+        http = (resp.get("ResponseMetadata") or {}).get("HTTPStatusCode")
+        if str(http) == "404":
+            return True
+    return type(exc).__name__ in ("NoSuchKey", "NotFound", "404")
+
+
+def mirror_off_status() -> dict:
+    """The mirror_status() shape when no S3 mirror is configured."""
+    return {"enabled": False, "uri": None, "bucket": None, "prefix": None,
+            "last_upload_ok": None, "last_upload_s": None,
+            "last_upload_key": None, "last_error": None}
+
+
+class S3Mirror:
+    """One-object-per-file S3 mirror for a local durable file.
+
+    Constructed from ``s3://bucket/prefix``; ``key_for(name)`` composes keys
+    under that prefix. ``client`` is any boto3-style S3 client exposing
+    ``put_object(Bucket=, Key=, Body=bytes)`` and
+    ``get_object(Bucket=, Key=) -> {"Body": <.read()>}``; tests inject a fake
+    so no AWS is ever touched. With no client injected boto3 is imported
+    LAZILY on first use and its absence is a clear RuntimeError — raised only
+    here, i.e. only when a mirror was actually configured (the
+    wgresponse.clients optional-dependency pattern).
+
+    Failure discipline:
+      upload()   NEVER raises. Any failure (including the missing-boto3
+                 RuntimeError) is a LOUD ERROR log + False; the caller's
+                 local write has already succeeded and still counts.
+      download() returns None for a MISSING object (first run) and RAISES
+                 for every other failure, so each caller can log its own
+                 domain-specific "starting fresh" / "falling back" ERROR.
+    No wall-clock reads: the status timestamp is whatever the caller passes
+    as ``now_s`` (None when the caller has no clock to offer)."""
+
+    def __init__(self, s3_uri: str, client: Optional[object] = None) -> None:
+        self._uri = str(s3_uri)
+        self._bucket, self._prefix = parse_s3_uri(s3_uri)
+        self._client = client
+        self._last_upload_ok: Optional[bool] = None
+        self._last_upload_s: Optional[float] = None
+        self._last_upload_key: Optional[str] = None
+        self._last_error: Optional[str] = None
+
+    # -- identity ------------------------------------------------------------
+
+    @property
+    def uri(self) -> str:
+        return self._uri
+
+    @property
+    def bucket(self) -> str:
+        return self._bucket
+
+    @property
+    def prefix(self) -> str:
+        return self._prefix
+
+    def key_for(self, name: str) -> str:
+        """Object key for ``name`` under the configured prefix."""
+        name = str(name).lstrip("/")
+        return "%s/%s" % (self._prefix, name) if self._prefix else name
+
+    # -- client --------------------------------------------------------------
+
+    def client(self):
+        """The S3 client: the injected one, else a lazily built boto3 client.
+
+        Raises RuntimeError (naming the pip) when boto3 is absent. Region and
+        credentials come from the standard AWS environment / task role."""
+        if self._client is None:
+            try:
+                import boto3
+            except ImportError as e:
+                raise RuntimeError(
+                    "the S3 durable-state mirror (%s) requires boto3 — pip "
+                    "install boto3, inject s3_client for tests/offline use, "
+                    "or leave the mirror unconfigured to run on local disk "
+                    "only" % (self._uri,)) from e
+            self._client = boto3.client("s3")
+        return self._client
+
+    # -- transfers -----------------------------------------------------------
+
+    def download(self, key: str) -> Optional[bytes]:
+        """Object bytes, or None when the object does not exist (first run).
+        Raises on every OTHER failure (auth, bucket, network, no boto3)."""
+        try:
+            resp = self.client().get_object(Bucket=self._bucket, Key=key)
+        except Exception as exc:
+            if _is_missing_object(exc):
+                return None
+            raise
+        body = resp["Body"] if isinstance(resp, dict) else resp
+        return body.read() if hasattr(body, "read") else bytes(body)
+
+    def upload(self, key: str, body: bytes,
+               now_s: Optional[float] = None) -> bool:
+        """PUT body at key; True on success. NEVER raises: any failure is a
+        LOUD ERROR + False (the caller's local write already succeeded)."""
+        try:
+            self.client().put_object(Bucket=self._bucket, Key=key, Body=body)
+        except Exception as exc:
+            self._last_upload_ok = False
+            self._last_upload_s = now_s
+            self._last_upload_key = key
+            self._last_error = "%s: %s" % (type(exc).__name__, exc)
+            logger.error(
+                "S3 mirror: upload to s3://%s/%s FAILED (%s) — the LOCAL copy "
+                "is written and authoritative, but a CONTAINER RESTART WILL "
+                "NOT FIND THIS STATE (durable-state mirror degraded)",
+                self._bucket, key, exc)
+            return False
+        self._last_upload_ok = True
+        self._last_upload_s = now_s
+        self._last_upload_key = key
+        self._last_error = None
+        logger.debug("S3 mirror: uploaded %d bytes to s3://%s/%s",
+                     len(body), self._bucket, key)
+        return True
+
+    # -- status --------------------------------------------------------------
+
+    def status(self) -> dict:
+        """Ops surface: last upload ok/failed + the caller-supplied stamp."""
+        return {"enabled": True, "uri": self._uri, "bucket": self._bucket,
+                "prefix": self._prefix,
+                "last_upload_ok": self._last_upload_ok,
+                "last_upload_s": self._last_upload_s,
+                "last_upload_key": self._last_upload_key,
+                "last_error": self._last_error}
+
+
+# ---------------------------------------------------------------------------
 # StateStore
 # ---------------------------------------------------------------------------
 
@@ -213,16 +420,71 @@ class StateStore:
     on first save(). save() raises OSError on disk failure (the daemon guards
     and notes it — a full disk must not kill the alert loop); load() NEVER
     raises (absence/corruption -> loud note + None, start fresh).
+
+    ``s3_uri`` (``s3://bucket/prefix``) turns on the S3 mirror described in
+    the module docstring: save() uploads to ``<prefix>/state.json`` AFTER the
+    local atomic write, load() pulls that object down when the local file is
+    absent (fresh container). ``s3_client`` injects a boto3-style client
+    (tests); otherwise boto3 is imported lazily on first S3 use. With
+    ``s3_uri=None`` the class behaves EXACTLY as before — no imports, no
+    network, no behaviour change.
+
+    A malformed s3_uri raises ValueError HERE (startup), so a typo in
+    WGRESP_STATE_S3 can never degrade silently into "no mirror".
     """
 
-    def __init__(self, dir_path) -> None:
+    def __init__(self, dir_path, s3_uri: Optional[str] = None,
+                 s3_client: Optional[object] = None) -> None:
         self._dir = Path(dir_path)
         self._path = self._dir / STATE_FILENAME
+        self._mirror = S3Mirror(s3_uri, client=s3_client) if s3_uri else None
+        self._s3_key = (self._mirror.key_for(S3_STATE_OBJECT)
+                        if self._mirror else None)
+        self._restored_from_s3 = False
+        self._last_download: Optional[str] = None   # hit|missing|error|None
+        if s3_uri is None and s3_client is not None:
+            logger.warning("persist: s3_client was given without s3_uri — the "
+                           "S3 mirror stays OFF (state is local-disk only)")
 
     @property
     def path(self) -> Path:
         """The state file path (for logs/tests)."""
         return self._path
+
+    @property
+    def s3_key(self) -> Optional[str]:
+        """The mirrored object key (``<prefix>/state.json``); None when the
+        mirror is off."""
+        return self._s3_key
+
+    @property
+    def s3_enabled(self) -> bool:
+        """True when an S3 mirror is configured."""
+        return self._mirror is not None
+
+    def mirror_status(self) -> dict:
+        """S3 mirror surface for the daemon/console (never raises).
+
+        {"enabled", "uri", "bucket", "prefix", "key", "last_upload_ok"
+         (True / False / None = never attempted), "last_upload_s" (the
+         timestamp the CALLER passed to save(now_s=...); None if it passed
+         none — persist reads no clock), "last_upload_key", "last_error",
+         "restored_from_s3", "last_download": "hit"|"missing"|"error"|None}.
+        """
+        st = self._mirror.status() if self._mirror else mirror_off_status()
+        st["key"] = self._s3_key
+        st["restored_from_s3"] = self._restored_from_s3
+        st["last_download"] = self._last_download
+        return st
+
+    def probe_mirror(self) -> None:
+        """Raise RuntimeError if a mirror is configured but unusable (boto3
+        missing). No-op when the mirror is off. For a STARTUP check by the
+        CLI: save()/load() themselves never raise on S3 trouble, so without
+        this an operator could run a whole shift believing state was durable.
+        """
+        if self._mirror is not None:
+            self._mirror.client()
 
     # ------------------------------------------------------------------ save
 
@@ -230,12 +492,20 @@ class StateStore:
              notified_ledger: Dict[_LedgerKey, float],
              incumbent_plan: Optional[DispatchPlan],
              meta: Optional[dict],
-             incident_growth: Optional[dict] = None) -> str:
+             incident_growth: Optional[dict] = None,
+             now_s: Optional[float] = None) -> str:
         """Atomically persist one cycle's durable state; returns the file path.
 
         Tuple keys are flattened into lists (JSON has no tuple keys). Raises
         OSError/TypeError upward on disk/serialization failure — the caller
         decides whether that is fatal (the watch daemon logs + continues).
+
+        With an S3 mirror configured the same bytes are then PUT to
+        ``<prefix>/state.json``; that upload NEVER raises and never changes
+        the return value — a failed mirror is a loud ERROR while the local
+        save still counts as success. ``now_s`` (the caller's clock, unix
+        seconds) is only stamped into mirror_status(); persist itself reads
+        no wall clock.
         """
         payload = {
             "schema_version": SCHEMA_VERSION,
@@ -264,6 +534,12 @@ class StateStore:
             fh.flush()
             os.fsync(fh.fileno())
         os.replace(tmp, self._path)  # atomic on POSIX and Windows
+        if self._mirror is not None:
+            # The local save has ALREADY succeeded and is authoritative; the
+            # mirror only has to survive for the NEXT container, so its
+            # failure is loud (inside upload()) but never fatal here.
+            self._mirror.upload(self._s3_key, body.encode("utf-8"),
+                                now_s=now_s)
         return str(self._path)
 
     # ------------------------------------------------------------------ load
@@ -282,7 +558,21 @@ class StateStore:
         own ERROR note while the rest restore. A last-resort guard converts
         ANY unexpected failure into a loud ERROR + None (Session-3 verifier
         F1: a supervised daemon must never crash-loop on a bad state file).
+
+        S3 mirror: when the local file is ABSENT and a mirror is configured,
+        the mirrored object is downloaded to the local path first (missing
+        object -> info "first run"; any S3 error -> loud ERROR + start
+        fresh), then the tolerant load above proceeds unchanged — so a
+        corrupt mirrored object is rejected by exactly the same loud,
+        never-fatal path as a corrupt local file.
         """
+        try:
+            self._restore_from_s3()
+        except Exception:
+            # Belt-and-braces: _restore_from_s3 already swallows everything.
+            logger.exception(
+                "persist: S3 restore failed in an UNEXPECTED way — STARTING "
+                "FRESH from local disk; previously-alerted pairs may re-notify")
         try:
             return self._load()
         except Exception:
@@ -384,6 +674,62 @@ class StateStore:
             "meta": dict(meta) if isinstance(meta, dict) else {},
             "incident_growth": growth,
         }
+
+    # ------------------------------------------------------------ S3 mirror
+
+    def _restore_from_s3(self) -> bool:
+        """Fill an ABSENT local state file from the mirror. Never raises.
+
+        True only when the local file now exists because of this download.
+        A present local file always wins: a live container's own write is
+        newer than anything in S3, and re-downloading could rewind the
+        ladder/ledger."""
+        if self._mirror is None:
+            return False
+        if self._path.exists():
+            return False
+        uri = "s3://%s/%s" % (self._mirror.bucket, self._s3_key)
+        try:
+            body = self._mirror.download(self._s3_key)
+        except Exception as exc:
+            self._last_download = "error"
+            logger.error(
+                "persist: restore from %s FAILED (%s) — STARTING FRESH; "
+                "previously-alerted pairs may re-notify (check the task "
+                "role's s3:GetObject on this bucket)", uri, exc)
+            return False
+        if body is None:
+            self._last_download = "missing"
+            logger.info(
+                "persist: no mirrored state at %s — first run for this "
+                "prefix, starting fresh", uri)
+            return False
+        try:
+            self._write_bytes_atomically(body)
+        except OSError as exc:
+            self._last_download = "error"
+            logger.error(
+                "persist: mirrored state from %s could not be written to %s "
+                "(%s) — STARTING FRESH", uri, self._path, exc)
+            return False
+        self._restored_from_s3 = True
+        self._last_download = "hit"
+        logger.info(
+            "persist: restored %d bytes of state from %s -> %s (container "
+            "restart keeps the alert ladder, notified ledger and incumbent "
+            "plan)", len(body), uri, self._path)
+        return True
+
+    def _write_bytes_atomically(self, body: bytes) -> None:
+        """Same durability discipline as save(): tmp + flush + fsync +
+        os.replace, so a crash mid-restore cannot leave a torn state file."""
+        self._dir.mkdir(parents=True, exist_ok=True)
+        tmp = Path(str(self._path) + ".tmp")
+        with open(tmp, "wb") as fh:
+            fh.write(body)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, self._path)
 
     def _list_field(self, payload: dict, field: str) -> list:
         """payload[field] as a list; a type-corrupt non-list scalar (Session-3

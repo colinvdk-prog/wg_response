@@ -61,6 +61,10 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
+#: DURABLE STATE (docs/DURABLE_STATE.md): s3://bucket/prefix that mirrors the
+#: watcher's alert state and LANDFIRE cache across container restarts.
+_STATE_S3_ENV = "WGRESP_STATE_S3"
+
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="wgresponse",
@@ -576,9 +580,17 @@ def _watch_terrain(args, state_dir):
             "SyntheticTerrain: fuels/slope are generated, NOT LANDFIRE — "
             "rehearsal-grade forecasts until the deps are installed"]
     email = os.environ.get(_LFPS_EMAIL_ENV) or _LFPS_EMAIL_DEFAULT
-    return terrain_mod.LfpsTerrain(cache_dir=cache_dir, email=email), [
-        f"terrain: live LANDFIRE via LFPS (zip+tile cache: {cache_dir}; "
-        f"job email {email} — override with env {_LFPS_EMAIL_ENV})"]
+    # DURABLE STATE (fix program 2026-09-11, docs/DURABLE_STATE.md): the
+    # same S3 prefix that mirrors the alert state also mirrors the LANDFIRE
+    # tile + zip cache, so a fresh container (App Runner /tmp is wiped on
+    # every restart) refetches nothing it has already fetched.
+    s3_uri = os.environ.get(_STATE_S3_ENV) or None
+    provider = terrain_mod.LfpsTerrain(cache_dir=cache_dir, email=email,
+                                       s3_uri=s3_uri)
+    return provider, [
+        f"terrain: live LANDFIRE via LFPS (zip+tile cache: {cache_dir}"
+        + (f", mirrored to {s3_uri}/terrain/" if s3_uri else "")
+        + f"; job email {email} — override with env {_LFPS_EMAIL_ENV})"]
 
 
 def _watch_registry(args, aoi):
@@ -803,6 +815,8 @@ class _WatchDaemon:
             "cycles_run": self.cycles_run,
             "started_at_s": self.started_at_s,
             "restored": self.restored,
+            "state_mirror": (self._store.mirror_status()
+                             if hasattr(self._store, "mirror_status") else None),
             "startup_notes": list(self._startup_notes),
             "safe_zones": [{"zone_id": z.zone_id, "lat": z.loc.lat,
                             "lon": z.loc.lon, "name": z.name}
@@ -1076,7 +1090,29 @@ def _cmd_watch(args) -> int:
         terrain_provider=terrain, registry=registry, alert_engine=engine,
         cfg=cfg, safe_zones=safe_zones, crew_tracker=tracker,
         dispatcher=dispatch_mod, aoi=aoi)
-    store = StateStore(state_dir)
+    # DURABLE STATE (fix program 2026-09-11): env WGRESP_STATE_S3 mirrors
+    # the alert ladder / notified ledger / incumbent plan to S3 and restores
+    # them into a fresh container before the first cycle. A configured but
+    # unusable mirror (no boto3, no credentials, no bucket) must fail LOUD at
+    # startup, never silently run un-mirrored.
+    s3_uri = os.environ.get(_STATE_S3_ENV) or None
+    store = StateStore(state_dir, s3_uri=s3_uri)
+    if s3_uri:
+        try:
+            store.probe_mirror()
+        except RuntimeError as exc:
+            print(f"error: state mirror {s3_uri} unusable: {exc}",
+                  file=sys.stderr)
+            return 2
+        startup_notes.append(
+            f"durable state: alert state + terrain cache mirrored to "
+            f"{s3_uri} (restart restores from the mirror; local disk stays "
+            f"the authority)")
+    else:
+        startup_notes.append(
+            "durable state OFF: state lives on local disk only (set "
+            "WGRESP_STATE_S3=s3://bucket/prefix to mirror it — App Runner "
+            "wipes /tmp on every restart)")
     daemon = _WatchDaemon(monitor=monitor, engine=engine, registry=registry,
                           tracker=tracker, store=store, cfg=cfg, aoi=aoi,
                           period_s=period_s, aoi_desc=aoi_desc,

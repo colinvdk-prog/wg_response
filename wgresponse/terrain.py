@@ -24,6 +24,18 @@ when any is missing the LIVE path raises a clear RuntimeError naming all
 three pips while cached/ascii/synthetic paths keep working (see
 requirements.txt [live] extras). Mock generation uses contracts.seeded_rng —
 never wall-clock.
+
+S3 TILE-CACHE MIRROR (tri-model review fix program, "durable state off
+/tmp"): LfpsTerrain(cache_dir=..., s3_uri="s3://bucket/prefix") mirrors BOTH
+cache seams — the decoded ascii tile (``lfps_<hash>.wgtile``) and the raw job
+zip (``lfps_<hash>.zip``) — to ``<prefix>/terrain/<same filename>``. On App
+Runner the cache_dir lives on /tmp, so every container restart emptied it and
+the first cycle re-fetched every tile from LFPS (~20 min measured). A cache
+MISS now tries one S3 GET before submitting a job, and every newly written
+cache file is PUT back. The keys stay the existing deterministic hashes, so
+a mirror is just a shared cache_dir. Loud but NEVER fatal: any S3 failure
+logs and falls back to the normal LFPS path. With ``s3_uri=None`` behaviour
+is byte-identical to before — no imports, no network, no extra syscalls.
 """
 from __future__ import annotations
 
@@ -41,6 +53,7 @@ import zipfile
 from typing import Callable, Optional
 
 from .contracts import BBox, GridSpec, Raster, TerrainTile, seeded_rng
+from .persist import S3Mirror, mirror_off_status
 
 log = logging.getLogger(__name__)
 
@@ -48,6 +61,11 @@ HttpGet = Callable[[str, dict], "tuple[int, bytes]"]
 
 M_PER_DEG_LAT = 111_320.0
 FLAT_ASPECT = -1.0          # LANDFIRE Asp convention for flat cells
+# Mirrored cache files live under this sub-prefix, so ONE bucket/prefix can
+# hold both the daemon state object and the terrain cache without collision:
+#   s3://bucket/prefix/state.json          (persist.StateStore)
+#   s3://bucket/prefix/terrain/lfps_*.wgtile|.zip   (here)
+S3_TERRAIN_PREFIX = "terrain"
 
 
 def _default_http_get(url: str, headers: Optional[dict] = None,
@@ -317,6 +335,17 @@ class LfpsTerrain:
     once. slope deg, aspect deg (LANDFIRE: -1 flat), elev m, fuel FBFM40
     codes; cell_m meters.
 
+    S3 MIRROR (durable cache off /tmp): with ``s3_uri="s3://bucket/prefix"``
+    a cache MISS first tries ``<prefix>/terrain/<cache filename>`` (the
+    decoded ``.wgtile``, then the raw ``.zip``) before submitting a job, and
+    every cache file written is uploaded to the same key. The filenames are
+    the existing deterministic (layers, AOI[, cell_m]) hashes, so the mirror
+    behaves exactly like a shared cache_dir across containers. ``s3_client``
+    injects a boto3-style client for tests; otherwise boto3 is imported
+    lazily on first S3 use (clear RuntimeError when absent, logged loudly).
+    EVERY S3 failure is loud + non-fatal: the live LFPS path still runs.
+    With ``s3_uri=None`` nothing about this class changes.
+
     poll_interval_s/timeout_s in seconds; sleep_fn and dep_probe injectable
     for tests (dep_probe defaults to probe_live_decode_deps)."""
 
@@ -331,7 +360,9 @@ class LfpsTerrain:
                  poll_interval_s: float = 5.0,
                  timeout_s: float = 600.0,
                  sleep_fn: Callable[[float], None] = time.sleep,
-                 dep_probe: Optional[Callable[[], None]] = None):
+                 dep_probe: Optional[Callable[[], None]] = None,
+                 s3_uri: Optional[str] = None,
+                 s3_client: Optional[object] = None):
         if len(layer_list.split(";")) != 4:
             raise ValueError("layer_list must name exactly 4 layers "
                              "(fuel;slope;aspect;elev) to fill a TerrainTile")
@@ -343,6 +374,18 @@ class LfpsTerrain:
         self._timeout_s = timeout_s
         self._sleep = sleep_fn
         self._dep_probe = dep_probe or probe_live_decode_deps
+        # A malformed s3_uri raises ValueError HERE (startup) even when the
+        # mirror ends up disabled, so a typo can never degrade silently.
+        mirror = S3Mirror(s3_uri, client=s3_client) if s3_uri else None
+        # Mirroring without a local cache_dir is meaningless (nothing is
+        # written to mirror and nothing to download INTO): say so loudly
+        # rather than silently doing nothing.
+        if mirror is not None and not cache_dir:
+            log.warning("terrain: s3_uri %s given without cache_dir — the S3 "
+                        "tile mirror stays OFF (every tile re-fetches from "
+                        "LFPS)", s3_uri)
+            mirror = None
+        self._s3 = mirror
 
     # -- public seam ---------------------------------------------------------
 
@@ -350,24 +393,45 @@ class LfpsTerrain:
         """TerrainTile for bbox at cell_m meters; disk-cached. Raises
         RuntimeError on job failure/timeout or missing optional deps.
 
-        Order of operations (ticket C3c): ascii-cache hit returns dep-free
-        and network-free; otherwise the decode deps are probed FIRST (fail
-        fast, before any network); then a cached job zip (if present) is
-        re-decoded without re-submitting; only then is a fresh LFPS job
-        submitted, and its zip is written to the cache BEFORE decode."""
+        Order of operations (ticket C3c + the S3 mirror): ascii-cache hit
+        returns dep-free and network-free; a MIRRORED ascii tile is pulled
+        next and is just as dep-free (no decode); otherwise the decode deps
+        are probed FIRST (fail fast, before any network); then a cached job
+        zip — local, else mirrored — is re-decoded without re-submitting;
+        only then is a fresh LFPS job submitted, and its zip is written to
+        the cache (and mirrored) BEFORE decode."""
         cache_path = self.cache_path(bbox, cell_m)
         if cache_path and os.path.exists(cache_path):
             return load_ascii_tile(cache_path)
+        # S3 MIRROR (decoded tile): a fresh container starts with an EMPTY
+        # cache_dir on /tmp, so the local miss above says nothing about
+        # whether this tile was ever fetched. One GET beats a 90-180 s LFPS
+        # job, and it stays dep-free — no decode is involved, so the dep
+        # probe must not run for a mirror hit either.
+        if cache_path and self._s3_pull(cache_path):
+            try:
+                return load_ascii_tile(cache_path)
+            except Exception as exc:
+                log.error("terrain: mirrored tile %s is unusable (%s) — "
+                          "discarding it and falling back to a live LFPS job",
+                          self.s3_key(cache_path), exc)
+                self._discard_local(cache_path)
         # A decode is unavoidable from here: probe the optional deps BEFORE
         # spending an LFPS job (or even touching the network) — OPS-2.
         self._dep_probe()
         zip_path = self.zip_cache_path(bbox)
+        body = None
         if zip_path and os.path.exists(zip_path):
             log.info("LFPS zip cache hit for %s; re-decoding without "
                      "re-submitting a job", zip_path)
             with open(zip_path, "rb") as f:
                 body = f.read()
-        else:
+        elif zip_path and self._s3_pull(zip_path):
+            log.info("terrain: mirrored LFPS job zip pulled to %s; decoding "
+                     "without submitting a job", zip_path)
+            with open(zip_path, "rb") as f:
+                body = f.read()
+        if body is None:
             job_id = self._submit(bbox)
             zip_url = self._poll(job_id)
             status, body = self._http_get(zip_url, {})
@@ -381,10 +445,12 @@ class LfpsTerrain:
                 with open(tmp, "wb") as f:
                     f.write(body)
                 os.replace(tmp, zip_path)
+                self._s3_push(zip_path, body)
         tile = self._decode_zip(body, bbox, cell_m)
         if cache_path:
             os.makedirs(os.path.dirname(cache_path), exist_ok=True)
             save_ascii_tile(tile, cache_path)
+            self._s3_push(cache_path)
         return tile
 
     def cache_path(self, bbox: BBox, cell_m: float) -> Optional[str]:
@@ -409,6 +475,90 @@ class LfpsTerrain:
                f"{bbox.east:.6f},{bbox.north:.6f}")
         h = hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
         return os.path.join(self._cache_dir, f"lfps_{h}.zip")
+
+    # -- S3 cache mirror -----------------------------------------------------
+
+    @property
+    def s3_enabled(self) -> bool:
+        """True when the tile cache is mirrored to S3."""
+        return self._s3 is not None
+
+    def s3_key(self, local_path: Optional[str]) -> Optional[str]:
+        """Mirror key for a local cache file: ``<prefix>/terrain/<basename>``
+        (the basename IS the deterministic cache hash). None when no mirror
+        is configured."""
+        if self._s3 is None or not local_path:
+            return None
+        return self._s3.key_for(
+            f"{S3_TERRAIN_PREFIX}/{os.path.basename(local_path)}")
+
+    def mirror_status(self) -> dict:
+        """S3 mirror surface for ops (same shape as
+        persist.StateStore.mirror_status(), minus the state-file keys)."""
+        return self._s3.status() if self._s3 is not None else mirror_off_status()
+
+    def _s3_pull(self, local_path: str) -> bool:
+        """Fill a MISSING local cache file from the mirror; True when the
+        file now exists locally. Loud but NEVER fatal: a missing object is an
+        info note (first fetch for this tile) and any other S3 failure is an
+        ERROR — both fall through to the normal LFPS job path."""
+        if self._s3 is None or not local_path:
+            return False
+        key = self.s3_key(local_path)
+        uri = f"s3://{self._s3.bucket}/{key}"
+        try:
+            body = self._s3.download(key)
+        except Exception as exc:
+            log.error("terrain: S3 mirror GET %s failed (%s) — falling back "
+                      "to a live LFPS job (slow, not fatal)", uri, exc)
+            return False
+        if body is None:
+            log.info("terrain: no mirrored object at %s — first fetch for "
+                     "this tile, submitting an LFPS job", uri)
+            return False
+        try:
+            os.makedirs(os.path.dirname(local_path) or ".", exist_ok=True)
+            tmp = f"{local_path}.tmp"
+            with open(tmp, "wb") as f:
+                f.write(body)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, local_path)
+        except OSError as exc:
+            log.error("terrain: mirrored object %s could not be written to "
+                      "%s (%s) — falling back to a live LFPS job", uri,
+                      local_path, exc)
+            return False
+        log.info("terrain: pulled %d bytes from %s -> %s (LFPS job skipped)",
+                 len(body), uri, local_path)
+        return True
+
+    def _s3_push(self, local_path: str,
+                 body: Optional[bytes] = None) -> bool:
+        """Upload a freshly written cache file to the mirror. Never raises:
+        the local cache write already succeeded, so a failed upload only
+        costs the NEXT container another LFPS job (loud ERROR inside
+        S3Mirror.upload)."""
+        if self._s3 is None or not local_path:
+            return False
+        if body is None:
+            try:
+                with open(local_path, "rb") as f:
+                    body = f.read()
+            except OSError as exc:
+                log.error("terrain: cache file %s unreadable for the S3 "
+                          "mirror (%s) — not uploaded", local_path, exc)
+                return False
+        return self._s3.upload(self.s3_key(local_path), body)
+
+    @staticmethod
+    def _discard_local(path: str) -> None:
+        """Remove an unusable cache file (never raises)."""
+        try:
+            os.remove(path)
+        except OSError as exc:
+            log.error("terrain: could not remove unusable cache file %s (%s)",
+                      path, exc)
 
     # -- job API --------------------------------------------------------------
 
