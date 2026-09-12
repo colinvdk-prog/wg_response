@@ -739,11 +739,26 @@ def replay_pair(tile: TerrainTile, wx: WeatherForecast,
     seeds) and score the ensemble against snap1. Deterministic: the ensemble
     seeds on (incident_id, member_k) only, per contracts."""
     seed_rings = [subsample_ring(r, MAX_RING_VERTS) for r in snap0.rings]
+    regime = False
+    cfg0 = cfg
+    if cfg.extreme_regime_enabled:
+        # EXTREME SPREAD REGIME posture on the spread physics — the SAME
+        # rule the live watcher applies (threat.regime_spread_cfg), so the
+        # calibration replays and the daemon see one world.
+        from wgresponse.threat import regime_spread_cfg
+        cfg, regime = regime_spread_cfg(tile, wx, snap0.t_s, cfg)
     ens = spread.ensemble_arrival(tile, [], wx, snap0.t_s, cfg,
                                   incident_id=incident_id,
                                   perimeter=seed_rings,
                                   perimeter_at_s=snap0.t_s)
-    return score_pair(tile, ens, snap0, snap1, incident_id, name, label)
+    m = score_pair(tile, ens, snap0, snap1, incident_id, name, label)
+    if regime:
+        applied = float(getattr(cfg0, "extreme_regime_floor_frac", 0.0) or 0.0) > 0.0
+        m.notes.append(
+            "extreme spread regime detected"
+            + (f": blow-up floor {cfg.grass_ros_floor_frac:g} applied on all "
+               f"classes" if applied else " (physics unchanged: no regime floor)"))
+    return m
 
 
 def score_pair(tile: TerrainTile, ens, snap0: PerimeterSnapshot,

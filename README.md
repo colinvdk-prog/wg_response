@@ -194,6 +194,8 @@ the shipped values.
 | `grid_max_cells` | 300000 | Coarsen the grid above this cell count. |
 | `live_herb_frac` | 0.30 | Cured fire-season live herbaceous moisture default. |
 | `live_woody_frac` | 0.60 | Live woody moisture default. |
+| `edge_weather_piecewise` | False | EDGE-WEATHER PIECEWISE INTEGRATION (review code finding, late-biased frozen departure-hour weather): True continues a traversal that crosses an hour boundary with each subsequent hour's rate for the distance still unburned. Default OFF = byte-identical; hindcast A/B decides the live flip. |
+| `slope_phi_vector` | False | PHI-VECTOR SLOPE/WIND COMBINATION (review code finding: speed-space vector combination runs −11 to −33% slow on opposed slopes, the downslope Santa Ana geometry): True combines the Rothermel phi factors as vectors (the ELMFIRE/FARSITE convention) for both the effective wind and the max-spread bearing. Default OFF = byte-identical; hindcast A/B decides the live flip. |
 
 ### Dispatch
 
@@ -204,6 +206,7 @@ the shipped values.
 | `churn_penalty_frac` | 0.05 | Objective penalty per reassigned stop (fraction of mean stop score). |
 | `adoption_threshold_frac` | 0.03 | New plan must beat the repaired incumbent by this fraction to be adopted. |
 | `solver_budget_s` | 5.0 | Wall-clock budget per plan cycle. |
+| `solver_budget_evals` | 0 | DETERMINISTIC SOLVER BUDGET (review held item): > 0 makes the dispatch solver's budget a COUNT of budget checks instead of a wall clock, so identical inputs stop at the identical point regardless of machine load (the measured ±1-home nondeterminism); `solver_budget_s` stays as a hard ceiling. 0 = legacy wall clock, byte-identical; the simulator arms it. |
 | `ils_iterations` | 30 | Iterated-local-search restarts. |
 
 ### Crew tracking / feeds
@@ -242,6 +245,7 @@ the shipped values.
 | `grass_ros_floor_frac` | 0.0 | Fuel-class head-fire ROS floor as a fraction of 10-m wind (Cruz–Alexander anchor for grass; GS/TU/TL at reduced ratios). 0 = off (engine-default byte-identical); the simulator sets 0.10 and the LIVE watch daemon has run 0.10 via `--grass-floor` since 2026-07-28. The tri-model review (docs/TRI_MODEL_REVIEW_2026-08-31.md) found the as-deployed floor overrides the moisture of extinction and buys coverage by area inflation — see the two physics knobs below; the old "0% early-miss" validation language is retired (tautological by construction). |
 | `ros_floor_extinction_gate` | False | ROS-FLOOR PHYSICS (review finding A3): True = the floor only ever raises a POSITIVE Rothermel ROS — fuel at/above its moisture of extinction stays out instead of walking at frac×U10 with zero intensity (39.4% of cached August fire-hours) — and Byram intensity scales with the raised ROS so spotting sees the same fire the front does. Default OFF = the as-deployed floor, byte-identical; the calibration A/B decides the live flip. |
 | `ros_floor_grass_only` | False | ROS-FLOOR CLASS SET (same review): True restricts the floor to GR/GS (the Cruz–Alexander evidence base) — the "grass" floor was lifting TU/TL timber 19–45× Rothermel. Default OFF = all four legacy classes, byte-identical. |
+| `extreme_regime_floor_frac` | 0.0 | REGIME-CONDITIONAL FLOOR (calibration matrix 2026-09-03 verdict): when > 0 and the incident's domain trips the extreme-spread-regime detector (cured-grass fuelscape + wind), that incident spreads with THIS floor fraction on every floored class (grass-only lifted) — the blow-up posture — while non-regime incidents keep the calibrated honest band. Lets the honest, tight band (half floor, gated, grass-only, model-error 0.71) run outside blow-ups without giving up the July late-miss. 0 = off, byte-identical. |
 | `spotting_enabled` | False | Ember spotting — burning cells throw firebrands downwind that ignite ahead of the front (samples the distance distribution). Off by default (live engine); the simulator turns it on. |
 | `extreme_regime_enabled` | False | EXTREME SPREAD REGIME posture (docs/calibration/hindcast_oos_2026-07-28.md): incidents whose burnable domain is cured-grass-led with wind evaluate the alert ladder on the PESSIMISTIC (p10) arrival and carry a banner — the measured blow-ups (Porcupine Ridge 13x under-forecast) are fuel-separated, not red-flag-weather-separated. Off = byte-identical ladder; the watch daemon arms it via `--extreme-regime`. |
 | `extreme_regime_grass_frac` | 0.60 | Regime fuel gate: GR+GS fraction of burnable domain cells that arms the posture (Porcupine 88%, Madre grass run 69%; every non-grass-led window scored ~0% late under the grass floor). |

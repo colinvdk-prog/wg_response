@@ -848,6 +848,7 @@ class CycleResult:
     notes: list = field(default_factory=list)
     operator_events: list = field(default_factory=list)  # list[OperatorEvent] (SAFETY SEMANTICS 6)
     degraded: bool = False             # True when any provider was blind/failed this cycle
+    timings: dict = field(default_factory=dict)  # cycle phase wall-times (s): feeds/assess/alerts/dispatch + per-incident terrain/weather/spread (cadence telemetry, review item 6)
 
 
 # ---------------------------------------------------------------------------
@@ -1005,12 +1006,44 @@ class ResponseConfig:
     grid_max_cells: int = 300_000      # coarsen above this
     live_herb_frac: float = 0.30       # cured fire-season default
     live_woody_frac: float = 0.60
+    # EDGE-WEATHER PIECEWISE INTEGRATION (tri-model review, code finding
+    # "frozen departure-bucket edge weather", late-biased: a 46-min constant
+    # offset in a step case; timber flank edges spanning 25 h on one weather
+    # hour). Legacy: an edge's traversal time is computed from the weather
+    # of the hour the fire LEAVES the source cell, however long the traversal
+    # runs. When ON, a traversal that crosses an hour boundary continues with
+    # each subsequent hour's rate for the distance still unburned (piecewise
+    # constant integration), so a rising wind arrives earlier and a dying
+    # wind later — the honest direction both ways. Default OFF =
+    # byte-identical; the hindcast A/B decides the live flip.
+    edge_weather_piecewise: bool = False
+    # PHI-VECTOR SLOPE/WIND COMBINATION (same review: the max-spread vector
+    # combines midflame wind and the slope-equivalent wind in SPEED space,
+    # whereas Rothermel/FARSITE combine the phi FACTORS as vectors; phi_w =
+    # C*U^B is nonlinear, so the two agree only when one term is zero —
+    # measured -11 to -33% too slow on OPPOSED slopes, the downslope Santa
+    # Ana geometry, zero on flat ground). When ON the effective wind and the
+    # max-spread bearing come from the phi-vector sum (rothermel.
+    # effective_wind_from_bed's wind_slope_angle seam). Default OFF =
+    # byte-identical; hindcast A/B decides the live flip.
+    slope_phi_vector: bool = False
     # --- dispatch ---
     replan_period_s: float = 900.0
     commitment_horizon_min: float = 20.0
     churn_penalty_frac: float = 0.05
     adoption_threshold_frac: float = 0.03
     solver_budget_s: float = 5.0
+    # DETERMINISTIC SOLVER BUDGET (tri-model review held item "solver
+    # determinism"; measured +-1 belt home between identical runs because
+    # solver_budget_s is a WALL CLOCK — a loaded machine cuts the ILS at a
+    # different iteration). When > 0 the budget is a COUNT of budget checks
+    # (each insertion scan / local-search pass / exact-DFS node consults the
+    # budget once), so identical inputs always stop at the identical point
+    # regardless of machine load; solver_budget_s then only bounds a runaway
+    # (it still applies as a hard ceiling). 0 = legacy wall clock,
+    # byte-identical. The simulator arms it; a value that matches ~5 s of
+    # solver work on the dev box is derived in docs/FIX_PROGRAM_2026-09-11.md.
+    solver_budget_evals: int = 0
     ils_iterations: int = 30
     # --- crew tracking ---
     beacon_stale_s: float = 600.0
@@ -1150,6 +1183,18 @@ class ResponseConfig:
     # Cruz-Alexander evidence base); the TU/TL ratios become 0. Default OFF =
     # all four legacy classes, byte-identical.
     ros_floor_grass_only: bool = False
+    # REGIME-CONDITIONAL FLOOR (calibration matrix 2026-09-03, the verdict's
+    # own recommendation): the honest, tight band (half floor 0.05, gated,
+    # GR/GS only, model-error 0.71 — PIT extreme mass 40%, near-symmetric)
+    # was held back ONLY by the July blow-ups, where every variant has skill
+    # ~1.0 and coverage is area budget. When > 0 and the incident's domain
+    # trips the EXTREME SPREAD REGIME detector (threat._extreme_regime_now:
+    # cured-grass-led fuelscape + wind), that incident spreads with THIS floor
+    # fraction on EVERY floored class (grass-only lifted) — the blow-up
+    # posture — while non-regime incidents keep the calibrated point. The
+    # detector already gates the ladder's P10 evaluation; this lets it carry
+    # the spread physics too. 0.0 = off, byte-identical.
+    extreme_regime_floor_frac: float = 0.0
     # EXTREME SPREAD REGIME (docs/calibration/hindcast_oos_2026-07-28.md):
     # blow-up windows (Porcupine Ridge 22.5 km/12.9 h = 13x under-forecast)
     # are NOT separated by red-flag weather in reanalysis (they occurred at

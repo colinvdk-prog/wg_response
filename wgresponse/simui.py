@@ -331,6 +331,13 @@ SIM_ESCAPE_HYSTERESIS_MIN = 20.0
 #: 5-7 ticks BEFORE the last clean-at-arrival road out of the SW pocket
 #: burns over (the flag itself came 2-3 ticks AFTER). See configure() block.
 SIM_ESCAPE_PROACTIVE_LEAD_MIN = 120.0
+#: DETERMINISTIC SOLVER BUDGET (contracts solver_budget_evals, fix program
+#: 2026-09-11): consult count that lets every measured simulator plan
+#: COMPLETE (largest natural spend measured 2,008 consults ~2.3 s on the
+#: 100-client RSF scenario; scratch_review/w9_budget_calib.py) so plans
+#: replay byte for byte regardless of machine load; the 10x wall-clock
+#: runaway guard still bounds a pathological case.
+SIM_SOLVER_BUDGET_EVALS = 20_000
 
 
 def _edge_kinds_from_route(rr, n_edges: int) -> list:
@@ -1556,6 +1563,12 @@ class SimSession:
         # both via --fail-closed. Explicit cfg_overrides ALWAYS win.
         if "corridor_fail_closed" not in overrides:
             cfg.corridor_fail_closed = True
+        # DETERMINISTIC SOLVER BUDGET (fix program 2026-09-11, review held
+        # item): counted consults instead of the wall clock, so the same
+        # scenario replays byte for byte under any load. Explicit override
+        # wins; the engine default stays 0 (legacy wall clock).
+        if "solver_budget_evals" not in overrides:
+            cfg.solver_budget_evals = SIM_SOLVER_BUDGET_EVALS
 
         # FIRE ZONE placement law: clients ALWAYS live in the central
         # ~18 km community window; on the standard tile that IS the tile

@@ -74,6 +74,8 @@ def test_sim_defaults_flip_calibrated_stack():
     # is its whole world)
     assert s._cfg.corridor_fail_closed is True
     assert s._cfg.corridor_unreached_bound is False
+    # fix program 2026-09-11: deterministic solver budget in the sim
+    assert s._cfg.solver_budget_evals == 20_000
 
 
 def test_cold_black_nonburnable_flat_window():
@@ -99,3 +101,6 @@ def test_engine_defaults_stay_off():
     assert cfg.ros_floor_extinction_gate is False
     assert cfg.model_error_sd_log == 0.0
     assert cfg.ensemble_p50_nominal_bound is False
+    assert cfg.solver_budget_evals == 0
+    assert cfg.extreme_regime_floor_frac == 0.0
+    assert cfg.edge_weather_piecewise is False and cfg.slope_phi_vector is False

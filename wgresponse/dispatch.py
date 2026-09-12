@@ -731,8 +731,57 @@ class _Ctx:
         if best is None:
             return None
         st.assign[best[1]].append(key)
-        _edf_insert(self, st, self.active_keys - {key}, time.monotonic() + 1.0)
+        _edf_insert(self, st, self.active_keys - {key},
+                    _sub_budget(self, 1.0, 20_000))
         return _state_served(st)
+
+
+# ---------------------------------------------------------------------------
+# Solver budget (contracts solver_budget_s / solver_budget_evals)
+# ---------------------------------------------------------------------------
+
+class _Budget:
+    """The solver's stopping rule, consulted at every insertion scan, local-
+    search pass, ILS iteration and every 256th exact-DFS node.
+
+    Legacy (cfg.solver_budget_evals == 0): a WALL CLOCK — expired() is
+    time.monotonic() >= deadline. The cut point therefore depends on machine
+    load: the tri-model review measured +-1 belt home between identical runs.
+
+    Counted (solver_budget_evals > 0): every consult spends one unit and the
+    budget expires when the units are gone. Identical inputs consult the
+    budget in an identical order, so the cut point is load-independent and
+    plans replay byte for byte. A wall-clock RUNAWAY GUARD of 10x
+    solver_budget_s remains; if it ever trips the plan is load-dependent
+    again and diagnostics['budget_runaway'] says so."""
+
+    __slots__ = ("deadline_s", "left", "counted", "spent", "runaway")
+
+    def __init__(self, deadline_s: float, evals: int = 0) -> None:
+        self.deadline_s = float(deadline_s)
+        self.counted = int(evals) > 0
+        self.left = int(evals)
+        self.spent = 0
+        self.runaway = False
+
+    def expired(self) -> bool:
+        self.spent += 1
+        if self.counted:
+            if self.left <= 0:
+                return True
+            self.left -= 1
+            if time.monotonic() >= self.deadline_s:      # 10x runaway guard
+                self.runaway = True
+                return True
+            return False
+        return time.monotonic() >= self.deadline_s
+
+
+def _sub_budget(ctx, seconds: float, evals: int) -> "_Budget":
+    """A short side budget (never-worse-than-greedy refill) in the same mode
+    as the main budget: counted when the config counts, else wall clock."""
+    counted = int(getattr(ctx.cfg, "solver_budget_evals", 0) or 0) > 0
+    return _Budget(time.monotonic() + seconds, evals if counted else 0)
 
 
 # ---------------------------------------------------------------------------
@@ -767,10 +816,10 @@ def _regret2_insert(ctx: _Ctx, state: _State, pool, deadline: float) -> None:
     """Insert pool jobs by regret-2 (spec section 6.2) until nothing feasible
     and value-positive remains. Mutates state; leftover jobs stay unrouted."""
     pool = set(pool)
-    while pool and time.monotonic() < deadline:
+    while pool and not deadline.expired():
         cands = []
         for key in sorted(pool):
-            if time.monotonic() >= deadline:     # in-scan budget check (perf D4)
+            if deadline.expired():     # in-scan budget check (perf D4)
                 break
             job = ctx.jobmap[key]
             options = _best_insertions(ctx, state, key)
@@ -859,7 +908,7 @@ def _edf_insert(ctx: _Ctx, state: _State, pool, deadline: float) -> None:
         else:
             ends[cid] = (ctx.crew_by_id[cid].loc(), ctx.now_s)
     for key in sorted(pool, key=lambda k: (ctx.jobmap[k].latest_service_start_s, k)):
-        if time.monotonic() >= deadline:
+        if deadline.expired():
             break
         best = None
         for cid in ctx.crew_ids:
@@ -993,7 +1042,7 @@ def _local_search(ctx: _Ctx, state: _State, deadline: float) -> None:
     cur_j = ctx.plan_j(state)
     if cur_j == -math.inf:
         return
-    while time.monotonic() < deadline:
+    while not deadline.expired():
         for move in (_try_relocate, _try_swap, _try_2opt, _try_drop_refill):
             nj = move(ctx, state, cur_j)
             if nj is not None:
@@ -1093,7 +1142,7 @@ def _exact_small_solve(ctx: _Ctx, base: _State, deadline: float):
 
         def dfs(mask, route, loc, t, value, drive_h, churn_w):
             counter[0] += 1
-            if counter[0] % 256 == 0 and time.monotonic() >= deadline:
+            if counter[0] % 256 == 0 and deadline.expired():
                 raise _ExactAbort()
             for i, key in enumerate(universe):
                 if mask & (1 << i):
@@ -1382,7 +1431,11 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
     overrun tail). None (default) = tier-0 chords, byte-identical.
     """
     t0 = time.monotonic()
-    deadline = t0 + max(0.05, cfg.solver_budget_s)
+    _evals = int(getattr(cfg, "solver_budget_evals", 0) or 0)
+    # DETERMINISTIC BUDGET (contracts solver_budget_evals): counted consults
+    # with a 10x wall-clock runaway guard; legacy = the wall clock itself.
+    deadline = _Budget(t0 + max(0.05, cfg.solver_budget_s) * (10.0 if _evals > 0 else 1.0),
+                       _evals)
 
     eligible = sorted((c for c in crews
                        if c.loc() is not None
@@ -1563,7 +1616,7 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
 
     stall = 0                            # VNS escalation counter (B2, F3)
     for it in range(cfg.ils_iterations if exact is None else 0):
-        if time.monotonic() >= deadline:
+        if deadline.expired():
             break
         cand = best.copy()
         removed = _shake(ctx, cand, it, extra=stall // 3)
@@ -1690,6 +1743,9 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
         "seed": seed_tag,                 # winning construction seed (B2)
         "guardrail": guardrail,           # ''|'objective'|'value' (B2 floor)
         "solver_s": time.monotonic() - t0,
+        "budget_mode": "evals" if deadline.counted else "wall",
+        "budget_spent": deadline.spent,
+        "budget_runaway": deadline.runaway,
         "dedup_dropped_jobs": dedup_dropped,
     }
     return DispatchPlan(computed_at_s=now_s, plans=plans, unserved=unserved,

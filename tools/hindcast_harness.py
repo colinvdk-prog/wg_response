@@ -335,6 +335,10 @@ def _variant_config_kwargs(args) -> dict:
         "model_error_sd_log": args.model_error,
         "ensemble_p50_nominal_bound": args.p50_bound,
         "spotting_enabled": args.spotting,
+        "extreme_regime_enabled": getattr(args, "extreme_regime", False),
+        "extreme_regime_floor_frac": getattr(args, "regime_floor", 0.0),
+        "edge_weather_piecewise": getattr(args, "edge_piecewise", False),
+        "slope_phi_vector": getattr(args, "phi_vector", False),
     }
 
 
@@ -526,6 +530,20 @@ def main(argv=None) -> int:
                          "never trails the nominal member)")
     ap.add_argument("--spotting", action="store_true",
                     help="cfg.spotting_enabled=True for the replay")
+    ap.add_argument("--extreme-regime", action="store_true",
+                    help="cfg.extreme_regime_enabled=True: per-pair regime "
+                         "detection (threat._extreme_regime_now) on the "
+                         "replay tile + weather")
+    ap.add_argument("--regime-floor", type=float, default=0.0,
+                    help="cfg.extreme_regime_floor_frac: blow-up floor on "
+                         "every floored class for regime pairs (needs "
+                         "--extreme-regime)")
+    ap.add_argument("--edge-piecewise", action="store_true",
+                    help="cfg.edge_weather_piecewise=True (hour-crossing "
+                         "traversals integrate each hour's rate)")
+    ap.add_argument("--phi-vector", action="store_true",
+                    help="cfg.slope_phi_vector=True (phi-factor vector "
+                         "slope/wind combination)")
     ap.add_argument("--out", default="replay_results.json",
                     help="`replay` results filename inside --data-dir "
                          "(default replay_results.json; pair with --label "

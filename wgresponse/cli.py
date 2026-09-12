@@ -172,6 +172,17 @@ def _build_parser() -> argparse.ArgumentParser:
                     help="cfg.model_error_sd_log: ensemble model-error term, "
                          "sd(log head ROS) per perturbed member — "
                          "hindcast-PIT-calibrated (item 3); 0 = off")
+    pw.add_argument("--solver-evals", type=int, default=0,
+                    help="cfg.solver_budget_evals: deterministic dispatch "
+                         "budget as a consult COUNT (0 = wall clock); the "
+                         "simulator runs 20000 (fix program 2026-09-11)")
+    pw.add_argument("--regime-floor", type=float, default=0.0,
+                    help="cfg.extreme_regime_floor_frac: when the extreme-"
+                         "regime detector trips for an incident, spread it "
+                         "with THIS floor fraction on every floored class "
+                         "(the blow-up posture) while other incidents keep "
+                         "the calibrated band; needs --extreme-regime "
+                         "(calibration matrix 2026-09-03 verdict)")
     pw.add_argument("--p50-bound", action="store_true",
                     help="cfg.ensemble_p50_nominal_bound: the ladder median "
                          "never trails the nominal run (item 3, N4)")
@@ -821,6 +832,7 @@ class _WatchDaemon:
             # a merely slow loop would silence alerting entirely).
             "cycle_stale": age_s > stale_after_s,
             "stale_after_s": stale_after_s,
+            "last_cycle_phases": dict(getattr(res, "timings", {}) or {}),
             "degraded": bool(res.degraded),
             "operator_events": list(res.operator_events),
             "notes": list(res.notes),
@@ -989,6 +1001,25 @@ def _cmd_watch(args) -> int:
             f"{float(args.model_error):g} on every perturbed member's head "
             f"ROS — p10/p90 are calibrated percentiles, not the sample "
             f"minimum/maximum (review item 3)")
+    if getattr(args, "solver_evals", 0):
+        cfg = dataclasses.replace(cfg, solver_budget_evals=int(args.solver_evals))
+        startup_notes_fix.append(
+            f"dispatch solver budget DETERMINISTIC: {int(args.solver_evals)} "
+            f"consults (10x wall-clock runaway guard) — identical inputs "
+            f"replay identical plans regardless of load")
+    if getattr(args, "regime_floor", 0.0):
+        if not getattr(args, "extreme_regime", False):
+            print("error: --regime-floor needs --extreme-regime (the posture "
+                  "that decides which incidents get the blow-up floor)",
+                  file=sys.stderr)
+            return 2
+        cfg = dataclasses.replace(
+            cfg, extreme_regime_floor_frac=float(args.regime_floor))
+        startup_notes_fix.append(
+            f"regime-conditional floor ACTIVE: incidents in the extreme "
+            f"spread regime spread with floor {float(args.regime_floor):g} "
+            f"x U10 on every floored class; others keep the calibrated band "
+            f"(matrix verdict 2026-09-03)")
     if getattr(args, "p50_bound", False):
         cfg = dataclasses.replace(cfg, ensemble_p50_nominal_bound=True)
         startup_notes_fix.append(

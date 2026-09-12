@@ -98,8 +98,10 @@ per contracts.
 """
 from __future__ import annotations
 
+import dataclasses
 import logging
 import math
+import time
 from typing import Optional
 
 from wgresponse import fuels, geo, spread
@@ -183,6 +185,25 @@ def _extreme_regime_now(tile, wxf, now_s: float, cfg) -> bool:
             if eff > max_eff:
                 max_eff = eff
     return max_eff >= cfg.extreme_regime_wind_mps
+
+
+def regime_spread_cfg(tile, wxf, now_s: float, cfg):
+    """(config to spread THIS incident with, regime flag) — the EXTREME
+    SPREAD REGIME posture applied to the spread physics (contracts
+    extreme_regime_floor_frac; calibration matrix 2026-09-03 verdict). When
+    the detector trips and the knob is > 0 the incident spreads with the
+    blow-up floor on EVERY floored class (ros_floor_grass_only lifted);
+    otherwise the caller's config is returned unchanged (byte-identical).
+    Shared by ThreatMonitor._assess_incident and the hindcast harness so the
+    live path and the calibration replays see one rule."""
+    if not cfg.extreme_regime_enabled:
+        return cfg, False
+    flag = _extreme_regime_now(tile, wxf, now_s, cfg)
+    frac = float(getattr(cfg, "extreme_regime_floor_frac", 0.0) or 0.0)
+    if flag and frac > 0.0:
+        cfg = dataclasses.replace(cfg, grass_ros_floor_frac=frac,
+                                  ros_floor_grass_only=False)
+    return cfg, flag
 
 
 class _ProviderFailure(RuntimeError):
@@ -278,8 +299,12 @@ class ThreatMonitor:
         """
         notes: list = []
         operator_events: list = []
+        timings: dict = {"incidents": {}}      # cadence telemetry (review item 6)
+        _t = time.monotonic()
         incidents, feeds_healthy = self._fetch_and_fuse(now_s, notes,
                                                         operator_events)
+        timings["feeds_s"] = time.monotonic() - _t
+        _t = time.monotonic()
         active = [inc for inc in incidents if inc.active]
         active = self._gate_stale_incidents(active, now_s, notes)
 
@@ -296,7 +321,8 @@ class ThreatMonitor:
             try:
                 self._assess_incident(inc, now_s, assessments, ensembles,
                                       clients_seen, etas, notes, roster_seen,
-                                      forecasts, extreme_flags, eroded_map)
+                                      forecasts, extreme_flags, eroded_map,
+                                      timings=timings)
             except _ProviderFailure as pf:
                 failed_incidents.add(inc.incident_id)
                 notes.append(
@@ -402,6 +428,8 @@ class ThreatMonitor:
             for iid in gone:
                 del self._extreme_prev[iid]
         events: list = []
+        timings["assess_s"] = time.monotonic() - _t
+        _t = time.monotonic()
         try:
             events = self._evaluate_alerts(assessments, now_s, blind_pairs,
                                            feeds_healthy, incident_meta)
@@ -412,10 +440,13 @@ class ThreatMonitor:
                 message=f"alert evaluation failed: {exc}",
                 detail={"step": "alerts"}))
         operator_events.extend(self._drain_alert_operator_events(notes))
+        timings["alerts_s"] = time.monotonic() - _t
+        _t = time.monotonic()
 
         plan = self._maybe_dispatch(now_s, ensembles, clients_seen, etas,
                                     notes, forecasts,
                                     eroded_map=(eroded_map or None))
+        timings["dispatch_s"] = time.monotonic() - _t
 
         degraded = (not feeds_healthy) or bool(failed_incidents) or any(
             ev.kind in ("degraded", "feed_blind", "provider_error")
@@ -423,7 +454,7 @@ class ThreatMonitor:
         return CycleResult(t_s=now_s, incidents=active, assessments=assessments,
                            events=events, plan=plan, ensembles=ensembles,
                            notes=notes, operator_events=operator_events,
-                           degraded=degraded)
+                           degraded=degraded, timings=timings)
 
     # ------------------------------------------------------------- internals
 
@@ -588,7 +619,8 @@ class ThreatMonitor:
                          roster_seen: Optional[dict] = None,
                          forecasts: Optional[dict] = None,
                          extreme_flags: Optional[dict] = None,
-                         eroded_map: Optional[dict] = None) -> None:
+                         eroded_map: Optional[dict] = None,
+                         timings: Optional[dict] = None) -> None:
         """Spread one incident and append per-client ThreatAssessments.
 
         Domain = bbox around (ignition geometry + protected clients within the
@@ -682,16 +714,22 @@ class ThreatMonitor:
         domain = geo.bbox_around(geom_pts + [c.loc for c in near],
                                  _DOMAIN_PAD_M)
         cell_m = self._pick_cell_m(domain)
+        _tm = {}
+        _t = time.monotonic()
         try:
             tile = self._terrain.tile(domain, cell_m)
         except Exception as exc:
             raise _ProviderFailure("terrain", exc)
+        _tm["terrain_s"] = time.monotonic() - _t
+        _t = time.monotonic()
         fire_centroid = LatLon(sum(p.lat for p in ign) / len(ign),
                                sum(p.lon for p in ign) / len(ign))
         try:
             wxf = self._weather.forecast(fire_centroid, self._cfg.horizon_h)
         except Exception as exc:
             raise _ProviderFailure("weather", exc)
+        _tm["weather_s"] = time.monotonic() - _t
+        _t = time.monotonic()
         if forecasts is not None:
             # Sprint 2 C5 (Council-1 dispatch F5): the SAME fire-centroid
             # forecast that drives spread is threaded to dispatch.plan(
@@ -699,17 +737,26 @@ class ThreatMonitor:
             # reflect the actual fire weather, not the 25 C reference.
             forecasts[inc.incident_id] = wxf
 
-        if extreme_flags is not None and self._cfg.extreme_regime_enabled:
+        spread_cfg = self._cfg
+        if self._cfg.extreme_regime_enabled:
             # EXTREME SPREAD REGIME (contracts knob block): computed per
             # incident from the SAME tile + fire-centroid forecast that drive
-            # spread, so the posture and the forecast see one world.
-            extreme_flags[inc.incident_id] = _extreme_regime_now(
-                tile, wxf, now_s, self._cfg)
+            # spread, so the posture and the forecast see one world. With
+            # extreme_regime_floor_frac > 0 the posture also carries the
+            # spread physics for THIS incident (regime_spread_cfg).
+            spread_cfg, flag = regime_spread_cfg(tile, wxf, now_s, self._cfg)
+            if extreme_flags is not None:
+                extreme_flags[inc.incident_id] = flag
 
-        ens = spread.ensemble_arrival(tile, seeds, wxf, now_s, self._cfg,
+        ens = spread.ensemble_arrival(tile, seeds, wxf, now_s, spread_cfg,
                                       incident_id=inc.incident_id,
                                       perimeter=perimeter,
                                       perimeter_at_s=perimeter_at_s)
+        _tm["spread_s"] = time.monotonic() - _t
+        _tm["cells"] = tile.spec.nrows * tile.spec.ncols
+        _tm["clients"] = len(near)
+        if timings is not None:
+            timings.setdefault("incidents", {})[inc.incident_id] = _tm
         if (eroded_map is not None
                 and getattr(self._cfg, "corridor_erosion_tiered", False)):
             # FUEL-TIERED EROSION: built here because this is where the fuel
