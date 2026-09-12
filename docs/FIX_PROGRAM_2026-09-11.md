@@ -197,3 +197,57 @@ adds ~110 s of spread per cycle on this AOI (346 → 455 s; the phi
 combination sits in the memoised cell path but adds a bed lookup per
 unique key) — the steady state is ~9 min with it armed, inside the
 15-minute SLO.
+
+## The 4-hour experiment (founder 2026-09-11)
+
+Question: what would need to happen to coat more homes with 4 hours of
+notice? Harness `scratch_review/probe_4h.py` (per-home lead = detection →
+ground-truth arrival at the home's cell; 5 maps × 60 scenarios, 40 homes, 8
+crews; table `docs/calibration/leadtime_4h_experiment_2026-09-11.md`).
+Coated / reached, with the 3–5 h bin as "4 hours of notice"; violations are
+the honest 10(c) count (every one inspected in the base arm was an
+*imminent-while-egressing* row — a crew on an escape leg inside the
+pessimistic band — with zero departure-audit violations and no crew in
+burned fuel).
+
+| arm | overall | **3–5 h** | 6–8 h | viol. scenarios |
+|---|---|---|---|---|
+| A base: the optimized stack, old narrow band | 57.1% | **43%** | 42% | 17 |
+| B honest: A + the LIVE band (0.71, gate, φ) | 51.6% | **27%** | 43% | 9 |
+| B + deploy 10 min | 53.8% | 31% | 38% | 13 |
+| B + slack floor 0 | 51.1% | 27% | 41% | 12 |
+| B + deploy 10 + slack 0 + re-plan every 5 min | 47.2% | 24% | 38% | 13 |
+| … + crews staged among the homes | 43.6% | 27% | 35% | 31 |
+| … + homes served as 8 clusters | 32.7% | 17% | 20% | 35 |
+| **G perfect information: B with P10 = truth, scattered** | **68.0%** | **45%** | 59% | 4 |
+| F perfect information on the clustered arm | 44.7% | 35% | 63% | 18 |
+
+Findings, in order of size:
+
+1. **The forecast-vs-truth gap is the lever — and the only large one.**
+   Perfect information on top of the live configuration is worth **+16 pp
+   overall and +18 pp at 4 hours** (27% → 45%), and it has the FEWEST
+   exposures of any arm (4 scenarios): crews are not chased by a
+   pessimistic band. That is the size of the prize for observation
+   (perimeter/hotspot updates every cycle) and for a tighter, still-honest
+   band once the blow-up signature can be detected.
+2. **The honest band costs 16 points at 4 hours** (43% → 27%) against the
+   old narrow band: the price of deadlines that are real. It is not
+   recoverable by tuning — only by information.
+3. **Deploy 15 → 10 minutes is worth +4 pp at 4 hours** (+2 pp overall);
+   the only operational change that helped.
+4. **Everything else I proposed hurt or did nothing.** Removing the
+   15-minute slack floor: nothing. Re-planning every 5 minutes: −7 pp (plan
+   churn). Staging crews among the homes: no 4-hour gain, −8 pp overall and
+   3.4× the exposures — crews that start inside the band spend the window
+   escaping. Serving homes as clusters: −19 pp and the most exposures — the
+   fire reaches every home in a cluster at once and 8 crews cannot be in
+   one place. The dispersed, pessimistically-scheduled, slack-carrying plan
+   the optimizer found is the right shape.
+5. **Earlier detection is the lever outside the model**: the live band's
+   own bins go 22% (3–4 h) → 31% (4–5 h) → 43% (6–8 h); an hour of earlier
+   warning is worth roughly as much as perfect physics.
+
+Corrected mechanism claims from the 2026-09-11 answer: staging, clustering
+and overhead-stripping were predicted to help and measured not to; the
+prediction on information was right and larger than expected.
