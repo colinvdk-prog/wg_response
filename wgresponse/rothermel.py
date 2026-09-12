@@ -328,6 +328,56 @@ def surface_ros_from_bed(bed, midflame_wind_mps: float,
     )
 
 
+def surface_ros_from_bed_phi(bed, phi_e: float) -> RosResult:
+    """surface_ros_from_bed for a caller that has ALREADY combined the wind and
+    slope factors as VECTORS in PHI space (the Rothermel/FARSITE convention,
+    digest §3.2): `phi_e` is the MAGNITUDE |phi_w + phi_s| of that vector sum.
+
+    NEW seam (tri-model review 2026-08-31, "speed-space slope/wind" finding;
+    consumed by spread.py behind cfg.slope_phi_vector). It changes nothing in
+    the existing seams — surface_ros_from_bed still owns the scalar-collinear
+    path, and every legacy caller is untouched.
+
+        R          = R0 * (1 + phi_E)          (Rothermel 1972 eq. 52)
+        U_eff      = _wind_from_phi(phi_E)     (wind that alone gives phi_E;
+                                                feeds ellipse_lb)
+        I (Byram)  = I_R * t_r * R  with Anderson 1969 t_r = 384/sigma
+        L (Byram)  = 0.0775 * I^0.46
+
+    i.e. exactly the arithmetic surface_ros_from_bed performs once it has
+    phi_w + phi_s, with the SCALAR sum replaced by the caller's VECTOR
+    magnitude. Consequently
+        surface_ros_from_bed_phi(bed, _phi_wind(bed, u*_MPS_TO_FTMIN))
+    is bit-identical to surface_ros_from_bed(bed, u, 0.0) (pinned by
+    tests/test_spread_physics2.py). bed=None returns the all-zero RosResult
+    exactly like the other from-bed seams; phi_e is floored at 0.
+    """
+    if bed is None:
+        return RosResult(ros_mps=0.0, effective_wind_mps=0.0,
+                         flame_length_m=0.0, intensity_kwm=0.0)
+    phi = max(0.0, phi_e)
+    r_ftmin = bed.r0_ftmin * (1.0 + phi)
+    if not math.isfinite(r_ftmin) or r_ftmin < 0.0:
+        r_ftmin = 0.0
+    u_eff_ftmin = _wind_from_phi(bed, phi)
+
+    intensity_kwm = 0.0
+    flame_m = 0.0
+    if r_ftmin > 0.0 and bed.i_r > 0.0:
+        t_r_min = 384.0 / bed.sigma_char          # Anderson 1969 residence time, min
+        i_btufts = bed.i_r * t_r_min * r_ftmin / 60.0   # Btu/ft/s
+        intensity_kwm = max(0.0, i_btufts * _BTUFTS_TO_KWM)
+        if intensity_kwm > 0.0:
+            # Byram 1959 flame length: L_m = 0.0775 * I_kW/m ^ 0.46
+            flame_m = 0.0775 * intensity_kwm ** 0.46
+    return RosResult(
+        ros_mps=r_ftmin * _FTMIN_TO_MPS,
+        effective_wind_mps=u_eff_ftmin * _FTMIN_TO_MPS,
+        flame_length_m=flame_m,
+        intensity_kwm=intensity_kwm,
+    )
+
+
 def midflame_wind_mps(wind10_mps: float, fuel: FuelModel) -> float:
     """Midflame wind speed (m/s) from a 10-m sustained wind (m/s).
 

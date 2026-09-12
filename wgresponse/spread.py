@@ -56,6 +56,25 @@ reference path (every quantity recomputed per settled cell, the pre-B3
 structure); read per call, it exists for the byte-identity tests and for
 A/B-ing suspected memo bugs in the field.
 
+PHYSICS KNOBS (tri-model review 2026-08-31, "Additional confirmed defects
+(code aspect)"). Both live in contracts.ResponseConfig, both default OFF, and
+both are BYTE-IDENTICAL when off (branch-guarded; the pinned fingerprints in
+tests/test_spread.py and the memo-vs-reference matrix pin it):
+  cfg.edge_weather_piecewise  an edge whose traversal crosses an hour boundary
+      continues with each SUBSEQUENT hour's rate for the distance still
+      unburned, instead of freezing the DEPARTURE hour's rate for the whole
+      traversal ("frozen departure-bucket edge weather": LATE-biased, measured
+      46.3 min constant offset in a step-wind case, and timber flank/backing
+      edges that span up to 25 h on a single weather hour). See
+      _piecewise_edge_arrival.
+  cfg.slope_phi_vector        the max-spread magnitude/bearing and the
+      effective wind come from the Rothermel/FARSITE PHI-FACTOR vector sum
+      instead of the speed-space wind + slope-equivalent-wind sum (the
+      CONVENTION NOTE in compute_arrival): measured -11..-33% too SLOW on
+      OPPOSED slopes (the downslope Santa Ana geometry, anti-safe polarity),
+      fast on the aligned head axis, EXACTLY ZERO on flat ground. See
+      _phi_max_spread_vector + rothermel.surface_ros_from_bed_phi.
+
 Stdlib only; deterministic (ensemble perturbations via contracts.seeded_rng).
 """
 from __future__ import annotations
@@ -92,6 +111,14 @@ from wgresponse.fuels import (
 _ROS_FLOOR_MPS = 1e-4        # traversal-time floor divisor (m/s)
 _SQRT2 = math.sqrt(2.0)
 _SQRT5 = math.sqrt(5.0)
+
+# EDGE-WEATHER PIECEWISE INTEGRATION (cfg.edge_weather_piecewise): hard cap on
+# how many weather HOURS one edge traversal may be integrated across. 200 h is
+# well past the 96 h default horizon, so the horizon test inside the loop fires
+# first in every shipped config and the cap only guards a pathological
+# horizon_h; a traversal still unfinished at the cap relaxes nothing (the same
+# outcome as running past the horizon).
+_PIECEWISE_MAX_HOUR_STEPS = 200
 
 # B3 ROS-memo bounds (module docstring). _ROS_CACHE_MAX only ever binds on
 # pathological continuous-slope synthetic tiles (~91% unique keys); LANDFIRE
@@ -413,6 +440,22 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     NOT route the combined case through effective_wind_mps's phi-vector seam;
     reconciling the two conventions is an integrator decision (see the physics
     review finding), not a correctness bug.
+    cfg.slope_phi_vector (default OFF) IS that reconciliation, now available
+    behind a knob: ON, the head ROS, the max-spread bearing AND
+    res.effective_wind_mps (hence ellipse_lb) all come from the PHI-vector sum
+    phi_E = |phi_w + phi_s| — see _phi_max_spread_vector. The tri-model review
+    re-measured the divergence on GR2/SH5/TL3 at 3-10 m/s over 15-30 deg: OFF
+    runs -11..-33% SLOW on OPPOSED slopes (anti-safe) and fast on the aligned
+    axis; flat ground is bit-identical either way, so a flat hindcast corpus
+    cannot see the flip.
+
+    cfg.edge_weather_piecewise (default OFF): the relaxation below prices an
+    edge with the ROS of the hour the fire LEAVES the source cell, however long
+    the traversal runs — frozen departure-bucket weather, LATE-biased (46.3 min
+    constant offset in the review's step-wind case; timber flank edges measured
+    spanning 25 h on one weather hour). ON, the traversal is integrated
+    PIECEWISE-CONSTANT across the hours it spans (_piecewise_edge_arrival), so
+    a rising wind arrives earlier and a dying wind later — honest both ways.
 
     Search is bounded at t0_s + cfg.horizon_h hours: later arrivals are
     UNREACHED (the forecast does not extend there). Cost O(cells * 16 * log)
@@ -523,6 +566,11 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     aspect_d = tile.aspect_deg.data
     spotting = bool(cfg.spotting_enabled)
     floor_gate = bool(getattr(cfg, "ros_floor_extinction_gate", False))
+    # The two tri-model-review physics knobs (module docstring). getattr keeps
+    # the engine runnable against a ResponseConfig predating them; False is the
+    # branch that executes the legacy float operations unchanged.
+    piecewise = bool(getattr(cfg, "edge_weather_piecewise", False))
+    phi_vector = bool(getattr(cfg, "slope_phi_vector", False))
 
     def _max_spread_vector(u_wind: float, u_slope: float, wdir: float,
                            aspect: float):
@@ -537,6 +585,44 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         u_eff = math.hypot(vx, vy)
         brg = math.degrees(math.atan2(vx, vy)) % 360.0 if u_eff > 1e-12 else 0.0
         return u_eff, brg
+
+    def _phi_max_spread_vector(bed, u_wind: float, slope: float, wdir: float,
+                               aspect: float):
+        """(phi_e, bearing_deg) of the max-spread direction under the
+        Rothermel/FARSITE PHI-VECTOR convention (cfg.slope_phi_vector ON) —
+        the replacement for _max_spread_vector's speed-space sum.
+
+        phi_w = rothermel._phi_wind(bed, U_midflame in ft/min) points along
+        wind-blows-TO = wdir + 180; phi_s = rothermel._phi_slope(bed, slope)
+        points UPSLOPE = aspect + 180 (contracts pins aspect_deg as the
+        DOWNslope-facing direction). The return is the magnitude and bearing
+        of the VECTOR SUM phi_w + phi_s, which
+        rothermel.surface_ros_from_bed_phi turns into
+        R = r0*(1 + phi_E) and U_eff = _wind_from_phi(phi_E) (so ellipse_lb
+        sees the phi-derived effective wind, not the speed-space one).
+
+        Why it differs from _max_spread_vector: phi_w = C*U^B is SUPERLINEAR
+        in U (B ~ 1.5 for grass), so adding the equivalent WINDS over-adds
+        when wind and slope point the same way and over-CANCELS when they
+        oppose — the review's -11..-33% slow on opposed slopes. With one term
+        zero (flat ground, or zero wind) the two conventions are identical,
+        which is why the flat fingerprint corpus cannot see this.
+
+        bed=None (a bed that cannot carry fire) yields (0.0, 0.0), mirroring
+        effective_wind_from_bed / surface_ros_from_bed's None handling; the
+        1e-12 bearing guard matches _max_spread_vector's.
+        """
+        if bed is None:
+            return 0.0, 0.0
+        phi_w = rothermel._phi_wind(bed, u_wind * rothermel._MPS_TO_FTMIN)
+        phi_s = rothermel._phi_slope(bed, slope)
+        to_wind = math.radians((wdir + 180.0) % 360.0)
+        to_upslope = math.radians((aspect + 180.0) % 360.0)
+        px = phi_w * math.sin(to_wind) + phi_s * math.sin(to_upslope)
+        py = phi_w * math.cos(to_wind) + phi_s * math.cos(to_upslope)
+        phi_e = math.hypot(px, py)
+        brg = math.degrees(math.atan2(px, py)) % 360.0 if phi_e > 1e-12 else 0.0
+        return phi_e, brg
 
     def _pack_params(res, wind10: float, wdir: float, brg: float, code: int):
         """(head_ros_mps, lb, bearing_deg, spot) from a RosResult + effective
@@ -614,10 +700,15 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                 bed = rothermel.fuel_bed(fuel, m_dead, herb, woody)
                 bed_cache[bkey] = bed
             u_wind = rothermel.midflame_wind_mps(wind10, fuel)
-            u_slope = rothermel.effective_wind_from_bed(bed, 0.0, slope)
-            u_eff, brg = _max_spread_vector(u_wind, u_slope, wdir, aspect)
-            p = _pack_params(rothermel.surface_ros_from_bed(bed, u_eff, 0.0),
-                             wind10, wdir, brg, fuel.code)
+            if phi_vector:
+                phi_e, brg = _phi_max_spread_vector(bed, u_wind, slope, wdir,
+                                                    aspect)
+                res = rothermel.surface_ros_from_bed_phi(bed, phi_e)
+            else:
+                u_slope = rothermel.effective_wind_from_bed(bed, 0.0, slope)
+                u_eff, brg = _max_spread_vector(u_wind, u_slope, wdir, aspect)
+                res = rothermel.surface_ros_from_bed(bed, u_eff, 0.0)
+            p = _pack_params(res, wind10, wdir, brg, fuel.code)
             if len(ros_cache) < _ROS_CACHE_MAX:
                 ros_cache[key] = p
         return p
@@ -635,15 +726,122 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         m_dead = max(0.01, dead_fuel_moisture_frac(s.temp_c, s.rh_pct)
                      * moisture_scale)
         u_wind = rothermel.midflame_wind_mps(wind10, fuel)
-        u_slope = rothermel.effective_wind_mps(fuel, 0.0, slope_d[idx],
-                                               m_dead, herb, woody)
         wdir = s.wind_dir_deg + dir_offset_deg
-        u_eff, brg = _max_spread_vector(u_wind, u_slope, wdir, aspect_d[idx])
-        res = rothermel.surface_ros_mps(fuel, m_dead, herb, woody, u_eff, 0.0)
+        if phi_vector:
+            # PHI-VECTOR path (cfg.slope_phi_vector). fuel_bed is PURE, so a
+            # bed built fresh here holds bit-identical fields to the memo
+            # path's cached bed and the phi factors below are bit-identical
+            # to it — which is what the memo-vs-reference matrix asserts.
+            bed = rothermel.fuel_bed(fuel, m_dead, herb, woody)
+            phi_e, brg = _phi_max_spread_vector(bed, u_wind, slope_d[idx],
+                                                wdir, aspect_d[idx])
+            res = rothermel.surface_ros_from_bed_phi(bed, phi_e)
+        else:
+            u_slope = rothermel.effective_wind_mps(fuel, 0.0, slope_d[idx],
+                                                   m_dead, herb, woody)
+            u_eff, brg = _max_spread_vector(u_wind, u_slope, wdir,
+                                            aspect_d[idx])
+            res = rothermel.surface_ros_mps(fuel, m_dead, herb, woody,
+                                            u_eff, 0.0)
         return _pack_params(res, wind10, wdir, brg, fuel.code)
 
     if os.environ.get("WGRESP_NO_ROS_MEMO") == "1":
         cell_params = cell_params_reference
+
+    def _piecewise_edge_arrival(idx: int, t_u: float, hour0: int,
+                                dist_m: float, ebrg: float, ros0: float,
+                                p0: tuple):
+        """Arrival time (unix seconds) of a traversal of `dist_m` that leaves
+        cell `idx` at `t_u` along bearing `ebrg`, with the source cell's
+        directional ROS integrated PIECEWISE-CONSTANT over the weather hours
+        the traversal spans (cfg.edge_weather_piecewise ON). None => the
+        traversal never completes inside the horizon (or the hour-step cap),
+        i.e. the caller relaxes nothing.
+
+        SEMANTICS (the choices this fixes, all deliberate):
+        * SOURCE CELL ONLY. Exactly as the frozen law, the whole edge is
+          priced from the SOURCE cell's params — only the HOUR advances
+          (cell_params(idx, hour + 1), the memoised seam). The separate
+          "source-only edge ROS" review finding (destination-cell rate never
+          consulted) is NOT addressed here and is untouched by this knob.
+        * DEPARTURE HOUR ros <= 0 => no edge at all. The caller applies the
+          legacy "fuel that cannot carry fire never relaxes a neighbour"
+          test before calling, and passes the departure-hour rate in as
+          `ros0`, so the first segment's divisor is bit-identical to the
+          frozen law's.
+        * A LATER hour with ros <= 0 STALLS the traversal: the fire makes no
+          progress during that hour and resumes at the next hour's rate with
+          the distance still unburned. (The alternative — abandoning the edge
+          — would let one humid hour permanently delete a spread path that
+          the next hour's weather reopens, a LATE/silencing polarity this
+          product must not take. A stall costs at most the horizon.)
+        * ROS FLOOR. Each burning hour's divisor is max(ros, _ROS_FLOOR_MPS),
+          the same guard the frozen law applies; a stalled hour uses no
+          divisor at all (zero progress), so the floor can never manufacture
+          creep out of an hour Rothermel says is out.
+        * EXACT SEGMENT MERGING. Consecutive hours whose rate is the SAME
+          float are kept as ONE segment, solved once from the segment's own
+          start time and remaining distance. So under weather that does not
+          change across the boundary the result is `t_u + dist/r` computed in
+          exactly the frozen law's float operations — ON is BIT-IDENTICAL to
+          OFF whenever no hour actually differs (pinned in
+          tests/test_spread_physics2.py), and the knob can only move cells
+          where the weather really moved.
+        * HORIZON / CAP. The walk stops once the next hour begins past
+          horizon_end_s (nothing later can beat it) or after
+          _PIECEWISE_MAX_HOUR_STEPS hours; both return None.
+        * An hour whose (head, lb, bearing, spot) params EQUAL the previous
+          hour's cannot change the directional rate, so the ellipse step is
+          skipped for it — a pure short-circuit of an identical computation
+          (p0 carries the departure hour's params in for the comparison),
+          measured 1.5-1.7x on tiles whose traversals span many hours. Even
+          with it, the knob costs ~3.7x (GR2) to ~7x (TL3) the frozen law on
+          an 81x81 tile under a varying forecast — it walks hours the frozen
+          law skipped, which is the price of the fix.
+
+        LABEL-SETTING: the returned time is a pure function of
+        (idx, t_u, ebrg, dist_m) — the source cell's own params at the hours
+        AFTER t_u, none of which any later relaxation can change. No state is
+        mutated, nothing is read back from `best`, so Dijkstra stays
+        label-safe in exactly the sense the frozen law is: a popped label is
+        final and edge costs never depend on the order labels settle. (The
+        pre-existing non-FIFO caveat of time-dependent MTT — a later
+        departure CAN arrive earlier when the wind rises — is unchanged in
+        kind by this knob; it is the same caveat digest §3.3 records for the
+        hourly buckets.)
+        """
+        t = t_u                       # start of the hour being integrated
+        seg_t0 = t_u                  # start of the current constant-rate run
+        seg_rem = dist_m              # distance still unburned at seg_t0
+        seg_r = None                  # that run's rate (None = none open yet)
+        hour = hour0
+        r = max(ros0, _ROS_FLOOR_MPS)
+        p_cur = p0                    # params the rate `r` was derived from
+        for _ in range(_PIECEWISE_MAX_HOUR_STEPS):
+            if r != seg_r:
+                # Rate really changed at `t`: close the open run there (a
+                # stalled run burned nothing) and open a new one.
+                if seg_r is not None and seg_r > 0.0:
+                    seg_rem -= seg_r * (t - seg_t0)
+                    if seg_rem <= 0.0:
+                        return t      # rounding guard: it finished at the seam
+                seg_t0 = t
+                seg_r = r
+            if r > 0.0:
+                t_fin = seg_t0 + seg_rem / r
+                if t_fin <= t0_s + (hour + 1) * 3600.0:
+                    return t_fin
+            t = t0_s + (hour + 1) * 3600.0
+            hour += 1
+            if t > horizon_end_s:
+                return None
+            p_next = cell_params(idx, hour)
+            if p_next != p_cur:
+                p_cur = p_next
+                nros = rothermel.directional_ros_mps(p_next[0], p_next[1],
+                                                     ebrg - p_next[2])
+                r = max(nros, _ROS_FLOOR_MPS) if nros > 0.0 else 0.0
+        return None
 
     while heap:
         t_u, idx = heapq.heappop(heap)
@@ -653,7 +851,8 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             continue          # seeded non-burnable cell: recorded, no spread
         r, c = divmod(idx, ncols)
         hour = int((t_u - t0_s) // 3600.0)
-        head, lb, brg, spot = cell_params(idx, hour)
+        params = cell_params(idx, hour)
+        head, lb, brg, spot = params
         for dr, dc, dist_cells, ebrg, gates in _OFFSETS:
             nr = r + dr
             nc = c + dc
@@ -684,7 +883,19 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                 # spread rate: at 30 m cells it put an "out" cell 83 h away,
                 # inside the 96 h horizon (tri-model review, code finding).
                 continue
-            t_v = t_u + (dist_cells * cell_m) / max(ros, _ROS_FLOOR_MPS)
+            if piecewise:
+                # EDGE-WEATHER PIECEWISE INTEGRATION (cfg.edge_weather_
+                # piecewise): continue the traversal at each later hour's
+                # rate for the distance still unburned, instead of freezing
+                # this departure hour's rate for the whole run. Bit-identical
+                # to the line below whenever no crossed hour differs.
+                t_v = _piecewise_edge_arrival(idx, t_u, hour,
+                                              dist_cells * cell_m, ebrg, ros,
+                                              params)
+                if t_v is None:
+                    continue          # never completes inside the horizon
+            else:
+                t_v = t_u + (dist_cells * cell_m) / max(ros, _ROS_FLOOR_MPS)
             if t_v < best[nidx] and t_v <= horizon_end_s:
                 best[nidx] = t_v
                 heapq.heappush(heap, (t_v, nidx))
