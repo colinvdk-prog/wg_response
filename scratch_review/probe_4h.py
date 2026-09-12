@@ -61,6 +61,10 @@ ARMS = {
     "D_staged": ({**COMMON, **HONEST, **OVERHEAD}, "scattered", "near"),
     "E_cluster": ({**COMMON, **HONEST, **OVERHEAD}, "cluster8", "near"),
     "F_perfect": ({**COMMON, **HONEST, **OVERHEAD, **PERFECT}, "cluster8", "near"),
+    # attribution arms (added after the first ladder: C fell below B)
+    "C1_deploy10": ({**COMMON, **HONEST, "deploy_min": 10.0}, "scattered", "default"),
+    "C2_slack0": ({**COMMON, **HONEST, "deploy_min": 15.0, "slack_min": 0.0}, "scattered", "default"),
+    "G_perfect_scatter": ({**COMMON, **HONEST, "deploy_min": 15.0, **PERFECT}, "scattered", "default"),
 }
 BINS = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 8), (8, 12), (12, 16)]
 
