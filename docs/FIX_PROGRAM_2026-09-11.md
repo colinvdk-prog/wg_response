@@ -76,4 +76,41 @@ Watcher env `WGRESP_STATE_S3=s3://bucket/prefix`. See
 
 ## Measurements
 
-(filled in as the runs complete)
+### Regime-conditional floor (matrix round 2, `scratch_review/calmatrix2_run.sh`)
+
+Rule as on 2026-09-03: honesty (PIT extreme mass) subject to late-miss no
+worse than the deployed floor on BOTH corpora. J = the honest band (half
+floor 0.05, gated, GR/GS only, model-error 0.71) + blow-up floor 0.10 on
+regime incidents; L = J without the band.
+
+| variant | Aug adeq / late / area / PIT / 6-12 h | July adeq / late / area / PIT / 6-12 h | regime pairs |
+|---|---|---|---|---|
+| D gate + band 0.71 (deployed) | 98.8 / 1.2 / 24.7× / 50% / 94% | 83.1 / 16.9 / 14.2× / 72% / 99% | — |
+| I honest band (no regime) | 94.1 / 5.9 / 11.0× / 40% / 69% | 68.0 / 32.0 / 10.4× / 67% / 62% | — |
+| **J = I + regime floor 0.10** | 95.9 / 4.1 / 14.2× / 48% / 79% | 71.1 / 28.9 / 10.4× / 67% / 62% | Aug 13/27, **July 2/18** |
+| L = J without the band | 91.1 / 8.9 / 7.0× / 80% / 60% | 65.7 / 34.3 / 6.9× / 90% / 56% | same |
+
+**Verdict: the regime floor stays built but OFF; D071 stays deployed.** The
+detector (cured grass ≥ 0.60 of the burnable domain + wind ≥ 4 m/s, built
+from n=1 positive example) trips on only 2 of the 18 July pairs, so the
+posture does not carry the July blow-ups — the premise of the 2026-09-03
+recommendation does not hold yet. Per-pair diagnosis (grass fraction, max
+effective wind, cells; late-miss D vs I):
+
+| July pair | dt h | GR+GS | max wind m/s | regime | cells | late D | late I |
+|---|---|---|---|---|---|---|---|
+| PorcupineRidge-OR | 12.9 | 0.88 | 9.0 | **yes** | 33,888 | **53.1%** | 62.8% |
+| AspenAcres-CO | 7.4 | 0.60 | 11.7 | no (on the threshold) | 11,003 | 3.8% | **86.9%** |
+| Willow-CO (timber) | 20.8 | 0.07 | 7.4 | no | 1,231 | 0% | **62.6%** |
+| Cottonwood-UT | 8.2 | 0.49 | 10.2 | no | 7,886 | 0% | **34.3%** |
+| every other pair | | | | no | | 0% | ≤ 6% |
+
+Three facts: (1) the one true regime pair is beyond every variant — 53%
+late even with the full floor — which is what pins July skill at ≈1.0;
+(2) the half-floor's July losses are one grass domain sitting exactly on
+the 0.60 threshold under strong wind and two non-grass domains where the
+ALL-class floor is doing the work; (3) re-tuning the detector on these 18
+pairs would be fitting the out-of-sample test. The detector signature
+needs more blow-up windows (the monthly review accumulates them) before
+the honest band can run outside the regime. Raw results:
+`scratch_review/calmatrix/{aug,oos}_{J_regime_I071,L_regime_I_noband}.json`.

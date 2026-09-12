@@ -55,22 +55,26 @@ default path is fingerprint-pinned.
 ## 3. As-deployed configuration
 
 Live watcher StartCommand (verify via `aws apprunner describe-service`,
-service `wg-response-watch`, us-west-2), image tag `fix1` (2026-09-03,
-fix program docs/FIX_PROGRAM_2026-09-03.md): `--gust-blend 0.5
---grass-floor 0.10 --floor-gate --model-error 0.71 --extreme-regime
---fail-closed --ember-radius 200 --p50-bound` — the floor-physics and
-model-error flags were chosen by the hindcast calibration matrix
-(docs/calibration/calibration_matrix_2026-09-03.md; grass-only and
-half-strength floors rejected by the July blow-up corpus). Engine
-`ResponseConfig` defaults keep every calibrated knob OFF. The public
-simulator additionally defaults (sim sessions only): fuel-tiered corridor
-erosion (FAST 550 m GR/GS, SHRUB 200 m, SLOW 150 m, euclidean discs),
-escape-target hysteresis 20 min, per-fuel-class cold-black windows,
-proactive pre-pocket escape 120 min, corridor fail-closed (off-raster
-bound only — the tile is the sim's world), `deploy_min` 15 (3-person
-crews), ember_threat_radius 200 m, spotting + grass floor on. The 10c
-crew-overrun audit counts imminent exposure in every crew mode (both
-paths). Previous lineage: `gf1` = `--gust-blend 0.5 --grass-floor 0.10
+service `wg-response-watch`, us-west-2), image tag `fix3` (2026-09-11,
+docs/FIX_PROGRAM_2026-09-11.md): `--gust-blend 0.5 --grass-floor 0.10
+--floor-gate --model-error 0.71 --extreme-regime --fail-closed
+--ember-radius 200 --p50-bound --solver-evals 20000`, env
+`WGRESP_STATE_S3=s3://wg-response-state-296920174396/watch` (alert state +
+LANDFIRE cache mirrored across restarts; instance role
+`wg-response-apprunner-instance`). Built but NOT armed live:
+`--regime-floor` (the regime detector trips on 2/18 July blow-up pairs),
+`edge_weather_piecewise`, `slope_phi_vector` (matrix round 2 verdicts in
+that doc). Engine `ResponseConfig` defaults keep every calibrated knob OFF.
+The public simulator additionally defaults (sim sessions only): fuel-tiered
+corridor erosion (FAST 550 m GR/GS, SHRUB 200 m, SLOW 150 m, euclidean
+discs), escape-target hysteresis 20 min, per-fuel-class cold-black windows,
+proactive pre-pocket escape 120 min, corridor fail-closed (off-raster bound
+only — the tile is the sim's world), deterministic solver budget 20,000
+consults, `deploy_min` 15 (3-person crews), ember_threat_radius 200 m,
+spotting + grass floor on. The 10c crew-overrun audit counts imminent
+exposure in every crew mode (both paths). Previous lineage: `fix2`
+(2026-09-03) = the same watcher flags without `--solver-evals` and no
+state mirror; `gf1` = `--gust-blend 0.5 --grass-floor 0.10
 --extreme-regime` (the configuration the tri-model review assessed).
 
 ## 4. Validation record (the numbers under review)
