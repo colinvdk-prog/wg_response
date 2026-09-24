@@ -3,7 +3,9 @@
 Contract seam (contracts MODULE SEAMS; founder request 2026-07-09;
 docs/SIMULATOR_DESIGN.md is the spec of record):
 
-    LOCATIONS                    five real presets -> SimLocation(name, center,
+    LOCATIONS                    real presets (five originals, Rancho Santa Fe,
+                                 the six Vail->Aspen corridor communities)
+                                 -> SimLocation(name, center,
                                  canonical hazard wind dir_deg, tile path
                                  data/tiles/<key>.wgt, 2-3 safe-zone anchors)
     load_tile(key, ...)          cached ascii tile if present, else a
@@ -616,6 +618,112 @@ LOCATIONS = {
             SafeZone("park_city_ut-z2", LatLon(40.646, -111.498), "Park City Old Town"),
             # Jeremy Ranch / I-80 west node, ~9.9 km NW
             SafeZone("park_city_ut-z3", LatLon(40.757, -111.657), "Jeremy Ranch / I-80 west"),
+        )),
+    # ---------------------------------------------------------------------
+    # VAIL -> ASPEN CORRIDOR (founder 2026-09-23 "build the response program
+    # from Vail to Aspen"): the PD Mountain Resorts territory served from the
+    # Eagle, CO forward base -- six community tiles along I-70 (Eagle Valley)
+    # and SH-82 (Roaring Fork Valley). Hazard winds are the western-slope
+    # dry-cold-front / prefrontal SW-WSW flow behind every analog fire named
+    # below (Storm King 1994, Coal Seam 2002, Lake Christine 2018, Grizzly
+    # Creek 2020, Sylvan 2021): the E-W Eagle Valley tiles use 240 (WSW,
+    # channelled along the valley), the Roaring Fork tiles 225 (SW). Safe
+    # zones are PLANNING-GRADE highway / arterial nodes (interchanges, SH-82
+    # junctions, park-and-rides), NOT field-verified staging areas -- the
+    # HOA_40_PLAYBOOK ground-verification gate applies before any dispatch.
+    # No city-limits polygon: the mountain WUI band IS the towns. Program of
+    # record: docs/vail_aspen_response_program.md.
+    # ---------------------------------------------------------------------
+    "vail_co": SimLocation(
+        key="vail_co", name="Vail / East Vail / Minturn, CO",
+        center=LatLon(39.635, -106.360), hazard_wind_dir_deg=240.0,
+        tile_path="data/tiles/vail_co.wgt",
+        safe_zones=(
+            # I-70 exit 180 / East Vail (Bighorn Rd), ~6.3 km E
+            SafeZone("vail_co-z1", LatLon(39.6305, -106.2870),
+                     "I-70 exit 180 / East Vail"),
+            # I-70 exit 171 / Dowd Junction (US-24), ~7.0 km WSW
+            SafeZone("vail_co-z2", LatLon(39.6150, -106.4370),
+                     "I-70 exit 171 / Dowd Junction"),
+            # Minturn, US-24 / Main St, ~8.1 km SW
+            SafeZone("vail_co-z3", LatLon(39.5865, -106.4305),
+                     "Minturn / US-24"),
+        )),
+    "beaver_creek_co": SimLocation(
+        key="beaver_creek_co", name="Beaver Creek / Avon / Edwards, CO",
+        center=LatLon(39.625, -106.560), hazard_wind_dir_deg=240.0,
+        tile_path="data/tiles/beaver_creek_co.wgt",
+        safe_zones=(
+            # I-70 exit 167 / Avon Rd, ~3.4 km NE
+            SafeZone("beaver_creek_co-z1", LatLon(39.6365, -106.5230),
+                     "I-70 exit 167 / Avon"),
+            # I-70 exit 163 / Edwards Access Rd, ~4.2 km NW
+            SafeZone("beaver_creek_co-z2", LatLon(39.6495, -106.5985),
+                     "I-70 exit 163 / Edwards"),
+            # I-70 exit 169 / Eagle-Vail (US-6), ~7.6 km E
+            SafeZone("beaver_creek_co-z3", LatLon(39.6210, -106.4715),
+                     "I-70 exit 169 / Eagle-Vail"),
+        )),
+    "eagle_co": SimLocation(
+        key="eagle_co", name="Eagle / Gypsum, CO (corridor base)",
+        center=LatLon(39.650, -106.890), hazard_wind_dir_deg=240.0,
+        tile_path="data/tiles/eagle_co.wgt",
+        safe_zones=(
+            # I-70 exit 147 / Eby Creek Rd (Eagle), ~5.4 km E -- the
+            # corridor base node (PD Mountain Resorts HQ, Eagle)
+            SafeZone("eagle_co-z1", LatLon(39.6605, -106.8285),
+                     "I-70 exit 147 / Eagle (corridor base)"),
+            # I-70 exit 140 / Gypsum, Cooley Mesa Rd (airport), ~4.5 km W
+            SafeZone("eagle_co-z2", LatLon(39.6465, -106.9425),
+                     "I-70 exit 140 / Gypsum, airport"),
+            # Brush Creek Rd / Eagle Ranch, ~6.1 km SE
+            SafeZone("eagle_co-z3", LatLon(39.6215, -106.8295),
+                     "Brush Creek Rd / Eagle Ranch"),
+        )),
+    "glenwood_springs_co": SimLocation(
+        key="glenwood_springs_co", name="Glenwood Springs, CO",
+        center=LatLon(39.545, -107.320), hazard_wind_dir_deg=240.0,
+        tile_path="data/tiles/glenwood_springs_co.wgt",
+        safe_zones=(
+            # I-70 exit 114 / West Glenwood (Mel Ray Rd), ~3.3 km NW
+            SafeZone("glenwood_springs_co-z1", LatLon(39.5595, -107.3530),
+                     "I-70 exit 114 / West Glenwood"),
+            # I-70 exit 119 / No Name, ~3.9 km NE
+            SafeZone("glenwood_springs_co-z2", LatLon(39.5665, -107.2835),
+                     "I-70 exit 119 / No Name"),
+            # SH-82 / CR-154 Cattle Creek, ~9.2 km SSE
+            SafeZone("glenwood_springs_co-z3", LatLon(39.4695, -107.2765),
+                     "SH-82 / Cattle Creek"),
+        )),
+    "basalt_carbondale_co": SimLocation(
+        key="basalt_carbondale_co", name="Basalt / El Jebel / Carbondale, CO",
+        center=LatLon(39.395, -107.125), hazard_wind_dir_deg=225.0,
+        tile_path="data/tiles/basalt_carbondale_co.wgt",
+        safe_zones=(
+            # SH-82 x SH-133 (Carbondale), ~7.7 km W
+            SafeZone("basalt_carbondale_co-z1", LatLon(39.4105, -107.2135),
+                     "SH-82 / SH-133 Carbondale"),
+            # SH-82 x Basalt Ave (Basalt), ~8.5 km ESE
+            SafeZone("basalt_carbondale_co-z2", LatLon(39.3705, -107.0315),
+                     "SH-82 / Basalt Ave"),
+            # SH-82 x Willits Ln, ~4.7 km ESE
+            SafeZone("basalt_carbondale_co-z3", LatLon(39.3835, -107.0725),
+                     "SH-82 / Willits Ln"),
+        )),
+    "aspen_co": SimLocation(
+        key="aspen_co", name="Aspen / Snowmass Village, CO",
+        center=LatLon(39.210, -106.870), hazard_wind_dir_deg=225.0,
+        tile_path="data/tiles/aspen_co.wgt",
+        safe_zones=(
+            # SH-82 x Brush Creek Rd intercept lot, ~4.5 km N
+            SafeZone("aspen_co-z1", LatLon(39.2485, -106.8845),
+                     "SH-82 / Brush Creek intercept lot"),
+            # Aspen, Main St x Mill St (SH-82), ~4.9 km ESE
+            SafeZone("aspen_co-z2", LatLon(39.1905, -106.8195),
+                     "Aspen Main St / Mill St"),
+            # Snowmass Village, Town Park / Brush Creek Rd, ~5.8 km W
+            SafeZone("aspen_co-z3", LatLon(39.2125, -106.9370),
+                     "Snowmass Village Town Park"),
         )),
 }
 

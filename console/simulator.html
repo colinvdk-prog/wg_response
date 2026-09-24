@@ -357,6 +357,14 @@
         <option value="santa_rosa_ca">Santa Rosa NE / Mark West, CA</option>
         <option value="boulder_co">Boulder / Superior, CO</option>
         <option value="park_city_ut">Park City / Summit Park, UT</option>
+        <!-- VAIL -> ASPEN CORRIDOR (2026-09-23): six community tiles served
+             from the Eagle base; docs/vail_aspen_response_program.md -->
+        <option value="vail_co">Vail / East Vail / Minturn, CO</option>
+        <option value="beaver_creek_co">Beaver Creek / Avon / Edwards, CO</option>
+        <option value="eagle_co">Eagle / Gypsum, CO (corridor base)</option>
+        <option value="glenwood_springs_co">Glenwood Springs, CO</option>
+        <option value="basalt_carbondale_co">Basalt / El Jebel / Carbondale, CO</option>
+        <option value="aspen_co">Aspen / Snowmass Village, CO</option>
       </select>
       <!-- FIRE ZONE (founder request 2026-07-10): extended loads the
            wide-area <key>_ext tile so ignition can start tens of km out;
@@ -875,6 +883,14 @@ const SIM_LOCATIONS = {   // key -> [name, canonical hazard wind FROM deg]
   santa_rosa_ca: ["Santa Rosa NE / Mark West, CA", 45],
   boulder_co: ["Boulder / Superior, CO", 270],
   park_city_ut: ["Park City / Summit Park, UT", 225],
+  // Vail -> Aspen corridor (2026-09-23): WSW 240 along the E-W Eagle
+  // Valley, SW 225 in the Roaring Fork Valley (simui.LOCATIONS).
+  vail_co: ["Vail / East Vail / Minturn, CO", 240],
+  beaver_creek_co: ["Beaver Creek / Avon / Edwards, CO", 240],
+  eagle_co: ["Eagle / Gypsum, CO (corridor base)", 240],
+  glenwood_springs_co: ["Glenwood Springs, CO", 240],
+  basalt_carbondale_co: ["Basalt / El Jebel / Carbondale, CO", 225],
+  aspen_co: ["Aspen / Snowmass Village, CO", 225],
 };
 const POLL_MS = 1000;              // 1 s state poll while RUNNING (adaptive)
 const COLORS = { none:"#8b93a1", notice_72h:"#f2b04c", watch:"#ff8c1a",

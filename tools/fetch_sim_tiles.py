@@ -80,6 +80,14 @@ LOCATIONS = (
     ("park_city_ut",  "Park City / Summit Park, UT",    40.72,  -111.55),
     # Witch Creek corridor estate WUI (founder 2026-07-31)
     ("rancho_santa_fe_ca", "Rancho Santa Fe / Covenant, CA", 33.020, -117.200),
+    # VAIL -> ASPEN CORRIDOR (founder 2026-09-23; six community tiles served
+    # from the Eagle base; docs/vail_aspen_response_program.md)
+    ("vail_co",              "Vail / East Vail / Minturn, CO",        39.635, -106.360),
+    ("beaver_creek_co",      "Beaver Creek / Avon / Edwards, CO",    39.625, -106.560),
+    ("eagle_co",             "Eagle / Gypsum, CO (corridor base)",   39.650, -106.890),
+    ("glenwood_springs_co",  "Glenwood Springs, CO",                 39.545, -107.320),
+    ("basalt_carbondale_co", "Basalt / El Jebel / Carbondale, CO",   39.395, -107.125),
+    ("aspen_co",             "Aspen / Snowmass Village, CO",         39.210, -106.870),
 )
 HALF_M = 9000.0        # bbox half-width in meters -> ~18 x 18 km per location
 CELL_M = 90.0          # simulator grid step (LANDFIRE native 30 m, NN-resampled)

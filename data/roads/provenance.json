@@ -1,6 +1,78 @@
 {
   "highway_regex": "^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|service)$",
   "locations": {
+    "aspen_co": {
+      "bbox_wsen": [
+        -106.97446,
+        39.129061,
+        -106.76554,
+        39.290939
+      ],
+      "checked_utc": "2026-09-24T03:43:08Z",
+      "fetched_utc": "2026-09-24T03:43:08Z",
+      "name": "Aspen / Snowmass Village, CO",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 30,
+        "components": 15,
+        "edges": 3456,
+        "fetch_seconds": 2.4,
+        "file_kb": 510.9,
+        "largest_component_node_pct": 98.97,
+        "nodes": 2882,
+        "raw_way_nodes": 23872,
+        "self_loops_dropped": 82,
+        "ways_fetched": 2042
+      }
+    },
+    "basalt_carbondale_co": {
+      "bbox_wsen": [
+        -107.23096,
+        39.314061,
+        -107.01404,
+        39.475939
+      ],
+      "checked_utc": "2026-09-24T03:47:04Z",
+      "fetched_utc": "2026-09-24T03:47:04Z",
+      "name": "Basalt / El Jebel / Carbondale, CO",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 69,
+        "components": 24,
+        "edges": 3858,
+        "fetch_seconds": 2.2,
+        "file_kb": 484.4,
+        "largest_component_node_pct": 97.96,
+        "nodes": 3315,
+        "raw_way_nodes": 21744,
+        "self_loops_dropped": 92,
+        "ways_fetched": 2277
+      }
+    },
+    "beaver_creek_co": {
+      "bbox_wsen": [
+        -106.665083,
+        39.544061,
+        -106.45398,
+        39.705939
+      ],
+      "checked_utc": "2026-09-24T03:43:08Z",
+      "fetched_utc": "2026-09-24T03:43:08Z",
+      "name": "Beaver Creek / Avon / Edwards, CO",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 55,
+        "components": 7,
+        "edges": 3049,
+        "fetch_seconds": 11.3,
+        "file_kb": 486.6,
+        "largest_component_node_pct": 97.8,
+        "nodes": 2447,
+        "raw_way_nodes": 23485,
+        "self_loops_dropped": 25,
+        "ways_fetched": 1779
+      }
+    },
     "boulder_co": {
       "bbox_wsen": [
         -105.277614,
@@ -19,6 +91,54 @@
         "largest_component_node_pct": 99.21,
         "nodes": 33459,
         "ways_fetched": 26244
+      }
+    },
+    "eagle_co": {
+      "bbox_wsen": [
+        -106.995121,
+        39.569061,
+        -106.784879,
+        39.730939
+      ],
+      "checked_utc": "2026-09-24T03:43:08Z",
+      "fetched_utc": "2026-09-24T03:43:08Z",
+      "name": "Eagle / Gypsum, CO (corridor base)",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 20,
+        "components": 7,
+        "edges": 2774,
+        "fetch_seconds": 10.8,
+        "file_kb": 477.1,
+        "largest_component_node_pct": 99.07,
+        "nodes": 2124,
+        "raw_way_nodes": 22152,
+        "self_loops_dropped": 40,
+        "ways_fetched": 1503
+      }
+    },
+    "glenwood_springs_co": {
+      "bbox_wsen": [
+        -107.424962,
+        39.45601,
+        -107.215038,
+        39.625939
+      ],
+      "checked_utc": "2026-09-24T03:43:08Z",
+      "fetched_utc": "2026-09-24T03:43:08Z",
+      "name": "Glenwood Springs, CO",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 59,
+        "components": 16,
+        "edges": 3746,
+        "fetch_seconds": 2.6,
+        "file_kb": 434.0,
+        "largest_component_node_pct": 98.11,
+        "nodes": 3070,
+        "raw_way_nodes": 19486,
+        "self_loops_dropped": 71,
+        "ways_fetched": 2163
       }
     },
     "malibu_ca": {
@@ -123,6 +243,30 @@
         "largest_component_node_pct": 99.13,
         "nodes": 24184,
         "ways_fetched": 16710
+      }
+    },
+    "vail_co": {
+      "bbox_wsen": [
+        -106.465098,
+        39.554061,
+        -106.254902,
+        39.715939
+      ],
+      "checked_utc": "2026-09-24T03:43:08Z",
+      "fetched_utc": "2026-09-24T03:43:08Z",
+      "name": "Vail / East Vail / Minturn, CO",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 20,
+        "components": 6,
+        "edges": 1425,
+        "fetch_seconds": 1.8,
+        "file_kb": 247.5,
+        "largest_component_node_pct": 98.32,
+        "nodes": 1170,
+        "raw_way_nodes": 12417,
+        "self_loops_dropped": 8,
+        "ways_fetched": 983
       }
     }
   },

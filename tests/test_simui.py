@@ -101,9 +101,12 @@ def _burnable_point(session):
 # ---------------------------------------------------------------------------
 
 def test_locations_registry_shape():
-    assert sorted(LOCATIONS) == ["boulder_co", "malibu_ca", "paradise_ca",
-                                 "park_city_ut", "rancho_santa_fe_ca",
-                                 "santa_rosa_ca"]
+    assert sorted(LOCATIONS) == [
+        # the five originals + Rancho Santa Fe (2026-08-01) + the six
+        # Vail -> Aspen corridor communities (2026-09-23)
+        "aspen_co", "basalt_carbondale_co", "beaver_creek_co", "boulder_co",
+        "eagle_co", "glenwood_springs_co", "malibu_ca", "paradise_ca",
+        "park_city_ut", "rancho_santa_fe_ca", "santa_rosa_ca", "vail_co"]
     for key, loc in LOCATIONS.items():
         assert loc.key == key
         assert loc.tile_path == f"data/tiles/{key}.wgt"

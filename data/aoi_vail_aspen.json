@@ -1,0 +1,124 @@
+{
+  "_comment": "VAIL -> ASPEN CORRIDOR AOI (founder 2026-09-23 'build the response program from Vail to Aspen'; docs/vail_aspen_response_program.md). One bbox over the I-70 Eagle Valley + SH-82 Roaring Fork corridor (Vail Pass to Glenwood Springs to Aspen, including the seasonal Independence Pass link and the Eagle, CO forward base). Safe zones are the six community presets' zones (wgresponse.simui.LOCATIONS): PLANNING-GRADE highway / arterial nodes, NOT ground-verified -- per HOA_40_PLAYBOOK a real deployment requires ground-verified zones before any crew dispatch. Shadow use only (mock clients, dry-notify) until Phase 2 onboarding.",
+  "zones": [
+    {
+      "name": "vail_aspen_corridor",
+      "bbox": [
+        -107.45,
+        39.05,
+        -106.2,
+        39.8
+      ]
+    }
+  ],
+  "safe_zones": [
+    {
+      "zone_id": "vail_co-z1",
+      "lat": 39.6305,
+      "lon": -106.287,
+      "name": "UNVERIFIED I-70 exit 180 / East Vail"
+    },
+    {
+      "zone_id": "vail_co-z2",
+      "lat": 39.615,
+      "lon": -106.437,
+      "name": "UNVERIFIED I-70 exit 171 / Dowd Junction"
+    },
+    {
+      "zone_id": "vail_co-z3",
+      "lat": 39.5865,
+      "lon": -106.4305,
+      "name": "UNVERIFIED Minturn / US-24"
+    },
+    {
+      "zone_id": "beaver_creek_co-z1",
+      "lat": 39.6365,
+      "lon": -106.523,
+      "name": "UNVERIFIED I-70 exit 167 / Avon"
+    },
+    {
+      "zone_id": "beaver_creek_co-z2",
+      "lat": 39.6495,
+      "lon": -106.5985,
+      "name": "UNVERIFIED I-70 exit 163 / Edwards"
+    },
+    {
+      "zone_id": "beaver_creek_co-z3",
+      "lat": 39.621,
+      "lon": -106.4715,
+      "name": "UNVERIFIED I-70 exit 169 / Eagle-Vail"
+    },
+    {
+      "zone_id": "eagle_co-z1",
+      "lat": 39.6605,
+      "lon": -106.8285,
+      "name": "UNVERIFIED I-70 exit 147 / Eagle (corridor base)"
+    },
+    {
+      "zone_id": "eagle_co-z2",
+      "lat": 39.6465,
+      "lon": -106.9425,
+      "name": "UNVERIFIED I-70 exit 140 / Gypsum, airport"
+    },
+    {
+      "zone_id": "eagle_co-z3",
+      "lat": 39.6215,
+      "lon": -106.8295,
+      "name": "UNVERIFIED Brush Creek Rd / Eagle Ranch"
+    },
+    {
+      "zone_id": "glenwood_springs_co-z1",
+      "lat": 39.5595,
+      "lon": -107.353,
+      "name": "UNVERIFIED I-70 exit 114 / West Glenwood"
+    },
+    {
+      "zone_id": "glenwood_springs_co-z2",
+      "lat": 39.5665,
+      "lon": -107.2835,
+      "name": "UNVERIFIED I-70 exit 119 / No Name"
+    },
+    {
+      "zone_id": "glenwood_springs_co-z3",
+      "lat": 39.4695,
+      "lon": -107.2765,
+      "name": "UNVERIFIED SH-82 / Cattle Creek"
+    },
+    {
+      "zone_id": "basalt_carbondale_co-z1",
+      "lat": 39.4105,
+      "lon": -107.2135,
+      "name": "UNVERIFIED SH-82 / SH-133 Carbondale"
+    },
+    {
+      "zone_id": "basalt_carbondale_co-z2",
+      "lat": 39.3705,
+      "lon": -107.0315,
+      "name": "UNVERIFIED SH-82 / Basalt Ave"
+    },
+    {
+      "zone_id": "basalt_carbondale_co-z3",
+      "lat": 39.3835,
+      "lon": -107.0725,
+      "name": "UNVERIFIED SH-82 / Willits Ln"
+    },
+    {
+      "zone_id": "aspen_co-z1",
+      "lat": 39.2485,
+      "lon": -106.8845,
+      "name": "UNVERIFIED SH-82 / Brush Creek intercept lot"
+    },
+    {
+      "zone_id": "aspen_co-z2",
+      "lat": 39.1905,
+      "lon": -106.8195,
+      "name": "UNVERIFIED Aspen Main St / Mill St"
+    },
+    {
+      "zone_id": "aspen_co-z3",
+      "lat": 39.2125,
+      "lon": -106.937,
+      "name": "UNVERIFIED Snowmass Village Town Park"
+    }
+  ]
+}
