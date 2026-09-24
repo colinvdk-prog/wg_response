@@ -324,11 +324,14 @@ violating scenario and classifies each audit row):
 | local4 | 47 | **0** | 262 | 6 / 3 |
 | mixed2p2 | 63 | **0** | 264 | 3 / 1 |
 | base1p3 | 62 | **0** | 276 (+2 imminent-idle) | 6 / 2 |
+| mixed2p2 from a Basalt base (3 communities / 54) | 29 | **0** | 146 | 1 / 1 |
+| base1p3 from a Basalt base (3 communities / 54) | 32 | **0** | 150 | 2 / 2 |
 | *(whole-band placement)* | 43 · 50 · 64 · 68 | **0 · 0 · 0 · 0** | 132 · 275 · 299 · 296 | 4/2 · 6/2 · 6/2 · 4/1 |
+| *(alerted arms, §3.5)* | 5–11 of 9–18 | **0 · 0 · 0 · 0** | 30–54 (+32–64 idle) | 276–550 / 0 |
 
-**Zero departure-audit violations in 864 reactive scenarios** — no serviced
-stop ever departed after its latest-depart, the failure the law exists to
-prevent. Everything the scoreboard counts is the honest 10c backstop
+**Zero departure-audit violations in all 1,035 scenarios (972 reactive, 63
+alerted; `scratch_review/corridor/violations.json`)** — no serviced stop ever
+departed after its latest-depart, the failure the law exists to prevent. Everything the scoreboard counts is the honest 10c backstop
 shipped on 2026-09-11, and it divides into two classes:
 
 - **Imminent-while-egressing** (the bulk): a crew on its escape leg
