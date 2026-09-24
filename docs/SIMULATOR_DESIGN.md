@@ -367,3 +367,83 @@ synthetic crescent test: no self-crossing segments, consecutive points within 2 
 diagonals. Idle crews now emit `route_on_roads`/`egress_on_roads` = `null` when no
 polyline exists — `false` is reserved for a real straight-line leg (the UI's honesty
 chip trigger).
+
+## Vail → Aspen corridor presets (2026-09-23)
+
+Founder request 2026-09-23: *"build the response program from Vail to Aspen"*
+(program of record: `docs/vail_aspen_response_program.md`). Six community
+tiles along the PD Mountain Resorts corridor — the I-70 Eagle Valley and the
+SH-82 Roaring Fork Valley, served from the Eagle, CO forward base — were added
+to `simui.LOCATIONS`, `tools/fetch_sim_tiles.py` (kept in sync;
+`tests/test_corridor_vail_aspen.py`) and the simulator's location list. Same
+tile law as the five originals (standard ~18×18 km @ 90 m, extended ~48×48 km
+@ 240 m), same OSM road law (`tools/fetch_sim_roads.py`), no city-limits
+polygon (the mountain WUI band *is* the towns).
+
+| key | community | center (lat, lon) | hazard wind FROM | analog events (geography + wind, [ASSUMED]) | safe zones (PLANNING-GRADE, not field-verified) |
+|---|---|---|---|---|---|
+| `vail_co` | Vail / East Vail / Minturn | 39.635, −106.360 | 240° WSW | prefrontal SW-WSW channelled along Gore Creek; no modern town-threatening run on record | I-70 exit 180 East Vail · I-70 exit 171 Dowd Junction · Minturn US-24 |
+| `beaver_creek_co` | Beaver Creek / Avon / Edwards | 39.625, −106.560 | 240° | Sylvan 2021 (south of Eagle) as the valley's recent WSW-driven event | I-70 exit 167 Avon · I-70 exit 163 Edwards · I-70 exit 169 Eagle-Vail |
+| `eagle_co` | Eagle / Gypsum (corridor base) | 39.650, −106.890 | 240° | Sylvan Fire 2021 | I-70 exit 147 Eagle (base) · I-70 exit 140 Gypsum / airport · Brush Creek Rd / Eagle Ranch |
+| `glenwood_springs_co` | Glenwood Springs | 39.545, −107.320 | 240° | Storm King 1994, Coal Seam 2002 (29 homes, West Glenwood), Grizzly Creek 2020 (I-70 closed two weeks) | I-70 exit 114 West Glenwood · I-70 exit 119 No Name · SH-82 / Cattle Creek |
+| `basalt_carbondale_co` | Basalt / El Jebel / Carbondale | 39.395, −107.125 | 225° SW | Lake Christine 2018 (El Jebel, 3 homes) | SH-82 / SH-133 Carbondale · SH-82 / Basalt Ave · SH-82 / Willits Ln |
+| `aspen_co` | Aspen / Snowmass Village | 39.210, −106.870 | 225° | SW synoptic flow across the Roaring Fork; no modern town-threatening run on record | SH-82 / Brush Creek intercept lot · Aspen Main St / Mill St · Snowmass Village Town Park |
+
+Hazard-wind rationale: the western-slope fire wind is the dry-cold-front /
+prefrontal SW–WSW flow behind every analog above; the E–W Eagle Valley tiles
+use 240 (channelled along the valley), the NW–SE Roaring Fork tiles 225. The
+scenario suites rotate the axis ±30/±40°, so each community is scored across
+the whole approach arc. Safe zones are highway interchanges, SH-82 junctions
+and park-and-rides 3–13 km from each center (the registry-shape pin);
+`HOA_40_PLAYBOOK.md` ground-verification is a hard gate before any dispatch.
+
+Corridor drive-time graph: `data/roads/corridor_vail_aspen.wgr` — OSM major
+roads (motorway..tertiary + links) over the corridor bbox
+(W −107.45, S 39.05, E −106.20, N 39.80), 993 nodes / 1,442 edges, LCC 99.6%,
+built by `scratch_review/corridor_roads.py`; the drive-time matrix (free-flow,
+fire-traffic, Glenwood-Canyon-closed and all-season variants) lives in
+`scratch_review/corridor_drive_times.json`. Watcher AOI for the corridor:
+`data/aoi_vail_aspen.json` (one bbox + the 18 zones, all labelled UNVERIFIED).
+
+### Corridor tile provenance
+
+**Standard tiles fetched 2026-09-24 03:51–04:30Z (2026-09-23 PDT evening)** by
+`py -3 tools/fetch_sim_tiles.py --only <key> …` — six LFPS jobs, 369–415 s
+each, all first attempt; layers `LF2024_FBFM40;LF2020_SlpD;LF2020_Asp;LF2020_Elev`
+@ 90 m, 200×200; machine-readable record `data/tiles/provenance.json`; pins
+`tests/test_sim_tiles.py` (all green).
+
+| key | bytes | burnable | dev 91/93 | water | WUI dev cells (r≤3) | elev m | slope max | top fuels (% of cells) |
+|---|---|---|---|---|---|---|---|---|
+| vail_co | 937,576 | 89.1% | 4.0% | 0.2% | 1,608 | 2,324–3,986 | 64° | TU5 27.5, TU1 22.4, TL5 11.1 |
+| beaver_creek_co | 934,823 | 92.2% | 6.6% | 0.3% | 2,649 | 2,124–3,704 | 56° | TU1 27.6, TU5 23.3, TL3 6.8 |
+| eagle_co | 924,018 | 90.8% | 7.5% | 0.4% | 2,985 | 1,893–3,003 | 47° | TL3 27.0, GS2 17.5, SH2 10.6 |
+| glenwood_springs_co | 936,163 | 93.9% | 4.8% | 0.5% | 1,909 | 1,719–3,192 | 72° | TU1 21.8, SH4 21.3, TL3 11.9 |
+| basalt_carbondale_co | 919,815 | 87.3% | 11.6% | 0.9% | 4,619 | 1,854–3,216 | 46° | TL3 20.6, SH4 19.5, GS2 13.6 |
+| aspen_co | 931,516 | 90.3% | 6.5% | 0.3% | 2,604 | 2,186–4,023 | 61° | TU1 22.2, TU5 21.6, SH4 12.7 |
+
+Timber country: four of the six tiles are 50–60% timber-understory; GR+GS
+peaks at 40% of burnable (Eagle / Gypsum), below the 0.60 extreme-spread-regime
+gate everywhere, so that posture never arms on the corridor
+(`docs/vail_aspen_response_program.md` §2.5). No nodata anywhere.
+
+**Extended fire-zone tiles fetched 2026-09-24 04:30–05:12Z** by
+`py -3 tools/fetch_sim_tiles.py --extended --only <key> …` — six LFPS jobs,
+387–475 s each, all first attempt; the existing product size was reused
+(**48×48 km @ 240 m, no step-down**; `data/tiles/provenance_ext.json`).
+"WUI dev cells" counts the whole 48 km tile; "center 18 km" counts the
+client-placement core (the standard footprint), which must stay populated.
+
+| key | bytes | grid | burnable | dev 91/93 | water | WUI dev cells (r≤3) | center 18 km WUI cells | elev m | slope max | top fuels |
+|---|---|---|---|---|---|---|---|---|---|---|
+| vail_co_ext | 931,305 | 200×200 @ 240 m | 84.9% | 2.2% | 0.5% | 867 | 227 | 2,086–4,207 | 65° | TU5 25.3, TU1 19.0, TL5 10.6 |
+| beaver_creek_co_ext | 932,138 | 200×200 @ 240 m | 89.7% | 2.2% | 0.3% | 891 | 381 | 1,987–4,230 | 64° | TU5 24.6, TU1 20.9, TL3 7.3 |
+| eagle_co_ext | 929,784 | 200×200 @ 240 m | 96.2% | 2.0% | 0.4% | 790 | 418 | 1,863–3,828 | 67° | TU1 15.3, TL3 14.0, SH2 12.5 |
+| glenwood_springs_co_ext | 929,812 | 200×200 @ 240 m | 94.9% | 3.9% | 0.4% | 1,539 | 274 | 1,668–3,463 | 71° | TU1 18.9, TL3 18.5, SH4 14.7 |
+| basalt_carbondale_co_ext | 930,740 | 200×200 @ 240 m | 94.3% | 3.9% | 0.4% | 1,570 | 658 | 1,726–3,927 | 72° | TU1 21.2, SH4 15.7, TU5 13.6 |
+| aspen_co_ext | 932,624 | 200×200 @ 240 m | 84.7% | 1.9% | 0.5% | 744 | 358 | 1,916–4,282 | 66° | TU5 25.7, TU1 16.8, NB9 12.7 |
+
+(aspen_co_ext's 12.7% NB9 is bare rock / snow above treeline — the Elk
+Mountains; non-burnable by construction, no nodata.) All twelve corridor
+tiles pass `tests/test_sim_tiles.py`, including the extended uniform-cell-size
+pin.

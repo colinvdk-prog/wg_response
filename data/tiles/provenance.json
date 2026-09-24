@@ -3,6 +3,132 @@
   "cell_m": 90.0,
   "layers": "LF2024_FBFM40;LF2020_SlpD;LF2020_Asp;LF2020_Elev",
   "locations": {
+    "aspen_co": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -106.974342,
+        39.129152,
+        -106.765658,
+        39.290848
+      ],
+      "cell_m": 90.0,
+      "center_lat": 39.21,
+      "center_lon": -106.87,
+      "checked_utc": "2026-09-24T03:51:00Z",
+      "fetched_utc": "2026-09-24T03:51:00Z",
+      "layers": "LF2024_FBFM40;LF2020_SlpD;LF2020_Asp;LF2020_Elev",
+      "name": "Aspen / Snowmass Village, CO",
+      "status": "fetched",
+      "summary": {
+        "burnable_pct": 90.33,
+        "bytes": 931516,
+        "cell_m": 90.0,
+        "codes_outside_namespace": {},
+        "developed_91_93_pct": 6.53,
+        "elev_max_m": 4023.0,
+        "elev_min_m": 2186.0,
+        "fetch_seconds": 368.9,
+        "file": "data/tiles/aspen_co.wgt",
+        "ncols": 200,
+        "nodata_pct": 0.0,
+        "nrows": 200,
+        "slope_max_deg": 61.0,
+        "top_codes": [
+          "161 TU1 22.2%",
+          "165 TU5 21.6%",
+          "144 SH4 12.7%",
+          "183 TL3 6.3%",
+          "91 NB1 5.7%",
+          "162 TU2 4.8%"
+        ],
+        "water_98_pct": 0.27,
+        "wui_developed_cells_r3": 2604
+      }
+    },
+    "basalt_carbondale_co": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -107.229618,
+        39.314152,
+        -107.020382,
+        39.475848
+      ],
+      "cell_m": 90.0,
+      "center_lat": 39.395,
+      "center_lon": -107.125,
+      "checked_utc": "2026-09-24T03:51:00Z",
+      "fetched_utc": "2026-09-24T03:51:00Z",
+      "layers": "LF2024_FBFM40;LF2020_SlpD;LF2020_Asp;LF2020_Elev",
+      "name": "Basalt / El Jebel / Carbondale, CO",
+      "status": "fetched",
+      "summary": {
+        "burnable_pct": 87.28,
+        "bytes": 919815,
+        "cell_m": 90.0,
+        "codes_outside_namespace": {},
+        "developed_91_93_pct": 11.63,
+        "elev_max_m": 3216.0,
+        "elev_min_m": 1854.0,
+        "fetch_seconds": 374.2,
+        "file": "data/tiles/basalt_carbondale_co.wgt",
+        "ncols": 200,
+        "nodata_pct": 0.0,
+        "nrows": 200,
+        "slope_max_deg": 46.0,
+        "top_codes": [
+          "183 TL3 20.6%",
+          "144 SH4 19.5%",
+          "122 GS2 13.6%",
+          "161 TU1 7.0%",
+          "102 GR2 6.2%",
+          "91 NB1 6.1%"
+        ],
+        "water_98_pct": 0.86,
+        "wui_developed_cells_r3": 4619
+      }
+    },
+    "beaver_creek_co": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -106.664965,
+        39.544152,
+        -106.455035,
+        39.705848
+      ],
+      "cell_m": 90.0,
+      "center_lat": 39.625,
+      "center_lon": -106.56,
+      "checked_utc": "2026-09-24T03:51:00Z",
+      "fetched_utc": "2026-09-24T03:51:00Z",
+      "layers": "LF2024_FBFM40;LF2020_SlpD;LF2020_Asp;LF2020_Elev",
+      "name": "Beaver Creek / Avon / Edwards, CO",
+      "status": "fetched",
+      "summary": {
+        "burnable_pct": 92.23,
+        "bytes": 934823,
+        "cell_m": 90.0,
+        "codes_outside_namespace": {},
+        "developed_91_93_pct": 6.64,
+        "elev_max_m": 3704.0,
+        "elev_min_m": 2124.0,
+        "fetch_seconds": 414.6,
+        "file": "data/tiles/beaver_creek_co.wgt",
+        "ncols": 200,
+        "nodata_pct": 0.0,
+        "nrows": 200,
+        "slope_max_deg": 56.0,
+        "top_codes": [
+          "161 TU1 27.6%",
+          "165 TU5 23.3%",
+          "183 TL3 6.8%",
+          "91 NB1 6.5%",
+          "142 SH2 5.5%",
+          "185 TL5 4.1%"
+        ],
+        "water_98_pct": 0.34,
+        "wui_developed_cells_r3": 2649
+      }
+    },
     "boulder_co": {
       "bbox_wsen": [
         -105.26547,
@@ -40,6 +166,90 @@
         ],
         "water_98_pct": 2.3,
         "wui_developed_cells_r3": 14143
+      }
+    },
+    "eagle_co": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -106.995003,
+        39.569152,
+        -106.784997,
+        39.730848
+      ],
+      "cell_m": 90.0,
+      "center_lat": 39.65,
+      "center_lon": -106.89,
+      "checked_utc": "2026-09-24T03:51:00Z",
+      "fetched_utc": "2026-09-24T03:51:00Z",
+      "layers": "LF2024_FBFM40;LF2020_SlpD;LF2020_Asp;LF2020_Elev",
+      "name": "Eagle / Gypsum, CO (corridor base)",
+      "status": "fetched",
+      "summary": {
+        "burnable_pct": 90.77,
+        "bytes": 924018,
+        "cell_m": 90.0,
+        "codes_outside_namespace": {},
+        "developed_91_93_pct": 7.48,
+        "elev_max_m": 3003.0,
+        "elev_min_m": 1893.0,
+        "fetch_seconds": 373.3,
+        "file": "data/tiles/eagle_co.wgt",
+        "ncols": 200,
+        "nodata_pct": 0.0,
+        "nrows": 200,
+        "slope_max_deg": 47.0,
+        "top_codes": [
+          "183 TL3 27.0%",
+          "122 GS2 17.5%",
+          "142 SH2 10.6%",
+          "121 GS1 7.2%",
+          "91 NB1 6.0%",
+          "123 GS3 5.6%"
+        ],
+        "water_98_pct": 0.36,
+        "wui_developed_cells_r3": 2985
+      }
+    },
+    "glenwood_springs_co": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -107.424844,
+        39.464152,
+        -107.215156,
+        39.625848
+      ],
+      "cell_m": 90.0,
+      "center_lat": 39.545,
+      "center_lon": -107.32,
+      "checked_utc": "2026-09-24T03:51:00Z",
+      "fetched_utc": "2026-09-24T03:51:00Z",
+      "layers": "LF2024_FBFM40;LF2020_SlpD;LF2020_Asp;LF2020_Elev",
+      "name": "Glenwood Springs, CO",
+      "status": "fetched",
+      "summary": {
+        "burnable_pct": 93.94,
+        "bytes": 936163,
+        "cell_m": 90.0,
+        "codes_outside_namespace": {},
+        "developed_91_93_pct": 4.83,
+        "elev_max_m": 3192.0,
+        "elev_min_m": 1719.0,
+        "fetch_seconds": 401.1,
+        "file": "data/tiles/glenwood_springs_co.wgt",
+        "ncols": 200,
+        "nodata_pct": 0.0,
+        "nrows": 200,
+        "slope_max_deg": 72.0,
+        "top_codes": [
+          "161 TU1 21.8%",
+          "144 SH4 21.3%",
+          "183 TL3 11.9%",
+          "122 GS2 6.8%",
+          "165 TU5 6.8%",
+          "102 GR2 4.7%"
+        ],
+        "water_98_pct": 0.49,
+        "wui_developed_cells_r3": 1909
       }
     },
     "malibu_ca": {
@@ -240,6 +450,48 @@
         ],
         "water_98_pct": 0.26,
         "wui_developed_cells_r3": 9870
+      }
+    },
+    "vail_co": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -106.464981,
+        39.554152,
+        -106.255019,
+        39.715848
+      ],
+      "cell_m": 90.0,
+      "center_lat": 39.635,
+      "center_lon": -106.36,
+      "checked_utc": "2026-09-24T03:51:00Z",
+      "fetched_utc": "2026-09-24T03:51:00Z",
+      "layers": "LF2024_FBFM40;LF2020_SlpD;LF2020_Asp;LF2020_Elev",
+      "name": "Vail / East Vail / Minturn, CO",
+      "status": "fetched",
+      "summary": {
+        "burnable_pct": 89.06,
+        "bytes": 937576,
+        "cell_m": 90.0,
+        "codes_outside_namespace": {},
+        "developed_91_93_pct": 4.02,
+        "elev_max_m": 3986.0,
+        "elev_min_m": 2324.0,
+        "fetch_seconds": 413.6,
+        "file": "data/tiles/vail_co.wgt",
+        "ncols": 200,
+        "nodata_pct": 0.0,
+        "nrows": 200,
+        "slope_max_deg": 64.0,
+        "top_codes": [
+          "165 TU5 27.5%",
+          "161 TU1 22.4%",
+          "185 TL5 11.1%",
+          "183 TL3 7.5%",
+          "181 TL1 6.0%",
+          "99 NB9 4.6%"
+        ],
+        "water_98_pct": 0.17,
+        "wui_developed_cells_r3": 1608
       }
     }
   }

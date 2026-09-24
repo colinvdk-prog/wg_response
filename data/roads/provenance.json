@@ -8,20 +8,16 @@
         -106.76554,
         39.290939
       ],
-      "checked_utc": "2026-09-24T03:43:08Z",
-      "fetched_utc": "2026-09-24T03:43:08Z",
+      "checked_utc": "2026-09-24T05:12:41Z",
+      "fetched_utc": "2026-09-24T03:43:11Z",
       "name": "Aspen / Snowmass Village, CO",
-      "status": "fetched",
+      "status": "cached",
       "summary": {
-        "component_nodes_dropped": 30,
-        "components": 15,
         "edges": 3456,
         "fetch_seconds": 2.4,
         "file_kb": 510.9,
         "largest_component_node_pct": 98.97,
         "nodes": 2882,
-        "raw_way_nodes": 23872,
-        "self_loops_dropped": 82,
         "ways_fetched": 2042
       }
     },
@@ -32,20 +28,16 @@
         -107.01404,
         39.475939
       ],
-      "checked_utc": "2026-09-24T03:47:04Z",
-      "fetched_utc": "2026-09-24T03:47:04Z",
+      "checked_utc": "2026-09-24T05:12:41Z",
+      "fetched_utc": "2026-09-24T03:47:48Z",
       "name": "Basalt / El Jebel / Carbondale, CO",
-      "status": "fetched",
+      "status": "cached",
       "summary": {
-        "component_nodes_dropped": 69,
-        "components": 24,
         "edges": 3858,
         "fetch_seconds": 2.2,
         "file_kb": 484.4,
         "largest_component_node_pct": 97.96,
         "nodes": 3315,
-        "raw_way_nodes": 21744,
-        "self_loops_dropped": 92,
         "ways_fetched": 2277
       }
     },
@@ -56,20 +48,16 @@
         -106.45398,
         39.705939
       ],
-      "checked_utc": "2026-09-24T03:43:08Z",
-      "fetched_utc": "2026-09-24T03:43:08Z",
+      "checked_utc": "2026-09-24T05:12:41Z",
+      "fetched_utc": "2026-09-24T03:45:37Z",
       "name": "Beaver Creek / Avon / Edwards, CO",
-      "status": "fetched",
+      "status": "cached",
       "summary": {
-        "component_nodes_dropped": 55,
-        "components": 7,
         "edges": 3049,
         "fetch_seconds": 11.3,
         "file_kb": 486.6,
         "largest_component_node_pct": 97.8,
         "nodes": 2447,
-        "raw_way_nodes": 23485,
-        "self_loops_dropped": 25,
         "ways_fetched": 1779
       }
     },
@@ -100,20 +88,16 @@
         -106.784879,
         39.730939
       ],
-      "checked_utc": "2026-09-24T03:43:08Z",
-      "fetched_utc": "2026-09-24T03:43:08Z",
+      "checked_utc": "2026-09-24T05:12:41Z",
+      "fetched_utc": "2026-09-24T03:45:56Z",
       "name": "Eagle / Gypsum, CO (corridor base)",
-      "status": "fetched",
+      "status": "cached",
       "summary": {
-        "component_nodes_dropped": 20,
-        "components": 7,
         "edges": 2774,
         "fetch_seconds": 10.8,
         "file_kb": 477.1,
         "largest_component_node_pct": 99.07,
         "nodes": 2124,
-        "raw_way_nodes": 22152,
-        "self_loops_dropped": 40,
         "ways_fetched": 1503
       }
     },
@@ -124,20 +108,16 @@
         -107.215038,
         39.625939
       ],
-      "checked_utc": "2026-09-24T03:43:08Z",
-      "fetched_utc": "2026-09-24T03:43:08Z",
+      "checked_utc": "2026-09-24T05:12:41Z",
+      "fetched_utc": "2026-09-24T03:46:06Z",
       "name": "Glenwood Springs, CO",
-      "status": "fetched",
+      "status": "cached",
       "summary": {
-        "component_nodes_dropped": 59,
-        "components": 16,
         "edges": 3746,
         "fetch_seconds": 2.6,
         "file_kb": 434.0,
         "largest_component_node_pct": 98.11,
         "nodes": 3070,
-        "raw_way_nodes": 19486,
-        "self_loops_dropped": 71,
         "ways_fetched": 2163
       }
     },
@@ -252,20 +232,16 @@
         -106.254902,
         39.715939
       ],
-      "checked_utc": "2026-09-24T03:43:08Z",
-      "fetched_utc": "2026-09-24T03:43:08Z",
+      "checked_utc": "2026-09-24T05:12:41Z",
+      "fetched_utc": "2026-09-24T03:46:16Z",
       "name": "Vail / East Vail / Minturn, CO",
-      "status": "fetched",
+      "status": "cached",
       "summary": {
-        "component_nodes_dropped": 20,
-        "components": 6,
         "edges": 1425,
         "fetch_seconds": 1.8,
         "file_kb": 247.5,
         "largest_component_node_pct": 98.32,
         "nodes": 1170,
-        "raw_way_nodes": 12417,
-        "self_loops_dropped": 8,
         "ways_fetched": 983
       }
     }

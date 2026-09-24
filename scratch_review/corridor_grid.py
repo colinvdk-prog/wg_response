@@ -55,8 +55,9 @@ os.environ.setdefault("PYTHONHASHSEED", "0")
 
 from scratch_review.bench_dispatch import BASE, HORIZON_TICKS  # noqa: E402
 from scratch_review.opt_ember import _burn_dist_m, pool_stats  # noqa: E402
-from wgresponse import geo, simui  # noqa: E402
-from wgresponse.simui import LOCATIONS  # noqa: E402
+from wgresponse import geo, roads, simui  # noqa: E402
+from wgresponse.contracts import seeded_rng  # noqa: E402
+from wgresponse.simui import LOCATIONS, load_tile, wui_cells  # noqa: E402
 
 CORRIDOR = ("vail_co", "beaver_creek_co", "eagle_co", "glenwood_springs_co",
             "basalt_carbondale_co", "aspen_co")
@@ -78,16 +79,23 @@ OUT_DIR = ROOT / "scratch_review" / "corridor"
 BINS = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 8), (8, 12), (12, 16)]
 
 ARMS = {
-    # arm: (in-zone crews, corridor crews from the Eagle base, fire_zone, ticks)
-    "local2": (2, 0, "standard", HORIZON_TICKS),
-    "local4": (4, 0, "standard", HORIZON_TICKS),
-    "mixed2p2": (2, 2, "standard", HORIZON_TICKS),
-    "base1p3": (1, 3, "standard", HORIZON_TICKS),
-    "alerted2": (2, 0, "extended", ALERTED_TICKS),
+    # arm: (in-zone crews, corridor crews, fire_zone, ticks, corridor base)
+    "local2": (2, 0, "standard", HORIZON_TICKS, None),
+    "local4": (4, 0, "standard", HORIZON_TICKS, None),
+    "mixed2p2": (2, 2, "standard", HORIZON_TICKS, "eagle"),
+    "base1p3": (1, 3, "standard", HORIZON_TICKS, "eagle"),
+    "alerted2": (2, 0, "extended", ALERTED_TICKS, None),
     # the corridor fleet in the ALERTED regime: 1 local + 3 from Eagle — with
     # hours of lead the 23-122 min drive should not matter; this arm measures
     # whether that is true community by community
-    "alerted1p3": (1, 3, "extended", ALERTED_TICKS),
+    "alerted1p3": (1, 3, "extended", ALERTED_TICKS, "eagle"),
+    # ROARING FORK BASE sensitivity (program §6.2): the corridor crews come
+    # from Basalt / El Jebel instead of Eagle (Basalt -> Glenwood 34 min,
+    # -> Aspen 40 min under fire traffic; its own community at Eagle's
+    # in-town 8 min) — run on the three Roaring Fork-side communities.
+    "mixed2p2_rf": (2, 2, "standard", HORIZON_TICKS, "basalt"),
+    "base1p3_rf": (1, 3, "standard", HORIZON_TICKS, "basalt"),
+    "alerted1p3_rf": (1, 3, "extended", ALERTED_TICKS, "basalt"),
 }
 DESC = {
     "local2": "2 in-zone crews at the community's safe zones",
@@ -96,20 +104,67 @@ DESC = {
     "base1p3": "1 in-zone + 3 corridor crews from the Eagle base",
     "alerted2": "ALERTED: fire detected ~15 km out (extended tile, 60 h), 2 in-zone crews",
     "alerted1p3": "ALERTED: 1 in-zone + 3 corridor crews from the Eagle base",
+    "mixed2p2_rf": "2 in-zone + 2 corridor crews from a Basalt / El Jebel base",
+    "base1p3_rf": "1 in-zone + 3 corridor crews from a Basalt / El Jebel base",
+    "alerted1p3_rf": "ALERTED: 1 in-zone + 3 corridor crews from a Basalt / El Jebel base",
 }
+ROARING_FORK = ("glenwood_springs_co", "basalt_carbondale_co", "aspen_co")
+
+
+#: PLACEMENT SENSITIVITY (arms suffixed `_road`): the resort tiles carry
+#: LANDFIRE 'developed' cells on the ski mountains (lift stations, on-mountain
+#: restaurants) inside the WUI band the simulator seeds clients into — at
+#: Vail 25% of the grid's placed homes are > 2 km from any road
+#: (scratch_review/corridor_roadless.py). A real client has a driveway, so the
+#: `_road` variant draws the same 40 homes from WUI cells within ROAD_HOME_M
+#: of a road node (same seeded draw law, own namespace) and hands them to the
+#: session through the client_locs seam. No engine change.
+ROAD_HOME_M = 300.0
+_ROAD_POOL: dict = {}
+
+
+def road_homes(key: str, seed: str, n: int) -> list:
+    pool = _ROAD_POOL.get(key)
+    if pool is None:
+        tile, _syn = load_tile(key, cell_m=90.0)
+        g = roads.load_road_graph(key)
+        pool = [p for p in (geo.rc_to_latlon(tile.spec, r, c) for r, c in wui_cells(tile))
+                if g is not None and g.nearest_node(p, ROAD_HOME_M) is not None]
+        _ROAD_POOL[key] = pool
+    rng = seeded_rng("simui-clients-road", str(seed))
+    return rng.sample(pool, n)
+
+
+def base_arm(arm: str) -> str:
+    return arm[:-5] if arm.endswith("_road") else arm
+
+
+def crew_delay_min(map_key: str, base: str) -> float:
+    """Minutes after the first ignition a corridor crew from `base` reaches
+    this community: measured OSM drive time under fire traffic
+    (scratch_review/corridor_roads.py; the all-season graph for Eagle, the
+    community-to-community matrix for a Basalt base; a base's own community
+    uses Eagle's in-town 8 min) + MOBILIZE_MIN."""
+    d = json.load(open(DRIVE_JSON, encoding="utf-8"))
+    if base == "eagle":
+        mins = d["from_eagle_base_all_season"][map_key]["fire_min"]
+    elif base == "basalt":
+        if map_key == "basalt_carbondale_co":
+            mins = d["from_eagle_base"]["eagle_co"]["fire_min"]      # in-town analog
+        else:
+            mins = d["center_to_center"][f"basalt_carbondale_co->{map_key}"]["fire_min"]
+    else:
+        raise ValueError(base)
+    return round(mins + MOBILIZE_MIN, 1)
 
 
 def eagle_delay_min(map_key: str) -> float:
-    """Minutes after the first ignition a corridor crew from the Eagle base
-    reaches this community: measured OSM drive time under fire traffic
-    (scratch_review/corridor_roads.py, all-season graph) + MOBILIZE_MIN."""
-    d = json.load(open(DRIVE_JSON, encoding="utf-8"))
-    return round(d["from_eagle_base_all_season"][map_key]["fire_min"] + MOBILIZE_MIN, 1)
+    return crew_delay_min(map_key, "eagle")
 
 
 def scenarios(map_key: str, arm: str) -> list:
     out = []
-    if ARMS[arm][2] == "extended":
+    if ARMS[base_arm(arm)][2] == "extended":
         for wind_off in WIND_OFFS:
             out.append(dict(map=map_key, wind_off=wind_off, dist=ALERTED_DIST_M,
                             inten="high",
@@ -141,18 +196,20 @@ def _ignite(s, loc, wd, dist_m, inten, extended):
 
 def run_one(job):
     sc, arm = job
-    n_local, n_eagle, fire_zone, ticks = ARMS[arm]
+    n_local, n_eagle, fire_zone, ticks, base = ARMS[base_arm(arm)]
     loc = LOCATIONS[sc["map"]]
     wd = (loc.hazard_wind_dir_deg + sc["wind_off"]) % 360.0
     cfg = dict(CFG)
     delay = None
     if n_eagle:
-        delay = eagle_delay_min(sc["map"])
+        delay = crew_delay_min(sc["map"], base)
         cfg["crew_reinforce_1h_min"] = delay
     if fire_zone == "extended" and not simui.tile_file(sc["map"], fire_zone="extended").exists():
         return dict(seed=sc["seed"], map=sc["map"], arm=arm, error="no_ext_tile")
+    locs = road_homes(sc["map"], sc["seed"], N_CLIENTS) if arm.endswith("_road") else None
     s = simui.SimSession(sc["map"], N_CLIENTS, n_local, seed=sc["seed"],
-                         cfg_overrides=cfg, fire_zone=fire_zone, n_crews_1h=n_eagle)
+                         cfg_overrides=cfg, fire_zone=fire_zone, n_crews_1h=n_eagle,
+                         client_locs=locs)
     if not _ignite(s, loc, wd, sc["dist"], sc["inten"], fire_zone == "extended"):
         return dict(seed=sc["seed"], map=sc["map"], arm=arm, error="off_tile")
     t0 = s._now_s
@@ -218,7 +275,9 @@ def run_arm(arm: str, maps, workers: int):
         with ProcessPoolExecutor(max_workers=min(workers, len(jobs))) as ex:
             rows = list(ex.map(run_one, jobs))
         out = OUT_DIR / f"{arm}__{m}.json"
-        json.dump(dict(arm=arm, map=m, cfg=CFG, crews=ARMS[arm][:2],
+        json.dump(dict(arm=arm, map=m, cfg=CFG, crews=ARMS[base_arm(arm)][:2],
+                       base=ARMS[base_arm(arm)][4],
+                       placement=("road" if arm.endswith("_road") else "wui"),
                        clients=N_CLIENTS, mobilize_min=MOBILIZE_MIN, rows=rows),
                   open(out, "w"), indent=1)
         st = summarize(rows)
@@ -264,7 +323,7 @@ def _pct(pair):
 
 
 def report():
-    files = sorted(glob.glob(str(OUT_DIR / "*.json")))
+    files = sorted(glob.glob(str(OUT_DIR / "*__*.json")))   # <arm>__<map>.json only
     by = {}
     for f in files:
         d = json.load(open(f, encoding="utf-8"))
@@ -281,26 +340,27 @@ def report():
              "coated among homes the fire reached 3-5 h after detection (the '4 hours of",
              "notice' band). Violations / overrun ticks must be 0. scratch_review/corridor_grid.py.",
              ""]
+    reactive = [a for a in ("local2", "local4", "mixed2p2", "base1p3",
+                            "local2_road", "local4_road", "mixed2p2_road", "base1p3_road",
+                            "mixed2p2_rf", "base1p3_rf", "mixed2p2_rf_road", "base1p3_rf_road")
+                if a in by]
     lines += ["## Reactive arms — pooled over the six communities", "",
               "| arm | scenarios | belt e1000 | front-reached | coated / threatened | **3-5 h** | 6-8 h | viol / ovt | min margin h |",
               "|---|---|---|---|---|---|---|---|---|"]
-    for arm in ("local2", "local4", "mixed2p2", "base1p3"):
-        if arm not in by:
-            continue
+    for arm in reactive:
         rows = [r for m in by[arm] for r in by[arm][m]]
         st = summarize(rows)
-        lines.append(f"| {arm} — {DESC[arm]} | {st['n_scen']} | {_pct(st['e1000'])} | {_pct(st['front'])} "
+        desc = DESC.get(arm) or (DESC[base_arm(arm)] + " — homes within 300 m of a road")
+        lines.append(f"| {arm} — {desc} | {st['n_scen']} | {_pct(st['e1000'])} | {_pct(st['front'])} "
                      f"| {_pct(st['threatened'])} | **{_pct(st['four_h'])}** | {_pct(st['six_eight_h'])} "
                      f"| {st['viol']} / {st['ov_ticks']} | {st['min_margin_h']} |")
     lines += ["", "## Per community (belt e1000 · coated/threatened · 3-5 h band)", "",
-              "| community | Eagle delay min | " + " | ".join(a for a in ("local2", "local4", "mixed2p2", "base1p3") if a in by) + " |",
-              "|---|---|" + "---|" * len([a for a in ("local2", "local4", "mixed2p2", "base1p3") if a in by])]
+              "| community | Eagle delay min | " + " | ".join(reactive) + " |",
+              "|---|---|" + "---|" * len(reactive)]
     for m in CORRIDOR:
         cells = []
         delay = "—"
-        for arm in ("local2", "local4", "mixed2p2", "base1p3"):
-            if arm not in by:
-                continue
+        for arm in reactive:
             rows = by[arm].get(m)
             if not rows:
                 cells.append("not run")
@@ -312,10 +372,12 @@ def report():
             cells.append(f"{st['e1000'][2]:.1f}% · {st['threatened'][0]}/{st['threatened'][1]} · "
                          f"{_pct(st['four_h'])}{flag}")
         lines.append(f"| {LOCATIONS[m].name} | {delay} | " + " | ".join(cells) + " |")
-    for arm in ("alerted2", "alerted1p3"):
+    for arm in ("alerted2", "alerted1p3", "alerted1p3_rf",
+                "alerted2_road", "alerted1p3_road", "alerted1p3_rf_road"):
         if arm not in by:
             continue
-        lines += ["", f"## Alerted regime — {DESC[arm]} (fire detected ~15 km out, 60 h)", "",
+        desc = DESC.get(arm) or (DESC[base_arm(arm)] + " — homes within 300 m of a road")
+        lines += ["", f"## Alerted regime — {desc} (fire detected ~15 km out, 60 h)", "",
                   "| community | runs | first-alert lead h (min-max) | coated / threatened | belt e1000 | viol / ovt | errors |",
                   "|---|---|---|---|---|---|---|"]
         for m in CORRIDOR:
@@ -333,9 +395,8 @@ def report():
     lines += ["", "## Lead-time bands, pooled (coated / reached)", "",
               "| arm | " + " | ".join(f"{lo}-{hi} h" for lo, hi in BINS) + " |",
               "|---|" + "---|" * len(BINS)]
-    for arm in ("local2", "local4", "mixed2p2", "base1p3", "alerted2", "alerted1p3"):
-        if arm not in by:
-            continue
+    for arm in reactive + [a for a in ("alerted2", "alerted1p3", "alerted1p3_rf", "alerted2_road",
+                                       "alerted1p3_road", "alerted1p3_rf_road") if a in by]:
         rows = [r for m in by[arm] for r in by[arm][m]]
         st = summarize(rows)
         lines.append(f"| {arm} | " + " | ".join(_pct(st["bins"][f"{lo}-{hi}h"]) for lo, hi in BINS) + " |")
@@ -348,7 +409,7 @@ def report():
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--arm", choices=sorted(ARMS))
+    ap.add_argument("--arm", choices=sorted(ARMS) + sorted(a + "_road" for a in ARMS))
     ap.add_argument("--maps", nargs="*", default=list(CORRIDOR))
     ap.add_argument("--workers", type=int, default=12)
     ap.add_argument("--report", action="store_true")
