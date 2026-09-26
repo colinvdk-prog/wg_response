@@ -447,3 +447,102 @@ client-placement core (the standard footprint), which must stay populated.
 Mountains; non-burnable by construction, no nodata.) All twelve corridor
 tiles pass `tests/test_sim_tiles.py`, including the extended uniform-cell-size
 pin.
+
+### Eagle → Vail corridor preset (2026-09-25)
+
+Founder request 2026-09-25: *"expand the area for Vail so that the entire
+Eagle to Vail corridor can be modeled at once."* New preset `eagle_vail_co`
+(**Eagle → Vail corridor, CO**): ONE standard tile over the whole I-70 Eagle
+Valley, Gypsum / Eagle County airport to East Vail, so a fire near Eagle,
+crews at the exit-147 base and homes in Edwards, Avon, Beaver Creek and Vail
+share one session. `vail_co`, `beaver_creek_co` and `eagle_co` (and every grid
+result pinned to them) are untouched.
+
+- **Geometry** — center 39.635, −106.620, half-width 30 km: bbox W −106.969935,
+  S 39.365507, E −106.270065, N 39.904493 (~60 × 60 km; Gypsum exit 140 sits
+  2.4 km inside the west edge, East Vail exit 180 1.5 km inside the east edge),
+  **300 × 300 @ 200 m** (90,000 cells, 2.25× a standard tile). Per-location
+  geometry is a registry field — `SimLocation.tile_half_m` / `tile_cell_m`
+  (defaults 9 km / 90 m) mirrored by `TILE_GEOMETRY` in
+  `tools/fetch_sim_tiles.py`, an AOI ladder 60 → 56 → 52 km at 200 m because
+  the LFPS maximum AOI is undocumented. Every other key keeps the 18 km @ 90 m
+  law, and its tile, road bbox and provenance stay byte-identical (the 12
+  presets' placement, notes and 3-tick state hashes were diffed before/after).
+- **Why 200 m (measured 2026-09-25, this machine, other jobs running).**
+  SimSession tick wall time, 40 clients, 8 crews, one HIGH fire WSW of the
+  Eagle base, 24 ticks, `set_wind(260)` before tick 8, real LANDFIRE decodes of
+  the same LFPS job zip, roads on, 6 runs per row:
+
+  | grid | ignition tick | wind-change tick | other ticks, median / max |
+  |---|---|---|---|
+  | **300 × 300 @ 200 m (chosen)** | 0.50–0.71 s | 0.45–0.60 s | 0.01 / 0.02 s |
+  | 400 × 400 @ 150 m | 0.79–1.09 s | 0.73–1.04 s | 0.02 / 0.06 s |
+  | 200 × 200 @ 300 m (pre-fetch proxy, roads off) | 0.23 s | 0.23 s | 0.005 / 0.01 s |
+  | reference: `eagle_co` 200 × 200 @ 90 m | 0.41–0.59 s | 0.56–0.86 s | 0.01 / 0.03 s |
+
+  EXTREME intensity: 200 m 0.94–1.10 s / 0.80–1.03 s; 150 m 1.52–2.92 s /
+  1.79–2.29 s; `eagle_co` 0.98–1.14 s / 0.82–1.06 s. Through the public
+  page's session defaults (`POST /api/sim/new`: spotting + grass floor,
+  plan-on-roads, 24 h coating hold) every world-change tick is heavier —
+  ember-spotting ensembles plus road-routed dispatch:
+
+  | grid (page defaults) | ignition tick | wind-change tick | other ticks median |
+  |---|---|---|---|
+  | **200 m (chosen)** | 4.1–5.2 s | 6.0–6.1 s | 0.06 s |
+  | 150 m | 8.9–9.4 s | 12.0–14.8 s | 0.13 s |
+  | 300 m | 2.3–2.6 s | 6.4–7.7 s | 0.03 s |
+  | reference: `eagle_co` 90 m | 6.8–9.6 s | 2.2–2.6 s | 0.02 s |
+
+  150 m doubles every grid-bound cost; 300 m trims only the ignition tick (the
+  wind-change tick is road-routed dispatch on the 6.8k-node graph either way)
+  while coarsening the WUI band and the 300 m road rule to one 300 m cell.
+  **Honest caveat:** with the page defaults a world change (ignite, wind dial)
+  costs 4–6 s at 200 m — inside the envelope today's 90 m `eagle_co` already
+  shows at ignition (7–10 s), but above the ~2–3 s poll-comfort target;
+  ordinary ticks stay ~60 ms. A 200-client / 12-crew / two-extreme-fire
+  stress peaks at 8.3 s (the dispatch local search — `eagle_co` 10.3 s,
+  `beaver_creek_co` 4.9 s on the same stress). Coarse-cell physics note: at
+  200 m the tiered corridor erosion's slow tier (150 m, euclidean floor)
+  rounds to 0 cells and the shrub tier (200 m) to 1 — the regime the 240 m
+  extended tiles already run in.
+- **Tile provenance** — fetched 2026-09-26T00:57Z (2026-09-25 PDT) by
+  `py -3 tools/fetch_sim_tiles.py --only eagle_vail_co`: one LFPS job, 438 s,
+  first attempt on the 60 km rung — **no step-down** (`aoi_km` 60,
+  `stepped_down` false in `data/tiles/provenance.json`); 16.2 MB job zip cached
+  in `out/lfps_sim_cache` (re-decoding it at 200 m reproduces the committed
+  tile byte for byte). Pins: `tests/test_sim_tiles.py` (corridor section).
+
+  | key | bytes | grid | burnable | dev 91/93 | water | WUI dev cells (r≤3) | elev m | slope max | top fuels (% of cells) |
+  |---|---|---|---|---|---|---|---|---|---|
+  | eagle_vail_co | 2,095,361 | 300×300 @ 200 m | 91.1% | 2.2% | 0.5% | 1,959 | 1,905–4,234 | 63° | TU5 22.2, TU1 18.9, TL3 9.7 |
+
+- **Roads** — the road bbox law now takes the location's own tile half-width
+  (`SimLocation.tile_half_m`; 9 km for every other key, their recorded bboxes
+  reproduced exactly): 30 km ∪ the 1.5 km zone pads → W −106.970328,
+  S 39.365204, E −106.269477, N 39.904796. `data/roads/eagle_vail_co.wgr`,
+  fetched 2026-09-26 by `py -3 tools/fetch_sim_roads.py --only eagle_vail_co`
+  (one Overpass request; two HTTP 504s, success on the tool's third attempt):
+  5,339 ways → **6,836 nodes / 8,462 edges**, LCC 93.2% (500 island nodes in
+  48 islands dropped), 1,747 KB; loads in 0.06–0.10 s (budget 2 s); all six
+  zones snap within 270 m; Eagle base → East Vail exit 180 is a 56.1 km I-70
+  route (47.7 min at the 1.4× fire-traffic factor), A* 7–8 ms.
+- **Safe zones** (PLANNING-GRADE, the same coordinates the per-community
+  presets carry): I-70 exit 147 Eagle (base — listed first, so in-zone crew 1
+  stages there; crews round-robin west to east), exit 140 Gypsum / airport,
+  exit 163 Edwards, exit 167 Avon, exit 171 Dowd Junction, exit 180 East Vail.
+  Hazard wind 240 (the Eagle Valley's WSW).
+- **Placement** — `SimLocation.place_near_road_m = 300`: the seeded WUI draw is
+  restricted to band cells within 300 m of a road node (program §3.7's
+  driveway rule as a registry field; 0 = off, byte-identical, for every other
+  preset). Of the tile's 6,527 WUI band cells 3,699 (56.7%) qualify; 1,053
+  (16.1%) sit > 2 km from any road (ski-mountain 'developed' cells). No road
+  graph loaded → whole-band draw plus a loud note.
+- **Fire zone** — no extended tile by design (`extended_zone=False`; the tile
+  tool's `NO_EXTENDED` makes `--extended` skip the key): the standard tile
+  already reaches ~30 km from center. A session asking for `extended` loads
+  the standard tile with a loud "NO extended tile by design" note and no
+  horizon floor; the page toasts it and re-syncs the selector.
+- **UI** — Location list + `SIM_LOCATIONS` entry; the map fits
+  `state.terrain.bbox` and the RLE/ring layers read `nrows`/`ncols`, so the
+  60 km tile frames and renders with no 18 km assumption (the zone
+  selector's "Standard — 18 km community" label is the one generic string).

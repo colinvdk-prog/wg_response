@@ -126,6 +126,17 @@ and road laws as the five original simulator locations
 (`docs/SIMULATOR_DESIGN.md`, "Vail → Aspen corridor presets"). No city-limits
 polygon is used: in these valleys the mountain WUI band *is* the towns.
 
+A seventh, whole-valley preset — `eagle_vail_co`, **Eagle → Vail corridor**
+(founder 2026-09-25) — puts the entire I-70 Eagle Valley from Gypsum to East
+Vail on one ~60 × 60 km tile at 200 m with the six I-70 interchange anchors
+(the Eagle base first), so the Eagle-base question plays in a single
+session: a fire near Eagle, crews rolling from exit 147, homes from Edwards to
+Vail. It complements the three per-community Eagle Valley presets the grid in
+§3 was measured on (their tiles, zones and results are unchanged); its homes
+seed only within 300 m of a road (the §3.7 rule), and it has no extended tile —
+the standard tile already spans ~30 km each way (`docs/SIMULATOR_DESIGN.md`,
+"Eagle → Vail corridor preset").
+
 ### 2.2 Drive times from the Eagle base — measured on OSM
 
 Corridor road graph: OSM major roads (motorway through tertiary, plus links)

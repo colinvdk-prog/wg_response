@@ -100,21 +100,63 @@ def _burnable_point(session):
 # LOCATIONS registry
 # ---------------------------------------------------------------------------
 
+#: the whole-valley corridor preset (2026-09-25) — its own explicit pin below
+WHOLE_VALLEY = "eagle_vail_co"
+
+
 def test_locations_registry_shape():
     assert sorted(LOCATIONS) == [
         # the five originals + Rancho Santa Fe (2026-08-01) + the six
-        # Vail -> Aspen corridor communities (2026-09-23)
+        # Vail -> Aspen corridor communities (2026-09-23) + the whole-valley
+        # Eagle -> Vail corridor (2026-09-25)
         "aspen_co", "basalt_carbondale_co", "beaver_creek_co", "boulder_co",
-        "eagle_co", "glenwood_springs_co", "malibu_ca", "paradise_ca",
-        "park_city_ut", "rancho_santa_fe_ca", "santa_rosa_ca", "vail_co"]
+        "eagle_co", "eagle_vail_co", "glenwood_springs_co", "malibu_ca",
+        "paradise_ca", "park_city_ut", "rancho_santa_fe_ca", "santa_rosa_ca",
+        "vail_co"]
     for key, loc in LOCATIONS.items():
         assert loc.key == key
         assert loc.tile_path == f"data/tiles/{key}.wgt"
         assert 0.0 <= loc.hazard_wind_dir_deg < 360.0
+        if key == WHOLE_VALLEY:
+            continue      # ~60 km tile, 6 zones: test_whole_valley_registry_shape
+        # the 18 km community law: 2-3 zones 3-13 km out, standard geometry,
+        # an extended product, whole-band placement
         assert 2 <= len(loc.safe_zones) <= 3
         for z in loc.safe_zones:
             d_km = geo.haversine_m(loc.center, z.loc) / 1000.0
             assert 3.0 <= d_km <= 13.0, (key, z.zone_id, d_km)
+        assert (loc.tile_half_m, loc.tile_cell_m) == (9_000.0, 90.0), key
+        assert loc.extended_zone is True, key
+        assert loc.place_near_road_m == 0.0, key
+
+
+def test_whole_valley_registry_shape():
+    """The Eagle -> Vail corridor preset (founder 2026-09-25): ONE ~60x60 km
+    @ 200 m tile, up to six planning-grade I-70 anchors ANYWHERE inside it
+    (>= 1 km from every edge), the Eagle base first, hazard wind 240,
+    road-proximity placement armed at 300 m, no extended product, no
+    city-limits polygon."""
+    loc = LOCATIONS[WHOLE_VALLEY]
+    assert loc.name == "Eagle → Vail corridor, CO"
+    assert loc.center == LatLon(39.635, -106.62)
+    assert loc.hazard_wind_dir_deg == 240.0
+    assert (loc.tile_half_m, loc.tile_cell_m) == (30_000.0, 200.0)
+    assert loc.extended_zone is False
+    assert loc.place_near_road_m == 300.0
+    assert loc.bounds_poly == ()
+    assert 2 <= len(loc.safe_zones) <= 6
+    assert loc.safe_zones[0].loc == LatLon(39.6605, -106.8285)   # exit 147
+    assert "corridor base" in loc.safe_zones[0].name
+    inner = central_window_bbox(loc.center, half_m=loc.tile_half_m - 1_000.0)
+    ids = set()
+    for z in loc.safe_zones:
+        assert z.zone_id.startswith(f"{WHOLE_VALLEY}-z"), z.zone_id
+        assert inner.contains(z.loc), (z.zone_id, z.loc)
+        ids.add(z.zone_id)
+    assert len(ids) == len(loc.safe_zones)
+    # it spans the valley: Gypsum at one end, East Vail at the other
+    lons = sorted(z.loc.lon for z in loc.safe_zones)
+    assert lons[0] < -106.90 and lons[-1] > -106.30, lons
 
 
 def test_design_doc_centers_pinned():
@@ -1338,7 +1380,11 @@ def _far_burnable_ignition(session, min_km=20.0, max_km=23.5):
                 f"{session._loc.key} — re-pin the scan")
 
 
-@pytest.mark.parametrize("key", sorted(LOCATIONS))
+# Presets with an extended product (SimLocation.extended_zone); the whole-
+# valley eagle_vail_co has none BY DESIGN — its loud standard fallback is
+# pinned in tests/test_corridor_vail_aspen.py instead of skipping here.
+@pytest.mark.parametrize("key", sorted(k for k, loc in LOCATIONS.items()
+                                       if loc.extended_zone))
 def test_fire_zone_extended_real_tile_integration(key):
     """REAL committed extended tile per location (loud per-tile skip while
     the tile agent's fetch is incomplete): the wide tile loads, its bbox is

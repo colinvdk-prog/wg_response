@@ -210,6 +210,56 @@
         "wui_developed_cells_r3": 2985
       }
     },
+    "eagle_vail_co": {
+      "aoi_failed_km": [],
+      "aoi_km": 60,
+      "aoi_ladder_km": [
+        60,
+        56,
+        52
+      ],
+      "bbox_half_m": 30000.0,
+      "bbox_wsen": [
+        -106.969935,
+        39.365507,
+        -106.270065,
+        39.904493
+      ],
+      "cell_m": 200.0,
+      "center_lat": 39.635,
+      "center_lon": -106.62,
+      "checked_utc": "2026-09-26T00:57:25Z",
+      "fetched_utc": "2026-09-26T00:57:25Z",
+      "layers": "LF2024_FBFM40;LF2020_SlpD;LF2020_Asp;LF2020_Elev",
+      "name": "Eagle \u2192 Vail corridor, CO",
+      "status": "fetched",
+      "stepped_down": false,
+      "summary": {
+        "burnable_pct": 91.06,
+        "bytes": 2095361,
+        "cell_m": 200.0,
+        "codes_outside_namespace": {},
+        "developed_91_93_pct": 2.18,
+        "elev_max_m": 4234.0,
+        "elev_min_m": 1905.0,
+        "fetch_seconds": 442.1,
+        "file": "data/tiles/eagle_vail_co.wgt",
+        "ncols": 300,
+        "nodata_pct": 0.0,
+        "nrows": 300,
+        "slope_max_deg": 63.0,
+        "top_codes": [
+          "165 TU5 22.2%",
+          "161 TU1 18.9%",
+          "183 TL3 9.7%",
+          "142 SH2 7.5%",
+          "185 TL5 5.8%",
+          "122 GS2 5.6%"
+        ],
+        "water_98_pct": 0.51,
+        "wui_developed_cells_r3": 1959
+      }
+    },
     "glenwood_springs_co": {
       "bbox_half_m": 9000.0,
       "bbox_wsen": [

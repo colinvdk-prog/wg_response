@@ -1203,20 +1203,40 @@ def _simui_auth_setup() -> bool:
     return True
 
 
+def _console_line(line: str) -> str:
+    """`line` as the current stdout can encode it: unencodable characters
+    (the 'Eagle → Vail corridor, CO' arrow on a Windows cp1252 pipe) become
+    replacement characters instead of a UnicodeEncodeError that would kill
+    the simui startup; an encodable line is returned unchanged."""
+    enc = getattr(sys.stdout, "encoding", None) or "utf-8"
+    try:
+        line.encode(enc)
+    except UnicodeEncodeError:
+        return line.encode(enc, errors="replace").decode(enc)
+    except LookupError:
+        pass
+    return line
+
+
 def _simui_print_locations(simui_mod) -> None:
-    """The five design-doc locations + on-disk tile availability (standard
-    tile + the FIRE ZONE extended wide-area tile, contracts FIRE ZONE)."""
+    """The simulator locations + on-disk tile availability (standard tile +
+    the FIRE ZONE extended wide-area tile, contracts FIRE ZONE). A preset
+    with no extended product BY DESIGN (SimLocation.extended_zone False —
+    the whole-valley eagle_vail_co) says so instead of a refetch hint."""
     print("locations (docs/SIMULATOR_DESIGN.md):")
     for key in sorted(simui_mod.LOCATIONS):
         loc = simui_mod.LOCATIONS[key]
         tile_path = simui_mod.tile_file(key)
         avail = (f"tile cached ({loc.tile_path})" if tile_path.exists()
                  else "tile MISSING -> synthetic fallback + amber banner")
-        ext = ("extended zone cached"
-               if simui_mod.tile_file(key, fire_zone="extended").exists()
-               else "extended zone MISSING -> standard fallback "
-                    "(tools/fetch_sim_tiles.py --extended)")
-        print(f"  {key:<14} {loc.name:<34} {avail} · {ext}")
+        if not getattr(loc, "extended_zone", True):
+            ext = "standard zone only (no extended tile by design)"
+        else:
+            ext = ("extended zone cached"
+                   if simui_mod.tile_file(key, fire_zone="extended").exists()
+                   else "extended zone MISSING -> standard fallback "
+                        "(tools/fetch_sim_tiles.py --extended)")
+        print(_console_line(f"  {key:<14} {loc.name:<34} {avail} · {ext}"))
 
 
 def _cmd_simui(args) -> int:

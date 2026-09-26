@@ -365,6 +365,11 @@
         <option value="glenwood_springs_co">Glenwood Springs, CO</option>
         <option value="basalt_carbondale_co">Basalt / El Jebel / Carbondale, CO</option>
         <option value="aspen_co">Aspen / Snowmass Village, CO</option>
+        <!-- EAGLE -> VAIL CORRIDOR (2026-09-25): the whole I-70 Eagle Valley
+             (Gypsum to East Vail, ~60 km @ 200 m) on ONE tile, six I-70
+             safe zones, the Eagle base first; standard zone only (no
+             extended tile by design — the standard tile already spans it) -->
+        <option value="eagle_vail_co">Eagle → Vail corridor, CO</option>
       </select>
       <!-- FIRE ZONE (founder request 2026-07-10): extended loads the
            wide-area <key>_ext tile so ignition can start tens of km out;
@@ -891,6 +896,8 @@ const SIM_LOCATIONS = {   // key -> [name, canonical hazard wind FROM deg]
   glenwood_springs_co: ["Glenwood Springs, CO", 240],
   basalt_carbondale_co: ["Basalt / El Jebel / Carbondale, CO", 225],
   aspen_co: ["Aspen / Snowmass Village, CO", 225],
+  // Eagle -> Vail whole-valley corridor (2026-09-25): WSW 240, as above.
+  eagle_vail_co: ["Eagle → Vail corridor, CO", 240],
 };
 const POLL_MS = 1000;              // 1 s state poll while RUNNING (adaptive)
 const COLORS = { none:"#8b93a1", notice_72h:"#f2b04c", watch:"#ff8c1a",

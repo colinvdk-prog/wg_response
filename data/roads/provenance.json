@@ -101,6 +101,30 @@
         "ways_fetched": 1503
       }
     },
+    "eagle_vail_co": {
+      "bbox_wsen": [
+        -106.970328,
+        39.365204,
+        -106.269477,
+        39.904796
+      ],
+      "checked_utc": "2026-09-26T01:01:02Z",
+      "fetched_utc": "2026-09-26T01:01:02Z",
+      "name": "Eagle \u2192 Vail corridor, CO",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 500,
+        "components": 49,
+        "edges": 8462,
+        "fetch_seconds": 2.8,
+        "file_kb": 1747.1,
+        "largest_component_node_pct": 93.18,
+        "nodes": 6836,
+        "raw_way_nodes": 90412,
+        "self_loops_dropped": 103,
+        "ways_fetched": 5339
+      }
+    },
     "glenwood_springs_co": {
       "bbox_wsen": [
         -107.424962,

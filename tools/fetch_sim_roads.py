@@ -19,6 +19,11 @@ fetch_sim_tiles law) but three safe zones sit just OUTSIDE that box
 (malibu z1 Zuma Beach, santa_rosa z3 Windsor, park_city z3 Jeremy Ranch).
 The road bbox is therefore the UNION of geo.bbox_around([center], 9 km)
 and geo.bbox_around(safe_zone_locs, 1.5 km), all read from LOCATIONS.
+PER-LOCATION GEOMETRY (2026-09-25): the center pad is the location's own
+STANDARD-tile half-width, SimLocation.tile_half_m — 9 km for every preset
+except the whole-valley eagle_vail_co (30 km: Gypsum to East Vail), whose
+roads must cover its entire ~60 km tile. At the 9 km default the bbox of
+every existing key is byte-identical (their provenance records it).
 
 OVERPASS ETIQUETTE (https://overpass-api.de policy): ONE request at a time
 (strictly sequential), identifying User-Agent with a contact address, a
@@ -89,10 +94,18 @@ PROVENANCE_PATH = os.path.join(ROAD_DIR, "provenance.json")
 # BBox (all coords come from wgresponse.simui.LOCATIONS)
 # ---------------------------------------------------------------------------
 
+def tile_half_m(loc) -> float:
+    """The location's STANDARD-tile half-width (SimLocation.tile_half_m;
+    TILE_HALF_M = the 9 km law when a registry entry predates the field)."""
+    return float(getattr(loc, "tile_half_m", TILE_HALF_M))
+
+
 def bbox_for(loc) -> BBox:
-    """Union of the ~18x18 km tile box around the center and 1.5 km pads
-    around every safe zone (three zones sit outside the plain tile box)."""
-    center_box = geo.bbox_around([loc.center], pad_m=TILE_HALF_M)
+    """Union of the tile box around the center (the location's own tile
+    half-width — ~18x18 km for every preset but eagle_vail_co's ~60 km) and
+    1.5 km pads around every safe zone (three zones sit outside the plain
+    18 km tile box)."""
+    center_box = geo.bbox_around([loc.center], pad_m=tile_half_m(loc))
     zone_box = geo.bbox_around([z.loc for z in loc.safe_zones], pad_m=ZONE_PAD_M)
     return BBox(west=min(center_box.west, zone_box.west),
                 south=min(center_box.south, zone_box.south),
@@ -303,7 +316,8 @@ def fetch_one(loc, force: bool) -> "tuple[str, object]":
     bbox = bbox_for(loc)
     print(f"[{key}] {loc.name}")
     print(f"  bbox W {bbox.west:.5f}  S {bbox.south:.5f}  E {bbox.east:.5f}  "
-          f"N {bbox.north:.5f}  (tile 9 km + safe-zone 1.5 km pads)")
+          f"N {bbox.north:.5f}  (tile {tile_half_m(loc) / 1000.0:g} km + "
+          f"safe-zone 1.5 km pads)")
     if os.path.exists(path) and not force:
         print(f"  exists — skipping (use --force to refetch): {path}")
         return "cached", _summary_from_disk(key)
@@ -411,6 +425,12 @@ def main(argv=None) -> int:
                     choices=sorted(LOCATIONS),
                     help="restrict to one location key (repeatable)")
     args = ap.parse_args(argv)
+    # A display name the console cannot encode ('Eagle → Vail corridor, CO'
+    # on a Windows cp1252 pipe) prints as backslash escapes, never a crash.
+    try:
+        sys.stdout.reconfigure(errors="backslashreplace")
+    except (AttributeError, ValueError):
+        pass
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     results: dict = {}

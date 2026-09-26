@@ -4,10 +4,14 @@ Contract seam (contracts MODULE SEAMS; founder request 2026-07-09;
 docs/SIMULATOR_DESIGN.md is the spec of record):
 
     LOCATIONS                    real presets (five originals, Rancho Santa Fe,
-                                 the six Vail->Aspen corridor communities)
+                                 the six Vail->Aspen corridor communities, the
+                                 whole-valley Eagle->Vail corridor)
                                  -> SimLocation(name, center,
                                  canonical hazard wind dir_deg, tile path
-                                 data/tiles/<key>.wgt, 2-3 safe-zone anchors)
+                                 data/tiles/<key>.wgt, 2-3 safe-zone anchors
+                                 (the Eagle->Vail corridor: 6), optional
+                                 per-location tile geometry / road-proximity
+                                 placement — see SimLocation)
     load_tile(key, ...)          cached ascii tile if present, else a
                                  SyntheticTerrain fallback CLEARLY flagged
                                  (banner 'SYNTHETIC TERRAIN — rehearsal grade')
@@ -70,8 +74,9 @@ cells) so ignition can sit tens of km out and the full 72h NOTICE -> WATCH
 -> 24h EXTREME arc plays out. CLIENTS ARE ALWAYS PLACED IN THE CENTRAL
 ~18 km COMMUNITY WINDOW regardless of zone: on extended tiles the WUI
 placement mask is restricted to the sub-grid of cells whose CENTERS fall
-inside the standard-tile footprint (STANDARD_ZONE_HALF_M around the
-location center — computed from coordinates, never hardcoded indices).
+inside the standard-tile footprint (the location's tile_half_m —
+STANDARD_ZONE_HALF_M for every preset with an extended tile — around the
+location center, computed from coordinates, never hardcoded indices).
 Ignition may be anywhere on the loaded tile; safe zones and crew staging
 are unchanged (lat/lon anchors). Extended sessions default cfg.horizon_h
 to max(horizon_h, 120.0) UNLESS the caller explicitly set horizon_h in
@@ -521,6 +526,31 @@ class SimLocation:
     #: = whole-tile WUI band, byte-identical for every existing location.
     #: PLANNING-GRADE community boundaries, not surveyed parcels.
     bounds_poly: tuple = ()
+    #: PER-LOCATION TILE GEOMETRY (founder 2026-09-25 "expand the area for
+    #: Vail so that the entire Eagle to Vail corridor can be modeled at
+    #: once"): half-extent and cell size (meters) of this preset's STANDARD
+    #: tile as fetched by tools/fetch_sim_tiles.py (the TILE_GEOMETRY rung
+    #: that won; tests/test_sim_tiles.py pins the committed tile against
+    #: both). Defaults = the ~18x18 km @ 90 m law of every other preset.
+    #: tile_half_m also sizes the FIRE ZONE central client window on an
+    #: extended tile and the road-fetch bbox (tools/fetch_sim_roads.py) — at
+    #: the default both are byte-identical to the pre-field behaviour.
+    tile_half_m: float = STANDARD_ZONE_HALF_M
+    tile_cell_m: float = 90.0
+    #: FIRE ZONE: False = NO extended (_ext) tile BY DESIGN — the standard
+    #: tile already spans far ignitions (tools/fetch_sim_tiles NO_EXTENDED).
+    #: A session requesting 'extended' still falls back LOUDLY to the
+    #: standard tile; the note just states the real reason.
+    extended_zone: bool = True
+    #: ROAD-PROXIMITY PLACEMENT (meters): > 0 restricts the seeded WUI client
+    #: draw to band cells whose centers lie within this distance of a road-
+    #: graph node — homes with a driveway, not LANDFIRE 'developed' cells on
+    #: the ski mountains (lift stations, on-mountain restaurants: 25% of the
+    #: corridor grid's Vail homes sat > 2 km from any road, program §3.7).
+    #: 0.0 (default) = the whole WUI band, byte-identical for every existing
+    #: preset. No road graph loaded -> whole-band fallback, noted LOUDLY.
+    #: A different field from bounds_poly (a road rule, not a boundary).
+    place_near_road_m: float = 0.0
 
 
 LOCATIONS = {
@@ -725,6 +755,48 @@ LOCATIONS = {
             SafeZone("aspen_co-z3", LatLon(39.2125, -106.9370),
                      "Snowmass Village Town Park"),
         )),
+    # ---------------------------------------------------------------------
+    # EAGLE -> VAIL CORRIDOR (founder 2026-09-25 "expand the area for Vail
+    # so that the entire Eagle to Vail corridor can be modeled at once"):
+    # ONE ~60x60 km tile @ 200 m (300x300) over the whole I-70 Eagle Valley,
+    # Gypsum / Eagle County airport (W edge -106.970) to East Vail (E edge
+    # -106.270), so a fire near Eagle and crews based at the exit-147 base
+    # play against homes in Edwards, Avon, Beaver Creek and Vail in ONE
+    # session. The per-community presets above (vail_co, beaver_creek_co,
+    # eagle_co) are untouched. Six PLANNING-GRADE I-70 interchange anchors,
+    # the Eagle base FIRST (in-zone crew 1 stages there; crews round-robin
+    # west to east). Hazard wind 240 as on every Eagle Valley tile. Clients
+    # seed only on WUI cells within 300 m of a road node (the resort tiles'
+    # 'developed' ski-mountain cells are not homes; program §3.7). No
+    # extended tile by design: the standard tile already reaches ~30 km.
+    # ---------------------------------------------------------------------
+    "eagle_vail_co": SimLocation(
+        key="eagle_vail_co", name="Eagle → Vail corridor, CO",
+        center=LatLon(39.635, -106.620), hazard_wind_dir_deg=240.0,
+        tile_path="data/tiles/eagle_vail_co.wgt",
+        safe_zones=(
+            # I-70 exit 147 / Eby Creek Rd (Eagle) -- the corridor base
+            # (PD Mountain Resorts HQ), ~18.1 km W
+            SafeZone("eagle_vail_co-z1", LatLon(39.6605, -106.8285),
+                     "I-70 exit 147 / Eagle (corridor base)"),
+            # I-70 exit 140 / Gypsum, Cooley Mesa Rd (airport), ~27.6 km W
+            SafeZone("eagle_vail_co-z2", LatLon(39.6465, -106.9425),
+                     "I-70 exit 140 / Gypsum, airport"),
+            # I-70 exit 163 / Edwards Access Rd, ~2.4 km NE
+            SafeZone("eagle_vail_co-z3", LatLon(39.6495, -106.5985),
+                     "I-70 exit 163 / Edwards"),
+            # I-70 exit 167 / Avon Rd, ~8.3 km E
+            SafeZone("eagle_vail_co-z4", LatLon(39.6365, -106.5230),
+                     "I-70 exit 167 / Avon"),
+            # I-70 exit 171 / Dowd Junction (US-24), ~15.8 km E
+            SafeZone("eagle_vail_co-z5", LatLon(39.6150, -106.4370),
+                     "I-70 exit 171 / Dowd Junction"),
+            # I-70 exit 180 / East Vail (Bighorn Rd), ~28.5 km E
+            SafeZone("eagle_vail_co-z6", LatLon(39.6305, -106.2870),
+                     "I-70 exit 180 / East Vail"),
+        ),
+        tile_half_m=30_000.0, tile_cell_m=200.0, extended_zone=False,
+        place_near_road_m=300.0),
 }
 
 
@@ -807,7 +879,16 @@ def load_zone_tile(key: str, fire_zone: str = "standard", cell_m: float = 90.0,
         path = tile_file(key, tile_dir, fire_zone="extended")
         if path.exists():
             return load_ascii_tile(str(path)), False, "extended"
-        if notes is not None:
+        loc = LOCATIONS[key]
+        if notes is not None and not getattr(loc, "extended_zone", True):
+            # NO extended product BY DESIGN (SimLocation.extended_zone):
+            # same loud fallback, honest reason — no refetch hint.
+            notes.append(
+                f"FIRE ZONE: {key} has NO extended tile by design "
+                f"({path.name} is never fetched) — its standard tile already "
+                f"spans ~{2.0 * loc.tile_half_m / 1000.0:.0f} km; falling "
+                f"back to the STANDARD tile")
+        elif notes is not None:
             notes.append(
                 f"FIRE ZONE: extended tile {path.name} is not cached — "
                 f"falling back to the STANDARD ~18 km tile (fetch with "
@@ -887,7 +968,8 @@ def _burnable_adjacent_cells(tile: TerrainTile) -> list:
 
 def place_clients(tile: TerrainTile, n: int, seed: object,
                   notes: Optional[list] = None, window=None,
-                  bounds_poly=()) -> list:
+                  bounds_poly=(), road_graph=None,
+                  near_road_m: float = 0.0) -> list:
     """n ClientProperty records on seeded-random DISTINCT WUI cells.
 
     client_id sim-c<k> (k = 1..n, placement order); loc = cell center;
@@ -899,9 +981,17 @@ def place_clients(tile: TerrainTile, n: int, seed: object,
     CENTERS fall inside it — the FIRE ZONE central community window on
     extended tiles; None (the default, every standard session) is
     byte-identical to the pre-fire-zone behavior.
-    Deterministic: same (tile, n, seed, window) -> identical list."""
+    ROAD-PROXIMITY PLACEMENT (SimLocation.place_near_road_m): near_road_m >
+    0 together with a `road_graph` (wgresponse.roads.RoadGraph) restricts
+    BOTH pools to cells whose centers lie within near_road_m of a graph
+    node (RoadGraph.nearest_node) and notes the candidate count; the default
+    (0.0 / no graph) leaves the pools untouched — byte-identical. The same
+    seeded draw law applies to whatever pool survives.
+    Deterministic: same (tile, n, seed, window, bounds_poly, road_graph,
+    near_road_m) -> identical list."""
     if n < 1:
         raise ValueError("n must be >= 1")
+    near_road = road_graph is not None and near_road_m > 0.0
 
     def _in_window(rc):
         p = geo.rc_to_latlon(tile.spec, rc[0], rc[1])
@@ -912,6 +1002,9 @@ def place_clients(tile: TerrainTile, n: int, seed: object,
         # burnable-adjacent fallback below, which uses this same predicate).
         if bounds_poly and not geo.point_in_poly(p, bounds_poly):
             return False
+        # ROAD-PROXIMITY rule: off (default) = whole band, byte-identical.
+        if near_road and road_graph.nearest_node(p, max_m=near_road_m) is None:
+            return False
         return True
 
     rng = seeded_rng("simui-clients", str(seed))
@@ -919,6 +1012,11 @@ def place_clients(tile: TerrainTile, n: int, seed: object,
     if bounds_poly and notes is not None:
         notes.append(f"client placement bounded to the location's city-limits "
                      f"polygon ({len(pool)} candidate WUI cells)")
+    if near_road and notes is not None:
+        notes.append(f"client placement restricted to WUI cells within "
+                     f"{near_road_m:g} m of a road node ({len(pool)} candidate "
+                     f"WUI cells) — homes with a driveway, not roadless "
+                     f"'developed' cells")
     chosen = rng.sample(pool, min(n, len(pool)))
     if len(chosen) < n:
         taken = set(chosen)
@@ -1678,12 +1776,76 @@ class SimSession:
         if "solver_budget_evals" not in overrides:
             cfg.solver_budget_evals = SIM_SOLVER_BUDGET_EVALS
 
+        # --- roads (contracts wgresponse.roads seam; loaded ONCE per
+        # configure). LAZY import: the sibling module lands independently —
+        # a session must never hard-depend on it. Every offline path is
+        # noted LOUDLY (module docstring ROADS section), never silent.
+        # Loaded BEFORE client placement so the ROAD-PROXIMITY rule
+        # (SimLocation.place_near_road_m) can consult the graph; its notes
+        # are collected in road_notes and appended AFTER the placement notes
+        # (below), so state.notes keeps its established order.
+        road_notes = []
+        mod = self._roads_module_arg
+        if mod is _ROADS_AUTO:
+            try:
+                from wgresponse import roads as mod  # lazy (sibling seam)
+            except Exception:
+                mod = None
+                road_notes.append(
+                    "ROADS OFFLINE (wgresponse.roads not importable) — "
+                    "crews move on straight tier-0 legs")
+        elif mod is None:
+            road_notes.append(
+                "ROADS OFFLINE (disabled for this session) — crews move on "
+                "straight tier-0 legs")
+        self._roads = mod
+        self._road_graph = None
+        # PLAN-ON-ROADS session route cache (see _plan_road_provider)
+        self._road_plan_cache = {}
+        if mod is not None:
+            try:
+                g = mod.load_road_graph(location_key)
+            except Exception as e:       # unreadable cache: loud, non-fatal
+                g = None
+                road_notes.append(
+                    f"ROADS OFFLINE (road graph load failed: {e}) — crews "
+                    f"move on straight tier-0 legs")
+            else:
+                if g is None:
+                    road_notes.append(
+                        f"ROADS OFFLINE (no cached road graph for "
+                        f"{location_key}) — crews move on straight tier-0 "
+                        f"legs")
+            self._road_graph = g
+            if g is not None:
+                road_notes.append(
+                    f"road graph loaded for {location_key} "
+                    f"({len(g.nodes)} nodes) — crews follow road routes for "
+                    f"ingress and egress; departure decisions use "
+                    f"max(tier-0, road) egress time")
+
         # FIRE ZONE placement law: clients ALWAYS live in the central
-        # ~18 km community window; on the standard tile that IS the tile
-        # (window=None keeps the pre-fire-zone bytes), on extended tiles the
-        # WUI mask is restricted to the coordinate-computed central sub-grid.
-        window = (central_window_bbox(self._loc.center)
+        # community window (the location's tile_half_m — ~18 km for every
+        # preset with an extended tile); on the standard tile that IS the
+        # tile (window=None keeps the pre-fire-zone bytes), on extended tiles
+        # the WUI mask is restricted to the coordinate-computed central
+        # sub-grid.
+        window = (central_window_bbox(
+                      self._loc.center,
+                      half_m=getattr(self._loc, "tile_half_m",
+                                     STANDARD_ZONE_HALF_M))
                   if fire_zone == "extended" else None)
+        # ROAD-PROXIMITY PLACEMENT (SimLocation.place_near_road_m): 0 = off
+        # (every existing preset, byte-identical). Armed but no graph loaded
+        # -> whole-band draw, said LOUDLY (never a silent downgrade).
+        near_road_m = float(getattr(self._loc, "place_near_road_m", 0.0) or 0.0)
+        if (near_road_m > 0.0 and self._road_graph is None
+                and self._client_locs is None):
+            self._notes.append(
+                f"ROAD-PROXIMITY PLACEMENT ({near_road_m:g} m) is set for "
+                f"{location_key} but no road graph is loaded — clients are "
+                f"drawn from the WHOLE WUI band (some may sit on roadless "
+                f"'developed' cells)")
         if self._client_locs is not None:
             # ONBOARDING/BENCH seam: exact caller-supplied home coordinates
             # (real candidate parcels / synthetic geometries). Off-tile fails
@@ -1705,7 +1867,8 @@ class SimSession:
             self._clients = place_clients(
                 tile, n_clients, seed=f"{location_key}|{seed}",
                 notes=self._notes, window=window,
-                bounds_poly=getattr(self._loc, "bounds_poly", ()))
+                bounds_poly=getattr(self._loc, "bounds_poly", ()),
+                road_graph=self._road_graph, near_road_m=near_road_m)
         self._client_by_id = {c.client_id: c for c in self._clients}
         # Honest-model note (never silent): the WUI band deliberately includes
         # the developed side of the interface, and the overflow pool can land
@@ -1744,48 +1907,10 @@ class SimSession:
                     f"not alert or dispatch (ember/structure spread not "
                     f"modeled)")
 
-        # --- roads (contracts wgresponse.roads seam; loaded ONCE per
-        # configure). LAZY import: the sibling module lands independently —
-        # a session must never hard-depend on it. Every offline path is
-        # noted LOUDLY (module docstring ROADS section), never silent.
-        mod = self._roads_module_arg
-        if mod is _ROADS_AUTO:
-            try:
-                from wgresponse import roads as mod  # lazy (sibling seam)
-            except Exception:
-                mod = None
-                self._notes.append(
-                    "ROADS OFFLINE (wgresponse.roads not importable) — "
-                    "crews move on straight tier-0 legs")
-        elif mod is None:
-            self._notes.append(
-                "ROADS OFFLINE (disabled for this session) — crews move on "
-                "straight tier-0 legs")
-        self._roads = mod
-        self._road_graph = None
-        # PLAN-ON-ROADS session route cache (see _plan_road_provider)
-        self._road_plan_cache = {}
-        if mod is not None:
-            try:
-                g = mod.load_road_graph(location_key)
-            except Exception as e:       # unreadable cache: loud, non-fatal
-                g = None
-                self._notes.append(
-                    f"ROADS OFFLINE (road graph load failed: {e}) — crews "
-                    f"move on straight tier-0 legs")
-            else:
-                if g is None:
-                    self._notes.append(
-                        f"ROADS OFFLINE (no cached road graph for "
-                        f"{location_key}) — crews move on straight tier-0 "
-                        f"legs")
-            self._road_graph = g
-            if g is not None:
-                self._notes.append(
-                    f"road graph loaded for {location_key} "
-                    f"({len(g.nodes)} nodes) — crews follow road routes for "
-                    f"ingress and egress; departure decisions use "
-                    f"max(tier-0, road) egress time")
+        # The roads notes land HERE, after the placement notes — the order
+        # every existing session's state.notes has always had (the graph
+        # itself is loaded above, before placement; see the ROADS block).
+        self._notes.extend(road_notes)
 
         zones = list(self._loc.safe_zones)
         self._zone_by_id = {z.zone_id: z for z in zones}

@@ -56,7 +56,7 @@ py -3 -m wgresponse.cli watch --aoi "-121.0,32.5,-114.0,36.0" --state-dir state
 # requires an Email parameter on submit: watch sends env LFPS_EMAIL when set,
 # else ops@thewildfireguardian.com.
 
-# 6. THE INTERACTIVE SIMULATOR (docs/SIMULATOR_DESIGN.md): twelve real WUI
+# 6. THE INTERACTIVE SIMULATOR (docs/SIMULATOR_DESIGN.md): thirteen real WUI
 #    locations on cached LANDFIRE tiles, click-to-ignite fires, the REAL
 #    engine every tick (ensemble spread -> alert ladder -> dispatch ->
 #    per-tick SAFETY AUDIT), and the live safety-threshold slider (egress
@@ -114,7 +114,7 @@ py -3 -m pip install -r requirements.txt   # tifffile + numpy + imagecodecs (+ b
 | `wgresponse.notify` | Notifier protocol; SES/SMS stubs, log notifier. |
 | `wgresponse.sim` | Seeded synthetic scenarios + full-loop sim harness (the acceptance test and the demo). |
 | `wgresponse.server` | Stdlib HTTP: `POST /api/beacon`, `GET /api/state`, `GET /api/plan`, `GET /console`; `/healthz` carries last-cycle age + degraded + cycle count; `/simulator` + `/api/sim/*` session API (LRU-capped, per-session ticker). `X-Internal-API-Key`, fail-closed. |
-| `wgresponse.simui` | `SimSession`: the interactive simulator over the REAL engine — twelve cached LFPS WUI tiles (five originals, Rancho Santa Fe, the six Vail→Aspen corridor communities), seeded WUI client placement, perimeter-seeded ensembles, live safety-slider re-plans (in-flight deploys re-checked, never grandfathered), per-tick safety audit. |
+| `wgresponse.simui` | `SimSession`: the interactive simulator over the REAL engine — thirteen cached LFPS WUI tiles (five originals, Rancho Santa Fe, the six Vail→Aspen corridor communities, the whole-valley Eagle→Vail corridor on one ~60 km @ 200 m tile), seeded WUI client placement, perimeter-seeded ensembles, live safety-slider re-plans (in-flight deploys re-checked, never grandfathered), per-tick safety audit. |
 | `wgresponse.persist` | `StateStore`: atomic-write (fsync'd) versioned JSON persistence for alert records, the notified ledger, the incumbent plan, and watch metadata — restart re-fires nothing already sent (an applied-but-never-sent active alert IS re-fired: re-notify-ward); ANY corrupt state — including non-UTF-8 bytes and type-corrupt fields — loads fresh with a loud note, never a crash. |
 | `wgresponse.cli` | `simulate \| forecast \| plan \| serve \| pull-feeds \| watch \| simui` (watch = the live operator daemon: AOI-bounded feeds, per-cycle persistence, console + healthz off the live loop; simui = the interactive simulator UI). |
 
