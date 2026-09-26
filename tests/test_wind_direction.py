@@ -129,7 +129,8 @@ def test_ignition_wind_rotation_rotates_the_burn(tmp_path):
     """Four sessions, identical but for the dial at ignition (FROM 0/90/180/
     270): the nominal burn centroid (sim ground truth) sits on the downwind
     bearing w + 180, so every 90 deg turn of the wind turns the burn 90 deg;
-    the page's burned fill (ensemble P50 <= now) and its h1 band follow."""
+    the ensemble P50 (the ladder median — the page's burned fill until the
+    2026-09-26 "shade the fire" change) and the h5 band follow."""
     bearings = []
     bands = []
     for w in (0.0, 90.0, 180.0, 270.0):
@@ -154,7 +155,7 @@ def test_ignition_wind_rotation_rotates_the_burn(tmp_path):
             along = max(along, abs(x * math.sin(to) + y * math.cos(to)))
             cross = max(cross, abs(x * math.cos(to) - y * math.sin(to)))
         assert along >= 3.0 * max(cross, spec.cell_m), (w, along, cross)
-        # what the page paints: the ensemble-P50 fill points the same way
+        # the ladder median (the page's fill until 2026-09-26) points the same way
         ux, uy, un = _centroid(f.ens.p50.data, spec, ign, -math.inf, t)
         assert un >= 3 and _angdiff(_bearing(ux, uy), w + 180.0) <= 10.0
         assert st["wind_dir_deg"] == w

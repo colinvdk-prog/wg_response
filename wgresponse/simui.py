@@ -106,17 +106,24 @@ explicit override wins): the wider graph opens proactive-escape routes whose
 exposed transit the 10c audit counts.
 
 STATE VISUAL CONTRACT (contracts wgresponse.simui block; founder UX
-2026-07-10): state.burned = rings (closed [[lat, lon], ...] polylines) of
-cells whose CURRENT p50 arrival <= sim-now — grows tick over tick because
-every tick re-seeds the forecast from the grown perimeter; state.fire_bands
-= {'h1','h5','h24'} p50 rings at sim-now +1/+5/+24 h, recomputed EVERY tick
-so they advance with the fire; crews[i].route_polyline / egress_polyline are
+2026-07-10; "shade the fire" 2026-09-26): the shaded fire is the SIMULATED
+ACTUAL FIRE — state.burned = rings (closed [[lat, lon], ...] polylines) of
+the union over fires of cells whose NOMINAL arrival <= sim-now (the ground
+truth above), growing tick over tick; state.burned_p50 = the old fill (each
+fire's P50 <= sim-now rings), kept under an explicit name; state.fire_bands
+= {'h1','h5','h24'} rings of (actual burn UNION P50 <= sim-now +1/+5/+24 h)
+— the ladder's median projection bounded by the actual fire, recomputed
+EVERY tick so they advance with it; state.fire_view = the exact per-cell
+picture the page shades (classes, strokes, areas — SimSession._fire_visuals;
+the median lags the nominal fire badly at high wind, which is why the fill
+moved: docs/SIMULATOR_DESIGN.md "Shading the fire");
+crews[i].route_polyline / egress_polyline are
 the road-following paths above (with route_on_roads/egress_on_roads flags
 and eta_s). The on-roads flags are TRI-STATE: True = road-following leg,
 False = a REAL straight-line leg (honest fallback the UI chips), None = no
 corresponding polyline exists at all (idle crew at rest) — False is
 reserved for actual legs. Rings are traced on a <=120x120 min-pooled copy
-of the p50 raster (payload budget), ordered by TRUE BOUNDARY FOLLOWING
+of their raster (payload budget), ordered by TRUE BOUNDARY FOLLOWING
 (clockwise Moore neighbor-trace per 8-connected boundary component, so
 concave fronts render as clean outlines instead of centroid-angle
 starbursts) and stride-capped per ring; the old absolute-hour isochrones
@@ -1264,14 +1271,18 @@ def _pool_min(raster, max_dim: int = _RING_MAX_DIM):
     iff ANY member cell is — the conservative visual union — and min-pooling
     commutes with thresholding, so nested thresholds trace nested rings.
     k == 1 returns the raster's own spec/data (no copy cost on small grids)."""
-    spec = raster.spec
+    return _pool_min_data(raster.spec, raster.data, max_dim)
+
+
+def _pool_min_data(spec, data, max_dim: int = _RING_MAX_DIM):
+    """_pool_min on a bare (GridSpec, row-major values) pair — the fire
+    view's union-over-fires fields have no Raster of their own."""
     k = max(1, math.ceil(max(spec.nrows, spec.ncols) / max_dim))
     if k == 1:
-        return spec, raster.data
+        return spec, data
     nr2 = (spec.nrows + k - 1) // k
     nc2 = (spec.ncols + k - 1) // k
     out = [UNREACHED] * (nr2 * nc2)
-    data = raster.data
     nc = spec.ncols
     for r in range(spec.nrows):
         base = r * nc
@@ -1398,6 +1409,143 @@ def _threshold_rings(spec, vals, thr_s: float) -> list:
         ring.append(list(ring[0]))
         rings.append(ring)
     return rings
+
+
+# ---------------------------------------------------------------------------
+# Fire view (STATE VISUAL CONTRACT: the shaded fire + truth-bounded bands;
+# founder "shade the fire", 2026-09-26)
+# ---------------------------------------------------------------------------
+
+#: state.fire_view display classes (code = index). burned + burning = the
+#: SIMULATED ACTUAL FIRE — the union over fires of cells whose NOMINAL-member
+#: arrival is <= sim-now, the engine's ground truth (the mask the crews are
+#: audited against and every re-anchor seeds from), spot-fire islands
+#: included; burning = the part of it still inside its fuel's cold-black
+#: (flaming) window. h1/h5/h24 = the ladder's MEDIAN (P50) projection at
+#: sim-now +1/+5/+24 h, BOUNDED by the actual fire: never on a burned cell,
+#: and a cell the median says has already burned but the nominal front has
+#: not reached is drawn in h1 ("overdue per the forecast").
+FIRE_VIEW_CLASSES = ("none", "burned", "burning", "h1", "h5", "h24")
+_FV_BURNED, _FV_BURNING, _FV_H1, _FV_H5, _FV_H24 = 1, 2, 3, 4, 5
+
+#: fire-view strokes are EXACT cell-edge contours on the grid-corner lattice
+#: (row 0 = the north edge, col 0 = the west edge; cell (r, c) spans rows
+#: r..r+1, cols c..c+1), so they sit on the raster's own cell edges at every
+#: zoom. Each stroke is [row, col, code]: the start corner plus a run-length
+#: CHAIN CODE of unit steps — 'E3S2W' = 3 east, 2 south, 1 west (a count of 1
+#: is omitted); a closed loop ends on its start corner. fire_view_corners()
+#: decodes one. A closed band-front loop enclosing fewer cells
+#: than this (a lone non-burnable cell or a speck of band), or a hole in the
+#: fire that small (an unburned speck), is not stroked — the raster still
+#: paints it; the fire's outline keeps every island however small (each
+#: spot fire is the truth).
+_FV_MIN_LOOP_CELLS = 9
+
+#: unit steps on the corner lattice, clockwise: E, S, W, N as (drow, dcol)
+_FV_DIRS = ((0, 1), (1, 0), (0, -1), (-1, 0))
+_FV_DIR_CHARS = "ESWN"
+
+
+def fire_view_corners(stroke) -> list:
+    """Decode one state.fire_view stroke [row, col, chain code] into its
+    corner points [(row, col), ...] on the grid-corner lattice (see
+    _FV_MIN_LOOP_CELLS' block for the format). lat = north_lat - row *
+    cell_m / m_per_deg_lat and lon = west_lon + col * cell_m /
+    (m_per_deg_lat * cos(lat)) place a corner on the map (fire_view.grid)."""
+    r, c, code = int(stroke[0]), int(stroke[1]), stroke[2]
+    pts = [(r, c)]
+    i = 0
+    while i < len(code):
+        dr, dc = _FV_DIRS[_FV_DIR_CHARS.index(code[i])]
+        j = i + 1
+        while j < len(code) and code[j].isdigit():
+            j += 1
+        n = int(code[i + 1:j]) if j > i + 1 else 1
+        r += dr * n
+        c += dc * n
+        pts.append((r, c))
+        i = j
+    return pts
+
+
+def _edge_contours(edges) -> list:
+    """Directed unit cell edges [((row, col), dir)] — each with its inside
+    cell on the RIGHT of travel — linked into chain-coded strokes on the
+    corner lattice: open chains (a band front that stops where the boundary
+    continues along the fire) start at corners with no incoming edge; the
+    rest close into loops, each started at a convex corner (out-degree 1).
+    At a saddle corner the walk turns RIGHT first (then straight, then
+    left), which keeps diagonal-touching cells as separate loops. Collinear
+    steps merge into one run. Returns [([row, col, code], closed,
+    area_cells)] — area > 0 for an outer boundary, < 0 for a hole, 0 for an
+    open chain. Deterministic."""
+    out = {}
+    indeg = {}
+    for s, d in edges:
+        out.setdefault(s, []).append(d)
+        e = (s[0] + _FV_DIRS[d][0], s[1] + _FV_DIRS[d][1])
+        indeg[e] = indeg.get(e, 0) + 1
+    for ds in out.values():
+        ds.sort()
+    deg0 = {v: len(ds) for v, ds in out.items()}
+
+    def walk(start):
+        pts = [start]
+        dirs = []
+        v = start
+        din = None
+        while True:
+            ds = out.get(v)
+            if not ds:
+                break
+            d = ds[0]
+            if din is not None and len(ds) > 1:
+                for turn in (1, 0, 3):            # right, straight, left
+                    if (din + turn) % 4 in ds:
+                        d = (din + turn) % 4
+                        break
+            ds.remove(d)
+            v = (v[0] + _FV_DIRS[d][0], v[1] + _FV_DIRS[d][1])
+            pts.append(v)
+            dirs.append(d)
+            din = d
+        closed = len(pts) > 2 and pts[-1] == pts[0]
+        if closed and dirs[0] == dirs[-1]:
+            # start on a corner, not mid-run, so the runs below are clean
+            k = next((i for i in range(1, len(dirs))
+                      if dirs[i] != dirs[i - 1]), 0)
+            dirs = dirs[k:] + dirs[:k]
+            pts = pts[k:-1] + pts[:k] + [pts[k]]
+        code = []
+        area = 0.0
+        r0, c0 = pts[0]
+        i = 0
+        while i < len(dirs):
+            j = i
+            while j < len(dirs) and dirs[j] == dirs[i]:
+                j += 1
+            n = j - i
+            code.append(_FV_DIR_CHARS[dirs[i]] + (str(n) if n > 1 else ""))
+            r1 = r0 + _FV_DIRS[dirs[i]][0] * n
+            c1 = c0 + _FV_DIRS[dirs[i]][1] * n
+            area += c0 * r1 - c1 * r0                  # shoelace, x=col y=row
+            r0, c0 = r1, c1
+            i = j
+        return ([pts[0][0], pts[0][1], "".join(code)], closed,
+                0.5 * area if closed else 0.0)
+
+    res = []
+    for v in sorted(out):                          # open chains first
+        if indeg.get(v, 0) == 0:
+            while out[v]:
+                res.append(walk(v))
+    for v in sorted(out):                          # then the loops
+        if deg0[v] == 1 and out[v]:
+            res.append(walk(v))
+    for v in sorted(out):                          # defensive leftovers
+        while out[v]:
+            res.append(walk(v))
+    return res
 
 
 # ---------------------------------------------------------------------------
@@ -1771,6 +1919,14 @@ class _SimFire:
     # per tick or per crew.
     _eroded_src: object = None
     _eroded_p10: object = None
+    # FIRE VIEW bookkeeping (display only, never read by the engine): a
+    # re-anchor seeds every burned cell at the anchor time, which would make
+    # the whole old burn read "burning now" again. _fv_burn_t keeps each such
+    # cell's TRUE nominal arrival from the field it burned in (flat index ->
+    # unix s), recorded by SimSession._fire_visuals when it first sees the
+    # new field (_fv_seen = the field it last drew).
+    _fv_seen: object = None
+    _fv_burn_t: object = None
 
 
 class CrewPlacementError(ValueError):
@@ -4578,29 +4734,249 @@ class SimSession:
         return {"encoding": "rle01", "first_value": 0,
                 "nrows": spec.nrows, "ncols": spec.ncols, "runs": runs}
 
-    def _fire_visuals(self):
-        """STATE VISUAL CONTRACT (module docstring): (burned, fire_bands).
-
-        burned = rings of cells whose CURRENT p50 arrival <= sim-now — grows
-        tick over tick because every tick re-seeds the forecast from the
-        grown perimeter. fire_bands = {'h1','h5','h24'} p50 rings at sim-now
-        +1/+5/+24 h, recomputed EVERY tick so they advance with the fire.
-        Both are traced per fire on a <=120x120 min-pooled copy of that
-        fire's p50 raster (payload budget) and concatenated in fire order.
-        Band keys are ALWAYS present (empty lists before any forecast)."""
-        burned = []
-        bands = {key: [] for key, _h in _BAND_LEADS}
-        now = self._now_s
-        for fid in self._fire_order:
-            ens = self._fires[fid].ens
-            if ens is None:
+    def _fv_record_reanchors(self, fires) -> None:
+        """FIRE VIEW bookkeeping (display only, never read by the engine).
+        A re-anchor (tick() step 2: ignite / set_wind / horizon rebase)
+        seeds every cell the nominal member had consumed at the anchor
+        time, so the NEW field holds arrival == anchor over the whole old
+        burn. The burned/burning split needs each cell's TRUE arrival: the
+        first time this builder sees a new field it records, for every
+        seeded cell (old nominal <= the new anchor) not recorded yet, the old
+        field's nominal arrival — chained through successive re-anchors (a
+        cell recorded earlier keeps its earlier time). tick() always ends in
+        state(), so every field is seen before it can be replaced; the
+        record is a pure function of the command script (deterministic)."""
+        for f in fires:
+            seen = f._fv_seen
+            if seen is f.ens:
                 continue
-            spec2, vals = _pool_min(ens.p50)
-            burned.extend(_threshold_rings(spec2, vals, now))
-            for key, h in _BAND_LEADS:
-                bands[key].extend(
-                    _threshold_rings(spec2, vals, now + h * 3600.0))
-        return burned, bands
+            if seen is not None:
+                anchor = f.anchor_t0_s
+                rec = f._fv_burn_t if f._fv_burn_t is not None else {}
+                for i, v in enumerate(seen.members[0].data):
+                    if v <= anchor and i not in rec:
+                        rec[i] = v
+                f._fv_burn_t = rec
+            f._fv_seen = f.ens
+
+    def _fire_visuals(self):
+        """STATE VISUAL CONTRACT (module docstring; founder "shade the fire"
+        2026-09-26): (burned, fire_bands, burned_p50, fire_view).
+
+        THE SHADED FIRE IS THE SIMULATED ACTUAL FIRE: the union over fires
+        of cells whose NOMINAL-member arrival is <= sim-now — exactly the
+        mask the engine treats as ground truth (terrain.burned, the 10c
+        crew audit's 'burned', the re-anchor seed set), spot-fire islands
+        included. Until 2026-09-26 the fill was each fire's ensemble P50 <=
+        now, which under-drew a wind-driven fire ~20x (park_city_windstorm,
+        T+1h45: 0.6 vs 12.4 km2; scratch_review/p50_vs_nominal_probe.py)
+        and jumped up to the true burn at every re-anchor.
+
+          burned      rings of that nominal union, traced on a <=120x120
+                      min-pooled copy (payload budget): shape unchanged,
+                      MEANING changed from the P50 to the actual fire.
+          burned_p50  the previous `burned`, verbatim — each fire's P50 <=
+                      sim-now rings, concatenated in fire order: the ladder
+                      median's own burned area, under an explicit name.
+          fire_bands  {'h1','h5','h24'}: rings of (actual burn UNION
+                      {P50 <= sim-now + 1/5/24 h}) — the ladder's median
+                      projection BOUNDED by the actual fire, so a band's
+                      outer edge never lies inside the burn; nested (h1 in
+                      h5 in h24), min-pooled like burned; keys ALWAYS present.
+          fire_view   the exact picture the page shades, at FULL tile
+                      resolution: FIRE_VIEW_CLASSES per cell as row-major
+                      runs. burned/burning split each fire cell by its TRUE
+                      nominal arrival against its fuel's cold-black window
+                      (the SEM-10 transit rule: per fuel class under
+                      cfg.transit_cold_black_by_class, else the flat 45
+                      min). Band cells never overlap the fire; a cell the
+                      median says has burned but the nominal front has not
+                      reached is h1. strokes (exact cell-edge contours,
+                      chain-coded on the grid-corner lattice — see
+                      fire_view_corners): the fire's outline loops and each
+                      band's FRONT — its outer edge only where it lies
+                      beyond the fire. areas_km2 carries the P50's own
+                      burned area, so the median-vs-truth gap stays visible.
+        """
+        spec = self._tile.spec
+        nr, nc = spec.nrows, spec.ncols
+        n = nr * nc
+        now = self._now_s
+        fires = [self._fires[fid] for fid in self._fire_order
+                 if self._fires[fid].ens is not None]
+        per_class = bool(getattr(self._cfg, "transit_cold_black_by_class",
+                                 False))
+        # one build per (sim-now, fields): state() also runs on every server
+        # poll between ticks. The cache holds the field OBJECTS (identity
+        # compared) so a replaced field can never alias a stale entry.
+        cache = getattr(self, "_fv_cache", None)
+        if (cache is not None and cache[0] == now and cache[1] is self._tile
+                and cache[2] == per_class and len(cache[3]) == len(fires)
+                and all(e is f.ens for e, f in zip(cache[3], fires))):
+            return cache[4]
+        burned_p50 = []
+        pooled_p50 = []
+        for f in fires:
+            spec2, vals = _pool_min(f.ens.p50)
+            pooled_p50.append(vals)
+            burned_p50.extend(_threshold_rings(spec2, vals, now))
+        strokes = {"fire": [], "h1": [], "h5": [], "h24": []}
+        view = {
+            "encoding": "rle_class",
+            "classes": list(FIRE_VIEW_CLASSES),
+            "nrows": nr, "ncols": nc,
+            "grid": {"north_lat": spec.north_lat, "west_lon": spec.west_lon,
+                     "cell_m": spec.cell_m,
+                     "m_per_deg_lat": geo.M_PER_DEG_LAT},
+            "burning_window": "fuel_class" if per_class else "flat_45_min",
+            # strokes are [row, col, chain code] on the cell-CORNER lattice
+            # (fire_view_corners decodes one); a corner sits at lat = north
+            # - row*cell_m/m_per_deg_lat, lon = west + col*cell_m/
+            # (m_per_deg_lat*cos(lat)) — the GridSpec law, exact to the cell
+            "stroke_coords": "grid_corner_chain",
+        }
+        if not fires:
+            view.update(values=[0], runs=[n], strokes=strokes,
+                        areas_km2={k: 0.0 for k in (
+                            "fire", "burned", "burning", "h1", "h5", "h24",
+                            "p50_burned")})
+            return ([], {key: [] for key, _h in _BAND_LEADS}, burned_p50,
+                    view)
+        self._fv_record_reanchors(fires)
+
+        # union over fires: earliest nominal (the actual fire) and earliest
+        # median (the ladder's projection) per cell
+        nom = fires[0].ens.members[0].data
+        p50 = fires[0].ens.p50.data
+        for f in fires[1:]:
+            nom = [a if a <= b else b
+                   for a, b in zip(nom, f.ens.members[0].data)]
+            p50 = [a if a <= b else b for a, b in zip(p50, f.ens.p50.data)]
+
+        # the actual fire: burning while the cell's TRUE arrival is inside
+        # its fuel's cold-black window, burned (cold black) after
+        cls = bytearray(n)
+        fire_idx = [i for i, a in enumerate(nom) if a <= now]
+        recs = [(f.ens.members[0].data, f._fv_burn_t or {}) for f in fires]
+        fuel = self._tile.fuel.data
+        win_memo = {}
+        for i in fire_idx:
+            t = UNREACHED
+            for data, rec in recs:
+                v = rec.get(i, data[i])
+                if v < t:
+                    t = v
+            if per_class:
+                code = int(round(fuel[i]))
+                w = win_memo.get(code)
+                if w is None:
+                    w = win_memo[code] = cold_black_minutes(code) * 60.0
+            else:
+                w = _COLD_BLACK_PASS_S
+            cls[i] = _FV_BURNING if (now - t) < w else _FV_BURNED
+
+        # the median projection, bounded by the actual fire (overdue -> h1)
+        t1 = now + 3600.0
+        t5 = now + 5.0 * 3600.0
+        t24 = now + 24.0 * 3600.0
+        band_idx = []
+        n_p50 = 0
+        for i in [i for i, q in enumerate(p50) if q <= t24]:
+            q = p50[i]
+            if q <= now:
+                n_p50 += 1
+            if cls[i]:
+                continue
+            cls[i] = _FV_H1 if q <= t1 else (_FV_H5 if q <= t5 else _FV_H24)
+            band_idx.append(i)
+
+        # row-major runs over the sparse non-empty cells
+        nz = sorted(fire_idx + band_idx)
+        values = []
+        runs = []
+        pos = 0
+        counts = [0] * len(FIRE_VIEW_CLASSES)
+        for i in nz:
+            v = cls[i]
+            counts[v] += 1
+            if i > pos:
+                values.append(0)
+                runs.append(i - pos)
+                values.append(v)
+                runs.append(1)
+            elif values and values[-1] == v:
+                runs[-1] += 1
+            else:
+                values.append(v)
+                runs.append(1)
+            pos = i + 1
+        if pos < n:
+            values.append(0)
+            runs.append(n - pos)
+
+        # strokes, as exact cell edges: the fire's outline = every edge of a
+        # fire cell facing a non-fire cell; band k's FRONT = every edge of a
+        # band cell of class <= k facing a cell outside (fire U band k) —
+        # empty, a farther band, or off the tile. A fire cell facing outside
+        # is never a front: where the median does not reach past the actual
+        # fire, the band simply is not drawn.
+        fire_edges = []
+        front_edges = {_FV_H1: [], _FV_H5: [], _FV_H24: []}
+        for i in nz:
+            c = cls[i]
+            r, q = divmod(i, nc)
+            for n_cls, start, d in (
+                    (cls[i - nc] if r > 0 else 0, (r, q), 0),
+                    (cls[i + 1] if q < nc - 1 else 0, (r, q + 1), 1),
+                    (cls[i + nc] if r < nr - 1 else 0, (r + 1, q + 1), 2),
+                    (cls[i - 1] if q > 0 else 0, (r + 1, q), 3)):
+                if c <= _FV_BURNING:
+                    if not 0 < n_cls <= _FV_BURNING:
+                        fire_edges.append((start, d))
+                else:
+                    for k in range(c, _FV_H24 + 1):
+                        if n_cls == 0 or n_cls > k:
+                            front_edges[k].append((start, d))
+        # every outer loop (each spot-fire island, however small); an
+        # unburned pocket only when it is not a speck (the raster shows it)
+        strokes["fire"] = [s for s, _closed, a
+                           in _edge_contours(fire_edges)
+                           if a >= 0.0 or -a >= _FV_MIN_LOOP_CELLS]
+        for key, k in (("h1", _FV_H1), ("h5", _FV_H5), ("h24", _FV_H24)):
+            strokes[key] = [s for s, closed, a
+                            in _edge_contours(front_edges[k])
+                            if not closed or abs(a) >= _FV_MIN_LOOP_CELLS]
+
+        cell_km2 = (spec.cell_m / 1000.0) ** 2
+        view.update(values=values, runs=runs, strokes=strokes, areas_km2={
+            "fire": round((counts[_FV_BURNED] + counts[_FV_BURNING])
+                          * cell_km2, 4),
+            "burned": round(counts[_FV_BURNED] * cell_km2, 4),
+            "burning": round(counts[_FV_BURNING] * cell_km2, 4),
+            "h1": round(counts[_FV_H1] * cell_km2, 4),
+            "h5": round(counts[_FV_H5] * cell_km2, 4),
+            "h24": round(counts[_FV_H24] * cell_km2, 4),
+            "p50_burned": round(n_p50 * cell_km2, 4),
+        })
+
+        # compat rings (payload budget: min-pooled like before). A pooled
+        # block holds a burned cell iff its pooled nominal is <= now, and
+        # then it is inside every band threshold (>= now) whatever its P50;
+        # otherwise its (fire U band) value is its pooled median.
+        if len(fires) == 1:
+            spec2, pn = _pool_min(fires[0].ens.members[0])
+            pq = pooled_p50[0]
+        else:
+            spec2, pn = _pool_min_data(spec, nom)
+            _spec, pq = _pool_min_data(spec, p50)
+        burned = _threshold_rings(spec2, pn, now)
+        disp = [a if a <= now else q for a, q in zip(pn, pq)]
+        bands = {key: _threshold_rings(spec2, disp, now + h * 3600.0)
+                 for key, h in _BAND_LEADS}
+        out = (burned, bands, burned_p50, view)
+        self._fv_cache = (now, self._tile, per_class,
+                          [f.ens for f in fires], out)
+        return out
 
     # -- ROADS LEGIBILITY (display only; roads inspection 2026-09-25) ----------
     # The founder watched crews "not use roads". The engine drove the road
@@ -5185,7 +5561,7 @@ class SimSession:
             row["rule_ember_min"] = re_
             audit_rows.append(row)
 
-        burned_rings, fire_bands = self._fire_visuals()
+        burned_rings, fire_bands, burned_p50, fire_view = self._fire_visuals()
         first_tick, last_tick = self._history_bounds()
         return {
             "schema_version": SCHEMA_VERSION,
@@ -5240,8 +5616,14 @@ class SimSession:
             },
             "terrain": terrain,
             "fires": fires,
+            # STATE VISUAL CONTRACT ("shade the fire", 2026-09-26): burned =
+            # the ACTUAL fire (nominal), burned_p50 = the old median fill,
+            # fire_bands bounded by the actual fire, fire_view = the exact
+            # per-cell picture the page shades (see _fire_visuals)
             "burned": burned_rings,
+            "burned_p50": burned_p50,
             "fire_bands": fire_bands,
+            "fire_view": fire_view,
             "clients": clients,
             "crews": crews,
             "plan": self._plan_snapshot,

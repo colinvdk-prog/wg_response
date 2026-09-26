@@ -107,8 +107,15 @@ dep-free**. If a tile is missing at runtime: loud banner + synthetic fallback (n
 
 ## What the map shows (the functionality being demonstrated)
 
-- Fire perimeter growth (burned mask) + P50 isochrone rings (6/12/24/48/72 h) and the eroded
-  P10 corridor field toggle — the actual safety surface.
+- **The shaded area is the simulated actual fire** — the engine's nominal member (the
+  ground truth the crews are safety-audited against), cell for cell at full tile
+  resolution, spot-fire islands included: dark red = burned, bright red = burning now
+  (the front is still inside its fuel's cold-black window). Growth is the fire's own.
+- **The h1 / h5 / h24 bands are the ladder's median (P50) forecast**, reached in < 1 h
+  (red) / < 5 h (orange) / < 24 h (yellow), drawn from the fire's edge outward and never
+  over a burned cell; where the median lags the fire, a band is simply absent there
+  (see "Shading the fire" below). The eroded P10 corridor field toggle remains the
+  actual safety surface.
 - Clients colored by live alert state (NONE→NOTICE→WATCH→EXTREME→IMPACTED/CLEARED ladder,
   real AlertEngine with hysteresis).
 - Crews moving along planned routes (real `dispatch.plan` output, commitment horizon honored),
@@ -122,6 +129,99 @@ dep-free**. If a tile is missing at runtime: loud banner + synthetic fallback (n
   the departure deadlines (not the served count — the corridor law dominates there), while a
   LIVE mid-run tightening moves the headline served count itself by withdrawing in-flight
   work — the threshold-exploration the request asks for, told honestly.
+
+### Shading the fire (2026-09-26)
+
+Founder decision: *"shade the fire."* Until now the page filled the fire and drew the
+bands from the pooled ensemble **P50**, while the fire the crews are audited against is
+the **nominal** member. At high/extreme wind the fill under-drew the fire badly (the
+extreme `park_city_windstorm` scenario at T+1h45: **0.6 km² drawn vs 12.4 km² burned**)
+and jumped up to the true burn at every re-anchor. Display change only — no engine or
+physics effect; contracts STATE VISUAL CONTRACT amended.
+
+- **What is drawn** (`SimSession._fire_visuals`, `state.fire_view`): per cell, at full tile
+  resolution, `burned | burning | h1 | h5 | h24`. burned + burning == the union over fires
+  of nominal arrival <= sim-now — exactly `terrain.burned` and the 10c audit's mask.
+  *burning now* = the cell's true nominal arrival is inside its fuel's cold-black window
+  (`fuels.cold_black_minutes`: grass 5-10 min, grass-shrub 10-20, shrub 20-30,
+  timber-understory 45, timber-litter 60, slash 90; flat 45 min when
+  `transit_cold_black_by_class` is off) — the rule SEM-10 route selection already uses for
+  "still hazardous to drive". True arrival times survive re-anchors (display
+  bookkeeping), so a wind-dial turn never relights the old burn.
+- **Bands** = the ladder's median at sim-now +1/+5/+24 h, **bounded by the actual fire**:
+  never on a burned cell, filled from the fire's edge outward, with a border line (the
+  band's *front*) only where the median reaches beyond the fire. **Overdue cells** — the
+  median says burned, the nominal front has not arrived — are drawn in the **< 1 h band**
+  (the forecast calls them burning; the truth has not reached them; the most urgent band
+  is the conservative read). Where the median lags the fire the band is absent, and the
+  legend says so.
+- **Page**: one exact raster (canvas image overlay in its own pane under every vector
+  layer, placed by the GridSpec law) plus the fire outline and band fronts as exact
+  cell-edge lines (chain-coded in state); the layer switcher still hides the fire or any
+  band; the ring / RLE paths remain as fallbacks for an older backend.
+- **State compatibility**: `burned` keeps its ring shape but is now the actual fire;
+  `burned_p50` carries the old fill verbatim; `fire_bands` keeps its nested-ring shape,
+  now `(actual burn ∪ P50 <= now+h)`; `terrain.burned` is unchanged. Payload: `fire_view`
+  7 KB (eagle_vail high, T+4h) to 28 KB (park_city extreme with spotting, T+1h45; whole
+  state 90 KB vs 52 KB); one build per tick (cached across polls), 25-60 ms.
+- **Frames** (`docs/img/fire_shading/`, `scratch_review/fire_shading_shots.py`): before /
+  after of `park_city_windstorm` at T+1h45 and an eagle_vail_co HIGH fire at T+4h, plus
+  cell-level close-ups (`*_detail_after.jpg`).
+
+**Finding — the median is biased late against the simulated truth**
+(`scratch_review/p50_vs_nominal_probe.py`; page physics: spotting + grass floor, 6 members):
+
+| scenario | T | nominal km² | P50 km² | P10 km² | P50 / nominal |
+|---|---|---|---|---|---|
+| park_city_ut high | 1 h / 2 h / 4 h / 8 h | 2.7 / 11.9 / 40.5 / 64.1 | 0.09 / 2.3 / 12.0 / 30.9 | 11.0 / 37.7 / 85.7 / 140.6 | 0.03 / 0.19 / 0.30 / 0.48 |
+| park_city_ut extreme | 1 h / **1h45** / 2 h / 4 h / 8 h | 3.2 / **12.4** / 17.1 / 38.3 / 62.9 | 0.11 / **0.57** / 0.97 / 7.1 / 24.3 | 15.2 / 47.3 / 56.0 / 100.6 / 131.6 | 0.03 / **0.05** / 0.06 / 0.19 / 0.39 |
+| eagle_vail_co high | 1 h / 2 h / 4 h / 8 h | 1.1 / 2.2 / 8.9 / 25.4 | 0.16 / 0.60 / 2.6 / 8.8 | 2.8 / 7.7 / 29.4 / 118.2 | 0.15 / 0.27 / 0.29 / 0.35 |
+| eagle_vail_co extreme | 1 h / 2 h / 4 h / 8 h | 1.9 / 5.6 / 12.6 / 79.2 | 0.36 / 1.3 / 3.6 / 8.6 | 4.8 / 15.2 / 74.9 / 300.6 | 0.19 / 0.23 / 0.29 / 0.11 |
+
+- **Not a slow ensemble — a pooled percentile.** Each member alone burns about as much as
+  the nominal (park extreme, T+1h45: 12.4 / 22.3 / 15.8 / 18.7 / 8.7 / 3.9 km² for members
+  0-5, median member 14.1 km²); their per-cell median is 0.57 km².
+- **Cause: the direction perturbation.** Members carry constant wind rotations of
+  0 / −12 / +12 / 0 / −24 / +24° (`dir_perturb_deg` 30 at the mid-horizon ramp). At
+  high/extreme wind the ellipse L/B saturates at 8 (e = 0.992), so a member turned 12°
+  reaches the nominal head axis through its flank at (1−e)/(1−e·cos 12°) ≈ 0.26 of the
+  head rate; the Hazen median of six (mean of the 3rd and 4th arrivals) *is* that flank
+  arrival — measured 2.4-5.5× the nominal arrival 1-4 km down the park_city head axis
+  (the tri-model review's N4 found ~4.2×). The pointwise median of six narrow ellipses
+  pointing different ways is their common core near the ignition. Per-member ember
+  spotting amplifies it (each member's spot fires land along its own downwind line).
+  One knob at a time, park extreme, P50/nominal at T+1h45 / T+4h: baseline 0.05 / 0.19;
+  no direction perturbation 1.21 / 1.01; direction perturbation only (wind and moisture
+  perturbation off) 0.05 / 0.18; spotting off 0.25 / 0.39; neither 1.00 / 1.00;
+  `model_error_sd_log` 0.71 0.08 / 0.23. Unreached (+inf) members are not a factor
+  (0-2 cells).
+- **Consequence.** The simulated truth is the unperturbed member, which along its own
+  head axis is the ensemble's fastest member, so every P50-keyed rule runs late against
+  the fire the page now shows: IMPACTED (and the `protected_then_impacted` outcome, the
+  `fire_arrived` unserved reason) waits for P50 <= now — homes inside the shaded fire can
+  still read EXTREME; NOTICE (P50 <= 72 h) and the P50 arm of EXTREME (P50 <= 24 h) come
+  late, and so do job adoption (P50 <= notice_h) and the gel window (P50 − gel_window_h).
+  The EXTREME rung itself still reaches homes ahead of the true front through its P10
+  arm (P10 <= 12 h).
+- **Crew safety is not affected.** Every deadline keys on P10, which is nominal-bounded
+  (`spread.ensemble_arrival`): 0 cells later than the truth in all 20 scenario × time
+  rows, covering 2-6× the actual burn — conservative.
+- **Re-anchor sawtooth.** At every re-anchor the members restart from the nominal burned
+  mask, so P50 snaps to the true burn and then lags again (park extreme: 0.11 → 3.86 km²
+  against 3.95 at the anchor, 6.44 vs 9.43 km² 45 min later).
+- **Recommendation (founder's call — a ladder change, not made here):** arm the existing
+  default-OFF `ensemble_p50_nominal_bound` (P50 = min(Hazen P50, nominal)) in the
+  simulator's session defaults. The live watcher already runs with it (`--p50-bound`,
+  docs/MODEL_ASSESSMENT_HANDOFF.md §3), so the simulator currently shows a later ladder
+  than production. Measured: P50/nominal 1.00-1.02 in all four probes; the bands would
+  then start at the fire's head instead of being absent there.
+
+Seen in passing (engine, not changed): a re-anchor seeds every consumed cell AT the anchor
+time, so the front loses its partial progress into the next cells; after a same-direction
+`set_wind` the simulated fire grows 10-24% less over the next 1-1.5 h than the continuous
+run (IoU 0.76-0.93 at high/extreme with page physics; 0.87-0.91 with spotting off, and
+re-throwing the seeds' embers changes nothing — so it is the restart time, not the
+embers). A default-OFF fix would seed the front at its true arrival times.
 
 ## Slider observability — what the buffer demonstrably changes (measured 2026-07-10)
 
