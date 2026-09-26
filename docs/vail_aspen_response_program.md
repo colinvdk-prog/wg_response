@@ -300,7 +300,7 @@ no road; at Vail **25% of the placed homes were more than 2 km from any
 road** (`scratch_review/corridor_roadless.py`), none elsewhere but Basalt
 (0.4%). A real client has a driveway, so **the program's headline placement
 draws the same 40 homes from WUI cells within 300 m of a road** (`_road`
-arms); the whole-band placement is reported as the sensitivity (§3.6).
+arms); the whole-band placement is reported as the sensitivity (§3.7).
 Since 2026-09-25 the six corridor presets in the simulator seed their homes
 the same way by default (`SimLocation.place_near_road_m = 300`, roads
 inspection `docs/review/roads_inspection_2026-09-25.md`), so a public

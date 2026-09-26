@@ -351,6 +351,19 @@ Extended stress (EXTREME, 14 km, 80 ticks, six presets):
 
 ## 7. Open items (owner decisions)
 
+**Follow-up the same day.** Item 5 is RESOLVED: sessions share one RoadGraph
+per graph file process-wide (`simui._load_road_graph_shared`, weak values,
+keyed by path + mtime + size) — measured road-graph RAM with every one of the
+25 graphs in use at once is 485 MB; sixteen unshared extended-Boulder sessions
+would have held 1,059 MB. Item 1 was TRIED AND NOT ARMED: as a simulator default,
+`escape_road_snap_m = 1500` passed the whole suite except the pinned Camp-Fire-
+scale extended run (`test_sem10d_extended_campfire_scale_no_overrun_ever`), which
+recorded two imminent-while-egressing rows (ticks 69 and 106: 410 and 1,158 min
+inside the eroded-P10 band, the nominal front still ≥ 48 h away; relocations
+3 → 7, served 16 → 16) — `scratch_review/snap_campfire_diag.py`.
+The knob stays default-OFF until the escape scoring can keep a road-bound flee
+without losing the least-exposure option that scenario needs.
+
 1. **Arm `escape_road_snap_m`** (e.g. 1500 m) as a simulator default. On the
    A/B above:
    * straight escape driving −75…−99 %;

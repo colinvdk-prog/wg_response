@@ -196,6 +196,8 @@ from __future__ import annotations
 
 import copy
 import math
+import threading
+import weakref
 from collections import deque
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -333,6 +335,49 @@ _ROADS_AUTO = object()
 #: capped spur instead of a whole-leg straight chord. A caller who pins
 #: road_spur_max_m in cfg_overrides always wins (configure() precedence).
 SIM_ROAD_SPUR_MAX_M = 8000.0
+
+#: PROCESS-WIDE ROAD-GRAPH SHARING (2026-09-25): the public service holds up
+#: to WGRESP_SIM_MAX_SESSIONS sessions, and an extended Boulder graph is
+#: ~80 MB in RAM — loaded per session that was ~1.3 GB of duplicates on a
+#: 2 GB instance. Sessions never mutate a RoadGraph (adjacency is built at
+#: construction; the lazy snap index is an idempotent cache), so every
+#: session on the same graph FILE shares one object. Weak values: the graph
+#: is freed when the last session using it goes away. Keyed by the resolved
+#: path + mtime + size, so a refetched file is reloaded.
+_SHARED_ROAD_GRAPHS = weakref.WeakValueDictionary()
+_SHARED_ROAD_GRAPHS_LOCK = threading.Lock()
+
+
+def _load_road_graph_shared(mod, key: str):
+    """``mod.load_road_graph(key)``, shared across sessions when ``mod`` is
+    the real wgresponse.roads module with its own loader (an injected or
+    monkeypatched loader is always called directly — tests that fake a
+    missing or failing graph are never bypassed). Missing file -> the
+    loader's None (the caller's loud note stands); never caches None."""
+    loader = getattr(mod, "load_road_graph", None)
+    road_file = getattr(mod, "road_file", None)
+    if (loader is None or road_file is None
+            or getattr(loader, "__module__", None) != "wgresponse.roads"
+            or getattr(road_file, "__module__", None) != "wgresponse.roads"):
+        return mod.load_road_graph(key)
+    try:
+        path = Path(road_file(key))
+        st = path.stat()
+        ck = (str(path.resolve()), st.st_mtime_ns, st.st_size)
+    except (OSError, ValueError, TypeError):
+        return loader(key)
+    with _SHARED_ROAD_GRAPHS_LOCK:
+        g = _SHARED_ROAD_GRAPHS.get(ck)
+    if g is not None:
+        return g
+    g = loader(key)
+    if g is not None:
+        try:
+            with _SHARED_ROAD_GRAPHS_LOCK:
+                g = _SHARED_ROAD_GRAPHS.setdefault(ck, g)
+        except TypeError:              # a graph class without __weakref__
+            pass
+    return g
 
 #: FOUNDER ROUND 4 law 6 (EMBER / ADJACENCY THREAT): the SimSession default
 #: ember-threat radius (meters) threaded into every spread.eta_at call. The
@@ -1972,7 +2017,8 @@ class SimSession:
                 if fire_zone == "extended":
                     # FIRE ZONE road coverage (EXT_ROAD_SUFFIX): the extended
                     # tile's own graph; missing -> LOUD fallback below.
-                    g = mod.load_road_graph(location_key + EXT_ROAD_SUFFIX)
+                    g = _load_road_graph_shared(
+                        mod, location_key + EXT_ROAD_SUFFIX)
                     ext_loaded = g is not None
                     if g is None:
                         road_notes.append(
@@ -1983,7 +2029,7 @@ class SimSession:
                             f"beyond it fall back to straight chords (fetch "
                             f"with py -3 tools/fetch_sim_roads.py --extended)")
                 if g is None:
-                    g = mod.load_road_graph(location_key)
+                    g = _load_road_graph_shared(mod, location_key)
             except Exception as e:       # unreadable cache: loud, non-fatal
                 g = None
                 road_notes.append(

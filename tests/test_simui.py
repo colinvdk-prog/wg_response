@@ -3623,7 +3623,10 @@ def test_escape_road_snap_default_off_and_road_bound_when_armed():
             not (DEFAULT_TILE_DIR.parent / "roads" / f"{key}.wgr").exists():
         pytest.skip("LOUD SKIP: beaver_creek_co tile/road graph not cached")
     base = {"ensemble_n": 2, "horizon_h": 24.0}
-    off = SimSession(key, 2, 1, seed="snap", cfg_overrides=dict(base))
+    # the raw-ray "off" arm is pinned explicitly (robust to any future
+    # simulator default for the knob)
+    off = SimSession(key, 2, 1, seed="snap",
+                     cfg_overrides=dict(base, escape_road_snap_m=0.0))
     on = SimSession(key, 2, 1, seed="snap",
                     cfg_overrides=dict(base, escape_road_snap_m=1500.0))
     pos = LOCATIONS[key].safe_zones[0].loc
@@ -3641,6 +3644,61 @@ def test_escape_road_snap_default_off_and_road_bound_when_armed():
     tiny = SimSession(key, 2, 1, seed="snap",
                       cfg_overrides=dict(base, escape_road_snap_m=0.5))
     assert tiny._escape_ray_targets(pos, tiny._now_s, 15.0) == t_off
+
+
+def test_road_graphs_shared_across_sessions_and_released(tmp_path, monkeypatch):
+    """PROCESS-WIDE ROAD-GRAPH SHARING: two loads of the same graph file are
+    ONE object (sessions never mutate it); the weak cache lets it go when
+    the last holder does; a rewritten file reloads; a monkeypatched loader
+    is never bypassed (so fault-injection tests still see their fault)."""
+    import gc
+
+    from wgresponse import roads as roads_mod
+    from wgresponse import simui as simui_mod
+    from wgresponse.roads import RoadEdge, RoadGraph, save_road_graph
+
+    def tiny(n):
+        nodes = {i: LatLon(40.0, -105.0 + 0.01 * i) for i in range(n)}
+        edges = [RoadEdge(u=i, v=i + 1, highway_class="residential",
+                          length_m=850.0) for i in range(n - 1)]
+        return RoadGraph(nodes, edges, {"key": "share_probe"})
+
+    monkeypatch.setattr(roads_mod, "DEFAULT_ROAD_DIR", tmp_path)
+    save_road_graph(tiny(3), tmp_path / "share_probe.wgr")
+    g1 = simui_mod._load_road_graph_shared(roads_mod, "share_probe")
+    g2 = simui_mod._load_road_graph_shared(roads_mod, "share_probe")
+    assert g1 is not None and g1 is g2
+    path = str((tmp_path / "share_probe.wgr").resolve())
+    assert any(k[0] == path for k in list(simui_mod._SHARED_ROAD_GRAPHS.keys()))
+    del g1, g2
+    gc.collect()
+    assert not any(k[0] == path for k in list(simui_mod._SHARED_ROAD_GRAPHS.keys()))
+    # a refetched (rewritten) file is reloaded, never served stale
+    g3 = simui_mod._load_road_graph_shared(roads_mod, "share_probe")
+    import os
+    save_road_graph(tiny(5), tmp_path / "share_probe.wgr")
+    st = (tmp_path / "share_probe.wgr").stat()
+    os.utime(tmp_path / "share_probe.wgr",
+             ns=(st.st_atime_ns, st.st_mtime_ns + 1_000_000_000))
+    g4 = simui_mod._load_road_graph_shared(roads_mod, "share_probe")
+    assert len(g3.nodes) == 3 and len(g4.nodes) == 5 and g3 is not g4
+    # missing file: None, never cached
+    assert simui_mod._load_road_graph_shared(roads_mod, "absent_probe") is None
+    # a monkeypatched loader is called directly (fault injection wins)
+    monkeypatch.setattr(roads_mod, "load_road_graph", lambda key, road_dir=None: None)
+    assert simui_mod._load_road_graph_shared(roads_mod, "share_probe") is None
+    del g3, g4
+
+
+def test_real_sessions_share_one_road_graph():
+    """Two simulator sessions on the same preset hold the SAME RoadGraph
+    object (the 2 GB App Runner instance serves up to 16 sessions)."""
+    key = "beaver_creek_co"
+    if not (DEFAULT_TILE_DIR.parent / "roads" / f"{key}.wgr").exists():
+        pytest.skip("LOUD SKIP: beaver_creek_co road graph not cached")
+    a = SimSession(key, 2, 1, seed="share-a", cfg_overrides={"ensemble_n": 2})
+    b = SimSession(key, 3, 1, seed="share-b", cfg_overrides={"ensemble_n": 2})
+    assert a._road_graph is not None and a._road_graph is b._road_graph
 
 
 def test_extended_sessions_arm_lawful_only_proactive_escape(tmp_path):

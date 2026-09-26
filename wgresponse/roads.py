@@ -272,7 +272,11 @@ class RoadGraph:
     improve a route. The nearest-node snap index (grid buckets of
     _SNAP_CELL_DEG degrees) is built lazily on first use."""
 
-    __slots__ = ("nodes", "edges", "meta", "_adj", "_snap_grid", "_vmax_mps")
+    # __weakref__: lets the simulator share one loaded graph across its
+    # concurrent sessions (simui._load_road_graph_shared, a
+    # WeakValueDictionary) without keeping it alive after the last session.
+    __slots__ = ("nodes", "edges", "meta", "_adj", "_snap_grid", "_vmax_mps",
+                 "__weakref__")
 
     def __init__(self, nodes: dict, edges: list, meta: Optional[dict] = None):
         self.nodes = dict(nodes)
