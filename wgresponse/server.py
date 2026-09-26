@@ -54,6 +54,23 @@ runs the REAL engine — nothing here forks physics). All authed:
     POST /api/sim/<id>/ctl      {action: run|pause|step|reset|reroll_clients|
                                 goto}  (goto {tick} returns the recorded
                                 tick-k snapshot for the UI scrub — LAW 1)
+    POST /api/sim/<id>/crew     CREW PLACEMENT (founder 2026-09-26 "allow the
+                                crews to be placed on the map"; SETUP only —
+                                before the first ignition):
+                                {crew_id, lat, lon} parks an IN-ZONE crew at
+                                the road node nearest the point (snap <= 2 km;
+                                home_base / egress anchor stay its safe zone)
+                                -> 200 {ok, crew_id, placement, state};
+                                {action: "reset_crews"} -> every placed crew
+                                back to its safe zone -> 200 {ok, action,
+                                reset, state}. 400 = bad body / non-finite
+                                number / unknown or reinforcement crew / point
+                                off the tile / no road within 2 km; 409 once a
+                                fire is lit ("crews are now dispatched by the
+                                engine — reset the scenario to re-stage").
+                                Placements are in the cmd_log and survive ctl
+                                reset and reroll_clients (the same staging
+                                replays); a new session starts with none.
     GET  /api/sim/<id>/state    the live current state [?safety=1 adds the
                                 eroded-P10 safety surface]; ?tick=k INSTEAD
                                 returns SimSession.state_at(k) — the recorded
@@ -612,15 +629,33 @@ class SimSessionManager:
             entry.rerolls += 1
             new_seed = f"{entry.base_seed}#r{entry.rerolls}"
             a = entry.args
+            kept, dropped = [], []
             with entry.lock:
+                # CREW PLACEMENT survives a client re-roll: the same staging
+                # replays on the new layout, re-applied through place_crew so
+                # the new cmd_log carries it (replayable). The re-roll keeps
+                # the tile, road graph and crew ids, so nothing can drop —
+                # but a drop would be reported, never silent.
+                placements = entry.session.crew_placements()
                 entry.session.configure(
                     a["location"], a["clients"], a["crews"], new_seed,
                     a["cfg"], fire_zone=a.get("fire_zone", "standard"),
                     n_crews_1h=a.get("crews_1h", 0),
                     n_crews_3h=a.get("crews_3h", 0))
+                for cid, lat, lon in placements:
+                    try:
+                        entry.session.place_crew(cid, lat, lon)
+                        kept.append(cid)
+                    except ValueError as e:
+                        dropped.append({"crew_id": cid, "error": str(e)})
                 entry._safety_cache = None
-            return 200, {"ok": True, "action": action, "seed": new_seed,
-                         "state": self._state_payload(entry)}
+            out = {"ok": True, "action": action, "seed": new_seed,
+                   "state": self._state_payload(entry)}
+            if placements:
+                out["crew_placements_kept"] = kept
+            if dropped:
+                out["crew_placements_dropped"] = dropped
+            return 200, out
         elif action == "goto":
             # LAW 1 TIME SCRUB (the UI slider): return the RECORDED tick-k
             # snapshot verbatim. Read-only — never mutates the session or its
@@ -644,6 +679,66 @@ class SimSessionManager:
             return 400, {"error": "action must be one of "
                                   "run|pause|step|reset|reroll_clients|goto"}
         return 200, {"ok": True, "action": action,
+                     "state": self._state_payload(entry)}
+
+    _CREW_KEYS = ("crew_id", "lat", "lon")
+
+    def crew(self, sid: str, payload):
+        """CREW PLACEMENT (founder 2026-09-26; simui.SimSession.place_crew /
+        reset_crews). {crew_id, lat, lon} places one IN-ZONE crew at the road
+        node nearest the point; {action: "reset_crews"} sends every placed
+        crew back to its safe zone. Body validated here first (known keys,
+        non-empty crew_id, finite numbers — a bad request never reaches the
+        engine); the engine owns the rest: unknown / reinforcement crew,
+        off-tile point, no road within simui.CREW_PLACE_MAX_ROAD_M -> 400
+        with its own message; simui.CrewPlacementLocked (a fire is lit:
+        setup is over) -> 409 Conflict. Mutates under entry.lock like every
+        command, so a running ticker never sees a half-applied placement."""
+        entry = self._entry(sid)
+        if entry is None:
+            return 404, {"error": f"unknown session {sid!r}"}
+        if not isinstance(payload, dict):
+            return 400, {"error": "body must be a JSON object"}
+        action = payload.get("action", "place")
+        if action == "reset_crews":
+            extra = sorted(set(payload) - {"action"})
+            if extra:
+                return 400, {"error": f"reset_crews takes no other keys "
+                                      f"(got {extra})"}
+            with entry.lock:
+                try:
+                    moved = entry.session.reset_crews()
+                except simui.CrewPlacementLocked as e:
+                    return 409, {"error": str(e)}
+                except ValueError as e:
+                    return 400, {"error": str(e)}
+            return 200, {"ok": True, "action": "reset_crews", "reset": moved,
+                         "state": self._state_payload(entry)}
+        if action != "place":
+            return 400, {"error": "action must be 'place' (the default: "
+                                  "{crew_id, lat, lon}) or 'reset_crews'"}
+        unknown = sorted(set(payload) - set(self._CREW_KEYS) - {"action"})
+        if unknown:
+            return 400, {"error": f"unknown crew keys {unknown}; a placement "
+                                  f"is {list(self._CREW_KEYS)}"}
+        crew_id = payload.get("crew_id")
+        if not isinstance(crew_id, str) or not crew_id:
+            return 400, {"error": "crew_id must be a non-empty string"}
+        try:
+            lat = float(payload["lat"])
+            lon = float(payload["lon"])
+        except (KeyError, TypeError, ValueError):
+            return 400, {"error": "lat and lon are required numbers"}
+        if not (math.isfinite(lat) and math.isfinite(lon)):
+            return 400, {"error": "lat/lon must be finite"}
+        with entry.lock:
+            try:
+                placement = entry.session.place_crew(crew_id, lat, lon)
+            except simui.CrewPlacementLocked as e:
+                return 409, {"error": str(e)}
+            except (TypeError, ValueError) as e:
+                return 400, {"error": str(e)}
+        return 200, {"ok": True, "crew_id": crew_id, "placement": placement,
                      "state": self._state_payload(entry)}
 
     # -- ticker --------------------------------------------------------------
@@ -958,7 +1053,8 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_json(code, payload)
             return
         if (path == "/api/sim/new"
-                or (len(parts) == 5 and parts[4] in ("ignite", "config", "ctl"))):
+                or (len(parts) == 5
+                    and parts[4] in ("ignite", "config", "ctl", "crew"))):
             self._send_json(405, {"error": "use POST"})
             return
         self._send_json(404, {"error": "not found"})
@@ -980,6 +1076,8 @@ class _Handler(BaseHTTPRequestHandler):
                 code, out = mgr.config(parts[3], payload)
             elif len(parts) == 5 and parts[4] == "ctl":
                 code, out = mgr.ctl(parts[3], payload)
+            elif len(parts) == 5 and parts[4] == "crew":
+                code, out = mgr.crew(parts[3], payload)
             elif len(parts) == 5 and parts[4] == "state":
                 code, out = 405, {"error": "use GET"}
             else:

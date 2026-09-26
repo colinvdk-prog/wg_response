@@ -85,6 +85,43 @@
   .crewtiers .tier { flex: 1 1 0; display: flex; flex-direction: column; gap: 3px; }
   .crewtiers .tier label { font-size: 10px; color: var(--dim); text-transform: uppercase;
            letter-spacing: .5px; }
+  /* CREW PLACEMENT (founder 2026-09-26 "allow the crews to be placed on the
+     map"): the Place-crews mode has its OWN cursor + teal map hint (never the
+     ignite crosshair / red hint), a per-crew placement list, a dotted
+     click->road snap tick, and a white ring on a crew the user placed. */
+  #map.placing, #map.placing .leaflet-container { cursor: cell; }
+  #placerow { margin-top: 8px; }
+  #placecrews.active { background: var(--safety); border-color: var(--safety);
+                       color: #06283a; font-weight: 700; }
+  #placecrews:disabled, #resetcrews:disabled { opacity: .45; cursor: not-allowed;
+                       border-color: var(--dim); }
+  #placehint { margin: 4px 0 0; }
+  #placehint.locked { color: var(--amber); }
+  #placelist { margin-top: 3px; font-size: 11px; }
+  #placelist .pl { display: flex; gap: 6px; align-items: baseline; padding: 1px 4px;
+                   border-radius: 4px; cursor: pointer; }
+  #placelist .pl.next { background: #0b3a45; outline: 1px solid var(--safety); }
+  #placelist .pl .who { color: var(--orange); font-weight: 700; min-width: 26px; }
+  #placelist .pl .where { color: var(--dim); }
+  #placelist .pl.placed .where { color: var(--text); }
+  /* top, below the sim clock (the bottom is the toast's, where placement
+     refusals are shown; the withdrawal banner cannot show before a fire) */
+  #placemaphint { display: none; position: absolute; z-index: 1500; top: 72px; left: 50%;
+                  transform: translateX(-50%); background: rgba(77,208,225,.95);
+                  color: #06283a; font-size: 12px; font-weight: 700; padding: 3px 12px;
+                  border-radius: 10px; max-width: 70%; text-align: center; }
+  .crew-icon.placed { box-shadow: 0 0 0 2px #ffffff, 0 0 7px 2px rgba(77,208,225,.85); }
+  .crew-icon.draggable { cursor: grab; }
+  /* MARKER POSITION FIX (found building crew placement, 2026-09-26): the
+     .crew-icon / .fire-origin rules below set position:relative, overriding
+     Leaflet's .leaflet-marker-icon {position:absolute}, so every such icon
+     also took up normal-flow space in the marker pane and each later one was
+     drawn lower on screen — crew N sat 10*(N-1) px SOUTH of its true position
+     (a crew placed on a road node appeared beside it; a fire origin lit
+     after five crews drew ~50 px south of the click). An absolute icon is
+     still the containing block of its .crew-arrow / .creloc-ring / .cinb /
+     .core / .halo children, so nothing else moves. */
+  .leaflet-marker-icon.crew-icon, .leaflet-marker-icon.fire-origin { position: absolute; }
   #physrow { gap: 12px; }
   #physrow label { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
   button { background: var(--navy); color: var(--text); border: 1px solid var(--orange);
@@ -418,6 +455,23 @@
       </div>
       <div class="sub">in-zone crews respond now; reinforcements mobilize on the
         first ignition &amp; arrive after ~1 h / ~3 h — inbound at the map edge with a countdown</div>
+      <!-- CREW PLACEMENT (founder 2026-09-26 "allow the crews to be placed on
+           the map"; POST /api/sim/<id>/crew; docs/SIMULATOR_DESIGN.md "Crew
+           placement"). SETUP ONLY — before the first ignition. Place-crews
+           mode: each map click puts the NEXT in-zone crew (1, 2, ... cycling)
+           on the road node nearest the click (<= 2 km, farther is refused);
+           while the mode is on, in-zone crew markers are draggable. The mode
+           is EXCLUSIVE with click-to-ignite: arming an intensity leaves it,
+           and while it is on a map click never lights a fire. After the first
+           ignition both buttons are disabled — crews are dispatched by the
+           engine. Changing location / crews / fire zone rebuilds the session
+           and clears placements (toasted); Reset and Re-roll keep them. -->
+      <div class="row" id="placerow"><span id="placewrap">
+        <button id="placecrews" class="small" disabled>Place crews</button>
+        <button id="resetcrews" class="small" disabled>Reset to safe zones</button></span>
+      </div>
+      <div class="sub" id="placehint"></div>
+      <div id="placelist"></div>
     </div>
 
     <div class="ctl">
@@ -600,6 +654,7 @@
 <div id="crewoverrunbanner"></div>
 <div id="replaybanner"></div>
 <div id="ignitehint">click the map to ignite (burnable fuel only)</div>
+<div id="placemaphint"></div>
 <div id="toast"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -1000,6 +1055,12 @@ let scrubbing = false;     // true while viewing a RECORDED past tick (read-only
 let headTick = null;       // history.last_tick seen while live (the playhead)
 let scrubBusy = false;     // a scrub state?tick fetch is in flight
 let scrubWant = null;      // the newest tick the user dragged to (coalesced)
+// CREW PLACEMENT (founder 2026-09-26): `placing` = Place-crews mode is on (a
+// map click places a crew, NEVER ignites; exclusive with `armed`);
+// `placeNext` = index into the in-zone crew list — the crew the next map
+// click places (1, 2, ... cycling).
+let placing = false;
+let placeNext = 0;
 
 function apiKey(forceAsk) {
   let k = localStorage.getItem("wgresp_key");
@@ -1232,6 +1293,10 @@ function applyScrubUI() {
     $("map").classList.remove("crosshair");
     $("ignitehint").style.display = "none";
   }
+  // CREW PLACEMENT: the past is read-only — leave Place-crews mode and let
+  // the placement controls re-derive their enabled state (setup phase only)
+  if (scrubbing && placing) setPlacing(false);
+  else syncPlacementUI(lastState);
 }
 
 function enterScrub(k) {            // user grabbed the slider -> pause + replay
@@ -1253,6 +1318,10 @@ let scenarioUsed = false;
 
 async function newSession() {
   if (mutationBlocked()) return;
+  // CREW PLACEMENT: a rebuilt scenario (location / crews / fire zone /
+  // physics change) starts every crew at its safe zone again — say so
+  const hadPlaced = sid ? placedCount(lastState) : 0;
+  placeNext = 0;
   setStatus("building scenario (real tile + WUI placement)…");
   // SEMANTICS 9 crew tiers (crews_1h/crews_3h out-of-region reinforcements) +
   // SEMANTICS 11 physics toggles (spotting / grass_realism) passed on create.
@@ -1279,6 +1348,9 @@ async function newSession() {
     }
     setTimeout(() => { $("run").click(); }, 400);
   }
+  if (hadPlaced)
+    toast(`crew placements cleared (${hadPlaced}) — the scenario was rebuilt, ` +
+          `so every crew starts at its safe zone again`);
   // FIRE ZONE honesty: requested extended but the wide-area tile is not
   // cached -> the engine fell back to standard with a loud note; surface it.
   if (body.fire_zone === "extended" && out.state &&
@@ -1300,7 +1372,12 @@ function afterCommand(state) {
 const ctl = action => guard(async () => {
   if (!sid || mutationBlocked()) return;
   const out = await api("POST", `/api/sim/${sid}/ctl`, { action });
-  if (out.seed) toast("re-rolled placement — new seed " + out.seed);
+  // CREW PLACEMENT survives reset + client re-roll (the same staging replays)
+  const kept = (out.crew_placements_kept || []).length;
+  if (out.seed) toast("re-rolled placement — new seed " + out.seed +
+                      (kept ? ` · ${kept} crew placement${kept === 1 ? "" : "s"} kept` : ""));
+  else if (action === "reset" && placedCount(out.state))
+    toast("scenario reset — crews re-staged where you placed them");
   afterCommand(out.state);
 });
 const sendConfig = patch => guard(async () => {
@@ -1310,7 +1387,8 @@ const sendConfig = patch => guard(async () => {
 });
 
 async function igniteAt(lat, lng) {
-  if (!sid || !armed || mutationBlocked()) return;
+  // CREW PLACEMENT: a click in Place-crews mode is a placement, never a fire
+  if (!sid || !armed || placing || mutationBlocked()) return;
   try {
     const out = await api("POST", `/api/sim/${sid}/ignite`,
       { lat, lon: lng, intensity: armed, wind_dir_deg: +$("wind").value });
@@ -1318,6 +1396,187 @@ async function igniteAt(lat, lng) {
     afterCommand(out.state);
   } catch (e) {
     toast("ignite rejected: " + String(e.message || e));  // e.g. non-burnable cell
+  }
+}
+
+// --- CREW PLACEMENT (founder 2026-09-26 "allow the crews to be placed on the
+// map"). SETUP ONLY: state.crew_placement.setup is true until the first fire
+// is lit; the engine (simui.SimSession.place_crew, POST /api/sim/<id>/crew)
+// snaps every placement to the nearest road node (<= 2 km, farther refused),
+// keeps each crew's escape target at its safe zone, and refuses (409) once a
+// fire is lit. The page only proposes points — every snap / refusal is the
+// engine's, shown verbatim. Offline-shim safe: marker dragging needs real
+// Leaflet (guarded); click-to-place works on the shim's map click too.
+const PLACE_LOCKED = "crews are now dispatched by the engine — reset the scenario to re-stage";
+const placeLayer = L.layerGroup().addTo(map);   // click -> road snap ticks (setup)
+const shortCrew = cid => String(cid).replace("sim-", "");
+function placementOpen(st) {
+  if (!st || scrubbing) return false;
+  const cp = st.crew_placement;
+  if (cp && typeof cp === "object") return !!cp.setup;
+  return !(st.fires || []).length;            // older backend: no fire lit yet
+}
+function placeableIds(st) {
+  const cp = st && st.crew_placement;
+  if (cp && Array.isArray(cp.placeable)) return cp.placeable.slice();
+  return ((st && st.crews) || []).filter(c => (c.region || "in_zone") === "in_zone")
+    .map(c => c.crew_id);
+}
+function placedMap(st) {
+  const out = {};
+  const cp = st && st.crew_placement;
+  ((cp && Array.isArray(cp.placed)) ? cp.placed : []).forEach(p => {
+    if (p && p.crew_id != null) out[p.crew_id] = p;
+  });
+  return out;
+}
+function placedCount(st) { return Object.keys(placedMap(st)).length; }
+function placedWhere(p) {
+  if (!p) return "";
+  return p.snapped
+    ? `on the road · snapped ${Math.round(p.snap_m || 0)} m · ${(+p.lat).toFixed(5)}, ${(+p.lon).toFixed(5)}`
+    : `raw clicked point (no road graph) · ${(+p.lat).toFixed(5)}, ${(+p.lon).toFixed(5)}`;
+}
+// Mode switch. Exclusive with click-to-ignite: entering it disarms any primed
+// intensity (and arming an intensity leaves it — see the intensity buttons).
+function setPlacing(on) {
+  placing = !!on && placementOpen(lastState);
+  if (placing && armed) {
+    armed = null;
+    for (const j of ["low", "moderate", "high", "extreme"])
+      $("int-" + j).classList.remove("active");
+    $("map").classList.remove("crosshair");
+    $("ignitehint").style.display = "none";
+  }
+  syncPlacementUI(lastState);
+}
+function selectNextCrew(cid) {
+  const ids = placeableIds(lastState);
+  const i = ids.indexOf(cid);
+  if (i === -1) return;
+  placeNext = i;
+  if (!placing) setPlacing(true); else syncPlacementUI(lastState);
+}
+// One placement round-trip. The engine's snapped position comes back in the
+// state (render() PLACES the marker there — a re-stage is never a drive); a
+// refusal (far from any road, off the tile, fire already lit, ...) is toasted
+// verbatim and a dragged marker snaps back to where it was.
+async function placeCrew(cid, lat, lng) {
+  const R = crewReg[cid];
+  const snapBack = () => {
+    if (R && R.shown && R.marker && R.marker.setLatLng) R.marker.setLatLng(R.shown);
+  };
+  if (!sid || mutationBlocked() || !placementOpen(lastState)) { snapBack(); return false; }
+  for (let i = 0; busy && i < 100; i++) await new Promise(r => setTimeout(r, 100));
+  if (busy) { snapBack(); toast("busy — try the placement again"); return false; }
+  busy = true;
+  try {
+    const out = await api("POST", `/api/sim/${sid}/crew`, { crew_id: cid, lat, lon: lng });
+    const p = out.placement || {};
+    // the cursor cycles 1, 2, ... whenever the NEXT crew was placed (by a map
+    // click or by dragging that crew's marker)
+    const ids = placeableIds(out.state);
+    if (ids.length && ids[placeNext] === cid) placeNext = (placeNext + 1) % ids.length;
+    toast(p.snapped
+      ? `crew ${shortCrew(cid)} placed on the road — snapped ${Math.round(p.snap_m || 0)} m from your click`
+      : `crew ${shortCrew(cid)} placed at the clicked point — ${p.note || "no road graph loaded"}`);
+    afterCommand(out.state);
+    return true;
+  } catch (e) {
+    snapBack();
+    toast(`crew ${shortCrew(cid)} not placed: ` + String(e.message || e));
+    return false;
+  } finally { busy = false; }
+}
+// A map click in Place-crews mode: the NEXT in-zone crew goes to the nearest
+// road node; on success placeCrew cycles the cursor to the following crew.
+async function placeClickAt(lat, lng) {
+  const ids = placeableIds(lastState);
+  if (!ids.length) { toast("no in-zone crews to place"); return; }
+  await placeCrew(ids[placeNext % ids.length], lat, lng);
+}
+// Everything placement-related the page shows, derived from ONE state: the two
+// buttons (disabled + the lock reason as tooltip once a fire is lit), the hint,
+// the per-crew list, the teal map hint, the click->road snap ticks, and the
+// crew markers' drag handles + "placed" ring.
+function syncPlacementUI(st) {
+  if (!st) return;
+  const open = placementOpen(st);
+  if (placing && !open) placing = false;
+  const cp = st.crew_placement || {};
+  const ids = placeableIds(st);
+  const placed = placedMap(st);
+  const nPlaced = Object.keys(placed).length;
+  if (placeNext >= ids.length) placeNext = 0;
+  const nextId = ids.length ? ids[placeNext] : null;
+  const lit = (st.fires || []).length > 0;
+  const lockTip = cp.locked_reason || PLACE_LOCKED;
+  const pb = $("placecrews"), rb = $("resetcrews");
+  pb.disabled = !open;
+  rb.disabled = !open || !nPlaced;
+  pb.classList.toggle("active", placing);
+  $("map").classList.toggle("placing", placing);
+  const km = ((cp.max_road_m || 2000) / 1000).toFixed(0);
+  pb.title = open
+    ? `Place crews: click the map to put the next in-zone crew on the nearest road (within ${km} km); drag a crew to move it. No fire is lit in this mode.`
+    : (lit ? lockTip : "placement is available before the first ignition");
+  rb.title = open ? "Send every placed crew back to its safe zone" : pb.title;
+  // disabled buttons swallow hover in some browsers: the wrapper carries it too
+  $("placewrap").title = open ? "" : pb.title;
+  const hint = $("placehint");
+  hint.classList.toggle("locked", lit && !open);
+  if (!open) {
+    hint.textContent = lit ? "Crews are now dispatched by the engine — reset the scenario to re-stage." : "";
+  } else if (placing) {
+    hint.textContent = nextId
+      ? `Click the map: crew ${shortCrew(nextId)} goes to the nearest road (within ${km} km). ` +
+        `Drag a crew to move it; click a crew or a row to choose who is next.`
+      : "no in-zone crews to place";
+  } else {
+    hint.textContent = nPlaced
+      ? `${nPlaced} crew${nPlaced === 1 ? "" : "s"} placed — they start there; every escape target stays its safe zone.`
+      : "Crews start at their safe zones — Place crews puts them on roads of your choice before a fire is lit.";
+  }
+  const crewById = {};
+  (st.crews || []).forEach(c => { crewById[c.crew_id] = c; });
+  $("placelist").innerHTML = ids.map((cid, i) => {
+    const p = placed[cid], c = crewById[cid] || {};
+    const where = p ? "placed · " + placedWhere(p)
+      : `at safe zone ${c.anchor_zone_id || "?"}`;
+    const next = placing && i === placeNext ? " next" : "";
+    return `<div class="pl${p ? " placed" : ""}${next}" data-cid="${cid}" title="${open ? "click to place this crew next" : ""}">` +
+      `<span class="who">${shortCrew(cid)}</span><span class="where">${next ? "▶ next click · " : ""}${where}</span></div>`;
+  }).join("");
+  const mh = $("placemaphint");
+  mh.style.display = placing ? "block" : "none";
+  if (placing) mh.textContent = `PLACING CREWS — click the map to put crew ${shortCrew(nextId || "?")} ` +
+    `on the nearest road · drag a crew to move it · no fire is lit in this mode`;
+  // click -> road snap ticks (setup only): where you clicked, dotted to the node
+  placeLayer.clearLayers();
+  if (open) {
+    Object.values(placed).forEach(p => {
+      if (!p.snapped || !isFinite(p.requested_lat) || !(p.snap_m > 1)) return;
+      const tip = `crew ${shortCrew(p.crew_id)}: your click, snapped ${Math.round(p.snap_m)} m to the nearest road node`;
+      L.polyline([[p.requested_lat, p.requested_lon], [p.lat, p.lon]],
+        { color: "#4dd0e1", weight: 1.5, opacity: 0.9, dashArray: "2 4" })
+        .bindTooltip(tip).addTo(placeLayer);
+      L.circleMarker([p.requested_lat, p.requested_lon],
+        { radius: 4, color: "#4dd0e1", weight: 1.5, fill: false, fillOpacity: 0 })
+        .bindTooltip(tip).addTo(placeLayer);
+    });
+  }
+  for (const cid in crewReg) {
+    const R = crewReg[cid], c = crewById[cid];
+    const canDrag = placing && !!c && (c.region || "in_zone") === "in_zone" && !c.inbound;
+    if (R.marker && R.marker.dragging) {
+      try { if (canDrag) R.marker.dragging.enable(); else R.marker.dragging.disable(); }
+      catch (e) { /* marker torn down: no-op */ }
+    }
+    const el = R.marker && R.marker.getElement ? R.marker.getElement() : null;
+    if (el) {
+      el.classList.toggle("placed", open && !!placed[cid]);
+      el.classList.toggle("draggable", canDrag);
+    }
   }
 }
 
@@ -1342,13 +1601,41 @@ $("reroll").addEventListener("click", () => ctl("reroll_clients"));
 for (const k of ["low", "moderate", "high", "extreme"]) {
   $("int-" + k).addEventListener("click", () => {
     armed = (armed === k) ? null : k;
+    // CREW PLACEMENT: arming ignition LEAVES Place-crews mode — the map click
+    // has exactly one meaning at a time (place a crew XOR light a fire)
+    if (armed && placing) setPlacing(false);
     for (const j of ["low", "moderate", "high", "extreme"])
       $("int-" + j).classList.toggle("active", armed === j);
     $("map").classList.toggle("crosshair", !!armed);
     $("ignitehint").style.display = armed ? "block" : "none";
   });
 }
-map.on("click", e => { if (armed) igniteAt(e.latlng.lat, e.latlng.lng); });
+map.on("click", e => {
+  // CREW PLACEMENT owns the click while its mode is on: it places a crew and
+  // NEVER ignites (setPlacing disarmed any primed intensity on entry)
+  if (placing) { placeClickAt(e.latlng.lat, e.latlng.lng); return; }
+  if (armed) igniteAt(e.latlng.lat, e.latlng.lng);
+});
+$("placecrews").addEventListener("click", () => {
+  if (mutationBlocked()) return;
+  setPlacing(!placing);
+});
+$("resetcrews").addEventListener("click", () => guard(async () => {
+  if (!sid || mutationBlocked()) return;
+  const out = await api("POST", `/api/sim/${sid}/crew`, { action: "reset_crews" });
+  const back = out.reset || [];
+  toast(back.length ? `crew${back.length === 1 ? "" : "s"} ${back.map(shortCrew).join(", ")} ` +
+                      `back at ${back.length === 1 ? "its safe zone" : "their safe zones"}`
+                    : "every crew is already at its safe zone");
+  placeNext = 0;
+  afterCommand(out.state);
+}));
+// a crew row in the placement list: choose who the next map click places
+$("placelist").addEventListener("click", e => {
+  const row = e.target && e.target.closest ? e.target.closest(".pl") : null;
+  if (row && row.dataset.cid && placementOpen(lastState) && !mutationBlocked())
+    selectNextCrew(row.dataset.cid);
+});
 
 $("wind").addEventListener("input", () => {
   $("windval").textContent = $("wind").value;
@@ -1412,9 +1699,14 @@ $("grass_realism").addEventListener("change", () => guard(newSession));
 $("copyseed").addEventListener("click", () => {
   if (!lastState) return;
   const s = lastState;
+  // CREW PLACEMENT: placed starts change the timeline, so they ride along
+  // (the full command script is state.cmd_log: place_crew / reset_crews)
+  const placedStr = Object.values(placedMap(s)).map(p =>
+    `${p.crew_id}@${(+p.requested_lat).toFixed(5)},${(+p.requested_lon).toFixed(5)}`).join(";");
   const line = `wgresponse simui repro: seed=${s.seed} location=${s.location} ` +
                `fire_zone=${s.fire_zone || "standard"} ` +
-               `clients=${s.clients.length} crews=${s.crews.length} tick=${s.tick}`;
+               `clients=${s.clients.length} crews=${s.crews.length} tick=${s.tick}` +
+               (placedStr ? ` placed=${placedStr}` : "");
   (navigator.clipboard ? navigator.clipboard.writeText(line)
                        : Promise.reject()).then(
     () => toast("copied: " + line),
@@ -2084,6 +2376,7 @@ function render(st) {
     }
   }
   const routeMeta = {};                  // crew_id -> {offroad} for the cards
+  const placedRecs = placedMap(st);      // CREW PLACEMENT records by crew_id
   (st.crews || []).forEach((c, idx) => {
     let R = crewReg[c.crew_id];
     if (!R) {
@@ -2122,6 +2415,20 @@ function render(st) {
           }
         } catch (e) { /* keep default styling */ }
       }
+      // CREW PLACEMENT: drag a crew to move it (syncPlacementUI enables the
+      // handle only in Place-crews mode, in-zone crews, before any fire);
+      // clicking a crew picks it as the next one to place. Real Leaflet only
+      // (the offline shim has no marker events — click-to-place still works).
+      if (R.marker.on) {
+        const cid = c.crew_id, RR = R;
+        R.marker.on("dragstart", () => { RR.dragging = true; delete anim[cid]; });
+        R.marker.on("dragend", () => {
+          RR.dragging = false;
+          const ll = RR.marker.getLatLng ? RR.marker.getLatLng() : null;
+          if (ll) placeCrew(cid, ll.lat, ll.lng);
+        });
+        R.marker.on("click", () => { if (placing) selectNextCrew(cid); });
+      }
     }
     // tooltip carries the crew's REGION (SEMANTICS 9) + any inbound countdown /
     // relocating / caught-in-fire context (SEMANTICS 10) so hovering a crew
@@ -2137,7 +2444,10 @@ function render(st) {
       (c.relocating
         ? `<br>⟳ REPOSITIONING — ${c.relocate_reason === "proactive_escape" ? "proactive escape" : c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened"}` : "") +
       (overrunIds[c.crew_id]
-        ? `<br>⚠ CAUGHT IN FIRE (${overrunIds[c.crew_id].reason || ""})` : ""));
+        ? `<br>⚠ CAUGHT IN FIRE (${overrunIds[c.crew_id].reason || ""})` : "") +
+      (placedRecs[c.crew_id]
+        ? `<br>◎ start placed by you — ${placedWhere(placedRecs[c.crew_id])}` +
+          `<br>escape target stays safe zone ${c.anchor_zone_id || ""}` : ""));
     // SEMANTICS 9/10: paint the persistent marker element for this crew's state
     // (inbound greyed square + chevron countdown / relocating amber pulse ring /
     // overrun red flash). No-op in the offline shim (no per-marker element).
@@ -2237,7 +2547,9 @@ function render(st) {
 
     // tween the marker along the road toward its new tick position; polls
     // between ticks repeat the same target and leave the tween running
-    if (tickChanged || sessionChanged || clockRewound) {
+    if (R.dragging) {
+      // CREW PLACEMENT: the user is holding this marker — never yank it
+    } else if (tickChanged || sessionChanged || clockRewound) {
       if (mv)          // ROADS LEGIBILITY: along the road actually driven
         startCrewTweenMV(c.crew_id, R, [c.lat, c.lon], mv,
                          sessionChanged || clockRewound, tickGapMs);
@@ -2245,9 +2557,16 @@ function render(st) {
         startCrewTween(c.crew_id, R, [c.lat, c.lon],
                        [roadRoute, egressPts], sessionChanged || clockRewound,
                        tickGapMs);
+    } else if (R.shown && (R.shown[0] !== c.lat || R.shown[1] !== c.lon)) {
+      // CREW PLACEMENT / reset-to-zones moved the crew with NO tick: a setup
+      // re-stage is never a drive — PLACE the marker at the snapped road node
+      delete anim[c.crew_id];
+      if (R.marker && R.marker.setLatLng) R.marker.setLatLng([c.lat, c.lon]);
+      R.shown = [c.lat, c.lon];
     }
   });
   lastTick = st.tick != null ? st.tick : lastTick;
+  syncPlacementUI(st);   // CREW PLACEMENT controls, list, drag handles, ring
 
   // alert feed (real AlertEvents, newest first)
   const evts = (st.alert_feed || []).slice(-60).reverse();
@@ -2340,8 +2659,14 @@ function render(st) {
     let tail = "";
     if (c.inbound)
       tail = `<div class="tt" style="color:var(--amber)">▸ mobilized from ${regionTag} — arrives in ${inbMin != null ? inbMin + "m" : "—"} (not dispatch-eligible until arrival)</div>`;
-    else if (!stops && !done)
-      tail = `<div class="tt" style="color:var(--dim)">idle — staged at ${c.anchor_zone_id || "base"}</div>`;
+    else if (!stops && !done) {
+      // CREW PLACEMENT: a crew still resting on the start the user placed
+      const pr = placedRecs[c.crew_id];
+      const atPlaced = pr && Math.abs(pr.lat - c.lat) < 1e-6 && Math.abs(pr.lon - c.lon) < 1e-6;
+      tail = atPlaced
+        ? `<div class="tt" style="color:var(--safety)">idle — at its placed start (${pr.snapped ? "road node" : "raw point"}) · escape zone ${c.anchor_zone_id || "base"}</div>`
+        : `<div class="tt" style="color:var(--dim)">idle — staged at ${c.anchor_zone_id || "base"}</div>`;
+    }
     const cls = overrunIds[c.crew_id] ? " caught" : (c.relocating ? " reloc" : "");
     return `<div class="crew-block${cls}"><span class="cid">${c.crew_id}</span> ` +
       `<span class="st">${c.status}</span>${badges}${dep}${offroad}${stops}${done}${tail}</div>`;

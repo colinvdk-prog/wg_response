@@ -39,6 +39,60 @@ dep-free**. If a tile is missing at runtime: loud banner + synthetic fallback (n
   lognormal ($600k–$5M) so dispatch triage is visible.
 - **Response teams (M)** — 1–12. Staged at real safe-zone anchor points (town centers /
   highway nodes per location); safe zones marked on the map.
+- **Crew placement** (founder 2026-09-26: *"allow the crews to be placed on the map"*) —
+  a **setup-only** control in the Response crews panel, before the first ignition.
+  *Place crews* turns the map click into a placement — it never lights a fire (arming an
+  intensity leaves the mode, entering it disarms the intensity; its own cursor and teal
+  hint): each click puts the next in-zone crew (1, 2, … cycling; click a crew or its row to
+  choose) on the **road-graph node nearest the click**, and in-zone crew markers become
+  draggable; *Reset to safe zones* undoes every placement. **Refusals** (the engine's
+  message, shown verbatim; `POST /api/sim/<id>/crew` → 400): a click more than **2 km from
+  every road node** (the message carries the measured distance — a truck starts on a
+  road; the whole-valley `eagle_vail_co` tile has wilderness where this happens), a point
+  off the tile (or whose nearest road node is), an unknown crew, and an out-of-region
+  **reinforcement** (it arrives at its staging zone). With no road graph loaded the raw
+  point is used and said loudly (placement note + `state.notes`). A placement moves the
+  crew's **position + beacon only**: `home_base` and the egress anchor stay its round-robin
+  safe zone — an escape target is never an arbitrary clicked point — and the SEM-10 sweep
+  governs a placed crew exactly like any parked crew. Once a fire is lit, placement is
+  refused (409, *"crews are now dispatched by the engine — reset the scenario to
+  re-stage"*) and the page disables the mode with that tooltip. **Determinism:**
+  `place_crew` / `reset_crews` land in `cmd_log`; placements survive **Reset** and the
+  client **re-roll** (the same staging replays; the re-rolled session's own `cmd_log`
+  re-issues them), a replay of the command script reproduces the timeline byte for byte,
+  and a session with no placement is byte-identical to before (the one additive state key,
+  `crew_placement`, stripped: per-tick hashes of eagle_vail_co / boulder_co / malibu_ca
+  scripted runs matched the pre-feature engine exactly). Changing location, crew count,
+  fire zone or a physics toggle builds a new session with no placements, and the page
+  says so. **Safety, measured.** On the controlled grass test tile
+  (tests/test_sim_crew_placement.py) a crew placed on the road 3 km downwind of where a
+  HIGH fire is then lit is relocated by the SEM-10 sweep at the first tick: 0 departure
+  violations, 0 crew overruns, the crew > 2 km clear; a fire lit ON a placed crew is
+  reported by the 10c audit on every tick the crew's own cell is burned or imminent
+  (asserted row for row) while the sweep drives it out. On the real eagle_vail_co timber
+  through the page's defaults (spotting on, HIGH, wind from 240, ignition WSW of
+  Edwards; scratch_review/crew_placement_path_probe.py), a crew placed
+  ≤ ~2 km downwind is already inside the pessimistic front at the first audit — the
+  backstop REPORTS it for that one tick (red "crew overrun" banner, 1 — UNSAFE) while
+  the sweep turns it out, and it is clear with violations 0 from tick 2 (departure
+  violations 0 throughout); placed ≥ ~3.5 km out, dispatch takes it out of the path with
+  0 overruns. Placement cannot hide danger: it only chooses where an idle crew waits,
+  and the audit judges it exactly like every other crew. (The tick-1 report is the tick
+  order at work — the sweep runs after each tick's movement, so no crew anywhere can
+  leave a cell the first tick's front reaches before that tick's audit; a pre-movement
+  sweep on the ignition tick would change every session's timeline and is left as a
+  decision.) Frames, eagle_vail_co, 40 homes, 4 in-zone + 1 +1 h crew, seed
+  `placement-demo` (`docs/img/crew_placement/`): `01_refused_off_road` (three crews put
+  on roads by map clicks, a click on roadless ski terrain refused), `02_setup_all_placed`
+  (the fourth crew dragged; hover text), `03_dispatched_from_placed_starts` (tick 2:
+  dispatched from the placed starts, placement locked), `04_fire_path_tick1_reported` and
+  `05_fire_path_tick3_relocated` (a crew placed ~2 km downwind: reported, then out).
+  **Marker position fix (found here):** `.crew-icon` / `.fire-origin` carried
+  `position: relative`, overriding Leaflet's absolutely positioned marker icon, so each
+  icon also took normal-flow space in the marker pane — crew N was drawn 10·(N−1) px
+  south of its true position and a fire origin lit after five crews ~50 px south of the
+  click (on the page since the initial commit). Both are absolutely positioned again
+  (measured: icon centres now match `latLngToContainerPoint` to the pixel).
 - **Fire** — click map to ignite (or drag existing); **intensity** preset mapping to weather:
   Low (8 mph, RH 35%), Moderate (18 mph, RH 22%), High (28 mph, RH 12%), Extreme
   (40 mph gusting, RH 6%) + wind direction dial (default = location's canonical hazard wind:

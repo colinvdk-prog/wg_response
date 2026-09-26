@@ -49,6 +49,23 @@ class CrewTracker:
         self._history[beacon.crew_id].append(beacon)
         return True
 
+    def restage(self, beacon: CrewBeacon) -> None:
+        """Re-stage a crew at `beacon` REGARDLESS of its timestamp and restart
+        its history there. This is a SETUP action, not telemetry: the
+        interactive simulator's crew placement (wgresponse.simui
+        SimSession.place_crew / reset_crews, before any fire is lit) parks a
+        crew somewhere it never drove to, so the old trail is dropped rather
+        than joined to the new spot. ingest() keeps its strictly-newer rule
+        for real beacons; this is the only path that bypasses it. Unknown
+        crew ids are auto-registered, like ingest()."""
+        crew = self._crews.get(beacon.crew_id)
+        if crew is None:
+            crew = Crew(crew_id=beacon.crew_id, name=beacon.crew_id)
+            self._crews[beacon.crew_id] = crew
+        crew.last_beacon = beacon
+        crew.status = beacon.status
+        self._history[beacon.crew_id] = deque([beacon], maxlen=HISTORY_LEN)
+
     def crews(self) -> List[Crew]:
         """All tracked crews, sorted by crew_id (deterministic)."""
         return [self._crews[cid] for cid in sorted(self._crews)]

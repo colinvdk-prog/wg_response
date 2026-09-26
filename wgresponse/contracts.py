@@ -385,6 +385,18 @@ wgresponse.simui   (founder request 2026-07-09; docs/SIMULATOR_DESIGN.md is the 
     anywhere on the tile. Extended sessions default horizon_h to >=120 (a far
     fire must stay inside the forecast horizon). Missing _ext tile -> loud note
     + fall back to standard.
+    CREW PLACEMENT (founder request 2026-09-26 "allow the crews to be placed on
+    the map"): .place_crew(crew_id, lat, lon) / .reset_crews() — SETUP ONLY
+    (before the first ignition; afterwards CrewPlacementLocked, HTTP 409 —
+    crews then belong to dispatch + SAFETY SEMANTICS 10). Moves an IN-ZONE
+    crew's sim position + beacon to the road-graph node nearest the point
+    (simui.CREW_PLACE_MAX_ROAD_M = 2 km; farther, off-tile, unknown crew or an
+    out-of-region reinforcement -> CrewPlacementError, HTTP 400; no graph ->
+    the raw point, loud note). home_base and the egress anchor STAY the safe
+    zone (escape targets are never arbitrary points). Recorded in cmd_log,
+    replayed by reset() and the client re-roll; no placement = byte-identical
+    sessions (state gains one additive key, crew_placement). Server:
+    POST /api/sim/<id>/crew {crew_id, lat, lon} | {action: "reset_crews"}.
     .ignite(loc, intensity) / .set_wind(dir_deg) / .set_buffer(egress_buffer_min)
     .tick() -> state dict for the UI   (deterministic given seed + command script)
     Five real-location tiles cached dep-free under data/tiles/ (LFPS-sourced).

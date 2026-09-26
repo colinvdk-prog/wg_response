@@ -22,6 +22,8 @@ docs/SIMULATOR_DESIGN.md is the spec of record):
                                  intensity, wind_dir_deg=None) / .set_wind /
                                  .set_buffer / .set_slack / .set_speed /
                                  .pause / .resume / .reset / .tick / .state
+                                 / .place_crew(crew_id, lat, lon) /
+                                 .reset_crews (CREW PLACEMENT, setup only)
 
 REAL ENGINE PATHS ONLY (design rule 1): every tick runs spread.ensemble_arrival
 (perimeter-seeded), spread.eta_at, alerts.AlertEngine.evaluate,
@@ -147,6 +149,27 @@ AVAILABLE at its staging safe zone (lat/lon = the zone) and behaves as an
 ordinary dispatch-eligible crew; an INBOUND crew is NEVER in a dispatch plan
 and never counts as an idle full-utilization failure. Arrival is a pure
 function of (first-ignition time + delay), so scrub replay is byte-identical.
+
+CREW PLACEMENT (founder 2026-09-26 "allow the crews to be placed on the map";
+SIMULATOR_DESIGN.md "Crew placement"): place_crew(crew_id, lat, lon) parks
+an IN-ZONE crew at the road-graph node nearest the point — sim position +
+beacon only. It is a SETUP step: refused (CrewPlacementLocked) once the first
+fire is lit, because from then on crews belong to dispatch and the SEM-10
+safety law. Refused (CrewPlacementError, a ValueError) for an unknown crew,
+an out-of-region reinforcement (it arrives at its staging zone), a
+non-finite or off-tile point, or a point farther than CREW_PLACE_MAX_ROAD_M
+(2 km) from every road node; with no road graph loaded the raw point is used
+and said LOUDLY (record note + state.notes). home_base and the egress anchor
+stay the crew's round-robin safe zone — an escape target is never an
+arbitrary clicked point — and the SEM-10 sweep governs a placed crew exactly
+as it governs any parked crew (a crew put in the fire's path relocates; the
+10c audit reports any tick it stands inside the pessimistic front).
+reset_crews() returns every placed crew to its configured start. Both land
+in cmd_log ('place_crew' / 'reset_crews'); placements survive reset() (the
+same staging replays) and a (re)configure starts with none. state() carries
+ONE additive key, crew_placement {setup, locked_reason, max_road_m,
+snaps_to_roads, placeable, placed}; with no placement every other key is
+unchanged (byte-identical sessions).
 
 WUI band definition (SIMULATOR_DESIGN.md): developed cells (FBFM40 91/93)
 within 3 cells (Chebyshev) of burnable fuel, UNION burnable cells within
@@ -440,6 +463,16 @@ MAP_QUEUE_EPS_M = 15.0
 #: whole ~48 km extended tile) and falls back LOUDLY to the standard ~18 km
 #: graph when it is missing. Standard sessions never touch it.
 EXT_ROAD_SUFFIX = "_ext"
+
+#: CREW PLACEMENT (founder 2026-09-26; module docstring): a placement snaps
+#: to the nearest road-graph node within this distance — a crew truck starts
+#: ON a road. Farther from every node is refused with the measured distance.
+#: Same value as the roads seam's own snap ceiling (roads.SNAP_MAX_M).
+CREW_PLACE_MAX_ROAD_M = 2000.0
+#: The one-line reason every post-ignition placement refusal carries (the
+#: page shows it as the disabled mode's tooltip).
+CREW_PLACE_LOCKED_REASON = ("crews are now dispatched by the engine — reset "
+                            "the scenario to re-stage")
 
 
 def _dp_keep(xy: list, eps_m: float) -> list:
@@ -1740,6 +1773,19 @@ class _SimFire:
     _eroded_p10: object = None
 
 
+class CrewPlacementError(ValueError):
+    """A crew placement the session refuses (CREW PLACEMENT, module
+    docstring): unknown crew, out-of-region reinforcement, non-finite or
+    off-tile point, or no road node within CREW_PLACE_MAX_ROAD_M. A
+    ValueError, so every existing caller's 400 path applies unchanged."""
+
+
+class CrewPlacementLocked(CrewPlacementError):
+    """Placement refused because SETUP is over: the first fire is lit and
+    the crews are under dispatch + the SEM-10 safety law. reset() re-opens
+    setup (the server maps this to 409 Conflict)."""
+
+
 # ---------------------------------------------------------------------------
 # SimSession
 # ---------------------------------------------------------------------------
@@ -1768,7 +1814,8 @@ class SimSession:
     (0.0 = the whole WUI band) — how scratch_review/corridor_grid.py keeps
     its whole-band arms reproducible now that the corridor presets are
     road-placed. Every command appends to cmd_log — the reproducibility
-    script echoed in state()."""
+    script echoed in state() — including the setup-phase CREW PLACEMENT
+    commands place_crew / reset_crews (module docstring)."""
 
     def __init__(self, location_key: str, n_clients: int, n_crews: int,
                  seed: object, cfg_overrides: Optional[dict] = None,
@@ -1862,6 +1909,11 @@ class SimSession:
         # governs any parked crew. None (default) = staging at safe zones,
         # byte-identical.
         self._crew_locs = list(crew_locs) if crew_locs else None
+        # CREW PLACEMENT (place_crew): crew_id -> the REQUESTED (lat, lon), in
+        # placement order. Scenario-level like the two seams above: reset()
+        # re-applies it (the same staging replays); a (re)configure is a new
+        # scenario and starts with none.
+        self._crew_placements = {}
         self._cmd_log = [{
             "cmd": "configure", "location": location_key,
             "n_clients": n_clients, "n_crews": n_crews, "seed": str(seed),
@@ -2170,6 +2222,11 @@ class SimSession:
         self._crew_region = {}
         self._crew_reinforce_delay_min = {}
         self._crew_available_at = {}
+        # CREW PLACEMENT: each in-zone crew's CONFIGURED start (its safe zone,
+        # or the crew_locs harness start) — where reset_crews() returns it —
+        # and the live placement records state()['crew_placement'] carries.
+        self._crew_default_start = {}
+        self._placed = {}
         tile_bbox = self._tile_bbox()
         k = 0
         # in-zone crews (staged round-robin at safe zones, AVAILABLE now) —
@@ -2189,6 +2246,14 @@ class SimSession:
             if self._crew_locs:
                 start = self._crew_locs[(k - 1) % len(self._crew_locs)]
                 cs.pos = start
+            self._crew_default_start[crew.crew_id] = start
+            # CREW PLACEMENT (place_crew): a setup-phase placement replays on
+            # reset() — the same road node, position + beacon only.
+            if crew.crew_id in self._crew_placements:
+                placed = self._replay_placement(crew.crew_id)
+                if placed is not None:
+                    start = placed
+                    cs.pos = start
             self._crew_sims[crew.crew_id] = cs
             self._tracks[crew.crew_id] = deque(maxlen=240)
             self._crew_anchor[crew.crew_id] = zone.zone_id
@@ -2486,6 +2551,197 @@ class SimSession:
         """Release a pause()."""
         self._paused = False
         self._cmd_log.append({"cmd": "resume"})
+
+    # -- CREW PLACEMENT (founder 2026-09-26 "allow the crews to be placed on
+    # -- the map"; module docstring CREW PLACEMENT) ----------------------------
+
+    def place_crew(self, crew_id: str, lat: float, lon: float) -> dict:
+        """Park IN-ZONE crew `crew_id` at the road node nearest (lat, lon) —
+        sim position + beacon only. home_base and the egress anchor stay its
+        round-robin safe zone (escape targets are never arbitrary points);
+        the SEM-10 sweep governs the placed crew like any parked crew.
+
+        SETUP ONLY: CrewPlacementLocked once the first fire is lit (crews are
+        then dispatched by the engine; reset() re-opens setup). Refused with
+        CrewPlacementError for an unknown crew, an out-of-region
+        reinforcement (it arrives at its staging safe zone), a non-finite or
+        off-tile point, or a point farther than CREW_PLACE_MAX_ROAD_M from
+        every road node (the message carries the measured distance). No road
+        graph loaded -> the raw point, with a LOUD note. Re-placing a crew
+        moves it again. Appended to cmd_log; reset() re-applies it. Returns
+        the placement record (state()['crew_placement']['placed'] rows)."""
+        cs = self._crew_sims.get(crew_id) if isinstance(crew_id, str) else None
+        if cs is None:
+            raise CrewPlacementError(
+                f"unknown crew {crew_id!r} (crews: "
+                f"{', '.join(_idsort(self._crew_sims))})")
+        self._placement_gate(cs)
+        region = self._crew_region.get(crew_id, "in_zone")
+        if region != "in_zone":
+            raise CrewPlacementError(
+                f"{crew_id} is an out-of-region reinforcement ({region}) — it "
+                f"arrives at its staging safe zone "
+                f"{self._crew_anchor.get(crew_id, '')} and cannot be placed; "
+                f"only in-zone crews are placeable")
+        pos, rec = self._resolve_placement(lat, lon)
+        self._crew_placements[crew_id] = (float(lat), float(lon))
+        rec = self._adopt_placement(crew_id, rec)
+        self._restage_crew(crew_id, pos)
+        self._cmd_log.append({"cmd": "place_crew", "crew_id": crew_id,
+                              "lat": float(lat), "lon": float(lon)})
+        return dict(rec)
+
+    def reset_crews(self) -> list:
+        """'Reset to safe zones': drop every placement — each placed crew
+        goes back to its CONFIGURED start (its round-robin safe zone, or the
+        crew_locs harness start when one was configured). SETUP ONLY (the
+        same CrewPlacementLocked after the first ignition). Appended to
+        cmd_log (even when nothing was placed — every command is). Returns
+        the ids of the crews that moved back."""
+        self._placement_gate()
+        moved = _idsort(self._crew_placements)
+        for cid in moved:
+            self._restage_crew(cid, self._crew_default_start[cid])
+        self._crew_placements.clear()
+        self._placed.clear()
+        self._cmd_log.append({"cmd": "reset_crews"})
+        return moved
+
+    def crew_placements(self) -> list:
+        """The placements in force as [(crew_id, lat, lon), ...] — the
+        REQUESTED points, in placement order: exactly what reset() re-applies
+        and what the server re-applies after a client re-roll (the same
+        staging on the new layout)."""
+        return [(cid, lat, lon)
+                for cid, (lat, lon) in self._crew_placements.items()]
+
+    def _placement_gate(self, cs=None) -> None:
+        """Raise CrewPlacementLocked unless the session is in SETUP: no fire
+        lit yet (and, defensively, the crew at rest — before any ignition
+        nothing ever gives a crew work)."""
+        if self._n_fires > 0:
+            raise CrewPlacementLocked(
+                "crew placement is a setup step, before the first ignition — "
+                + CREW_PLACE_LOCKED_REASON)
+        if cs is not None and not cs.idle():
+            raise CrewPlacementLocked(
+                f"{cs.crew.crew_id} is not at rest — " + CREW_PLACE_LOCKED_REASON)
+
+    def _resolve_placement(self, lat, lon):
+        """The geometry of one placement: (start LatLon, record dict). The
+        point must be finite and ON the loaded tile; it snaps to the nearest
+        road-graph node within CREW_PLACE_MAX_ROAD_M, and that node must lie
+        on the tile too. No road graph (or one with no nearest-node index)
+        -> the raw point, with a LOUD note in the record. Pure function of
+        (tile, road graph, lat, lon) — deterministic (nearest_node breaks
+        ties on the smaller node id)."""
+        try:
+            lat_f, lon_f = float(lat), float(lon)
+        except (TypeError, ValueError):
+            raise CrewPlacementError("lat and lon must be numbers") from None
+        if not (math.isfinite(lat_f) and math.isfinite(lon_f)):
+            raise CrewPlacementError("lat/lon must be finite numbers")
+        req = LatLon(lat_f, lon_f)
+        where = f"({lat_f:.5f}, {lon_f:.5f})"
+        if geo.latlon_to_rc(self._tile.spec, req) is None:
+            raise CrewPlacementError(
+                f"{where} is outside the {self._loc.key} tile — place the "
+                f"crew inside the terrain extent")
+        rec = {"requested_lat": round(lat_f, 6),
+               "requested_lon": round(lon_f, 6)}
+        g = self._road_graph
+        nearest = getattr(g, "nearest_node", None) if g is not None else None
+        if not callable(nearest):
+            rec.update(
+                lat=round(lat_f, 6), lon=round(lon_f, 6), snapped=False,
+                snap_m=None, road_node=None,
+                note=("CREW PLACEMENT WITHOUT ROADS: no road graph is loaded "
+                      "for this session, so the crew starts at the RAW "
+                      "clicked point (not snapped to a road) and moves on "
+                      "straight tier-0 legs"))
+            return req, rec
+        hit = nearest(req, max_m=CREW_PLACE_MAX_ROAD_M)
+        if hit is None:
+            far = nearest(req, max_m=math.inf)
+            gap = (f"the nearest road node is {far[1] / 1000.0:.1f} km away"
+                   if far is not None else "the road graph has no nodes")
+            raise CrewPlacementError(
+                f"no road within {CREW_PLACE_MAX_ROAD_M / 1000.0:g} km of "
+                f"{where} — {gap}; a crew truck starts on a road, so place "
+                f"it on or near one")
+        node_id, snap_m = hit
+        node = g.nodes[node_id]
+        if geo.latlon_to_rc(self._tile.spec, node) is None:
+            raise CrewPlacementError(
+                f"the road node nearest {where} lies outside the "
+                f"{self._loc.key} tile — place the crew farther inside the "
+                f"terrain extent")
+        rec.update(lat=round(node.lat, 6), lon=round(node.lon, 6),
+                   snapped=True, snap_m=round(snap_m, 1), road_node=node_id,
+                   note=(f"on the road: snapped {snap_m:,.0f} m from the "
+                         f"click to the nearest road node"))
+        return node, rec
+
+    def _adopt_placement(self, cid: str, rec: dict) -> dict:
+        """Record a resolved placement for state() (crew_id first) and, when
+        it could not snap to a road, say so in state.notes (never silent)."""
+        rec = dict({"crew_id": cid}, **rec)
+        self._placed[cid] = rec
+        if not rec["snapped"]:
+            self._notes.append(f"{cid}: {rec['note']}")
+        return rec
+
+    def _replay_placement(self, cid: str):
+        """_init_state's half of reset(): re-resolve crew `cid`'s requested
+        point on the (identical) tile + graph and return its start, or None
+        — the placement then dropped with a loud note — if it no longer
+        resolves (unreachable on reset, which rebuilds the same scenario)."""
+        lat, lon = self._crew_placements[cid]
+        try:
+            pos, rec = self._resolve_placement(lat, lon)
+        except CrewPlacementError as e:
+            del self._crew_placements[cid]
+            self._notes.append(f"CREW PLACEMENT of {cid} dropped on reset: {e}")
+            return None
+        self._adopt_placement(cid, rec)
+        return pos
+
+    def _restage_crew(self, cid: str, pos: LatLon) -> None:
+        """Park crew `cid` at `pos` as a SETUP re-stage (placement / reset to
+        zone): sim position + a fresh beacon (CrewTracker.restage — the crew
+        never drove there, so it is not telemetry). The per-tick breadcrumb
+        and the display trail restart at the new spot, so the map neither
+        draws a drive nor a jump for it. home_base, the egress anchor and
+        every engine field stay as they are."""
+        cs = self._crew_sims[cid]
+        cs.pos = pos
+        self._tracker.restage(CrewBeacon(crew_id=cid, loc=pos, t_s=self._now_s,
+                                         status=cs.status))
+        self._tracks[cid].clear()
+        self._map_last_pos[cid] = pos
+        self._map_moved[cid] = []
+        self._map_jumped[cid] = None
+        self._map_trail[cid].clear()
+        self._map_trail_runs[cid] = []
+
+    def _placement_state(self) -> dict:
+        """state()['crew_placement'] (additive, display + API contract):
+        setup (placement allowed: no fire lit yet), locked_reason (why not,
+        once a fire is lit), max_road_m, snaps_to_roads (a road graph with a
+        nearest-node index is loaded), placeable (the in-zone crew ids) and
+        placed (one record per placed crew, id order)."""
+        setup = self._n_fires == 0
+        g = self._road_graph
+        return {
+            "setup": setup,
+            "locked_reason": None if setup else CREW_PLACE_LOCKED_REASON,
+            "max_road_m": CREW_PLACE_MAX_ROAD_M,
+            "snaps_to_roads": (g is not None
+                               and callable(getattr(g, "nearest_node", None))),
+            "placeable": [cid for cid in _idsort(self._crew_sims)
+                          if self._crew_region.get(cid) == "in_zone"],
+            "placed": [dict(self._placed[cid]) for cid in _idsort(self._placed)],
+        }
 
     def _rebuild_weather(self) -> None:
         spec = INTENSITY_WEATHER[self._intensity]
@@ -5003,6 +5259,10 @@ class SimSession:
                             "lat": round(z.loc.lat, 6),
                             "lon": round(z.loc.lon, 6)}
                            for z in self._loc.safe_zones],
+            # CREW PLACEMENT (founder 2026-09-26): ONE additive key — setup
+            # flag, lock reason, the placeable in-zone crews and every
+            # placement in force (see _placement_state).
+            "crew_placement": self._placement_state(),
             "notes": list(self._notes),
             "cmd_log": [dict(c) for c in self._cmd_log],
         }
