@@ -38,17 +38,26 @@ member (members[0], the engine's unperturbed best-estimate run). Each tick
 the burned mask is {cells with nominal arrival <= sim_now}; its boundary ring
 becomes the incident perimeter. When the world changes (ignite / set_wind —
 the wind dial) or the anchor ages toward the horizon, the forecast
-RE-ANCHORS from that EXACT burned mask: every consumed cell seeds at sim-now
-(spread's ignition-point path, seed_spotting=False — each already threw its
-one ember), so nothing that burned un-burns, nothing unburned is stamped
-burned, and all new growth runs under the new weather (a mid-run wind turn
-then matches one continuous run with the same wind shift, IoU 0.97-1.00).
-(Until 2026-09-25 the re-anchor filled the angle-sorted boundary ring as a
-perimeter polygon; spot-fire islands and concave burns made that ring self-
-intersect, so a wind change dropped up to half of a 3-h-old burn and
-stamped unburned wedges — scratch_review/wind_direction_probe.py.)
-Ensembles then express forecast uncertainty around that ground truth
-exactly as in operations.
+RE-ANCHORS from that EXACT burned mask, keeping the fire's HISTORY
+(2026-09-26; spread's RE-ANCHOR HISTORY): every consumed cell enters the new
+solve with its TRUE arrival time — final, quiet (each already threw its one
+ember; the embers still aloft land), the front continuing from each cell's
+own time with the progress it made under the weather it burned in — and
+every unburned cell arrives strictly after sim-now. So nothing that burned
+un-burns, nothing unburned is stamped burned, a re-anchor that changes
+nothing physical (a second ignition's shared-weather rebuild, the same wind
+re-set, the horizon rebase) reproduces the continuous run cell for cell, and
+after a real wind change the fire IS one continuous run with that wind shift
+(piecewise edge weather), cell for cell — docs/SIMULATOR_DESIGN.md "Re-anchor
+keeps the front's progress". (Until 2026-09-25 the re-anchor filled the angle-
+sorted boundary ring as a perimeter polygon; spot-fire islands and concave
+burns made that ring self-intersect, so a wind change dropped up to half of a
+3-h-old burn and stamped unburned wedges — scratch_review/
+wind_direction_probe.py. Until 2026-09-26 it seeded every consumed cell AT
+sim-now, which threw away the front's partial progress: 2-58% less growth
+over the next 0.5-3 h even with no physical change — scratch_review/
+reanchor_progress_probe.py.) Ensembles then express forecast uncertainty
+around that ground truth exactly as in operations.
 
 ROADS (contracts wgresponse.roads seam; founder UX 2026-07-10): the session
 loads the location's RoadGraph ONCE at configure via roads.load_road_graph
@@ -228,6 +237,7 @@ import copy
 import math
 import threading
 import weakref
+from array import array
 from collections import deque
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -1919,14 +1929,27 @@ class _SimFire:
     # per tick or per crew.
     _eroded_src: object = None
     _eroded_p10: object = None
-    # FIRE VIEW bookkeeping (display only, never read by the engine): a
-    # re-anchor seeds every burned cell at the anchor time, which would make
-    # the whole old burn read "burning now" again. _fv_burn_t keeps each such
-    # cell's TRUE nominal arrival from the field it burned in (flat index ->
-    # unix s), recorded by SimSession._fire_visuals when it first sees the
-    # new field (_fv_seen = the field it last drew).
+    # FIRE VIEW bookkeeping (display only, never read by the engine): until
+    # 2026-09-26 a re-anchor seeded every burned cell at the anchor time, which
+    # made the whole old burn read "burning now" again. _fv_burn_t keeps each
+    # such cell's TRUE nominal arrival from the field it burned in (flat index
+    # -> unix s), recorded by SimSession._fire_visuals when it first sees the
+    # new field (_fv_seen = the field it last drew). Since the progress-
+    # preserving re-anchor the new field itself carries those true times, so
+    # the record and the field agree cell for cell.
     _fv_seen: object = None
     _fv_burn_t: object = None
+    # RE-ANCHOR HISTORY (tick() step 2, _reanchor_history): the embers the
+    # CURRENT nominal field threw (array('d') of flat (landing index, thrown
+    # unix s, landing unix s) triples — ember spotting only), the embers
+    # that were still aloft when it was anchored ((index, landing s) pairs),
+    # and the weather the fire has burned under ((anchor unix s,
+    # WeatherSample) per field, ascending — the domain weather is constant
+    # within a field), so the next re-anchor keeps every front edge's
+    # progress at the rate it was made and lands every ember still in flight.
+    _ember_log: object = None
+    _aloft: tuple = ()
+    _wx_hist: tuple = ()
 
 
 class CrewPlacementError(ValueError):
@@ -2625,10 +2648,12 @@ class SimSession:
     def set_wind(self, dir_deg: float) -> None:
         """Turn the domain wind dial (meteorological FROM degrees); forecasts
         rebuild and every fire re-runs the ensemble next tick — re-anchored
-        at that tick's clock from its EXACT burned mask, so the burn so far
-        is kept cell for cell and all further growth runs under the new wind
-        (tick() step 2). The server's /api/sim/<id>/config {wind_dir_deg}
-        routes the page's wind dial here (founder 2026-09-25)."""
+        at that tick's clock from its EXACT burned mask with each cell's
+        true arrival time, so the burn so far is kept cell for cell, the
+        front continues from its real progress and all further growth runs
+        under the new wind (tick() step 2). The server's /api/sim/<id>/config
+        {wind_dir_deg} routes the page's wind dial here (founder
+        2026-09-25)."""
         self._wind_dir_deg = float(dir_deg) % 360.0
         for f in self._fires.values():
             f.wind_dir_deg = self._wind_dir_deg
@@ -4143,8 +4168,7 @@ class SimSession:
         # EXACT RE-ANCHOR (wind-dial finding 2026-09-25): a fire's FIRST
         # field starts from its ignition point at its ignition time; every
         # later recompute re-anchors at `now` from the EXACT nominal burned
-        # mask — every consumed cell seeds at `now` (_burned_seed_points)
-        # without re-throwing its ember (seed_spotting=False), so the burn so
+        # mask, without re-throwing the kept cells' embers, so the burn so
         # far carries over cell for cell and all new growth runs under the
         # new weather. The traced ring stays the incident's perimeter RECORD
         # only: filled as a perimeter polygon it self-intersected on spot-
@@ -4153,6 +4177,19 @@ class SimSession:
         # unburned wedges burned; and a fire too young for a ring (< 3
         # boundary cells) was re-run from its ignition time, rewriting its
         # past under the new wind (scratch_review/wind_direction_probe.py).
+        # PROGRESS-PRESERVING RE-ANCHOR (2026-09-26): the kept burn enters
+        # the solve with each cell's TRUE arrival (spread's RE-ANCHOR
+        # HISTORY — final, quiet, the front re-seeded at its own times, every
+        # unburned cell clamped after `now`), the weather the fire burned
+        # under (f._wx_hist: each front edge keeps the progress it made at
+        # the old rate) and the embers still aloft (_reanchor_history).
+        # Seeding the burn AT `now` threw away every front cell's partial
+        # progress: a same-wind re-anchor — a second ignition's weather
+        # rebuild, a no-op dial turn, the horizon rebase — made the fire grow
+        # 2-58% less over the next 0.5-3 h than the continuous run
+        # (scratch_review/reanchor_progress_probe.py). Now such a re-anchor
+        # reproduces the continuous run cell for cell, and a wind turn the
+        # continuous run with that shift.
         incidents = []
         horizon_rebase_s = 0.8 * cfg.horizon_h * 3600.0
         for fid in self._fire_order:
@@ -4166,6 +4203,7 @@ class SimSession:
             stale_anchor = (f.ens is not None
                             and (now - f.anchor_t0_s) > horizon_rebase_s)
             if f.ens is None or f.wx_epoch != self._wx_epoch or stale_anchor:
+                log = []                 # the nominal field's thrown embers
                 if f.ens is None:
                     # first field: point seed at the TRUE ignition time
                     # (rings is None here — no field, no ring)
@@ -4173,16 +4211,25 @@ class SimSession:
                     f.ens = spread.ensemble_arrival(
                         self._tile, inc.ignition_points(), self._wx, anchor,
                         cfg, incident_id=fid, perimeter=None,
-                        perimeter_at_s=None)
+                        perimeter_at_s=None, ember_log=log)
+                    aloft = ()
                 else:
                     anchor = now
-                    seeds = self._burned_seed_points(f, now) or [f.origin]
-                    # seed_spotting=False: each kept cell threw its one ember
-                    # in the field it burned in; re-throwing them fired an
-                    # ember shower from the whole burn at every wind change
+                    kept, aloft = self._reanchor_history(f, now)
+                    # the kept cells are QUIET: each threw its one ember in
+                    # the field it burned in (re-throwing them fired an ember
+                    # shower from the whole burn at every wind change); the
+                    # ones still aloft land via embers_aloft; kept_wx prices
+                    # each front edge's progress so far at the weather it
+                    # was made under
                     f.ens = spread.ensemble_arrival(
-                        self._tile, seeds, self._wx, anchor, cfg,
-                        incident_id=fid, seed_spotting=False)
+                        self._tile, [], self._wx, anchor, cfg,
+                        incident_id=fid, seed_spotting=False, kept=kept,
+                        kept_wx=list(f._wx_hist), embers_aloft=aloft,
+                        ember_log=log)
+                f._ember_log = array("d", [x for e in log for x in e])
+                f._aloft = tuple(aloft)
+                f._wx_hist = f._wx_hist + ((anchor, self._wx.at(anchor)),)
                 f.wx_epoch = self._wx_epoch
                 f.anchor_t0_s = anchor
             incidents.append(inc)
@@ -4502,21 +4549,51 @@ class SimSession:
                          for u in plan.unserved],
         }
 
-    def _burned_seed_points(self, fire: _SimFire, now: float) -> list:
-        """EXACT re-anchor seed set (tick() step 2): the center of every cell
-        the NOMINAL member has consumed by `now`, row-major (deterministic).
+    def _reanchor_history(self, fire: _SimFire, now: float):
+        """(kept, embers_aloft) for a re-anchor at `now` (tick() step 2;
+        spread's RE-ANCHOR HISTORY arguments).
 
-        Seeded at `now` through spread's ignition-point path, each such cell
-        holds arrival == now in every ensemble member (nothing can arrive
-        before the anchor, so a seed is as final as a perimeter-interior
-        cell — never relaxed, never re-burned by a spot landing) and the
-        front advances from the mask's true edge. tick() passes
-        seed_spotting=False: every seed already threw its one ember in the
-        field it burned in (re-throwing them showered the new downwind side
-        from the whole burn at each wind change). Cell centers round-trip
-        exactly through geo.latlon_to_rc, so the carried-over burned mask
-        equals the old one cell for cell — what the traced ring filled as a
-        polygon did not (see tick())."""
+        kept = {flat index: TRUE arrival} for every cell the NOMINAL member
+        has consumed by `now` — the field's own values: the first field is
+        anchored at the ignition, and every re-anchored field carries its
+        kept cells' true times forward, so these are the times the cells
+        really burned (the fire-shading record _fv_burn_t holds the same
+        values). The solve keeps them final and quiet and re-seeds the
+        front from each one AT ITS OWN TIME, so a front cell's partial
+        progress into its unburned neighbours survives the re-anchor.
+
+        embers_aloft = sorted (landing index, landing s) of every ember the
+        current field threw at or before `now` that lands after it (from
+        f._ember_log), plus any ember carried into the current field that is
+        still aloft, on cells not yet burned: in the continuous run they
+        land, so they must land here too. Deterministic (row-major kept,
+        sorted embers)."""
+        data = fire.ens.members[0].data
+        kept = {i: v for i, v in enumerate(data) if v <= now}
+        if not kept:                  # defensive: the ignition cell is burned
+            rc = geo.latlon_to_rc(self._tile.spec, fire.origin)
+            kept = {rc[0] * self._tile.spec.ncols + rc[1]:
+                    min(fire.t_ignite_s, now)}
+        aloft = {(i, t) for i, t in fire._aloft if t > now and i not in kept}
+        log = fire._ember_log
+        if log:
+            for k in range(0, len(log), 3):
+                thrown, lands = log[k + 1], log[k + 2]
+                if thrown <= now < lands:
+                    i = int(log[k])
+                    if i not in kept:
+                        aloft.add((i, lands))
+        return kept, sorted(aloft)
+
+    def _burned_seed_points(self, fire: _SimFire, now: float) -> list:
+        """The center of every cell the NOMINAL member has consumed by `now`,
+        row-major (deterministic) — the 2026-09-25 re-anchor seed set, which
+        seeded every kept cell AT `now` through spread's ignition-point path.
+        No longer the engine's re-anchor (tick() step 2 hands spread the
+        kept cells with their TRUE times: _reanchor_history); kept for the
+        controls and probes that reproduce the anchor-time seeding
+        (tests/test_wind_direction.py's ember-shower control). Cell centers
+        round-trip exactly through geo.latlon_to_rc."""
         nominal = fire.ens.members[0]
         spec = nominal.spec
         nc = spec.ncols
@@ -4528,8 +4605,8 @@ class SimSession:
         (nominal-member arrival <= now), angle-sorted around the origin and
         subsampled to <= 200 vertices (threat.py convention). None while the
         fire is too young to have a >= 3-vertex ring (point ignition).
-        The incident's perimeter RECORD only: re-anchors seed from
-        _burned_seed_points, never from filling this ring — angle-sorting
+        The incident's perimeter RECORD only: re-anchors carry the exact
+        burned cells (_reanchor_history), never a fill of this ring — angle-sorting
         spot-fire islands and concave burns into one ring makes it self-
         intersect (tick() step 2)."""
         if fire.ens is None:
@@ -4737,15 +4814,20 @@ class SimSession:
     def _fv_record_reanchors(self, fires) -> None:
         """FIRE VIEW bookkeeping (display only, never read by the engine).
         A re-anchor (tick() step 2: ignite / set_wind / horizon rebase)
-        seeds every cell the nominal member had consumed at the anchor
-        time, so the NEW field holds arrival == anchor over the whole old
-        burn. The burned/burning split needs each cell's TRUE arrival: the
-        first time this builder sees a new field it records, for every
-        seeded cell (old nominal <= the new anchor) not recorded yet, the old
+        carries every cell the nominal member had consumed at the anchor
+        time into the new field. Until 2026-09-26 it carried them AT the
+        anchor time (the new field held arrival == anchor over the whole old
+        burn); the burned/burning split needs each cell's TRUE arrival, so
+        the first time this builder sees a new field it records, for every
+        kept cell (old nominal <= the new anchor) not recorded yet, the old
         field's nominal arrival — chained through successive re-anchors (a
-        cell recorded earlier keeps its earlier time). tick() always ends in
-        state(), so every field is seen before it can be replaced; the
-        record is a pure function of the command script (deterministic)."""
+        cell recorded earlier keeps its earlier time). The progress-
+        preserving re-anchor now carries the true times in the field itself,
+        so the record equals the field on every kept cell (asserted by
+        tests/test_sim_reanchor_progress.py); it stays as the display's
+        explicit record. tick() always ends in state(), so every field is
+        seen before it can be replaced; the record is a pure function of the
+        command script (deterministic)."""
         for f in fires:
             seen = f._fv_seen
             if seen is f.ens:

@@ -21,6 +21,16 @@ Fixed by POST /api/sim/<id>/config {wind_dir_deg} -> SimSession.set_wind, the
 page wiring, and an EXACT, QUIET re-anchor (every burned cell seeds at `now`
 without re-throwing its ember) — a mid-run turn now matches one continuous
 run with the same wind shift.
+CORRECTION 2026-09-26 (tests/test_sim_reanchor_progress.py): that match
+(recorded as IoU 0.97-1.00; the commit said 0.95-1.00) held for 45-90 deg
+turns only — seeding the burn AT `now` lost every front cell's partial
+progress, so a re-anchor with NO physical change (same wind, a second
+ignition, the horizon rebase) grew the fire 2-58% less than its continuous
+run (IoU 0.78-0.95 over the first 1.5 h; scratch_review/
+reanchor_progress_probe.py). The re-anchor now carries each burned cell's
+TRUE arrival, the weather it burned under and the embers still aloft: a
+no-op re-anchor IS the continuous run and a turn IS the continuous-shift
+run, cell for cell; the IoU >= 0.95 bar below still holds (at 1.00).
 
 Offline + fast: tests/test_simui.py's controlled uniform-grass tiles (flat
 GR2) and FAST config, roads pinned off; the HTTP test reuses

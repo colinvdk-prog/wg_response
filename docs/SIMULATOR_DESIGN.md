@@ -97,6 +97,9 @@ dep-free**. If a tile is missing at runtime: loud banner + synthetic fallback (n
   Low (8 mph, RH 35%), Moderate (18 mph, RH 22%), High (28 mph, RH 12%), Extreme
   (40 mph gusting, RH 6%) + wind direction dial (default = location's canonical hazard wind:
   Santa Ana E-NE, Diablo NE, Marshall W, etc.). Multiple simultaneous fires allowed.
+  Turning the dial while fires burn (`POST /api/sim/<id>/config {wind_dir_deg}` →
+  `SimSession.set_wind`) re-anchors every fire at the next tick; the front keeps its real
+  progress through the turn — see "Re-anchor keeps the front's progress (2026-09-26)".
 - **THE SAFETY SLIDER — "minimum clear-by" (`egress_buffer_min`)**: 10–120 min, default 30.
   Applied live to `ResponseConfig.egress_buffer_min` (the SAFETY SEMANTICS 2 deadline). A
   second optional slider exposes `slack_min` (0–60). Changing either triggers an immediate
@@ -147,7 +150,9 @@ physics effect; contracts STATE VISUAL CONTRACT amended.
   timber-understory 45, timber-litter 60, slash 90; flat 45 min when
   `transit_cold_black_by_class` is off) — the rule SEM-10 route selection already uses for
   "still hazardous to drive". True arrival times survive re-anchors (display
-  bookkeeping), so a wind-dial turn never relights the old burn.
+  bookkeeping — and, since the progress-preserving re-anchor below, the re-anchored field
+  itself carries them; the two agree cell for cell), so a wind-dial turn never relights
+  the old burn.
 - **Bands** = the ladder's median at sim-now +1/+5/+24 h, **bounded by the actual fire**:
   never on a burned cell, filled from the fire's edge outward, with a border line (the
   band's *front*) only where the median reaches beyond the fire. **Overdue cells** — the
@@ -216,12 +221,105 @@ physics effect; contracts STATE VISUAL CONTRACT amended.
   than production. Measured: P50/nominal 1.00-1.02 in all four probes; the bands would
   then start at the fire's head instead of being absent there.
 
-Seen in passing (engine, not changed): a re-anchor seeds every consumed cell AT the anchor
-time, so the front loses its partial progress into the next cells; after a same-direction
-`set_wind` the simulated fire grows 10-24% less over the next 1-1.5 h than the continuous
-run (IoU 0.76-0.93 at high/extreme with page physics; 0.87-0.91 with spotting off, and
-re-throwing the seeds' embers changes nothing — so it is the restart time, not the
-embers). A default-OFF fix would seed the front at its true arrival times.
+Seen in passing here, fixed the same day (next section): a re-anchor seeded every consumed
+cell AT the anchor time, so the front lost its partial progress into the next cells; after
+a same-direction `set_wind` the simulated fire grew 10-24% less over the next 1-1.5 h than
+the continuous run (IoU 0.76-0.93 at high/extreme with page physics; 0.87-0.91 with
+spotting off, and re-throwing the seeds' embers changed nothing — the restart time, not the
+embers).
+
+### Re-anchor keeps the front's progress (2026-09-26)
+
+**Defect.** The sim-world truth is the nominal member; a **re-anchor** re-solves a fire
+from its current burn on a wind-dial change, a new ignition (the weather is domain-shared)
+and the 0.8 × horizon rebase (`SimSession.tick()` step 2). Since the 2026-09-25 wind fix it
+seeded every burned cell **at the anchor time** (quiet — no re-thrown embers), so every
+front cell restarted its march into its unburned neighbours from zero: an edge the fire was
+80% along started over. The crews are audited against this fire, so a re-anchor that slows
+the truth made wind-change scenarios look safer than they were — and a re-anchor with no
+physical change at all (the same wind re-set, a second fire's weather rebuild, the rebase)
+slowed it too. Measured before the fix (`scratch_review/reanchor_progress_probe.py`, real
+tiles, page physics — spotting + grass floor; switch at T = 1 h; area / growth-since-T /
+IoU vs the reference at T + 0.5 / 1 / 1.5 / 3 h; every differing cell was LATE):
+
+| scenario (a = same wind, c = second fire far away, d = rebase at T+5 h, horizon 6 h) | area | growth | IoU | mean late |
+|---|---|---|---|---|
+| park_city_ut high, a (spotting on / off) | 0.83 / 0.81 / 0.82 / 0.96 · 0.79 / 0.79 / 0.87 / 0.96 | 0.71 / 0.76 / 0.79 / 0.96 · 0.71 / 0.77 / 0.86 / 0.96 | = area | 10.2 · 6.7 min (max 60) |
+| park_city_ut extreme, a (on / off) | 0.83 / 0.85 / 0.95 / 0.97 · 0.87 / 0.91 / 0.93 / 0.99 | 0.71 / 0.82 / 0.95 / 0.97 · 0.82 / 0.90 / 0.92 / 0.98 | = area | 8.9 · 3.4 min |
+| eagle_vail_co high, a (on / off) | 0.88 / 0.78 / 0.87 / 0.90 · 0.94 / 0.78 / 0.93 / 0.94 | 0.67 / 0.57 / 0.80 / 0.88 · 0.86 / 0.67 / 0.91 / 0.94 | = area | 15.3 · 9.9 min |
+| c (all three) | identical to a (spotting on) | | | |
+| park_city_ut high, d | 0.98 / 0.98 / 0.99 / 0.98 | 0.68 / 0.87 / 0.91 / 0.94 | = area | 103 min |
+| eagle_vail_co high, d | 0.92 / 0.91 / 0.89 / 0.86 | 0.42 / 0.62 / 0.64 / 0.74 | = area | 73 min |
+| turn +45° vs the continuous-shift run (park high / park extreme / eagle high) | 0.96-1.00 | 0.86-1.00 | 0.92-1.00 | 2.8 / 3.0 / 5.2 min |
+| turn +90° (same) | 0.97-1.00 | 0.95-1.00 | 0.97-1.00 | 1.7 / 1.5 / 1.5 min |
+
+**Fix** (`simui._reanchor_history` + spread's RE-ANCHOR HISTORY arguments, all
+default-None → byte-identical; the pinned spread fingerprints do not move): the re-anchor
+hands the solve (1) the kept burn **with each cell's TRUE arrival time** — final, quiet, the
+front re-seeded at its own times, every unburned cell clamped strictly after the anchor, so
+nothing retro-burns and the burned mask at the anchor tick is identical; (2) the **weather
+the fire burned under** (one sample per field — the domain weather is constant within a
+field), so each front edge's progress before the anchor is priced at the rate it was made
+at and only the remainder at the new wind; (3) the **embers still aloft** (thrown by a kept
+cell, landing after the anchor — the nominal field logs every ember it throws); in the
+continuous run they land, so they land here. After the fix every case above, turns
+included, reproduces its reference **cell for cell**: 0 of 88-10,456 cells differ over the
+3 h window, spotting on (IoU 1.00 / area 1.00 at every lead). Invariants pinned in
+`tests/test_sim_reanchor_progress.py` (13 tests; 7 fail on the pre-fix re-anchor): a no-op
+re-anchor (same wind, second ignition, rebase) is the continuous run; a 45°/90° turn — and
+two turns an hour apart — is the continuous run with the same shifts; the growth still
+turns; the burned mask never shrinks and never jumps; kept cells are history in every
+member (p10 = p50 = p90 = the true time) and p10 stays nominal-bounded.
+
+- **The reference for a turn** is ONE continuous nominal run from the ignition under the
+  simulator's weather script with the wind shifting at the switch hour (MockWeather
+  shifts), priced with piecewise edge weather (an edge crossing the shift keeps the
+  progress it made and continues at the new rate — exactly "the new wind from T with each
+  front cell's partial progress preserved"). Limits: an hourly weather script can only
+  shift on a whole hour after the ignition, so the probe and tests switch at T = 1 h / 2 h
+  (the simulator itself integrates a change at any tick); it is the nominal member only
+  (the members restart from the truth at every re-anchor by design — the P50 sawtooth
+  above is unchanged); edges are priced from their source cell (the engine's law, shared).
+  The engine's default FROZEN departure-hour law (an edge keeps the wind it left under) is
+  a different, LATE-biased yardstick: vs the piecewise run it reads IoU 0.42-0.96.
+- **Why the weather history is needed.** The prescribed minimum — re-seed the front at its
+  true times but price its old progress at the NEW wind — is exact for a no-op but, after a
+  turn, runs EARLY (93-97% of differing cells early; mean 4-18 min over 3 h; the kept flank
+  "finishes" edges it had barely started and is clamped to burn right after the anchor):
+  area 1.07-1.16 / IoU 0.86-0.93 at +0.5 h on park_city, 1.52-1.73 / 0.58-0.66 on the
+  200 m eagle_vail grid (1.01-1.15 / 0.86-0.99 by +3 h). Safe polarity, but larger than
+  the pre-fix turn error; `kept_wx` removes it.
+- **Correction (wind dial, 2026-09-25).** The earlier claim that the quiet anchor-time
+  re-anchor "matches one continuous run with the same wind shift at IoU 0.97-1.00" (spread
+  docstring; 0.95-1.00 in the commit) held only for turns, where restarting a flank that
+  had made little progress costs little (measured again: 45° 0.92-1.00, 90° 0.97-1.00, every
+  cell late). A re-anchor that changes nothing physical matched its continuous run at only
+  IoU 0.78-0.95 over the first 1.5 h (growth 5-43% short; 0.86-0.99 by 3 h), the rebase
+  losing 6-58% of the growth.
+- **Side effects, by design.** The re-anchored field now holds each kept cell's true
+  arrival instead of the anchor time, so SEM-10 route selection sees old burn as OLD after
+  a re-anchor (its cold-black carve-out used to read the whole burn as freshly burned for
+  up to its window — 5-90 min by fuel — after every wind change or second ignition); the 10c
+  audit (nominal <= now = burned) and every P10 deadline are unchanged in kind; the
+  fire-shading record equals the field. Cost: re-anchor ticks unchanged (2-3 s on the real
+  tiles with page physics); the ember log is ≤ 0.5 MB per fire (packed array).
+- **Coarse jumps (a SAFETY pin moved — left for the owner).** When one tick is longer than
+  the field's remaining horizon (`SimSession.set_speed` past ~77× at the 96 h horizon;
+  the page never does this — its speed is wall-clock cadence, every engine tick one 900 s
+  cycle), the old field is UNREACHED beyond its horizon, so at the rebase the kept front's
+  next edges are overdue: they now burn right after the anchor (the clamp — a one-ring
+  catch-up of growth the horizon cut off), where the old rebase restarted them from zero.
+  The fire grows more per coarse tick — `test_speed_600x_coarse_jumps_audit_still_clean`
+  (FAST config, 24 h horizon, 150 h ticks): 666 vs 488 burned cells after the first coarse
+  rebase, 1,555 vs 1,014 after six — and the 10c backstop now reports crews the nominal
+  front reaches while parked inside one 150 h tick as **burned** (sim-g2 tick 3, sim-g1
+  tick 6; crew-overrun rows per tick 0/1/1/0/2/2 vs 0/1/0/0/1/0, all while egressing;
+  serviced-stop audit still clean). That test asserts imminent-only rows and now FAILS; it
+  is a safety pin, so it was not re-pinned. One outcome pin was re-pinned:
+  `test_live_tightening_reduces_served_vs_control`'s tightened twin serves 1 (was 0) — the
+  spot-fire injection's wind swing re-anchors fire 1, which now keeps its progress (P10
+  0.1-0.4 h earlier), so the tick-6 re-plan sends the idle crew to sim-c16, served lawfully
+  (margin 15.3 h under the 120-min rule).
 
 ## Slider observability — what the buffer demonstrably changes (measured 2026-07-10)
 

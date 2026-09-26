@@ -184,6 +184,12 @@ wgresponse.spread
         # INSIDE them is burned AT perimeter_at_s (the feed's updated_at_s, not now) —
         # the front then advances naturally from that earlier time; interior cells
         # never "re-burn" later; hotspots still seed even when a perimeter exists.
+        # RE-ANCHOR HISTORY (simulator, 2026-09-26): optional kept / kept_wx /
+        # embers_aloft / ember_log (also on ensemble_arrival; default None =
+        # byte-identical) re-solve a burning fire from its burn with each cell's
+        # TRUE arrival (final, quiet), the weather it burned under and the embers
+        # still aloft — nothing arrives at or before t0_s; a no-op re-solve is the
+        # continuous solve cell for cell. wgresponse.simui's re-anchor uses them.
     ensemble_arrival(tile, ignition, wx, t0_s, cfg, incident_id: str = '') -> EnsembleArrival
         # Sprint 2 (Council-1 model F2+F6): members perturb wind SPEED, dead-fuel
         # MOISTURE, and wind DIRECTION (lead-scaled, up to cfg.dir_perturb_deg at max

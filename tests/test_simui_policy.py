@@ -304,8 +304,16 @@ def test_live_tightening_reduces_served_vs_control(tmp_path):
     # served 3 -> 9 re-pinned for FOUNDER ROUND 4 law 6 (the 200 m ember-threat
     # radius gels 6 more fire-adjacent developed homes); the law assertions
     # above are what actually matter and are unchanged.
+    # Tightened twin served 0 -> 1 re-pinned 2026-09-26 for the progress-
+    # preserving re-anchor (tests/test_sim_reanchor_progress.py): the spot-fire
+    # injection swings the shared wind, so fire 1 re-anchors on that tick and
+    # now keeps its front's progress (P10 0.1-0.4 h earlier at the homes it
+    # threatens: c1 4.79 -> 4.68 h, c9 3.61 -> 3.51 h, c16 19.86 -> 19.44 h);
+    # the tick-6 re-plan for the idle crew then adopts sim-c16 (was: no stop),
+    # served lawfully under the 120-min rule (margin 15.3 h; violations 0 on
+    # every tick). Same withdrawal, same victim; the control still serves 9.
     assert st_a["scoreboard"]["served"] == 9
-    assert st_b["scoreboard"]["served"] == 0
+    assert st_b["scoreboard"]["served"] == 1
     assert st_b["scoreboard"]["withdrawn"] == 1
 
 

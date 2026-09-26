@@ -75,10 +75,23 @@ tests/test_spread.py and the memo-vs-reference matrix pin it):
       fast on the aligned head axis, EXACTLY ZERO on flat ground. See
       _phi_max_spread_vector + rothermel.surface_ros_from_bed_phi.
 
+RE-ANCHOR HISTORY (simulator re-anchor finding 2026-09-26; four optional
+compute_arrival / ensemble_arrival arguments, all default None => the call is
+BYTE-IDENTICAL to one without them — branch-guarded, pinned by
+tests/test_sim_reanchor_progress.py next to the tests/test_spread*.py
+fingerprints): `kept` carries a fire's already-burned cells with their TRUE
+arrival times into a fresh solve (final, quiet, the front re-seeded at each
+cell's own time, nothing arriving at or before t0_s); `kept_wx` is the
+weather they burned under, so each front edge keeps the progress it made
+before t0_s at the OLD rate; `embers_aloft` lands the embers still in flight
+at t0_s; `ember_log` records the embers a solve throws so the next re-anchor
+can find the ones in flight. See compute_arrival.
+
 Stdlib only; deterministic (ensemble perturbations via contracts.seeded_rng).
 """
 from __future__ import annotations
 
+import bisect
 import heapq
 import logging
 import math
@@ -369,22 +382,80 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     perimeter: list = None, perimeter_at_s: float = None,
                     incident_id: str = "", member_k: int = 0,
                     ros_scale: float = 1.0,
-                    seed_spotting: bool = True) -> Raster:
+                    seed_spotting: bool = True,
+                    kept: dict = None,
+                    embers_aloft: list = None,
+                    ember_log: list = None,
+                    kept_wx: list = None) -> Raster:
     """Fire arrival-time raster (absolute unix SECONDS per cell; UNREACHED=inf).
+
+    kept / kept_wx / embers_aloft / ember_log (RE-ANCHOR HISTORY, simulator
+    finding 2026-09-26; all default None => byte-identical to a call without
+    them). The simulator re-solves a burning fire from its current burn
+    whenever the world changes (simui tick() step 2). Seeding every burned
+    cell AT t0_s threw away each front cell's partial progress into its
+    unburned neighbours: a same-wind re-anchor — no physical change at all —
+    made the fire grow 2-58% less over the next 0.5-3 h than the continuous
+    run, every cell late (scratch_review/reanchor_progress_probe.py). With
+    history the solve CONTINUES the front instead:
+      kept          {flat cell index: TRUE arrival (unix s, <= t0_s)} — the
+                    cells that already burned. Each is FINAL at its own time
+                    (never relaxed, never landed on — history, not forecast;
+                    the output raster holds those times), QUIET (its one
+                    ember flew in the solve it burned in) and, when its
+                    16-offset reach holds a non-kept cell, seeds the front AT
+                    ITS OWN TIME — so an edge the fire was part-way along
+                    finishes on time. Every other cell is CLAMPED to arrive
+                    strictly after t0_s (math.nextafter): nothing retro-burns,
+                    so the burned mask at t0_s is exactly `kept`. Under
+                    unchanged weather the result is cell for cell the
+                    continuous solve (below the old horizon).
+      kept_wx       [(span start unix s, WeatherSample)], ascending — the
+                    weather the kept burn burned under, each span's (constant)
+                    weather in effect until the next span, the last one until
+                    t0_s (times before the first span use the first). With
+                    it, a kept cell's edge covers its distance BEFORE t0_s at
+                    each span's own directional rate and only the rest at
+                    `wx`'s (_kept_edge_arrival): a wind change at t0_s then
+                    reproduces ONE continuous run with that change priced by
+                    the piecewise walker. Without it (None), the kept cells'
+                    edges are priced from their true times at `wx`'s samples
+                    for those hours — for a caller whose `wx` holds the NEW
+                    weather at all times that applies the new weather to the
+                    front's old progress too: measured EARLY by 4-18 min mean
+                    over the next 3 h after a 45/90 deg turn (IoU down to 0.58
+                    at +0.5 h on a 200 m grid; docs/SIMULATOR_DESIGN.md
+                    "Re-anchor keeps the front's progress"), so the simulator
+                    always passes it.
+      embers_aloft  [(flat cell index, landing unix s)] — embers thrown
+                    before t0_s by kept cells, still in flight: each lands
+                    as an ordinary burning seed (clamped after t0_s; skipped
+                    on non-burnable, kept or post-horizon cells) that throws
+                    its own ember when it burns.
+      ember_log     a list receiving (landing index, thrown unix s, landing
+                    unix s) for every ember this solve throws onto a
+                    burnable, non-final cell inside the horizon (recorded,
+                    never read — the next re-anchor picks the ones in flight
+                    out of it). Inert with spotting off.
 
     seed_spotting (RE-ANCHOR SEAM, simulator wind-dial finding 2026-09-25):
     True (default) = every burning cell, ignition seeds included, owns its one
     spotting teleport edge — byte-identical to the pre-seam engine. False =
     the `ignition` seeds carry fire (they seed the front at t0_s) but throw NO
     ember: for a caller re-anchoring a fire from cells that ALREADY burned in
-    an earlier field (simui's exact re-anchor), whose one ember each was
-    thrown there. Re-throwing them fired a synchronous ember shower from the
-    whole burn toward the new downwind side on every mid-run wind change
-    (+26% burned cells 15 min after a 90 deg turn vs a continuous run with the
-    same shift; quiet seeds match that run at IoU 0.97-1.00 —
-    scratch_review/wind_direction_probe.py). Inert with spotting off.
-    Perimeter-mask cells are unaffected (the live feed path keeps them
-    burning).
+    an earlier field, whose one ember each was thrown there. Re-throwing them
+    fired a synchronous ember shower from the whole burn toward the new
+    downwind side on every mid-run wind change (+26% burned cells 15 min after
+    a 90 deg turn vs a continuous run with the same shift —
+    scratch_review/wind_direction_probe.py). CORRECTION 2026-09-26: the quiet
+    seeds' match to that run (recorded here as IoU 0.97-1.00) held for 45-90
+    deg turns only (re-measured 0.92-1.00, every cell late); seeding the burn
+    AT t0_s lost the front's partial progress, so a re-anchor with NO
+    physical change matched its continuous run at IoU 0.78-0.95 over the
+    first 1.5 h (scratch_review/reanchor_progress_probe.py). simui now
+    re-anchors through `kept` (quiet by construction, exact); this seam stays
+    for callers seeding points. Inert with spotting off. Perimeter-mask cells
+    are unaffected (the live feed path keeps them burning).
 
     ros_scale (ENSEMBLE MODEL-ERROR TERM, contracts model_error_sd_log): a
     member-wide multiplicative scale on the head ROS (and, linearly, Byram
@@ -564,6 +635,29 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                         heapq.heappush(heap, (burn_t, idx))
                         break
     quiet = None                 # seed_spotting=False: seeds throw no ember
+    # RE-ANCHOR HISTORY (docstring): the kept burn is final at its TRUE
+    # times and quiet; the front re-seeds from each kept cell at its own time.
+    resume = kept is not None or bool(embers_aloft)
+    t_floor = math.nextafter(t0_s, math.inf) if resume else t0_s
+    if kept:
+        if final is None:
+            final = bytearray(n)
+        quiet = bytearray(n)
+        for idx, t_k in kept.items():
+            if not 0 <= idx < n:
+                raise ValueError(f"kept cell index {idx} is off the grid")
+            best[idx] = t_k
+            final[idx] = 1
+            quiet[idx] = 1
+        for idx in kept:
+            r, c = divmod(idx, ncols)
+            for dr, dc, _dist, _brg, _gates in _OFFSETS:
+                nr = r + dr
+                nc = c + dc
+                if 0 <= nr < nrows and 0 <= nc < ncols and \
+                        not final[nr * ncols + nc]:
+                    heapq.heappush(heap, (best[idx], idx))
+                    break
     for p in ignition:
         rc = geo.latlon_to_rc(spec, p)
         if rc is None:
@@ -580,6 +674,18 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             quiet[idx] = 1
 
     horizon_end_s = t0_s + cfg.horizon_h * 3600.0
+    for idx, t_land in (embers_aloft or ()):
+        # RE-ANCHOR HISTORY: an ember in flight at t0_s lands exactly as its
+        # teleport edge would have (same fuel / final / horizon tests), as a
+        # burning seed that throws its own ember when it burns.
+        if not 0 <= idx < n or fuel_of[idx] is None or \
+                (final is not None and final[idx]):
+            continue
+        if t_land < t_floor:
+            t_land = t_floor
+        if t_land < best[idx] and t_land <= horizon_end_s:
+            best[idx] = t_land
+            heapq.heappush(heap, (t_land, idx))
     herb = cfg.live_herb_frac
     woody = cfg.live_woody_frac
     slope_d = tile.slope_deg.data
@@ -688,25 +794,36 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     bed_cache = {}   # (fuel_code, m_dead) -> fuel-bed intermediate (or None)
     ros_cache = {}   # (fuel_code, slope, aspect, wind10, m_dead, wdir) -> p
 
+    def _weather_sample(hour):
+        """The WeatherSample an hour bucket (int, relative to t0_s) prices —
+        or, for a ('kept_wx', j) key, span j of the RE-ANCHOR HISTORY
+        weather (_kept_edge_arrival)."""
+        if hour.__class__ is tuple:
+            return kept_wx[hour[1]][1]
+        return wx.at(t0_s + hour * 3600.0)
+
+    def _eff_weather(s):
+        """(wind10, m_dead, wdir) of WeatherSample `s` for THIS member.
+        A4 ensemble knob: rotate the wind direction wherever weather is
+        consumed (max-spread vector AND spotting bearing). +0.0 is an exact
+        float identity, keeping the default byte-identical. WIND GUST BLEND
+        (cfg.wind_gust_blend): effective sustained = ws + b*(gust-ws); b=0.0
+        adds +0.0 (exact float identity, same convention as dir_offset_deg).
+        Gust is clamped >= sustained at the adapter seam, so the max() guard
+        is belt-and-braces."""
+        ws_eff = (s.wind_speed_mps
+                  + gust_blend * max(0.0, s.wind_gust_mps
+                                     - s.wind_speed_mps))
+        return (max(0.0, ws_eff * wind_scale),
+                max(0.01, dead_fuel_moisture_frac(s.temp_c, s.rh_pct)
+                    * moisture_scale),
+                s.wind_dir_deg + dir_offset_deg)
+
     def cell_params(idx: int, hour: int):
         fuel = fuel_of[idx]
         wt = hour_wx.get(hour)
         if wt is None:
-            s = wx.at(t0_s + hour * 3600.0)
-            # A4 ensemble knob: rotate the wind direction wherever weather is
-            # consumed (max-spread vector AND spotting bearing). +0.0 is an
-            # exact float identity, keeping the default byte-identical.
-            # WIND GUST BLEND (cfg.wind_gust_blend): effective sustained =
-            # ws + b*(gust-ws); b=0.0 adds +0.0 (exact float identity, same
-            # convention as dir_offset_deg). Gust is clamped >= sustained at
-            # the adapter seam, so the max() guard is belt-and-braces.
-            ws_eff = (s.wind_speed_mps
-                      + gust_blend * max(0.0, s.wind_gust_mps
-                                         - s.wind_speed_mps))
-            wt = (max(0.0, ws_eff * wind_scale),
-                  max(0.01, dead_fuel_moisture_frac(s.temp_c, s.rh_pct)
-                      * moisture_scale),
-                  s.wind_dir_deg + dir_offset_deg)
+            wt = _eff_weather(_weather_sample(hour))
             hour_wx[hour] = wt
         wind10, m_dead, wdir = wt
         slope = slope_d[idx]
@@ -737,7 +854,7 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         """WGRESP_NO_ROS_MEMO=1 escape hatch: the pre-B3 structure — every
         quantity computed fresh per settled cell through the classic rothermel
         seams. The byte-identity oracle for the memo path above."""
-        s = wx.at(t0_s + hour * 3600.0)
+        s = _weather_sample(hour)
         fuel = fuel_of[idx]
         ws_eff = (s.wind_speed_mps
                   + gust_blend * max(0.0, s.wind_gust_mps
@@ -788,7 +905,10 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
           legacy "fuel that cannot carry fire never relaxes a neighbour"
           test before calling, and passes the departure-hour rate in as
           `ros0`, so the first segment's divisor is bit-identical to the
-          frozen law's.
+          frozen law's. (The one caller that passes ros0 <= 0 is the
+          RE-ANCHOR HISTORY continuation at t0_s — _kept_edge_arrival —
+          where a kept edge's first hour under the new weather STALLS like
+          any later hour instead of creeping at the divisor floor.)
         * A LATER hour with ros <= 0 STALLS the traversal: the fire makes no
           progress during that hour and resumes at the next hour's rate with
           the distance still unburned. (The alternative — abandoning the edge
@@ -835,7 +955,7 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         seg_rem = dist_m              # distance still unburned at seg_t0
         seg_r = None                  # that run's rate (None = none open yet)
         hour = hour0
-        r = max(ros0, _ROS_FLOOR_MPS)
+        r = max(ros0, _ROS_FLOOR_MPS) if ros0 > 0.0 else 0.0
         p_cur = p0                    # params the rate `r` was derived from
         for _ in range(_PIECEWISE_MAX_HOUR_STEPS):
             if r != seg_r:
@@ -862,6 +982,70 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                                                      ebrg - p_next[2])
                 r = max(nros, _ROS_FLOOR_MPS) if nros > 0.0 else 0.0
         return None
+
+    # RE-ANCHOR HISTORY weather (kept_wx): span start times, ascending.
+    kept_wx_t = ([float(t) for t, _s in kept_wx]
+                 if kept and kept_wx else None)
+
+    def _kept_edge_arrival(idx: int, t_u: float, dist_m: float, ebrg: float):
+        """Arrival (unix s) over one edge leaving KEPT cell `idx` at its true
+        time t_u < t0_s, or None (no relaxation) — RE-ANCHOR HISTORY with the
+        fire's weather history `kept_wx` (docstring).
+
+        The distance the front covered BEFORE t0_s is integrated over the
+        history spans it crossed, each at the directional rate its own
+        weather gives (the source cell's params, like every edge); the rest
+        runs from t0_s under `wx`: the frozen law at t0_s's rate, or the
+        piecewise walker when cfg.edge_weather_piecewise is on. Same
+        conventions as the walker — a span with ros <= 0 STALLS, burning
+        spans divide by max(ros, floor), and consecutive spans with the SAME
+        rate merge into one run solved from its own start (EXACT SEGMENT
+        MERGING): under unchanged weather the result is t_u + dist/r in the
+        frozen law's exact float operations, i.e. the continuous run bit
+        for bit, and after one change at t0_s it is the continuous run with
+        that change priced by the piecewise walker, also bit for bit
+        (tests/test_sim_reanchor_progress.py). A kept edge that the history
+        says had already finished returns that instant (the caller clamps
+        it after t0_s)."""
+        j = bisect.bisect_right(kept_wx_t, t_u) - 1
+        if j < 0:
+            j = 0                  # before the first span: its weather
+        runs = []                  # [(start unix s, rate)], rate 0.0 = stall
+        start = t_u
+        while True:
+            p = cell_params(idx, ("kept_wx", j))
+            nros = rothermel.directional_ros_mps(p[0], p[1], ebrg - p[2])
+            r = max(nros, _ROS_FLOOR_MPS) if nros > 0.0 else 0.0
+            if not runs or r != runs[-1][1]:
+                runs.append((start, r))
+            if j + 1 < len(kept_wx_t) and kept_wx_t[j + 1] < t0_s:
+                j += 1
+                start = kept_wx_t[j]
+            else:
+                break
+        p0 = cell_params(idx, 0)
+        nros0 = rothermel.directional_ros_mps(p0[0], p0[1], ebrg - p0[2])
+        r0 = max(nros0, _ROS_FLOOR_MPS) if nros0 > 0.0 else 0.0
+        if r0 != runs[-1][1]:
+            runs.append((t0_s, r0))
+        rem = dist_m
+        for k in range(len(runs) - 1):
+            s_k, r_k = runs[k]
+            if r_k > 0.0:
+                rem -= r_k * (runs[k + 1][0] - s_k)
+                if rem <= 0.0:
+                    return runs[k + 1][0]
+        s_l, r_l = runs[-1]
+        if piecewise:
+            # the walker re-reads wx hour by hour from t0_s on
+            if r_l > 0.0 and s_l < t0_s:
+                rem -= r_l * (t0_s - s_l)
+                if rem <= 0.0:
+                    return t0_s
+            return _piecewise_edge_arrival(idx, t0_s, 0, rem, ebrg, nros0, p0)
+        if r_l <= 0.0:
+            return None
+        return s_l + rem / r_l
 
     while heap:
         t_u, idx = heapq.heappop(heap)
@@ -895,7 +1079,13 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                 if not passable:
                     continue
             ros = rothermel.directional_ros_mps(head, lb, ebrg - brg)
-            if ros <= 0.0:
+            if kept_wx_t is not None and t_u < t0_s:
+                # RE-ANCHOR HISTORY: a kept front cell's edge, its progress
+                # before t0_s priced at the weather it burned under.
+                t_v = _kept_edge_arrival(idx, t_u, dist_cells * cell_m, ebrg)
+                if t_v is None:
+                    continue
+            elif ros <= 0.0:
                 # Fuel that cannot carry fire (dead moisture at/above the
                 # moisture of extinction => Rothermel 0) never relaxes a
                 # neighbour. The 1e-4 m/s divisor floor below is a
@@ -903,7 +1093,7 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                 # spread rate: at 30 m cells it put an "out" cell 83 h away,
                 # inside the 96 h horizon (tri-model review, code finding).
                 continue
-            if piecewise:
+            elif piecewise:
                 # EDGE-WEATHER PIECEWISE INTEGRATION (cfg.edge_weather_
                 # piecewise): continue the traversal at each later hour's
                 # rate for the distance still unburned, instead of freezing
@@ -916,6 +1106,12 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     continue          # never completes inside the horizon
             else:
                 t_v = t_u + (dist_cells * cell_m) / max(ros, _ROS_FLOOR_MPS)
+            if resume and t_v < t_floor:
+                # RE-ANCHOR HISTORY: a kept front cell's edge priced from its
+                # true time may "finish" before t0_s (new weather applied to
+                # its old progress, without kept_wx); it burns right after
+                # t0_s instead — nothing retro-burns (docstring).
+                t_v = t_floor
             if t_v < best[nidx] and t_v <= horizon_end_s:
                 best[nidx] = t_v
                 heapq.heappush(heap, (t_v, nidx))
@@ -933,6 +1129,15 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                 if land is not None:
                     nidx = land[0] * ncols + land[1]
                     t_v = t_u + dist_m / max(u20, 0.1)   # ember flight ~ 20-ft wind
+                    if resume and t_v < t_floor:
+                        t_v = t_floor
+                    if ember_log is not None and fuel_of[nidx] is not None \
+                            and t_v <= horizon_end_s \
+                            and not (final is not None and final[nidx]):
+                        # RE-ANCHOR HISTORY: every ember that could ignite
+                        # something, won here or not (a later re-anchor under
+                        # new weather may need it while it is still aloft)
+                        ember_log.append((nidx, t_u, t_v))
                     if fuel_of[nidx] is not None and t_v < best[nidx] \
                             and t_v <= horizon_end_s \
                             and not (final is not None and final[nidx]):
@@ -1018,7 +1223,11 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                      t0_s: float, cfg: ResponseConfig, incident_id: str = "",
                      perimeter: list = None,
                      perimeter_at_s: float = None,
-                     seed_spotting: bool = True) -> EnsembleArrival:
+                     seed_spotting: bool = True,
+                     kept: dict = None,
+                     embers_aloft: list = None,
+                     ember_log: list = None,
+                     kept_wx: list = None) -> EnsembleArrival:
     """Ensemble v2 (Sprint 2 ticket A4, Council-1 model F2+F6): nominal member
     (k=0, unperturbed) + (cfg.ensemble_n - 1) perturbed members, plus per-cell
     p10/p50/p90 quantile rasters (unix seconds; p10 = EARLIEST/pessimistic).
@@ -1063,6 +1272,15 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     seed_spotting is forwarded the same way (compute_arrival; default True =
     byte-identical; simui's exact re-anchor passes False).
 
+    kept / kept_wx / embers_aloft (RE-ANCHOR HISTORY, compute_arrival;
+    default None = byte-identical) are forwarded to EVERY member: the kept
+    burn is the nominal TRUTH with its true arrival times, final in every
+    member (so p10 = p50 = p90 = the true time there), and each member
+    continues the front from it under its own perturbed weather (its
+    wind/moisture/direction perturbation applies to the history weather
+    too). ember_log goes to the NOMINAL member only (the truth's embers are
+    what a later re-anchor carries).
+
     NOTE: ensemble_n counts TOTAL members (nominal + n-1 perturbed), so
     ensemble_n=1 is nominal-only, matching the v1 convention the suite pins;
     contracts' config comment reads it as perturbed-count — the discrepancy
@@ -1080,7 +1298,9 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                                perimeter=perimeter,
                                perimeter_at_s=perimeter_at_s,
                                incident_id=incident_id, member_k=0,
-                               seed_spotting=seed_spotting)]
+                               seed_spotting=seed_spotting, kept=kept,
+                               embers_aloft=embers_aloft,
+                               ember_log=ember_log, kept_wx=kept_wx)]
     draws = _stratified_member_draws(incident_id, n_members - 1)
     dir_lead = min(1.0, (cfg.horizon_h * 0.5) / _DIR_RAMP_SATURATION_H)
     sd_log = float(getattr(cfg, "model_error_sd_log", 0.0) or 0.0)
@@ -1104,7 +1324,9 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                                        perimeter_at_s=perimeter_at_s,
                                        incident_id=incident_id, member_k=k,
                                        ros_scale=r_scale,
-                                       seed_spotting=seed_spotting))
+                                       seed_spotting=seed_spotting,
+                                       kept=kept, embers_aloft=embers_aloft,
+                                       kept_wx=kept_wx))
 
     ncells = tile.spec.nrows * tile.spec.ncols
     if len(members) == 1:

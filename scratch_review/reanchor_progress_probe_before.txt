@@ -1,0 +1,149 @@
+# scratch_review/reanchor_progress_probe.py on be103e4 (BEFORE the 2026-09-26 progress-preserving re-anchor): the re-anchor seeded every burned cell AT the anchor time.
+
+[park_city_ut/high] (a) spotting on — mask@T: 329 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50     633     760   0.83   0.71  0.83      0    127
+     1.00    1192    1472   0.81   0.76  0.81      0    280
+     1.50    1984    2425   0.82   0.79  0.82      0    441
+     3.00    4816    4995   0.96   0.96  0.96      0    179
+   arrival re-anchored - reference over the 4995 cells burned by T+3 h: 4995 differ, max |d| 60.0 min; mean 10.25 / median 5.46 / p05 2.08 / p95 23.99 min; early 0.0% late 100.0%
+
+[park_city_ut/high] (a) spotting off — mask@T: 19 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50      59      75   0.79   0.71  0.79      0     16
+     1.00     143     181   0.79   0.77  0.79      0     38
+     1.50     335     386   0.87   0.86  0.87      0     51
+     3.00    1162    1213   0.96   0.96  0.96      0     51
+   arrival re-anchored - reference over the 1213 cells burned by T+3 h: 1213 differ, max |d| 60.0 min; mean 6.66 / median 3.97 / p05 0.55 / p95 13.07 min; early 0.0% late 100.0%
+
+[park_city_ut/high] (b) turn +45 deg — mask@T: 329 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50    1731    1794   0.96   0.96  0.96      0     63
+     1.00    2842    2913   0.98   0.97  0.98      0     71
+     1.50    3709    3767   0.98   0.98  0.98      0     58
+     3.00    6347    6418   0.99   0.99  0.99      0     71
+   arrival re-anchored - reference over the 6418 cells burned by T+3 h: 6418 differ, max |d| 282.9 min; mean 2.81 / median 0.80 / p05 0.03 / p95 9.75 min; early 0.0% late 100.0%
+   vs the FROZEN-law shift run (IoU / area) by lead: 0.5 h 0.70/1.19  1 h 0.83/1.11  1.5 h 0.88/1.04  3 h 0.94/0.99
+   (frozen-law vs piecewise reference, IoU / area: 0.5 h 0.69/0.81  1 h 0.82/0.88  1.5 h 0.88/0.95  3 h 0.94/1.00)
+
+[park_city_ut/high] (b) turn +90 deg — mask@T: 329 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50    2656    2702   0.98   0.98  0.98      0     46
+     1.00    4589    4639   0.99   0.99  0.99      0     50
+     1.50    5695    5736   0.99   0.99  0.99      0     41
+     3.00    7316    7337   1.00   1.00  1.00      0     21
+   arrival re-anchored - reference over the 7337 cells burned by T+3 h: 7337 differ, max |d| 451.0 min; mean 1.75 / median 0.13 / p05 0.01 / p95 9.41 min; early 0.0% late 100.0%
+   vs the FROZEN-law shift run (IoU / area) by lead: 0.5 h 0.55/1.62  1 h 0.83/1.15  1.5 h 0.88/1.08  3 h 0.94/1.01
+   (frozen-law vs piecewise reference, IoU / area: 0.5 h 0.56/0.61  1 h 0.84/0.86  1.5 h 0.89/0.92  3 h 0.94/0.99)
+
+[park_city_ut/high] (c) second fire sim-f2 14.0 km away — mask@T: 329 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50     633     760   0.83   0.71  0.83      0    127
+     1.00    1192    1472   0.81   0.76  0.81      0    280
+     1.50    1984    2425   0.82   0.79  0.82      0    441
+     3.00    4816    4995   0.96   0.96  0.96      0    179
+   arrival re-anchored - reference over the 4995 cells burned by T+3 h: 4995 differ, max |d| 60.0 min; mean 10.25 / median 5.46 / p05 2.08 / p95 23.99 min; early 0.0% late 100.0%
+
+[park_city_ut/high] (d) rebase at T+5 h (horizon 6 h) — mask@T: 5957 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50    6243    6377   0.98   0.68  0.98      0    134
+     1.00    6645    6747   0.98   0.87  0.98      0    102
+     1.50    6950    7046   0.99   0.91  0.99      0     96
+     3.00    7788    7910   0.98   0.94  0.98      0    122
+   arrival re-anchored - reference over the 7904 cells burned by T+3 h: 7910 differ, max |d|  inf min; mean 103.05 / median 99.88 / p05 0.98 / p95 235.41 min; early 0.0% late 100.0%
+
+[park_city_ut/extreme] (a) spotting on — mask@T: 400 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50     807     972   0.83   0.71  0.83      0    165
+     1.00    1797    2106   0.85   0.82  0.85      0    309
+     1.50    2716    2844   0.95   0.95  0.95      0    128
+     3.00    4577    4726   0.97   0.97  0.97      0    149
+   arrival re-anchored - reference over the 4726 cells burned by T+3 h: 4726 differ, max |d| 60.0 min; mean 8.86 / median 4.58 / p05 1.16 / p95 22.38 min; early 0.0% late 100.0%
+
+[park_city_ut/extreme] (a) spotting off — mask@T: 31 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50      90     103   0.87   0.82  0.87      0     13
+     1.00     199     218   0.91   0.90  0.91      0     19
+     1.50     421     454   0.93   0.92  0.93      0     33
+     3.00    1202    1220   0.99   0.98  0.99      0     18
+   arrival re-anchored - reference over the 1220 cells burned by T+3 h: 1220 differ, max |d| 60.0 min; mean 3.40 / median 0.62 / p05 0.21 / p95 13.92 min; early 0.0% late 100.0%
+
+[park_city_ut/extreme] (b) turn +45 deg — mask@T: 400 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50    3444    3596   0.96   0.95  0.96      0    152
+     1.00    5597    5665   0.99   0.99  0.99      0     68
+     1.50    6853    6985   0.98   0.98  0.98      0    132
+     3.00    8566    8603   1.00   1.00  1.00      0     37
+   arrival re-anchored - reference over the 8603 cells burned by T+3 h: 8603 differ, max |d| 199.6 min; mean 3.02 / median 0.39 / p05 0.01 / p95 22.80 min; early 0.0% late 100.0%
+   vs the FROZEN-law shift run (IoU / area) by lead: 0.5 h 0.66/1.34  1 h 0.79/1.16  1.5 h 0.85/1.07  3 h 0.95/1.02
+   (frozen-law vs piecewise reference, IoU / area: 0.5 h 0.67/0.71  1 h 0.80/0.85  1.5 h 0.87/0.92  3 h 0.96/0.98)
+
+[park_city_ut/extreme] (b) turn +90 deg — mask@T: 400 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50    5010    5066   0.99   0.99  0.99      0     56
+     1.00    6894    6916   1.00   1.00  1.00      0     22
+     1.50    8251    8285   1.00   1.00  1.00      0     34
+     3.00   10430   10456   1.00   1.00  1.00      0     26
+   arrival re-anchored - reference over the 10456 cells burned by T+3 h: 10456 differ, max |d| 327.3 min; mean 1.53 / median 0.21 / p05 0.04 / p95 1.98 min; early 0.0% late 100.0%
+   vs the FROZEN-law shift run (IoU / area) by lead: 0.5 h 0.62/1.46  1 h 0.85/1.12  1.5 h 0.85/1.13  3 h 0.96/1.02
+   (frozen-law vs piecewise reference, IoU / area: 0.5 h 0.62/0.68  1 h 0.85/0.89  1.5 h 0.85/0.88  3 h 0.96/0.98)
+
+[park_city_ut/extreme] (c) second fire sim-f2 14.0 km away — mask@T: 400 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50     807     972   0.83   0.71  0.83      0    165
+     1.00    1797    2106   0.85   0.82  0.85      0    309
+     1.50    2716    2844   0.95   0.95  0.95      0    128
+     3.00    4577    4726   0.97   0.97  0.97      0    149
+   arrival re-anchored - reference over the 4726 cells burned by T+3 h: 4726 differ, max |d| 60.0 min; mean 8.86 / median 4.58 / p05 1.16 / p95 22.38 min; early 0.0% late 100.0%
+
+[eagle_vail_co/high] (a) spotting on — mask@T: 27 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50      37      42   0.88   0.67  0.88      0      5
+     1.00      43      55   0.78   0.57  0.78      0     12
+     1.50      66      76   0.87   0.80  0.87      0     10
+     3.00     199     222   0.90   0.88  0.90      0     23
+   arrival re-anchored - reference over the 222 cells burned by T+3 h: 222 differ, max |d| 60.0 min; mean 15.31 / median 5.89 / p05 1.69 / p95 56.97 min; early 0.0% late 100.0%
+
+[eagle_vail_co/high] (a) spotting off — mask@T: 9 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50      15      16   0.94   0.86  0.94      0      1
+     1.00      21      27   0.78   0.67  0.78      0      6
+     1.50      39      42   0.93   0.91  0.93      0      3
+     3.00      83      88   0.94   0.94  0.94      0      5
+   arrival re-anchored - reference over the 88 cells burned by T+3 h: 88 differ, max |d| 60.0 min; mean 9.90 / median 5.29 / p05 1.10 / p95 42.04 min; early 0.0% late 100.0%
+
+[eagle_vail_co/high] (b) turn +45 deg — mask@T: 27 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50      57      62   0.92   0.86  0.92      0      5
+     1.00     118     124   0.95   0.94  0.95      0      6
+     1.50     205     212   0.97   0.96  0.97      0      7
+     3.00     582     603   0.97   0.96  0.97      0     21
+   arrival re-anchored - reference over the 603 cells burned by T+3 h: 603 differ, max |d| 95.1 min; mean 5.24 / median 2.15 / p05 0.11 / p95 10.27 min; early 0.0% late 100.0%
+   vs the FROZEN-law shift run (IoU / area) by lead: 0.5 h 0.65/1.10  1 h 0.67/1.16  1.5 h 0.73/1.18  3 h 0.85/1.06
+   (frozen-law vs piecewise reference, IoU / area: 0.5 h 0.63/0.84  1 h 0.67/0.82  1.5 h 0.73/0.82  3 h 0.85/0.91)
+
+[eagle_vail_co/high] (b) turn +90 deg — mask@T: 27 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50      88      91   0.97   0.95  0.97      0      3
+     1.00     216     220   0.98   0.98  0.98      0      4
+     1.50     337     340   0.99   0.99  0.99      0      3
+     3.00     939     941   1.00   1.00  1.00      0      2
+   arrival re-anchored - reference over the 941 cells burned by T+3 h: 941 differ, max |d| 60.0 min; mean 1.47 / median 0.56 / p05 0.11 / p95 2.07 min; early 0.0% late 100.0%
+   vs the FROZEN-law shift run (IoU / area) by lead: 0.5 h 0.42/1.52  1 h 0.41/1.76  1.5 h 0.52/1.52  3 h 0.69/1.17
+   (frozen-law vs piecewise reference, IoU / area: 0.5 h 0.42/0.64  1 h 0.42/0.56  1.5 h 0.51/0.65  3 h 0.68/0.85)
+
+[eagle_vail_co/high] (c) second fire sim-f2 20.0 km away — mask@T: 27 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50      37      42   0.88   0.67  0.88      0      5
+     1.00      43      55   0.78   0.57  0.78      0     12
+     1.50      66      76   0.87   0.80  0.87      0     10
+     3.00     199     222   0.90   0.88  0.90      0     23
+   arrival re-anchored - reference over the 222 cells burned by T+3 h: 222 differ, max |d| 60.0 min; mean 15.31 / median 5.89 / p05 1.69 / p95 56.97 min; early 0.0% late 100.0%
+
+[eagle_vail_co/high] (d) rebase at T+5 h (horizon 6 h) — mask@T: 298 burned, lost 0, added 0
+   lead h   cells     ref   area growth   IoU  early   late
+     0.50     319     348   0.92   0.42  0.92      0     29
+     1.00     351     384   0.91   0.62  0.91      0     33
+     1.50     379     424   0.89   0.64  0.89      0     45
+     3.00     548     634   0.86   0.74  0.86      0     86
+   arrival re-anchored - reference over the 633 cells burned by T+3 h: 634 differ, max |d|  inf min; mean 72.80 / median 43.16 / p05 3.24 / p95 230.40 min; early 0.0% late 100.0%
