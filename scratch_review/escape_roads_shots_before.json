@@ -1,0 +1,24 @@
+[
+ {
+  "name": "b01_glenwood_t3_ray_escape",
+  "key": "glenwood_springs_co",
+  "zone": "standard",
+  "tick": 3,
+  "view": [39.585, -107.345, 12],
+  "mid": null,
+  "tooltip": {"crew": "sim-g5", "match": "area escape"},
+  "caption": "BEFORE (escape_road_network off) · glenwood_springs_co std t3 · sim-g5's SEM-10d area escape is a straight-bearing point in open ground: 1.1 km of road, then a 6.0 km straight spur north (sim-g4: a 604 m spur west)"
+ },
+ {
+  "name": "b02_vail_ext_t24_ray_escape",
+  "key": "vail_co",
+  "zone": "extended",
+  "tick": 24,
+  "view": [39.66, -106.27, 11],
+  "mid": null,
+  "graph_bbox": true,
+  "graph_label": "road graph coverage (vail_co_ext)",
+  "tooltip": {"match": "no road route"},
+  "caption": "BEFORE (escape_road_network off) · vail_co EXTENDED t24 (EXTREME, 14 km) · 8 crews flee East Vail on 11.6 km straight chords NE into the roadless Gore Range"
+ }
+]

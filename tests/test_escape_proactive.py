@@ -83,8 +83,13 @@ def test_sim_default_explicit_override_wins():
 
 
 def test_picker_none_when_no_durable_zone():
-    """Every zone inside the proactive horizon -> None (no treadmill hop)."""
-    s = _session()
+    """Every zone inside the proactive horizon -> None (no treadmill hop).
+    The zone-only picker: with contracts escape_road_network armed (the
+    simulator default since 2026-09-26) a fully lawful, durable ROAD node
+    is also a candidate when no zone rule yields a move — this scripted
+    world makes every non-zone point safe forever, so that picker decamps by
+    road (pinned in tests/test_sim_escape_roads.py)."""
+    s = _session(escape_road_network=False)
     cs = _crew(s)
     now = s._now_s
     _script_exposure(s, {z.zone_id: now + 1800.0 for z in _zones(s)})
@@ -190,8 +195,10 @@ def test_sweep_decamps_idle_crew_inside_horizon():
 
 def test_sweep_holds_when_no_durable_exit():
     """No durable zone -> the crew stays put (never a least-bad early hop);
-    behavior identical to the knob being off until the imminent law fires."""
-    s = _session(escape_proactive_lead_min=120.0)
+    behavior identical to the knob being off until the imminent law fires.
+    Zone-only picker (see test_picker_none_when_no_durable_zone): the road-
+    network counterpart is pinned in tests/test_sim_escape_roads.py."""
+    s = _session(escape_proactive_lead_min=120.0, escape_road_network=False)
     z1, z2, z3 = _zones(s)
     cs = _prime(s, {z1.zone_id: s._now_s + 2 * 3600.0,
                     z2.zone_id: s._now_s + 1800.0,

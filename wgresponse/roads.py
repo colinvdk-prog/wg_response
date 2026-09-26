@@ -9,6 +9,11 @@ must visibly travel on real roads):
     load_road_graph(key) -> RoadGraph | None      (None when absent, never raises
                                                    for a missing cache file)
     route(g, a, b, cfg) -> RoadRoute(polyline, time_s, dist_m, on_roads)
+    route_on_path(g, a, node_path, edge_path, cfg) -> RoadRoute
+                                 the same assembly along a node path found by
+                                 an external search (simui's SEM-10d road-
+                                 network escape): origin spur + road path,
+                                 ending ON the last node
 
 DIVISION OF AUTHORITY (contracts): dispatch.plan keeps the calibrated tier-0
 travel model (circuity x fire-traffic, wgresponse.travel); the SIMULATOR moves
@@ -745,6 +750,32 @@ def route(g: Optional[RoadGraph], a: LatLon, b: LatLon,
                          f"snapped nodes {snap_a[0]} and {snap_b[0]} on "
                          f"disconnected road components")
     return _assemble(g, a, b, snap_a, snap_b, found, cfg)
+
+
+def route_on_path(g: RoadGraph, a: LatLon, node_path, edge_path,
+                  cfg: ResponseConfig) -> RoadRoute:
+    """RoadRoute for a node path found by an EXTERNAL search (the simulator's
+    SEM-10d road-network escape, contracts escape_road_network): origin spur
+    a -> node_path[0] (skipped when a sits on that node), then the road path
+    along exactly `edge_path` (edge indices, one per hop, so parallel edges
+    are unambiguous), ending EXACTLY on node_path[-1] — the destination is a
+    road node, so there is no destination spur. Same geometry/time model as
+    route() (_assemble): per-edge OSM geometry, cfg.fire_traffic_factor
+    applied at route time, spur charged at SNAP_SPEED_MPS. The caller owns
+    the path's validity (consecutive nodes joined by the named edges)."""
+    node_path = list(node_path)
+    edge_path = list(edge_path)
+    if not node_path or len(edge_path) != len(node_path) - 1:
+        raise ValueError("route_on_path: need len(edge_path) == len(node_path) - 1")
+    for (u, v), ei in zip(zip(node_path, node_path[1:]), edge_path):
+        e = g.edges[ei]
+        if {e.u, e.v} != {u, v}:
+            raise ValueError(f"route_on_path: edge {ei} does not join {u} and {v}")
+    first = node_path[0]
+    snap_a = (first, geo.haversine_m(a, g.nodes[first]))
+    last = node_path[-1]
+    return _assemble(g, a, g.nodes[last], snap_a, (last, 0.0),
+                     (node_path, edge_path), cfg)
 
 
 def _assemble(g: RoadGraph, a: LatLon, b: LatLon, snap_a, snap_b,

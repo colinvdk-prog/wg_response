@@ -74,7 +74,10 @@ state()['withdrawn'] record + scoreboard count + unserved reason
 'withdrawn_unsafe' + note. A fast road route never loosens the decision
 below tier-0; a slow one tightens it. Checked at arrival, at every tick of
 an in-flight deploy, and via the _recheck_deploy path (which subtracts the
-same effective egress in road sessions).
+same effective egress in road sessions). FLEEING BY ROAD (contracts
+escape_road_network, armed by the simulator, 2026-09-26): a crew that must
+flee with no catalog zone lawfully reachable searches the road graph and
+drives the searched path to a road node (see _road_escape_search).
 
 FIRE ZONE (contracts wgresponse.simui FIRE ZONE block; founder request
 2026-07-10 — "allow the fire zone to be increased so ignition can be
@@ -225,6 +228,7 @@ wind_dir_deg blowing FROM. Stdlib only.
 from __future__ import annotations
 
 import copy
+import heapq
 import math
 import threading
 import weakref
@@ -441,6 +445,36 @@ SIM_ESCAPE_PROACTIVE_LEAD_MIN = 120.0
 #: replay byte for byte regardless of machine load; the 10x wall-clock
 #: runaway guard still bounds a pathological case.
 SIM_SOLVER_BUDGET_EVALS = 20_000
+
+#: SEM-10 escape-path sample spacing (m): _route_points_with_times subdivides
+#: every polyline span into pieces of at most this length so the front cannot
+#: slip between samples; the road-network escape search samples its edges
+#: with exactly the same law, so its numbers equal _route_metrics'.
+_ESCAPE_SAMPLE_M = 275.0
+#: SEM-10d ROAD-NETWORK ESCAPE (contracts escape_road_network; founder
+#: "rework the crews fleeing" 2026-09-26, docs/review/escape_roads_2026-09-26.md).
+#: Destination rule, lexicographic over road nodes (and the catalog zones):
+#: lawful destination first, then transit exposure in ESCAPE_NET_EXPOSURE_Q_S
+#: steps (ceil — zero exposure is its own step, always first; below a third
+#: of a standard 15-min tick, a difference in conservatively estimated
+#: transit does not outrank a longer horizon: measured, 1-min steps took a
+#: 15.5 h road node over a 34.7 h catalog zone for 74 s less exposure — bench
+#: santa_rosa_ca|+40|8000|extreme), then the SAFETY HORIZON (eroded-P10
+#: arrival at the node minus the crew's arrival there) in
+#: ESCAPE_NET_HORIZON_Q_S steps, capped at cfg.escape_road_horizon_cap_h so
+#: a long-safe spot beats a marginal one without sending crews to the far
+#: edge, then a catalog zone before a road node, then drive time, then id.
+ESCAPE_NET_EXPOSURE_Q_S = 300.0
+ESCAPE_NET_HORIZON_Q_S = 1800.0
+#: minimum straight-line flee distance of a road-node destination (the ray
+#: law's 2 km: the crew actually leaves its spot)
+ESCAPE_NET_MIN_FLEE_M = 2_000.0
+#: search budget (deterministic, never the wall clock): settled nodes and
+#: the drive time (s at the crew's escape speed) beyond which nodes are no
+#: longer expanded. Escapes are rare; the search stops early at the first
+#: node that can no longer be beaten (see _road_escape_search).
+ESCAPE_NET_MAX_NODES = 25_000
+ESCAPE_NET_MAX_DRIVE_S = 3.0 * 3600.0
 
 #: ROADS LEGIBILITY (roads inspection 2026-09-25, founder "there are times
 #: that the response team does not use roads";
@@ -2191,6 +2225,16 @@ class SimSession:
         # wins; the engine default stays 0 (legacy wall clock).
         if "solver_budget_evals" not in overrides:
             cfg.solver_budget_evals = SIM_SOLVER_BUDGET_EVALS
+        # SEM-10d ROAD-NETWORK ESCAPE (founder "rework the crews fleeing"
+        # 2026-09-26; contracts escape_road_network): a crew that must flee
+        # with no catalog zone lawfully reachable searches the ROAD GRAPH for
+        # the destination node with the least exposure and the longest
+        # (capped) safety horizon and drives there on roads end to end —
+        # instead of a straight ray into open ground. Explicit cfg_overrides
+        # ALWAYS win; the ResponseConfig default stays False (live product
+        # path byte-identical).
+        if "escape_road_network" not in overrides:
+            cfg.escape_road_network = True
 
         # --- roads (contracts wgresponse.roads seam; loaded ONCE per
         # configure). LAZY import: the sibling module lands independently —
@@ -2505,6 +2549,25 @@ class SimSession:
         # SEM-10d: one-shot alarm latch for the area-escape note (crews leaving
         # the operating area because no catalog zone is safely reachable).
         self._area_escape_alarmed = False
+        # SEM-10d ROAD-NETWORK ESCAPE (contracts escape_road_network; all
+        # empty and never read when the knob is off — byte-identical):
+        # _escape_pins: (a.lat, a.lon, b.lat, b.lon) -> the searched
+        #   RoadRoute a -> b; _leg_route serves it, so the crew DRIVES the
+        #   searched path (and the map previews it). Pruned every sweep to
+        #   targets some crew still heads for.
+        # _net_escape: crew_id -> the road node it is fleeing to, so the
+        #   sweep re-judges the REMAINING searched leg it is driving.
+        # _esc_edge_cache: (edge index, forward) -> the edge's escape samples
+        #   (static per session: graph geometry + tile).
+        # _escape_kind_last: how the last _best_escape call decided — "zone",
+        #   "network", "ray", or "ray_fallback" (no passable road escape).
+        # _net_fallback_noted: crews already told (loudly, once per episode)
+        #   that no passable road escape existed.
+        self._escape_pins = {}
+        self._net_escape = {}
+        self._esc_edge_cache = {}
+        self._escape_kind_last = None
+        self._net_fallback_noted = set()
         # FOUNDER ROUND 5 COATING HOLD state: released latches True the first
         # time the feasibility gate fails (no stop-start churn); _hold_noted
         # one-shots the activation note; _preposition_target avoids re-issuing
@@ -2924,9 +2987,20 @@ class SimSession:
         through the candidate policy at the CURRENT clock — crews departing
         now drive the fastest candidate that passes the corridor law today,
         re-chosen with fresh fire state at every departure. (Crew legs use
-        the ingress rule; live egress safety is owned by the SEM-10 sweep.)"""
+        the ingress rule; live egress safety is owned by the SEM-10 sweep.)
+
+        SEM-10d ROAD-NETWORK ESCAPE (contracts escape_road_network): the
+        searched escape path pinned for its exact (origin, node) pair is
+        served verbatim, so the crew drives — and the map previews — the path
+        the search judged (_escape_pins; empty when the knob is off)."""
         if self._roads is None or self._road_graph is None:
             return None
+        if self._escape_pins:
+            # SEM-10d ROAD-NETWORK ESCAPE: the searched escape path from
+            # exactly this position to exactly this node (empty = knob off)
+            pin = self._escape_pins.get((a.lat, a.lon, b.lat, b.lon))
+            if pin is not None:
+                return pin
         if int(getattr(self._cfg, "route_alternatives", 1) or 1) > 1:
             return self._route_choose(a, b, "ingress", self._now_s)
         return self._roads.route(self._road_graph, a, b, self._cfg)
@@ -3213,8 +3287,9 @@ class SimSession:
         if (hyst_s <= 0.0 or cs.egress_loc is None
                 or new_id == cs.egress_zone_id):
             return True
-        b_cur, _e, _w, _t, dm_cur = self._route_metrics(
-            cs.pos, cs.egress_loc, now, cs.speed, lead_s)
+        # the current target judged over the route the crew is actually on
+        # (a searched road-network escape: its remaining leg; else legacy)
+        b_cur, _e, _w, _t, dm_cur = self._crew_target_metrics(cs, now, lead_s)
         b_new, _e2, _w2, _t2, dm_new = self._route_metrics(
             cs.pos, new_loc, now, cs.speed, lead_s)
         if b_cur and not b_new:
@@ -3335,9 +3410,17 @@ class SimSession:
                         pts.append(q)
         if len(pts) < 2:
             pts = [a, b]
+        return self._points_with_times(pts, speed_mps)
+
+    @staticmethod
+    def _points_with_times(pts, speed_mps: float):
+        """[(LatLon, pass_time_offset_s)] along an ordered, de-duplicated
+        point list: every span subdivided into <= _ESCAPE_SAMPLE_M pieces,
+        pass time = cumulative distance / ground speed (the start point at
+        0). The one sampling law of every SEM-10 route judgement."""
         out = [(pts[0], 0.0)]
         t = 0.0
-        step = 275.0
+        step = _ESCAPE_SAMPLE_M
         for i in range(1, len(pts)):
             p0, p1 = pts[i - 1], pts[i]
             d = geo.haversine_m(p0, p1)
@@ -3369,8 +3452,15 @@ class SimSession:
         and stand in the alarm forever). (not burned and worst_s >= 0) == the
         whole route is fully lawful (SEM-10 extended from the crew's cell to
         every cell of its escape route)."""
+        return self._metrics_of_points(
+            self._route_points_with_times(a, b, speed_mps), now, lead_s)
+
+    def _metrics_of_points(self, pts, now, lead_s: float):
+        """_route_metrics' judgement over explicit [(LatLon, pass_offset_s)]
+        samples (see _route_metrics for the five returned values). Split out
+        so a crew's REMAINING searched escape leg is judged by the same law
+        (_crew_target_metrics)."""
         buffer_s = self._cfg.egress_buffer_min * 60.0
-        pts = self._route_points_with_times(a, b, speed_mps)
         burned = False
         exposure = 0.0
         worst = math.inf
@@ -3500,6 +3590,324 @@ class SimSession:
                 return node
         return None
 
+    # -- SEM-10d ROAD-NETWORK ESCAPE (contracts escape_road_network; founder
+    # -- "rework the crews fleeing" 2026-09-26). The ray escape proposes points
+    # -- on 12 straight bearings (open ground: the crew drives to the nearest
+    # -- junction, then straight); its road snap walked back from each ray end
+    # -- to a road node — and both scored lawful destinations by (exposure,
+    # -- drive time) alone, blind to how long the destination stays safe
+    # -- (docs/review/escape_roads_2026-09-26.md). This searches the ROADS. ---
+
+    def _net_escape_capable(self) -> bool:
+        """True when the road-network escape can run: the knob is on, a REAL
+        road graph is loaded (nearest_node / neighbors / edges — the in-test
+        fakes carry none) and the roads module can assemble a searched path
+        (route_on_path). Otherwise the legacy ray escape runs unchanged."""
+        if not getattr(self._cfg, "escape_road_network", False):
+            return False
+        g = self._road_graph
+        return (g is not None and bool(getattr(g, "nodes", None))
+                and callable(getattr(g, "nearest_node", None))
+                and callable(getattr(g, "neighbors", None))
+                and hasattr(g, "edges")
+                and callable(getattr(self._roads, "route_on_path", None)))
+
+    def _esc_span_samples(self, verts) -> tuple:
+        """Escape samples along an ordered, de-duplicated vertex list: one
+        (d_sub_m, LatLon, tile flat index or -1, cold-black window s) per
+        sub-step, the start vertex excluded, the end vertex included —
+        exactly the subdivision _points_with_times applies to the same
+        vertices, so pass times and exposure add up to the same floats."""
+        spec = self._tile.spec
+        step = _ESCAPE_SAMPLE_M
+        out = []
+        for i in range(1, len(verts)):
+            p0, p1 = verts[i - 1], verts[i]
+            d = geo.haversine_m(p0, p1)
+            if d <= 0.0:
+                continue
+            n_sub = max(1, int(d // step))
+            for k in range(1, n_sub + 1):
+                f = k / n_sub
+                q = LatLon(p0.lat + (p1.lat - p0.lat) * f,
+                           p0.lon + (p1.lon - p0.lon) * f)
+                rc = geo.latlon_to_rc(spec, q)
+                idx = -1 if rc is None else rc[0] * spec.ncols + rc[1]
+                out.append((d / n_sub, q, idx, self._cold_black_pass_s(q)))
+        return tuple(out)
+
+    def _esc_edge_samples(self, ei: int, fwd: bool) -> tuple:
+        """Escape samples for driving road edge `ei` u->v (fwd) or v->u, over
+        the vertices roads._assemble emits for it (end node, OSM geometry in
+        driving order, far node; consecutive duplicates dropped). Cached per
+        session — graph geometry and tile are static."""
+        key = (ei, fwd)
+        hit = self._esc_edge_cache.get(key)
+        if hit is None:
+            g = self._road_graph
+            e = g.edges[ei]
+            if fwd:
+                a, b, geom = e.u, e.v, e.geometry
+            else:
+                a, b, geom = e.v, e.u, tuple(reversed(e.geometry))
+            verts = [g.nodes[a]]
+            for p in geom:
+                if verts[-1] != p:
+                    verts.append(p)
+            if verts[-1] != g.nodes[b]:
+                verts.append(g.nodes[b])
+            hit = self._esc_span_samples(verts)
+            self._esc_edge_cache[key] = hit
+        return hit
+
+    def _esc_fields(self):
+        """[(nominal-member data, eroded-P10 data or None)] per fire with a
+        field — the grids _crew_exposure samples — when every one is on the
+        session tile grid (then a sample's precomputed flat index reads them
+        directly); None otherwise (samples then go through _crew_exposure:
+        the same numbers, slower). Also None when _crew_exposure has been
+        replaced on this instance (a scripted world): the search must judge
+        exactly what every other SEM-10 judgement in the session judges."""
+        if "_crew_exposure" in self.__dict__:
+            return None
+        spec = self._tile.spec
+        out = []
+        for fid in self._fire_order:
+            f = self._fires[fid]
+            if f.ens is None:
+                continue
+            nomr = f.ens.members[0]
+            er = self._eroded_p10(f)
+            if nomr.spec != spec or (er is not None and er.spec != spec):
+                return None
+            out.append((nomr.data, None if er is None else er.data))
+        return out
+
+    def _esc_net_key(self, expo: float, total: float, dm: float,
+                     lead_s: float, kind: int, ident) -> tuple:
+        """SEM-10d ROAD-NETWORK ESCAPE destination rule — an ascending key
+        (module constants ESCAPE_NET_*). A LAWFUL destination (dm >= 0: its
+        safety horizon covers the egress buffer + lead at arrival) always
+        ranks first; among them (transit exposure in ESCAPE_NET_EXPOSURE_Q_S
+        steps, ceil — zero exposure its own, first step; then the safety
+        horizon — eroded-P10 arrival at the destination minus
+        the crew's arrival, capped and stepped — longest first; then a
+        CATALOG ZONE before a road node; then drive time). The zone-before-
+        node step only orders destinations the two safety steps before it
+        cannot tell apart: a zone is where dispatch stages and egresses
+        crews, a road node is a refuge — among equally safe destinations the
+        zone keeps the crew in play. With no lawful destination: the one
+        that stays lawful LONGEST (max dm), then exposure, then drive time —
+        the legacy least-bad order. kind (0 catalog zone, 1 road node) + id
+        break exact ties."""
+        eq = 0 if expo <= 0.0 else math.ceil(expo / ESCAPE_NET_EXPOSURE_Q_S)
+        if dm >= 0.0:
+            hz = dm + self._cfg.egress_buffer_min * 60.0 + lead_s
+            return (0, eq, -self._esc_horizon_step(hz), kind, total, ident)
+        return (1, -dm, eq, total, kind, ident)
+
+    def _esc_horizon_step(self, hz: float) -> int:
+        """The safety horizon capped at cfg.escape_road_horizon_cap_h, in
+        ESCAPE_NET_HORIZON_Q_S steps (an infinite uncapped horizon would be
+        one huge step, so the key always stays an orderable int)."""
+        h = min(hz, self._cfg.escape_road_horizon_cap_h * 3600.0)
+        if math.isinf(h):
+            return 10 ** 9
+        return math.floor(h / ESCAPE_NET_HORIZON_Q_S)
+
+    def _road_escape_search(self, pos, now, speed_mps: float, lead_s: float,
+                            lawful_only: bool = False,
+                            min_p10_s: float = -math.inf):
+        """SEM-10d ROAD-NETWORK ESCAPE search (contracts escape_road_network).
+
+        A time-dependent Dijkstra over the loaded road graph from the crew's
+        position: the origin spur to its nearest node (as roads.route snaps),
+        then edges, every sample judged at its PASS time (cumulative road
+        distance / the crew's escape ground speed — the _route_metrics law,
+        conservative against the faster road speeds the crew actually
+        drives). A sample the nominal front crosses inside its cold-black
+        window makes the edge IMPASSABLE (never used); a sample inside the
+        eroded-P10 imminent band (margin < egress buffer + lead) costs its
+        seconds as EXPOSURE. Labels are (exposure step, pass time,
+        exposure s) — exposure-first, then the fastest. Every settled node
+        >= ESCAPE_NET_MIN_FLEE_M from the crew is a candidate destination,
+        ranked by _esc_net_key (lawful first; exposure; capped horizon;
+        drive time; node id). The search stops at the first settled node that
+        is lawful with a full-cap horizon (nothing popped later can beat it:
+        pops come in (exposure, time) order), or at the deterministic budget
+        (ESCAPE_NET_MAX_NODES settled; nodes beyond ESCAPE_NET_MAX_DRIVE_S are
+        not expanded).
+
+        lawful_only (the SEM-10e proactive decamp, a VOLUNTARY move): an
+        exposed sample is impassable too, and a candidate must be lawful at
+        arrival with its own eroded-P10 arrival >= min_p10_s (durable).
+
+        Returns None when there is NO passable road escape (the crew is
+        beyond the spur cap from every node, the only way onto the network
+        crosses the burn, or no node >= 2 km out is reachable without
+        crossing it). Else a dict: node, loc (the node), route (the searched
+        RoadRoute, roads end to end — pinned by the caller), key, exposure_s,
+        total_s, dm_s, horizon_s, settled. Deterministic: heap ties break on
+        (exposure, time, node id); no RNG, no wall clock."""
+        g = self._road_graph
+        cfg = self._cfg
+        snap = g.nearest_node(pos, max_m=cfg.road_spur_max_m)
+        if snap is None:
+            return None
+        s0 = snap[0]
+        spd = max(speed_mps, 0.1)
+        buffer_s = cfg.egress_buffer_min * 60.0
+        fields = self._esc_fields()
+        INF = math.inf
+        crew_exposure = self._crew_exposure
+
+        def drive(samples, t, e):
+            """(t, e, p10 at the last sample) after driving `samples` from
+            cumulative time t / exposure e; None when a sample is burned at
+            its pass time (the edge is impassable)."""
+            p10 = INF
+            for dsub, q, idx, cb in samples:
+                t_prev = t
+                t += dsub / spd
+                pass_t = now + t
+                if fields is None:
+                    nom, p10 = crew_exposure(q)
+                else:
+                    nom = p10 = INF
+                    if idx >= 0:
+                        for nd, pd in fields:
+                            v = nd[idx]
+                            if v < nom:
+                                nom = v
+                            if pd is not None:
+                                w = pd[idx]
+                                if w < p10:
+                                    p10 = w
+                if nom <= pass_t and (pass_t - nom) < cb:
+                    return None
+                if p10 < INF and p10 - (pass_t + buffer_s + lead_s) < 0.0:
+                    if lawful_only:
+                        return None
+                    e += max(0.0, t - t_prev)
+            return t, e, p10
+
+        def qz(e):
+            return 0 if e <= 0.0 else math.ceil(e / ESCAPE_NET_EXPOSURE_Q_S)
+
+        p_s0 = g.nodes[s0]
+        spur = (self._esc_span_samples([pos, p_s0]) if pos != p_s0 else ())
+        r = drive(spur, 0.0, 0.0)
+        if r is None:
+            return None
+        t0, e0, p10_0 = r
+        lab = {s0: (qz(e0), t0, e0)}
+        p10_at = {s0: p10_0}
+        parent = {s0: None}
+        heap = [(qz(e0), t0, e0, s0)]
+        done = set()
+        best = None
+        top_step = -self._esc_horizon_step(math.inf)
+        while heap:
+            qe, t, e, u = heapq.heappop(heap)
+            if u in done:
+                continue
+            done.add(u)
+            if (geo.haversine_m(pos, g.nodes[u]) >= ESCAPE_NET_MIN_FLEE_M
+                    and p10_at[u] >= min_p10_s):
+                # the destination margin exactly as _metrics_of_points takes
+                # it: the last sample's p10 against its pass time
+                dm = p10_at[u] - (now + t + buffer_s + lead_s)
+                key = self._esc_net_key(e, t, dm, lead_s, 1, u)
+                if (not lawful_only or key[0] == 0) and (
+                        best is None or key < best[0]):
+                    best = (key, u, t, e, dm)
+                if key[0] == 0 and key[2] == top_step:
+                    break           # lawful, full-cap horizon: unbeatable
+            if len(done) >= ESCAPE_NET_MAX_NODES:
+                break
+            if t > ESCAPE_NET_MAX_DRIVE_S:
+                continue
+            for v, ei in g.neighbors(u):
+                if v in done:
+                    continue
+                r = drive(self._esc_edge_samples(ei, g.edges[ei].u == u), t, e)
+                if r is None:
+                    continue                            # burned: impassable
+                t2, e2, p10v = r
+                nl = (qz(e2), t2, e2)
+                old = lab.get(v)
+                if old is None or nl < old:
+                    lab[v] = nl
+                    parent[v] = (u, ei)
+                    p10_at[v] = p10v
+                    heapq.heappush(heap, (nl[0], t2, e2, v))
+        if best is None:
+            return None
+        key, node, t, e, dm = best
+        node_path, edge_path = [node], []
+        cur = node
+        while parent[cur] is not None:
+            prev, ei = parent[cur]
+            node_path.append(prev)
+            edge_path.append(ei)
+            cur = prev
+        node_path.reverse()
+        edge_path.reverse()
+        rr = self._roads.route_on_path(g, pos, node_path, edge_path, cfg)
+        return {"node": node, "loc": g.nodes[node], "route": rr, "key": key,
+                "exposure_s": e, "total_s": t, "dm_s": dm,
+                "horizon_s": dm + buffer_s + lead_s, "settled": len(done)}
+
+    def _net_escape_choice(self, pos, now, speed_mps: float, lead_s: float,
+                           found: dict):
+        """(target_loc, target_id) between the catalog zones — scored over
+        their actual (legacy) routes, burned routes excluded — and the road
+        search's best node, under ONE rule (_esc_net_key). A chosen node's
+        searched path is PINNED (_escape_pins) so the crew drives exactly
+        what was judged; its target id stays "escape" (SEM-10d area escape:
+        the map and the notes know it)."""
+        best = None
+        for z in sorted(self._loc.safe_zones, key=lambda z: z.zone_id):
+            burned, expo, _w, total, dm = self._route_metrics(
+                pos, z.loc, now, speed_mps, lead_s)
+            if burned:
+                continue
+            k = self._esc_net_key(expo, total, dm, lead_s, 0, z.zone_id)
+            if best is None or k < best[0]:
+                best = (k, z.loc, z.zone_id)
+        if best is None or found["key"] < best[0]:
+            loc = found["loc"]
+            self._escape_pins[(pos.lat, pos.lon, loc.lat, loc.lon)] = (
+                found["route"])
+            self._escape_kind_last = "network"
+            return loc, "escape"
+        self._escape_kind_last = "zone"
+        return best[1], best[2]
+
+    def _crew_target_metrics(self, cs, now, lead_s: float):
+        """_route_metrics for a crew's route to its CURRENT egress target: the
+        REMAINING searched road-network escape leg when that is what the crew
+        is driving (contracts escape_road_network — judging a fresh fastest
+        route instead would judge a road the crew is not on), else the legacy
+        fresh route from its position."""
+        cid = cs.crew.crew_id
+        net = self._net_escape.get(cid)
+        leg = cs._leg
+        if (net is not None and cs.egress_loc is not None
+                and net == cs.egress_loc and leg is not None
+                and leg.get("kind") == "egress"
+                and leg.get("target") == cs.egress_loc):
+            pts = [cs.pos]
+            for p in leg["pts"]:
+                if (pts[-1].lat, pts[-1].lon) != (p.lat, p.lon):
+                    pts.append(p)
+            if len(pts) < 2:
+                pts = [cs.pos, cs.egress_loc]
+            return self._metrics_of_points(
+                self._points_with_times(pts, cs.speed), now, lead_s)
+        return self._route_metrics(cs.pos, cs.egress_loc, now, cs.speed,
+                                   lead_s)
+
     def _best_escape(self, pos, now, speed_mps: float, lead_s: float):
         """(target_loc, target_id) for a crew that must move (SEM-10d) — the
         LEAST-EXPOSURE ROUTED choice, never a blind nearest-zone hop:
@@ -3512,13 +3920,30 @@ class SimSession:
            pick long detours whose extra time-at-risk TRIPLED standard-tile
            overrun ticks (43 -> 158 across the 60-scenario sweep), else
         3. (every candidate route crosses the burn) the nearest catalog zone —
-           genuinely cornered; the audit reports what follows honestly."""
+           genuinely cornered; the audit reports what follows honestly.
+
+        SEM-10d ROAD-NETWORK ESCAPE (contracts escape_road_network): step 1
+        is unchanged; step 2's straight-ray proposals are replaced by a
+        search of the road graph (_road_escape_search) and the catalog zones
+        compete with its best node under one rule (_net_escape_choice:
+        lawful destination, exposure, capped safety horizon, drive time).
+        Only when the graph offers NO passable road escape do steps 2-3 run
+        as above (self._escape_kind_last = "ray_fallback"; the sweep says so
+        loudly)."""
         zones = list(self._loc.safe_zones)
         safe_zones, fail_closed = self._currently_safe_zones(now, lead_s=lead_s)
         if not fail_closed:
             z = self._reachable_zone(pos, safe_zones, now, speed_mps, lead_s)
             if z is not None:
+                self._escape_kind_last = "zone"
                 return z.loc, z.zone_id
+        self._escape_kind_last = "ray"
+        if self._net_escape_capable():
+            found = self._road_escape_search(pos, now, speed_mps, lead_s)
+            if found is not None:
+                return self._net_escape_choice(pos, now, speed_mps, lead_s,
+                                               found)
+            self._escape_kind_last = "ray_fallback"
         cands = []
         for z in sorted(zones, key=lambda z: z.zone_id):
             burned, expo, _w, total, dm = self._route_metrics(
@@ -3572,19 +3997,56 @@ class SimSession:
         law still may) with a lawful DESTINATION (dm >= 0 — pessimistic-
         exposed transit is what egressing crews already ride under 10d).
         Longevity-first both times: forever zones nearest-first, else latest
-        P10, zone_id tiebreaks — deterministic."""
+        P10, zone_id tiebreaks — deterministic.
+
+        SEM-10d ROAD-NETWORK ESCAPE (contracts escape_road_network): when
+        neither zone rule yields a move, a FULLY LAWFUL road node >= 2 km
+        out whose own eroded-P10 arrival clears the same durable bar
+        (_road_escape_search lawful_only: no exposed or burned sample on the
+        way) — a crew parked at a road point after an area escape (no
+        catalog zone left) otherwise sat there until the imminent law made
+        it re-flee through the band (the pinned Camp-Fire-scale run: 25 idle
+        ticks, then 50 min of exposure). It never pre-empts a zone move:
+        whether a voluntary move may ride exposed transit to a zone stays
+        the owner's escape_proactive_lawful_only call (roads inspection open
+        item 7). Measured both ways (docs/review/escape_roads_2026-09-26.md
+        §4.6): ranking the lawful road node ahead of the exposed-transit
+        zone cut 10c rows 24 -> 19 on the page-config sets but served 11
+        fewer homes (1,700 -> 1,689; knob off 1,694). Returned as a
+        SafeZone(zone_id="escape") with its searched path pinned."""
         bar = now + self._cfg.egress_buffer_min * 60.0 + lead_s + pro_s
         durable = []
         for z in sorted(self._loc.safe_zones, key=lambda z: z.zone_id):
             _nom, zp10 = self._crew_exposure(z.loc)
             if math.isinf(zp10) or zp10 >= bar:
                 durable.append((z, zp10))
-        if not durable:
-            return None
-        z = self._reachable_zone(pos, [z for z, _ in durable], now,
-                                 speed_mps, lead_s)
-        if z is not None:
-            return z
+        if durable:
+            z = self._reachable_zone(pos, [z for z, _ in durable], now,
+                                     speed_mps, lead_s)
+            if z is not None:
+                return z
+            z = self._proactive_exposed_zone(pos, now, speed_mps, lead_s,
+                                             durable)
+            if z is not None:
+                return z
+        if self._net_escape_capable():
+            found = self._road_escape_search(pos, now, speed_mps, lead_s,
+                                             lawful_only=True, min_p10_s=bar)
+            if found is not None:
+                loc = found["loc"]
+                self._escape_pins[(pos.lat, pos.lon, loc.lat, loc.lon)] = (
+                    found["route"])
+                return SafeZone(zone_id="escape", loc=loc,
+                                name="road escape point")
+        return None
+
+    def _proactive_exposed_zone(self, pos, now, speed_mps: float,
+                                lead_s: float, durable):
+        """SEM-10e's exposed-transit fallback (legacy, verbatim): among the
+        durable zones, a route that is not burned, never crosses a nominal-
+        passed cell and ends lawful (dm >= 0) — pessimistic-exposed transit
+        allowed; longevity-first pick. None under escape_proactive_lawful_
+        only or when no durable zone qualifies."""
         if getattr(self._cfg, "escape_proactive_lawful_only", False):
             # contracts SEM-10e LAWFUL-ONLY: a voluntary move never rides
             # audit-counted (pessimistic-exposed) transit
@@ -3695,6 +4157,14 @@ class SimSession:
         self._no_safe_zone = fail_closed
         buffer_s = self._cfg.egress_buffer_min * 60.0
         pro_s = getattr(self._cfg, "escape_proactive_lead_min", 0.0) * 60.0
+        if self._escape_pins:
+            # SEM-10d ROAD-NETWORK ESCAPE: keep only the searched paths to
+            # nodes some crew still heads for (a begun leg holds its own copy)
+            live = {(c.egress_loc.lat, c.egress_loc.lon)
+                    for c in self._crew_sims.values()
+                    if c.egress_loc is not None}
+            self._escape_pins = {k: v for k, v in self._escape_pins.items()
+                                 if (k[2], k[3]) in live}
         for cid in _idsort(self._crew_sims):
             cs = self._crew_sims[cid]
             if cs.status == CrewStatus.INBOUND:
@@ -3763,12 +4233,27 @@ class SimSession:
                             self._superseded.discard(d)
                             self._stop_rule.pop(d, None)
                         self._n_relocations += 1
-                        self._notes.append(
-                            f"crew {cid} proactive escape — the pessimistic "
-                            f"front reaches this cell within "
-                            f"{(buffer_s + lead_s + pro_s) / 3600.0:.2g}h "
-                            f"and a durable exit is still clean (relocating "
-                            f"to {z.zone_id})")
+                        if z.zone_id == "escape":
+                            # SEM-10d ROAD-NETWORK ESCAPE (contracts
+                            # escape_road_network): a searched, fully
+                            # lawful road path to a durable road point
+                            self._net_escape[cid] = z.loc
+                            self._notes.append(
+                                f"crew {cid} proactive escape by road — the "
+                                f"pessimistic front reaches this spot within "
+                                f"{(buffer_s + lead_s + pro_s) / 3600.0:.2g}h, "
+                                f"no catalog zone is a durable clean exit, "
+                                f"and a road point "
+                                f"{geo.haversine_m(cs.pos, z.loc) / 1000.0:.1f}"
+                                f" km out still is (relocating by road)")
+                        else:
+                            self._net_escape.pop(cid, None)
+                            self._notes.append(
+                                f"crew {cid} proactive escape — the "
+                                f"pessimistic front reaches this cell within "
+                                f"{(buffer_s + lead_s + pro_s) / 3600.0:.2g}h "
+                                f"and a durable exit is still clean "
+                                f"(relocating to {z.zone_id})")
                         self._relocating[cid] = "proactive_escape"
                 continue
             # SEM-10d ROUTED RELOCATION: the LEAST-EXPOSURE ROUTED choice —
@@ -3779,11 +4264,14 @@ class SimSession:
             # re-picking every tick let alternating 'best' targets zigzag a
             # crew in place for hours (44 exposed ticks on park_city extreme).
             if cid in self._relocating and cs.egress_loc is not None:
-                _b, _e, _w, _t, dm_cur = self._route_metrics(
-                    cs.pos, cs.egress_loc, now, cs.speed, lead_s)
+                # (a searched road-network escape is judged over the leg the
+                # crew is driving; everything else exactly as before)
+                _b, _e, _w, _t, dm_cur = self._crew_target_metrics(
+                    cs, now, lead_s)
                 if not _b and dm_cur >= 0.0:
                     continue                    # keep fleeing to the same target
             zone_loc, zone_id = self._best_escape(cs.pos, now, cs.speed, lead_s)
+            kind = self._escape_kind_last
             # ESCAPE-TARGET HYSTERESIS (founder churn fix): when the current
             # target is unlawful but the best alternative is not MEANINGFULLY
             # better, keep committed motion instead of zigzagging between
@@ -3792,12 +4280,37 @@ class SimSession:
                     and not self._escape_switch_ok(cs, now, lead_s,
                                                    zone_loc, zone_id)):
                 continue
+            net_on = self._net_escape_capable()
             if zone_id == "escape" and not self._area_escape_alarmed:
-                self._notes.append(
-                    "CREW SAFETY (SEMANTICS 10d area escape): no catalog safe "
-                    "zone is safely REACHABLE ahead of the front — crews are "
-                    "leaving the operating area along the safest outward bearing")
+                if net_on and kind == "network":
+                    self._notes.append(
+                        "CREW SAFETY (SEMANTICS 10d area escape, by road): no "
+                        "catalog safe zone is safely REACHABLE ahead of the "
+                        "front — crews are leaving the operating area on the "
+                        "road network, each to the road point with the least "
+                        "exposure on the way and the longest safety horizon")
+                else:
+                    self._notes.append(
+                        "CREW SAFETY (SEMANTICS 10d area escape): no catalog "
+                        "safe zone is safely REACHABLE ahead of the front — "
+                        "crews are leaving the operating area along the "
+                        "safest outward bearing")
                 self._area_escape_alarmed = True
+            if net_on:
+                if kind == "ray_fallback":
+                    if cid not in self._net_fallback_noted:
+                        self._net_fallback_noted.add(cid)
+                        self._notes.append(
+                            f"CREW SAFETY (SEMANTICS 10d road-network escape): "
+                            f"no passable road leads {cid} out — every road "
+                            f"from its position crosses the burn (or it is "
+                            f"off the road network); falling back to the "
+                            f"legacy least-exposure choice among the catalog "
+                            f"zones and straight-bearing escape points, which "
+                            f"may end in open ground (the map labels any "
+                            f"straight stretch)")
+                else:
+                    self._net_fallback_noted.discard(cid)
             if cs.pos == zone_loc:
                 # nowhere safer to go (already AT the chosen — possibly
                 # fail-closed — zone): let the audit (10c) report the unavoidable
@@ -3811,6 +4324,12 @@ class SimSession:
                 self._assigned.discard(d)
                 self._superseded.discard(d)
                 self._stop_rule.pop(d, None)
+            if net_on and kind == "network":
+                # SEM-10d ROAD-NETWORK ESCAPE: the crew drives the pinned
+                # searched path; the sweep re-judges its remaining leg
+                self._net_escape[cid] = zone_loc
+            else:
+                self._net_escape.pop(cid, None)
             if cid not in self._relocating:
                 self._n_relocations += 1
                 self._notes.append(
