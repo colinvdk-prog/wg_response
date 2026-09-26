@@ -7,10 +7,20 @@
      EVERYTHING RENDERED IS REAL ENGINE OUTPUT — ensemble spread forecasts,
      the alert ladder, dispatch plans, corridor/egress safety and the
      per-tick SAFETY AUDIT (violations must stay 0). No canned animation.
-     FOUNDER UX CONTRACT (contracts.py "STATE VISUAL CONTRACT", 2026-07-10):
-       state.burned rings   -> dark-red filled fire that GROWS tick over tick
-       state.fire_bands     -> h1 RED / h5 ORANGE / h24 YELLOW projection
-                               borders, updated IN PLACE each poll (setLatLngs)
+     FOUNDER UX CONTRACT (contracts.py "STATE VISUAL CONTRACT", 2026-07-10;
+     "shade the fire", 2026-09-26):
+       state.fire_view      -> THE SHADED FIRE IS THE SIMULATED ACTUAL FIRE
+                               (the engine's nominal member, the ground truth
+                               the crews are audited against): an exact
+                               per-cell raster (dark-red burned, hot burning-
+                               now front) plus the h1 RED / h5 ORANGE / h24
+                               YELLOW median-forecast bands BOUNDED by it
+                               (never painted on a burned cell), with the
+                               fire's outline and each band's front drawn as
+                               lines, updated IN PLACE each poll
+       state.burned rings   -> fallback when fire_view is absent: dark-red
+                               filled fire that GROWS tick over tick
+       state.fire_bands     -> fallback h1/h5/h24 band polygons (older backend)
        crews[i].route_polyline / egress_polyline -> crews drive REAL ROADS;
                                dashed amber emergency-egress always shown while
                                a crew is out; markers tween ALONG the polyline
@@ -309,6 +319,9 @@
                        animation: firepulse 1.6s ease-out infinite; }
   @keyframes firepulse { 0% { transform: scale(.7); opacity: .95; }
                          100% { transform: scale(2.8); opacity: 0; } }
+  /* "shade the fire" (2026-09-26): the per-cell fire raster (state.fire_view)
+     scales with crisp cell edges, never a blur */
+  .fire-raster { image-rendering: -moz-crisp-edges; image-rendering: pixelated; }
   /* ROADS LEGIBILITY: the "why is this stretch straight" reasons are full
      sentences — wrap them instead of one very wide line off the map edge */
   .leaflet-tooltip { white-space: normal; width: max-content; max-width: 380px; }
@@ -562,11 +575,17 @@
   </div>
   <div class="lg-body">
   <!-- fire projection at a glance (founder UX 2026-07-10): the fire itself +
-       the three arrival bands replace the old absolute-hour isochrone rings -->
-  <div class="row"><span class="sw" style="background:#7f0f0f;border:1.5px solid #ff3b30"></span> burning now</div>
+       the three arrival bands replace the old absolute-hour isochrone rings.
+       "shade the fire" (founder 2026-09-26): the shaded area IS the simulated
+       actual fire (the engine's nominal member, the ground truth the crews
+       are audited against); the bands are the ladder's MEDIAN (P50) forecast,
+       drawn only beyond the fire's edge (state.fire_view) -->
+  <div class="row"><span class="sw" style="background:#7f0f0f;border:1.5px solid #ff3b30"></span> burned — the simulated fire</div>
+  <div class="row"><span class="sw" style="background:#ff3b30;border:1.5px solid #ffcf3f"></span> burning now — front still flaming (its fuel's cold-black window)</div>
   <div class="row"><span class="sw" style="background:rgba(229,57,53,.18);border:2px solid #e53935"></span> reached in &lt;1 h (red)</div>
   <div class="row"><span class="sw" style="background:rgba(255,140,26,.14);border:2px solid #ff8c1a"></span> reached in &lt;5 h (orange)</div>
   <div class="row"><span class="sw" style="background:rgba(242,176,76,.12);border:2px solid #f2b04c"></span> reached in &lt;24 h (yellow)</div>
+  <div class="row" style="font-size:10px;color:var(--dim)">bands = median (P50) forecast, from the fire's edge outward — absent where the median lags the fire</div>
   <div class="row"><span class="swline" style="border-top:3px solid #ffd166"></span> crew route (on roads)</div>
   <!-- ROADS LEGIBILITY (roads inspection 2026-09-25): the trail and the marker
        follow the road actually driven (state.crews[i].map_view); every
@@ -648,6 +667,13 @@ if (typeof window.L === "undefined") {
       setLatLngs(latlngs) { this._specs[0].latlngs = latlngs || []; this._repaint(); return this; }
       setStyle(opts) { Object.assign(this._specs[0].opts, opts || {}); this._repaint(); return this; }
     }
+    // "shade the fire" (2026-09-26): the per-cell fire raster (a canvas data
+    // URL) stretched over its [[s, w], [n, e]] bounds, swapped in place
+    class ImageLayer extends Layer {
+      constructor(url, bounds, opts) { super(); this._specs = [{ kind: "image", url, bounds, opts: opts || {} }]; }
+      setUrl(url) { this._specs[0].url = url; this._repaint(); return this; }
+      setBounds(b) { this._specs[0].bounds = b; this._repaint(); return this; }
+    }
     class LayerGroup {
       constructor() { this._map = null; this._children = []; }
       addTo(map) { this._map = map; map._groups.push(this); map._redraw(); return this; }
@@ -700,7 +726,7 @@ if (typeof window.L === "undefined") {
         let s = Infinity, w = Infinity, n = -Infinity, e = -Infinity, any = false;
         for (const layer of this._allLayers()) for (const sp of layer._specs) {
           const pts = sp.kind === "marker" || sp.kind === "circle"
-            ? [sp.latlng] : sp.latlngs;
+            ? [sp.latlng] : (sp.kind === "image" ? sp.bounds : sp.latlngs);
           for (const p of (pts || [])) {
             if (!p) continue;
             const lat = p[0], lon = p[1];
@@ -853,6 +879,20 @@ if (typeof window.L === "undefined") {
             node.setAttribute("fill-opacity", o.fillOpacity != null ? o.fillOpacity : 0.9);
             node.setAttribute("stroke", o.color || "#0e2038");
             node.setAttribute("stroke-width", o.weight || 1.5);
+          } else if (sp.kind === "image") {
+            // the per-cell fire raster: stretched corner to corner, crisp
+            if (!sp.url || !sp.bounds) continue;
+            const [xw, yn] = project(sp.bounds[1][0], sp.bounds[0][1]);
+            const [xe, ys] = project(sp.bounds[0][0], sp.bounds[1][1]);
+            node = document.createElementNS(SVGNS, "image");
+            node.setAttribute("href", sp.url);
+            node.setAttribute("x", Math.min(xw, xe));
+            node.setAttribute("y", Math.min(yn, ys));
+            node.setAttribute("width", Math.abs(xe - xw));
+            node.setAttribute("height", Math.abs(ys - yn));
+            node.setAttribute("preserveAspectRatio", "none");
+            node.setAttribute("style", "image-rendering:pixelated");
+            node.setAttribute("opacity", o.opacity != null ? o.opacity : 1);
           } else { // polyline | polygon
             if (!sp.latlngs || !sp.latlngs.length) continue;  // emptied layer: no-op
             const d = (sp.latlngs || []).map((p, i) =>
@@ -890,6 +930,7 @@ if (typeof window.L === "undefined") {
         [[b[0][0], b[0][1]], [b[0][0], b[1][1]], [b[1][0], b[1][1]], [b[1][0], b[0][1]]],
         opts),
       marker: (latlng, opts) => new Marker(latlng, opts),
+      imageOverlay: (url, bounds, opts) => new ImageLayer(url, bounds, opts),
       divIcon: (opts) => opts,
       _fallback: true,
     };
@@ -952,6 +993,22 @@ const BAND_STYLE = {
 // the fire itself (state.burned rings): dark-red fill, hot edge
 const BURNED_STYLE = { color: "#ff3b30", weight: 1.5, opacity: 0.9,
                        fillColor: "#7f0f0f", fillOpacity: 0.55 };
+// "shade the fire" (founder 2026-09-26): state.fire_view is the EXACT per-cell
+// picture — classes none | burned | burning | h1 | h5 | h24 as row-major runs.
+// burned + burning = the SIMULATED ACTUAL FIRE (the engine's nominal member,
+// the ground truth the crews are audited against); h1/h5/h24 = the ladder's
+// MEDIAN forecast bounded by it (never on a burned cell). One RGBA fill per
+// class painted into a canvas image overlay; the fire's outline and each
+// band's front (fire_view.strokes) are drawn as lines on top, in the band's
+// BAND_STYLE colour. Class code -> [r, g, b, alpha]:
+const FIRE_FILL = {
+  1: [127, 15, 15, 0.55],     // burned — BURNED_STYLE fill (#7f0f0f)
+  2: [255, 59, 48, 0.85],     // burning now — the hot edge (#ff3b30)
+  3: [229, 57, 53, 0.20],     // reached in <1 h  (#e53935)
+  4: [255, 140, 26, 0.14],    // reached in <5 h  (#ff8c1a)
+  5: [242, 176, 76, 0.10],    // reached in <24 h (#f2b04c)
+};
+const FIRE_EDGE_STYLE = { color: "#ff3b30", weight: 1.5, opacity: 0.9 };
 // crew-colored road routes (index-stable per session; 12 crews max)
 const CREW_COLORS = ["#ffd166", "#4dd0e1", "#c792ea", "#80e27e", "#ff8a65",
                      "#f06292", "#a3d5ff", "#e6ee9c", "#ffab91", "#b0bec5",
@@ -970,19 +1027,36 @@ try {
     { maxZoom: 17, opacity: 0.55, attribution: "&copy; OpenStreetMap" }).addTo(map);
 } catch (e) { /* offline: navy background only */ }
 
+// the fire raster sits UNDER every vector layer (bands' fronts, routes, crews,
+// clients): its own pane between the tiles (200) and the overlays (400). The
+// offline shim has no panes — there the draw order is the group order below.
+try {
+  if (map.createPane) {
+    const fp = map.createPane("firePane");
+    fp.style.zIndex = 350;
+    fp.style.pointerEvents = "none";
+  }
+} catch (e) { /* offline shim */ }
 const layers = {
-  extent: L.layerGroup().addTo(map), burned: L.layerGroup().addTo(map),
+  extent: L.layerGroup().addTo(map), fireRaster: L.layerGroup().addTo(map),
+  burned: L.layerGroup().addTo(map),
   band24: L.layerGroup().addTo(map), band5: L.layerGroup().addTo(map),
   band1: L.layerGroup().addTo(map), safety: L.layerGroup().addTo(map),
   fire: L.layerGroup().addTo(map), clients: L.layerGroup().addTo(map),
   crews: L.layerGroup().addTo(map), routes: L.layerGroup().addTo(map),
   zones: L.layerGroup().addTo(map)
 };
-L.control.layers(null, { "Terrain extent": layers.extent, "Burning now": layers.burned,
+// The fire-raster group is not in the switcher: which of its classes paint
+// follows these toggles (fire = burned + burning now, and the three bands).
+L.control.layers(null, { "Terrain extent": layers.extent,
+  "Fire (burned + burning now)": layers.burned,
   "Reached in <1 h": layers.band1, "Reached in <5 h": layers.band5,
   "Reached in <24 h": layers.band24, "Safety surface": layers.safety,
   "Fires": layers.fire, "Clients": layers.clients, "Crews": layers.crews,
   "Routes": layers.routes, "Safe zones": layers.zones }, { collapsed: true }).addTo(map);
+map.on("overlayadd overlayremove", () => {
+  if (fireRaster.fv) drawFireRaster(fireRaster.fv, true);
+});
 
 let sid = null;            // current session id
 let running = false;       // server ticker state (gates the 1 s poll)
@@ -1463,8 +1537,159 @@ function syncRingPool(pool, group, rings, style, tip) {
   for (let i = rings.length; i < pool.length; i++)
     if (pool[i] && pool[i].setLatLngs) pool[i].setLatLngs([]);
 }
+// the fire's outline + the bands' FRONTS (state.fire_view.strokes): LINES only
+// (a band never paints over the burn), reused in place like the ring pools;
+// the tooltip text is refreshed every poll (it carries live areas)
+const linePools = { fire: [], h1: [], h5: [], h24: [] };
+function syncLinePool(pool, group, lines, style, tip) {
+  for (let i = 0; i < lines.length; i++) {
+    let lay = pool[i];
+    if (!lay) {
+      lay = L.polyline(lines[i], style);
+      if (tip) lay.bindTooltip(tip, { sticky: true });
+      lay.addTo(group);
+      pool[i] = lay;
+    } else {
+      if (lay.setLatLngs) lay.setLatLngs(lines[i]);
+      if (tip && lay.setTooltipContent) lay.setTooltipContent(tip);
+    }
+  }
+  for (let i = lines.length; i < pool.length; i++)
+    if (pool[i] && pool[i].setLatLngs) pool[i].setLatLngs([]);
+}
+function lineList(raw) {   // [[pt, ...], ...] -> clean polylines (>= 2 points)
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  for (const l of raw) { const q = ptList(l, 2); if (q.length) out.push(q); }
+  return out;
+}
+// fire_view.strokes (stroke_coords "grid_corner_chain") are [row, col, code]:
+// a start corner on the cell-CORNER lattice plus a run-length chain code of
+// unit steps ("E3S2W" = 3 east, 2 south, 1 west) -> [lat, lon] lines placed by
+// the GridSpec law, so they sit exactly on the raster's cell edges. Anything
+// else is read as [lat, lon] polylines already.
+function fireViewLines(fv, raw) {
+  const g = fv.grid || {};
+  if (fv.stroke_coords !== "grid_corner_chain") return lineList(raw);
+  if (!Array.isArray(raw) || !(g.cell_m > 0) || g.north_lat == null ||
+      g.west_lon == null) return [];
+  const mlat = g.m_per_deg_lat || 111194.92664455873, rad = Math.PI / 180;
+  const dlat = g.cell_m / mlat;
+  const ll = (r, c) => {
+    const lat = g.north_lat - r * dlat;
+    return [lat, g.west_lon + c * g.cell_m /
+            (mlat * Math.max(Math.cos(lat * rad), 1e-6))];
+  };
+  const step = { E: [0, 1], S: [1, 0], W: [0, -1], N: [-1, 0] };
+  const out = [];
+  for (const s of raw) {
+    if (!Array.isArray(s) || s.length < 3 || !isFinite(s[0]) ||
+        !isFinite(s[1]) || typeof s[2] !== "string") continue;
+    let r = +s[0], c = +s[1];
+    const pts = [ll(r, c)];
+    const re = /([ESWN])(\d*)/g;
+    let m;
+    while ((m = re.exec(s[2])) !== null) {
+      const n = m[2] ? +m[2] : 1, d = step[m[1]];
+      r += d[0] * n; c += d[1] * n;
+      pts.push(ll(r, c));
+    }
+    if (pts.length >= 2) out.push(pts);
+  }
+  return out;
+}
+
+// --- the fire raster (state.fire_view): exact per-cell classes -> canvas ----
+// Geometry is the contracts GridSpec law (geo.rc_to_latlon): row r spans lat
+// [N - (r+1)d, N - r d], d = cell_m / m_per_deg_lat, and its columns sit at
+// lon = W + c * cell_m / (m_per_deg_lat * cos(row-centre lat)); the canvas is
+// linear in longitude and in web-mercator y, so every cell lands exactly where
+// the engine has it. Painted classes follow the layer switcher (fire / bands).
+const fireRaster = { overlay: null, key: null, fv: null, pending: null };
+function fireClassVisible(code) {
+  if (typeof map.hasLayer !== "function") return true;       // offline shim
+  const g = code <= 2 ? layers.burned : code === 3 ? layers.band1
+          : code === 4 ? layers.band5 : layers.band24;
+  return map.hasLayer(g);
+}
+function drawFireRaster(fv, force) {
+  const nr = fv.nrows, nc = fv.ncols, g = fv.grid || {};
+  if (!(nr > 0) || !(nc > 0) || !Array.isArray(fv.values) ||
+      !Array.isArray(fv.runs) || !(g.cell_m > 0) || g.north_lat == null ||
+      g.west_lon == null) return false;
+  fireRaster.fv = fv;
+  const vis = [0, 1, 2, 3, 4, 5].map(c => c > 0 && fireClassVisible(c));
+  const key = vis.join("") + "|" + nr + "x" + nc + "|" + g.north_lat + "," +
+              g.west_lon + "," + g.cell_m + "|" + fv.values.join(",") + "|" +
+              fv.runs.join(",");
+  if (!force && fireRaster.key === key) return true;
+  fireRaster.key = key;
+  const rad = Math.PI / 180;
+  const mlat = g.m_per_deg_lat || 111194.92664455873;
+  const dlat = g.cell_m / mlat;
+  const north = +g.north_lat, west = +g.west_lon, south = north - nr * dlat;
+  const dlonRow = r => g.cell_m /
+    (mlat * Math.max(Math.cos((north - (r + 0.5) * dlat) * rad), 1e-6));
+  const east = west + nc * dlonRow(0);           // the north row is the widest
+  const merc = lat => Math.log(Math.tan(Math.PI / 4 + lat * rad / 2));
+  const S = Math.max(1, Math.min(4, Math.floor(1600 / Math.max(nr, nc))));
+  const Wpx = nc * S, Hpx = nr * S;
+  const mN = merc(north), mS = merc(south);
+  const yOf = lat => Math.round((mN - merc(lat)) / (mN - mS) * Hpx);
+  const xOf = lon => Math.round((lon - west) / (east - west) * Wpx);
+  const cv = document.createElement("canvas");
+  cv.width = Wpx; cv.height = Hpx;
+  const ctx = cv.getContext("2d");
+  const fill = {};
+  for (const c in FIRE_FILL) {
+    const f = FIRE_FILL[c];
+    fill[c] = `rgba(${f[0]},${f[1]},${f[2]},${f[3]})`;
+  }
+  let idx = 0;
+  for (let k = 0; k < fv.runs.length; k++) {
+    const v = fv.values[k], run = fv.runs[k];
+    if (v && vis[v] && fill[v]) {
+      ctx.fillStyle = fill[v];
+      let start = idx;
+      const end = idx + run;
+      while (start < end) {
+        const r = Math.floor(start / nc);
+        const rowEnd = Math.min(end, (r + 1) * nc);
+        const dl = dlonRow(r);
+        const x0 = xOf(west + (start - r * nc) * dl);
+        const x1 = xOf(west + (rowEnd - r * nc) * dl);
+        const y0 = yOf(north - r * dlat), y1 = yOf(north - (r + 1) * dlat);
+        if (x1 > x0 && y1 > y0) ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+        start = rowEnd;
+      }
+    }
+    idx += run;
+  }
+  const url = cv.toDataURL("image/png");
+  if (!fireRaster.overlay) {
+    const opts = { interactive: false, className: "fire-raster" };
+    if (map.getPane && map.getPane("firePane")) opts.pane = "firePane";
+    fireRaster.overlay = L.imageOverlay(url, [[south, west], [north, east]],
+                                        opts).addTo(layers.fireRaster);
+  } else {
+    // swap once the new image has decoded — never a blank frame between polls
+    const ov = fireRaster.overlay, img = new Image();
+    fireRaster.pending = url;
+    img.onload = () => {
+      if (fireRaster.pending === url && fireRaster.overlay === ov) ov.setUrl(url);
+    };
+    img.src = url;
+  }
+  return true;
+}
+function clearFireView() {
+  layers.fireRaster.clearLayers();
+  fireRaster.overlay = null; fireRaster.key = null;
+  fireRaster.fv = null; fireRaster.pending = null;
+  for (const k in linePools) linePools[k] = [];
+}
 let layersSid = null;      // session the persistent registries belong to
-let burnedMode = null;     // "rings" | "rle" — switching resets layers.burned
+let burnedMode = null;     // "view" | "rings" | "rle" — switching resets the fire layers
 const crewReg = {};        // crew_id -> {color, marker, route, egress, track, shown}
 const fireReg = {};        // incident_id -> marker
 let lastTick = -1;
@@ -1473,6 +1698,7 @@ let tickGapMs = 1200;      // measured wall ms between sim ticks (tween length)
 
 function resetPersistentLayers() {
   for (const k of ["burned", "h1", "h5", "h24"]) pools[k] = [];
+  clearFireView();
   layers.burned.clearLayers(); layers.band1.clearLayers();
   layers.band5.clearLayers(); layers.band24.clearLayers();
   layers.crews.clearLayers(); layers.routes.clearLayers();
@@ -1931,45 +2157,90 @@ function render(st) {
     });
   }
 
-  // THE FIRE ITSELF — state.burned rings (visual contract): dark-red filled
-  // polygons that grow tick over tick, updated in place (setLatLngs).
-  const burnedRings = ringList(st.burned);
-  if (burnedRings.length) {
-    if (burnedMode !== "rings") {
-      layers.burned.clearLayers(); pools.burned = []; burnedMode = "rings";
+  // THE FIRE ITSELF ("shade the fire", founder 2026-09-26): state.fire_view is
+  // the SIMULATED ACTUAL FIRE (the engine's nominal member — the ground truth
+  // the crews are audited against) plus the ladder's median-forecast bands
+  // BOUNDED by it, cell for cell: one raster, with the fire's outline and each
+  // band's front drawn as lines — no band ever paints over the burn. Older
+  // backends (no fire_view) fall back to the ring / RLE paths below.
+  const bandGroup = { h1: layers.band1, h5: layers.band5, h24: layers.band24 };
+  const fv = st.fire_view;
+  let viewOk = false;
+  if (fv && fv.encoding === "rle_class") {
+    try { viewOk = drawFireRaster(fv, false); }
+    catch (e) { console.warn("fire raster:", e); viewOk = false; }
+  }
+  if (viewOk) {
+    if (burnedMode !== "view") {
+      layers.burned.clearLayers(); pools.burned = [];
+      for (const key of ["h1", "h5", "h24"]) {
+        bandGroup[key].clearLayers(); pools[key] = [];
+      }
+      for (const k in linePools) linePools[k] = [];
+      burnedMode = "view";
     }
-    syncRingPool(pools.burned, layers.burned, burnedRings, BURNED_STYLE,
-                 "burning now — fire has arrived");
+    const a = fv.areas_km2 || {};
+    const km2 = x => (x == null || !isFinite(x)) ? "?"
+      : (+x >= 10 ? (+x).toFixed(0) : (+x).toFixed(1));
+    const sk = fv.strokes || {};
+    syncLinePool(linePools.fire, layers.burned, fireViewLines(fv, sk.fire),
+      FIRE_EDGE_STYLE,
+      `the simulated fire (engine ground truth): ${km2(a.fire)} km² burned, ` +
+      `${km2(a.burning)} km² burning now<br>` +
+      `the ladder's median (P50) has ${km2(a.p50_burned)} km² burned`);
+    for (const key of ["h1", "h5", "h24"]) {
+      const s = BAND_STYLE[key];
+      syncLinePool(linePools[key], bandGroup[key], fireViewLines(fv, sk[key]), s,
+        `${s.label} — median (P50) forecast, from the fire's edge ` +
+        `(${km2(a[key])} km²)`);
+    }
   } else {
-    // fallback: RLE burned mask from state.terrain.burned (older backend or
-    // point-young fire) — same dark-red read, rebuilt per poll
-    if (burnedMode !== "rle") { layers.burned.clearLayers(); pools.burned = []; }
-    burnedMode = "rle";
-    layers.burned.clearLayers();
-    if (t.nrows && t.ncols && bbox.north != null) {
-      const latAt = r => bbox.north - r * (bbox.north - bbox.south) / t.nrows;
-      const lonAt = c => bbox.west + c * (bbox.east - bbox.west) / t.ncols;
-      for (const [r, c0, c1] of burnedSegments(t.burned)) {
-        L.rectangle([[latAt(r + 1), lonAt(c0)], [latAt(r), lonAt(c1 + 1)]],
-          { color: "#ff3b30", weight: 0.6, opacity: 0.8, fillColor: "#7f0f0f",
-            fillOpacity: 0.55 }).addTo(layers.burned);
+    if (burnedMode === "view") {                 // the view went away
+      clearFireView();
+      layers.burned.clearLayers(); pools.burned = [];
+      for (const key of ["h1", "h5", "h24"]) {
+        bandGroup[key].clearLayers(); pools[key] = [];
+      }
+      burnedMode = null;
+    }
+    // fallback — state.burned rings (visual contract): dark-red filled
+    // polygons that grow tick over tick, updated in place (setLatLngs).
+    const burnedRings = ringList(st.burned);
+    if (burnedRings.length) {
+      if (burnedMode !== "rings") {
+        layers.burned.clearLayers(); pools.burned = []; burnedMode = "rings";
+      }
+      syncRingPool(pools.burned, layers.burned, burnedRings, BURNED_STYLE,
+                   "burning now — fire has arrived");
+    } else {
+      // fallback: RLE burned mask from state.terrain.burned (older backend or
+      // point-young fire) — same dark-red read, rebuilt per poll
+      if (burnedMode !== "rle") { layers.burned.clearLayers(); pools.burned = []; }
+      burnedMode = "rle";
+      layers.burned.clearLayers();
+      if (t.nrows && t.ncols && bbox.north != null) {
+        const latAt = r => bbox.north - r * (bbox.north - bbox.south) / t.nrows;
+        const lonAt = c => bbox.west + c * (bbox.east - bbox.west) / t.ncols;
+        for (const [r, c0, c1] of burnedSegments(t.burned)) {
+          L.rectangle([[latAt(r + 1), lonAt(c0)], [latAt(r), lonAt(c1 + 1)]],
+            { color: "#ff3b30", weight: 0.6, opacity: 0.8, fillColor: "#7f0f0f",
+              fillOpacity: 0.55 }).addTo(layers.burned);
+        }
       }
     }
-  }
 
-  // FIRE PROJECTION BANDS — state.fire_bands {h1,h5,h24} (visual contract):
-  // RED <1 h / ORANGE <5 h / YELLOW <24 h solid borders, faint fills,
-  // recomputed by the engine every tick and moved in place here (no flicker).
-  // Missing field or missing band -> layers empty out gracefully.
-  const bands = (st.fire_bands && typeof st.fire_bands === "object")
-    ? st.fire_bands : {};
-  const bandGroup = { h1: layers.band1, h5: layers.band5, h24: layers.band24 };
-  const bandAlias = { h1: "1h", h5: "5h", h24: "24h" };
-  for (const key of ["h1", "h5", "h24"]) {
-    const raw = bands[key] != null ? bands[key] : bands[bandAlias[key]];
-    const s = BAND_STYLE[key];
-    syncRingPool(pools[key], bandGroup[key], ringList(raw), s,
-                 `${s.label} — p50 projection`);
+    // fallback FIRE PROJECTION BANDS — state.fire_bands {h1,h5,h24}: RED <1 h
+    // / ORANGE <5 h / YELLOW <24 h solid borders, faint fills, moved in place
+    // (no flicker). Missing field or band -> layers empty out gracefully.
+    const bands = (st.fire_bands && typeof st.fire_bands === "object")
+      ? st.fire_bands : {};
+    const bandAlias = { h1: "1h", h5: "5h", h24: "24h" };
+    for (const key of ["h1", "h5", "h24"]) {
+      const raw = bands[key] != null ? bands[key] : bands[bandAlias[key]];
+      const s = BAND_STYLE[key];
+      syncRingPool(pools[key], bandGroup[key], ringList(raw), s,
+                   `${s.label} — p50 projection`);
+    }
   }
 
   // fire origins: pulsing markers, persistent per incident (pulse must not

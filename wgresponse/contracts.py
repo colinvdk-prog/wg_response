@@ -389,12 +389,31 @@ wgresponse.simui   (founder request 2026-07-09; docs/SIMULATOR_DESIGN.md is the 
     .tick() -> state dict for the UI   (deterministic given seed + command script)
     Five real-location tiles cached dep-free under data/tiles/ (LFPS-sourced).
     STATE VISUAL CONTRACT (founder UX 2026-07-10; UI + backend build to this):
-      state.burned      = list of rings (list[list[[lat,lon]]]) — cells with p50
-                          arrival <= sim-now; GROWS tick over tick.
-      state.fire_bands  = {"h1": rings, "h5": rings, "h24": rings} — projection
-                          bands from the CURRENT p50 arrival raster at sim-now
-                          +1 h (render red), +5 h (orange), +24 h (yellow),
-                          recomputed EVERY tick so they advance with the fire.
+    "SHADE THE FIRE" (founder decision 2026-09-26, a DISPLAY change — no
+    engine/physics effect): the shaded fire is the SIMULATED ACTUAL FIRE — the
+    union over fires of cells whose NOMINAL-member arrival <= sim-now, the
+    engine's ground truth (the mask the 10c audit and every re-anchor use) —
+    and the bands are the ladder's median projection BOUNDED by it. (Until
+    then state.burned was the ensemble P50 <= now, which under-drew a wind-
+    driven fire ~20x: docs/SIMULATOR_DESIGN.md "Shading the fire".)
+      state.burned      = list of rings (list[list[[lat,lon]]]) — cells with
+                          NOMINAL arrival <= sim-now (the actual fire, union
+                          over fires); GROWS tick over tick.
+      state.burned_p50  = the previous state.burned, verbatim: each fire's P50
+                          <= sim-now rings (the ladder median's own burned area).
+      state.fire_bands  = {"h1": rings, "h5": rings, "h24": rings} — rings of
+                          (actual burn UNION {p50 <= sim-now +1/+5/+24 h}): the
+                          median projection bounded by the actual fire (render
+                          red / orange / yellow), recomputed EVERY tick; nested.
+      state.fire_view   = the exact per-cell picture the page shades: row-major
+                          runs of classes none|burned|burning|h1|h5|h24 at FULL
+                          tile resolution (burned+burning == the nominal mask;
+                          burning = inside the fuel's cold-black window; band
+                          cells never on the fire; p50 <= now but not yet
+                          reached -> h1), the GridSpec to place them, chain-
+                          coded cell-edge strokes (the fire's outline, each
+                          band's FRONT beyond the fire) and areas_km2 (incl.
+                          the P50's own burned area). simui._fire_visuals.
       crews[i].route_polyline / egress_polyline = list[[lat,lon]] road-following
                           paths (roads.route; on_roads flag per leg), which the
                           crew marker follows point-to-point between ticks.
