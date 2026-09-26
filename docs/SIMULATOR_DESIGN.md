@@ -321,6 +321,39 @@ member (p10 = p50 = p90 = the true time) and p10 stays nominal-bounded.
   0.1-0.4 h earlier), so the tick-6 re-plan sends the idle crew to sim-c16, served lawfully
   (margin 15.3 h under the 120-min rule).
 
+### Coarse jumps are sub-stepped; the median is tied to the fire (2026-09-26)
+
+Two founder decisions, taken after the re-anchor fix above:
+
+- **"Sub-step big jumps."** `SimSession.tick()` advances `replan_period_s × speed`. A
+  tick longer than `SIM_MAX_SUBSTEP_S` (1 simulated hour) now runs as equal internal steps
+  of at most an hour, each the full engine cycle (forecast, dispatch, movement, crew-safety
+  sweep, audit). The caller still sees ONE tick: the clock advances by the whole jump, the
+  tick counter and the time-scrub history by one, and the returned crew-overrun rows are
+  the union over the internal steps, so nothing a step saw is hidden. Page ticks never take
+  this path: the server's speed only changes wall-clock cadence, so every page tick is 15
+  simulated minutes, and `set_speed` ≤ 4× at the 15-min period is byte-identical. One 2 h
+  tick lands in exactly the same world as two 1 h ticks (fire, crews, served, audit;
+  `tests/test_sim_coarse_substep.py`).
+  Why: with the fire no longer freezing at each 150 h rebase, the 600× test caught a crew
+  parked inside a single jump at tick 2; sub-stepped, no crew is caught by the moving front
+  in the first 300 h. From ~400 h the whole synthetic tile, safe zone included, has burned,
+  and the strict audit counts crews standing on black 2–23 days old (the crews shuttle
+  between that black and the pessimistic band, ~300 relocations per 150 h). The founder's
+  ruling ("split the test"): the original assertions hold over the first two jumps
+  (`test_speed_600x_coarse_jumps_audit_still_clean`), and the burned-out stretch is pinned on
+  its own terms — at every internal step, a crew on burned ground is only ever on black
+  older than its fuel's cold-black window, never a live front
+  (`test_burned_out_map_crews_only_on_old_black`). Whether old black should count as a
+  violation at all is a separate safety-law decision, not taken.
+- **"Match production."** The simulator now arms `ensemble_p50_nominal_bound` (the live
+  watcher's `--p50-bound`): the ladder median is never later than the fire the page shades,
+  so homes inside the burn read IMPACTED on time and job adoption / outcome tags stop
+  lagging (park_city extreme at T+1h45: median burned area within 5 % of the 12.4 km² fire,
+  every home on ground burned a tick ago IMPACTED —
+  `test_default_median_never_lags_the_shaded_fire`). The shading tests that measure the old
+  lag pin the bound off. Crew safety was already bound the same way (P10 ≤ nominal).
+
 ## Slider observability — what the buffer demonstrably changes (measured 2026-07-10)
 
 Verifier sweeps (scratch_review/attack_sim_slider.py + attack_sim_probe_*.py) established

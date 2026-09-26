@@ -300,6 +300,23 @@ GUST_FACTOR = 1.3               # design: gusts +30% over sustained
 #: scripts cannot request arbitrarily coarse multi-cycle jumps.
 MAX_SPEED_MULT = 600.0
 
+#: COARSE JUMPS ARE SUB-STEPPED (founder 2026-09-26, "sub-step big jumps"):
+#: a tick whose advance (cfg.replan_period_s x speed) exceeds this many
+#: seconds runs as ceil(advance / SIM_MAX_SUBSTEP_S) equal internal steps,
+#: each the full engine cycle (forecast, dispatch, movement, crew-safety
+#: sweep, audit), so the sweep acts at least once per simulated hour and a
+#: crew parked in the fire's path is never left there for a whole jump.
+#: Surfaced as ONE tick: the clock advances by the full jump, the tick
+#: counter and the time-scrub history by one, and the returned crew-overrun
+#: rows are the union over the internal steps (nothing a step saw is
+#: hidden). Ticks at or under this size (every page tick: the server's speed
+#: only changes wall-clock cadence; set_speed <= 4x at the 15-min period)
+#: run the single-step path byte-identically. Found when the progress-
+#: preserving re-anchor stopped freezing the fire at each 150 h rebase and
+#: tests/test_simui_policy.py::test_speed_600x_coarse_jumps_audit_still_clean
+#: caught crews parked inside one jump.
+SIM_MAX_SUBSTEP_S = 3600.0
+
 #: Intensity presets (SIMULATOR_DESIGN.md): sustained wind mph, RH %.
 #: Temperatures are NOT pinned by the design doc; the ramp below is a
 #: documented choice (hotter with intensity) and part of the scenario law.
@@ -2258,6 +2275,17 @@ class SimSession:
         # path byte-identical).
         if "escape_road_network" not in overrides:
             cfg.escape_road_network = True
+        # LADDER MEDIAN BOUND (contracts ensemble_p50_nominal_bound; founder
+        # 2026-09-26 "match production"): the live watcher runs it
+        # (--p50-bound); without it the simulator's pooled median ran 2-30x
+        # behind the fire it now shades (per-member wind-direction
+        # perturbation: the median member reaches head-axis cells through
+        # its flank — docs/SIMULATOR_DESIGN.md "Shading the fire"), so
+        # IMPACTED / outcome tags / job adoption lagged the drawn fire. p10
+        # (crew safety) already obeyed the same min(., nominal) rule.
+        # Explicit override wins.
+        if "ensemble_p50_nominal_bound" not in overrides:
+            cfg.ensemble_p50_nominal_bound = True
 
         # --- roads (contracts wgresponse.roads seam; loaded ONCE per
         # configure). LAZY import: the sibling module lands independently —
@@ -4635,13 +4663,41 @@ class SimSession:
         in-flight-deploy safety re-checks (policy-superseded stops + the
         road-egress departure guard in road sessions) -> ThreatAssessments ->
         AlertEngine.evaluate -> dispatch.plan(forecasts=) -> kinematic crew
-        movement on road-following legs -> SAFETY AUDIT. Returns state()."""
+        movement on road-following legs -> SAFETY AUDIT. Returns state().
+
+        A jump longer than SIM_MAX_SUBSTEP_S runs as equal internal steps of
+        at most that size (see the constant): one tick to the caller, the
+        crew-safety sweep and audit at every internal step, crew-overrun rows
+        reported as their union over the jump."""
         self._cmd_log.append({"cmd": "tick"})
         if self._paused:
             return self.state()
+        total = self._cfg.replan_period_s * self._speed
+        if total <= SIM_MAX_SUBSTEP_S + 1e-9:
+            return self._tick_step(total)
+        n_sub = int(math.ceil(total / SIM_MAX_SUBSTEP_S - 1e-9))
+        seen, keys = [], set()
+        for i in range(n_sub):
+            self._tick_step(total / n_sub, emit=False, count=(i == 0))
+            for o in self._crew_overruns:
+                k = (o.get("crew_id"), o.get("reason"), o.get("mode"))
+                if k not in keys:
+                    keys.add(k)
+                    seen.append(o)
+        self._crew_overruns = seen
+        st = self.state()
+        self._record_history(st)   # LAW 1 TIME-SCRUB: one entry per tick
+        return st
+
+    def _tick_step(self, step: float, *, emit: bool = True,
+                   count: bool = True):
+        """One engine cycle advancing the clock by `step` seconds (the body
+        of tick(); tick() calls it once, or once per internal step of a
+        sub-stepped coarse jump with emit=False and the tick counter bumped
+        on the first step only). emit=True builds, records and returns
+        state(); emit=False returns None."""
         cfg = self._cfg
         now = self._now_s
-        step = cfg.replan_period_s * self._speed
 
         # 0. REINFORCEMENT ARRIVAL (SEMANTICS 9): an INBOUND crew whose
         # mobilization clock has elapsed (now >= available_at_s) ARRIVES —
@@ -4946,7 +5002,8 @@ class SimSession:
         # vs absolute p10-minus-rule), so moving the clock ahead of it is
         # byte-identical for that half; only the new crew-overrun half reads now.
         self._now_s = now + step
-        self._tick_n += 1
+        if count:
+            self._tick_n += 1
 
         # 6a. CREW SHIFTS (ROUND 6b fatigue law): rest/return transitions run
         # BEFORE the safety sweep so a crew that just went OFF_DUTY is already
@@ -4967,6 +5024,8 @@ class SimSession:
         # violations can therefore never read 0 while a crew is overrun.
         self._run_audit()
 
+        if not emit:
+            return None
         st = self.state()
         self._record_history(st)   # LAW 1 TIME-SCRUB: record the emitted tick
         return st

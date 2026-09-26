@@ -198,7 +198,12 @@ def test_bands_are_the_median_bounded_by_the_actual_fire(tmp_path):
     has already burned but the nominal front has not reached ('overdue') is
     drawn in <1 h. Non-vacuous: the raw median bands DO cover part of the
     actual burn here (the old page painted them over the fire)."""
-    s = _session(tmp_path, seed="bands")
+    # the simulator ties the median to the fire by default since
+    # 2026-09-26 (ensemble_p50_nominal_bound, "match production"); this
+    # test exercises the display under a LAGGING median, so it pins the
+    # bound off (the condition the shading was built for)
+    s = _session(tmp_path, seed="bands",
+                 cfg={"ensemble_p50_nominal_bound": False})
     _ignite(s)
     raw_inside = 0
     for _ in range(8):
@@ -304,12 +309,14 @@ def test_time_scrub_replays_the_same_truth(tmp_path):
 # ---------------------------------------------------------------------------
 
 def _real_session(key, intensity, bearing, dist_m=None, ignition=None,
-                  seed="shade-real"):
+                  seed="shade-real", p50_bound=None):
     if not (DEFAULT_TILE_DIR / f"{key}.wgt").exists():
         pytest.skip(f"real tile data/tiles/{key}.wgt not present")
     s = SimSession(key, 8, 1, seed=seed,
                    cfg_overrides={"spotting_enabled": True,
-                                  "grass_ros_floor_frac": 0.10},
+                                  "grass_ros_floor_frac": 0.10,
+                                  **({} if p50_bound is None else
+                                     {"ensemble_p50_nominal_bound": p50_bound})},
                    roads_module=None)
     if ignition is not None:
         return s, s.ignite(ignition[0], ignition[1], intensity=intensity,
@@ -336,8 +343,12 @@ def test_high_extreme_fire_is_shaded_as_the_nominal_truth(
         key, intensity, bearing, dist_m, ignition, ticks, gap):
     """On the real tiles the shaded fire equals the nominal cell count and is
     at least the P50's own burned area — here several times it: the pooled
-    median lags the simulated truth (docs/SIMULATOR_DESIGN.md, 2026-09-26)."""
-    s, fid = _real_session(key, intensity, bearing, dist_m, ignition)
+    median lags the simulated truth (docs/SIMULATOR_DESIGN.md, 2026-09-26).
+    Run with the simulator's median bound OFF: that is the lag the shading
+    was built to expose (the bound is armed by default since 2026-09-26 —
+    test_default_median_never_lags_the_shaded_fire pins that world)."""
+    s, fid = _real_session(key, intensity, bearing, dist_m, ignition,
+                           p50_bound=False)
     for _ in range(ticks):
         st = s.tick()
     now = st["sim_now_s"]
@@ -509,3 +520,35 @@ def test_simulator_page_shades_the_fire_view():
                 html.index("_fallback: true")]
     assert "imageOverlay:" in shim and 'sp.kind === "image"' in shim
     assert "setUrl(url)" in shim
+
+
+def test_default_median_never_lags_the_shaded_fire():
+    """Founder 2026-09-26 "match production": the simulator arms
+    ensemble_p50_nominal_bound, so the ladder median is never later than the
+    fire the page shades (p50 <= nominal per cell): its burned area covers
+    the actual fire and exceeds it only by cells the median reaches first,
+    and every home on ground the fire burned at least a tick ago reads
+    IMPACTED — the ladder no longer lags the map."""
+    s, fid = _real_session("park_city_ut", "extreme", 225.0, dist_m=7000.0)
+    assert s._cfg.ensemble_p50_nominal_bound is True
+    for _ in range(7):
+        st = s.tick()
+    now = st["sim_now_s"]
+    ens = s._fires[fid].ens
+    nom, p50 = ens.members[0].data, ens.p50.data
+    assert all(p <= n for p, n in zip(p50, nom))            # never later
+    a = st["fire_view"]["areas_km2"]
+    assert a["p50_burned"] >= a["fire"]
+    assert a["p50_burned"] <= 1.05 * a["fire"], a
+    spec = ens.members[0].spec
+    by_id = {c.client_id: c for c in s._clients}
+    checked = 0
+    for row in st["clients"]:
+        rc = geo.latlon_to_rc(spec, by_id[row["client_id"]].loc)
+        if rc is None:
+            continue
+        t = nom[rc[0] * spec.ncols + rc[1]]
+        if t <= now - s._cfg.replan_period_s:
+            checked += 1
+            assert row["state"] == "impacted", (row["client_id"], row["state"])
+    assert checked >= 1, "no home inside the burn — rebuild the scenario"

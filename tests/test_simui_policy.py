@@ -582,12 +582,21 @@ def test_set_speed_bounded_to_design_ceiling(tmp_path):
 def test_speed_600x_coarse_jumps_audit_still_clean(tmp_path):
     """Promoted from attack_sim_robust R3 (session path, synthetic tile):
     even 600x coarse multi-cycle jumps run the per-tick SAFETY AUDIT and
-    stay at 0 violations."""
+    stay at 0 violations.
+
+    SPLIT 2026-09-26 (founder): with the progress-preserving re-anchor the
+    fire no longer freezes at each 150 h rebase, and big jumps are sub-
+    stepped (simui.SIM_MAX_SUBSTEP_S). Every original assertion holds, as
+    strictly as before, over the first TWO jumps (300 h) — before the fire
+    has burned out this small tile. From ~400 h the whole tile, safe zone
+    included, is burned and the strict audit counts crews standing on
+    days-old black; that burned-out stretch is pinned on its own terms in
+    tests/test_sim_coarse_substep.py::test_burned_out_map_crews_only_on_old_black."""
     s = _session(tmp_path, n_clients=8, n_crews=2)
     st = s.tick()                        # one fine tick: adopt plans
     assert st["scoreboard"]["violations"] == 0
     s.set_speed(600.0)
-    for _ in range(6):
+    for _ in range(2):
         st = s.tick()
         # The subject here is the serviced-stop DEPARTURE audit under coarse
         # jumps: no stop may depart past its rule. Since 2026-09-03 the 10c
@@ -603,4 +612,4 @@ def test_speed_600x_coarse_jumps_audit_still_clean(tmp_path):
             (st["audit"], st["crew_overruns"])
         for o in st["crew_overruns"]:
             assert o["reason"] == "imminent" and o["mode"] != "idle", o
-    assert st["sim_now_s"] - st["t0_s"] >= 6 * 600.0 * 900.0
+    assert st["sim_now_s"] - st["t0_s"] >= 2 * 600.0 * 900.0
