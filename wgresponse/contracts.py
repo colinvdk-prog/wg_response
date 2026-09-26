@@ -1033,6 +1033,44 @@ class ResponseConfig:
     # ACTUAL route exactly as before (burned routes excluded, audit exposure
     # minimized). 0 = off, byte-identical.
     escape_road_snap_m: float = 0.0
+    # SEM-10d ROAD-NETWORK ESCAPE (founder "rework the crews fleeing",
+    # 2026-09-26; docs/review/escape_roads_2026-09-26.md). The ray escape and
+    # its road snap both score their proposals by (transit exposure, drive
+    # time) among lawful destinations and never look at how long the
+    # destination stays safe: on the pinned Camp-Fire-scale extended run the
+    # raw rays won by a 4 s drive-time tie (an infinite-horizon ray end over
+    # a 26.6 h one) and the snap walked back to nodes with 10-27 h horizons,
+    # so the crews were overtaken, re-fled from worse spots and caught (two
+    # imminent-while-egressing rows). When True and a road graph is loaded,
+    # a crew that must flee with no catalog zone lawfully reachable (the
+    # zone-first rule is unchanged) SEARCHES THE ROAD GRAPH from its
+    # position: a time-dependent Dijkstra at the crew's escape speed where an
+    # edge is impassable if any sample is BURNED at its pass time (inside the
+    # cold-black window) and costs EXPOSURE seconds for samples inside the
+    # eroded-P10 imminent band. Candidate destinations are road NODES
+    # >= 2 km out, chosen lexicographically by (exposure in 5-minute steps —
+    # zero exposure always first — then the node's SAFETY HORIZON: eroded-
+    # P10 arrival minus arrival, capped so a long-safe spot beats a marginal
+    # one without sending crews to the far edge — then drive time); a lawful
+    # destination (horizon >= egress buffer + lead) always beats an unlawful
+    # one. The catalog zones compete under the same key and win ties on the
+    # safety steps (dispatch stages crews at zones). The crew then drives
+    # EXACTLY the searched path (roads end to end). No passable road escape
+    # (cornered, or off the network) -> the legacy ray logic, with a loud
+    # note. False = off, byte-identical. The SIMULATOR arms it (explicit
+    # override wins). When neither SEM-10e zone rule yields a move, the
+    # proactive decamp also takes a fully lawful road path to a durable
+    # road node — a crew parked at a road point after an area escape
+    # otherwise waited for the imminent law and re-fled through the band.
+    escape_road_network: bool = False
+    # ... its horizon cap (hours): a destination whose safety horizon reaches
+    # this counts as fully safe (beyond it the nearer node wins). Measured on
+    # the pinned Camp-Fire-scale run (escape_roads_2026-09-26.md): 6 h -> 1
+    # imminent row, 9 relocations; 12 h -> 0 rows, 7 relocations; 24 h -> 0,
+    # 4; 48 h -> 0, 3 — short caps park crews where the growing band
+    # overtakes them and each re-flee starts from a worse pocket. Read only
+    # when escape_road_network is on.
+    escape_road_horizon_cap_h: float = 24.0
     # SEM-10e LAWFUL-ONLY (roads inspection 2026-09-25): when True the
     # PROACTIVE decamp takes only a fully lawful route (not burned, eroded-
     # P10 margin >= 0 at every pass time — nothing the 10c audit counts). The
@@ -1388,6 +1426,8 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("escape_proactive_lead_min must be >= 0")
     if cfg.escape_road_snap_m < 0:
         problems.append("escape_road_snap_m must be >= 0")
+    if not cfg.escape_road_horizon_cap_h > 0:
+        problems.append("escape_road_horizon_cap_h must be > 0")
 
     # --- corridor erosion / sampling ---
     if cfg.corridor_erosion_m < 0:

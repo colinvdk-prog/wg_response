@@ -369,7 +369,16 @@ def _record_leg(cs, kind, origin, target, rr):
            "origin_type": _point_type(origin), "target_type": _point_type(target),
            "dist_m": round(float(getattr(rr, "dist_m", 0.0) or 0.0), 1) if rr else None}
     rec.update(_leg_context(cs, kind))
+    g = REC.session._road_graph if REC.session is not None else None
+    rec["target_on_node"] = bool(g is not None and hasattr(g, "nearest_node")
+                                 and g.nearest_node(target, max_m=0.5) is not None)
     REC.legs.append(rec)
+
+
+def _on_node(_run, leg) -> bool:
+    """An escape leg ending ON a road-graph node (the road-network escape's
+    destinations are nodes; the ray escape's are open-ground points)."""
+    return bool(leg.get("target_on_node"))
 
 
 def _record_plan(cs, a, b, rr):
@@ -401,13 +410,22 @@ def _ignite(s, loc, zone, intensity=INTENSITY, std_dist=STD_DIST_M,
     return None
 
 
-def _state_hash(st, strip=()):
+def _state_hash(st, strip=(), top_strip=()):
     st = json.loads(json.dumps(st, sort_keys=True, allow_nan=False))
     for c in st.get("crews", []):
         for k in strip:
             c.pop(k, None)
+    for k in top_strip:
+        st.pop(k, None)
     return hashlib.sha256(json.dumps(st, sort_keys=True,
                                      allow_nan=False).encode()).hexdigest()
+
+
+#: ENGINE-identity hash (escape roads 2026-09-26): also strips the state's
+#: cmd_log — the echo of the configure() call, whose cfg_overrides differ
+#: when a knob is pinned explicitly (a knob-OFF arm vs a tree without the
+#: knob), while every engine output is compared.
+ENGINE_TOP_STRIP = ("cmd_log",)
 
 
 #: crew-level state keys added by the 2026-09-25 roads-legibility fix; the
@@ -444,6 +462,7 @@ def run_one(job):
     ign = _ignite(s, loc, zone, intensity, std_dist, ext_dist)
     st = s.state()
     hashes = [_state_hash(st, NEW_CREW_KEYS)]
+    engine_hashes = [_state_hash(st, NEW_CREW_KEYS, ENGINE_TOP_STRIP)]
     prev = st
     moves = []
     jumps = []
@@ -451,12 +470,29 @@ def run_one(job):
     egress_synth = []
     prev_drive = {}             # crew -> its previous tick's driven path
     state_kb = []
+    # per-TICK safety record (escape roads 2026-09-26): the final scoreboard
+    # only shows the last tick's 10c rows, so count every tick's
+    ov_rows = 0
+    ov_ticks = 0
+    ov_kinds = {}
+    dep_viol_max = 0
     for k in range(1, ticks + 1):
         REC.tick = k
         pre_pos = {cid: cs.pos for cid, cs in s._crew_sims.items()}
         st = s.tick()
         hashes.append(_state_hash(st, NEW_CREW_KEYS))
+        engine_hashes.append(_state_hash(st, NEW_CREW_KEYS, ENGINE_TOP_STRIP))
         state_kb.append(round(len(json.dumps(st)) / 1024.0, 1))
+        rows_k = st.get("crew_overruns") or []
+        if rows_k:
+            ov_ticks += 1
+        ov_rows += len(rows_k)
+        for o in rows_k:
+            kk = f"{o['reason']}|{o['mode']}"
+            ov_kinds[kk] = ov_kinds.get(kk, 0) + 1
+        sb_k = st["scoreboard"]
+        dep_viol_max = max(dep_viol_max, sb_k.get("violations", 0)
+                           - sb_k.get("crew_overruns", 0))
         pc = {c["crew_id"]: c for c in prev["crews"]}
         for c in st["crews"]:
             cid = c["crew_id"]
@@ -586,9 +622,12 @@ def run_one(job):
         "relocations": st["scoreboard"]["relocations"],
         "violations": st["scoreboard"]["violations"],
         "served": st["scoreboard"]["served"],
+        "overrun_rows": ov_rows, "overrun_ticks": ov_ticks,
+        "overrun_kinds": ov_kinds, "departure_viol_max": dep_viol_max,
         "notes": [n for n in st["notes"] if "road" in n.lower() or "ROAD" in n
                   or "FIRE ZONE" in n or "escape" in n.lower()],
-        "hashes": hashes, "state_kb_max": max(state_kb) if state_kb else 0,
+        "hashes": hashes, "engine_hashes": engine_hashes,
+        "state_kb_max": max(state_kb) if state_kb else 0,
         "state_kb_median": statistics.median(state_kb) if state_kb else 0,
         "wall_s": round(time.time() - t_start, 1),
     }
@@ -668,6 +707,12 @@ def summarize(r):
         "homes_gt300": sum(1 for h in homes if h > 300), "homes_gt2k": sum(1 for h in homes if h > 2000),
         "home_max_km": round(max(homes, default=0) / 1000, 2),
         "relocations": r["relocations"], "violations": r["violations"], "served": r["served"],
+        "overrun_rows": r.get("overrun_rows"), "overrun_ticks": r.get("overrun_ticks"),
+        "overrun_kinds": r.get("overrun_kinds"),
+        "departure_viol_max": r.get("departure_viol_max"),
+        "escape_on_node": sum(1 for L in escape if _on_node(r, L)),
+        "escape_chord_km": round(sum(s["len_m"] or 0 for L in escape for s in L["segs"]
+                                     if s["kind"] == "chord") / 1000, 1),
         "cap_m": r["cap_m"], "graph": r["graph_meta_key"], "graph_nodes": r["graph_nodes"],
         "state_kb_max": r["state_kb_max"], "wall_s": r["wall_s"],
     }
@@ -704,6 +749,17 @@ def print_tables(summ):
               f"{s['egress_synth']:>6}{s['homes_gt300']:>6}{s['homes_gt2k']:>5}"
               f"{s['home_max_km']:>6}{s['violations']:>5}{s['served']:>4}"
               f"{s['state_kb_max']:>6}{s['wall_s']:>6}")
+    print("\nESCAPES + SAFETY — every tick (10c rows = crew-overrun rows summed "
+          "over ticks; depV = max departure-audit rows in any tick)")
+    print(f"{'preset':<22}{'zone':<5}{'esc':>4}{'onNode':>7}{'escKm':>6}{'chKm':>6}"
+          f"{'reloc':>6}{'10c':>5}{'ovT':>5}{'depV':>5}{'srv':>5}  kinds")
+    for s in summ:
+        z = "ext" if s["zone"] == "extended" else "std"
+        print(f"{s['key']:<22}{z:<5}{s['escape_legs']:>4}{s.get('escape_on_node', 0):>7}"
+              f"{s['escape_straight_km']:>6}{s.get('escape_chord_km', 0):>6}"
+              f"{s['relocations']:>6}{s.get('overrun_rows', 0):>5}"
+              f"{s.get('overrun_ticks', 0):>5}{s.get('departure_viol_max', 0):>5}"
+              f"{s['served']:>5}  {s.get('overrun_kinds') or ''}")
 
 
 def main(argv=None):

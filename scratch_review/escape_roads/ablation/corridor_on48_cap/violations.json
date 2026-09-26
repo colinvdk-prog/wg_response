@@ -1,0 +1,28 @@
+[
+ {
+  "arm": "alerted2_road",
+  "map": "vail_co",
+  "seed": "corr-alert|vail_co|+0|high",
+  "viol_reported": 1,
+  "departure_rows_max": 0,
+  "overrun_ticks": 1,
+  "kinds": {
+   "imminent|egress": 1
+  },
+  "worst_past_p10_min": 0.0,
+  "burned_rows": []
+ },
+ {
+  "arm": "alerted2_road",
+  "map": "vail_co",
+  "seed": "corr-alert|vail_co|-30|high",
+  "viol_reported": 1,
+  "departure_rows_max": 0,
+  "overrun_ticks": 1,
+  "kinds": {
+   "imminent|egress": 1
+  },
+  "worst_past_p10_min": 0.0,
+  "burned_rows": []
+ }
+]

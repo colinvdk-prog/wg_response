@@ -73,9 +73,17 @@ COMMON.update({"dispatch_plan_on_roads": True, "dispatch_hold_h": 24.0,
                "deploy_min": 15.0})
 HONEST = {"model_error_sd_log": 0.71, "ros_floor_extinction_gate": True,
           "slope_phi_vector": True}
-CFG = {**COMMON, **HONEST}
+#: A/B hooks (escape roads 2026-09-26, scratch_review/escape_roads_ab.py):
+#: CORRIDOR_EXTRA_CFG (a JSON object of ResponseConfig overrides merged onto
+#: CFG) and CORRIDOR_OUT_DIR (write the arm files somewhere else), read from
+#: the environment so the spawned workers see them too. Unset = the grid of
+#: record, unchanged.
+_EXTRA_CFG = json.loads(os.environ.get("CORRIDOR_EXTRA_CFG") or "{}")
+CFG = {**COMMON, **HONEST, **_EXTRA_CFG}
 DRIVE_JSON = ROOT / "scratch_review" / "corridor_drive_times.json"
-OUT_DIR = ROOT / "scratch_review" / "corridor"
+OUT_DIR = (pathlib.Path(os.environ["CORRIDOR_OUT_DIR"])
+           if os.environ.get("CORRIDOR_OUT_DIR")
+           else ROOT / "scratch_review" / "corridor")
 BINS = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 8), (8, 12), (12, 16)]
 
 ARMS = {
