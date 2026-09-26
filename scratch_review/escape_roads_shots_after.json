@@ -1,0 +1,62 @@
+[
+ {
+  "name": "a01_glenwood_t3_road_escape",
+  "key": "glenwood_springs_co",
+  "zone": "standard",
+  "tick": 3,
+  "view": [
+   39.559,
+   -107.345,
+   13
+  ],
+  "mid": null,
+  "caption": "AFTER (road-network escape, the simulator default) · glenwood_springs_co std t3 · no spur into open ground: sim-g5's escape (previewed) is 4.6 km of road SW to a road node; sim-g4 drives 4.8 km of road through town to the same node"
+ },
+ {
+  "name": "a01b_glenwood_t4_road_escape_driven",
+  "key": "glenwood_springs_co",
+  "zone": "standard",
+  "tick": 4,
+  "view": [
+   39.559,
+   -107.345,
+   13
+  ],
+  "mid": 0.5,
+  "overlay": true,
+  "crews": [
+   "sim-g5"
+  ],
+  "caption": "AFTER · glenwood_springs_co std t4, mid-tick · magenta = the path the page slides sim-g5 along this tick: the road it drives to its escape node"
+ },
+ {
+  "name": "a02_vail_ext_t24_road_escape",
+  "key": "vail_co",
+  "zone": "extended",
+  "tick": 24,
+  "view": [
+   39.66,
+   -106.27,
+   11
+  ],
+  "mid": null,
+  "graph_bbox": true,
+  "graph_label": "road graph coverage (vail_co_ext)",
+  "caption": "AFTER · vail_co EXTENDED t24, same run · no chord: the crews left earlier BY ROAD (t11-t14 to road nodes 3 km from z2, t16 a clean proactive move 2.4 km from z1) and wait on the network"
+ },
+ {
+  "name": "a03_vail_ext_t10_road_escape",
+  "key": "vail_co",
+  "zone": "extended",
+  "tick": 10,
+  "view": [
+   39.626,
+   -106.405,
+   13
+  ],
+  "mid": null,
+  "graph_bbox": true,
+  "graph_label": "road graph coverage (vail_co_ext)",
+  "caption": "AFTER · vail_co EXTENDED t10 · the first flight, previewed: no catalog zone is lawfully reachable, so sim-g1/g3/g5 at z2 (Dowd Junction, I-70 exit 171) leave by road for a road node 3.1 km NE on I-70 (the old rule sent them 15 km east to z1 in East Vail, and at t24 on 11.6 km chords into the Gore Range)"
+ }
+]

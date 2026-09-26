@@ -364,6 +364,13 @@ inside the eroded-P10 band, the nominal front still ≥ 48 h away; relocations
 The knob stays default-OFF until the escape scoring can keep a road-bound flee
 without losing the least-exposure option that scenario needs.
 
+**2026-09-26 — superseded.** The failure was diagnosed (the escape rule never
+weighed how long a destination stays safe; the rays were clean on that run by
+a 4 s drive-time tie) and item 1 is replaced by a road-network escape,
+`escape_road_network`, armed as the simulator default: the pinned run passes
+(0 rows), escapes end on road nodes, the vail Gore Range chords are gone —
+`docs/review/escape_roads_2026-09-26.md`.
+
 1. **Arm `escape_road_snap_m`** (e.g. 1500 m) as a simulator default. On the
    A/B above:
    * straight escape driving −75…−99 %;

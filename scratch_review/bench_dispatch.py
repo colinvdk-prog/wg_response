@@ -66,6 +66,8 @@ def run_scenario(sc, overrides, horizon=HORIZON_TICKS):
     st = None
     max_viol = 0          # per-TICK max (scoreboard.violations is instantaneous
     ov_ticks = 0          # for overruns — final-tick reads can hide transients)
+    dep_max = 0           # per-TICK max of departure-audit rows alone
+    ov_rows = 0           # 10c crew-overrun rows summed over every tick
     for _ in range(horizon):
         st = s.tick()
         v = st["scoreboard"].get("violations", 0)
@@ -73,6 +75,8 @@ def run_scenario(sc, overrides, horizon=HORIZON_TICKS):
             max_viol = v
         if st.get("crew_overruns"):
             ov_ticks += 1
+        ov_rows += len(st.get("crew_overruns") or [])
+        dep_max = max(dep_max, v - st["scoreboard"].get("crew_overruns", 0))
     sb = st["scoreboard"]
     ov = ov_ticks
     outs = sb.get("outcomes", {}) or {}
@@ -87,6 +91,7 @@ def run_scenario(sc, overrides, horizon=HORIZON_TICKS):
         dist=sc["dist"], inten=sc["inten"],
         served=int(sb.get("served", 0)),
         violations=int(max_viol),
+        departure_viol_max=int(dep_max), overrun_rows=int(ov_rows),
         overruns=int(ov),
         withdrawn=int(sb.get("withdrawn", 0)),
         relocations=int(sb.get("relocations", 0)),
@@ -179,6 +184,8 @@ def main():
         horizon=args.horizon, wall_s=round(dt, 1),
         total_served=tot_served, total_threatened=tot_threat,
         total_violations=tot_viol, total_overruns=tot_ov,
+        total_departure_viol=sum(r.get("departure_viol_max", 0) for r in rows),
+        total_overrun_rows=sum(r.get("overrun_rows", 0) for r in rows),
         total_abandoned=sum(r["abandoned"] for r in rows),
         total_triaged=sum(r["triaged"] for r in rows),
         rows=rows)
@@ -190,6 +197,8 @@ def main():
     print(f"scenarios={len(rows)}  wall={dt:.1f}s  "
           f"TOTAL SERVED={tot_served}/{tot_threat} threatened  "
           f"violations={tot_viol}  overruns={tot_ov}  "
+          f"departure-rows={summary['total_departure_viol']}  "
+          f"10c-rows={summary['total_overrun_rows']}  "
           f"(abandoned={summary['total_abandoned']} triaged={summary['total_triaged']})")
     print(f"wrote {out}")
 

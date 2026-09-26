@@ -1,0 +1,5598 @@
+{
+ "arm": "network",
+ "cfg": {
+  "escape_road_network": true,
+  "escape_road_horizon_cap_h": 12.0
+ },
+ "served": 16,
+ "relocations": 7,
+ "rows": [],
+ "relocs": [
+  {
+   "tick": 14,
+   "crew": "sim-g2",
+   "from": [
+    39.685,
+    -121.62
+   ],
+   "target": "paradise_ca-z3",
+   "target_loc": [
+    39.7,
+    -121.52
+   ]
+  },
+  {
+   "tick": 26,
+   "crew": "sim-g1",
+   "from": [
+    39.71,
+    -121.705
+   ],
+   "target": "escape",
+   "target_loc": [
+    39.74616,
+    -121.63812
+   ]
+  },
+  {
+   "tick": 48,
+   "crew": "sim-g2",
+   "from": [
+    39.7,
+    -121.52
+   ],
+   "target": "escape",
+   "target_loc": [
+    39.70224,
+    -121.46622
+   ]
+  },
+  {
+   "tick": 63,
+   "crew": "sim-g1",
+   "from": [
+    39.74616,
+    -121.63812
+   ],
+   "target": "escape",
+   "target_loc": [
+    39.76047,
+    -121.62324
+   ]
+  },
+  {
+   "tick": 71,
+   "crew": "sim-g2",
+   "from": [
+    39.70224,
+    -121.46622
+   ],
+   "target": "escape",
+   "target_loc": [
+    39.68153,
+    -121.44971
+   ]
+  },
+  {
+   "tick": 95,
+   "crew": "sim-g2",
+   "from": [
+    39.68153,
+    -121.44971
+   ],
+   "target": "escape",
+   "target_loc": [
+    39.82393,
+    -121.41208
+   ]
+  },
+  {
+   "tick": 100,
+   "crew": "sim-g1",
+   "from": [
+    39.76047,
+    -121.62324
+   ],
+   "target": "escape",
+   "target_loc": [
+    39.77765,
+    -121.60628
+   ]
+  }
+ ],
+ "decisions": [
+  {
+   "tick": 26,
+   "pos": [
+    39.71,
+    -121.705
+   ],
+   "chosen": "escape",
+   "chosen_loc": [
+    39.74616,
+    -121.63812
+   ],
+   "zones": [
+    {
+     "burned": false,
+     "expo_s": 99.8,
+     "worst_s": -8932.0,
+     "drive_s": 99.8,
+     "dm_s": -557.4,
+     "horizon_h": 0.87,
+     "dist_km": 0.0,
+     "lat": 39.71,
+     "lon": -121.705,
+     "id": "paradise_ca-z1"
+    },
+    {
+     "burned": false,
+     "expo_s": 1981.5,
+     "worst_s": -20530.9,
+     "drive_s": 2682.1,
+     "dm_s": -17887.7,
+     "horizon_h": -3.22,
+     "dist_km": 7.79,
+     "lat": 39.685,
+     "lon": -121.62,
+     "id": "paradise_ca-z2"
+    },
+    {
+     "burned": true,
+     "expo_s": 2722.5,
+     "worst_s": -32989.4,
+     "drive_s": 4909.3,
+     "dm_s": 34181.1,
+     "horizon_h": 11.86,
+     "dist_km": 15.87,
+     "lat": 39.7,
+     "lon": -121.52,
+     "id": "paradise_ca-z3"
+    }
+   ],
+   "raw": [
+    {
+     "burned": false,
+     "expo_s": 3188.5,
+     "worst_s": -14525.7,
+     "drive_s": 3619.4,
+     "dm_s": -4766.4,
+     "horizon_h": 0.68,
+     "dist_km": 11.55,
+     "lat": 39.81387,
+     "lon": -121.705,
+     "bearing": 0
+    },
+    {
+     "burned": false,
+     "expo_s": 3248.7,
+     "worst_s": -28072.1,
+     "drive_s": 3248.7,
+     "dm_s": -13909.9,
+     "horizon_h": -1.96,
+     "dist_km": 11.55,
+     "lat": 39.79994,
+     "lon": -121.6374,
+     "bearing": 30
+    },
+    {
+     "burned": true,
+     "expo_s": 1127.3,
+     "worst_s": -34874.5,
+     "drive_s": 1889.7,
+     "dm_s": -34874.5,
+     "horizon_h": -8.16,
+     "dist_km": 11.55,
+     "lat": 39.76188,
+     "lon": -121.58798,
+     "bearing": 60
+    },
+    {
+     "burned": true,
+     "expo_s": 1893.5,
+     "worst_s": -32989.4,
+     "drive_s": 2641.4,
+     "dm_s": -28619.9,
+     "horizon_h": -6.22,
+     "dist_km": 11.55,
+     "lat": 39.70992,
+     "lon": -121.56998,
+     "bearing": 90
+    },
+    {
+     "burned": true,
+     "expo_s": 2780.2,
+     "worst_s": -32989.4,
+     "drive_s": 3528.1,
+     "dm_s": -18723.0,
+     "horizon_h": -3.22,
+     "dist_km": 11.55,
+     "lat": 39.65801,
+     "lon": -121.58815,
+     "bearing": 120
+    },
+    {
+     "burned": false,
+     "expo_s": 2913.0,
+     "worst_s": -20530.9,
+     "drive_s": 3613.6,
+     "dm_s": -13185.8,
+     "horizon_h": -1.66,
+     "dist_km": 11.55,
+     "lat": 39.62003,
+     "lon": -121.63758,
+     "bearing": 150
+    },
+    {
+     "burned": false,
+     "expo_s": 2651.8,
+     "worst_s": -12122.5,
+     "drive_s": 3520.6,
+     "dm_s": -6951.3,
+     "horizon_h": 0.05,
+     "dist_km": 11.55,
+     "lat": 39.60613,
+     "lon": -121.705,
+     "bearing": 180
+    },
+    {
+     "burned": false,
+     "expo_s": 1688.6,
+     "worst_s": -12122.5,
+     "drive_s": 3195.4,
+     "dm_s": 19209.8,
+     "horizon_h": 7.22,
+     "dist_km": 11.55,
+     "lat": 39.62003,
+     "lon": -121.77242,
+     "bearing": 210
+    },
+    {
+     "burned": false,
+     "expo_s": 1732.8,
+     "worst_s": -12122.5,
+     "drive_s": 2777.6,
+     "dm_s": 3406.2,
+     "horizon_h": 2.72,
+     "dist_km": 11.55,
+     "lat": 39.65801,
+     "lon": -121.82185,
+     "bearing": 240
+    },
+    {
+     "burned": false,
+     "expo_s": 1255.5,
+     "worst_s": -12122.5,
+     "drive_s": 2191.0,
+     "dm_s": 90063.7,
+     "horizon_h": 26.63,
+     "dist_km": 11.55,
+     "lat": 39.70992,
+     "lon": -121.84002,
+     "bearing": 270
+    },
+    {
+     "burned": false,
+     "expo_s": 1255.5,
+     "worst_s": -12122.5,
+     "drive_s": 2186.9,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.55,
+     "lat": 39.76188,
+     "lon": -121.82202,
+     "bearing": 300
+    },
+    {
+     "burned": false,
+     "expo_s": 2637.3,
+     "worst_s": -12122.5,
+     "drive_s": 3410.0,
+     "dm_s": 7994.7,
+     "horizon_h": 4.17,
+     "dist_km": 11.55,
+     "lat": 39.79994,
+     "lon": -121.7726,
+     "bearing": 330
+    }
+   ],
+   "snapped": [
+    {
+     "burned": false,
+     "expo_s": 3134.8,
+     "worst_s": -14525.7,
+     "drive_s": 3565.8,
+     "dm_s": -5957.0,
+     "horizon_h": 0.34,
+     "dist_km": 11.21,
+     "lat": 39.81078,
+     "lon": -121.70252,
+     "bearing": 0
+    },
+    {
+     "burned": false,
+     "expo_s": 3184.4,
+     "worst_s": -28072.1,
+     "drive_s": 3184.4,
+     "dm_s": -12757.9,
+     "horizon_h": -1.66,
+     "dist_km": 11.26,
+     "lat": 39.79939,
+     "lon": -121.64302,
+     "bearing": 30
+    },
+    {
+     "burned": true,
+     "expo_s": 1114.1,
+     "worst_s": -29796.1,
+     "drive_s": 1876.5,
+     "dm_s": -29796.1,
+     "horizon_h": -6.76,
+     "dist_km": 11.5,
+     "lat": 39.76233,
+     "lon": -121.58898,
+     "bearing": 60
+    },
+    {
+     "burned": true,
+     "expo_s": 1865.9,
+     "worst_s": -32989.4,
+     "drive_s": 2613.8,
+     "dm_s": -29308.0,
+     "horizon_h": -6.42,
+     "dist_km": 11.43,
+     "lat": 39.71145,
+     "lon": -121.57137,
+     "bearing": 90
+    },
+    {
+     "burned": true,
+     "expo_s": 2723.0,
+     "worst_s": -32989.4,
+     "drive_s": 3470.9,
+     "dm_s": -16746.7,
+     "horizon_h": -2.69,
+     "dist_km": 11.81,
+     "lat": 39.65951,
+     "lon": -121.58353,
+     "bearing": 120
+    },
+    {
+     "burned": false,
+     "expo_s": 2857.4,
+     "worst_s": -20530.9,
+     "drive_s": 3558.0,
+     "dm_s": -13440.7,
+     "horizon_h": -1.75,
+     "dist_km": 11.34,
+     "lat": 39.62329,
+     "lon": -121.63515,
+     "bearing": 150
+    },
+    {
+     "burned": false,
+     "expo_s": 2487.7,
+     "worst_s": -12122.5,
+     "drive_s": 3356.6,
+     "dm_s": -6047.1,
+     "horizon_h": 0.25,
+     "dist_km": 11.55,
+     "lat": 39.60671,
+     "lon": -121.69062,
+     "bearing": 180
+    },
+    {
+     "burned": false,
+     "expo_s": 1688.6,
+     "worst_s": -12122.5,
+     "drive_s": 3126.1,
+     "dm_s": 16103.0,
+     "horizon_h": 6.34,
+     "dist_km": 11.63,
+     "lat": 39.62181,
+     "lon": -121.77805,
+     "bearing": 210
+    },
+    {
+     "burned": false,
+     "expo_s": 1732.8,
+     "worst_s": -12122.5,
+     "drive_s": 2748.9,
+     "dm_s": -694.1,
+     "horizon_h": 1.57,
+     "dist_km": 11.68,
+     "lat": 39.65876,
+     "lon": -121.82417,
+     "bearing": 240
+    },
+    {
+     "burned": false,
+     "expo_s": 1255.5,
+     "worst_s": -12122.5,
+     "drive_s": 2182.9,
+     "dm_s": 90071.9,
+     "horizon_h": 26.63,
+     "dist_km": 11.61,
+     "lat": 39.70983,
+     "lon": -121.84073,
+     "bearing": 270
+    },
+    {
+     "burned": false,
+     "expo_s": 1255.5,
+     "worst_s": -12122.5,
+     "drive_s": 2183.7,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.57,
+     "lat": 39.76208,
+     "lon": -121.82211,
+     "bearing": 300
+    },
+    {
+     "burned": false,
+     "expo_s": 2182.7,
+     "worst_s": -12122.5,
+     "drive_s": 2718.6,
+     "dm_s": -7486.7,
+     "horizon_h": -0.32,
+     "dist_km": 8.57,
+     "lat": 39.77781,
+     "lon": -121.75269,
+     "bearing": 330
+    }
+   ],
+   "fail_closed": false,
+   "chosen_metrics": {
+    "burned": false,
+    "expo_s": 860.3,
+    "worst_s": -16394.8,
+    "drive_s": 1117.2,
+    "dm_s": 64151.3,
+    "horizon_h": 19.13,
+    "dist_km": 6.99,
+    "lat": 39.74616,
+    "lon": -121.63812
+   }
+  },
+  {
+   "tick": 48,
+   "pos": [
+    39.7,
+    -121.52
+   ],
+   "chosen": "escape",
+   "chosen_loc": [
+    39.70224,
+    -121.46622
+   ],
+   "zones": [
+    {
+     "burned": false,
+     "expo_s": 4179.7,
+     "worst_s": -73428.7,
+     "drive_s": 4909.3,
+     "dm_s": -44966.9,
+     "horizon_h": -10.13,
+     "dist_km": 15.87,
+     "lat": 39.71,
+     "lon": -121.705,
+     "id": "paradise_ca-z1"
+    },
+    {
+     "burned": true,
+     "expo_s": 2425.5,
+     "worst_s": -58256.8,
+     "drive_s": 2934.6,
+     "dm_s": -57740.2,
+     "horizon_h": -14.22,
+     "dist_km": 8.72,
+     "lat": 39.685,
+     "lon": -121.62,
+     "id": "paradise_ca-z2"
+    },
+    {
+     "burned": false,
+     "expo_s": 22.5,
+     "worst_s": -554.7,
+     "drive_s": 45.1,
+     "dm_s": -554.7,
+     "horizon_h": 0.86,
+     "dist_km": 0.0,
+     "lat": 39.7,
+     "lon": -121.52,
+     "id": "paradise_ca-z3"
+    }
+   ],
+   "raw": [
+    {
+     "burned": false,
+     "expo_s": 2359.8,
+     "worst_s": -86081.9,
+     "drive_s": 2425.9,
+     "dm_s": -84990.0,
+     "horizon_h": -21.93,
+     "dist_km": 11.55,
+     "lat": 39.80387,
+     "lon": -121.52,
+     "bearing": 0
+    },
+    {
+     "burned": false,
+     "expo_s": 1195.9,
+     "worst_s": -32078.1,
+     "drive_s": 2260.4,
+     "dm_s": 11229.7,
+     "horizon_h": 4.75,
+     "dist_km": 11.55,
+     "lat": 39.78994,
+     "lon": -121.45241,
+     "bearing": 30
+    },
+    {
+     "burned": false,
+     "expo_s": 1195.9,
+     "worst_s": -32078.1,
+     "drive_s": 7717.4,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.55,
+     "lat": 39.75188,
+     "lon": -121.403,
+     "bearing": 60
+    },
+    {
+     "burned": false,
+     "expo_s": 1195.9,
+     "worst_s": -32078.1,
+     "drive_s": 6901.0,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.55,
+     "lat": 39.69992,
+     "lon": -121.385,
+     "bearing": 90
+    },
+    {
+     "burned": false,
+     "expo_s": 1195.9,
+     "worst_s": -32078.1,
+     "drive_s": 8549.0,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.55,
+     "lat": 39.64801,
+     "lon": -121.40317,
+     "bearing": 120
+    },
+    {
+     "burned": false,
+     "expo_s": 1195.9,
+     "worst_s": -32078.1,
+     "drive_s": 9581.5,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.55,
+     "lat": 39.61003,
+     "lon": -121.45259,
+     "bearing": 150
+    },
+    {
+     "burned": false,
+     "expo_s": 921.5,
+     "worst_s": -28585.7,
+     "drive_s": 2725.9,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.55,
+     "lat": 39.59613,
+     "lon": -121.52,
+     "bearing": 180
+    },
+    {
+     "burned": false,
+     "expo_s": 1808.7,
+     "worst_s": -44997.6,
+     "drive_s": 2317.8,
+     "dm_s": -26916.8,
+     "horizon_h": -5.83,
+     "dist_km": 11.55,
+     "lat": 39.61003,
+     "lon": -121.58741,
+     "bearing": 210
+    },
+    {
+     "burned": false,
+     "expo_s": 1830.5,
+     "worst_s": -58256.8,
+     "drive_s": 2339.6,
+     "dm_s": -49072.0,
+     "horizon_h": -11.98,
+     "dist_km": 11.55,
+     "lat": 39.64801,
+     "lon": -121.63683,
+     "bearing": 240
+    },
+    {
+     "burned": false,
+     "expo_s": 4017.3,
+     "worst_s": -73428.7,
+     "drive_s": 4554.9,
+     "dm_s": -52007.0,
+     "horizon_h": -12.18,
+     "dist_km": 11.55,
+     "lat": 39.69992,
+     "lon": -121.655,
+     "bearing": 270
+    },
+    {
+     "burned": false,
+     "expo_s": 3071.3,
+     "worst_s": -73428.7,
+     "drive_s": 3820.1,
+     "dm_s": 3550.4,
+     "horizon_h": 3.05,
+     "dist_km": 11.55,
+     "lat": 39.75188,
+     "lon": -121.637,
+     "bearing": 300
+    },
+    {
+     "burned": false,
+     "expo_s": 3147.4,
+     "worst_s": -81221.1,
+     "drive_s": 3733.2,
+     "dm_s": -60321.2,
+     "horizon_h": -14.72,
+     "dist_km": 11.55,
+     "lat": 39.78994,
+     "lon": -121.58759,
+     "bearing": 330
+    }
+   ],
+   "snapped": [
+    {
+     "burned": false,
+     "expo_s": 2308.6,
+     "worst_s": -86081.9,
+     "drive_s": 2374.7,
+     "dm_s": -86081.9,
+     "horizon_h": -22.25,
+     "dist_km": 11.46,
+     "lat": 39.80299,
+     "lon": -121.52436,
+     "bearing": 0
+    },
+    {
+     "burned": false,
+     "expo_s": 1195.9,
+     "worst_s": -32078.1,
+     "drive_s": 2197.5,
+     "dm_s": 11785.2,
+     "horizon_h": 4.88,
+     "dist_km": 11.94,
+     "lat": 39.79417,
+     "lon": -121.45301,
+     "bearing": 30
+    },
+    {
+     "burned": false,
+     "expo_s": 743.2,
+     "worst_s": -32078.1,
+     "drive_s": 1853.6,
+     "dm_s": 32549.0,
+     "horizon_h": 10.56,
+     "dist_km": 4.99,
+     "lat": 39.72342,
+     "lon": -121.47027,
+     "bearing": 60
+    },
+    {
+     "burned": false,
+     "expo_s": 1195.9,
+     "worst_s": -32078.1,
+     "drive_s": 6771.5,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 12.27,
+     "lat": 39.70603,
+     "lon": -121.37684,
+     "bearing": 90
+    },
+    {
+     "burned": false,
+     "expo_s": 1195.9,
+     "worst_s": -32078.1,
+     "drive_s": 8544.0,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.57,
+     "lat": 39.64818,
+     "lon": -121.40279,
+     "bearing": 120
+    },
+    {
+     "burned": false,
+     "expo_s": 1195.9,
+     "worst_s": -32078.1,
+     "drive_s": 9525.0,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.29,
+     "lat": 39.61358,
+     "lon": -121.45076,
+     "bearing": 150
+    },
+    {
+     "burned": false,
+     "expo_s": 921.5,
+     "worst_s": -28585.7,
+     "drive_s": 2669.8,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.68,
+     "lat": 39.59502,
+     "lon": -121.51529,
+     "bearing": 180
+    },
+    {
+     "burned": false,
+     "expo_s": 1731.8,
+     "worst_s": -44997.6,
+     "drive_s": 2240.9,
+     "dm_s": -23683.4,
+     "horizon_h": -4.96,
+     "dist_km": 11.05,
+     "lat": 39.61271,
+     "lon": -121.58163,
+     "bearing": 210
+    },
+    {
+     "burned": false,
+     "expo_s": 1803.5,
+     "worst_s": -58256.8,
+     "drive_s": 2312.6,
+     "dm_s": -49045.0,
+     "horizon_h": -11.98,
+     "dist_km": 11.43,
+     "lat": 39.64732,
+     "lon": -121.63463,
+     "bearing": 240
+    },
+    {
+     "burned": false,
+     "expo_s": 3957.7,
+     "worst_s": -73428.7,
+     "drive_s": 4495.3,
+     "dm_s": -52098.9,
+     "horizon_h": -12.22,
+     "dist_km": 11.36,
+     "lat": 39.70353,
+     "lon": -121.65267,
+     "bearing": 270
+    },
+    {
+     "burned": false,
+     "expo_s": 3071.3,
+     "worst_s": -73428.7,
+     "drive_s": 3798.1,
+     "dm_s": 3572.4,
+     "horizon_h": 3.05,
+     "dist_km": 11.41,
+     "lat": 39.75057,
+     "lon": -121.63607,
+     "bearing": 300
+    },
+    {
+     "burned": false,
+     "expo_s": 3142.7,
+     "worst_s": -81221.1,
+     "drive_s": 3728.5,
+     "dm_s": -60316.6,
+     "horizon_h": -14.72,
+     "dist_km": 11.59,
+     "lat": 39.79022,
+     "lon": -121.58777,
+     "bearing": 330
+    }
+   ],
+   "fail_closed": true,
+   "chosen_metrics": {
+    "burned": false,
+    "expo_s": 633.2,
+    "worst_s": -20408.9,
+    "drive_s": 1278.0,
+    "dm_s": 46565.0,
+    "horizon_h": 14.29,
+    "dist_km": 4.61,
+    "lat": 39.70224,
+    "lon": -121.46622
+   }
+  },
+  {
+   "tick": 63,
+   "pos": [
+    39.74616,
+    -121.63812
+   ],
+   "chosen": "escape",
+   "chosen_loc": [
+    39.76047,
+    -121.62324
+   ],
+   "zones": [
+    {
+     "burned": false,
+     "expo_s": 1117.2,
+     "worst_s": -82757.1,
+     "drive_s": 1117.2,
+     "dm_s": -68174.8,
+     "horizon_h": -17.63,
+     "dist_km": 6.99,
+     "lat": 39.71,
+     "lon": -121.705,
+     "id": "paradise_ca-z1"
+    },
+    {
+     "burned": false,
+     "expo_s": 1564.9,
+     "worst_s": -86013.8,
+     "drive_s": 1564.9,
+     "dm_s": -83370.5,
+     "horizon_h": -21.72,
+     "dist_km": 6.98,
+     "lat": 39.685,
+     "lon": -121.62,
+     "id": "paradise_ca-z2"
+    },
+    {
+     "burned": true,
+     "expo_s": 3743.2,
+     "worst_s": -98472.2,
+     "drive_s": 3792.1,
+     "dm_s": -31301.8,
+     "horizon_h": -6.64,
+     "dist_km": 11.33,
+     "lat": 39.7,
+     "lon": -121.52,
+     "id": "paradise_ca-z3"
+    }
+   ],
+   "raw": [
+    {
+     "burned": true,
+     "expo_s": 2643.0,
+     "worst_s": -94072.4,
+     "drive_s": 2643.0,
+     "dm_s": -79904.1,
+     "horizon_h": -20.46,
+     "dist_km": 6.05,
+     "lat": 39.80057,
+     "lon": -121.63812,
+     "bearing": 0
+    },
+    {
+     "burned": false,
+     "expo_s": 1577.4,
+     "worst_s": -111363.3,
+     "drive_s": 1744.9,
+     "dm_s": -107691.7,
+     "horizon_h": -28.43,
+     "dist_km": 11.55,
+     "lat": 39.8361,
+     "lon": -121.57048,
+     "bearing": 30
+    },
+    {
+     "burned": false,
+     "expo_s": 3497.3,
+     "worst_s": -116884.8,
+     "drive_s": 3660.5,
+     "dm_s": -111347.5,
+     "horizon_h": -28.91,
+     "dist_km": 11.55,
+     "lat": 39.79804,
+     "lon": -121.52104,
+     "bearing": 60
+    },
+    {
+     "burned": true,
+     "expo_s": 4672.3,
+     "worst_s": -98472.2,
+     "drive_s": 4721.2,
+     "dm_s": -56638.8,
+     "horizon_h": -13.42,
+     "dist_km": 11.55,
+     "lat": 39.74608,
+     "lon": -121.50303,
+     "bearing": 90
+    },
+    {
+     "burned": true,
+     "expo_s": 3573.7,
+     "worst_s": -98472.2,
+     "drive_s": 3622.6,
+     "dm_s": -31132.3,
+     "horizon_h": -6.64,
+     "dist_km": 11.55,
+     "lat": 39.69417,
+     "lon": -121.52121,
+     "bearing": 120
+    },
+    {
+     "burned": true,
+     "expo_s": 2375.4,
+     "worst_s": -98472.2,
+     "drive_s": 2375.4,
+     "dm_s": -69655.8,
+     "horizon_h": -17.69,
+     "dist_km": 11.55,
+     "lat": 39.65619,
+     "lon": -121.57066,
+     "bearing": 150
+    },
+    {
+     "burned": false,
+     "expo_s": 2218.6,
+     "worst_s": -86013.8,
+     "drive_s": 2218.6,
+     "dm_s": -72271.1,
+     "horizon_h": -18.46,
+     "dist_km": 11.55,
+     "lat": 39.64229,
+     "lon": -121.63812,
+     "bearing": 180
+    },
+    {
+     "burned": false,
+     "expo_s": 2937.2,
+     "worst_s": -72155.3,
+     "drive_s": 2937.2,
+     "dm_s": -70597.3,
+     "horizon_h": -17.79,
+     "dist_km": 11.55,
+     "lat": 39.65619,
+     "lon": -121.70558,
+     "bearing": 210
+    },
+    {
+     "burned": false,
+     "expo_s": 1710.6,
+     "worst_s": -82744.8,
+     "drive_s": 1710.6,
+     "dm_s": -71156.7,
+     "horizon_h": -18.29,
+     "dist_km": 11.55,
+     "lat": 39.69417,
+     "lon": -121.75503,
+     "bearing": 240
+    },
+    {
+     "burned": false,
+     "expo_s": 2715.5,
+     "worst_s": -82744.8,
+     "drive_s": 2715.5,
+     "dm_s": -68862.6,
+     "horizon_h": -17.37,
+     "dist_km": 11.55,
+     "lat": 39.74608,
+     "lon": -121.77321,
+     "bearing": 270
+    },
+    {
+     "burned": true,
+     "expo_s": 4324.5,
+     "worst_s": -82922.7,
+     "drive_s": 4324.5,
+     "dm_s": -82316.9,
+     "horizon_h": -20.66,
+     "dist_km": 5.5,
+     "lat": 39.77088,
+     "lon": -121.69385,
+     "bearing": 300
+    },
+    {
+     "burned": false,
+     "expo_s": 4402.5,
+     "worst_s": -82744.8,
+     "drive_s": 4402.5,
+     "dm_s": -39119.1,
+     "horizon_h": -8.64,
+     "dist_km": 11.55,
+     "lat": 39.8361,
+     "lon": -121.70576,
+     "bearing": 330
+    }
+   ],
+   "snapped": [
+    {
+     "burned": true,
+     "expo_s": 2584.6,
+     "worst_s": -94072.4,
+     "drive_s": 2584.6,
+     "dm_s": -78758.1,
+     "horizon_h": -20.16,
+     "dist_km": 5.93,
+     "lat": 39.79939,
+     "lon": -121.64302,
+     "bearing": 0
+    },
+    {
+     "burned": false,
+     "expo_s": 1540.9,
+     "worst_s": -111363.3,
+     "drive_s": 1708.3,
+     "dm_s": -107800.7,
+     "horizon_h": -28.47,
+     "dist_km": 11.29,
+     "lat": 39.8337,
+     "lon": -121.57127,
+     "bearing": 30
+    },
+    {
+     "burned": false,
+     "expo_s": 3414.9,
+     "worst_s": -116884.8,
+     "drive_s": 3578.1,
+     "dm_s": -114285.4,
+     "horizon_h": -29.75,
+     "dist_km": 11.6,
+     "lat": 39.80299,
+     "lon": -121.52436,
+     "bearing": 60
+    },
+    {
+     "burned": true,
+     "expo_s": 4604.5,
+     "worst_s": -98472.2,
+     "drive_s": 4653.4,
+     "dm_s": -59271.6,
+     "horizon_h": -14.17,
+     "dist_km": 11.7,
+     "lat": 39.75049,
+     "lon": -121.50138,
+     "bearing": 90
+    },
+    {
+     "burned": true,
+     "expo_s": 3539.1,
+     "worst_s": -98472.2,
+     "drive_s": 3588.0,
+     "dm_s": -31097.6,
+     "horizon_h": -6.64,
+     "dist_km": 11.35,
+     "lat": 39.69384,
+     "lon": -121.52423,
+     "bearing": 120
+    },
+    {
+     "burned": true,
+     "expo_s": 2315.4,
+     "worst_s": -98472.2,
+     "drive_s": 2315.4,
+     "dm_s": -65906.6,
+     "horizon_h": -16.66,
+     "dist_km": 11.77,
+     "lat": 39.65626,
+     "lon": -121.56539,
+     "bearing": 150
+    },
+    {
+     "burned": false,
+     "expo_s": 2197.1,
+     "worst_s": -86013.8,
+     "drive_s": 2197.1,
+     "dm_s": -74177.7,
+     "horizon_h": -18.99,
+     "dist_km": 11.66,
+     "lat": 39.64128,
+     "lon": -121.63948,
+     "bearing": 180
+    },
+    {
+     "burned": false,
+     "expo_s": 2800.1,
+     "worst_s": -72155.3,
+     "drive_s": 2800.1,
+     "dm_s": -61178.8,
+     "horizon_h": -15.22,
+     "dist_km": 10.99,
+     "lat": 39.66459,
+     "lon": -121.71066,
+     "bearing": 210
+    },
+    {
+     "burned": false,
+     "expo_s": 1580.5,
+     "worst_s": -82744.8,
+     "drive_s": 1580.5,
+     "dm_s": -70119.4,
+     "horizon_h": -18.04,
+     "dist_km": 11.37,
+     "lat": 39.70257,
+     "lon": -121.75842,
+     "bearing": 240
+    },
+    {
+     "burned": false,
+     "expo_s": 2693.9,
+     "worst_s": -82744.8,
+     "drive_s": 2693.9,
+     "dm_s": -68304.5,
+     "horizon_h": -17.23,
+     "dist_km": 11.7,
+     "lat": 39.74546,
+     "lon": -121.77493,
+     "bearing": 270
+    },
+    {
+     "burned": true,
+     "expo_s": 4245.4,
+     "worst_s": -82922.7,
+     "drive_s": 4245.4,
+     "dm_s": -82237.8,
+     "horizon_h": -20.66,
+     "dist_km": 5.32,
+     "lat": 39.77426,
+     "lon": -121.68846,
+     "bearing": 300
+    },
+    {
+     "burned": false,
+     "expo_s": 4382.0,
+     "worst_s": -82744.8,
+     "drive_s": 4382.0,
+     "dm_s": -39098.6,
+     "horizon_h": -8.64,
+     "dist_km": 11.49,
+     "lat": 39.83626,
+     "lon": -121.70396,
+     "bearing": 330
+    }
+   ],
+   "fail_closed": true,
+   "chosen_metrics": {
+    "burned": false,
+    "expo_s": 211.1,
+    "worst_s": -63448.7,
+    "drive_s": 274.9,
+    "dm_s": 64544.6,
+    "horizon_h": 19.01,
+    "dist_km": 2.04,
+    "lat": 39.76047,
+    "lon": -121.62324
+   }
+  },
+  {
+   "tick": 95,
+   "pos": [
+    39.68153,
+    -121.44971
+   ],
+   "chosen": "escape",
+   "chosen_loc": [
+    39.82393,
+    -121.41208
+   ],
+   "zones": [
+    {
+     "burned": false,
+     "expo_s": 6196.9,
+     "worst_s": -159403.1,
+     "drive_s": 6283.7,
+     "dm_s": -130941.3,
+     "horizon_h": -33.63,
+     "dist_km": 22.07,
+     "lat": 39.71,
+     "lon": -121.705,
+     "id": "paradise_ca-z1"
+    },
+    {
+     "burned": true,
+     "expo_s": 4222.3,
+     "worst_s": -144231.2,
+     "drive_s": 4309.0,
+     "dm_s": -143714.6,
+     "horizon_h": -37.72,
+     "dist_km": 14.58,
+     "lat": 39.685,
+     "lon": -121.62,
+     "id": "paradise_ca-z2"
+    },
+    {
+     "burned": false,
+     "expo_s": 1744.1,
+     "worst_s": -117891.3,
+     "drive_s": 1830.8,
+     "dm_s": -86940.5,
+     "horizon_h": -22.64,
+     "dist_km": 6.36,
+     "lat": 39.7,
+     "lon": -121.52,
+     "id": "paradise_ca-z3"
+    }
+   ],
+   "raw": [
+    {
+     "burned": false,
+     "expo_s": 2653.6,
+     "worst_s": -102609.9,
+     "drive_s": 2740.3,
+     "dm_s": -24722.9,
+     "horizon_h": -5.11,
+     "dist_km": 11.55,
+     "lat": 39.7854,
+     "lon": -121.44971,
+     "bearing": 0
+    },
+    {
+     "burned": false,
+     "expo_s": 2889.1,
+     "worst_s": -102609.9,
+     "drive_s": 8165.5,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.55,
+     "lat": 39.77147,
+     "lon": -121.38214,
+     "bearing": 30
+    },
+    {
+     "burned": false,
+     "expo_s": 2889.1,
+     "worst_s": -102609.9,
+     "drive_s": 7846.5,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.55,
+     "lat": 39.73341,
+     "lon": -121.33274,
+     "bearing": 60
+    },
+    {
+     "burned": false,
+     "expo_s": 2889.1,
+     "worst_s": -102609.9,
+     "drive_s": 8076.2,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 10.45,
+     "lat": 39.68147,
+     "lon": -121.3276,
+     "bearing": 90
+    },
+    {
+     "burned": false,
+     "expo_s": 2889.1,
+     "worst_s": -102609.9,
+     "drive_s": 9020.7,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.55,
+     "lat": 39.62954,
+     "lon": -121.33291,
+     "bearing": 120
+    },
+    {
+     "burned": false,
+     "expo_s": 2889.1,
+     "worst_s": -102609.9,
+     "drive_s": 9993.4,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.55,
+     "lat": 39.59156,
+     "lon": -121.38231,
+     "bearing": 150
+    },
+    {
+     "burned": false,
+     "expo_s": 2889.1,
+     "worst_s": -102609.9,
+     "drive_s": 10279.7,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.55,
+     "lat": 39.57766,
+     "lon": -121.44971,
+     "bearing": 180
+    },
+    {
+     "burned": false,
+     "expo_s": 3089.9,
+     "worst_s": -117891.3,
+     "drive_s": 4148.4,
+     "dm_s": 121931.2,
+     "horizon_h": 36.02,
+     "dist_km": 11.55,
+     "lat": 39.59156,
+     "lon": -121.51711,
+     "bearing": 210
+    },
+    {
+     "burned": false,
+     "expo_s": 3559.3,
+     "worst_s": -130174.1,
+     "drive_s": 3646.0,
+     "dm_s": -106199.5,
+     "horizon_h": -27.49,
+     "dist_km": 11.55,
+     "lat": 39.62954,
+     "lon": -121.56651,
+     "bearing": 240
+    },
+    {
+     "burned": false,
+     "expo_s": 3405.2,
+     "worst_s": -149127.0,
+     "drive_s": 3491.9,
+     "dm_s": -149127.0,
+     "horizon_h": -39.45,
+     "dist_km": 11.55,
+     "lat": 39.68145,
+     "lon": -121.58468,
+     "bearing": 270
+    },
+    {
+     "burned": false,
+     "expo_s": 4060.1,
+     "worst_s": -156266.4,
+     "drive_s": 4146.8,
+     "dm_s": -156266.4,
+     "horizon_h": -41.26,
+     "dist_km": 11.55,
+     "lat": 39.73341,
+     "lon": -121.56668,
+     "bearing": 300
+    },
+    {
+     "burned": true,
+     "expo_s": 2348.9,
+     "worst_s": -155901.4,
+     "drive_s": 2479.1,
+     "dm_s": -141619.5,
+     "horizon_h": -37.65,
+     "dist_km": 11.55,
+     "lat": 39.77147,
+     "lon": -121.51728,
+     "bearing": 330
+    }
+   ],
+   "snapped": [
+    {
+     "burned": false,
+     "expo_s": 2518.7,
+     "worst_s": -102609.9,
+     "drive_s": 2605.4,
+     "dm_s": -73222.7,
+     "horizon_h": -18.62,
+     "dist_km": 12.53,
+     "lat": 39.79417,
+     "lon": -121.45301,
+     "bearing": 0
+    },
+    {
+     "burned": false,
+     "expo_s": 3037.3,
+     "worst_s": -102609.9,
+     "drive_s": 6990.6,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 6.52,
+     "lat": 39.72714,
+     "lon": -121.4018,
+     "bearing": 30
+    },
+    {
+     "burned": false,
+     "expo_s": 2889.1,
+     "worst_s": -102609.9,
+     "drive_s": 7753.4,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 10.89,
+     "lat": 39.73213,
+     "lon": -121.34075,
+     "bearing": 60
+    },
+    {
+     "burned": false,
+     "expo_s": 2889.1,
+     "worst_s": -102609.9,
+     "drive_s": 8069.3,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 10.4,
+     "lat": 39.68168,
+     "lon": -121.32814,
+     "bearing": 90
+    },
+    {
+     "burned": false,
+     "expo_s": 2889.1,
+     "worst_s": -102609.9,
+     "drive_s": 8943.7,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 11.01,
+     "lat": 39.63027,
+     "lon": -121.33961,
+     "bearing": 120
+    },
+    {
+     "burned": false,
+     "expo_s": 2889.1,
+     "worst_s": -102609.9,
+     "drive_s": 9760.3,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 10.55,
+     "lat": 39.60623,
+     "lon": -121.37483,
+     "bearing": 150
+    },
+    {
+     "burned": false,
+     "expo_s": 2889.1,
+     "worst_s": -102609.9,
+     "drive_s": 10181.5,
+     "dm_s": "inf",
+     "horizon_h": "inf",
+     "dist_km": 10.82,
+     "lat": 39.58421,
+     "lon": -121.45117,
+     "bearing": 180
+    },
+    {
+     "burned": false,
+     "expo_s": 3089.9,
+     "worst_s": -117891.3,
+     "drive_s": 4108.4,
+     "dm_s": 113679.2,
+     "horizon_h": 33.72,
+     "dist_km": 11.83,
+     "lat": 39.58887,
+     "lon": -121.51753,
+     "bearing": 210
+    },
+    {
+     "burned": false,
+     "expo_s": 3438.5,
+     "worst_s": -130174.1,
+     "drive_s": 3525.2,
+     "dm_s": -109835.2,
+     "horizon_h": -28.53,
+     "dist_km": 12.43,
+     "lat": 39.62388,
+     "lon": -121.57416,
+     "bearing": 240
+    },
+    {
+     "burned": false,
+     "expo_s": 3351.1,
+     "worst_s": -149073.0,
+     "drive_s": 3437.9,
+     "dm_s": -149073.0,
+     "horizon_h": -39.45,
+     "dist_km": 11.38,
+     "lat": 39.67817,
+     "lon": -121.58258,
+     "bearing": 270
+    },
+    {
+     "burned": false,
+     "expo_s": 4042.2,
+     "worst_s": -156243.5,
+     "drive_s": 4129.0,
+     "dm_s": -153344.2,
+     "horizon_h": -40.45,
+     "dist_km": 11.68,
+     "lat": 39.73394,
+     "lon": -121.56809,
+     "bearing": 300
+    },
+    {
+     "burned": true,
+     "expo_s": 2287.5,
+     "worst_s": -155901.4,
+     "drive_s": 2417.8,
+     "dm_s": -155901.4,
+     "horizon_h": -41.63,
+     "dist_km": 11.75,
+     "lat": 39.77487,
+     "lon": -121.51419,
+     "bearing": 330
+    }
+   ],
+   "fail_closed": true,
+   "chosen_metrics": {
+    "burned": false,
+    "expo_s": 2915.3,
+    "worst_s": -102609.9,
+    "drive_s": 3290.3,
+    "dm_s": "inf",
+    "horizon_h": "inf",
+    "dist_km": 16.16,
+    "lat": 39.82393,
+    "lon": -121.41208
+   }
+  },
+  {
+   "tick": 100,
+   "pos": [
+    39.76047,
+    -121.62324
+   ],
+   "chosen": "escape",
+   "chosen_loc": [
+    39.77765,
+    -121.60628
+   ],
+   "zones": [
+    {
+     "burned": false,
+     "expo_s": 1392.1,
+     "worst_s": -149632.0,
+     "drive_s": 1392.1,
+     "dm_s": -135049.7,
+     "horizon_h": -36.13,
+     "dist_km": 8.97,
+     "lat": 39.71,
+     "lon": -121.705,
+     "id": "paradise_ca-z1"
+    },
+    {
+     "burned": false,
+     "expo_s": 1523.4,
+     "worst_s": -152572.3,
+     "drive_s": 1523.4,
+     "dm_s": -149929.0,
+     "horizon_h": -40.22,
+     "dist_km": 8.4,
+     "lat": 39.685,
+     "lon": -121.62,
+     "id": "paradise_ca-z2"
+    },
+    {
+     "burned": false,
+     "expo_s": 3750.6,
+     "worst_s": -165030.7,
+     "drive_s": 3750.6,
+     "dm_s": -97860.3,
+     "horizon_h": -25.14,
+     "dist_km": 11.1,
+     "lat": 39.7,
+     "lon": -121.52,
+     "id": "paradise_ca-z3"
+    }
+   ],
+   "raw": [
+    {
+     "burned": false,
+     "expo_s": 2287.4,
+     "worst_s": -177665.3,
+     "drive_s": 2586.9,
+     "dm_s": -93908.0,
+     "horizon_h": -24.37,
+     "dist_km": 11.55,
+     "lat": 39.86434,
+     "lon": -121.62324,
+     "bearing": 0
+    },
+    {
+     "burned": false,
+     "expo_s": 1621.5,
+     "worst_s": -177688.4,
+     "drive_s": 1772.2,
+     "dm_s": -166036.5,
+     "horizon_h": -44.63,
+     "dist_km": 11.55,
+     "lat": 39.85041,
+     "lon": -121.55559,
+     "bearing": 30
+    },
+    {
+     "burned": false,
+     "expo_s": 3797.4,
+     "worst_s": -183209.9,
+     "drive_s": 3868.3,
+     "dm_s": -178726.4,
+     "horizon_h": -47.57,
+     "dist_km": 11.55,
+     "lat": 39.81235,
+     "lon": -121.50613,
+     "bearing": 60
+    },
+    {
+     "burned": false,
+     "expo_s": 4664.8,
+     "worst_s": -165030.7,
+     "drive_s": 4664.8,
+     "dm_s": -122440.3,
+     "horizon_h": -31.72,
+     "dist_km": 11.55,
+     "lat": 39.76039,
+     "lon": -121.48812,
+     "bearing": 90
+    },
+    {
+     "burned": false,
+     "expo_s": 4175.5,
+     "worst_s": -165030.7,
+     "drive_s": 4175.5,
+     "dm_s": -90224.6,
+     "horizon_h": -22.9,
+     "dist_km": 11.55,
+     "lat": 39.70848,
+     "lon": -121.50631,
+     "bearing": 120
+    },
+    {
+     "burned": false,
+     "expo_s": 2124.2,
+     "worst_s": -165030.7,
+     "drive_s": 2124.2,
+     "dm_s": -135306.8,
+     "horizon_h": -36.0,
+     "dist_km": 11.55,
+     "lat": 39.6705,
+     "lon": -121.55577,
+     "bearing": 150
+    },
+    {
+     "burned": false,
+     "expo_s": 1971.6,
+     "worst_s": -152572.3,
+     "drive_s": 1971.6,
+     "dm_s": -143543.8,
+     "horizon_h": -38.33,
+     "dist_km": 11.55,
+     "lat": 39.6566,
+     "lon": -121.62324,
+     "bearing": 180
+    },
+    {
+     "burned": false,
+     "expo_s": 3318.3,
+     "worst_s": -140069.8,
+     "drive_s": 3318.3,
+     "dm_s": -140069.8,
+     "horizon_h": -36.99,
+     "dist_km": 11.55,
+     "lat": 39.6705,
+     "lon": -121.69071,
+     "bearing": 210
+    },
+    {
+     "burned": false,
+     "expo_s": 1676.0,
+     "worst_s": -149619.7,
+     "drive_s": 1676.0,
+     "dm_s": -137953.6,
+     "horizon_h": -36.85,
+     "dist_km": 11.55,
+     "lat": 39.70848,
+     "lon": -121.74017,
+     "bearing": 240
+    },
+    {
+     "burned": true,
+     "expo_s": 3396.7,
+     "worst_s": -149619.7,
+     "drive_s": 3396.7,
+     "dm_s": -140196.7,
+     "horizon_h": -37.0,
+     "dist_km": 11.55,
+     "lat": 39.76039,
+     "lon": -121.75836,
+     "bearing": 270
+    },
+    {
+     "burned": false,
+     "expo_s": 4546.7,
+     "worst_s": -149619.7,
+     "drive_s": 4546.7,
+     "dm_s": -125682.9,
+     "horizon_h": -32.65,
+     "dist_km": 11.55,
+     "lat": 39.81235,
+     "lon": -121.74035,
+     "bearing": 300
+    },
+    {
+     "burned": false,
+     "expo_s": 4936.5,
+     "worst_s": -149619.7,
+     "drive_s": 4936.5,
+     "dm_s": -93746.4,
+     "horizon_h": -23.67,
+     "dist_km": 11.55,
+     "lat": 39.85041,
+     "lon": -121.69089,
+     "bearing": 330
+    }
+   ],
+   "snapped": [
+    {
+     "burned": false,
+     "expo_s": 2183.3,
+     "worst_s": -177665.3,
+     "drive_s": 2482.8,
+     "dm_s": -86337.8,
+     "horizon_h": -22.29,
+     "dist_km": 12.3,
+     "lat": 39.87103,
+     "lon": -121.62036,
+     "bearing": 0
+    },
+    {
+     "burned": false,
+     "expo_s": 1535.2,
+     "worst_s": -177688.4,
+     "drive_s": 1685.9,
+     "dm_s": -163456.6,
+     "horizon_h": -43.94,
+     "dist_km": 11.45,
+     "lat": 39.8524,
+     "lon": -121.56274,
+     "bearing": 30
+    },
+    {
+     "burned": false,
+     "expo_s": 3232.4,
+     "worst_s": -183209.9,
+     "drive_s": 3303.2,
+     "dm_s": -180610.5,
+     "horizon_h": -48.25,
+     "dist_km": 9.68,
+     "lat": 39.80299,
+     "lon": -121.52436,
+     "bearing": 60
+    },
+    {
+     "burned": false,
+     "expo_s": 4523.5,
+     "worst_s": -165030.7,
+     "drive_s": 4523.5,
+     "dm_s": -116124.0,
+     "horizon_h": -30.0,
+     "dist_km": 10.94,
+     "lat": 39.75277,
+     "lon": -121.49563,
+     "bearing": 90
+    },
+    {
+     "burned": false,
+     "expo_s": 4097.2,
+     "worst_s": -165030.7,
+     "drive_s": 4097.2,
+     "dm_s": -86140.8,
+     "horizon_h": -21.79,
+     "dist_km": 12.08,
+     "lat": 39.7041,
+     "lon": -121.50243,
+     "bearing": 120
+    },
+    {
+     "burned": false,
+     "expo_s": 2044.8,
+     "worst_s": -165030.7,
+     "drive_s": 2044.8,
+     "dm_s": -137463.8,
+     "horizon_h": -36.62,
+     "dist_km": 10.95,
+     "lat": 39.67527,
+     "lon": -121.55896,
+     "bearing": 150
+    },
+    {
+     "burned": false,
+     "expo_s": 1960.2,
+     "worst_s": -152572.3,
+     "drive_s": 1960.2,
+     "dm_s": -147363.2,
+     "horizon_h": -39.39,
+     "dist_km": 11.59,
+     "lat": 39.65624,
+     "lon": -121.62235,
+     "bearing": 180
+    },
+    {
+     "burned": false,
+     "expo_s": 904.0,
+     "worst_s": -129834.1,
+     "drive_s": 904.0,
+     "dm_s": -127016.1,
+     "horizon_h": -34.03,
+     "dist_km": 6.56,
+     "lat": 39.71072,
+     "lon": -121.66447,
+     "bearing": 210
+    },
+    {
+     "burned": false,
+     "expo_s": 1652.0,
+     "worst_s": -149619.7,
+     "drive_s": 1652.0,
+     "dm_s": -138522.5,
+     "horizon_h": -37.02,
+     "dist_km": 11.64,
+     "lat": 39.70685,
+     "lon": -121.7401,
+     "bearing": 240
+    },
+    {
+     "burned": true,
+     "expo_s": 3383.1,
+     "worst_s": -149619.7,
+     "drive_s": 3383.1,
+     "dm_s": -140183.1,
+     "horizon_h": -37.0,
+     "dist_km": 11.46,
+     "lat": 39.75991,
+     "lon": -121.75734,
+     "bearing": 270
+    },
+    {
+     "burned": false,
+     "expo_s": 4372.4,
+     "worst_s": -149619.7,
+     "drive_s": 4372.4,
+     "dm_s": -134319.3,
+     "horizon_h": -35.1,
+     "dist_km": 10.27,
+     "lat": 39.80445,
+     "lon": -121.72896,
+     "bearing": 300
+    },
+    {
+     "burned": false,
+     "expo_s": 4917.3,
+     "worst_s": -149619.7,
+     "drive_s": 4917.3,
+     "dm_s": -99732.6,
+     "horizon_h": -25.34,
+     "dist_km": 11.44,
+     "lat": 39.84913,
+     "lon": -121.69119,
+     "bearing": 330
+    }
+   ],
+   "fail_closed": true,
+   "chosen_metrics": {
+    "burned": false,
+    "expo_s": 316.7,
+    "worst_s": -147535.2,
+    "drive_s": 332.7,
+    "dm_s": "inf",
+    "horizon_h": "inf",
+    "dist_km": 2.4,
+    "lat": 39.77765,
+    "lon": -121.60628
+   }
+  }
+ ],
+ "per_tick": [
+  {
+   "tick": 0,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "deploy",
+     "status": "deploying",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.77368,
+      -121.62637
+     ],
+     "p10_min_ahead": 441.4,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "deploy",
+     "status": "deploying",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.76289,
+      -121.61518
+     ],
+     "p10_min_ahead": 834.0,
+     "nom_min_ahead": 1314.2
+    }
+   ]
+  },
+  {
+   "tick": 1,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "deploy",
+     "status": "deploying",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.78663,
+      -121.58981
+     ],
+     "p10_min_ahead": 377.3,
+     "nom_min_ahead": 730.3
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "deploy",
+     "status": "deploying",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.73483,
+      -121.62651
+     ],
+     "p10_min_ahead": 817.3,
+     "nom_min_ahead": 1017.5
+    }
+   ]
+  },
+  {
+   "tick": 2,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "deploy",
+     "status": "deploying",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.7672,
+      -121.61797
+     ],
+     "p10_min_ahead": 706.2,
+     "nom_min_ahead": 706.2
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "travel",
+     "status": "en_route",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.70896,
+      -121.62711
+     ],
+     "p10_min_ahead": 573.4,
+     "nom_min_ahead": 841.2
+    }
+   ]
+  },
+  {
+   "tick": 3,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "travel",
+     "status": "en_route",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.73527,
+      -121.68849
+     ],
+     "p10_min_ahead": 525.3,
+     "nom_min_ahead": 852.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "travel",
+     "status": "en_route",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.77045,
+      -121.59015
+     ],
+     "p10_min_ahead": 385.4,
+     "nom_min_ahead": 1399.1
+    }
+   ]
+  },
+  {
+   "tick": 4,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "deploy",
+     "status": "deploying",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.8039,
+      -121.64873
+     ],
+     "p10_min_ahead": 420.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "deploy",
+     "status": "deploying",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.75857,
+      -121.56746
+     ],
+     "p10_min_ahead": 129.4,
+     "nom_min_ahead": 577.7
+    }
+   ]
+  },
+  {
+   "tick": 5,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "deploy",
+     "status": "deploying",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.75209,
+      -121.67979
+     ],
+     "p10_min_ahead": 340.6,
+     "nom_min_ahead": 713.4
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "deploy",
+     "status": "deploying",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.71756,
+      -121.57607
+     ],
+     "p10_min_ahead": 245.1,
+     "nom_min_ahead": 1300.9
+    }
+   ]
+  },
+  {
+   "tick": 6,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "travel",
+     "status": "en_route",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.75038,
+      -121.7579
+     ],
+     "p10_min_ahead": 634.9,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "deploy",
+     "status": "deploying",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.70461,
+      -121.60699
+     ],
+     "p10_min_ahead": 363.1,
+     "nom_min_ahead": 956.7
+    }
+   ]
+  },
+  {
+   "tick": 7,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "deploy",
+     "status": "deploying",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.76936,
+      -121.68816
+     ],
+     "p10_min_ahead": 348.0,
+     "nom_min_ahead": 1301.5
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.685,
+      -121.62
+     ],
+     "p10_min_ahead": 376.6,
+     "nom_min_ahead": 1058.3
+    }
+   ]
+  },
+  {
+   "tick": 8,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "egress",
+     "status": "egressing",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.77429,
+      -121.72192
+     ],
+     "p10_min_ahead": 495.9,
+     "nom_min_ahead": 2429.1
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.685,
+      -121.62
+     ],
+     "p10_min_ahead": 346.6,
+     "nom_min_ahead": 1028.3
+    }
+   ]
+  },
+  {
+   "tick": 9,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "egress",
+     "status": "egressing",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71194,
+      -121.70825
+     ],
+     "p10_min_ahead": 422.0,
+     "nom_min_ahead": 794.6
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.685,
+      -121.62
+     ],
+     "p10_min_ahead": 316.6,
+     "nom_min_ahead": 998.3
+    }
+   ]
+  },
+  {
+   "tick": 10,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 532.4,
+     "nom_min_ahead": 714.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.685,
+      -121.62
+     ],
+     "p10_min_ahead": 286.6,
+     "nom_min_ahead": 968.3
+    }
+   ]
+  },
+  {
+   "tick": 11,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 502.4,
+     "nom_min_ahead": 684.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.685,
+      -121.62
+     ],
+     "p10_min_ahead": 256.6,
+     "nom_min_ahead": 938.3
+    }
+   ]
+  },
+  {
+   "tick": 12,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 472.4,
+     "nom_min_ahead": 654.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.685,
+      -121.62
+     ],
+     "p10_min_ahead": 226.6,
+     "nom_min_ahead": 908.3
+    }
+   ]
+  },
+  {
+   "tick": 13,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 442.4,
+     "nom_min_ahead": 624.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z2",
+     "reloc": null,
+     "pos": [
+      39.685,
+      -121.62
+     ],
+     "p10_min_ahead": 196.6,
+     "nom_min_ahead": 878.3
+    }
+   ]
+  },
+  {
+   "tick": 14,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 412.4,
+     "nom_min_ahead": 594.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "egress",
+     "status": "egressing",
+     "target": "paradise_ca-z3",
+     "reloc": "proactive_escape",
+     "pos": [
+      39.685,
+      -121.62
+     ],
+     "p10_min_ahead": 166.6,
+     "nom_min_ahead": 848.3
+    }
+   ]
+  },
+  {
+   "tick": 15,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 382.4,
+     "nom_min_ahead": 564.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "egress",
+     "status": "egressing",
+     "target": "paradise_ca-z3",
+     "reloc": "proactive_escape",
+     "pos": [
+      39.70139,
+      -121.52235
+     ],
+     "p10_min_ahead": 831.7,
+     "nom_min_ahead": 5337.6
+    }
+   ]
+  },
+  {
+   "tick": 16,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 352.4,
+     "nom_min_ahead": 534.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 1011.5,
+     "nom_min_ahead": 5175.6
+    }
+   ]
+  },
+  {
+   "tick": 17,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 322.4,
+     "nom_min_ahead": 504.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 981.5,
+     "nom_min_ahead": 5145.6
+    }
+   ]
+  },
+  {
+   "tick": 18,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 292.4,
+     "nom_min_ahead": 474.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 951.5,
+     "nom_min_ahead": 5115.6
+    }
+   ]
+  },
+  {
+   "tick": 19,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 262.4,
+     "nom_min_ahead": 444.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 921.5,
+     "nom_min_ahead": 5085.6
+    }
+   ]
+  },
+  {
+   "tick": 20,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 232.4,
+     "nom_min_ahead": 414.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 891.5,
+     "nom_min_ahead": 5055.6
+    }
+   ]
+  },
+  {
+   "tick": 21,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 202.4,
+     "nom_min_ahead": 384.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 861.5,
+     "nom_min_ahead": 5025.6
+    }
+   ]
+  },
+  {
+   "tick": 22,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 172.4,
+     "nom_min_ahead": 354.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 831.5,
+     "nom_min_ahead": 4995.6
+    }
+   ]
+  },
+  {
+   "tick": 23,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 142.4,
+     "nom_min_ahead": 324.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 801.5,
+     "nom_min_ahead": 4965.6
+    }
+   ]
+  },
+  {
+   "tick": 24,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 112.4,
+     "nom_min_ahead": 294.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 771.5,
+     "nom_min_ahead": 4935.6
+    }
+   ]
+  },
+  {
+   "tick": 25,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z1",
+     "reloc": null,
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 82.4,
+     "nom_min_ahead": 264.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 741.5,
+     "nom_min_ahead": 4905.6
+    }
+   ]
+  },
+  {
+   "tick": 26,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "egress",
+     "status": "egressing",
+     "target": "escape",
+     "reloc": "zone_threatened",
+     "pos": [
+      39.71,
+      -121.705
+     ],
+     "p10_min_ahead": 52.4,
+     "nom_min_ahead": 234.0
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 711.5,
+     "nom_min_ahead": 4875.6
+    }
+   ]
+  },
+  {
+   "tick": 27,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 1117.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 681.5,
+     "nom_min_ahead": 4845.6
+    }
+   ]
+  },
+  {
+   "tick": 28,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 1087.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 651.5,
+     "nom_min_ahead": 4815.6
+    }
+   ]
+  },
+  {
+   "tick": 29,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 1057.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 621.5,
+     "nom_min_ahead": 4785.6
+    }
+   ]
+  },
+  {
+   "tick": 30,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 1027.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 591.5,
+     "nom_min_ahead": 4755.6
+    }
+   ]
+  },
+  {
+   "tick": 31,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 997.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 561.5,
+     "nom_min_ahead": 4725.6
+    }
+   ]
+  },
+  {
+   "tick": 32,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 967.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 531.5,
+     "nom_min_ahead": 4695.6
+    }
+   ]
+  },
+  {
+   "tick": 33,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 937.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 501.5,
+     "nom_min_ahead": 4665.6
+    }
+   ]
+  },
+  {
+   "tick": 34,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 907.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 471.5,
+     "nom_min_ahead": 4635.6
+    }
+   ]
+  },
+  {
+   "tick": 35,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 877.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 441.5,
+     "nom_min_ahead": 4605.6
+    }
+   ]
+  },
+  {
+   "tick": 36,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 847.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 411.5,
+     "nom_min_ahead": 4575.6
+    }
+   ]
+  },
+  {
+   "tick": 37,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 817.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 381.5,
+     "nom_min_ahead": 4545.6
+    }
+   ]
+  },
+  {
+   "tick": 38,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 787.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 351.5,
+     "nom_min_ahead": 4515.6
+    }
+   ]
+  },
+  {
+   "tick": 39,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 757.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 321.5,
+     "nom_min_ahead": 4485.6
+    }
+   ]
+  },
+  {
+   "tick": 40,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 727.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 291.5,
+     "nom_min_ahead": 4455.6
+    }
+   ]
+  },
+  {
+   "tick": 41,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 697.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 261.5,
+     "nom_min_ahead": 4425.6
+    }
+   ]
+  },
+  {
+   "tick": 42,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 667.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 231.5,
+     "nom_min_ahead": 4395.6
+    }
+   ]
+  },
+  {
+   "tick": 43,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 637.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 201.5,
+     "nom_min_ahead": 4365.6
+    }
+   ]
+  },
+  {
+   "tick": 44,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 607.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 171.5,
+     "nom_min_ahead": 4335.6
+    }
+   ]
+  },
+  {
+   "tick": 45,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 577.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 141.5,
+     "nom_min_ahead": 4305.6
+    }
+   ]
+  },
+  {
+   "tick": 46,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 547.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 111.5,
+     "nom_min_ahead": 4275.6
+    }
+   ]
+  },
+  {
+   "tick": 47,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 517.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "paradise_ca-z3",
+     "reloc": null,
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 81.5,
+     "nom_min_ahead": 4245.6
+    }
+   ]
+  },
+  {
+   "tick": 48,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 487.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "egress",
+     "status": "egressing",
+     "target": "escape",
+     "reloc": "zone_threatened",
+     "pos": [
+      39.7,
+      -121.52
+     ],
+     "p10_min_ahead": 51.5,
+     "nom_min_ahead": 4215.6
+    }
+   ]
+  },
+  {
+   "tick": 49,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 457.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 827.4,
+     "nom_min_ahead": 4968.6
+    }
+   ]
+  },
+  {
+   "tick": 50,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 427.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 797.4,
+     "nom_min_ahead": 4938.6
+    }
+   ]
+  },
+  {
+   "tick": 51,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 397.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 767.4,
+     "nom_min_ahead": 4908.6
+    }
+   ]
+  },
+  {
+   "tick": 52,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 367.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 737.4,
+     "nom_min_ahead": 4878.6
+    }
+   ]
+  },
+  {
+   "tick": 53,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 337.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 707.4,
+     "nom_min_ahead": 4848.6
+    }
+   ]
+  },
+  {
+   "tick": 54,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 307.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 677.4,
+     "nom_min_ahead": 4818.6
+    }
+   ]
+  },
+  {
+   "tick": 55,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 277.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 647.4,
+     "nom_min_ahead": 4788.6
+    }
+   ]
+  },
+  {
+   "tick": 56,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 247.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 617.4,
+     "nom_min_ahead": 4758.6
+    }
+   ]
+  },
+  {
+   "tick": 57,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 217.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 587.4,
+     "nom_min_ahead": 4728.6
+    }
+   ]
+  },
+  {
+   "tick": 58,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 187.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 557.4,
+     "nom_min_ahead": 4698.6
+    }
+   ]
+  },
+  {
+   "tick": 59,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 157.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 527.4,
+     "nom_min_ahead": 4668.6
+    }
+   ]
+  },
+  {
+   "tick": 60,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 127.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 497.4,
+     "nom_min_ahead": 4638.6
+    }
+   ]
+  },
+  {
+   "tick": 61,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 97.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 467.4,
+     "nom_min_ahead": 4608.6
+    }
+   ]
+  },
+  {
+   "tick": 62,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 67.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 437.4,
+     "nom_min_ahead": 4578.6
+    }
+   ]
+  },
+  {
+   "tick": 63,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "egress",
+     "status": "egressing",
+     "target": "escape",
+     "reloc": "zone_threatened",
+     "pos": [
+      39.74616,
+      -121.63812
+     ],
+     "p10_min_ahead": 37.8,
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 407.4,
+     "nom_min_ahead": 4548.6
+    }
+   ]
+  },
+  {
+   "tick": 64,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 1110.3,
+     "nom_min_ahead": 1199.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 377.4,
+     "nom_min_ahead": 4518.6
+    }
+   ]
+  },
+  {
+   "tick": 65,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 1080.3,
+     "nom_min_ahead": 1169.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 347.4,
+     "nom_min_ahead": 4488.6
+    }
+   ]
+  },
+  {
+   "tick": 66,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 1050.3,
+     "nom_min_ahead": 1139.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 317.4,
+     "nom_min_ahead": 4458.6
+    }
+   ]
+  },
+  {
+   "tick": 67,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 1020.3,
+     "nom_min_ahead": 1109.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 287.4,
+     "nom_min_ahead": 4428.6
+    }
+   ]
+  },
+  {
+   "tick": 68,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 990.3,
+     "nom_min_ahead": 1079.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 257.4,
+     "nom_min_ahead": 4398.6
+    }
+   ]
+  },
+  {
+   "tick": 69,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 960.3,
+     "nom_min_ahead": 1049.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 227.4,
+     "nom_min_ahead": 4368.6
+    }
+   ]
+  },
+  {
+   "tick": 70,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 930.3,
+     "nom_min_ahead": 1019.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 197.4,
+     "nom_min_ahead": 4338.6
+    }
+   ]
+  },
+  {
+   "tick": 71,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 900.3,
+     "nom_min_ahead": 989.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "egress",
+     "status": "egressing",
+     "target": "escape",
+     "reloc": "proactive_escape",
+     "pos": [
+      39.70224,
+      -121.46622
+     ],
+     "p10_min_ahead": 167.4,
+     "nom_min_ahead": 4308.6
+    }
+   ]
+  },
+  {
+   "tick": 72,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 870.3,
+     "nom_min_ahead": 959.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 745.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 73,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 840.3,
+     "nom_min_ahead": 929.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 715.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 74,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 810.3,
+     "nom_min_ahead": 899.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 685.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 75,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 780.3,
+     "nom_min_ahead": 869.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 655.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 76,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 750.3,
+     "nom_min_ahead": 839.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 625.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 77,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 720.3,
+     "nom_min_ahead": 809.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 595.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 78,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 690.3,
+     "nom_min_ahead": 779.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 565.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 79,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 660.3,
+     "nom_min_ahead": 749.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 535.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 80,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 630.3,
+     "nom_min_ahead": 719.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 505.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 81,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 600.3,
+     "nom_min_ahead": 689.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 475.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 82,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 570.3,
+     "nom_min_ahead": 659.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 445.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 83,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 540.3,
+     "nom_min_ahead": 629.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 415.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 84,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 510.3,
+     "nom_min_ahead": 599.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 385.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 85,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 480.3,
+     "nom_min_ahead": 569.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 355.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 86,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 450.3,
+     "nom_min_ahead": 539.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 325.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 87,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 420.3,
+     "nom_min_ahead": 509.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 295.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 88,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 390.3,
+     "nom_min_ahead": 479.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 265.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 89,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 360.3,
+     "nom_min_ahead": 449.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 235.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 90,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 330.3,
+     "nom_min_ahead": 419.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 205.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 91,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 300.3,
+     "nom_min_ahead": 389.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 175.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 92,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 270.3,
+     "nom_min_ahead": 359.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 145.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 93,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 240.3,
+     "nom_min_ahead": 329.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 115.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 94,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 210.3,
+     "nom_min_ahead": 299.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 85.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 95,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 180.3,
+     "nom_min_ahead": 269.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "egress",
+     "status": "egressing",
+     "target": "escape",
+     "reloc": "zone_threatened",
+     "pos": [
+      39.68153,
+      -121.44971
+     ],
+     "p10_min_ahead": 55.2,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 96,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 150.3,
+     "nom_min_ahead": 239.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "egress",
+     "status": "egressing",
+     "target": "escape",
+     "reloc": "zone_threatened",
+     "pos": [
+      39.81731,
+      -121.42532
+     ],
+     "p10_min_ahead": 150.7,
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 97,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 120.3,
+     "nom_min_ahead": 209.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 98,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 90.3,
+     "nom_min_ahead": 179.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 99,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 60.3,
+     "nom_min_ahead": 149.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 100,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "egress",
+     "status": "egressing",
+     "target": "escape",
+     "reloc": "zone_threatened",
+     "pos": [
+      39.76047,
+      -121.62324
+     ],
+     "p10_min_ahead": 30.3,
+     "nom_min_ahead": 119.7
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 101,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 102,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 103,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 104,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 105,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 106,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 107,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 108,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 109,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 110,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 111,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 112,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 113,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 114,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 115,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 116,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 117,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 118,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  },
+  {
+   "tick": 119,
+   "crews": [
+    {
+     "crew": "sim-g1",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.77765,
+      -121.60628
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    },
+    {
+     "crew": "sim-g2",
+     "mode": "idle",
+     "status": "available",
+     "target": "escape",
+     "reloc": null,
+     "pos": [
+      39.82393,
+      -121.41208
+     ],
+     "p10_min_ahead": "inf",
+     "nom_min_ahead": "inf"
+    }
+   ]
+  }
+ ],
+ "cap_h": 12.0
+}
