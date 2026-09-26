@@ -34,10 +34,19 @@ violation count must stay 0.
 Sim-world ground truth: the fire "actually" follows the NOMINAL ensemble
 member (members[0], the engine's unperturbed best-estimate run). Each tick
 the burned mask is {cells with nominal arrival <= sim_now}; its boundary ring
-becomes the incident perimeter and the next forecast re-seeds from it
-(spread perimeter/perimeter_at_s path — the same growing-incident shape a
-live feed would deliver). Ensembles then express forecast uncertainty around
-that ground truth exactly as in operations.
+becomes the incident perimeter. When the world changes (ignite / set_wind —
+the wind dial) or the anchor ages toward the horizon, the forecast
+RE-ANCHORS from that EXACT burned mask: every consumed cell seeds at sim-now
+(spread's ignition-point path, seed_spotting=False — each already threw its
+one ember), so nothing that burned un-burns, nothing unburned is stamped
+burned, and all new growth runs under the new weather (a mid-run wind turn
+then matches one continuous run with the same wind shift, IoU 0.97-1.00).
+(Until 2026-09-25 the re-anchor filled the angle-sorted boundary ring as a
+perimeter polygon; spot-fire islands and concave burns made that ring self-
+intersect, so a wind change dropped up to half of a 3-h-old burn and
+stamped unburned wedges — scratch_review/wind_direction_probe.py.)
+Ensembles then express forecast uncertainty around that ground truth
+exactly as in operations.
 
 ROADS (contracts wgresponse.roads seam; founder UX 2026-07-10): the session
 loads the location's RoadGraph ONCE at configure via roads.load_road_graph
@@ -2145,7 +2154,11 @@ class SimSession:
 
     def set_wind(self, dir_deg: float) -> None:
         """Turn the domain wind dial (meteorological FROM degrees); forecasts
-        rebuild and every fire re-runs the ensemble next tick."""
+        rebuild and every fire re-runs the ensemble next tick — re-anchored
+        at that tick's clock from its EXACT burned mask, so the burn so far
+        is kept cell for cell and all further growth runs under the new wind
+        (tick() step 2). The server's /api/sim/<id>/config {wind_dir_deg}
+        routes the page's wind dial here (founder 2026-09-25)."""
         self._wind_dir_deg = float(dir_deg) % 360.0
         for f in self._fires.values():
             f.wind_dir_deg = self._wind_dir_deg
@@ -3423,11 +3436,22 @@ class SimSession:
         # against sim-now, so growth can never stall on tick granularity.
         # Recompute ONLY on: first tick of a fire, a world change
         # (ignite/set_wind bumped _wx_epoch), or the anchor nearing the
-        # forecast horizon (re-anchor from the traced burned rings at `now`,
-        # the standard live-engine perimeter move — interior re-stamp is
-        # negligible by then). Re-basing every tick discarded sub-tick front
+        # forecast horizon. Re-basing every tick discarded sub-tick front
         # progress and froze slow-fuel/coarse-cell fires (founder bug
         # 2026-07-10, both the point-seed and ring phases).
+        # EXACT RE-ANCHOR (wind-dial finding 2026-09-25): a fire's FIRST
+        # field starts from its ignition point at its ignition time; every
+        # later recompute re-anchors at `now` from the EXACT nominal burned
+        # mask — every consumed cell seeds at `now` (_burned_seed_points)
+        # without re-throwing its ember (seed_spotting=False), so the burn so
+        # far carries over cell for cell and all new growth runs under the
+        # new weather. The traced ring stays the incident's perimeter RECORD
+        # only: filled as a perimeter polygon it self-intersected on spot-
+        # fire islands / concave burns (angle-sorted around the origin), so a
+        # mid-run wind change un-burned 13-54% of a 1-3 h burn and stamped
+        # unburned wedges burned; and a fire too young for a ring (< 3
+        # boundary cells) was re-run from its ignition time, rewriting its
+        # past under the new wind (scratch_review/wind_direction_probe.py).
         incidents = []
         horizon_rebase_s = 0.8 * cfg.horizon_h * 3600.0
         for fid in self._fire_order:
@@ -3441,11 +3465,23 @@ class SimSession:
             stale_anchor = (f.ens is not None
                             and (now - f.anchor_t0_s) > horizon_rebase_s)
             if f.ens is None or f.wx_epoch != self._wx_epoch or stale_anchor:
-                anchor = now if rings else f.t_ignite_s
-                f.ens = spread.ensemble_arrival(
-                    self._tile, inc.ignition_points(), self._wx, anchor, cfg,
-                    incident_id=fid, perimeter=rings,
-                    perimeter_at_s=(now if rings else None))
+                if f.ens is None:
+                    # first field: point seed at the TRUE ignition time
+                    # (rings is None here — no field, no ring)
+                    anchor = f.t_ignite_s
+                    f.ens = spread.ensemble_arrival(
+                        self._tile, inc.ignition_points(), self._wx, anchor,
+                        cfg, incident_id=fid, perimeter=None,
+                        perimeter_at_s=None)
+                else:
+                    anchor = now
+                    seeds = self._burned_seed_points(f, now) or [f.origin]
+                    # seed_spotting=False: each kept cell threw its one ember
+                    # in the field it burned in; re-throwing them fired an
+                    # ember shower from the whole burn at every wind change
+                    f.ens = spread.ensemble_arrival(
+                        self._tile, seeds, self._wx, anchor, cfg,
+                        incident_id=fid, seed_spotting=False)
                 f.wx_epoch = self._wx_epoch
                 f.anchor_t0_s = anchor
             incidents.append(inc)
@@ -3763,11 +3799,36 @@ class SimSession:
                          for u in plan.unserved],
         }
 
+    def _burned_seed_points(self, fire: _SimFire, now: float) -> list:
+        """EXACT re-anchor seed set (tick() step 2): the center of every cell
+        the NOMINAL member has consumed by `now`, row-major (deterministic).
+
+        Seeded at `now` through spread's ignition-point path, each such cell
+        holds arrival == now in every ensemble member (nothing can arrive
+        before the anchor, so a seed is as final as a perimeter-interior
+        cell — never relaxed, never re-burned by a spot landing) and the
+        front advances from the mask's true edge. tick() passes
+        seed_spotting=False: every seed already threw its one ember in the
+        field it burned in (re-throwing them showered the new downwind side
+        from the whole burn at each wind change). Cell centers round-trip
+        exactly through geo.latlon_to_rc, so the carried-over burned mask
+        equals the old one cell for cell — what the traced ring filled as a
+        polygon did not (see tick())."""
+        nominal = fire.ens.members[0]
+        spec = nominal.spec
+        nc = spec.ncols
+        return [geo.rc_to_latlon(spec, i // nc, i % nc)
+                for i, v in enumerate(nominal.data) if v <= now]
+
     def _perimeter_rings(self, fire: _SimFire, now: float):
         """Growing-incident perimeter: boundary cells of the burned mask
         (nominal-member arrival <= now), angle-sorted around the origin and
         subsampled to <= 200 vertices (threat.py convention). None while the
-        fire is too young to have a >= 3-vertex ring (point ignition)."""
+        fire is too young to have a >= 3-vertex ring (point ignition).
+        The incident's perimeter RECORD only: re-anchors seed from
+        _burned_seed_points, never from filling this ring — angle-sorting
+        spot-fire islands and concave burns into one ring makes it self-
+        intersect (tick() step 2)."""
         if fire.ens is None:
             return None
         nominal = fire.ens.members[0]

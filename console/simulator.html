@@ -422,7 +422,8 @@
         <span>wind FROM <span class="val" id="windval">50</span>&deg;</span>
       </div>
       <input type="range" id="wind" min="0" max="359" value="50">
-      <div class="sub">dial defaults to the location's hazard wind</div>
+      <div class="sub">dial defaults to the location's hazard wind; turning it
+        re-steers every burning fire from its burned area on the next tick</div>
       <!-- PHYSICS TOGGLES (contracts SEMANTICS 11 + grass ROS floor): default
            CHECKED (reflecting the server default). Changing either RE-CREATES
            the session (same UX as the fire-zone / location change), passing
@@ -1337,6 +1338,33 @@ $("wind").addEventListener("input", () => {
   $("windval").textContent = $("wind").value;
   $("windarrow").style.transform = `rotate(${+$("wind").value}deg)`;
 });
+// WIND DIAL -> ENGINE (founder 2026-09-25: "changing the wind direction does
+// not seem to change how the fire propagates"). The dial used to reach the
+// engine ONLY inside /ignite, so turning it while a fire burned did nothing —
+// and render() snapped it back to the session wind within a second. Releasing
+// it now POSTs /config {wind_dir_deg} -> SimSession.set_wind: the one shared
+// weather script rebuilds and EVERY fire re-anchors from its burned area under
+// the new wind on the next tick (the next ignition inherits it too). Coalesced:
+// a release that lands while another command is in flight is re-sent with the
+// dial's LATEST value once that command returns (dropped only if the session
+// itself was replaced meanwhile — a new location owns its own hazard wind).
+let windWant = null, windSid = null;
+function pushWind() {
+  if (windWant == null || !sid) return;
+  if (sid !== windSid) { windWant = null; return; }   // session replaced: drop
+  if (busy) { setTimeout(pushWind, 150); return; }
+  const w = windWant;
+  windWant = null;
+  sendConfig({ wind_dir_deg: w });
+}
+$("wind").addEventListener("change", () => {
+  const w = +$("wind").value;
+  windWant = w;
+  windSid = sid;
+  pushWind();
+  if (lastState && (lastState.fires || []).length)
+    toast(`wind FROM ${w}° — every fire re-steers from its burned area on the next tick`);
+});
 $("buffer").addEventListener("input", () => { $("bufval").textContent = $("buffer").value; });
 $("buffer").addEventListener("change", () => sendConfig({ egress_buffer_min: +$("buffer").value }));
 $("slack").addEventListener("input", () => { $("slackval").textContent = $("slack").value; });
@@ -1664,9 +1692,14 @@ function render(st) {
   updateTimeline(st.history);
   $("seed").textContent = st.seed;
   $("sess").textContent = st.session_id || "–";
-  $("windval").textContent = Math.round(st.wind_dir_deg);
-  $("windarrow").style.transform = `rotate(${st.wind_dir_deg}deg)`;
-  if (document.activeElement !== $("wind")) $("wind").value = Math.round(st.wind_dir_deg);
+  // The dial, its label and its arrow follow the ENGINE's wind — except while
+  // the user holds the dial (a 1 s poll must never yank a drag in progress,
+  // nor relabel it with the old wind before the release reaches /config).
+  if (document.activeElement !== $("wind") && windWant == null) {
+    $("wind").value = Math.round(st.wind_dir_deg);
+    $("windval").textContent = Math.round(st.wind_dir_deg);
+    $("windarrow").style.transform = `rotate(${st.wind_dir_deg}deg)`;
+  }
 
   // FIRE ZONE: select tracks what ACTUALLY loaded (a missing _ext tile falls
   // back to standard, loudly) + a small chip while extended is active

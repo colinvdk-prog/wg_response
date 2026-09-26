@@ -39,8 +39,18 @@ runs the REAL engine — nothing here forks physics). All authed:
                                 echoed as state.spotting / state.grass_realism;
                                 reset + reroll_clients preserve them)
     POST /api/sim/<id>/ignite   {lat, lon, intensity?, wind_dir_deg?}
-    POST /api/sim/<id>/config   {egress_buffer_min?, slack_min?, speed?}
-                                (validated; echoes what was applied)
+    POST /api/sim/<id>/config   {egress_buffer_min?, slack_min?, speed?,
+                                deploy_min?, wind_dir_deg?}
+                                (validated; echoes what was applied).
+                                wind_dir_deg = the page's wind DIAL (compass
+                                degrees the wind blows FROM, any finite
+                                number, taken mod 360) -> SimSession.set_wind:
+                                the one shared weather script rebuilds and
+                                EVERY running fire re-anchors from its burned
+                                area under the new wind on the next tick
+                                (founder 2026-09-25: before this key the dial
+                                only reached the engine through /ignite, so
+                                turning it mid-run changed nothing)
     POST /api/sim/<id>/ctl      {action: run|pause|step|reset|reroll_clients|
                                 goto}  (goto {tick} returns the recorded
                                 tick-k snapshot for the UI scrub — LAW 1)
@@ -246,7 +256,8 @@ class SimSessionManager:
     MAX_SPEED_X = 600.0                # design doc clock ceiling
     MIN_TICK_REAL_S = 0.25             # ticker floor (protects tiny periods)
 
-    _CONFIG_KEYS = ("egress_buffer_min", "slack_min", "speed", "deploy_min")
+    _CONFIG_KEYS = ("egress_buffer_min", "slack_min", "speed", "deploy_min",
+                    "wind_dir_deg")
     _ISO_LEADS_H = (6.0, 12.0, 24.0, 48.0, 72.0)   # simui._isochrones leads
 
     def __init__(self, tile_dir=None, synth_size_km=None):
@@ -519,7 +530,11 @@ class SimSessionManager:
         Values are pre-validated (finite, in range) BEFORE any is applied so
         a bad request never half-applies; buffer/slack go through the
         SimSession seam (set_buffer/set_slack: validate_config + revoke of
-        unstarted stops -> re-plan next tick), speed is server clock glue."""
+        unstarted stops -> re-plan next tick), speed is server clock glue.
+        wind_dir_deg (the wind dial; any finite number, normalized mod 360)
+        goes through SimSession.set_wind — the shared weather rebuilds and
+        every fire re-anchors under the new wind on the next tick; with no
+        fire burning yet it sets the wind the next ignition inherits."""
         entry = self._entry(sid)
         if entry is None:
             return 404, {"error": f"unknown session {sid!r}"}
@@ -551,6 +566,10 @@ class SimSessionManager:
             return 400, {"error": "deploy_min must be in [1, 120] minutes"}
         if "speed" in vals and not (0.0 < vals["speed"] <= self.MAX_SPEED_X):
             return 400, {"error": f"speed must be in (0, {self.MAX_SPEED_X:g}]"}
+        if "wind_dir_deg" in vals:
+            # echo the bearing the engine actually runs (set_wind takes it
+            # mod 360, so a dial value of 360 or -90 is still a legal bearing)
+            vals["wind_dir_deg"] = vals["wind_dir_deg"] % 360.0
         with entry.lock:
             try:
                 if "egress_buffer_min" in vals:
@@ -559,6 +578,8 @@ class SimSessionManager:
                     entry.session.set_slack(vals["slack_min"])
                 if "deploy_min" in vals:
                     entry.session.set_deploy_min(vals["deploy_min"])
+                if "wind_dir_deg" in vals:
+                    entry.session.set_wind(vals["wind_dir_deg"])
             except ValueError as e:    # validate_config residuals (defensive)
                 return 400, {"error": str(e)}
             if "speed" in vals:

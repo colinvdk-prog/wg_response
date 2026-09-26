@@ -368,8 +368,23 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     wind_scale: float = 1.0, dir_offset_deg: float = 0.0,
                     perimeter: list = None, perimeter_at_s: float = None,
                     incident_id: str = "", member_k: int = 0,
-                    ros_scale: float = 1.0) -> Raster:
+                    ros_scale: float = 1.0,
+                    seed_spotting: bool = True) -> Raster:
     """Fire arrival-time raster (absolute unix SECONDS per cell; UNREACHED=inf).
+
+    seed_spotting (RE-ANCHOR SEAM, simulator wind-dial finding 2026-09-25):
+    True (default) = every burning cell, ignition seeds included, owns its one
+    spotting teleport edge — byte-identical to the pre-seam engine. False =
+    the `ignition` seeds carry fire (they seed the front at t0_s) but throw NO
+    ember: for a caller re-anchoring a fire from cells that ALREADY burned in
+    an earlier field (simui's exact re-anchor), whose one ember each was
+    thrown there. Re-throwing them fired a synchronous ember shower from the
+    whole burn toward the new downwind side on every mid-run wind change
+    (+26% burned cells 15 min after a 90 deg turn vs a continuous run with the
+    same shift; quiet seeds match that run at IoU 0.97-1.00 —
+    scratch_review/wind_direction_probe.py). Inert with spotting off.
+    Perimeter-mask cells are unaffected (the live feed path keeps them
+    burning).
 
     ros_scale (ENSEMBLE MODEL-ERROR TERM, contracts model_error_sd_log): a
     member-wide multiplicative scale on the head ROS (and, linearly, Byram
@@ -548,6 +563,7 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                             not final[nr * ncols + nc]:
                         heapq.heappush(heap, (burn_t, idx))
                         break
+    quiet = None                 # seed_spotting=False: seeds throw no ember
     for p in ignition:
         rc = geo.latlon_to_rc(spec, p)
         if rc is None:
@@ -558,6 +574,10 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         if t0_s < best[idx]:
             best[idx] = t0_s
             heapq.heappush(heap, (t0_s, idx))
+        if not seed_spotting:
+            if quiet is None:
+                quiet = bytearray(n)
+            quiet[idx] = 1
 
     horizon_end_s = t0_s + cfg.horizon_h * 3600.0
     herb = cfg.live_herb_frac
@@ -899,7 +919,7 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             if t_v < best[nidx] and t_v <= horizon_end_s:
                 best[nidx] = t_v
                 heapq.heappush(heap, (t_v, nidx))
-        if spot is not None:
+        if spot is not None and not (quiet is not None and quiet[idx]):
             mean_m, sbrg, u20 = spot
             # SEMANTICS 11: draw ONE lognormal landing distance for THIS burning
             # cell (seeded on the source cell => cells sharing a ROS-memo key
@@ -997,7 +1017,8 @@ def _stratified_member_draws(incident_id: str, m: int) -> list:
 def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                      t0_s: float, cfg: ResponseConfig, incident_id: str = "",
                      perimeter: list = None,
-                     perimeter_at_s: float = None) -> EnsembleArrival:
+                     perimeter_at_s: float = None,
+                     seed_spotting: bool = True) -> EnsembleArrival:
     """Ensemble v2 (Sprint 2 ticket A4, Council-1 model F2+F6): nominal member
     (k=0, unperturbed) + (cfg.ensemble_n - 1) perturbed members, plus per-cell
     p10/p50/p90 quantile rasters (unix seconds; p10 = EARLIEST/pessimistic).
@@ -1039,6 +1060,8 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     perimeter / perimeter_at_s are forwarded verbatim to every member's
     compute_arrival (ticket A5): the burned interior is FIXED across members
     (arrival = perimeter_at_s in every member, hence in every quantile).
+    seed_spotting is forwarded the same way (compute_arrival; default True =
+    byte-identical; simui's exact re-anchor passes False).
 
     NOTE: ensemble_n counts TOTAL members (nominal + n-1 perturbed), so
     ensemble_n=1 is nominal-only, matching the v1 convention the suite pins;
@@ -1056,7 +1079,8 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     members = [compute_arrival(tile, pts, wx, t0_s, cfg,
                                perimeter=perimeter,
                                perimeter_at_s=perimeter_at_s,
-                               incident_id=incident_id, member_k=0)]
+                               incident_id=incident_id, member_k=0,
+                               seed_spotting=seed_spotting)]
     draws = _stratified_member_draws(incident_id, n_members - 1)
     dir_lead = min(1.0, (cfg.horizon_h * 0.5) / _DIR_RAMP_SATURATION_H)
     sd_log = float(getattr(cfg, "model_error_sd_log", 0.0) or 0.0)
@@ -1079,7 +1103,8 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                                        perimeter=perimeter,
                                        perimeter_at_s=perimeter_at_s,
                                        incident_id=incident_id, member_k=k,
-                                       ros_scale=r_scale))
+                                       ros_scale=r_scale,
+                                       seed_spotting=seed_spotting))
 
     ncells = tile.spec.nrows * tile.spec.ncols
     if len(members) == 1:
