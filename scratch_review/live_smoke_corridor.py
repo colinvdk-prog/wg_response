@@ -41,6 +41,15 @@ print("  terrain synthetic:", terr.get("synthetic"), "| notes:",
       [n[:90] for n in st.get("notes", []) if "road" in n.lower()][:3])
 assert terr.get("synthetic") is False, "whole-valley tile did not load"
 
+# CREW PLACEMENT (2026-09-26): stage crew g1 at Edwards before any fire —
+# the engine snaps it to the nearest road node
+code, out = call("POST", f"/api/sim/{sid}/crew",
+                 {"crew_id": "sim-g1", "lat": 39.6452, "lon": -106.5930})
+print("place sim-g1 at Edwards:", code,
+      {k: out.get(k) for k in ("snapped_m", "lat", "lon", "note") if k in out}
+      or str(out)[:160])
+assert code == 200, out
+
 # ignite upwind (WSW) of the Eagle base — the base's own hazard-axis fire;
 # scan bearing / range until a burnable cell takes (the harness's rule)
 import math
@@ -70,6 +79,11 @@ for db in (0, 10, -10, 20, -20, 30, -30):
         break
 print("ignite:", code, f"at {lat:.4f},{lon:.4f}")
 assert code == 200, out
+# placement locks once a fire is lit
+code, out = call("POST", f"/api/sim/{sid}/crew",
+                 {"crew_id": "sim-g2", "lat": 39.6452, "lon": -106.5930})
+print("place after ignition (expect 409):", code)
+assert code == 409, out
 for _ in range(4):
     code, out = call("POST", f"/api/sim/{sid}/ctl", {"action": "step"})
     assert code == 200, out
@@ -89,4 +103,10 @@ print(f"  crews {len(crews)}, with map_view {len(mv)}; served "
       f"{st.get('scoreboard', {}).get('violations')}")
 assert 315 in winds or 315.0 in winds, "wind change did not reach the engine"
 assert mv, "no crew map_view in the live state"
+# FIRE SHADING (2026-09-26): the drawn fire is the simulated actual fire
+fv = st.get("fire_view")
+print("  fire_view present:", bool(fv), "| keys:", sorted(fv)[:8] if isinstance(fv, dict) else type(fv).__name__)
+assert fv, "no fire_view in the live state"
+pl = st.get("crew_placement") or {}
+print("  crew_placement:", {k: pl.get(k) for k in ("setup", "locked_reason") if k in pl})
 print(f"LIVE SMOKE OK in {time.time() - t0:.0f}s (session {sid} left to expire)")
