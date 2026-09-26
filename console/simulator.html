@@ -15,6 +15,14 @@
                                dashed amber emergency-egress always shown while
                                a crew is out; markers tween ALONG the polyline
                                between polls (requestAnimationFrame).
+       crews[i].map_view (ROADS LEGIBILITY, roads inspection 2026-09-25) ->
+                               the marker follows moved_path (the road the
+                               engine drove this tick), the trail is the driven
+                               road (trail runs), jumps are placed never slid,
+                               a deploying crew's queued stops draw on the road
+                               (queue), a relocating crew's first tick shows
+                               its road leg (egress_preview), and every
+                               straight spur/chord says WHY on hover (*_why).
      Every field is optional-defensive: a missing/odd-shaped field renders as
      a graceful no-op (old straight-leg fallbacks stay), never a JS error.
      Leaflet 1.9.4 from unpkg CDN when reachable; identical air-gapped
@@ -301,6 +309,9 @@
                        animation: firepulse 1.6s ease-out infinite; }
   @keyframes firepulse { 0% { transform: scale(.7); opacity: .95; }
                          100% { transform: scale(2.8); opacity: 0; } }
+  /* ROADS LEGIBILITY: the "why is this stretch straight" reasons are full
+     sentences — wrap them instead of one very wide line off the map edge */
+  .leaflet-tooltip { white-space: normal; width: max-content; max-width: 380px; }
   /* SEMANTICS 9 INBOUND reinforcement: a greyed / hollow (dashed) crew square
      with a countdown chip above it, its chevron pointing IN from the region
      edge. SEMANTICS 10a RELOCATING: a pulsing amber ring — the founder SEES a
@@ -557,8 +568,13 @@
   <div class="row"><span class="sw" style="background:rgba(255,140,26,.14);border:2px solid #ff8c1a"></span> reached in &lt;5 h (orange)</div>
   <div class="row"><span class="sw" style="background:rgba(242,176,76,.12);border:2px solid #f2b04c"></span> reached in &lt;24 h (yellow)</div>
   <div class="row"><span class="swline" style="border-top:3px solid #ffd166"></span> crew route (on roads)</div>
-  <div class="row"><span class="swline" style="border-top:2px dotted #ffd166"></span> last-mile spur (off-network)</div>
-  <div class="row"><span class="swline" style="border-top:2px dashed #ff5252"></span> road-network fallback (chord)</div>
+  <!-- ROADS LEGIBILITY (roads inspection 2026-09-25): the trail and the marker
+       follow the road actually driven (state.crews[i].map_view); every
+       straight stretch left on the map is REAL and says why on hover -->
+  <div class="row"><span class="swline" style="border-top:2px solid #ffd9b3"></span> driven trail (the road path actually driven)</div>
+  <div class="row"><span class="swline" style="border-top:2px dotted #c9d4e3"></span> planned next stops (road route)</div>
+  <div class="row"><span class="swline" style="border-top:2px dotted #ffd166"></span> last-mile spur (off-network) — straight: hover for why</div>
+  <div class="row"><span class="swline" style="border-top:2px dashed #ff5252"></span> road-network fallback (chord) — no road route: hover for why</div>
   <div class="row"><span class="swline" style="border-top:2px dashed #ffb300"></span> emergency egress route</div>
   <!-- SEMANTICS 9/10 crew states: inbound reinforcement · relocating (fleeing a
        threatened zone) · OVERRUN (a crew caught in the fire) -->
@@ -1603,19 +1619,29 @@ function startCrewTween(cid, R, target, paths, snap, durMs) {
 // last-mile SPUR short-dashed + thin (the honest off-network connector), and a
 // whole-leg CHORD fallback dashed RED-ish (no graph / endpoint beyond the spur
 // ceiling). Defensive decode: any missing/odd-shaped field degrades to a no-op.
-function decodeSegments(raw) {
+function decodeSegments(raw, why) {
+  // ROADS LEGIBILITY: `why` (map_view.*_why, aligned 1:1 with raw) carries the
+  // engine's one-line reason for each straight stretch into the tooltip.
   if (!Array.isArray(raw)) return [];
   const out = [];
-  for (const s of raw) {
+  for (let i = 0; i < raw.length; i++) {
+    const s = raw[i];
     if (!s || typeof s !== "object") continue;
     const pts = ptList(s.points);
     if (pts.length < 2) continue;
     let kind = s.kind;
     if (kind !== "road" && kind !== "spur" && kind !== "chord")
       kind = s.spur ? "spur" : "road";           // fall back to the spur flag
-    out.push({ points: pts, kind });
+    const w = Array.isArray(why) && typeof why[i] === "string" ? why[i] : null;
+    out.push({ points: pts, kind, why: w });
   }
   return out;
+}
+// tooltip line for one drawn segment: the engine's reason when it sent one
+function segTip(base, seg, roadNote, spurNote, chordNote) {
+  if (seg.why) return base + "<br>" + (seg.kind === "chord" ? "⚠ " : "↯ ") + seg.why;
+  return base + (seg.kind === "road" ? roadNote
+    : seg.kind === "spur" ? spurNote : chordNote);
 }
 // dashArray is ALWAYS set (null = solid) so a pooled slot that switches kind
 // across ticks never keeps a stale dash from its previous kind.
@@ -1625,6 +1651,60 @@ function segStyle(kind, color) {
   if (kind === "chord")                            // whole-leg fallback: red warn
     return { color: "#ff5252", weight: 2.5, opacity: 0.9, dashArray: "6 5" };
   return { color, weight: 3.5, opacity: 0.9, dashArray: null };   // road: solid
+}
+// PLANNED NEXT STOPS (ROADS LEGIBILITY): a deploying crew's queued legs, on
+// the road route (map_view.queue) — thin, pale, dotted: planned, not driven.
+function queueSegStyle(kind) {
+  if (kind === "spur")
+    return { color: "#c9d4e3", weight: 1.5, opacity: 0.85, dashArray: "2 4" };
+  if (kind === "chord")
+    return { color: "#ff5252", weight: 2.0, opacity: 0.8, dashArray: "6 5" };
+  return { color: "#c9d4e3", weight: 2.0, opacity: 0.75, dashArray: "1 5" };
+}
+// DRIVEN TRAIL (ROADS LEGIBILITY): map_view.trail = runs of the road path the
+// crew actually drove (never a line across a jump). One pooled polyline per
+// run (shim-safe: flat [lat, lon] lists only).
+const TRAIL_STYLE = { color: "#ffd9b3", weight: 2, opacity: 0.8 };
+function syncTrail(R, runs, tip) {
+  R.trailRuns = R.trailRuns || [];
+  for (let i = 0; i < runs.length; i++) {
+    let lay = R.trailRuns[i];
+    if (!lay) {
+      lay = L.polyline(runs[i], TRAIL_STYLE).addTo(layers.crews);
+      R.trailRuns[i] = lay;
+    } else if (lay.setLatLngs) lay.setLatLngs(runs[i]);
+    setTip(lay, tip);
+  }
+  for (let i = runs.length; i < R.trailRuns.length; i++)
+    if (R.trailRuns[i] && R.trailRuns[i].setLatLngs) R.trailRuns[i].setLatLngs([]);
+}
+// MARKER ALONG THE ROAD ACTUALLY DRIVEN (ROADS LEGIBILITY): map_view.moved_path
+// is the engine's own record of this tick's drive, so the marker follows it
+// vertex by vertex — never the old projection onto the NEXT leg, which slid
+// the marker in a straight line between 15-min tick positions. A crew that
+// did not drive this tick (idle, deploying, a reinforcement's off-map
+// arrival = map_view.jumped, a reset/scrub) is PLACED, never slid.
+function startCrewTweenMV(cid, R, target, mv, snap, durMs) {
+  const prev = anim[cid];
+  if (prev && !prev.done && !snap) {
+    const goal = prev.pts[prev.pts.length - 1];
+    if (d2(toXY(goal, goal[0]), toXY(target, goal[0])) < 1e-14) return;
+  }
+  delete anim[cid];
+  const path = ptList(mv.moved_path);
+  if (snap || path.length < 2) {
+    if (R.marker && R.marker.setLatLng) R.marker.setLatLng(target);
+    R.shown = target;
+    return;
+  }
+  const last = path[path.length - 1];
+  if (d2(toXY(last, last[0]), toXY(target, last[0])) > 1e-14) path.push(target);
+  // start where this tick's drive started: after a jump or a skipped poll
+  // the marker is placed there first — a jump, not a straight slide
+  if (R.marker && R.marker.setLatLng) R.marker.setLatLng(path[0]);
+  anim[cid] = buildTween(path, R.marker, R.arrowEl, durMs);
+  R.shown = target;
+  ensureAnimLoop();
 }
 // egress keeps its amber-dashed identity for the road portion (the long 8 5
 // dash the founder already reads as "emergency egress"); spur tightens the
@@ -2016,6 +2096,8 @@ function render(st) {
         // grown on demand + emptied when the remaining path has fewer segments
         routeSegs: [],
         egressSegs: [],
+        queueSegs: [],          // ROADS LEGIBILITY: planned next stops (roads)
+        trailRuns: [],          // ROADS LEGIBILITY: driven trail runs
         marker: L.marker([c.lat, c.lon], { icon: L.divIcon({
           className: "crew-icon",
           // creloc-ring = SEMANTICS 10a pulsing amber ring (shown via .relocating);
@@ -2045,8 +2127,11 @@ function render(st) {
     // relocating / caught-in-fire context (SEMANTICS 10) so hovering a crew
     // explains its state in words (and covers the offline shim, which has no
     // per-marker styling).
+    // ROADS LEGIBILITY display block (absent on older backends -> legacy path)
+    const mv = (c.map_view && typeof c.map_view === "object") ? c.map_view : null;
     setTip(R.marker, `${c.crew_id} ${c.name || ""}<br>status: ${c.status}` +
       `<br>region: ${REGION_LABEL[c.region] || c.region || "in-zone"}` +
+      (mv && mv.jumped && mv.jumped.why ? `<br>↯ ${mv.jumped.why}` : "") +
       (c.inbound && c.arrival_eta_s != null
         ? `<br>▸ inbound — arrives in ${Math.max(0, Math.ceil(c.arrival_eta_s / 60))} min` : "") +
       (c.relocating
@@ -2058,9 +2143,17 @@ function render(st) {
     // overrun red flash). No-op in the offline shim (no per-marker element).
     styleCrewMarker(R, c, !!overrunIds[c.crew_id]);
 
-    // breadcrumb of actual positions
-    const trackPts = ptList(c.track);
-    if (R.track.setLatLngs) R.track.setLatLngs(trackPts.length > 1 ? trackPts : []);
+    // DRIVEN TRAIL: the road path actually driven (map_view.trail runs, split
+    // at jumps); an older backend falls back to the per-tick track breadcrumb
+    // (one point per tick joined straight — the founder's "not on roads")
+    if (mv && Array.isArray(mv.trail)) {
+      if (R.track.setLatLngs) R.track.setLatLngs([]);
+      syncTrail(R, mv.trail.map(r => ptList(r)).filter(r => r.length > 1),
+                `${c.crew_id} driven trail — the road path actually driven`);
+    } else {
+      const trackPts = ptList(c.track);
+      if (R.track.setLatLngs) R.track.setLatLngs(trackPts.length > 1 ? trackPts : []);
+    }
 
     // planned ingress route (LAW 2 ROADS RENDER): prefer route_segments so the
     // road portion draws SOLID and the last-mile spur / whole-leg chord draw
@@ -2068,11 +2161,16 @@ function render(st) {
     // the straight crew->stops line (no road route at all — a chord).
     const stops = c.itinerary || [];
     const roadRoute = ptList(c.route_polyline);
-    let routeSegList = decodeSegments(c.route_segments);
+    let routeSegList = decodeSegments(c.route_segments, mv && mv.route_why);
     let straightFallback = false;
+    let queueSegList = [];
     if (!routeSegList.length) {
       if (roadRoute.length > 1) {
         routeSegList = [{ points: roadRoute, kind: "road" }];
+      } else if (mv && mv.queue) {
+        // PLANNED NEXT STOPS: a deploying crew's queued legs ON THE ROAD
+        // ROUTE (map_view.queue) — no longer one straight red chord
+        queueSegList = decodeSegments(mv.queue.segments, mv.queue.why);
       } else if (stops.length) {
         straightFallback = true;                       // whole-leg chord
         routeSegList = [{ points: [[c.lat, c.lon]]
@@ -2082,19 +2180,30 @@ function render(st) {
     const routeStopTip = `${c.crew_id} route — ${stops.length} stop${stops.length === 1 ? "" : "s"}`;
     syncCrewSegs(R.routeSegs, layers.routes, routeSegList,
       k => segStyle(k, R.color),
-      seg => routeStopTip + (seg.kind === "road" ? " · on roads"
-        : seg.kind === "spur" ? " · last-mile spur (off-network)"
-        : " · ≈ straight-line (no road route)"));
+      seg => segTip(routeStopTip, seg, " · on roads",
+        " · last-mile spur (off-network)", " · ≈ straight-line (no road route)"));
+    const queueTip = `${c.crew_id} planned next stops — ${Math.max(0, stops.length - 1)} ` +
+      `queued after this deploy (road route, not driven yet)`;
+    syncCrewSegs(R.queueSegs, layers.routes, queueSegList, queueSegStyle,
+      seg => segTip(queueTip, seg, "", " · last-mile spur", " · ≈ straight-line (no road route)"));
 
     // EMERGENCY EGRESS — the planned escape route, always on while deployed;
     // honor its road/spur/chord split (road stays amber-dashed, spur tightens,
     // chord goes red). egressPts is still computed for the marker tween.
     const active = ["en_route", "deploying", "egressing"].indexOf(c.status) !== -1
       || stops.length > 0;
-    let egressSegList = decodeSegments(c.egress_segments);
+    let egressSegList = decodeSegments(c.egress_segments, mv && mv.egress_why);
     let egressPts = ptList(c.egress_polyline);
+    // RELOCATION PREVIEW: on the tick the safety sweep turns a crew toward a
+    // new zone it has no leg yet; map_view.egress_preview is the exact road
+    // leg it starts driving next tick (the page used to synthesize a chord)
+    let egressPreview = false;
+    if (!egressSegList.length && !egressPts.length && mv && mv.egress_preview) {
+      egressSegList = decodeSegments(mv.egress_preview.segments, mv.egress_preview.why);
+      egressPreview = egressSegList.length > 0;
+    }
     const egressSynth = active && !egressPts.length && !egressSegList.length;
-    if (!egressPts.length && active) {
+    if (!egressPts.length && active && !egressPreview) {
       const ez = zoneById[c.egress_zone_id];
       if (ez) {
         const from = (c.status === "egressing" || !stops.length)
@@ -2108,11 +2217,12 @@ function render(st) {
       // with no segments is treated as an on-road leg
       egressSegList = [{ points: egressPts, kind: egressSynth ? "chord" : "road" }];
     }
-    const egressTip = `${c.crew_id} emergency egress — ${c.egress_zone_id || "nearest safe zone"}`;
+    const egressTip = `${c.crew_id} emergency egress — ${c.egress_zone_id || "nearest safe zone"}` +
+      (egressPreview ? " · relocating: the road leg it starts driving next tick" : "");
     syncCrewSegs(R.egressSegs, layers.routes, active ? egressSegList : [],
       egressSegStyle,
-      seg => egressTip + (seg.kind === "chord" ? " · ≈ straight-line (no road route)"
-        : seg.kind === "spur" ? " · last-mile spur" : ""));
+      seg => segTip(egressTip, seg, "", " · last-mile spur",
+        " · ≈ straight-line (no road route)"));
 
     // "≈ straight-line leg" honesty chip — ONLY when a straight line is
     // actually standing in for a road: a TRAVELING crew flagged off-road (or
@@ -2127,10 +2237,15 @@ function render(st) {
 
     // tween the marker along the road toward its new tick position; polls
     // between ticks repeat the same target and leave the tween running
-    if (tickChanged || sessionChanged || clockRewound)
-      startCrewTween(c.crew_id, R, [c.lat, c.lon],
-                     [roadRoute, egressPts], sessionChanged || clockRewound,
-                     tickGapMs);
+    if (tickChanged || sessionChanged || clockRewound) {
+      if (mv)          // ROADS LEGIBILITY: along the road actually driven
+        startCrewTweenMV(c.crew_id, R, [c.lat, c.lon], mv,
+                         sessionChanged || clockRewound, tickGapMs);
+      else             // older backend: legacy projection tween
+        startCrewTween(c.crew_id, R, [c.lat, c.lon],
+                       [roadRoute, egressPts], sessionChanged || clockRewound,
+                       tickGapMs);
+    }
   });
   lastTick = st.tick != null ? st.tick : lastTick;
 

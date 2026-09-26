@@ -12,6 +12,7 @@ Usage (from the repo root; LIVE network — Overpass is a shared public service)
     py -3 tools/fetch_sim_roads.py                   # fetch whatever is missing
     py -3 tools/fetch_sim_roads.py --force           # refetch (fresh queries)
     py -3 tools/fetch_sim_roads.py --only malibu_ca  # subset (repeatable)
+    py -3 tools/fetch_sim_roads.py --extended        # the <key>_ext.wgr graphs
 
 BBOX LAW: roads must cover every travel endpoint the simulator produces —
 clients live inside the ~18x18 km terrain tile (center +- 9 km, the
@@ -24,6 +25,26 @@ STANDARD-tile half-width, SimLocation.tile_half_m — 9 km for every preset
 except the whole-valley eagle_vail_co (30 km: Gypsum to East Vail), whose
 roads must cover its entire ~60 km tile. At the 9 km default the bbox of
 every existing key is byte-identical (their provenance records it).
+
+EXTENDED FIRE-ZONE GRAPHS (--extended; roads inspection 2026-09-25,
+docs/review/roads_inspection_2026-09-25.md): an extended session plays on
+the ~48 km <key>_ext.wgt tile, but the standard graph above covers only the
+~18 km core, so every leg ending beyond it (a crew fleeing outward on the
+SEM-10d area escape) was a whole-leg straight chord. --extended writes
+data/roads/<key>_ext.wgr over the EXTENDED tile box (half-width read from
+data/tiles/provenance_ext.json "bbox_half_m", 24 km) UNION the same zone
+pads, provenance in data/roads/provenance_ext.json (provenance.json and
+every <key>.wgr stay byte-identical). The simulator loads it only for
+extended sessions (simui.EXT_ROAD_SUFFIX) and falls back loudly to the
+standard graph when it is missing. SIZE LAW: a full 48 km fetch of the
+urban tiles is far past the 2 s load budget (Overpass `out count`,
+2026-09-25: Boulder timed out three times, Malibu 70,063 ways, Santa Rosa
+49,164 — the whole standard Boulder graph is 26,244), so EXT_TWO_TIER keys
+fetch TWO TIERS in one union query: every drivable class inside the
+standard road bbox (the same ways as <key>.wgr) plus motorway..tertiary +
+unclassified (+ links) over the whole extended box. The other eight keys
+(mountain / rural tiles, 3.2k-22.3k ways) fetch every drivable class over
+the whole box. Same simplification and largest-component law.
 
 OVERPASS ETIQUETTE (https://overpass-api.de policy): ONE request at a time
 (strictly sequential), identifying User-Agent with a contact address, a
@@ -89,6 +110,19 @@ POLITE_PAUSE_S = 8.0        # courtesy pause between consecutive live queries
 ROAD_DIR = os.path.join(_REPO_ROOT, "data", "roads")
 PROVENANCE_PATH = os.path.join(ROAD_DIR, "provenance.json")
 
+#: --extended (module docstring EXTENDED FIRE-ZONE GRAPHS)
+EXT_SUFFIX = "_ext"                   # == wgresponse.simui.EXT_ROAD_SUFFIX
+EXT_HALF_M_DEFAULT = 24000.0          # tools/fetch_sim_tiles.py EXT_SIZES[0]
+TILE_PROVENANCE_EXT = os.path.join(_REPO_ROOT, "data", "tiles",
+                                   "provenance_ext.json")
+PROVENANCE_EXT_PATH = os.path.join(ROAD_DIR, "provenance_ext.json")
+#: urban tiles whose full 48 km fetch is too big -> two-tier union query
+EXT_TWO_TIER = frozenset({"boulder_co", "malibu_ca", "santa_rosa_ca"})
+#: outer-tier classes of a two-tier extended graph
+OUTER_REGEX = ("^(motorway|trunk|primary|secondary|tertiary|unclassified|"
+               "motorway_link|trunk_link|primary_link|secondary_link|"
+               "tertiary_link)$")
+
 
 # ---------------------------------------------------------------------------
 # BBox (all coords come from wgresponse.simui.LOCATIONS)
@@ -113,6 +147,41 @@ def bbox_for(loc) -> BBox:
                 north=max(center_box.north, zone_box.north))
 
 
+def ext_half_m(key: str) -> float:
+    """Half-width (m) of the key's EXTENDED fire-zone tile as fetched
+    (data/tiles/provenance_ext.json: the location record, else the product
+    bbox_half_m), EXT_HALF_M_DEFAULT when no record exists."""
+    try:
+        with open(TILE_PROVENANCE_EXT, "r", encoding="utf-8") as f:
+            doc = json.load(f)
+    except (OSError, ValueError):
+        return EXT_HALF_M_DEFAULT
+    rec = (doc.get("locations") or {}).get(key) or {}
+    return float(rec.get("bbox_half_m") or doc.get("bbox_half_m")
+                 or EXT_HALF_M_DEFAULT)
+
+
+def ext_bbox_for(loc) -> BBox:
+    """The EXTENDED graph's bbox (module docstring EXTENDED FIRE-ZONE
+    GRAPHS): the extended tile box around the center UNION the same 1.5 km
+    safe-zone pads as the standard law."""
+    tile_box = geo.bbox_around([loc.center], pad_m=ext_half_m(loc.key))
+    zone_box = geo.bbox_around([z.loc for z in loc.safe_zones], pad_m=ZONE_PAD_M)
+    return BBox(west=min(tile_box.west, zone_box.west),
+                south=min(tile_box.south, zone_box.south),
+                east=max(tile_box.east, zone_box.east),
+                north=max(tile_box.north, zone_box.north))
+
+
+def has_extended_product(key: str) -> bool:
+    """True iff the key has an extended fire-zone tile (by design and
+    cached) — the only keys --extended fetches a road graph for."""
+    from wgresponse.simui import tile_file
+    loc = LOCATIONS[key]
+    return (getattr(loc, "extended_zone", True)
+            and tile_file(key, fire_zone="extended").exists())
+
+
 # ---------------------------------------------------------------------------
 # Overpass
 # ---------------------------------------------------------------------------
@@ -124,10 +193,25 @@ def overpass_query(bbox: BBox) -> str:
             "out geom;\n")
 
 
-def fetch_ways(bbox: BBox) -> list:
-    """POST the query; return the way elements (each with tags + geometry).
-    Raises RuntimeError on HTTP/parse/remark failure."""
-    query = overpass_query(bbox)
+def _bbox_str(b: BBox) -> str:
+    return f"({b.south:.6f},{b.west:.6f},{b.north:.6f},{b.east:.6f})"
+
+
+def overpass_query_two_tier(core: BBox, outer: BBox) -> str:
+    """One union request: every drivable class inside `core`, the
+    OUTER_REGEX classes over `outer` (module docstring SIZE LAW)."""
+    return (f"[out:json][timeout:{OVERPASS_TIMEOUT_S}];\n(\n"
+            f'  way["highway"~"{HIGHWAY_REGEX}"]{_bbox_str(core)};\n'
+            f'  way["highway"~"{OUTER_REGEX}"]{_bbox_str(outer)};\n'
+            ");\nout geom;\n")
+
+
+def fetch_ways(bbox: BBox, query: str = None) -> list:
+    """POST the query (default: the single-tier drivable query over bbox);
+    return the way elements (each with tags + geometry), de-duplicated by
+    way id (a union query may list a way under both tiers). Raises
+    RuntimeError on HTTP/parse/remark failure."""
+    query = query if query is not None else overpass_query(bbox)
     data = urllib.parse.urlencode({"data": query}).encode("utf-8")
     req = urllib.request.Request(
         OVERPASS_URL, data=data,
@@ -148,9 +232,16 @@ def fetch_ways(bbox: BBox) -> list:
     remark = payload.get("remark")
     if remark and ("error" in remark.lower() or "timed out" in remark.lower()):
         raise RuntimeError(f"Overpass remark: {remark}")
-    ways = [el for el in payload.get("elements", [])
-            if el.get("type") == "way" and el.get("nodes")
-            and el.get("geometry") and (el.get("tags") or {}).get("highway")]
+    ways = []
+    seen_ids = set()
+    for el in payload.get("elements", []):
+        if not (el.get("type") == "way" and el.get("nodes")
+                and el.get("geometry") and (el.get("tags") or {}).get("highway")):
+            continue
+        if el.get("id") in seen_ids:
+            continue
+        seen_ids.add(el.get("id"))
+        ways.append(el)
     if not ways:
         raise RuntimeError("Overpass returned zero highway ways for the bbox")
     return ways
@@ -308,19 +399,37 @@ def _summary_from_disk(key: str) -> dict:
     return out
 
 
-def fetch_one(loc, force: bool) -> "tuple[str, object]":
-    """Fetch/refresh one location. Returns ('cached'|'fetched', summary) or
-    ('FAILED', error string)."""
+def graph_bbox_for(loc, extended: bool = False) -> BBox:
+    """The fetch bbox of the standard (<key>.wgr) or extended
+    (<key>_ext.wgr) graph."""
+    return ext_bbox_for(loc) if extended else bbox_for(loc)
+
+
+def fetch_one(loc, force: bool, extended: bool = False) -> "tuple[str, object]":
+    """Fetch/refresh one location's standard graph, or with extended=True its
+    <key>_ext.wgr (module docstring EXTENDED FIRE-ZONE GRAPHS). Returns
+    ('cached'|'fetched', summary) or ('FAILED', error string)."""
     key = loc.key
-    path = str(road_file(key))
-    bbox = bbox_for(loc)
-    print(f"[{key}] {loc.name}")
-    print(f"  bbox W {bbox.west:.5f}  S {bbox.south:.5f}  E {bbox.east:.5f}  "
-          f"N {bbox.north:.5f}  (tile {tile_half_m(loc) / 1000.0:g} km + "
-          f"safe-zone 1.5 km pads)")
+    gkey = key + EXT_SUFFIX if extended else key
+    path = str(road_file(gkey))
+    bbox = graph_bbox_for(loc, extended)
+    two_tier = extended and key in EXT_TWO_TIER
+    query = (overpass_query_two_tier(bbox_for(loc), bbox) if two_tier
+             else None)
+    print(f"[{gkey}] {loc.name}")
+    if extended:
+        print(f"  bbox W {bbox.west:.5f}  S {bbox.south:.5f}  E {bbox.east:.5f}  "
+              f"N {bbox.north:.5f}  (EXTENDED tile "
+              f"{ext_half_m(key) / 1000.0:g} km half-width + safe-zone 1.5 km "
+              f"pads; {'TWO-TIER: all classes in the standard bbox, major + '
+                       'unclassified outside' if two_tier else 'all drivable classes'})")
+    else:
+        print(f"  bbox W {bbox.west:.5f}  S {bbox.south:.5f}  E {bbox.east:.5f}  "
+              f"N {bbox.north:.5f}  (tile {tile_half_m(loc) / 1000.0:g} km + "
+              f"safe-zone 1.5 km pads)")
     if os.path.exists(path) and not force:
         print(f"  exists — skipping (use --force to refetch): {path}")
-        return "cached", _summary_from_disk(key)
+        return "cached", _summary_from_disk(gkey)
     if force and os.path.exists(path):
         os.remove(path)
         print(f"  --force: removed {path}")
@@ -330,12 +439,12 @@ def fetch_one(loc, force: bool) -> "tuple[str, object]":
         try:
             print(f"  Overpass query (attempt {attempt}/{RETRIES + 1}) ...",
                   flush=True)
-            ways = fetch_ways(bbox)
+            ways = fetch_ways(bbox, query)
             fetch_s = time.monotonic() - t0
             print(f"  {len(ways):,} ways in {fetch_s:.1f} s; simplifying ...",
                   flush=True)
             meta = {
-                "key": key,
+                "key": gkey,
                 "name": loc.name,
                 "bbox_wsen": [round(bbox.west, 6), round(bbox.south, 6),
                               round(bbox.east, 6), round(bbox.north, 6)],
@@ -346,6 +455,16 @@ def fetch_one(loc, force: bool) -> "tuple[str, object]":
                 "generator": "tools/fetch_sim_roads.py",
                 "fetch_seconds": round(fetch_s, 1),
             }
+            if extended:
+                core = bbox_for(loc)
+                meta["extended"] = True
+                meta["tiers"] = ("two-tier" if two_tier else "full")
+                meta["core_bbox_wsen"] = [round(core.west, 6),
+                                          round(core.south, 6),
+                                          round(core.east, 6),
+                                          round(core.north, 6)]
+                if two_tier:
+                    meta["outer_highway_regex"] = OUTER_REGEX
             g, stats = build_graph(ways, meta)
             save_road_graph(g, path)
             kb = os.path.getsize(path) / 1024.0
@@ -373,25 +492,31 @@ def fetch_one(loc, force: bool) -> "tuple[str, object]":
     return "FAILED", last_err
 
 
-def write_provenance(results: dict) -> dict:
-    """Merge this run's results into data/roads/provenance.json (an --only run
-    never erases other locations' records)."""
+def write_provenance(results: dict, path: str = PROVENANCE_PATH,
+                     extended: bool = False) -> dict:
+    """Merge this run's results into data/roads/provenance.json (or, for
+    --extended, provenance_ext.json) — an --only run never erases other
+    locations' records."""
     doc = {"source": "overpass-api.de (OpenStreetMap, ODbL)",
            "highway_regex": HIGHWAY_REGEX, "locations": {}}
-    if os.path.exists(PROVENANCE_PATH):
+    if extended:
+        doc.update({"suffix": EXT_SUFFIX,
+                    "two_tier_keys": sorted(EXT_TWO_TIER),
+                    "outer_highway_regex": OUTER_REGEX})
+    if os.path.exists(path):
         try:
-            with open(PROVENANCE_PATH, "r", encoding="utf-8") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 doc.update(json.load(f))
         except (ValueError, OSError):
             pass                     # rewrite from scratch on a corrupt file
     doc.setdefault("locations", {})
     doc["locations"].update(results)
     os.makedirs(ROAD_DIR, exist_ok=True)
-    tmp = PROVENANCE_PATH + ".tmp"
+    tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8", newline="\n") as f:
         json.dump(doc, f, indent=2, sort_keys=True)
         f.write("\n")
-    os.replace(tmp, PROVENANCE_PATH)
+    os.replace(tmp, path)
     return doc
 
 
@@ -424,6 +549,10 @@ def main(argv=None) -> int:
     ap.add_argument("--only", action="append", metavar="KEY",
                     choices=sorted(LOCATIONS),
                     help="restrict to one location key (repeatable)")
+    ap.add_argument("--extended", action="store_true",
+                    help="fetch the EXTENDED fire-zone graphs <key>_ext.wgr "
+                         "(keys with an extended tile only; provenance_ext."
+                         "json) instead of the standard graphs")
     args = ap.parse_args(argv)
     # A display name the console cannot encode ('Eagle → Vail corridor, CO'
     # on a Windows cp1252 pipe) prints as backslash escapes, never a crash.
@@ -435,19 +564,26 @@ def main(argv=None) -> int:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     results: dict = {}
     did_network = False
+    ext = bool(args.extended)
     for key in sorted(LOCATIONS):
         if args.only and key not in args.only:
+            continue
+        if ext and not has_extended_product(key):
+            print(f"[{key}{EXT_SUFFIX}] no extended fire-zone tile (by design "
+                  f"or not cached) — no extended road graph; skipped")
             continue
         if did_network:
             time.sleep(POLITE_PAUSE_S)             # one query at a time, politely
         loc = LOCATIONS[key]
-        status, payload = fetch_one(loc, args.force)
+        status, payload = fetch_one(loc, args.force, extended=ext)
         did_network = status != "cached"
+        gb = graph_bbox_for(loc, ext)
         rec = {"status": status, "name": loc.name,
                "bbox_wsen": [round(v, 6) for v in
-                             (bbox_for(loc).west, bbox_for(loc).south,
-                              bbox_for(loc).east, bbox_for(loc).north)],
+                             (gb.west, gb.south, gb.east, gb.north)],
                "checked_utc": now}
+        if ext:
+            rec["tiers"] = "two-tier" if key in EXT_TWO_TIER else "full"
         if status == "FAILED":
             rec["error"] = payload
         else:
@@ -460,13 +596,15 @@ def main(argv=None) -> int:
                     rec["fetched_utc"] = prev
         results[key] = rec
 
-    doc = write_provenance(results)
-    print(f"\nprovenance written: {PROVENANCE_PATH}")
+    prov = PROVENANCE_EXT_PATH if ext else PROVENANCE_PATH
+    doc = write_provenance(results, prov, extended=ext)
+    print(f"\nprovenance written: {prov}")
     print_report(doc)
     failed = [k for k, r in results.items() if r["status"] == "FAILED"]
     if failed:
         print(f"\nEXIT 1 — locations FAILED: {', '.join(failed)} "
-              f"(rerun: py -3 tools/fetch_sim_roads.py --only {failed[0]})")
+              f"(rerun: py -3 tools/fetch_sim_roads.py "
+              f"{'--extended ' if ext else ''}--only {failed[0]})")
         return 1
     print("\nall requested road graphs present.")
     return 0

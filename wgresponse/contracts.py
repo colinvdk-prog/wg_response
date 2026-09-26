@@ -289,6 +289,24 @@ wgresponse.simui   (founder request 2026-07-09; docs/SIMULATOR_DESIGN.md is the 
        flagged spur=true in the polyline metadata); whole-leg chord fallback is
        legal ONLY when no graph is loaded or the endpoint is beyond
        cfg.road_spur_max_m from the network (loud note).
+       ROADS LEGIBILITY (roads inspection 2026-09-25, founder "there are
+       times that the response team does not use roads";
+       docs/review/roads_inspection_2026-09-25.md): state.crews[i] gains
+       ONE additive, DISPLAY-ONLY key `map_view` (never read by the engine;
+       every other key unchanged): moved_path (the road polyline driven
+       during the last tick, [] when the crew did not drive), jumped (null |
+       {from, to, reason, why} — a non-driven position change, i.e. a
+       reinforcement's arrival: the UI places the marker, never slides it),
+       trail (runs of the driven road over the last 30 ticks, split at
+       jumps), route_why / egress_why (a one-line reason per
+       route_segments / egress_segments entry, null for road), queue (the
+       road route through a DEPLOYING crew's queued stops, {segments, why}),
+       egress_preview (the exact road leg a crew relocated THIS tick starts
+       driving next tick, {segments, why}). The UI draws the marker along
+       moved_path and the trail along the road, and names the mechanism
+       behind every remaining straight spur / chord on hover. EXTENDED fire
+       zone sessions load data/roads/<key>_ext.wgr (the whole extended
+       tile; loud fallback to the standard graph when missing).
     3. FULL UTILIZATION: a crew that completes its itinerary or its egress returns
        to AVAILABLE (staged at its safe zone) and MUST be eligible for new work on
        the next plan. No crew idles while a feasible pending job exists; the
@@ -963,6 +981,33 @@ class ResponseConfig:
     # through a nominal-passed cell; when no such exit exists behavior is
     # unchanged and the imminent law stands). 0 = off, byte-identical.
     escape_proactive_lead_min: float = 0.0
+    # SEM-10d AREA-ESCAPE ROAD SNAP (roads inspection 2026-09-25,
+    # docs/review/roads_inspection_2026-09-25.md): the area-escape proposals
+    # are points on 12 straight bearings (simui _escape_ray_targets), so a
+    # crew fleeing along one drove its last stretch as a straight spur into
+    # open ground — up to the spur cap (3.4 km on eagle_co, 11 km chords on
+    # the extended tiles). When > 0 each proposal snaps to the road-graph
+    # node nearest a safe ray sample within this many metres, walking back
+    # from the ray end (the farthest safe point) toward the crew, keeping
+    # the >= 2 km driveable minimum, and the flee becomes ROAD-BOUND: a
+    # bearing with no road node in reach (open ground — the roadless Gore
+    # Range NE of East Vail on extended vail_co) is proposed only when NO
+    # bearing reaches a road. The proposals are then scored over the crew's
+    # ACTUAL route exactly as before (burned routes excluded, audit exposure
+    # minimized). 0 = off, byte-identical.
+    escape_road_snap_m: float = 0.0
+    # SEM-10e LAWFUL-ONLY (roads inspection 2026-09-25): when True the
+    # PROACTIVE decamp takes only a fully lawful route (not burned, eroded-
+    # P10 margin >= 0 at every pass time — nothing the 10c audit counts). The
+    # exposed-transit fallback (not burned, no nominal crossing, lawful
+    # destination) is skipped: since the 2026-09-03 audit change (A8) that
+    # transit is counted as imminent crew-overrun rows, and a VOLUNTARY move
+    # must not buy them. No lawful route -> no proactive move (the imminent
+    # law still owns the emergency). False = legacy, byte-identical. The
+    # simulator arms it for EXTENDED fire-zone sessions, whose extended road
+    # graph opens exposed-transit routes the standard graph never offered
+    # (the pinned Camp-Fire-scale run: one tick-23 imminent row -> 0).
+    escape_proactive_lawful_only: bool = False
     # TRANSIT-HAZARD STAGE 1 (founder "perform stage 1" 2026-07-30;
     # docs/transit_hazard_determination.md): per-fuel-class cold-black
     # windows replace the flat 45-min carve-out in SEM-10 ROUTE SELECTION
@@ -1304,6 +1349,8 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("escape_hysteresis_margin_min must be >= 0")
     if cfg.escape_proactive_lead_min < 0:
         problems.append("escape_proactive_lead_min must be >= 0")
+    if cfg.escape_road_snap_m < 0:
+        problems.append("escape_road_snap_m must be >= 0")
 
     # --- corridor erosion / sampling ---
     if cfg.corridor_erosion_m < 0:

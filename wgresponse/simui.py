@@ -91,11 +91,17 @@ are unchanged (lat/lon anchors). Extended sessions default cfg.horizon_h
 to max(horizon_h, 120.0) UNLESS the caller explicitly set horizon_h in
 cfg_overrides (an explicit override always wins — see configure()).
 A missing _ext tile is a LOUD state.notes entry + fallback to the standard
-tile; state()['fire_zone'] always reflects what ACTUALLY loaded. Road
-graphs were fetched on the STANDARD bbox: crews still route on them
-(clients/zones are central); a leg endpoint outside graph coverage falls
-back to the straight tier-0 leg per the roads seam (on_roads=False, never
-silent).
+tile; state()['fire_zone'] always reflects what ACTUALLY loaded. An
+extended session routes on data/roads/<key>_ext.wgr (EXT_ROAD_SUFFIX: the
+whole extended tile, tools/fetch_sim_roads.py --extended — before
+2026-09-25 it used the standard ~18 km graph, so a crew fleeing past the
+core drove a straight chord); when that graph is not cached the session
+falls back LOUDLY to the standard graph. A leg endpoint outside graph
+coverage falls back to the straight tier-0 leg per the roads seam
+(on_roads=False, never silent). Standard sessions never load it. Extended
+sessions also default cfg.escape_proactive_lawful_only=True (contracts;
+explicit override wins): the wider graph opens proactive-escape routes whose
+exposed transit the 10c audit counts.
 
 STATE VISUAL CONTRACT (contracts wgresponse.simui block; founder UX
 2026-07-10): state.burned = rings (closed [[lat, lon], ...] polylines) of
@@ -112,7 +118,13 @@ of the p50 raster (payload budget), ordered by TRUE BOUNDARY FOLLOWING
 (clockwise Moore neighbor-trace per 8-connected boundary component, so
 concave fronts render as clean outlines instead of centroid-angle
 starbursts) and stride-capped per ring; the old absolute-hour isochrones
-are gone from state (the UI renders the bands).
+are gone from state (the UI renders the bands). ROADS LEGIBILITY (roads
+inspection 2026-09-25): crews[i].map_view — display-only, additive — hands
+the page the road path driven this tick (moved_path, the marker's tween),
+the driven trail, jumps (a reinforcement's off-map arrival), a deploying
+crew's queued legs on roads, the road leg a just-relocated crew drives
+next, and a one-line reason for every straight spur / chord (see the
+section above SimSession.state).
 
 REGIONAL / MUTUAL-AID CREWS (contracts FOUNDER ROUND 5 SEMANTICS 9): the
 session takes n_crews (IN-ZONE, staged at local safe zones, available now)
@@ -355,6 +367,94 @@ SIM_ESCAPE_PROACTIVE_LEAD_MIN = 120.0
 #: runaway guard still bounds a pathological case.
 SIM_SOLVER_BUDGET_EVALS = 20_000
 
+#: ROADS LEGIBILITY (roads inspection 2026-09-25, founder "there are times
+#: that the response team does not use roads";
+#: docs/review/roads_inspection_2026-09-25.md). Every crew carries a
+#: DISPLAY-ONLY state()['crews'][i]['map_view'] block — the engine never
+#: reads it, every pre-existing state key is unchanged. The road path a crew
+#: drove during a tick is Douglas-Peucker simplified at MAP_PATH_EPS_M
+#: (well under a map pixel at street zoom) and capped at MAP_PATH_MAX_PTS
+#: vertices (the tolerance doubles until it fits). The driven trail keeps up
+#: to MAP_TRAIL_TICKS ticks (the crews[i].track window) within
+#: MAP_TRAIL_MAX_PTS vertices per crew: each tick's path is simplified on
+#: MAP_TRAIL_EPS_LADDER — the last MAP_TRAIL_FRESH_TICKS ticks at the first
+#: rung, older ticks at the coarsest rung that fits — and when even that
+#: does not fit, the OLDEST ticks are dropped: the trail gets shorter, never
+#: straighter. Planned queued-stop legs are simplified at MAP_QUEUE_EPS_M.
+#: Coordinates are rounded to 1e-6 deg, like every other state polyline.
+MAP_PATH_EPS_M = 8.0
+MAP_PATH_MAX_PTS = 160
+MAP_TRAIL_TICKS = 30
+MAP_TRAIL_EPS_LADDER = (20.0, 40.0, 80.0)
+MAP_TRAIL_FRESH_TICKS = 4
+MAP_TRAIL_MAX_PTS = 400
+MAP_QUEUE_EPS_M = 15.0
+
+#: FIRE ZONE road coverage: an EXTENDED session loads the road graph cached
+#: as data/roads/<key>_ext.wgr (tools/fetch_sim_roads.py --extended: the
+#: whole ~48 km extended tile) and falls back LOUDLY to the standard ~18 km
+#: graph when it is missing. Standard sessions never touch it.
+EXT_ROAD_SUFFIX = "_ext"
+
+
+def _dp_keep(xy: list, eps_m: float) -> list:
+    """Douglas-Peucker: sorted indices of the vertices of planar polyline
+    `xy` (metres) kept at tolerance eps_m. Iterative (no recursion limit);
+    the two endpoints are always kept. Deterministic."""
+    n = len(xy)
+    keep = [False] * n
+    keep[0] = keep[n - 1] = True
+    stack = [(0, n - 1)]
+    while stack:
+        i, j = stack.pop()
+        if j <= i + 1:
+            continue
+        ax, ay = xy[i]
+        bx, by = xy[j]
+        vx, vy = bx - ax, by - ay
+        l2 = vx * vx + vy * vy
+        best, bi = -1.0, -1
+        for k in range(i + 1, j):
+            px, py = xy[k]
+            if l2 <= 0.0:
+                d = math.hypot(px - ax, py - ay)
+            else:
+                t = max(0.0, min(1.0, ((px - ax) * vx + (py - ay) * vy) / l2))
+                d = math.hypot(px - (ax + t * vx), py - (ay + t * vy))
+            if d > best:
+                best, bi = d, k
+        if bi >= 0 and best > eps_m:
+            keep[bi] = True
+            stack.append((i, bi))
+            stack.append((bi, j))
+    return [k for k in range(n) if keep[k]]
+
+
+def _simplify_ll(points, eps_m: float = MAP_PATH_EPS_M,
+                 max_pts: int = MAP_PATH_MAX_PTS) -> list:
+    """[[lat, lon], ...] (rounded 1e-6 deg, consecutive duplicates dropped)
+    of a LatLon / [lat, lon] sequence, Douglas-Peucker simplified at eps_m
+    metres; the tolerance doubles until at most max_pts vertices remain
+    (endpoints always kept). A display helper for the ROADS LEGIBILITY
+    map_view — never used by the engine."""
+    pts = []
+    for p in points:
+        q = ((round(p.lat, 6), round(p.lon, 6)) if isinstance(p, LatLon)
+             else (round(float(p[0]), 6), round(float(p[1]), 6)))
+        if not pts or pts[-1] != q:
+            pts.append(q)
+    if len(pts) <= 2:
+        return [list(q) for q in pts]
+    lat0, lon0 = pts[0]
+    kx = math.cos(math.radians(lat0)) * geo.M_PER_DEG_LAT
+    xy = [((q[1] - lon0) * kx, (q[0] - lat0) * geo.M_PER_DEG_LAT) for q in pts]
+    eps = max(0.0, float(eps_m))
+    keep = _dp_keep(xy, eps)
+    while len(keep) > max(2, int(max_pts)) and eps < 1e7:
+        eps = eps * 2.0 if eps > 0.0 else 1.0
+        keep = _dp_keep(xy, eps)
+    return [list(pts[k]) for k in keep]
+
 
 def _edge_kinds_from_route(rr, n_edges: int) -> list:
     """Per-EDGE render kind list ('road'|'spur'|'chord'), length n_edges,
@@ -562,6 +662,14 @@ class SimLocation:
     place_near_road_m: float = 0.0
 
 
+#: ROAD-PROXIMITY PLACEMENT of the six Vail -> Aspen corridor community
+#: presets (roads inspection 2026-09-25): the same 300 m driveway rule as
+#: the whole-valley eagle_vail_co and the program's `_road` grid arms. The
+#: five originals and rancho_santa_fe_ca stay on the whole WUI band
+#: (place_near_road_m = 0.0, byte-identical).
+CORRIDOR_PLACE_NEAR_ROAD_M = 300.0
+
+
 LOCATIONS = {
     # Santa Ana alignment: NE-ENE downslope wind through the canyons.
     "malibu_ca": SimLocation(
@@ -671,7 +779,12 @@ LOCATIONS = {
     # junctions, park-and-rides), NOT field-verified staging areas -- the
     # HOA_40_PLAYBOOK ground-verification gate applies before any dispatch.
     # No city-limits polygon: the mountain WUI band IS the towns. Program of
-    # record: docs/vail_aspen_response_program.md.
+    # record: docs/vail_aspen_response_program.md. Clients seed only on WUI
+    # cells within 300 m of a road node (roads inspection 2026-09-25): the
+    # resort tiles' LANDFIRE 'developed' cells include ski-mountain lift
+    # stations with no road — crews drove multi-km straight spurs up the
+    # mountain to them — and the program's headline grid already uses this
+    # road placement (§3, §3.7).
     # ---------------------------------------------------------------------
     "vail_co": SimLocation(
         key="vail_co", name="Vail / East Vail / Minturn, CO",
@@ -687,7 +800,8 @@ LOCATIONS = {
             # Minturn, US-24 / Main St, ~8.1 km SW
             SafeZone("vail_co-z3", LatLon(39.5865, -106.4305),
                      "Minturn / US-24"),
-        )),
+        ),
+        place_near_road_m=CORRIDOR_PLACE_NEAR_ROAD_M),
     "beaver_creek_co": SimLocation(
         key="beaver_creek_co", name="Beaver Creek / Avon / Edwards, CO",
         center=LatLon(39.625, -106.560), hazard_wind_dir_deg=240.0,
@@ -702,7 +816,8 @@ LOCATIONS = {
             # I-70 exit 169 / Eagle-Vail (US-6), ~7.6 km E
             SafeZone("beaver_creek_co-z3", LatLon(39.6210, -106.4715),
                      "I-70 exit 169 / Eagle-Vail"),
-        )),
+        ),
+        place_near_road_m=CORRIDOR_PLACE_NEAR_ROAD_M),
     "eagle_co": SimLocation(
         key="eagle_co", name="Eagle / Gypsum, CO (corridor base)",
         center=LatLon(39.650, -106.890), hazard_wind_dir_deg=240.0,
@@ -718,7 +833,8 @@ LOCATIONS = {
             # Brush Creek Rd / Eagle Ranch, ~6.1 km SE
             SafeZone("eagle_co-z3", LatLon(39.6215, -106.8295),
                      "Brush Creek Rd / Eagle Ranch"),
-        )),
+        ),
+        place_near_road_m=CORRIDOR_PLACE_NEAR_ROAD_M),
     "glenwood_springs_co": SimLocation(
         key="glenwood_springs_co", name="Glenwood Springs, CO",
         center=LatLon(39.545, -107.320), hazard_wind_dir_deg=240.0,
@@ -733,7 +849,8 @@ LOCATIONS = {
             # SH-82 / CR-154 Cattle Creek, ~9.2 km SSE
             SafeZone("glenwood_springs_co-z3", LatLon(39.4695, -107.2765),
                      "SH-82 / Cattle Creek"),
-        )),
+        ),
+        place_near_road_m=CORRIDOR_PLACE_NEAR_ROAD_M),
     "basalt_carbondale_co": SimLocation(
         key="basalt_carbondale_co", name="Basalt / El Jebel / Carbondale, CO",
         center=LatLon(39.395, -107.125), hazard_wind_dir_deg=225.0,
@@ -748,7 +865,8 @@ LOCATIONS = {
             # SH-82 x Willits Ln, ~4.7 km ESE
             SafeZone("basalt_carbondale_co-z3", LatLon(39.3835, -107.0725),
                      "SH-82 / Willits Ln"),
-        )),
+        ),
+        place_near_road_m=CORRIDOR_PLACE_NEAR_ROAD_M),
     "aspen_co": SimLocation(
         key="aspen_co", name="Aspen / Snowmass Village, CO",
         center=LatLon(39.210, -106.870), hazard_wind_dir_deg=225.0,
@@ -763,7 +881,8 @@ LOCATIONS = {
             # Snowmass Village, Town Park / Brush Creek Rd, ~5.8 km W
             SafeZone("aspen_co-z3", LatLon(39.2125, -106.9370),
                      "Snowmass Village Town Park"),
-        )),
+        ),
+        place_near_road_m=CORRIDOR_PLACE_NEAR_ROAD_M),
     # ---------------------------------------------------------------------
     # EAGLE -> VAIL CORRIDOR (founder 2026-09-25 "expand the area for Vail
     # so that the entire Eagle to Vail corridor can be modeled at once"):
@@ -1237,6 +1356,11 @@ class _SimCrew(_CrewSim):
         self._leg = None                 # active leg (see _begin_leg)
         self._egress_plan = None         # CURRENT stop's escape route
         self.pending_withdrawals = []    # road-guard aborts, session-drained
+        # ROADS LEGIBILITY (display only): every position this crew occupied
+        # during the CURRENT advance() call, in driving order — the exact
+        # road path it drove this tick (state map_view.moved_path). Pure
+        # bookkeeping: never read by the kinematics.
+        self.driven = []
 
     # -- legs (roads seam) ---------------------------------------------------
 
@@ -1256,7 +1380,9 @@ class _SimCrew(_CrewSim):
         if rr is None:
             self._leg = {"kind": kind, "target": target, "pts": [target],
                          "speed": self.speed, "on_roads": False,
-                         "edge_kind": ["chord"]}
+                         "edge_kind": ["chord"],
+                         # display-only (ROADS LEGIBILITY map_view.*_why)
+                         "origin": self.pos, "note": None}
             return
         pts = list(rr.polyline)
         if pts and pts[0] == self.pos:
@@ -1268,7 +1394,10 @@ class _SimCrew(_CrewSim):
             speed = rr.dist_m / rr.time_s      # the route's implied speed
         self._leg = {"kind": kind, "target": target, "pts": pts,
                      "speed": speed, "on_roads": bool(rr.on_roads),
-                     "edge_kind": _edge_kinds_from_route(rr, len(pts))}
+                     "edge_kind": _edge_kinds_from_route(rr, len(pts)),
+                     # display-only (ROADS LEGIBILITY map_view.*_why): where
+                     # the leg began and the roads seam's chord reason
+                     "origin": self.pos, "note": getattr(rr, "note", None)}
 
     def _move_leg(self, t: float, t_end_s: float):
         """Advance along the active leg point-to-point; (t_new, arrived).
@@ -1284,9 +1413,11 @@ class _SimCrew(_CrewSim):
             if budget < seg:
                 if seg > 1e-9:
                     self.pos = _interp(self.pos, pts[0], budget / seg)
+                    self.driven.append(self.pos)
                 return t_end_s, False
             t += seg / speed
             self.pos = pts.pop(0)
+            self.driven.append(self.pos)
             if kinds:                          # consume this edge's render kind
                 kinds.pop(0)
         return t, True
@@ -1318,7 +1449,7 @@ class _SimCrew(_CrewSim):
             self._egress_plan = {"points": [origin, self.egress_loc],
                                  "on_roads": False, "time_s": tier0_s,
                                  "tier0_s": tier0_s, "eff_s": tier0_s,
-                                 "edge_kind": ["chord"]}
+                                 "edge_kind": ["chord"], "note": None}
             return
         pts = list(rr.polyline)
         if not pts or pts[0] != origin:
@@ -1334,7 +1465,9 @@ class _SimCrew(_CrewSim):
             "edge_kind": _edge_kinds_from_route(rr, len(pts) - 1),
             # CONSERVATIVE (module docstring ROADS nuance): the effective
             # egress time never drops below the calibrated tier-0 model.
-            "eff_s": max(tier0_s, road_s)}
+            "eff_s": max(tier0_s, road_s),
+            # display-only: the roads seam's chord reason (map_view)
+            "note": getattr(rr, "note", None)}
 
     def road_eff_egress_s(self) -> float:
         """The departure guard's effective egress seconds (0 when no plan)."""
@@ -1464,6 +1597,7 @@ class _SimCrew(_CrewSim):
         dwell + ServicedStop bookkeeping are byte-identical to sim.py; with
         route_fn=None every leg degenerates to the original straight tier-0
         leg (same physics as before roads existed)."""
+        self.driven = [self.pos]         # ROADS LEGIBILITY: this tick's drive
         t = t_start_s
         guard = 0
         while t < t_end_s and guard < 1000:
@@ -1583,8 +1717,13 @@ class SimSession:
     the session to straight-leg mode regardless of what is installed (the
     kinematics-pinned logic tests use this, same discipline as tile_dir);
     any other object is used as the roads module (in-test fakes conforming
-    to the contracts wgresponse.roads seam). Every command appends to
-    cmd_log — the reproducibility script echoed in state()."""
+    to the contracts wgresponse.roads seam). place_near_road_m (HARNESS
+    seam, roads inspection 2026-09-25): None (default) = the location's own
+    SimLocation.place_near_road_m; a number overrides it for this session
+    (0.0 = the whole WUI band) — how scratch_review/corridor_grid.py keeps
+    its whole-band arms reproducible now that the corridor presets are
+    road-placed. Every command appends to cmd_log — the reproducibility
+    script echoed in state()."""
 
     def __init__(self, location_key: str, n_clients: int, n_crews: int,
                  seed: object, cfg_overrides: Optional[dict] = None,
@@ -1593,10 +1732,15 @@ class SimSession:
                  tile_dir=None, synth_size_km: float = DEFAULT_SYNTH_SIZE_KM,
                  roads_module: object = _ROADS_AUTO,
                  client_locs: Optional[list] = None,
-                 crew_locs: Optional[list] = None):
+                 crew_locs: Optional[list] = None,
+                 place_near_road_m: Optional[float] = None):
         self._tile_dir = tile_dir
         self._synth_size_km = float(synth_size_km)
         self._roads_module_arg = roads_module
+        if place_near_road_m is not None and float(place_near_road_m) < 0.0:
+            raise ValueError("place_near_road_m must be >= 0")
+        self._place_near_road_override = (
+            None if place_near_road_m is None else float(place_near_road_m))
         self.configure(location_key, n_clients, n_crews, seed, cfg_overrides,
                        fire_zone=fire_zone, n_crews_1h=n_crews_1h,
                        n_crews_3h=n_crews_3h, client_locs=client_locs,
@@ -1722,6 +1866,16 @@ class SimSession:
         # explicitly pinned horizon_h in cfg_overrides.
         if fire_zone == "extended" and "horizon_h" not in overrides:
             cfg.horizon_h = max(cfg.horizon_h, EXT_MIN_HORIZON_H)
+        # EXTENDED sessions route on the extended road graph (roads
+        # inspection 2026-09-25), which opens proactive-escape routes beyond
+        # the 18 km core that the standard graph never offered; the SEM-10e
+        # exposed-transit fallback would ride them through audit-counted
+        # pessimistic exposure (contracts escape_proactive_lawful_only). Same
+        # precedence as the horizon floor: an explicit override always wins;
+        # standard sessions are untouched (byte-identical).
+        if (fire_zone == "extended"
+                and "escape_proactive_lawful_only" not in overrides):
+            cfg.escape_proactive_lawful_only = True
 
         # ROADS ADHERENCE (FOUNDER ROUND 3 law 2): lift the off-network spur
         # ceiling to SIM_ROAD_SPUR_MAX_M so the real cached graphs (terminal
@@ -1812,8 +1966,24 @@ class SimSession:
         # PLAN-ON-ROADS session route cache (see _plan_road_provider)
         self._road_plan_cache = {}
         if mod is not None:
+            g = None
+            ext_loaded = False
             try:
-                g = mod.load_road_graph(location_key)
+                if fire_zone == "extended":
+                    # FIRE ZONE road coverage (EXT_ROAD_SUFFIX): the extended
+                    # tile's own graph; missing -> LOUD fallback below.
+                    g = mod.load_road_graph(location_key + EXT_ROAD_SUFFIX)
+                    ext_loaded = g is not None
+                    if g is None:
+                        road_notes.append(
+                            f"ROADS: no extended road graph cached for "
+                            f"{location_key} ({location_key}"
+                            f"{EXT_ROAD_SUFFIX}.wgr) — this extended session "
+                            f"routes on the STANDARD ~18 km road graph; legs "
+                            f"beyond it fall back to straight chords (fetch "
+                            f"with py -3 tools/fetch_sim_roads.py --extended)")
+                if g is None:
+                    g = mod.load_road_graph(location_key)
             except Exception as e:       # unreadable cache: loud, non-fatal
                 g = None
                 road_notes.append(
@@ -1826,12 +1996,27 @@ class SimSession:
                         f"{location_key}) — crews move on straight tier-0 "
                         f"legs")
             self._road_graph = g
-            if g is not None:
+            if g is not None and ext_loaded:
+                road_notes.append(
+                    f"extended road graph loaded for {location_key} "
+                    f"({len(g.nodes)} nodes, the whole extended fire-zone "
+                    f"tile) — crews follow road routes for ingress and "
+                    f"egress; departure decisions use max(tier-0, road) "
+                    f"egress time")
+            elif g is not None:
                 road_notes.append(
                     f"road graph loaded for {location_key} "
                     f"({len(g.nodes)} nodes) — crews follow road routes for "
                     f"ingress and egress; departure decisions use "
                     f"max(tier-0, road) egress time")
+        # display-only (ROADS LEGIBILITY): the loaded graph's node bbox
+        # (south, west, north, east) — "outside the road graph" explanations
+        self._road_bbox = None
+        g_nodes = getattr(self._road_graph, "nodes", None)
+        if g_nodes and isinstance(next(iter(g_nodes.values()), None), LatLon):
+            lats = [p.lat for p in g_nodes.values()]
+            lons = [p.lon for p in g_nodes.values()]
+            self._road_bbox = (min(lats), min(lons), max(lats), max(lons))
 
         # FIRE ZONE placement law: clients ALWAYS live in the central
         # community window (the location's tile_half_m — ~18 km for every
@@ -1848,6 +2033,8 @@ class SimSession:
         # (every existing preset, byte-identical). Armed but no graph loaded
         # -> whole-band draw, said LOUDLY (never a silent downgrade).
         near_road_m = float(getattr(self._loc, "place_near_road_m", 0.0) or 0.0)
+        if self._place_near_road_override is not None:
+            near_road_m = self._place_near_road_override     # harness seam
         if (near_road_m > 0.0 and self._road_graph is None
                 and self._client_locs is None):
             self._notes.append(
@@ -1992,6 +2179,22 @@ class SimSession:
                 self._tracker.ingest(CrewBeacon(
                     crew_id=crew.crew_id, loc=cs.pos, t_s=T0_S,
                     status=CrewStatus.INBOUND))
+
+        # ROADS LEGIBILITY (display only; module constants MAP_*): the road
+        # path each crew drove during the last tick, its driven trail, and
+        # any NON-driven position change (a reinforcement's arrival — a jump
+        # the map must never draw as a drive). Never read by the engine.
+        self._map_last_pos = {cid: cs.pos
+                              for cid, cs in self._crew_sims.items()}
+        self._map_moved = {}
+        self._map_jumped = {}
+        self._map_trail = {cid: deque(maxlen=MAP_TRAIL_TICKS)
+                           for cid in self._crew_sims}
+        self._map_trail_runs = {}
+        self._map_route_cache = {}
+        self._map_preview_cache = {}
+        self._map_place_idx = None        # rebuilt lazily (clients changed)
+        self._map_gap_cache = {}
 
         self._alerts = AlertEngine(cfg, clients_by_id=dict(self._client_by_id))
         self._t0_s = T0_S
@@ -2786,9 +2989,16 @@ class SimSession:
         lat_lo = spec.north_lat - (spec.nrows - 2) * spec.cell_m / 111_320.0
         lon_w = geo.rc_to_latlon(spec, 0, 1).lon
         lon_e = geo.rc_to_latlon(spec, 0, spec.ncols - 2).lon
+        # SEM-10d AREA-ESCAPE ROAD SNAP (contracts escape_road_snap_m,
+        # default 0 = off, byte-identical): snap each proposal to a road node
+        snap_m = float(getattr(self._cfg, "escape_road_snap_m", 0.0) or 0.0)
+        g = (self._road_graph if snap_m > 0.0 and self._road_bbox is not None
+             else None)
         out = []
+        on_road = []                          # snapped proposals (snap only)
         for bearing in range(0, 360, 30):
             last_ok = None
+            safe = [] if g is not None else None     # safe samples (snap only)
             d = 550.0
             while d <= 12_000.0:
                 q = geo.destination(pos, float(bearing), d)
@@ -2800,10 +3010,37 @@ class SimSession:
                         and (pass_t - nom) < self._cold_black_pass_s(q)):
                     break        # the FRONT is here at pass time: ray ends
                 last_ok = q
+                if safe is not None:
+                    safe.append(q)
                 d += 550.0
             if last_ok is not None and geo.haversine_m(pos, last_ok) >= 2_000.0:
+                if safe:
+                    node = self._snap_escape_target(pos, safe, g, snap_m)
+                    if node is not None:
+                        on_road.append((bearing, node))
                 out.append((bearing, last_ok))
+        # snap armed: the flee is ROAD-BOUND whenever any bearing reaches a
+        # road — a proposal with no road node in reach (open ground, e.g. the
+        # roadless Gore Range NE of East Vail) survives only when none does
+        if on_road:
+            return on_road
         return out
+
+    @staticmethod
+    def _snap_escape_target(pos, safe_samples, g, snap_m: float):
+        """SEM-10d AREA-ESCAPE ROAD SNAP (contracts escape_road_snap_m): the
+        road-graph node nearest a safe ray sample within snap_m, scanning
+        from the ray end (the farthest safe point) back toward the crew, that
+        still leaves >= 2 km of drive; None when no sample has one (the raw
+        ray point stands). Deterministic (nearest_node ties -> smaller id)."""
+        for q in reversed(safe_samples):
+            hit = g.nearest_node(q, max_m=snap_m)
+            if hit is None:
+                continue
+            node = g.nodes[hit[0]]
+            if geo.haversine_m(pos, node) >= 2_000.0:
+                return node
+        return None
 
     def _best_escape(self, pos, now, speed_mps: float, lead_s: float):
         """(target_loc, target_id) for a crew that must move (SEM-10d) — the
@@ -2890,6 +3127,10 @@ class SimSession:
                                  speed_mps, lead_s)
         if z is not None:
             return z
+        if getattr(self._cfg, "escape_proactive_lawful_only", False):
+            # contracts SEM-10e LAWFUL-ONLY: a voluntary move never rides
+            # audit-counted (pessimistic-exposed) transit
+            return None
         lawful = []
         for z, zp10 in durable:
             burned, _e, _w, _t, dm = self._route_metrics(
@@ -3408,6 +3649,7 @@ class SimSession:
         # in-zone crew. Pure function of (ignition time + delay) vs the tick
         # clock -> deterministic and byte-identical on scrub replay. Runs
         # before the beacon ingest so the tracker/trails record the arrival.
+        arrived = set()
         for cid in _idsort(self._crew_sims):
             cs = self._crew_sims[cid]
             if cs.status != CrewStatus.INBOUND:
@@ -3419,6 +3661,7 @@ class SimSession:
             cs.status = CrewStatus.AVAILABLE
             cs._mode = "idle"
             cs._leg = None
+            arrived.add(cid)                    # ROADS LEGIBILITY: a jump
 
         # 1. crew beacons -> the real tracker (+ console trails)
         for cid in _idsort(self._crew_sims):
@@ -3623,8 +3866,10 @@ class SimSession:
 
         # 5. kinematic crew movement (sim.py physics; legs follow roads when
         # a graph is loaded) + service completion
+        jumps = self._map_jumps(arrived)     # display only (ROADS LEGIBILITY)
         for cid in _idsort(self._crew_sims):
             self._crew_sims[cid].advance(now, now + step, self._serviced)
+        self._record_map_paths(jumps)        # display only (ROADS LEGIBILITY)
 
         # 5b. drain ROAD-EGRESS departure-guard withdrawals raised inside
         # advance() (arrival-time guard) into the loud withdrawal channel —
@@ -4055,6 +4300,313 @@ class SimSession:
                     _threshold_rings(spec2, vals, now + h * 3600.0))
         return burned, bands
 
+    # -- ROADS LEGIBILITY (display only; roads inspection 2026-09-25) ----------
+    # The founder watched crews "not use roads". The engine drove the road
+    # polylines all along; the PAGE drew straight lines: the marker tween
+    # slid between 15-min tick positions, the breadcrumb joined one point per
+    # tick, a deploying crew's queued stops were one straight red chord, a
+    # relocating crew's first tick had no leg yet (a synthesized chord) and a
+    # reinforcement's arrival was slid across the map from the tile edge.
+    # crews[i].map_view hands the page the real geometry for each of those,
+    # plus a one-line reason for every straight stretch that IS real (a home,
+    # a zone anchor or an escape point off the road network; a chord outside
+    # the road graph). Nothing here feeds back into the engine.
+
+    def _map_jumps(self, arrived) -> dict:
+        """{crew_id: (from, to, reason)} for every crew whose position changed
+        since the end of its last drive WITHOUT driving — today only a
+        reinforcement's arrival (tick() step 0 places it at its safe zone
+        from the tile-edge staging marker). The page snaps such a crew; it
+        must never slide it across the terrain."""
+        out = {}
+        for cid in _idsort(self._crew_sims):
+            cs = self._crew_sims[cid]
+            last = self._map_last_pos.get(cid)
+            if last is not None and _haversine_m(last, cs.pos) > 1.0:
+                out[cid] = (last, cs.pos, ("reinforcement_arrival"
+                                           if cid in arrived else
+                                           "repositioned"))
+        return out
+
+    def _record_map_paths(self, jumps: dict) -> None:
+        """After tick() step 5: keep each crew's simplified driven path for
+        this tick (map_view.moved_path), its jump record, and rebuild its
+        driven trail."""
+        for cid in _idsort(self._crew_sims):
+            cs = self._crew_sims[cid]
+            moved = _simplify_ll(cs.driven) if len(cs.driven) >= 2 else []
+            if len(moved) < 2:
+                moved = []
+            self._map_moved[cid] = moved
+            j = jumps.get(cid)
+            self._map_jumped[cid] = self._jump_record(cid, j) if j else None
+            # each tick's drive simplified ONCE per trail rung
+            self._map_trail[cid].append((j is not None, {
+                eps: (_simplify_ll(moved, eps, max_pts=10 ** 9) if moved
+                      else []) for eps in MAP_TRAIL_EPS_LADDER}))
+            self._map_trail_runs[cid] = self._build_trail(cid)
+            self._map_last_pos[cid] = cs.pos
+
+    def _build_trail(self, cid) -> list:
+        """The driven trail as runs of [lat, lon] — consecutive ticks' paths
+        joined, a NEW run after every jump (never a line across it). The
+        last MAP_TRAIL_FRESH_TICKS ticks use the finest MAP_TRAIL_EPS_LADDER
+        rung; older ticks the finest rung that keeps the crew within
+        MAP_TRAIL_MAX_PTS; failing even the coarsest, the OLDEST ticks are
+        dropped (shorter, never straighter)."""
+        entries = list(self._map_trail.get(cid, ()))
+        n = len(entries)
+        fine = MAP_TRAIL_EPS_LADDER[0]
+
+        def pts_of(i, eps_old):
+            eps = fine if n - 1 - i < MAP_TRAIL_FRESH_TICKS else eps_old
+            return entries[i][1].get(eps) or []
+
+        choice = None
+        for start in range(n):
+            for eps_old in MAP_TRAIL_EPS_LADDER:
+                if sum(len(pts_of(i, eps_old))
+                       for i in range(start, n)) <= MAP_TRAIL_MAX_PTS:
+                    choice = (start, eps_old)
+                    break
+            if choice is not None:
+                break
+        if choice is None:
+            choice = (max(0, n - 1), MAP_TRAIL_EPS_LADDER[-1])
+        start, eps_old = choice
+        runs = []
+        cur = None
+        for i in range(start, n):
+            if entries[i][0]:                 # a jump: never join across it
+                cur = None
+            pts = pts_of(i, eps_old)
+            if len(pts) < 2:
+                continue
+            if cur is None or cur[-1] != pts[0]:
+                cur = list(pts)
+                runs.append(cur)
+            else:
+                cur.extend(pts[1:])
+        return runs
+
+    def _jump_record(self, cid, j) -> dict:
+        frm, to, reason = j
+        rec = {"from": [round(frm.lat, 6), round(frm.lon, 6)],
+               "to": [round(to.lat, 6), round(to.lon, 6)],
+               "reason": reason}
+        if reason == "reinforcement_arrival":
+            edge = ("east" if self._crew_region.get(cid) == "reg_1h"
+                    else "west")
+            delay = self._crew_reinforce_delay_min.get(cid, 0.0)
+            rec["why"] = (
+                f"mutual-aid arrival: the {delay:g} min transit from the "
+                f"{edge}-edge staging point happens off the map, so the crew "
+                f"appears at safe zone {self._crew_anchor.get(cid, '')} — no "
+                f"drive is simulated for it and none is drawn")
+        else:
+            rec["why"] = ("repositioned without a simulated drive — no path "
+                          "is drawn")
+        return rec
+
+    def _node_gap_m(self, p):
+        """Metres from p to the nearest node of the loaded road graph — the
+        snap roads.route charges as a straight spur — or None (no graph)."""
+        if self._road_bbox is None:
+            return None
+        key = (round(p.lat, 7), round(p.lon, 7))
+        if key not in self._map_gap_cache:
+            if len(self._map_gap_cache) >= 4096:
+                self._map_gap_cache.clear()
+            hit = self._road_graph.nearest_node(p, max_m=float("inf"))
+            self._map_gap_cache[key] = None if hit is None else hit[1]
+        return self._map_gap_cache[key]
+
+    def _map_place(self, p):
+        """('home', client_id) | ('zone', SafeZone) | ('other', None) for a
+        leg endpoint (exact coordinates: homes and zones are fixed points)."""
+        idx = self._map_place_idx
+        if idx is None:
+            idx = {}
+            for z in self._loc.safe_zones:
+                idx[(round(z.loc.lat, 7), round(z.loc.lon, 7))] = ("zone", z)
+            for cl in self._clients:
+                idx[(round(cl.loc.lat, 7), round(cl.loc.lon, 7))] = (
+                    "home", cl.client_id)
+            self._map_place_idx = idx
+        return idx.get((round(p.lat, 7), round(p.lon, 7)), ("other", None))
+
+    def _why_spur(self, p, end: str, target_kind: str = "") -> str:
+        d = self._node_gap_m(p)
+        gap = "an unknown distance" if d is None else f"{d:,.0f} m"
+        if end == "dest" and target_kind == "escape":
+            return (f"area escape (SEM-10d): no catalog safe zone is "
+                    f"reachable ahead of the fire, so the crew heads for open "
+                    f"ground {gap} from the nearest mapped road junction — "
+                    f"this last stretch is straight")
+        place, obj = self._map_place(p)
+        if place == "home":
+            if end == "dest":
+                return (f"last-mile spur: home {obj} sits {gap} from the "
+                        f"nearest mapped road junction — no road or driveway "
+                        f"is mapped closer, so the final stretch is straight")
+            return (f"leaving home {obj}, {gap} from the nearest mapped road "
+                    f"junction — no road or driveway is mapped closer")
+        if place == "zone":
+            return (f"safe zone {obj.zone_id} ({obj.name}) is anchored {gap} "
+                    f"from the nearest mapped road junction "
+                    f"(planning-grade coordinate) — straight connector")
+        return (f"the crew is {gap} from the nearest mapped road junction — "
+                f"straight connector to the road")
+
+    def _why_chord(self, a, b, note) -> str:
+        if self._road_graph is None:
+            return ("roads offline for this session — every leg is a "
+                    "straight tier-0 leg")
+        why = f"no road route ({note})" if note else "no road route"
+        bb = self._road_bbox
+        if bb is not None and not all(
+                bb[0] <= p.lat <= bb[2] and bb[1] <= p.lon <= bb[3]
+                for p in (a, b)):
+            why += (" — an end of this leg lies outside the loaded road "
+                    "graph's coverage")
+        return why + "; drawn as a straight tier-0 leg"
+
+    def _explain_segments(self, segs, origin, target, target_kind: str,
+                          note) -> Optional[list]:
+        """why[i] per display segment {points, kind, spur}: None for road,
+        the mechanism for every straight stretch (a leg's LAST spur is its
+        destination connector, any other spur its origin connector)."""
+        if not segs:
+            return None
+        n = len(segs)
+        out = []
+        for i, sg in enumerate(segs):
+            kind = sg.get("kind")
+            if kind == "road":
+                out.append(None)
+            elif kind == "chord":
+                a = origin if origin is not None else LatLon(*sg["points"][0])
+                why = self._why_chord(a, target, note)
+                if target_kind == "escape":
+                    why = ("area escape (SEM-10d): no catalog safe zone is "
+                           "reachable ahead of the fire and the escape point "
+                           "is open ground with no road near it — " + why)
+                out.append(why)
+            elif i == n - 1:
+                out.append(self._why_spur(target, "dest", target_kind))
+            else:
+                p = origin if origin is not None else LatLon(*sg["points"][0])
+                out.append(self._why_spur(p, "origin"))
+        return out
+
+    def _map_route(self, a: LatLon, b: LatLon):
+        """Cached fastest road route a -> b for DISPLAY of a deploying crew's
+        queued legs (roads.route, exact-coordinate key — homes are fixed);
+        None in straight-leg mode. Its own cache: the dispatch route cache
+        is never touched."""
+        if self._roads is None or self._road_graph is None:
+            return None
+        key = (a.lat, a.lon, b.lat, b.lon)
+        rr = self._map_route_cache.get(key)
+        if rr is None:
+            if len(self._map_route_cache) >= _ROAD_PLAN_CACHE_MAX:
+                self._map_route_cache.clear()
+            rr = self._roads.route(self._road_graph, a, b, self._cfg)
+            self._map_route_cache[key] = rr
+        return rr
+
+    @staticmethod
+    def _display_segments(a: LatLon, b: LatLon, rr, eps_m: float) -> list:
+        """Display cover {points, kind, spur} of one leg a -> b from a
+        RoadRoute (road runs simplified at eps_m, boundaries kept) or, with
+        no route, the honest straight chord [a, b]."""
+        if rr is None:
+            pts, kinds = [a, b], ["chord"]
+        else:
+            pts = list(rr.polyline) or [a, b]
+            if pts[0] != a:
+                pts.insert(0, a)
+            if pts[-1] != b:
+                pts.append(b)
+            kinds = _edge_kinds_from_route(rr, len(pts) - 1)
+        poly = [[round(p.lat, 6), round(p.lon, 6)] for p in pts]
+        segs = _segments_from_kinds(poly, kinds)
+        for sg in segs:
+            if sg["kind"] == "road" and len(sg["points"]) > 2:
+                sg["points"] = _simplify_ll(sg["points"], eps_m,
+                                            max_pts=10 ** 9)
+        return segs
+
+    def _queue_view(self, cs) -> Optional[dict]:
+        """The ROAD route through a DEPLOYING crew's queued stops
+        (itinerary[0] -> [1] -> ...) — the page used to draw [crew, stops]
+        as one straight red 'no road route' chord. None otherwise."""
+        if cs._mode != "deploy" or len(cs.itinerary) < 2:
+            return None
+        segs, why = [], []
+        for s0, s1 in zip(cs.itinerary, cs.itinerary[1:]):
+            a, b = s0["loc"], s1["loc"]
+            rr = self._map_route(a, b)
+            leg = self._display_segments(a, b, rr, MAP_QUEUE_EPS_M)
+            why.extend(self._explain_segments(
+                leg, a, b, "home", getattr(rr, "note", None)) or [])
+            segs.extend(leg)
+        return {"segments": segs, "why": why}
+
+    def _egress_preview(self, cid, cs) -> Optional[dict]:
+        """A crew the safety sweep relocated THIS tick is egressing with no
+        leg yet (_SimCrew resolves it at the start of its next drive), so it
+        has no egress polyline and the page synthesized a straight 'no road
+        route' chord. Preview the exact leg that drive resolves —
+        _leg_route(pos, egress_loc), the call _begin_leg makes. None
+        otherwise. Cached per (crew, tick)."""
+        if cs._mode != "egress" or cs._leg is not None or cs.egress_loc is None:
+            return None
+        key = (cid, self._tick_n, cs.pos, cs.egress_loc, self._now_s)
+        view = self._map_preview_cache.get(key)
+        if view is None:
+            rr = self._leg_route(cs.pos, cs.egress_loc)
+            segs = self._display_segments(cs.pos, cs.egress_loc, rr,
+                                          MAP_PATH_EPS_M)
+            kind = "escape" if cs.egress_zone_id == "escape" else "zone"
+            view = {"segments": segs,
+                    "why": self._explain_segments(
+                        segs, cs.pos, cs.egress_loc, kind,
+                        getattr(rr, "note", None))}
+            if len(self._map_preview_cache) > 256:
+                self._map_preview_cache.clear()
+            self._map_preview_cache[key] = view
+        return view
+
+    def _map_view(self, cid, cs, route_segments, egress_segments) -> dict:
+        """crews[i].map_view (display only; see the section comment)."""
+        leg = cs._leg
+        route_why = egress_why = None
+        if route_segments and leg is not None:
+            route_why = self._explain_segments(
+                route_segments, leg.get("origin"), leg["target"], "home",
+                leg.get("note"))
+        kind = "escape" if cs.egress_zone_id == "escape" else "zone"
+        if egress_segments:
+            if cs._mode == "egress" and leg is not None:
+                egress_why = self._explain_segments(
+                    egress_segments, leg.get("origin"), leg["target"], kind,
+                    leg.get("note"))
+            elif cs._egress_plan is not None:
+                plan = cs._egress_plan
+                egress_why = self._explain_segments(
+                    egress_segments, plan["points"][0], plan["points"][-1],
+                    kind, plan.get("note"))
+        return {
+            "moved_path": self._map_moved.get(cid, []),
+            "jumped": self._map_jumped.get(cid),
+            "trail": self._map_trail_runs.get(cid, []),
+            "route_why": route_why,
+            "egress_why": egress_why,
+            "egress_preview": self._egress_preview(cid, cs),
+            "queue": self._queue_view(cs),
+        }
+
     def state(self) -> dict:
         """JSON-safe UI snapshot (design doc panel-by-panel). Deterministic
         for a deterministic command script; json.dumps(..., allow_nan=False)
@@ -4267,6 +4819,12 @@ class SimSession:
                     # on projected violation) — never a silent grandfather
                     "policy_superseded": s["client_id"] in self._superseded,
                 } for s in cs.itinerary],
+                # ROADS LEGIBILITY (display only, additive — every key above
+                # is unchanged): the road path driven this tick, the driven
+                # trail, jumps, planned queued legs on roads, the relocation
+                # preview and a reason for every straight stretch.
+                "map_view": self._map_view(cid, cs, route_segments,
+                                           egress_segments),
             })
 
         unserved = []

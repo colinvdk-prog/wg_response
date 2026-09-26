@@ -301,6 +301,11 @@ road** (`scratch_review/corridor_roadless.py`), none elsewhere but Basalt
 (0.4%). A real client has a driveway, so **the program's headline placement
 draws the same 40 homes from WUI cells within 300 m of a road** (`_road`
 arms); the whole-band placement is reported as the sensitivity (§3.6).
+Since 2026-09-25 the six corridor presets in the simulator seed their homes
+the same way by default (`SimLocation.place_near_road_m = 300`, roads
+inspection `docs/review/roads_inspection_2026-09-25.md`), so a public
+session plays the headline placement; the grid harness pins its whole-band
+arms explicitly (`place_near_road_m=0.0`).
 
 Arms, all with the same seeds so comparisons are paired:
 

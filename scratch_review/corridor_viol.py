@@ -49,9 +49,11 @@ def rerun(job):
     if n_eagle:
         cfg["crew_reinforce_1h_min"] = crew_delay_min(row["map"], base)
     locs = road_homes(row["map"], row["seed"], N_CLIENTS) if arm.endswith("_road") else None
+    # whole-band arms stay whole-band (the corridor presets are road-placed
+    # by default since the roads inspection 2026-09-25)
     s = simui.SimSession(row["map"], N_CLIENTS, n_local, seed=row["seed"],
                          cfg_overrides=cfg, fire_zone=fire_zone, n_crews_1h=n_eagle,
-                         client_locs=locs)
+                         client_locs=locs, place_near_road_m=0.0)
     assert _ignite(s, loc, wd, row["dist"], row["inten"], fire_zone == "extended")
     kinds = Counter()          # (reason, mode) -> crew-ticks
     departure_rows_max = 0

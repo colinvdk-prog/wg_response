@@ -398,6 +398,122 @@ class TestRoadTiles:
 
 
 # ---------------------------------------------------------------------------
+# EXTENDED fire-zone road graphs (data/roads/<key>_ext.wgr; roads inspection
+# 2026-09-25, tools/fetch_sim_roads.py --extended): every key with an
+# extended tile gets a graph over the whole ~48 km tile so an extended
+# session's escape legs past the 18 km core route on roads instead of
+# straight chords. Two-tier (all classes in the standard bbox + major +
+# unclassified outside) for the three urban tiles, full elsewhere.
+# ---------------------------------------------------------------------------
+
+def _ext_keys():
+    from wgresponse.simui import DEFAULT_TILE_DIR
+    return tuple(k for k in sorted(LOCATIONS)
+                 if getattr(LOCATIONS[k], "extended_zone", True)
+                 and (DEFAULT_TILE_DIR / f"{k}_ext.wgt").exists())
+
+
+EXT_KEYS = _ext_keys()
+_ext_graphs: dict = {}
+_ext_load_s: dict = {}
+
+
+def _ext_graph(key: str):
+    gkey = f"{key}_ext"
+    path = road_file(gkey)
+    if not path.exists():
+        pytest.skip(
+            f"EXTENDED ROAD GRAPH MISSING: {path} — recreate it with `py -3 "
+            f"tools/fetch_sim_roads.py --extended --only {key}` (LIVE "
+            f"network). Until then an extended {key!r} session routes on the "
+            f"standard ~18 km graph (loud state note) and legs past it are "
+            f"straight chords.")
+    if key not in _ext_graphs:
+        t0 = time.perf_counter()
+        _ext_graphs[key] = load_road_graph(gkey)
+        _ext_load_s[key] = time.perf_counter() - t0
+    return _ext_graphs[key]
+
+
+def test_every_extended_tile_has_an_extended_road_graph():
+    """The fetch covered every key with an extended tile (11 on 2026-09-25)
+    and recorded it in its own provenance file."""
+    import json
+    from tools.fetch_sim_roads import PROVENANCE_EXT_PATH
+    assert len(EXT_KEYS) >= 11
+    missing = [k for k in EXT_KEYS if not road_file(f"{k}_ext").exists()]
+    assert not missing, f"extended road graphs missing: {missing}"
+    with open(PROVENANCE_EXT_PATH, encoding="utf-8") as f:
+        prov = json.load(f)
+    for k in EXT_KEYS:
+        assert prov["locations"][k]["status"] in ("fetched", "cached"), k
+
+
+@pytest.mark.parametrize("key", EXT_KEYS)
+class TestExtendedRoadGraphs:
+    def test_loads_fast_and_is_one_component(self, key):
+        from tools.fetch_sim_roads import EXT_TWO_TIER
+        g = _ext_graph(key)
+        assert _ext_load_s[key] < 2.0, (
+            f"{key}_ext: load took {_ext_load_s[key]:.2f} s (>2 s budget)")
+        assert g.meta.get("key") == f"{key}_ext"
+        assert g.meta.get("extended") is True
+        assert g.meta.get("tiers") == (
+            "two-tier" if key in EXT_TWO_TIER else "full")
+        # the largest-component law: one connected component, no islands
+        start = next(iter(g.nodes))
+        seen = {start}
+        stack = [start]
+        while stack:
+            n = stack.pop()
+            for m, _ei in g.neighbors(n):
+                if m not in seen:
+                    seen.add(m)
+                    stack.append(m)
+        assert len(seen) == len(g.nodes)
+
+    def test_reaches_well_beyond_the_standard_core(self, key):
+        """The point of the graph: road nodes far outside the standard road
+        bbox, and the core's own safe zones + center still snap."""
+        from tools.fetch_sim_roads import bbox_for
+        g = _ext_graph(key)
+        loc = LOCATIONS[key]
+        core = bbox_for(loc)
+        outside = [p for p in g.nodes.values()
+                   if not (core.south <= p.lat <= core.north
+                           and core.west <= p.lon <= core.east)]
+        assert len(outside) >= 200, (key, len(outside))
+        far = max(geo.haversine_m(loc.center, p) for p in outside)
+        assert far > 15_000.0, (key, far)
+        assert g.nearest_node(loc.center) is not None
+        for z in loc.safe_zones:
+            assert g.nearest_node(z.loc) is not None, z.zone_id
+
+    def test_keeps_the_core_detail_of_the_standard_graph(self, key):
+        """Inside the core the extended graph carries the standard graph's
+        detail (two-tier: every class inside the standard bbox): a seeded
+        sample of standard-graph nodes finds an extended node within 50 m
+        (OSM edits between the two fetch dates allowed at the margin)."""
+        g = _ext_graph(key)
+        std = _graph(key)
+        rng = seeded_rng("roads-ext-core", key)
+        ids = sorted(std.nodes)
+        sample = [std.nodes[ids[rng.randrange(len(ids))]] for _ in range(300)]
+        hit = sum(1 for p in sample if g.nearest_node(p, max_m=50.0) is not None)
+        assert hit / len(sample) >= 0.9, (key, hit)
+
+    def test_routes_from_the_core_to_the_outer_ring_on_roads(self, key):
+        g = _ext_graph(key)
+        loc = LOCATIONS[key]
+        a = g.nodes[g.nearest_node(loc.center)[0]]
+        b = max(g.nodes.values(), key=lambda p: (geo.haversine_m(loc.center, p),
+                                                 p.lat, p.lon))
+        r = route(g, a, b, CFG)
+        assert r.on_roads, f"{key}_ext: core -> outer ring is not a road route"
+        assert r.dist_m >= geo.haversine_m(a, b) - 1e-6
+
+
+# ---------------------------------------------------------------------------
 # ROADS ADHERENCE (FOUNDER ROUND 3 law 2): three-phase legs, spur metadata,
 # cfg.road_spur_max_m cap, loud whole-leg chord. See roads.py SPUR METADATA.
 # ---------------------------------------------------------------------------

@@ -207,9 +207,16 @@ def run_one(job):
     if fire_zone == "extended" and not simui.tile_file(sc["map"], fire_zone="extended").exists():
         return dict(seed=sc["seed"], map=sc["map"], arm=arm, error="no_ext_tile")
     locs = road_homes(sc["map"], sc["seed"], N_CLIENTS) if arm.endswith("_road") else None
+    # place_near_road_m=0.0: the whole-band arms stay the WHOLE WUI band now
+    # that the six corridor presets are road-placed by default (roads
+    # inspection 2026-09-25), so the reactive (standard-tile) grid of record
+    # reproduces byte for byte. The ALERTED arms (extended tile) now route on
+    # data/roads/<key>_ext.wgr when it is cached — legs beyond the 18 km core
+    # are road routes instead of straight chords — so they can differ from
+    # the 2026-09-23 record, which routed on the standard graph.
     s = simui.SimSession(sc["map"], N_CLIENTS, n_local, seed=sc["seed"],
                          cfg_overrides=cfg, fire_zone=fire_zone, n_crews_1h=n_eagle,
-                         client_locs=locs)
+                         client_locs=locs, place_near_road_m=0.0)
     if not _ignite(s, loc, wd, sc["dist"], sc["inten"], fire_zone == "extended"):
         return dict(seed=sc["seed"], map=sc["map"], arm=arm, error="off_tile")
     t0 = s._now_s

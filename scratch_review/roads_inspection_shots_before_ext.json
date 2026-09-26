@@ -1,0 +1,10 @@
+[
+  {"name": "b11_vail_extended_escape_chord", "key": "vail_co", "zone": "extended", "tick": 24,
+   "view": [39.66, -106.27, 11], "mid": null, "graph_bbox": true,
+   "graph_label": "road graph coverage (standard 18 km bbox)",
+   "caption": "BEFORE · vail_co EXTENDED (extreme, 14 km ignition) t24 · six crews flee East Vail on a whole-leg straight CHORD 11 km NE across the Gore Range - the escape point is outside the road graph (cyan)"},
+  {"name": "b12_park_city_extended_escape_chord", "key": "park_city_ut", "zone": "extended", "tick": 56,
+   "view": [40.61, -111.53, 11], "mid": null, "graph_bbox": true,
+   "graph_label": "road graph coverage (standard 18 km bbox)",
+   "caption": "BEFORE · park_city_ut EXTENDED (extreme, 14 km ignition) t56 · crews leave Old Town on straight chords to an escape point 8.2 km outside the road graph"}
+]

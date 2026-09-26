@@ -1,0 +1,288 @@
+{
+  "highway_regex": "^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|service)$",
+  "locations": {
+    "aspen_co": {
+      "bbox_wsen": [
+        -107.148559,
+        38.994163,
+        -106.591441,
+        39.425837
+      ],
+      "checked_utc": "2026-09-26T02:21:46Z",
+      "fetched_utc": "2026-09-26T02:21:46Z",
+      "name": "Aspen / Snowmass Village, CO",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 56,
+        "components": 29,
+        "edges": 6230,
+        "fetch_seconds": 2.6,
+        "file_kb": 1021.3,
+        "largest_component_node_pct": 98.96,
+        "nodes": 5337,
+        "raw_way_nodes": 48340,
+        "self_loops_dropped": 166,
+        "ways_fetched": 3824
+      },
+      "tiers": "full"
+    },
+    "basalt_carbondale_co": {
+      "bbox_wsen": [
+        -107.404296,
+        39.179163,
+        -106.845704,
+        39.610837
+      ],
+      "checked_utc": "2026-09-26T02:21:46Z",
+      "fetched_utc": "2026-09-26T02:21:46Z",
+      "name": "Basalt / El Jebel / Carbondale, CO",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 290,
+        "components": 65,
+        "edges": 11095,
+        "fetch_seconds": 4.9,
+        "file_kb": 1518.7,
+        "largest_component_node_pct": 97.01,
+        "nodes": 9425,
+        "raw_way_nodes": 71050,
+        "self_loops_dropped": 263,
+        "ways_fetched": 6730
+      },
+      "tiers": "full"
+    },
+    "beaver_creek_co": {
+      "bbox_wsen": [
+        -106.840222,
+        39.409163,
+        -106.279778,
+        39.840837
+      ],
+      "checked_utc": "2026-09-26T02:21:46Z",
+      "fetched_utc": "2026-09-26T02:21:46Z",
+      "name": "Beaver Creek / Avon / Edwards, CO",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 83,
+        "components": 30,
+        "edges": 6782,
+        "fetch_seconds": 3.1,
+        "file_kb": 1409.4,
+        "largest_component_node_pct": 98.52,
+        "nodes": 5528,
+        "raw_way_nodes": 67280,
+        "self_loops_dropped": 64,
+        "ways_fetched": 4095
+      },
+      "tiers": "full"
+    },
+    "boulder_co": {
+      "bbox_wsen": [
+        -105.44157,
+        39.739163,
+        -104.87843,
+        40.170837
+      ],
+      "checked_utc": "2026-09-26T02:21:46Z",
+      "fetched_utc": "2026-09-26T02:21:46Z",
+      "name": "Boulder / Superior, CO",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 398,
+        "components": 132,
+        "edges": 58193,
+        "fetch_seconds": 23.1,
+        "file_kb": 6160.2,
+        "largest_component_node_pct": 99.08,
+        "nodes": 42881,
+        "raw_way_nodes": 254163,
+        "self_loops_dropped": 391,
+        "ways_fetched": 49632
+      },
+      "tiers": "two-tier"
+    },
+    "eagle_co": {
+      "bbox_wsen": [
+        -107.170323,
+        39.434163,
+        -106.609677,
+        39.865837
+      ],
+      "checked_utc": "2026-09-26T02:21:46Z",
+      "fetched_utc": "2026-09-26T02:21:46Z",
+      "name": "Eagle / Gypsum, CO (corridor base)",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 268,
+        "components": 60,
+        "edges": 5179,
+        "fetch_seconds": 2.4,
+        "file_kb": 1234.0,
+        "largest_component_node_pct": 94.11,
+        "nodes": 4283,
+        "raw_way_nodes": 62935,
+        "self_loops_dropped": 79,
+        "ways_fetched": 3164
+      },
+      "tiers": "full"
+    },
+    "glenwood_springs_co": {
+      "bbox_wsen": [
+        -107.599899,
+        39.329163,
+        -107.040101,
+        39.760837
+      ],
+      "checked_utc": "2026-09-26T02:21:46Z",
+      "fetched_utc": "2026-09-26T02:21:46Z",
+      "name": "Glenwood Springs, CO",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 399,
+        "components": 69,
+        "edges": 9148,
+        "fetch_seconds": 6.5,
+        "file_kb": 1202.7,
+        "largest_component_node_pct": 95.06,
+        "nodes": 7676,
+        "raw_way_nodes": 58926,
+        "self_loops_dropped": 190,
+        "ways_fetched": 5556
+      },
+      "tiers": "full"
+    },
+    "malibu_ca": {
+      "bbox_wsen": [
+        -118.980515,
+        33.839163,
+        -118.459485,
+        34.270837
+      ],
+      "checked_utc": "2026-09-26T02:21:46Z",
+      "fetched_utc": "2026-09-26T02:21:46Z",
+      "name": "Malibu / Santa Monica Mtns, CA",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 212,
+        "components": 58,
+        "edges": 20867,
+        "fetch_seconds": 5.7,
+        "file_kb": 3042.1,
+        "largest_component_node_pct": 98.72,
+        "nodes": 16361,
+        "raw_way_nodes": 136689,
+        "self_loops_dropped": 214,
+        "ways_fetched": 21479
+      },
+      "tiers": "two-tier"
+    },
+    "paradise_ca": {
+      "bbox_wsen": [
+        -121.880832,
+        39.559163,
+        -121.319168,
+        39.990837
+      ],
+      "checked_utc": "2026-09-26T02:21:46Z",
+      "fetched_utc": "2026-09-26T02:21:46Z",
+      "name": "Paradise / Magalia, CA",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 130,
+        "components": 40,
+        "edges": 24507,
+        "fetch_seconds": 10.1,
+        "file_kb": 2744.8,
+        "largest_component_node_pct": 99.33,
+        "nodes": 19404,
+        "raw_way_nodes": 116124,
+        "self_loops_dropped": 216,
+        "ways_fetched": 13205
+      },
+      "tiers": "full"
+    },
+    "park_city_ut": {
+      "bbox_wsen": [
+        -111.83478,
+        40.504163,
+        -111.26522,
+        40.935837
+      ],
+      "checked_utc": "2026-09-26T02:21:46Z",
+      "fetched_utc": "2026-09-26T02:21:46Z",
+      "name": "Park City / Summit Park, UT",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 596,
+        "components": 121,
+        "edges": 38130,
+        "fetch_seconds": 4.8,
+        "file_kb": 4769.8,
+        "largest_component_node_pct": 98.14,
+        "nodes": 31458,
+        "raw_way_nodes": 211070,
+        "self_loops_dropped": 404,
+        "ways_fetched": 22292
+      },
+      "tiers": "full"
+    },
+    "santa_rosa_ca": {
+      "bbox_wsen": [
+        -122.925792,
+        38.284163,
+        -122.374208,
+        38.715837
+      ],
+      "checked_utc": "2026-09-26T02:21:46Z",
+      "fetched_utc": "2026-09-26T02:21:46Z",
+      "name": "Santa Rosa NE / Mark West, CA",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 290,
+        "components": 87,
+        "edges": 31149,
+        "fetch_seconds": 5.0,
+        "file_kb": 3282.5,
+        "largest_component_node_pct": 98.86,
+        "nodes": 25173,
+        "raw_way_nodes": 136206,
+        "self_loops_dropped": 271,
+        "ways_fetched": 19439
+      },
+      "tiers": "two-tier"
+    },
+    "vail_co": {
+      "bbox_wsen": [
+        -106.640263,
+        39.419163,
+        -106.079737,
+        39.850837
+      ],
+      "checked_utc": "2026-09-26T02:21:46Z",
+      "fetched_utc": "2026-09-26T02:21:46Z",
+      "name": "Vail / East Vail / Minturn, CO",
+      "status": "fetched",
+      "summary": {
+        "component_nodes_dropped": 1287,
+        "components": 33,
+        "edges": 5786,
+        "fetch_seconds": 2.8,
+        "file_kb": 907.9,
+        "largest_component_node_pct": 78.01,
+        "nodes": 4566,
+        "raw_way_nodes": 55814,
+        "self_loops_dropped": 83,
+        "ways_fetched": 4345
+      },
+      "tiers": "full"
+    }
+  },
+  "outer_highway_regex": "^(motorway|trunk|primary|secondary|tertiary|unclassified|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link)$",
+  "source": "overpass-api.de (OpenStreetMap, ODbL)",
+  "suffix": "_ext",
+  "two_tier_keys": [
+    "boulder_co",
+    "malibu_ca",
+    "santa_rosa_ca"
+  ]
+}

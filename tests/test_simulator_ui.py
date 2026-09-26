@@ -165,9 +165,10 @@ def test_law2_egress_keeps_amber_dash_with_spur_split():
     # amber road-egress dash preserved (the founder already reads 8 5 as egress)
     assert "#ffb300" in html
     assert 'dashArray: "8 5"' in html
-    # egress consumed through the same per-segment renderer
+    # egress consumed through the same per-segment renderer (since the roads
+    # inspection 2026-09-25 it also carries map_view.egress_why reasons)
     assert "R.egressSegs" in html
-    assert "decodeSegments(c.egress_segments)" in html
+    assert "decodeSegments(c.egress_segments, mv && mv.egress_why)" in html
 
 
 def test_law2_segments_render_in_offline_shim():
@@ -593,3 +594,107 @@ def test_sem9_10_crew_state_styling_is_shim_safe():
     # the shim slice stays self-contained (only the inert SVG xmlns)
     assert re.findall(r"https?://[A-Za-z0-9.-]+", _shim(html)) == \
         ["http://www.w3.org"]
+
+
+# --- ROADS LEGIBILITY (roads inspection 2026-09-25) ---------------------------
+# Founder: "there are times that the response team does not use roads". The
+# engine drove the road polylines; the PAGE drew straight lines (the marker
+# tween between 15-min tick positions, the one-point-per-tick breadcrumb, a
+# deploying crew's queued stops as one red chord, a relocating crew's first
+# tick, a reinforcement's arrival slid across the map). crews[i].map_view
+# hands the page the real geometry + a reason for every straight stretch.
+
+def _fn_body(html, name):
+    body = html[html.index(f"function {name}"):]
+    return body[:body.index("\n}\n")]
+
+
+def test_roads_legibility_map_view_consumed():
+    """The page reads every crews[i].map_view field."""
+    html = _html()
+    for frag in ("c.map_view", "mv.moved_path", "mv.trail", "mv.queue",
+                 "mv.egress_preview", "mv.route_why", "mv.egress_why",
+                 "mv.jumped", "function startCrewTweenMV", "function syncTrail",
+                 "function segTip", "function queueSegStyle"):
+        assert frag in html, frag
+
+
+def test_marker_follows_moved_path_never_a_straight_slide():
+    """The marker tweens ALONG map_view.moved_path (the road the engine drove
+    this tick); a tick with no drive, a jump (reinforcement arrival) or a
+    reset/scrub PLACES it — the old projection onto the NEXT leg (a straight
+    slide between tick positions) survives only for backends without
+    map_view."""
+    html = _html()
+    body = _fn_body(html, "startCrewTweenMV")
+    assert "ptList(mv.moved_path)" in body
+    assert "buildTween(path" in body
+    assert "subPathAlong" not in body and "projectOnPath" not in body
+    assert "path.length < 2" in body and "setLatLng(target)" in body
+    assert "setLatLng(path[0])" in body        # a jump is a jump, not a slide
+    render = html[html.index("function render(st)"):]
+    assert "if (mv)" in render and "startCrewTweenMV(c.crew_id" in render
+    assert "startCrewTween(c.crew_id" in render   # legacy backend fallback
+
+
+def test_trail_is_drawn_from_driven_runs_with_track_fallback():
+    html = _html()
+    assert "syncTrail(R, mv.trail" in html
+    assert "ptList(c.track)" in html            # older backend fallback kept
+    body = _fn_body(html, "syncTrail")
+    # one pooled polyline per run: flat [lat, lon] lists (offline-shim safe)
+    assert "L.polyline(runs[i], TRAIL_STYLE)" in body
+    assert "setLatLngs([])" in body
+
+
+def test_queued_stops_draw_on_roads_not_a_straight_chord():
+    html = _html()
+    assert "decodeSegments(mv.queue.segments, mv.queue.why)" in html
+    assert "planned next stops" in html
+    assert "R.queueSegs" in html and "queueSegs: []" in html
+    # the straight chord through the stops is now only the no-map_view path
+    assert html.index("else if (mv && mv.queue)") < \
+        html.index("straightFallback = true")
+
+
+def test_relocation_preview_replaces_the_synthesized_chord():
+    html = _html()
+    assert ("decodeSegments(mv.egress_preview.segments, "
+            "mv.egress_preview.why)") in html
+    assert "!egressPreview" in html
+    assert "the road leg it starts driving next tick" in html
+
+
+def test_every_straight_stretch_explains_itself():
+    """Tooltips carry the engine's reason (map_view.*_why) for every spur /
+    chord, and the marker tooltip carries a jump's reason."""
+    html = _html()
+    for frag in ("decodeSegments(c.route_segments, mv && mv.route_why)",
+                 "decodeSegments(c.egress_segments, mv && mv.egress_why)",
+                 "segTip(routeStopTip", "segTip(egressTip", "segTip(queueTip",
+                 "mv.jumped.why"):
+        assert frag in html, frag
+    body = _fn_body(html, "segTip")
+    assert "seg.why" in body
+
+
+def test_legend_rows_for_driven_trail_planned_stops_and_why():
+    html = _html()
+    legend = html[html.index('<div id="legend">'):
+                  html.index('<div id="synthbanner">')]
+    for frag in ("driven trail (the road path actually driven)",
+                 "planned next stops (road route)",
+                 "last-mile spur (off-network)", "road-network fallback (chord)",
+                 "hover for why"):
+        assert frag in legend, frag
+
+
+def test_roads_legibility_layers_are_shim_primitives():
+    """The new layers use only L.polyline + setLatLngs + setStyle — the SVG
+    shim's primitives — so they render offline too."""
+    html = _html()
+    shim = _shim(html)
+    assert "polyline: (latlngs, opts)" in shim and "setLatLngs(" in shim
+    for name in ("syncTrail", "startCrewTweenMV"):
+        body = _fn_body(html, name)
+        assert "L.map(" not in body and "fetch(" not in body

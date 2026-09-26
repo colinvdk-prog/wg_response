@@ -342,11 +342,17 @@ out instead of a fire that is already on the doorstep at ignition. Law of record
 - **Missing `_ext` tile** — loud `state.notes` entry + fallback to the standard tile;
   `state.fire_zone` always reflects what ACTUALLY loaded (the UI toasts the note and
   re-syncs the selector). There is deliberately no synthetic extended fallback.
-- **Roads** — road graphs were fetched on the STANDARD bbox and are loaded unchanged;
-  crews still route on them (clients/zones are central). A leg endpoint outside graph
-  coverage (e.g. a far ignition-side withdrawal target) falls back per the
-  `wgresponse.roads` seam: straight tier-0 leg, `on_roads=False`, never silent —
-  verified in `tests/test_simui.py::test_fire_zone_extended_real_tile_integration`.
+- **Roads** — until 2026-09-25 an extended session routed on the STANDARD ~18 km
+  graph, so a crew fleeing past the core (the SEM-10d area escape) drove a whole-leg
+  straight chord — up to 11 km across the Gore Range on extended vail_co (roads
+  inspection, `docs/review/roads_inspection_2026-09-25.md`). Extended sessions now
+  load `data/roads/<key>_ext.wgr` over the whole extended tile
+  (`py -3 tools/fetch_sim_roads.py --extended`; `data/roads/provenance_ext.json`;
+  two-tier — every class in the standard bbox, motorway..tertiary + unclassified
+  outside — for the urban `boulder_co`, `malibu_ca`, `santa_rosa_ca`, full elsewhere)
+  and fall back LOUDLY to the standard graph when it is missing; standard sessions
+  never load it. A leg endpoint outside graph coverage still falls back per the
+  `wgresponse.roads` seam: straight tier-0 leg, `on_roads=False`, never silent.
 - **Map** — the UI fits bounds to `state.terrain.bbox` per session, so an extended
   session automatically frames the wide tile.
 
@@ -378,7 +384,12 @@ to `simui.LOCATIONS`, `tools/fetch_sim_tiles.py` (kept in sync;
 `tests/test_corridor_vail_aspen.py`) and the simulator's location list. Same
 tile law as the five originals (standard ~18×18 km @ 90 m, extended ~48×48 km
 @ 240 m), same OSM road law (`tools/fetch_sim_roads.py`), no city-limits
-polygon (the mountain WUI band *is* the towns).
+polygon (the mountain WUI band *is* the towns). Since the roads inspection
+(2026-09-25) the six seed homes only on WUI cells within 300 m of a road node
+(`SimLocation.place_near_road_m = 300`, the program's headline `_road`
+placement): on the whole band a quarter of Vail's homes were ski-mountain
+'developed' cells with no road, and crews drove straight spurs of up to 6.4 km
+up the mountain to them.
 
 | key | community | center (lat, lon) | hazard wind FROM | analog events (geography + wind, [ASSUMED]) | safe zones (PLANNING-GRADE, not field-verified) |
 |---|---|---|---|---|---|
@@ -546,3 +557,51 @@ result pinned to them) are untouched.
   `state.terrain.bbox` and the RLE/ring layers read `nrows`/`ncols`, so the
   60 km tile frames and renders with no 18 km assumption (the zone
   selector's "Standard — 18 km community" label is the one generic string).
+
+## Roads legibility (roads inspection 2026-09-25)
+
+Founder: *"there are times that the response team does not use roads."* Record:
+`docs/review/roads_inspection_2026-09-25.md` (screenshots, probe tables, file:line
+references); probe `scratch_review/roads_offroad_probe.py`.
+
+- **What was wrong.** The engine drove the road polylines all along (zero whole-leg
+  chords in 1,000+ movement legs on the 24 standard/extended probe sessions). The
+  straight lines the founder watched were the PAGE: the marker tween projected the
+  previous position onto the NEXT tick's remaining route and slid in a straight line
+  between 15-min tick positions (40-60% of moving crew-ticks cut > 250 m off the road,
+  up to 7 km), the breadcrumb joined one point per tick straight, a DEPLOYING crew's
+  queued stops were one straight red "no road route" chord (up to 38 km), a crew the
+  safety sweep relocated had no leg for one tick (a synthesized straight chord), and a
+  reinforcement's off-map arrival was slid up to 31 km across the map from the tile
+  edge.
+- **`crews[i].map_view`** (display-only, additive; contracts ROADS LEGIBILITY):
+  `moved_path` (the road polyline the crew drove this tick), `jumped` (a non-driven
+  position change — a reinforcement's arrival), `trail` (the driven road over the
+  last 30 ticks, split at jumps; the last hour at 20 m, older ticks at <= 80 m, the
+  oldest dropped before anything straightens), `queue` (a deploying crew's queued
+  stops on the road route), `egress_preview` (the exact road leg a just-relocated crew
+  drives next tick), `route_why` / `egress_why` (a one-line reason per spur/chord). The
+  page tweens the marker along `moved_path`, draws the trail from `trail`, places
+  (never slides) a jump, and names the mechanism of every remaining straight stretch
+  on hover: a home or a zone anchor N m from the nearest road junction, an SEM-10d
+  open-ground escape point, a chord with its roads-seam reason. Legend rows: driven
+  trail, planned next stops, "hover for why".
+- **Placement.** The six Vail -> Aspen community presets are road-placed
+  (`place_near_road_m = 300`, the program's headline placement); the five originals
+  and Rancho Santa Fe keep the whole band (byte-identical).
+- **Extended fire zone.** `data/roads/<key>_ext.wgr` over the whole extended tile (see
+  Fire zone, Roads). The new routes beyond the core let the SEM-10e proactive escape's
+  exposed-transit fallback ride pessimistic exposure that the 10c audit counts (the
+  pinned Camp-Fire-scale extended run recorded one imminent row at tick 23), so extended
+  sessions arm `escape_proactive_lawful_only` (contracts; default OFF, explicit override
+  wins): a voluntary decamp takes only a fully lawful route. Standard sessions keep the
+  legacy rule, byte-identical.
+- **Engine knob, default OFF.** `escape_road_snap_m` (contracts SEM-10d AREA-ESCAPE ROAD
+  SNAP) makes the area escape road-bound; not armed in the simulator (it would change
+  existing presets' sessions) — the A/B is in the review record.
+- **Spur cap.** `SIM_ROAD_SPUR_MAX_M` stays 8 km: with road-placed homes every spur
+  that remains longer than the engine's 2 km belongs to a zone anchor, a non-corridor
+  roadless home or an open-ground escape point, and a lower cap would turn each of
+  those legs into a whole-leg straight chord (worse). Byte-identity: the probe's
+  per-tick state hashes (map_view stripped) are identical before/after for every
+  standard session of the five originals, Rancho Santa Fe and eagle_vail_co.

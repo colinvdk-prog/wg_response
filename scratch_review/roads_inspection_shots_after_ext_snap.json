@@ -1,0 +1,6 @@
+[
+  {"name": "a11b_vail_extended_escape_snap_armed", "key": "vail_co", "zone": "extended", "tick": 24,
+   "view": [39.66, -106.27, 11], "mid": null, "graph_bbox": true,
+   "graph_label": "road graph coverage (vail_co_ext)",
+   "caption": "A/B · escape_road_snap_m = 1500 (default OFF) · vail_co EXTENDED t24 · the escape is road-bound: the crews leave East Vail on I-70 instead of a chord into the Gore Range"}
+]

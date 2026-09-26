@@ -1,0 +1,11 @@
+[
+  {"name": "a11_vail_extended_escape_gore_range", "key": "vail_co", "zone": "extended", "tick": 24,
+   "view": [39.66, -106.27, 11], "mid": null, "graph_bbox": true,
+   "graph_label": "road graph coverage (vail_co_ext)",
+   "tooltip": {"match": "no road route"},
+   "caption": "AFTER (escape snap OFF) · vail_co EXTENDED t24 · the extended road graph now covers the tile, but this area escape points NE into the roadless Gore Range: still a chord - labelled on hover"},
+  {"name": "a12_park_city_extended_escape_on_roads", "key": "park_city_ut", "zone": "extended", "tick": 56,
+   "view": [40.61, -111.53, 11], "mid": null, "graph_bbox": true,
+   "graph_label": "road graph coverage (park_city_ut_ext)",
+   "caption": "AFTER · park_city_ut EXTENDED t56 · the same flight from Old Town now drives the roads of the extended graph (was an 8.2 km+ straight chord)"}
+]

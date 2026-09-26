@@ -120,14 +120,18 @@ def test_locations_registry_shape():
         if key == WHOLE_VALLEY:
             continue      # ~60 km tile, 6 zones: test_whole_valley_registry_shape
         # the 18 km community law: 2-3 zones 3-13 km out, standard geometry,
-        # an extended product, whole-band placement
+        # an extended product; whole-band placement except the corridor six
         assert 2 <= len(loc.safe_zones) <= 3
         for z in loc.safe_zones:
             d_km = geo.haversine_m(loc.center, z.loc) / 1000.0
             assert 3.0 <= d_km <= 13.0, (key, z.zone_id, d_km)
         assert (loc.tile_half_m, loc.tile_cell_m) == (9_000.0, 90.0), key
         assert loc.extended_zone is True, key
-        assert loc.place_near_road_m == 0.0, key
+        # road-proximity placement: the six corridor communities are road-
+        # placed since the roads inspection 2026-09-25 (300 m driveway rule);
+        # the five originals + Rancho Santa Fe keep the whole WUI band
+        assert loc.place_near_road_m == (
+            300.0 if key in CORRIDOR_ROAD_PLACED else 0.0), key
 
 
 def test_whole_valley_registry_shape():
@@ -1391,9 +1395,11 @@ def test_fire_zone_extended_real_tile_integration(key):
     ~2-3x the standard tile's, all clients stay in the central community
     window (<= ~13 km of center), a ~20+ km-out ignition is accepted, the
     engine ticks violation-free with bands present, the horizon floor holds,
-    and (when the real road graph is cached) a leg to the far ignition
-    falls back per the roads seam (on_roads=False straight leg — graphs
-    were fetched on the STANDARD bbox)."""
+    and the session routes on the EXTENDED road graph (roads inspection
+    2026-09-25): a leg to the far ignition is a road route whenever a road
+    node lies within the spur cap (else the honest chord); with no extended
+    graph cached it falls back LOUDLY to the standard graph and the leg is
+    the straight fallback."""
     ext_path = DEFAULT_TILE_DIR / f"{key}_ext.wgt"
     std_path = DEFAULT_TILE_DIR / f"{key}.wgt"
     if not ext_path.exists():
@@ -1437,15 +1443,26 @@ def test_fire_zone_extended_real_tile_integration(key):
     assert geo.haversine_m(center, ign) >= 20_000.0
     assert s.ignite(ign.lat, ign.lon, intensity="high") == "sim-f1"
 
-    # roads seam on the STANDARD-bbox graph: a leg to the far ignition point
-    # falls back to the straight tier-0 leg, honestly flagged
+    # roads seam: the extended session routes on the EXTENDED road graph, so
+    # the far ignition point is inside road coverage (road route unless the
+    # point is beyond the spur cap of every node — then the honest chord);
+    # without a cached extended graph: loud standard-graph fallback + chord
     if st["roads_on"]:
         rr = s._leg_route(LOCATIONS[key].safe_zones[0].loc, ign)
         assert rr is not None
-        assert rr.on_roads is False, (
-            f"{key}: a 20+ km-out point snapped onto the standard-bbox road "
-            f"graph — expected the seam's straight-leg fallback")
-        assert len(rr.polyline) == 2
+        if s._road_graph.meta.get("key") == f"{key}_ext":
+            assert any("extended road graph loaded" in n for n in st["notes"])
+            near = s._road_graph.nearest_node(ign, max_m=s._cfg.road_spur_max_m)
+            assert rr.on_roads is (near is not None), (
+                f"{key}: far-ignition leg on_roads={rr.on_roads} but a node "
+                f"{'is' if near else 'is not'} within the spur cap")
+        else:
+            assert any("no extended road graph cached" in n
+                       for n in st["notes"])
+            assert rr.on_roads is False, (
+                f"{key}: a 20+ km-out point snapped onto the standard-bbox "
+                f"road graph — expected the seam's straight-leg fallback")
+            assert len(rr.polyline) == 2
 
     st = s.tick()
     assert st["scoreboard"]["violations"] == 0
@@ -3205,3 +3222,449 @@ def test_crew_shifts_off_is_inert(tmp_path):
         st = s.tick()
         assert st["scoreboard"]["crews_resting"] == 0
         assert all(c.get("status") != "off_duty" for c in st["crews"])
+
+
+# ---------------------------------------------------------------------------
+# ROADS LEGIBILITY (roads inspection 2026-09-25, founder "there are times that
+# the response team does not use roads"; docs/review/
+# roads_inspection_2026-09-25.md). crews[i].map_view is DISPLAY-ONLY: the road
+# path driven this tick (moved_path), the driven trail, jumps, a deploying
+# crew's queued legs on roads, the relocation preview and a reason for every
+# straight stretch. The engine never reads it; every pre-existing key is
+# unchanged (the probe diffed 41-tick state hashes before/after).
+# ---------------------------------------------------------------------------
+
+#: crew keys every state() carried before the roads inspection (pinned so the
+#: map_view block stays strictly ADDITIVE)
+_LEGACY_CREW_KEYS = {
+    "crew_id", "name", "status", "region", "inbound", "available_at_s",
+    "arrival_eta_s", "relocating", "relocate_reason", "lat", "lon",
+    "anchor_zone_id", "egress_zone_id", "route_polyline", "route_on_roads",
+    "route_spur_mask", "route_segments", "egress_polyline", "egress_on_roads",
+    "egress_spur_mask", "egress_segments", "eta_s", "track", "itinerary"}
+_MAP_VIEW_KEYS = {"moved_path", "jumped", "trail", "route_why", "egress_why",
+                  "egress_preview", "queue"}
+
+
+def _ll(p):
+    return p if isinstance(p, LatLon) else LatLon(p[0], p[1])
+
+
+def _max_off_polyline_m(pts, poly):
+    """Farthest any of `pts` lies from polyline `poly` ([lat, lon] / LatLon)."""
+    P = [_ll(p) for p in poly]
+    return max(_dist_to_polyline_m(_ll(q), P) for q in pts)
+
+
+def test_map_view_is_additive_display_only(tmp_path):
+    """Every crew gains ONE key, map_view, with the documented fields; the
+    legacy crew schema is untouched and the whole state stays strict JSON."""
+    s = _road_session(tmp_path, _FakeRoads(speed_mps=6.0), seed="mv-shape")
+    for _ in range(3):
+        st = s.tick()
+        for c in st["crews"]:
+            assert set(c) == _LEGACY_CREW_KEYS | {"map_view"}
+            assert set(c["map_view"]) == _MAP_VIEW_KEYS
+        json.dumps(st, sort_keys=True, allow_nan=False)
+
+
+def test_state_polling_never_changes_the_engine(tmp_path):
+    """map_view is computed inside state() (queue routes, relocation preview,
+    explanations, caches): polling state() between ticks — as the page does
+    every second — must leave the engine's tick outputs byte-identical to a
+    session nobody polls."""
+    def run(poll):
+        s = _road_session(tmp_path, _FakeRoads(speed_mps=6.0), seed="mv-poll",
+                          n_clients=10, n_crews=2)
+        out = []
+        for _ in range(6):
+            if poll:
+                s.state()
+                s.state()
+            st = s.tick()
+            for c in st["crews"]:
+                c.pop("map_view")
+            out.append(_state_hash(st))
+        return out
+    assert run(poll=False) == run(poll=True)
+
+
+def test_map_view_moved_path_is_the_road_actually_driven(tmp_path):
+    """moved_path = the exact road polyline the crew drove this tick: it
+    starts where the crew was when the tick began, ends at its position now,
+    lies ON the leg polyline it followed (the fake's L-shaped road), and —
+    across the drive — turns the road's corner instead of cutting it (the
+    page's old tween slid straight between tick positions)."""
+    s = _road_session(tmp_path, _FakeRoads(speed_mps=4.0), seed="road2")
+    prev = s.state()["crews"][0]
+    turned = False
+    for _ in range(8):
+        st = s.tick()
+        c = st["crews"][0]
+        mp = c["map_view"]["moved_path"]
+        leg = s._crew_sims["sim-g1"]._leg
+        if mp and leg is not None and c["status"] == "en_route":
+            # the leg's FULL polyline (leg["pts"] is consumed as it drives)
+            road = s._roads.route(s._road_graph, leg["origin"], leg["target"],
+                                  s._cfg).polyline
+            assert _max_off_polyline_m(mp, road) < 2.0
+        if mp:
+            assert geo.haversine_m(_ll(mp[0]), _ll((prev["lat"], prev["lon"]))) < 1.0
+            assert geo.haversine_m(_ll(mp[-1]), _ll((c["lat"], c["lon"]))) < 1.0
+            a, b = _ll(mp[0]), _ll(mp[-1])
+            if max(_pt_seg_dist_m(_ll(q), a, b) for q in mp) > 300.0:
+                turned = True            # the drive bends: not a straight hop
+        prev = c
+    assert turned, "no tick's drive turned a corner — re-pin the scenario"
+
+
+def test_map_view_trail_is_the_driven_road_not_tick_chords(tmp_path):
+    """The trail is the driven road (runs of moved paths), so it keeps the
+    road's corners that the one-point-per-tick track joins straight across;
+    its last run ends where the crew is now."""
+    s = _road_session(tmp_path, _FakeRoads(speed_mps=4.0), seed="road2")
+    drives = []
+    for _ in range(8):
+        st = s.tick()
+        c = st["crews"][0]
+        if c["map_view"]["moved_path"]:
+            drives.append(c["map_view"]["moved_path"])
+    trail = c["map_view"]["trail"]
+    assert trail and all(len(r) >= 2 for r in trail)
+    assert geo.haversine_m(_ll(trail[-1][-1]), _ll((c["lat"], c["lon"]))) < 1.0
+    driven = [p for d in drives for p in d]
+    # every trail vertex lies on the road actually driven (<= the simplifier)
+    assert _max_off_polyline_m([p for r in trail for p in r], driven) < 25.0
+    # ...while the legacy track (one point per tick, joined straight) cuts it
+    track = [(t["lat"], t["lon"]) for t in c["track"]] + [(c["lat"], c["lon"])]
+    road = [_ll(p) for p in driven]
+    cut = 0.0
+    for a, b in zip(track, track[1:]):
+        for k in range(1, 20):
+            f = k / 20.0
+            q = _ll((a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f))
+            cut = max(cut, _dist_to_polyline_m(q, road))
+    assert cut > 150.0, "scenario never made the straight track cut a corner"
+
+
+def test_map_view_reinforcement_arrival_is_a_jump_not_a_drive(tmp_path):
+    """An INBOUND reinforcement's arrival moves it from the tile-edge staging
+    marker to its safe zone WITHOUT a drive: map_view.jumped says so (the page
+    places the marker there instead of sliding it across the map), no trail
+    run ever touches the edge marker, and any drive that tick starts AT the
+    zone."""
+    s = _reinf_session(tmp_path, n_crews=1, n_crews_1h=1, n_crews_3h=0,
+                       seed="jump", d1=15.0, d3=30.0)
+    edge = s.state()["crews"][1]
+    assert edge["region"] == "reg_1h" and edge["inbound"] is True
+    edge_pt = _ll((edge["lat"], edge["lon"]))
+    ign = _upwind_ignition("boulder_co", 8_000.0)
+    s.ignite(ign.lat, ign.lon, intensity="high")
+    seen = None
+    for _ in range(4):
+        st = s.tick()
+        c = st["crews"][1]
+        j = c["map_view"]["jumped"]
+        if j is not None:
+            seen = (j, c)
+        for run in c["map_view"]["trail"]:
+            assert all(geo.haversine_m(_ll(p), edge_pt) > 200.0 for p in run), (
+                "a trail run touches the edge staging marker")
+        assert st["crews"][0]["map_view"]["jumped"] is None   # in-zone: never
+    assert seen is not None, "the reinforcement never arrived"
+    j, c = seen
+    assert j["reason"] == "reinforcement_arrival"
+    assert geo.haversine_m(_ll(j["from"]), edge_pt) < 1.0
+    zone = s._zone_by_id[s._crew_anchor["sim-g2"]].loc
+    assert geo.haversine_m(_ll(j["to"]), zone) < 1.0
+    assert "off the map" in j["why"] and "no drive is simulated" in j["why"]
+    mp = c["map_view"]["moved_path"]
+    if mp:
+        assert geo.haversine_m(_ll(mp[0]), zone) < 1.0
+
+
+def test_map_view_queue_routes_the_queued_stops_on_roads(tmp_path):
+    """A DEPLOYING crew's queued stops come as the road route itinerary[0] ->
+    [1] -> ... (the page drew them as ONE straight red chord): the queue
+    starts at the crew, visits every stop in order, ends at the last stop and
+    follows the road (the fake's L-shaped corners), never a straight hop."""
+    s = _road_session(tmp_path, _FakeRoads(speed_mps=15.0), seed="queue",
+                      n_clients=12, n_crews=1)
+    found = None
+    for _ in range(14):
+        st = s.tick()
+        c = st["crews"][0]
+        if c["status"] == "deploying" and len(c["itinerary"]) >= 2:
+            found = c
+            break
+    assert found is not None, "no deploying crew with a queue — re-pin"
+    q = found["map_view"]["queue"]
+    assert q is not None
+    pts = [p for sg in q["segments"] for p in sg["points"]]
+    stops = [(x["lat"], x["lon"]) for x in found["itinerary"]]
+    assert geo.haversine_m(_ll(pts[0]), _ll(stops[0])) < 1.0
+    assert geo.haversine_m(_ll(pts[-1]), _ll(stops[-1])) < 1.0
+    for stp in stops:
+        assert min(geo.haversine_m(_ll(p), _ll(stp)) for p in pts) < 1.0
+    assert {sg["kind"] for sg in q["segments"]} <= {"road", "spur"}
+    assert len(q["why"]) == len(q["segments"])
+    # the fake's roads bend: the queued legs are not the straight stop chain
+    chain = [_ll(p) for p in stops]
+    assert max(_dist_to_polyline_m(_ll(p), chain) for p in pts) > 300.0
+
+
+def test_map_view_egress_preview_is_the_leg_driven_next_tick(tmp_path):
+    """On the tick the safety sweep turns a crew toward a new zone it has no
+    leg yet (egress_polyline is empty — the page used to synthesize a straight
+    'no road route' chord). map_view.egress_preview is exactly the road leg
+    it then drives: next tick's moved_path lies on it."""
+    s = _road_session(tmp_path, _FakeRoads(speed_mps=6.0), seed="preview",
+                      n_clients=8, n_crews=2)
+    s.tick()
+    cid = "sim-g2"
+    cs = s._crew_sims[cid]
+    zone = max(LOCATIONS["boulder_co"].safe_zones,
+               key=lambda z: geo.haversine_m(z.loc, cs.pos))   # farthest zone
+    cs.relocate_to(zone.loc, zone.zone_id)
+    start = cs.pos
+    st = s.state()
+    c = next(c for c in st["crews"] if c["crew_id"] == cid)
+    assert c["status"] == "egressing" and c["egress_polyline"] == []
+    pv = c["map_view"]["egress_preview"]
+    assert pv is not None and len(pv["why"]) == len(pv["segments"])
+    pts = [p for sg in pv["segments"] for p in sg["points"]]
+    assert geo.haversine_m(_ll(pts[0]), start) < 1.0
+    assert geo.haversine_m(_ll(pts[-1]), zone.loc) < 1.0
+    st2 = s.tick()
+    c2 = next(c for c in st2["crews"] if c["crew_id"] == cid)
+    mp = c2["map_view"]["moved_path"]
+    assert mp, "the relocating crew did not drive"
+    assert _max_off_polyline_m(mp, pts) < 2.0
+
+
+def test_map_view_why_names_each_offroad_mechanism():
+    """Every straight stretch carries its reason (REAL vail_co graph + tile):
+    a home on Vail Mountain ~3 km above the nearest road junction, a safe-zone
+    anchor, an SEM-10d open-ground escape point, a chord outside the road
+    graph, and straight-leg mode."""
+    key = "vail_co"
+    if not (DEFAULT_TILE_DIR / f"{key}.wgt").exists() or \
+            not (DEFAULT_TILE_DIR.parent / "roads" / f"{key}.wgr").exists():
+        pytest.skip("LOUD SKIP: vail_co tile/road graph not cached")
+    mountain = LatLon(39.606176, -106.361502)       # Vail Mountain (probe)
+    s = SimSession(key, 1, 1, seed="why", client_locs=[mountain],
+                   cfg_overrides={"ensemble_n": 2, "horizon_h": 24.0})
+    assert s._road_graph is not None
+    zone = LOCATIONS[key].safe_zones[0]
+    rr = s._leg_route(zone.loc, mountain)
+    segs = s._display_segments(zone.loc, mountain, rr, 8.0)
+    why = s._explain_segments(segs, zone.loc, mountain, "home",
+                              getattr(rr, "note", None))
+    assert segs[-1]["kind"] == "spur" and why[-1] is not None
+    assert "home sim-c1" in why[-1] and "nearest mapped road junction" in why[-1]
+    gap = float(why[-1].split(" sits ")[1].split(" m ")[0].replace(",", ""))
+    assert gap > 2000.0                               # truly roadless
+    assert all(w is None for sg, w in zip(segs, why) if sg["kind"] == "road")
+    # a zone anchor, an escape point, a chord outside the graph
+    assert "safe zone vail_co-z1" in s._why_spur(zone.loc, "dest", "zone")
+    assert "area escape (SEM-10d)" in s._why_spur(mountain, "dest", "escape")
+    far = LatLon(39.95, -106.36)                      # ~35 km N, off the graph
+    assert "outside the loaded road graph" in s._why_chord(zone.loc, far, "x")
+    chord = [{"points": [[zone.loc.lat, zone.loc.lon], [far.lat, far.lon]],
+              "kind": "chord", "spur": True}]
+    esc = s._explain_segments(chord, zone.loc, far, "escape", "dest far")
+    assert esc[0].startswith("area escape (SEM-10d)") and "no road route" in esc[0]
+    s0 = SimSession(key, 1, 1, seed="why", client_locs=[mountain],
+                    roads_module=None, cfg_overrides={"ensemble_n": 2})
+    assert "roads offline" in s0._why_chord(zone.loc, mountain, None)
+
+
+# --- road-proximity placement of the corridor presets -------------------------
+
+CORRIDOR_ROAD_PLACED = ("vail_co", "beaver_creek_co", "eagle_co",
+                        "glenwood_springs_co", "basalt_carbondale_co",
+                        "aspen_co")
+
+
+def test_corridor_presets_are_road_placed_others_whole_band():
+    """The six Vail -> Aspen community presets (and the whole-valley preset)
+    seed homes only within 300 m of a road node; the five originals and
+    Rancho Santa Fe keep the whole WUI band (byte-identical)."""
+    for key, loc in LOCATIONS.items():
+        if key in CORRIDOR_ROAD_PLACED or key == WHOLE_VALLEY:
+            assert loc.place_near_road_m == 300.0, key
+        else:
+            assert loc.place_near_road_m == 0.0, key
+
+
+def test_corridor_preset_homes_have_driveways_real_vail():
+    """Real vail_co tile + graph: every placed home is within 300 m of a road
+    node — no more 'homes' on the ski mountain's lift stations (the probe
+    found 9 of 40 more than 2 km from any road, up to 6.2 km)."""
+    key = "vail_co"
+    if not (DEFAULT_TILE_DIR / f"{key}.wgt").exists() or \
+            not (DEFAULT_TILE_DIR.parent / "roads" / f"{key}.wgr").exists():
+        pytest.skip("LOUD SKIP: vail_co tile/road graph not cached")
+    s = SimSession(key, 40, 2, seed="roads-probe",
+                   cfg_overrides={"ensemble_n": 2, "horizon_h": 24.0})
+    g = s._road_graph
+    assert g is not None
+    for c in s._clients:
+        assert g.nearest_node(c.loc, max_m=300.0) is not None, c.client_id
+    assert any("within 300 m of a road node" in n for n in s.state()["notes"])
+
+
+def test_place_near_road_seam_reproduces_the_whole_band(tmp_path):
+    """SimSession(place_near_road_m=0.0) — the corridor grid's whole-band
+    arms — draws exactly the legacy whole-band placement even on a
+    road-placed preset; None keeps the registry rule; negative fails loud."""
+    key = "vail_co"
+    d = _controlled_tile_dir(tmp_path, key)
+    s = SimSession(key, 6, 1, seed="seam", tile_dir=d, roads_module=None,
+                   cfg_overrides=dict(FAST), place_near_road_m=0.0)
+    legacy = place_clients(s._tile, 6, seed=f"{key}|seam")
+    assert [(c.loc, c.value_usd) for c in s._clients] == \
+        [(c.loc, c.value_usd) for c in legacy]
+    assert not any("ROAD-PROXIMITY PLACEMENT" in n for n in s.state()["notes"])
+    s2 = SimSession(key, 6, 1, seed="seam", tile_dir=d, roads_module=None,
+                    cfg_overrides=dict(FAST))
+    assert any("ROAD-PROXIMITY PLACEMENT (300 m)" in n
+               for n in s2.state()["notes"])            # rule on, no graph
+    with pytest.raises(ValueError):
+        SimSession(key, 6, 1, seed="seam", tile_dir=d, roads_module=None,
+                   cfg_overrides=dict(FAST), place_near_road_m=-1.0)
+
+
+# --- extended fire zone: the extended road graph ------------------------------
+
+class _KeyedFakeRoads(_FakeRoads):
+    """_FakeRoads that records every graph key requested and can withhold
+    the extended (<key>_ext) graph."""
+
+    def __init__(self, ext=True, **kw):
+        super().__init__(**kw)
+        self.ext = ext
+        self.requested = []
+
+    def load_road_graph(self, key):
+        self.requested.append(key)
+        if key.endswith("_ext") and not self.ext:
+            return None
+        return _FakeRoadGraph()
+
+
+def test_extended_session_loads_the_extended_road_graph_only(tmp_path):
+    """An EXTENDED session asks for <key>_ext first; a standard session never
+    touches it; a missing extended graph falls back LOUDLY to the standard
+    one (roads stay on)."""
+    d = _controlled_tile_dir(tmp_path, "boulder_co")
+    (d / "boulder_co_ext.wgt").write_bytes((d / "boulder_co.wgt").read_bytes())
+    fake = _KeyedFakeRoads()
+    s = SimSession("boulder_co", 4, 1, seed="ext", tile_dir=d,
+                   cfg_overrides=dict(FAST), roads_module=fake,
+                   fire_zone="extended")
+    assert s.state()["fire_zone"] == "extended"
+    assert fake.requested == ["boulder_co_ext"]
+    assert any("extended road graph loaded for boulder_co" in n
+               for n in s.state()["notes"])
+    std = _KeyedFakeRoads()
+    SimSession("boulder_co", 4, 1, seed="ext", tile_dir=d,
+               cfg_overrides=dict(FAST), roads_module=std)
+    assert std.requested == ["boulder_co"]
+    missing = _KeyedFakeRoads(ext=False)
+    s3 = SimSession("boulder_co", 4, 1, seed="ext", tile_dir=d,
+                    cfg_overrides=dict(FAST), roads_module=missing,
+                    fire_zone="extended")
+    st3 = s3.state()
+    assert missing.requested == ["boulder_co_ext", "boulder_co"]
+    assert st3["roads_on"] is True
+    assert any("no extended road graph cached for boulder_co" in n
+               for n in st3["notes"])
+
+
+def test_extended_session_real_extended_graph_when_present():
+    """Real data: an extended session of a key with a cached <key>_ext.wgr
+    routes on it (meta key <key>_ext, spanning the whole ~48 km tile), a
+    standard session of the same key on the standard graph."""
+    key = next((k for k in sorted(LOCATIONS)
+                if (DEFAULT_TILE_DIR / f"{k}_ext.wgt").exists()
+                and (DEFAULT_TILE_DIR.parent / "roads" / f"{k}_ext.wgr").exists()),
+               None)
+    if key is None:
+        pytest.skip("LOUD SKIP: no data/roads/<key>_ext.wgr cached yet — run "
+                    "py -3 tools/fetch_sim_roads.py --extended")
+    s = SimSession(key, 4, 1, seed="ext-real", fire_zone="extended",
+                   cfg_overrides={"ensemble_n": 2})
+    assert s.state()["fire_zone"] == "extended"
+    assert s._road_graph.meta.get("key") == f"{key}_ext"
+    bb = s.state()["terrain"]["bbox"]
+    south, west, north, east = s._road_bbox
+    # the graph spans the extended tile (well beyond the 18 km core)
+    assert south < bb["south"] + 0.05 and north > bb["north"] - 0.05
+    assert west < bb["west"] + 0.06 and east > bb["east"] - 0.06
+    s_std = SimSession(key, 4, 1, seed="ext-real",
+                       cfg_overrides={"ensemble_n": 2})
+    assert s_std._road_graph.meta.get("key") == key
+
+
+# --- SEM-10d area-escape road snap (contracts escape_road_snap_m) -------------
+
+def test_escape_road_snap_default_off_and_road_bound_when_armed():
+    """Default 0: the area-escape proposals are the raw straight-ray points
+    (byte-identical) — open ground, the defect. Armed: the flee is
+    ROAD-BOUND — every proposal is a real road node >= 2 km out on one of
+    the same bearings; a bearing with no road in reach drops out. With no
+    road anywhere in reach the raw points stand (never a crew left without
+    an escape). REAL beaver_creek_co tile + graph, no fire (rays run full)."""
+    from wgresponse.contracts import ResponseConfig
+    assert ResponseConfig().escape_road_snap_m == 0.0
+    key = "beaver_creek_co"
+    if not (DEFAULT_TILE_DIR / f"{key}.wgt").exists() or \
+            not (DEFAULT_TILE_DIR.parent / "roads" / f"{key}.wgr").exists():
+        pytest.skip("LOUD SKIP: beaver_creek_co tile/road graph not cached")
+    base = {"ensemble_n": 2, "horizon_h": 24.0}
+    off = SimSession(key, 2, 1, seed="snap", cfg_overrides=dict(base))
+    on = SimSession(key, 2, 1, seed="snap",
+                    cfg_overrides=dict(base, escape_road_snap_m=1500.0))
+    pos = LOCATIONS[key].safe_zones[0].loc
+    t_off = off._escape_ray_targets(pos, off._now_s, 15.0)
+    t_on = on._escape_ray_targets(pos, on._now_s, 15.0)
+    assert t_off and t_on
+    assert {b for b, _ in t_on} <= {b for b, _ in t_off}
+    g = on._road_graph
+    for _b, tgt in t_on:
+        assert geo.haversine_m(pos, tgt) >= 2_000.0
+        assert g.nearest_node(tgt, max_m=1.0) is not None      # a road node
+    # the raw proposals include open-ground points (what the knob fixes)
+    assert any(g.nearest_node(raw, max_m=1.0) is None for _b, raw in t_off)
+    # a snap radius too small to reach any road: the raw points stand
+    tiny = SimSession(key, 2, 1, seed="snap",
+                      cfg_overrides=dict(base, escape_road_snap_m=0.5))
+    assert tiny._escape_ray_targets(pos, tiny._now_s, 15.0) == t_off
+
+
+def test_extended_sessions_arm_lawful_only_proactive_escape(tmp_path):
+    """contracts escape_proactive_lawful_only (default False, byte-identical):
+    the simulator arms it for EXTENDED sessions only — their extended road
+    graph opens proactive routes beyond the core that the exposed-transit
+    fallback would ride through audit-counted pessimistic exposure (the
+    pinned Camp-Fire-scale run, test_sem10d_extended_campfire_scale_no_
+    overrun_ever, recorded one tick-23 imminent row without it). Standard
+    sessions keep the legacy rule; an explicit override always wins."""
+    from wgresponse.contracts import ResponseConfig
+    assert ResponseConfig().escape_proactive_lawful_only is False
+    d = _controlled_tile_dir(tmp_path, "boulder_co")
+    (d / "boulder_co_ext.wgt").write_bytes((d / "boulder_co.wgt").read_bytes())
+    std = SimSession("boulder_co", 4, 1, seed="lo", tile_dir=d,
+                     roads_module=None, cfg_overrides=dict(FAST))
+    assert std._cfg.escape_proactive_lawful_only is False
+    ext = SimSession("boulder_co", 4, 1, seed="lo", tile_dir=d,
+                     roads_module=None, cfg_overrides=dict(FAST),
+                     fire_zone="extended")
+    assert ext.state()["fire_zone"] == "extended"
+    assert ext._cfg.escape_proactive_lawful_only is True
+    pinned = SimSession("boulder_co", 4, 1, seed="lo", tile_dir=d,
+                        roads_module=None, fire_zone="extended",
+                        cfg_overrides=dict(FAST,
+                                           escape_proactive_lawful_only=False))
+    assert pinned._cfg.escape_proactive_lawful_only is False

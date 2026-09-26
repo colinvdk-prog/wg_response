@@ -1,0 +1,15 @@
+[
+ {
+  "name": "a07b_escape_snap_armed",
+  "key": "glenwood_springs_co",
+  "zone": "standard",
+  "tick": 3,
+  "view": [
+   39.585,
+   -107.345,
+   12
+  ],
+  "mid": null,
+  "caption": "A/B \u00b7 escape_road_snap_m = 1500 (default OFF, not armed on the public page) \u00b7 glenwood_springs_co std t3 \u00b7 sim-g4's area escape ends ON a road node (knob off: a 603 m straight spur into open ground at t3, a 6 km one for sim-g5 at t4)"
+ }
+]

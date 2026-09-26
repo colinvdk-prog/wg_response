@@ -1286,3 +1286,39 @@ def test_scenario_presets_build_and_ignite(sim_ctx):
     status, raw = sim_ctx.request("POST", "/api/sim/new",
                                   body={"scenario": "nope"}, key=KEY)
     assert status == 400
+
+
+# -- ROADS LEGIBILITY (roads inspection 2026-09-25) ---------------------------
+
+_MAP_VIEW_KEYS = {"moved_path", "jumped", "trail", "route_why", "egress_why",
+                  "egress_preview", "queue"}
+
+
+def test_sim_state_carries_display_only_map_view(sim_ctx):
+    """Every crew in the /api/sim state carries the additive map_view block
+    (the road path driven this tick, trail, jumps, queued legs, relocation
+    preview, reasons) and the LAW 1 recorded snapshot serves it verbatim."""
+    _, data = _sim_new(sim_ctx)
+    sid = data["session_id"]
+    for c in data["state"]["crews"]:
+        assert set(c["map_view"]) == _MAP_VIEW_KEYS
+        assert c["map_view"]["moved_path"] == [] and c["map_view"]["trail"] == []
+    _sim_post(sim_ctx, sid, "ignite", {"lat": SIM_IGN.lat, "lon": SIM_IGN.lon,
+                                       "intensity": "high"})
+    live = None
+    for _ in range(3):
+        status, out = _sim_post(sim_ctx, sid, "ctl", {"action": "step"})
+        assert status == 200
+        live = out["state"]
+        for c in live["crews"]:
+            mv = c["map_view"]
+            assert set(mv) == _MAP_VIEW_KEYS
+            if mv["moved_path"]:
+                # the drive ends where the crew is now
+                assert mv["moved_path"][-1] == pytest.approx(
+                    [c["lat"], c["lon"]], abs=1e-6)
+    status, snap = _sim_post(sim_ctx, sid, "ctl", {"action": "goto",
+                                                   "tick": live["tick"]})
+    assert status == 200
+    assert [c["map_view"] for c in snap["state"]["crews"]] == \
+        [c["map_view"] for c in live["crews"]]

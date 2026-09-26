@@ -1,0 +1,169 @@
+[
+ {
+  "name": "a01_park_city_trail_and_tween",
+  "key": "park_city_ut",
+  "zone": "standard",
+  "tick": 10,
+  "frame": {
+   "tick": 10,
+   "crew": "sim-g4"
+  },
+  "mid": 0.45,
+  "overlay": true,
+  "driven": [
+   {
+    "crew": "sim-g4",
+    "tick": 10,
+    "label": "sim-g4: road actually driven this tick"
+   }
+  ],
+  "caption": "AFTER \u00b7 park_city_ut std t10 (same session, byte-identical engine) \u00b7 the marker now slides along map_view.moved_path (magenta dots on the green road) and the peach trail is the road actually driven"
+ },
+ {
+  "name": "a02_boulder_chinook_tween",
+  "key": "boulder_co",
+  "zone": "standard",
+  "tick": 6,
+  "scenario": "boulder_chinook",
+  "view": [
+   39.985,
+   -105.17,
+   13
+  ],
+  "mid": 0.45,
+  "overlay": true,
+  "caption": "AFTER \u00b7 boulder_chinook scenario t6 \u00b7 marker tween paths (magenta) follow US-36 / US-287 and the town streets; trails on the roads"
+ },
+ {
+  "name": "a03_vail_road_placed_homes",
+  "key": "vail_co",
+  "zone": "standard",
+  "tick": 2,
+  "view": [
+   39.622,
+   -106.362,
+   14
+  ],
+  "mid": null,
+  "caption": "AFTER \u00b7 vail_co std t2 \u00b7 homes seed within 300 m of a road (place_near_road_m): no 'homes' on Vail Mountain's lift stations, no 3 km spurs up the slope"
+ },
+ {
+  "name": "a04_reinforcement_jump_placed",
+  "key": "aspen_co",
+  "zone": "standard",
+  "tick": 5,
+  "frame": {
+   "tick": 5,
+   "crew": "sim-g7"
+  },
+  "mid": 0.4,
+  "overlay": true,
+  "tooltip": {
+   "crew": "sim-g7",
+   "marker": true,
+   "match": "mutual-aid arrival"
+  },
+  "caption": "AFTER \u00b7 aspen_co std t5 \u00b7 the 1 h mutual-aid crew is PLACED at its zone (map_view.jumped) and drives on from there - no 11 km slide from the tile edge; its tooltip says why"
+ },
+ {
+  "name": "a05_queued_stops_on_roads",
+  "key": "park_city_ut",
+  "zone": "standard",
+  "tick": 2,
+  "view": [
+   40.705,
+   -111.535,
+   12
+  ],
+  "mid": null,
+  "tooltip": {
+   "match": "planned next stops"
+  },
+  "caption": "AFTER \u00b7 park_city_ut std t2 \u00b7 a deploying crew's queued stops are drawn on the ROAD route (pale dotted, map_view.queue) instead of one straight red chord"
+ },
+ {
+  "name": "a06_relocation_preview",
+  "key": "glenwood_springs_co",
+  "zone": "standard",
+  "tick": 3,
+  "view": [
+   39.52,
+   -107.31,
+   12
+  ],
+  "mid": null,
+  "tooltip": {
+   "match": "the road leg it starts driving next tick"
+  },
+  "caption": "AFTER \u00b7 glenwood_springs_co std t3 \u00b7 a crew relocating to z3 shows the ROAD leg it drives next tick (map_view.egress_preview) - no synthesized straight chord"
+ },
+ {
+  "name": "a07_escape_spur_explained",
+  "key": "glenwood_springs_co",
+  "zone": "standard",
+  "tick": 3,
+  "view": [
+   39.585,
+   -107.345,
+   12
+  ],
+  "mid": null,
+  "tooltip": {
+   "crew": "sim-g5",
+   "match": "area escape"
+  },
+  "caption": "AFTER (escape snap OFF, the default) \u00b7 glenwood_springs_co std t3 \u00b7 SEM-10d area escapes still end in straight spurs to open-ground ray points (sim-g5: 6 km due north, previewed; sim-g4: 603 m west) - now labelled on hover"
+ },
+ {
+  "name": "a08_basalt_extended_jump",
+  "key": "basalt_carbondale_co",
+  "zone": "extended",
+  "tick": 5,
+  "view": [
+   39.4,
+   -107.13,
+   11
+  ],
+  "mid": 0.4,
+  "overlay": true,
+  "graph_bbox": true,
+  "graph_label": "road graph coverage (basalt_carbondale_co_ext: the whole extended tile)",
+  "caption": "AFTER \u00b7 basalt_carbondale_co EXTENDED t5 \u00b7 the reinforcement is placed, not slid 26 km; the extended session routes on the extended road graph (cyan)"
+ },
+ {
+  "name": "a09_eagle_vail_tween",
+  "key": "eagle_vail_co",
+  "zone": "standard",
+  "tick": 6,
+  "frame": {
+   "tick": 6,
+   "crew": "sim-g1"
+  },
+  "mid": 0.45,
+  "overlay": true,
+  "driven": [
+   {
+    "crew": "sim-g1",
+    "tick": 6,
+    "label": "sim-g1: road actually driven"
+   }
+  ],
+  "caption": "AFTER \u00b7 eagle_vail_co t6 (byte-identical engine) \u00b7 the marker tween (magenta) rides I-70 exactly where the crew drove (green)"
+ },
+ {
+  "name": "a10_park_city_zone_anchor",
+  "key": "park_city_ut",
+  "zone": "standard",
+  "tick": 6,
+  "view": [
+   40.752,
+   -111.645,
+   14
+  ],
+  "mid": null,
+  "tooltip": {
+   "match": "safe zone park_city_ut-z3"
+  },
+  "caption": "AFTER \u00b7 park_city_ut std t6 \u00b7 the 1.4 km spur to z3 remains (the anchor itself sits off the road network) - its tooltip now says so"
+ }
+]

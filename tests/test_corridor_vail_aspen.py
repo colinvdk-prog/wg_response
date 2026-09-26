@@ -152,11 +152,14 @@ def test_whole_valley_in_sync_with_the_tile_tool():
     geom = saved_geometry(tile_path(WHOLE))
     if geom is not None:
         assert geom == (loc.tile_half_m, loc.tile_cell_m), geom
-    # the per-community presets it spans are untouched (grid results pin them)
+    # the per-community presets it spans keep their own tile geometry and
+    # extended product; since the roads inspection (2026-09-25) they share
+    # its 300 m road-proximity placement (the grid's headline `_road` rule —
+    # the whole-band grid arms pin place_near_road_m=0.0 explicitly)
     for key in ("vail_co", "beaver_creek_co", "eagle_co"):
         other = LOCATIONS[key]
         assert (other.tile_half_m, other.tile_cell_m) == (9_000.0, 90.0)
-        assert other.extended_zone is True and other.place_near_road_m == 0.0
+        assert other.extended_zone is True and other.place_near_road_m == 300.0
 
 
 def test_whole_valley_zones_are_the_corridor_interchanges():
