@@ -188,6 +188,55 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    decision); the SIMULATOR enables it (spotting_enabled=True) with a UI toggle.
    Spotting feeds the P10 ensemble (embers arrive early => more conservative =>
    SEMANTICS 10 protects crews near spot-ignition zones).
+12. SEEDED INCIDENTS ARE REAL TO THE ENGINE, NEVER TO A CLIENT (W1, 2026-09-26;
+   docs/LIVE_WORLD_PLAN.md "W1 seeded incidents"). A user lights a fire at a
+   point (SeededIgnition; the watch daemon's POST /api/seed) and the live
+   watcher runs it through the SAME code as a feed incident:
+   (a) IDENTITY: ids live in the SEEDED_ID_PREFIX namespace ('seeded:<uuid>',
+       IncidentSource.SEEDED). Seeded incidents join the cycle AFTER feed
+       fusion, and fuse_incidents never joins one with anything (IRWIN, name
+       or distance): a drill can never rename, absorb or be absorbed by a
+       real fire.
+   (b) GEOMETRY: a point incident — no perimeter, acreage 0, containment
+       unknown — whose observed geometry STAYS the ignition point. The watcher
+       has no ground truth for live fires (the simulator's nominal-member
+       "actual fire" does not exist here), so every cycle spreads it from the
+       point at now_s exactly like a feed point-incident without a perimeter;
+       its forecast is the ensemble. t_ignite_s records when it was lit (the
+       (e) clock and discovered_at_s), never a spread t0.
+   (c) FRESHNESS: materialized with updated_at_s = now_s every cycle (the seed
+       store vouches for it), so the SEMANTICS 9 staleness gate keeps it until
+       it is retired — there is no zombie gate on a fire the operator says
+       burns.
+   (d) SAME LAW AS LIVE FIRES: unioned BEFORE the client-range filter — a
+       seeded fire with no protected client in range is shown (incidents,
+       /api/state) but builds no domain (the cycle note says so); in range it
+       gets a domain, ensemble, ETAs, the ladder, dispatch jobs, and its P10
+       enters every corridor check like any fire's.
+   (e) RETIREMENT = ABSENCE: DELETE /api/seed/<id> (operator), or the seed's
+       horizon passing (t_ignite_s + cfg.horizon_h) with no pair of it in
+       NOTICE/WATCH/EXTREME and its assessment healthy (the watcher), removes
+       it from the incident set; its pairs then follow SEMANTICS 6 exactly as
+       a vanished feed incident's: every feed healthy -> clear streak ->
+       CLEARED after clear_cycles; any feed blind -> FROZEN. IMPACTED stays
+       terminal.
+   (f) WEATHER: default = the LIVE provider at the fire (NWS gridpoint, as for
+       every incident). Optional per-incident override through the weather
+       seam, for THAT incident only (wgresponse.seeded.seeded_forecast): the
+       conditions from an intensity preset (simui.INTENSITY_WEATHER) or an
+       explicit SeedWeather, the direction from wind_dir_deg; each part left
+       unset stays live, both set = the simulator's MockWeather script (no
+       network). The mode is recorded in the cycle notes and /api/state.
+   (g) NEVER A CLIENT MESSAGE: the watch daemon routes every notification of a
+       seeded incident to the log (seeded.SeedSafeNotifier; the send reports
+       success, so it is ledgered and restart re-fires nothing) — a drill fire
+       never reaches a real client channel, whatever notifier the daemon runs.
+       The ladder and its AlertEvents are unchanged.
+   (h) DURABLE: seeds (active + the recently retired) persist in the
+       StateStore (an additive key, written only once a seed exists) and
+       survive restart; restart re-fires nothing already sent (persist law).
+   No seeds = byte-identical cycles, persisted state and /api/state (pinned in
+   tests/test_seeded_incidents.py against goldens computed before W1).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -269,6 +318,17 @@ wgresponse.alerts
 
 wgresponse.threat
     class ThreatMonitor .cycle(now_s) -> CycleResult    # full loop: feeds->wx->terrain->spread->etas->alerts
+        # W1 SEEDED INCIDENTS (SAFETY SEMANTICS 12): .seeded (the store),
+        # .create_seed(...) / .add_seed(ign) / .retire_seed(id, now_s, ...) /
+        # .list_seeds() / .restore_seeds(rows); consulted every cycle.
+
+wgresponse.seeded   (W1, 2026-09-26; SAFETY SEMANTICS 12)
+    class SeededIncidentStore  .create(...) -> SeededIgnition  .add(ign)
+        .retire(id, now_s, reason, by) .active() .entries() .ignition(id)
+        .rows() / .restore(rows)   # thread-safe; MAX_ACTIVE cap, bounded retired history
+    seeded_forecast(ign, live_provider, loc, horizon_h, now_s) -> WeatherForecast
+    parse_seed_request(payload, aoi) -> dict   # ValueError = HTTP 400
+    class SeedSafeNotifier(real, drill)        # seeded incidents -> the log, never a client
 
 wgresponse.safety
     corridor_safe(a: LatLon, b: LatLon, depart_s: float, speed_mps: float,
@@ -295,12 +355,17 @@ wgresponse.sim
 wgresponse.server
     stdlib http server: POST /api/beacon, GET /api/state, GET /api/plan, GET /console
     auth: X-Internal-API-Key (fail closed unless WGRESP_DEV_OPEN=1)
+    W1: /api/seed routes (GET/POST/DELETE) to the injected app.seed_api (the
+    watch daemon); 404 when no seed API is wired.
 
 wgresponse.persist   (Sprint 2, Council-1 OPS-4)
     class StateStore(dir_path)  .save(alert_records, notified_ledger, incumbent_plan, meta)
                                 .load() -> restored dicts (or None when absent/corrupt: loud note)
     # Alert/IMPACTED/notification state survives restart; restart re-fires NOTHING.
     # AlertEngine exposes .restore(records) and .notified_ledger() seams for this.
+    # W1: save(..., seeded_incidents=rows) writes an ADDITIVE key only when
+    # given (no seeds = byte-identical file); load()["seeded_incidents"] ([]
+    # when absent) feeds ThreatMonitor.restore_seeds (SAFETY SEMANTICS 12h).
 
 wgresponse.roads   (founder UX request 2026-07-10 — crews travel on real roads)
     class RoadGraph — nodes {id: LatLon}, edges (u, v, highway_class, length_m,
@@ -490,6 +555,10 @@ wgresponse.cli
     # cfg.poll_period_s cadence over a REQUIRED --aoi bbox/zones file, serves the
     # console+state off the live loop, persists via wgresponse.persist, exposes
     # last-cycle age + degraded on /healthz.
+    # W1 (SAFETY SEMANTICS 12): POST /api/seed {lat, lon, intensity?,
+    # wind_dir_deg?, weather?, note?, created_by?} -> 201 {incident_id};
+    # GET /api/seed[/<id>]; DELETE /api/seed/<id> (retire) — authed like
+    # every write path; seeds persist and survive restart.
 ============================================================================
 """
 from __future__ import annotations
@@ -592,6 +661,7 @@ class IncidentSource(str, Enum):
     FIRMS = "firms"
     WATCHDUTY = "watchduty"   # enterprise-licensed slot only; unofficial API is ToS-banned
     MOCK = "mock"
+    SEEDED = "seeded"         # W1: a fire a user lit in the live world (SAFETY SEMANTICS 12) — never a feed
 
 
 @dataclass
@@ -623,6 +693,197 @@ class FireIncident:
 
 class FireFeed(Protocol):
     def fetch_active(self, bbox: Optional[BBox] = None) -> "list[FireIncident]": ...
+
+
+# ---------------------------------------------------------------------------
+# Seeded incidents (W1 — docs/LIVE_WORLD_PLAN.md ticket 1.2; SAFETY SEMANTICS 12)
+# ---------------------------------------------------------------------------
+
+#: Every seeded incident id lives in this namespace ('seeded:<uuid>'). No feed
+#: adapter mints it (IRWIN GUIDs, wfigs:/firis:/calfire:/firms: ids, mock-*),
+#: so a seeded fire can never collide with — or fuse into — a feed incident.
+SEEDED_ID_PREFIX = "seeded:"
+
+#: The simulator's intensity presets, by name. wgresponse.simui.
+#: INTENSITY_WEATHER owns the numbers (sustained mph, RH, temperature); the
+#: names are pinned equal to its keys by tests/test_seeded_incidents.py.
+SEED_INTENSITIES = ("low", "moderate", "high", "extreme")
+
+_SEED_ID_MAX = 80
+_SEED_WHO_MAX = 64
+_SEED_NOTE_MAX = 280
+
+
+def is_seeded_id(incident_id: object) -> bool:
+    """True for an id in the seeded namespace (SEEDED_ID_PREFIX + a tail)."""
+    return (isinstance(incident_id, str)
+            and incident_id.startswith(SEEDED_ID_PREFIX)
+            and len(incident_id) > len(SEEDED_ID_PREFIX))
+
+
+def _finite_number(v: object) -> bool:
+    return (isinstance(v, (int, float)) and not isinstance(v, bool)
+            and math.isfinite(v))
+
+
+@dataclass(frozen=True)
+class SeedWeather:
+    """EXPLICIT constant fire weather for a seeded ignition — the MockWeather-
+    style sample: every forecast hour carries these values (SI at the seam:
+    10-m sustained + gust m/s, RH percent, Celsius). No direction here:
+    SeededIgnition.wind_dir_deg fixes it, else the live provider's hourly
+    direction applies (SAFETY SEMANTICS 12f)."""
+    wind_speed_mps: float
+    wind_gust_mps: float
+    rh_pct: float
+    temp_c: float
+
+    def problems(self) -> "list[str]":
+        out = [f"weather.{n} must be a finite number"
+               for n in ("wind_speed_mps", "wind_gust_mps", "rh_pct", "temp_c")
+               if not _finite_number(getattr(self, n))]
+        if out:
+            return out
+        if not 0.0 <= self.wind_speed_mps <= 60.0:
+            out.append("weather.wind_speed_mps must be within [0, 60] m/s")
+        if not self.wind_speed_mps <= self.wind_gust_mps <= 90.0:
+            out.append("weather.wind_gust_mps must be within "
+                       "[wind_speed_mps, 90] m/s")
+        if not 1.0 <= self.rh_pct <= 100.0:
+            out.append("weather.rh_pct must be within [1, 100] %")
+        if not -40.0 <= self.temp_c <= 60.0:
+            out.append("weather.temp_c must be within [-40, 60] C")
+        return out
+
+
+@dataclass(frozen=True)
+class SeededIgnition:
+    """One fire a user lit at a point in the live world (W1 ticket 1.2;
+    SAFETY SEMANTICS 12). The watch daemon's POST /api/seed creates one
+    (wgresponse.seeded mints the id); ThreatMonitor's seeded store holds it
+    and every cycle materializes it with to_incident(now_s) next to the feed
+    results — from then on it is an ordinary incident to the engine.
+
+    Weather (12f): `intensity` (a SEED_INTENSITIES simulator preset) OR
+    `weather` (an explicit SeedWeather) replaces the CONDITIONS — sustained
+    wind, gust, RH, temperature — in every forecast hour; `wind_dir_deg`
+    (meteorological FROM, [0, 360)) fixes the DIRECTION in every hour. Each
+    part left unset comes from the LIVE provider at the fire (NWS gridpoint,
+    as for every incident); with both set the forecast is fully synthetic —
+    the simulator's MockWeather script, no network (weather_mode()).
+    t_ignite_s is when it was lit (unix s): the auto-retire clock (12e) and
+    the incident's discovered_at_s — never a spread t0 (12b)."""
+    incident_id: str
+    loc: LatLon
+    t_ignite_s: float
+    intensity: Optional[str] = None
+    weather: Optional[SeedWeather] = None
+    wind_dir_deg: Optional[float] = None
+    created_by: str = ""
+    note: str = ""
+
+    def problems(self) -> "list[str]":
+        """Human-readable validation problems (empty = valid)."""
+        out = []
+        if not is_seeded_id(self.incident_id):
+            out.append(f"incident_id must start with {SEEDED_ID_PREFIX!r} "
+                       f"(the seeded namespace)")
+        elif (len(self.incident_id) > _SEED_ID_MAX
+              or any(ch.isspace() or ch in "/?#%" for ch in self.incident_id)):
+            out.append(f"incident_id must be <= {_SEED_ID_MAX} chars with no "
+                       f"whitespace or '/?#%'")
+        if not (isinstance(self.loc, LatLon) and _finite_number(self.loc.lat)
+                and _finite_number(self.loc.lon)):
+            out.append("loc must be a LatLon with finite lat/lon")
+        elif not (-90.0 <= self.loc.lat <= 90.0
+                  and -180.0 <= self.loc.lon <= 180.0):
+            out.append("loc out of range (lat ±90, lon ±180)")
+        if not (_finite_number(self.t_ignite_s) and self.t_ignite_s > 0):
+            out.append("t_ignite_s must be a finite unix time > 0")
+        if self.intensity is not None and self.intensity not in SEED_INTENSITIES:
+            out.append(f"intensity must be one of {list(SEED_INTENSITIES)} "
+                       f"(or omitted for live conditions)")
+        if self.weather is not None:
+            if not isinstance(self.weather, SeedWeather):
+                out.append("weather must be a SeedWeather")
+            else:
+                out.extend(self.weather.problems())
+            if self.intensity is not None:
+                out.append("intensity and weather are exclusive (each sets "
+                           "the conditions)")
+        if self.wind_dir_deg is not None and not (
+                _finite_number(self.wind_dir_deg)
+                and 0.0 <= self.wind_dir_deg < 360.0):
+            out.append("wind_dir_deg must be a finite bearing in [0, 360)")
+        if not isinstance(self.created_by, str) or len(self.created_by) > _SEED_WHO_MAX:
+            out.append(f"created_by must be a string <= {_SEED_WHO_MAX} chars")
+        if not isinstance(self.note, str) or len(self.note) > _SEED_NOTE_MAX:
+            out.append(f"note must be a string <= {_SEED_NOTE_MAX} chars")
+        return out
+
+    def weather_mode(self) -> str:
+        """Which weather drives this fire (SAFETY SEMANTICS 12f):
+        'live' | 'live+fixed-dir' (live conditions, direction forced) |
+        'preset' / 'explicit' (fully synthetic, no network) |
+        'preset+live-dir' / 'explicit+live-dir' (synthetic conditions, the
+        live provider's hourly direction)."""
+        cond = ("preset" if self.intensity is not None else
+                "explicit" if self.weather is not None else "live")
+        fixed = self.wind_dir_deg is not None
+        if cond == "live":
+            return "live+fixed-dir" if fixed else "live"
+        return cond if fixed else cond + "+live-dir"
+
+    def display_name(self) -> str:
+        """Incident name: loud 'SEEDED' + the id's first 8 chars (+ note)."""
+        name = f"SEEDED fire {self.incident_id[len(SEEDED_ID_PREFIX):][:8]}"
+        if self.note:
+            name += " — " + self.note[:60]
+        return name
+
+    def summary(self) -> dict:
+        """JSON-able description (incident meta, /api/state, the API)."""
+        w = self.weather
+        return {
+            "incident_id": self.incident_id,
+            "lat": self.loc.lat, "lon": self.loc.lon,
+            "t_ignite_s": self.t_ignite_s,
+            "intensity": self.intensity,
+            "weather": (None if w is None else
+                        {"wind_speed_mps": w.wind_speed_mps,
+                         "wind_gust_mps": w.wind_gust_mps,
+                         "rh_pct": w.rh_pct, "temp_c": w.temp_c}),
+            "wind_dir_deg": self.wind_dir_deg,
+            "weather_mode": self.weather_mode(),
+            "created_by": self.created_by,
+            "note": self.note,
+        }
+
+    def to_incident(self, now_s: float) -> FireIncident:
+        """The cycle's FireIncident for this seed (SAFETY SEMANTICS 12b/c):
+        a POINT incident — origin = the ignition, no perimeter, no hotspots,
+        acreage 0, containment unknown — whose observed geometry stays the
+        point (the watcher has no ground truth for live fires; its forecast is
+        the ensemble, spread from the point at now_s like any feed
+        point-incident). updated_at_s = now_s: the seed store vouches for it
+        every cycle, so the staleness gate keeps it until it is retired.
+        No IRWIN id; source_ids carries the seeded provenance only."""
+        return FireIncident(
+            incident_id=self.incident_id,
+            name=self.display_name(),
+            source=IncidentSource.SEEDED,
+            origin=self.loc,
+            updated_at_s=float(now_s),
+            discovered_at_s=float(self.t_ignite_s),
+            acreage=0.0,
+            containment_pct=None,
+            active=True,
+            perimeter=None,
+            hotspots=None,
+            irwin_id=None,
+            source_ids={"seeded": self.incident_id},
+            meta={"seed": self.summary()},
+        )
 
 
 # ---------------------------------------------------------------------------

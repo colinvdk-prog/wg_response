@@ -93,6 +93,25 @@ naming (D3) and the SAFETY SEMANTICS 8 containment WATCH-ceiling (D2);
 (d) ``incumbent``/``restore_incumbent(plan)`` expose the warm-start plan for
 the persist seam so dispatch commitments survive a daemon restart.
 
+W1 SEEDED INCIDENTS (docs/LIVE_WORLD_PLAN.md ticket 1.2; contracts SAFETY
+SEMANTICS 12): the monitor owns a wgresponse.seeded.SeededIncidentStore
+(``seeded`` / create_seed / add_seed / retire_seed / list_seeds /
+restore_seeds — the watch daemon's /api/seed writes it from HTTP threads,
+the store is locked). Every cycle the ACTIVE seeds are materialized
+(SeededIgnition.to_incident: a point incident stamped fresh at now_s) and
+unioned into the incident set AFTER feed fusion (they never fuse) and BEFORE
+the staleness gate and the client-range filter — a seeded fire with no
+protected client in range is listed but builds no domain, exactly the live
+law. In range it runs the unchanged _assess_incident: seeds = the point at
+now_s (a feed point-incident's law), weather through _incident_forecast —
+the live provider, or the seed's per-incident override
+(seeded.seeded_forecast; the mode lands in the cycle notes). A retired seed
+simply stops appearing: its pairs take SAFETY SEMANTICS 6's absence path
+like a vanished feed incident. After the alerts a seed whose forecast
+horizon (t_ignite_s + cfg.horizon_h) has passed with no pair in
+NOTICE/WATCH/EXTREME (and a healthy assessment) is auto-retired
+(OperatorEvent kind 'seed_retired'). No seeds = byte-identical cycles.
+
 Units: times unix seconds, distances meters, config durations hours/minutes
 per contracts.
 """
@@ -105,12 +124,14 @@ import time
 from typing import Optional
 
 from wgresponse import fuels, geo, spread
+from wgresponse import seeded as seeded_mod
 from wgresponse.contracts import (
     AlertState,
     BBox,
     CycleResult,
     DispatchJob,
     FireIncident,
+    IncidentSource,
     LatLon,
     OperatorEvent,
     ResponseConfig,
@@ -264,6 +285,46 @@ class ThreatMonitor:
         self._aoi = aoi
         self._incumbent = None          # last DispatchPlan, warm-start seed
         self._extreme_prev: dict = {}   # incident_id -> bool (regime toggle events)
+        # W1 SEEDED INCIDENTS (contracts SAFETY SEMANTICS 12): user-lit fires,
+        # consulted every cycle; empty = byte-identical cycles.
+        self._seeded = seeded_mod.SeededIncidentStore()
+
+    # ------------------------------------------------- W1 seeded incidents
+
+    @property
+    def seeded(self) -> "seeded_mod.SeededIncidentStore":
+        """The seeded-incident store (thread-safe; the daemon's API writes it)."""
+        return self._seeded
+
+    def create_seed(self, lat: float, lon: float, t_ignite_s: float,
+                    **kw) -> "object":
+        """Light a fire at (lat, lon) at t_ignite_s (unix s): mints the
+        'seeded:<uuid>' id and stores the seed (kw: intensity / weather /
+        wind_dir_deg / created_by / note — SeededIncidentStore.create). It
+        joins the incident set from the next cycle. Raises ValueError (bad
+        ignition) / seeded.SeedCapacityError (too many active)."""
+        return self._seeded.create(lat, lon, t_ignite_s, **kw)
+
+    def add_seed(self, ign) -> "object":
+        """Store a pre-built contracts.SeededIgnition (tests, tooling)."""
+        return self._seeded.add(ign)
+
+    def retire_seed(self, incident_id: str, now_s: float,
+                    reason: str = seeded_mod.RETIRED_BY_OPERATOR,
+                    by: str = "") -> "object":
+        """Retire a seed at now_s (SAFETY SEMANTICS 12e): it leaves the
+        incident set from the next cycle and its pairs follow the absence
+        law. KeyError unknown; seeded.SeedAlreadyRetired if already retired."""
+        return self._seeded.retire(incident_id, now_s, reason=reason, by=by)
+
+    def list_seeds(self) -> list:
+        """Every seed entry (active + retired), creation order."""
+        return self._seeded.entries()
+
+    def restore_seeds(self, rows) -> int:
+        """Re-seed the store from persisted rows (persist seam); returns the
+        number restored (malformed rows are skipped loudly, never raised)."""
+        return self._seeded.restore(rows)
 
     @property
     def incumbent(self):
@@ -287,7 +348,9 @@ class ThreatMonitor:
     def cycle(self, now_s: float) -> CycleResult:
         """Run one full monitoring cycle at unix time now_s (seconds).
 
-        Returns a CycleResult: fused ACTIVE incidents (after the SAFETY
+        Returns a CycleResult: fused ACTIVE incidents plus the active SEEDED
+        incidents (SAFETY SEMANTICS 12; after the fused ones, creation order)
+        (after the SAFETY
         SEMANTICS 9 staleness gate — incidents older than
         cfg.incident_stale_h are excluded from the cycle with a note),
         per-client ThreatAssessments (etas in absolute unix seconds),
@@ -306,6 +369,12 @@ class ThreatMonitor:
         timings["feeds_s"] = time.monotonic() - _t
         _t = time.monotonic()
         active = [inc for inc in incidents if inc.active]
+        # W1 SEEDED INCIDENTS (SAFETY SEMANTICS 12a/c/d): unioned AFTER
+        # fusion (never merged with a feed record) and BEFORE the staleness
+        # gate + the client-range filter (the live law); [] = unchanged.
+        seeded_now = self._seeded_incidents(now_s, active, notes)
+        if seeded_now:
+            active = active + seeded_now
         active = self._gate_stale_incidents(active, now_s, notes)
 
         assessments: list = []
@@ -440,6 +509,11 @@ class ThreatMonitor:
                 message=f"alert evaluation failed: {exc}",
                 detail={"step": "alerts"}))
         operator_events.extend(self._drain_alert_operator_events(notes))
+        if self._seeded.has_active():
+            # SEMANTICS 12e: a seed past its forecast horizon with nothing
+            # threatened retires (after the ladder has seen this cycle).
+            self._retire_spent_seeds(now_s, failed_incidents, notes,
+                                     operator_events)
         timings["alerts_s"] = time.monotonic() - _t
         _t = time.monotonic()
 
@@ -457,6 +531,120 @@ class ThreatMonitor:
                            degraded=degraded, timings=timings)
 
     # ------------------------------------------------------------- internals
+
+    def _seeded_incidents(self, now_s: float, feed_active: list,
+                          notes: list) -> list:
+        """This cycle's seeded FireIncidents (SAFETY SEMANTICS 12), creation
+        order; [] with no active seed (and then no note: byte-identical).
+
+        Operator retirements since the last cycle are noted once here — from
+        this cycle the retired seed is absent and its pairs take the absence
+        law. Each active seed materializes through SeededIgnition.
+        to_incident(now_s) (a fresh point incident) with its weather label in
+        meta["seed"]; an id already used by a feed incident (impossible
+        across namespaces — defense in depth) is skipped with a note, never
+        merged."""
+        for e in self._seeded.take_announcements():
+            notes.append(
+                f"seeded incident {e.ignition.incident_id} retired by "
+                f"{e.retired_by or 'the operator'} at {e.retired_at_s:.0f}: "
+                f"absent from the incident set from this cycle — its pairs "
+                f"follow the absence law like a vanished feed incident "
+                f"(clear streak toward CLEARED while every feed is healthy, "
+                f"frozen while any is blind; SAFETY SEMANTICS 6/12e)")
+        igns = self._seeded.active()
+        if not igns:
+            return []
+        taken = {inc.incident_id for inc in feed_active}
+        out = []
+        for ign in igns:
+            if ign.incident_id in taken:
+                notes.append(
+                    f"seeded incident {ign.incident_id}: id collides with a "
+                    f"feed incident — skipped this cycle (a seeded fire never "
+                    f"merges with a feed record)")
+                continue
+            inc = ign.to_incident(now_s)
+            inc.meta["seed"]["weather_label"] = seeded_mod.weather_label(ign)
+            out.append(inc)
+        return out
+
+    def _incident_forecast(self, inc: FireIncident, loc: LatLon,
+                           now_s: float, notes: list):
+        """The fire-weather forecast for one incident at `loc` (the fire
+        centroid). Feed incidents: the live provider, exactly the legacy
+        call. A SEEDED incident: its per-incident override through the same
+        seam (seeded.seeded_forecast — the live provider untouched when the
+        seed overrides nothing), for THAT incident only; the mode that
+        applied is noted (SAFETY SEMANTICS 12f)."""
+        if inc.source is IncidentSource.SEEDED:
+            ign = self._seeded.ignition(inc.incident_id)
+            if ign is not None:
+                wxf = seeded_mod.seeded_forecast(ign, self._weather, loc,
+                                                 self._cfg.horizon_h, now_s)
+                notes.append(f"seeded incident {inc.incident_id}: weather "
+                             f"{seeded_mod.weather_label(ign)}")
+                return wxf
+        return self._weather.forecast(loc, self._cfg.horizon_h)
+
+    @staticmethod
+    def _note_seed_fuel(inc: FireIncident, tile, notes: list) -> None:
+        """A seeded ignition on NON-BURNABLE fuel spreads nothing (the
+        simulator rejects such a click; the watcher learns the fuel only with
+        the domain tile) — say so loudly instead of a silent dead fire."""
+        rc = geo.latlon_to_rc(tile.spec, inc.origin)
+        if rc is None:
+            return
+        code = int(round(tile.fuel.get(*rc)))
+        if not fuels.is_burnable(code):
+            notes.append(
+                f"seeded incident {inc.incident_id}: the ignition cell is "
+                f"NON-BURNABLE (FBFM40 {code}) — the surface-spread model "
+                f"cannot ignite or spread from urban / agriculture / water / "
+                f"barren fuel; retire it and seed on burnable fuel")
+
+    def _retire_spent_seeds(self, now_s: float, failed_incidents: set,
+                            notes: list, operator_events: list) -> None:
+        """SAFETY SEMANTICS 12e auto-retire: an active seed whose forecast
+        horizon (t_ignite_s + cfg.horizon_h) has passed, whose assessment
+        did not fail this cycle, and none of whose pairs is in NOTICE_72H /
+        WATCH / EXTREME_24H retires (reason 'horizon', by 'watcher') — note +
+        OperatorEvent('seed_retired'). A seed that still threatens a client
+        keeps burning until the operator retires it (a point incident spreads
+        from its point every cycle, so it would threaten indefinitely).
+        Alert states unavailable = no evidence = no retirement."""
+        horizon_s = self._cfg.horizon_h * 3600.0
+        due = [ign for ign in self._seeded.active()
+               if now_s - ign.t_ignite_s >= horizon_s
+               and ign.incident_id not in failed_incidents]
+        if not due:
+            return
+        try:
+            threatened = {key[1] for key, rec in self._alert_engine.states().items()
+                          if getattr(rec, "state", None) in _DISPATCH_STATES}
+        except Exception as exc:
+            notes.append(f"seeded auto-retire skipped: alert states "
+                         f"unavailable ({exc})")
+            return
+        for ign in due:
+            if ign.incident_id in threatened:
+                continue
+            try:
+                self._seeded.retire(ign.incident_id, now_s,
+                                    reason=seeded_mod.RETIRED_AT_HORIZON,
+                                    by="watcher", announce=False)
+            except (KeyError, seeded_mod.SeedConflict):
+                continue            # retired concurrently by the operator
+            msg = (f"seeded incident {ign.incident_id} auto-RETIRED: its "
+                   f"{self._cfg.horizon_h:g} h forecast horizon has passed "
+                   f"(lit {(now_s - ign.t_ignite_s) / 3600.0:.1f} h ago) with "
+                   f"no client pair in NOTICE/WATCH/EXTREME — absent from the "
+                   f"next cycle (SAFETY SEMANTICS 12e)")
+            notes.append(msg)
+            operator_events.append(OperatorEvent(
+                t_s=now_s, kind="seed_retired", message=msg,
+                incident_id=ign.incident_id,
+                detail={"reason": seeded_mod.RETIRED_AT_HORIZON}))
 
     def _evaluate_alerts(self, assessments: list, now_s: float,
                          blind_pairs: set, feeds_healthy: bool,
@@ -707,8 +895,13 @@ class ThreatMonitor:
         near = [c for c in candidates
                 if min(geo.haversine_m(c.loc, p) for p in geom_pts) <= radius_m]
         if not near:
-            notes.append(f"incident {inc.incident_id}: no protected clients "
-                         f"within {radius_m / 1000.0:.0f} km; spread skipped")
+            note = (f"incident {inc.incident_id}: no protected clients "
+                    f"within {radius_m / 1000.0:.0f} km; spread skipped")
+            if inc.source is IncidentSource.SEEDED:
+                # SEMANTICS 12d: the same law as a live fire, said out loud
+                note += (" — a seeded fire follows the live law: listed, but "
+                         "no domain without a protected client in range")
+            notes.append(note)
             return
 
         domain = geo.bbox_around(geom_pts + [c.loc for c in near],
@@ -721,11 +914,15 @@ class ThreatMonitor:
         except Exception as exc:
             raise _ProviderFailure("terrain", exc)
         _tm["terrain_s"] = time.monotonic() - _t
+        if inc.source is IncidentSource.SEEDED:
+            self._note_seed_fuel(inc, tile, notes)
         _t = time.monotonic()
         fire_centroid = LatLon(sum(p.lat for p in ign) / len(ign),
                                sum(p.lon for p in ign) / len(ign))
         try:
-            wxf = self._weather.forecast(fire_centroid, self._cfg.horizon_h)
+            # SEMANTICS 12f: a seeded incident's per-incident override; every
+            # feed incident gets the unchanged live-provider call.
+            wxf = self._incident_forecast(inc, fire_centroid, now_s, notes)
         except Exception as exc:
             raise _ProviderFailure("weather", exc)
         _tm["weather_s"] = time.monotonic() - _t

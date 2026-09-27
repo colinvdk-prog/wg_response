@@ -436,15 +436,21 @@ function render(d) {
       weight: 2, fillColor: "#e53935", fillOpacity: 0.95 })
       .bindTooltip("fire origin").addTo(layers.fire);
   }
-  // Live watch mode: one marker per fused active incident.
+  // Live watch mode: one marker per fused active incident. W1 seeded fires
+  // (source "seeded", contracts SAFETY SEMANTICS 12) get a violet ring and
+  // a SEEDED label with the weather that drives them — real to the engine,
+  // never to a client.
   (d.incidents || []).forEach(inc => {
     if (inc.lat == null || inc.lon == null) return;
+    const seeded = inc.source === "seeded";
     const extra = [
+      seeded ? "SEEDED (drill) · " + ((inc.seed && inc.seed.weather_mode) || "live") + " weather" : null,
       inc.acreage != null ? Number(inc.acreage).toFixed(0) + " ac" : null,
       inc.containment_pct != null ? Number(inc.containment_pct).toFixed(0) + "% contained" : null,
     ].filter(Boolean).join(" · ");
-    L.circleMarker([inc.lat, inc.lon], { radius: 9, color: "#ffcf3f",
-      weight: 2, fillColor: "#e53935", fillOpacity: 0.95 })
+    L.circleMarker([inc.lat, inc.lon], { radius: seeded ? 10 : 9,
+      color: seeded ? "#b388ff" : "#ffcf3f", weight: seeded ? 3 : 2,
+      fillColor: "#e53935", fillOpacity: 0.95 })
       .bindTooltip(`${inc.name || inc.incident_id}${extra ? "<br>" + extra : ""}`)
       .addTo(layers.fire);
   });

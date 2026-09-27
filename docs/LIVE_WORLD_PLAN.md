@@ -79,6 +79,116 @@ clients nearby run side by side in one process; 0 departure-audit violations;
 every 10c row reported; per-tick state hashes of the seeded run byte-identical
 to the simulator's for the same commands.
 
+#### W1 seeded incidents (2026-09-26)
+
+Ticket 1.2 is built, and the first slice of 1.3 (live ∪ seeded in one
+cycle): **a user lights a fire at a point and the live watcher runs it
+through the same code as a feed incident.** The law is contracts SAFETY
+SEMANTICS 12; the module is `wgresponse/seeded.py`.
+
+| Question | Answer as built |
+|---|---|
+| Identity | `SeededIgnition` (contracts): id `seeded:<uuid>` (a name-based uuid5 over the store sequence, ignition time and point, so a replayed command script re-mints the same ids — the ensemble is seeded on the incident id), `IncidentSource.SEEDED`, lat/lon, `t_ignite_s`, intensity preset **or** explicit `SeedWeather`, optional `wind_dir_deg`, `created_by`, `note`. |
+| Fusion | Seeds are unioned **after** `fuse_incidents`, and `fuse_incidents` itself never joins a seeded incident with anything (IRWIN, name, distance) — pinned with a seeded record carrying a feed fire's IRWIN id, name and point. |
+| Geometry | A point incident: no perimeter, acreage 0, containment unknown. **Its observed geometry stays the ignition point**; every cycle spreads it from the point at `now_s`, exactly like a feed point-incident without a perimeter (pinned: its ensemble equals a direct `ensemble_arrival` of the point at now). The watcher has no ground truth for live fires, so the simulator's "actual fire" (the nominal member's burn) does not exist here — a seeded fire therefore never grows, and its ETAs stay where the first cycle put them for as long as the weather holds. |
+| Guards | Materialized with `updated_at_s = now` every cycle (the seed store vouches for it): the SEMANTICS 9 staleness gate keeps it until it is retired. |
+| Client range | Unioned **before** the staleness gate and the client-range filter: a seed with no protected client within the threat radius is listed (`/api/state`, the note says so) and builds no domain — the live law. |
+| Weather | Default: the LIVE provider at the fire (NWS gridpoint), as for every incident. Override, for that incident only, through the weather seam (`seeded.seeded_forecast`): `intensity` (the simulator's `INTENSITY_WEATHER` presets) or `weather` sets the conditions (sustained, gust, RH, temperature) in every hour, `wind_dir_deg` fixes the direction; each part left unset stays live; both set = the simulator's own `MockWeather` script, no network. The mode (`live`, `live+fixed-dir`, `preset`, `preset+live-dir`, `explicit`, `explicit+live-dir`) is in the cycle notes and `/api/state`. |
+| Retirement | `DELETE /api/seed/<id>` (operator), or automatically once `t_ignite_s + horizon_h` has passed with no pair of it in NOTICE / WATCH / EXTREME and a healthy assessment (`OperatorEvent` kind `seed_retired`). A retired seed simply stops appearing, so its pairs take SEMANTICS 6's absence path **exactly** as a vanished feed incident's (pinned side by side: the same states and events cycle for cycle — CLEARED after `clear_cycles` while every feed is healthy, frozen while any is blind). |
+| Clients | A seeded fire's notifications go to the DRILL LOG only (`SeedSafeNotifier`, wired by `watch`): never a client channel, whatever notifier the daemon runs. The ladder and its events are unchanged and the drill send is ledgered, so a restart re-fires nothing. |
+| API | `POST /api/seed` {lat, lon, intensity?, wind_dir_deg?, weather?, note?, created_by?} → 201 `{incident_id}` (400: bad body / outside the AOI; 409: 12 active); `GET /api/seed[/<id>]` (weather mode, last-cycle domain and phase times, pair states); `DELETE /api/seed/<id>` (404 unknown, 409 already retired). Authed like every write path. A seed / retire persists at once and wakes the loop (the next cycle runs now, not after the period). `/api/state` lists seeded incidents with `source: "seeded"` and gains a `seeds` key once any seed exists; the console draws them with a violet ring. |
+| Persistence | Seeds (active + the last 50 retired) ride in the StateStore under an additive `seeded_incidents` key, written only once a seed exists; restart restores them before the first cycle. |
+| Byte-identity | With no seed the cycles, the persisted state file and `/api/state` are byte-identical to goldens computed on commit 09f94b5 **before** any of this code existed (`tests/test_seeded_incidents.py`). |
+
+**The drill (2026-09-26, dev box, one watch daemon per phase).** `watch --aoi
+data/aoi_vail_aspen.json --registry mock --dry-notify` with the production
+physics flags (`--gust-blend 0.5 --grass-floor 0.10 --floor-gate
+--model-error 0.71 --extreme-regime --fail-closed --ember-radius 200
+--p50-bound --solver-evals 20000 --phi-vector`), live LANDFIRE via LFPS, live
+WFIGS / FIRIS / CAL FIRE feeds, an API key, crews beaconing from the Eagle,
+Gypsum and Avon zones. The live WFIGS **Willow** fire (39.234, −106.440;
+7,389 ac, 80 % contained) was burning inside the AOI with 9 mock clients in
+range, so every phase ran **a live WFIGS fire and a seeded fire side by side
+in one process** — the W1 exit gate's shape. Every cycle was healthy
+(`degraded: false`).
+
+| Cycle | Wall | Where the time went |
+|---|---|---|
+| Willow, fresh domain | 439.7 s | LFPS terrain 424.6 s · NWS 1.3 s · spread 11.3 s (300,987 cells, 9 clients) · feeds 2.3 s · alerts 0.0002 s · dispatch 0.13 s |
+| + seed, fresh domain (phase 1) | 477.2 s | seed: LFPS terrain 462.3 s · weather 0.0002 s (synthetic preset) · spread 1.05 s (300,286 cells at 108.8 m, 9 clients); Willow cached: terrain 0.10 s · NWS 0.24 s · spread 10.8 s |
+| + seed, fresh domain (phase 2) | 387.9 s | seed: LFPS 372.6 s · spread 1.70 s (300,492 cells at 114.3 m, 12 clients); dispatch 0.24 s |
+| both cached | 13–17 s | seed spread 1.0–1.7 s, Willow spread ~11 s, feeds ~2–3 s |
+
+- **Phase 1 — the literal drill:** HIGH, wind FROM 240, 10 km WSW of the
+  Eagle base (4–8 km out is FBFM40 91 in both cached Eagle tiles). `POST` →
+  201 (persisted at once, loop woken); a point outside the AOI → 400. The
+  seed missed the next cycle by 4 s (cycle 1 had overrun the 300 s period, so
+  cycle 2 began at once, before the POST) and joined the one after — a fresh
+  LFPS domain with 9 clients in range. Its 9 pairs stayed NONE: the run up the
+  Eagle valley stalls in urban / agriculture / barren (the nominal member
+  reaches 5,167 cells in 96 h) and every mock client sits S/SW of Eagle,
+  upwind or crosswind. **Hard kill** (TerminateProcess, no final persist) →
+  restart: the seed row, 18 alert records and 6 ledgered sends came back;
+  `restored: true`; the post-restart cycle (14.3 s) re-fired **0** events.
+  `DELETE` → 200 (again → 409); absent from the next cycle; listed retired.
+- **Phase 2 — a seed that threatens:** HIGH, wind FROM 240, 8 km upwind of
+  mock-client-000. Ladder: client-000 NONE → EXTREME_24H (p50 5.14 h), client-007
+  NONE → EXTREME_24H on the P10 rung (p10 9.61 h, p50 51.8 h); two DRILL-log
+  sends, no client channel. Both homes are also EXTREME for Willow with p10 =
+  0 h, so the planner's one-job-per-home dedup kept Willow's (infeasible) job
+  and folded the seeded ones away (`dedup_dropped_jobs: 2`). Hard kill →
+  restart: seed restored active, **0** events and **0** drill-log lines
+  re-fired. `DELETE` → next cycle absent with both pairs still EXTREME (clear
+  streak 1; "pair … not assessed this cycle; job skipped", as for a vanished
+  feed fire) → the cycle after, both EXTREME → CLEARED (the all-clear sends
+  suppressed: both homes still hold Willow alerts — the existing law).
+- **Phases 3–5 — dispatch:** HIGH seeds upwind of homes Willow does not
+  threaten (client-006 wind 240; client-001 wind 90 and wind 135; phases 4–5
+  reuse the cached 12-client domain — terrain 0.09 s). Ladder: EXTREME
+  (p50 6.05 h), EXTREME (p50 7.53 h, p10 5.56 h), NOTICE_72H → WATCH (p50
+  34.0 h, p10 20.8 h). Every plan listed the seeded job as
+  **`no_safe_corridor`**; each retirement walked the pair to CLEARED on the
+  second cycle. **Attribution** (phase 5's exact seed, same id, replayed
+  through the real monitor + planner + cached tiles): **alone, it is served**
+  — crew E2 (Gypsum) → client-001, arrive +1.61 h, margin 18.2 h; **with the
+  live Willow ensemble present, the same job is `no_safe_corridor`.**
+  Client-001 is ~69 km from Willow, outside Willow's domain: the fail-closed
+  corridor law bounds every off-raster sample by Willow's reached-boundary
+  arrival + distance at 1.7 m/s, so a large live fire vetoes routes tens of
+  km beyond its own domain. Conservative by design — and in a multi-fire
+  world it is the dominant dispatch constraint (ticket 1.5's question).
+
+`POST` / `GET` / `DELETE` and every 400 / 404 / 405 / 409 / 401 path are also
+pinned over real HTTP in `tests/test_seed_api.py`.
+
+What remains of W1:
+
+- **1.1 `IncidentDomain`** — one object hosting terrain, ensemble, ETAs,
+  dispatch, crew kinematics, sweep and audit per incident. Today the watcher
+  still rebuilds every domain from scratch each cycle, and a seeded fire is a
+  point re-lit at `now`; with 1.1 a seeded domain can carry the simulator's
+  ground truth (the nominal burn, re-anchored from its own history) and the
+  exit gate's "per-tick state hashes byte-identical to the simulator's" becomes
+  testable. The seeded weather already uses the simulator's own
+  `MockWeather` script and preset table, so that comparison starts from the
+  same weather.
+- **1.3 (rest)** — domain lifecycle (build / re-anchor / retire as objects,
+  not per-cycle rebuilds) and a per-domain cycle budget: a seed with clients
+  in range costs a full ~300,000-cell ensemble every cycle.
+- **1.4 crews as world objects** — the watcher plans with beacon crews only;
+  seeded domains see no simulator crews.
+- **1.5 left-the-domain / conservative off-domain horizon** — now with a
+  measured stake: the fail-closed off-raster bound (1.7 m/s from every reached
+  boundary cell) let the live Willow fire veto a seeded job ~69 km away that
+  the planner serves with an 18.2 h margin when Willow is absent. A
+  per-domain horizon that knows where each fire can actually go is what keeps
+  one large fire from freezing dispatch across a region.
+- **Policy before real crews (W4):** a seeded fire is real to the engine —
+  its P10 enters every corridor check and its jobs enter the plan — so on a
+  daemon with real crews a drill would re-route them. The drill-safe notifier
+  covers clients only; drills on a live crew roster need a drill window, a
+  drill flag on crews, or a separate drill world.
+
 ### W2 — Terrain anywhere, in seconds
 
 | # | Ticket | Notes |

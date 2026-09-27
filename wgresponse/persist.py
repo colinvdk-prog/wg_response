@@ -84,6 +84,15 @@ Payload shapes (all times unix seconds, per contracts):
   incident_growth {incident_id: {"acreage": float|None, "last_growth_s": s}}
                   — the containment-gate no-growth clock (SAFETY SEMANTICS 8;
                   additive kwarg, engine seam AlertEngine.incident_growth()).
+  seeded_incidents [row, ...] — W1 seeded incidents (contracts SAFETY
+                  SEMANTICS 12h): the rows of wgresponse.seeded.
+                  SeededIncidentStore.rows(), stored VERBATIM (the explicit
+                  field map lives in seeded.encode_entry/decode_entry).
+                  ADDITIVE: written only when the caller passes the kwarg
+                  (the watch daemon does once any seed exists), so a daemon
+                  that never seeded writes a byte-identical file; load()
+                  returns [] when the key is absent and a loud [] when it is
+                  not a list (a type-corrupt key never costs the alert state).
 
 Stdlib only.
 """
@@ -493,8 +502,13 @@ class StateStore:
              incumbent_plan: Optional[DispatchPlan],
              meta: Optional[dict],
              incident_growth: Optional[dict] = None,
-             now_s: Optional[float] = None) -> str:
+             now_s: Optional[float] = None,
+             seeded_incidents: Optional[list] = None) -> str:
         """Atomically persist one cycle's durable state; returns the file path.
+
+        ``seeded_incidents`` (W1, SAFETY SEMANTICS 12h): JSON-able seed rows
+        (seeded.SeededIncidentStore.rows()); None = the key is not written
+        at all (byte-identical to the pre-W1 file).
 
         Tuple keys are flattened into lists (JSON has no tuple keys). Raises
         OSError/TypeError upward on disk/serialization failure — the caller
@@ -520,6 +534,8 @@ class StateStore:
             "meta": dict(meta or {}),
             "incident_growth": _encode_growth(incident_growth),
         }
+        if seeded_incidents is not None:
+            payload["seeded_incidents"] = [dict(r) for r in seeded_incidents]
         body = json.dumps(payload, sort_keys=True, indent=1)
         self._dir.mkdir(parents=True, exist_ok=True)
         tmp = Path(str(self._path) + ".tmp")
@@ -551,7 +567,8 @@ class StateStore:
                  "notified_ledger": {(cid, iid, state): t_s},
                  "incumbent_plan": DispatchPlan | None,
                  "meta": dict,
-                 "incident_growth": {iid: {"acreage", "last_growth_s"}}}.
+                 "incident_growth": {iid: {"acreage", "last_growth_s"}},
+                 "seeded_incidents": [row, ...]}   (W1; [] when absent).
         NEVER raises: file absent -> info note; unreadable / non-UTF-8 /
         corrupt JSON / unknown schema / type-corrupt containers -> ERROR
         note; a malformed individual record/ledger entry is skipped with its
@@ -673,6 +690,10 @@ class StateStore:
             "incumbent_plan": plan,
             "meta": dict(meta) if isinstance(meta, dict) else {},
             "incident_growth": growth,
+            # W1 (SAFETY SEMANTICS 12h): rows verbatim; the seeded store
+            # decodes them tolerantly (a malformed row is skipped loudly).
+            "seeded_incidents": [r for r in self._list_field(
+                payload, "seeded_incidents") if isinstance(r, dict)],
         }
 
     # ------------------------------------------------------------ S3 mirror
