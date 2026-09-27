@@ -461,6 +461,30 @@ seeding (6.2, the other half of W1's first piece); time-scrub (6.3).
 | 8.3 | Good-black sizing: doctrine wants a burned area around the crew, the model judges one cell; measure and decide before crews rest near flame by rule | corridor: 60 crew-ticks 113–300 m from flame |
 | 8.4 | The median bound and the honest band stay the operating physics; the extreme-spread posture remains data-limited (n = 1) | `FIX_PROGRAM_2026-09-11.md` |
 
+#### Fire belief — each fire's spread rate corrected by the live reports (2026-09-27)
+
+Founder, 2026-09-27: the rate of spread of an ageing, contained fire "should be bayesian unless
+a new weather pattern emerges", and the map should be "updated with the live data ... so that
+simulations are always corrected by the real data ... a bayesian feedback loop for each fire".
+Built as contracts **SAFETY SEMANTICS 14** (`wgresponse/fire_belief.py`, full write-up
+`docs/FIRE_BELIEF.md`): per fire, every new perimeter or changed acreage is compared with the
+engine's own forecast of that growth and updates a posterior over a whole-fire spread-rate
+multiplier (prior = the engine's measured model error, evidence half-life 72 h). Two
+default-OFF knobs: `fire_belief_track` (learn + publish `FireStatus` on the cycle, `/api/state`,
+the world summary's `belief` rows and `<state-dir>/fire_beliefs.json`; no physics change) and
+`fire_belief_apply` (the belief drives the footprint, the ladder's P50 and P90 in
+same-weather-pattern hours; physics returns for new weather, surprise resets, rapid fires and no
+evidence; P10 is GUARDED — never later than physics — because the synthetic study measured that
+letting the learned rate slow P10 leaves 38–43 % of a contained fire's newly burned cells ahead
+of it; `fire_belief_apply_p10` lifts the guard, config only). Watch flags `--fire-belief` /
+`--fire-belief-apply`.
+`FireStatus` (known / rapid / multiplier quantiles / new-pattern time) is the input the
+off-map road-crossing rule consumes. A TEST (drill) world takes `fire_beliefs.copy()` (never
+saved) so drills cannot change the live belief. Open: point incidents are still seeded as a
+point at now (the belief learns their rate, not their extent); FIRMS hotspots would shorten the
+evidence lag; a real-fire WFIGS hindcast should calibrate the noise and rapid thresholds before
+`--fire-belief-apply` goes live.
+
 ## 3. Sequencing and what to build first
 
 1. **Now (days):** a thin W6 over the existing watcher — set its AOI to CONUS

@@ -1,0 +1,70 @@
+       grow-m0.5            OFF: 85 cycles (30 s)
+       grow-m0.5             ON: 85 cycles (85 s)
+       grow-m0.5         ON+P10: 85 cycles (114 s)
+       grow-m1.0            OFF: 85 cycles (42 s)
+       grow-m1.0             ON: 85 cycles (112 s)
+       grow-m1.0         ON+P10: 85 cycles (152 s)
+       grow-m2.0            OFF: 85 cycles (56 s)
+       grow-m2.0             ON: 85 cycles (177 s)
+       grow-m2.0         ON+P10: 85 cycles (254 s)
+      aged-m0.01            OFF: 85 cycles (36 s)
+      aged-m0.01             ON: 85 cycles (80 s)
+      aged-m0.01         ON+P10: 85 cycles (98 s)
+      aged-m0.03            OFF: 85 cycles (36 s)
+      aged-m0.03             ON: 85 cycles (84 s)
+      aged-m0.03         ON+P10: 85 cycles (104 s)
+       aged-m0.1            OFF: 85 cycles (37 s)
+       aged-m0.1             ON: 85 cycles (97 s)
+       aged-m0.1         ON+P10: 85 cycles (126 s)
+ aged-wind-event            OFF: 85 cycles (53 s)
+ aged-wind-event             ON: 85 cycles (133 s)
+ aged-wind-event         ON+P10: 85 cycles (181 s)
+ aged-wind-event ON+P10-no-novelty: 85 cycles (224 s)
+      aged-flare            OFF: 85 cycles (38 s)
+      aged-flare             ON: 85 cycles (84 s)
+      aged-flare         ON+P10: 85 cycles (112 s)
+
+| case | phase | arm | cycles | posterior P50 (last) | rapid cycles | truth growth ac/24 h (median) | median 24-h area error | median 24-h growth ratio | P10 misses 24 h | P10 misses 48 h | median P10 lead 24 h (h) | client P10 misses | P50 late 24 h (calibrated ~50%) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| grow-m0.5 | learned (after the first 24 h) | OFF | 61 | 0.534 | 100% | 6,021 | 58% | 2.38 | 2.19% | 0.88% | -12.2 | 3/177 | 18% |
+| grow-m0.5 | learned (after the first 24 h) | ON | 61 | 0.534 | 100% | 6,021 | 58% | 2.38 | 2.19% | 0.88% | -12.2 | 3/177 | 18% |
+| grow-m0.5 | learned (after the first 24 h) | ON+P10 | 61 | 0.534 | 100% | 6,021 | 58% | 2.38 | 2.19% | 0.88% | -12.2 | 3/177 | 18% |
+| grow-m1.0 | learned (after the first 24 h) | OFF | 61 | 1.068 | 100% | 23,371 | 7% | 0.85 | 3.13% | 1.68% | -7.4 | 4/375 | 88% |
+| grow-m1.0 | learned (after the first 24 h) | ON | 61 | 1.060 | 100% | 23,371 | 4% | 0.93 | 3.11% | 1.53% | -7.4 | 4/375 | 75% |
+| grow-m1.0 | learned (after the first 24 h) | ON+P10 | 61 | 1.060 | 100% | 23,371 | 4% | 0.93 | 3.12% | 1.54% | -7.4 | 4/375 | 75% |
+| grow-m2.0 | learned (after the first 24 h) | OFF | 61 | 1.970 | 100% | 84,802 | 34% | 0.34 | 53.09% | 65.38% | 0.3 | 188/342 | 100% |
+| grow-m2.0 | learned (after the first 24 h) | ON | 61 | 1.905 | 100% | 84,802 | 1% | 0.99 | 6.15% | 3.61% | -4.2 | 31/342 | 81% |
+| grow-m2.0 | learned (after the first 24 h) | ON+P10 | 61 | 1.905 | 100% | 84,802 | 1% | 0.99 | 6.15% | 3.61% | -4.2 | 31/342 | 81% |
+| aged-m0.01 | learned (after the first 24 h) | OFF | 61 | 0.144 | 0% | 128 | 96% | 143.78 | 2.86% | 1.26% | -14.8 | 0/0 | 11% |
+| aged-m0.01 | learned (after the first 24 h) | ON | 61 | 0.161 | 0% | 128 | 15% | 21.20 | 2.86% | 1.26% | -14.8 | 0/0 | 64% |
+| aged-m0.01 | learned (after the first 24 h) | ON+P10 | 61 | 0.161 | 0% | 128 | 15% | 21.20 | 43.29% | 26.39% | -5.2 | 0/0 | 64% |
+| aged-m0.03 | learned (after the first 24 h) | OFF | 61 | 0.166 | 11% | 498 | 91% | 36.66 | 1.63% | 0.80% | -14.8 | 0/0 | 9% |
+| aged-m0.03 | learned (after the first 24 h) | ON | 61 | 0.200 | 11% | 498 | 13% | 5.90 | 1.63% | 0.80% | -14.8 | 0/0 | 64% |
+| aged-m0.03 | learned (after the first 24 h) | ON+P10 | 61 | 0.200 | 11% | 498 | 13% | 5.90 | 38.53% | 24.19% | -4.4 | 0/0 | 64% |
+| aged-m0.1 | learned (after the first 24 h) | OFF | 61 | 0.191 | 69% | 1,366 | 81% | 15.61 | 2.12% | 1.06% | -14.0 | 0/48 | 11% |
+| aged-m0.1 | learned (after the first 24 h) | ON | 61 | 0.203 | 69% | 1,366 | 70% | 11.58 | 2.12% | 1.06% | -14.0 | 0/48 | 27% |
+| aged-m0.1 | learned (after the first 24 h) | ON+P10 | 61 | 0.203 | 69% | 1,366 | 70% | 11.58 | 15.13% | 11.20% | -11.3 | 14/48 | 27% |
+| aged-wind-event | before (learned) | OFF | 24 | 0.210 | 25% | 41,035 | 23% | 1.39 | 1.53% | 0.81% | -5.4 | 2/203 | 51% |
+| aged-wind-event | before (learned) | ON | 24 | 0.221 | 25% | 41,035 | 16% | 0.77 | 1.52% | 0.77% | -5.4 | 2/203 | 80% |
+| aged-wind-event | before (learned) | ON+P10 | 24 | 0.221 | 25% | 41,035 | 16% | 0.77 | 17.65% | 10.79% | -1.4 | 45/203 | 80% |
+| aged-wind-event | before (learned) | ON+P10-no-novelty | 24 | 0.221 | 25% | 41,035 | 43% | 0.20 | 53.92% | 66.94% | 4.8 | 147/203 | 80% |
+| aged-wind-event | event | OFF | 18 | - | 100% | 54,478 | 1% | 0.98 | 3.76% | 4.15% | -6.9 | 1/120 | 76% |
+| aged-wind-event | event | ON | 18 | - | 100% | 54,478 | 1% | 0.98 | 3.76% | 4.15% | -6.9 | 1/120 | 76% |
+| aged-wind-event | event | ON+P10 | 18 | - | 100% | 54,478 | 1% | 0.98 | 3.76% | 4.15% | -6.9 | 1/120 | 76% |
+| aged-wind-event | event | ON+P10-no-novelty | 18 | - | 100% | 54,478 | 1% | 0.98 | 3.76% | 4.15% | -6.9 | 1/120 | 76% |
+| aged-wind-event | after | OFF | 19 | 0.870 | 100% | 45,447 | 1% | 0.98 | 7.33% | 6.35% | -9.3 | 1/138 | 78% |
+| aged-wind-event | after | ON | 19 | 0.872 | 100% | 45,447 | 1% | 0.98 | 7.33% | 6.35% | -9.3 | 1/138 | 78% |
+| aged-wind-event | after | ON+P10 | 19 | 0.872 | 100% | 45,447 | 1% | 0.98 | 7.33% | 6.35% | -9.3 | 1/138 | 78% |
+| aged-wind-event | after | ON+P10-no-novelty | 19 | 0.872 | 100% | 45,447 | 1% | 0.98 | 7.33% | 6.35% | -9.3 | 1/138 | 78% |
+| aged-flare | before (learned) | OFF | 26 | 0.191 | 0% | 6,263 | 38% | 2.56 | 1.29% | 0.34% | -18.1 | 0/88 | 20% |
+| aged-flare | before (learned) | ON | 26 | 0.202 | 0% | 6,263 | 14% | 0.55 | 1.29% | 0.34% | -18.1 | 0/88 | 88% |
+| aged-flare | before (learned) | ON+P10 | 26 | 0.202 | 0% | 6,263 | 14% | 0.55 | 71.02% | 85.21% | 0.8 | 78/88 | 88% |
+| aged-flare | after the flare-up | OFF | 35 | 1.054 | 89% | 23,940 | 3% | 0.95 | 3.85% | 1.89% | -8.3 | 4/239 | 87% |
+| aged-flare | after the flare-up | ON | 35 | 1.231 | 89% | 23,940 | 5% | 0.91 | 3.84% | 1.88% | -8.3 | 4/239 | 86% |
+| aged-flare | after the flare-up | ON+P10 | 35 | 1.231 | 89% | 23,940 | 5% | 0.91 | 11.60% | 11.01% | -8.3 | 28/239 | 86% |
+
+flare-up exposure (aged-flare, OFF): flare at +122 h, first surprise reset at +132 h (exposed 10 h)
+
+flare-up exposure (aged-flare, ON): flare at +122 h, first surprise reset at +132 h (exposed 10 h)
+
+flare-up exposure (aged-flare, ON+P10): flare at +122 h, first surprise reset at +132 h (exposed 10 h)

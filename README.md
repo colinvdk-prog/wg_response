@@ -312,6 +312,35 @@ the shipped values.
 | `containment_watch_ceiling_pct` | 90.0 | Containment at/above this (with no growth) engages the WATCH ceiling when the gate is enabled. |
 | `containment_no_growth_h` | 48.0 | Hours without acreage growth required before the WATCH ceiling engages. |
 
+### Fire belief (SAFETY SEMANTICS 14 — `docs/FIRE_BELIEF.md`)
+
+The per-fire spread-rate belief (founder 2026-09-27: "the rate of fire spread should be bayesian unless a new weather pattern emerges" and "a bayesian feedback loop for each fire"). Every knob OFF = byte-identical engine; the watch daemon arms it with `--fire-belief` (track) / `--fire-belief-apply` (apply, implies track).
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `fire_belief_track` | False | Learn a per-fire whole-fire head-ROS multiplier from the feeds' growth observations (newer perimeters, changed / long-unchanged reported acreage) against the engine's own nominal growth curve; publish `CycleResult.fire_status`, `/api/state` `fire_status`, the world summary's `belief` rows and `<state-dir>/fire_beliefs.json` (S3-mirrored). Changes NO arrival, ETA, alert or dispatch. |
+| `fire_belief_apply` | False | Requires track. The posterior drives the ensemble's head-ROS multiplier in SAME-weather-pattern forecast hours (nominal = posterior median, members at their model-error stratum's posterior quantile): the footprint, the ladder's P50 (**alert timing changes**) and P90 move; P10 stays GUARDED (never later than physics) unless `fire_belief_apply_p10`. Measured before/after in `docs/FIRE_BELIEF.md`. Physics (the prior) returns for new weather, surprise resets, rapid fires (larger of prior and posterior) and no evidence. |
+| `fire_belief_apply_p10` | False | Requires apply. OFF (default) = the **P10 guard**: P10 = min(belief P10, physics P10) — the belief drives the nominal, P50 (the alert ladder) and P90 but never makes P10 (crew safety, corridors) later than today's engine (a second, legacy ensemble runs for belief-applied fires only). ON = the belief moves P10 too — **measured unsafe for contained fires** (P10 too late on 38–43 % of newly burned cells vs 1.6–2.9 % physics; `docs/FIRE_BELIEF.md` §5). |
+| `fire_belief_prior_sd_log` | 0.0 | Prior sd of log(multiplier). 0 = `model_error_sd_log` when > 0, else 0.71 (the hindcast-measured model error). |
+| `fire_belief_half_life_h` | 72.0 | Evidence half-life: a growth window's log-likelihood weighs 0.5^(age / half-life). |
+| `fire_belief_min_obs_spacing_h` | 3.0 | Two observations of one series closer than this are not both kept (the next spans both). |
+| `fire_belief_area_rel_err` | 0.03 | Area measurement error, relative part (sd). |
+| `fire_belief_area_abs_err_acres` | 10.0 | Area measurement error, absolute part (sd, acres). Long-unchanged ("static") sizes carry 3× both. |
+| `fire_belief_noise_nu` | 4.0 | Student-t degrees of freedom of the growth-rate noise (heavy tails: one re-stated acreage cannot swing a fire). |
+| `fire_belief_discrepancy_frac` | 0.30 | Model-discrepancy sd as a fraction of the predicted radial growth rate. |
+| `fire_belief_fast_sd_floor` | 0.35 | Apply: the fast side of the members' multipliers is never narrower than this log sd around the posterior median. |
+| `fire_belief_mult_floor` | 0.05 | Apply: no member multiplier below this. |
+| `fire_belief_novel_severity_ratio` | 1.5 | New weather pattern: a forecast hour whose Rothermel severity (dominant fuel, flat) exceeds this × the evidence hours' P90; physics applies from the first such hour to the end of the horizon. |
+| `fire_belief_novel_shift_deg` | 60.0 | New weather pattern: the wind turns more than this from the evidence's speed-weighted mean direction ... |
+| `fire_belief_novel_min_wind_mps` | 4.0 | ... at an effective wind of at least this (m/s). |
+| `fire_belief_reset_h` | 24.0 | Surprise reset: a window that beats the belief's P90 predicted growth resets the fire to physics for this long (sticky) and drops older evidence. |
+| `fire_belief_static_h` | 24.0 | An unchanged reported size counts as zero growth only after the record kept being modified this long since the size last changed. |
+| `fire_belief_rapid_acres_per_day` | 1000.0 | Rapid: a window grew at least this many acres per 24 h (equivalent) ... |
+| `fire_belief_rapid_frac_per_day` | 0.25 | ... or at least this fraction of its starting area per 24 h ... |
+| `fire_belief_rapid_min_acres` | 100.0 | ... with at least this many acres grown. |
+| `fire_belief_rapid_lookback_h` | 48.0 | Rapid: windows ending within this lookback count (and fires discovered within it are judged on growth since discovery). |
+| `fire_belief_rapid_noise_z` | 1.645 | Rapid is judged on growth BEYOND measurement noise: growth − z × its sd under the belief's own area-error model (one-sided 95 %). 3 % of a 20,000-acre fire is ±600 ac per report, so raw 12-h windows of a fire truly growing ~600 ac/day read 1,400–2,500 ac/day and would flag every big fire rapid. 0 = the raw observed growth. |
+
 ## Feed & data licensing posture
 
 Read this before pointing any adapter at a live endpoint.

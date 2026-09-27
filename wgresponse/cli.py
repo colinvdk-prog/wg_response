@@ -254,6 +254,22 @@ def _build_parser() -> argparse.ArgumentParser:
     pw.add_argument("--p50-bound", action="store_true",
                     help="cfg.ensemble_p50_nominal_bound: the ladder median "
                          "never trails the nominal run (item 3, N4)")
+    # FIRE BELIEF (contracts SAFETY SEMANTICS 14; docs/FIRE_BELIEF.md)
+    pw.add_argument("--fire-belief", action="store_true",
+                    help="cfg.fire_belief_track: learn a per-fire spread-rate "
+                         "belief from the feeds' growth observations and "
+                         "publish it (status, /api/world/summary, "
+                         "<state-dir>/fire_beliefs.json); it changes no "
+                         "arrival, alert or dispatch")
+    pw.add_argument("--fire-belief-apply", action="store_true",
+                    help="cfg.fire_belief_apply (implies --fire-belief): the "
+                         "learned belief drives the ensemble's head-ROS "
+                         "multiplier in same-weather-pattern hours (the "
+                         "footprint, the ladder's P50 and P90 move: alert "
+                         "timing changes); P10 stays guarded, never later "
+                         "than physics (cfg.fire_belief_apply_p10 lifts the "
+                         "guard: config only, measured unsafe for contained "
+                         "fires, docs/FIRE_BELIEF.md)")
     pw.add_argument("--dry-notify", action="store_true",
                     help="force log-only notifications (no SES even when "
                          "WGRESP_NOTIFY_SES=1)")
@@ -747,6 +763,42 @@ def _watch_notifier(args, state_dir):
     return LogNotifier(), "LogNotifier (set WGRESP_NOTIFY_SES=1 for SES)"
 
 
+def _fire_belief_cfg(cfg, args):
+    """cfg with the --fire-belief / --fire-belief-apply flags applied (SAFETY
+    SEMANTICS 14; apply implies track). No flag = cfg unchanged."""
+    if getattr(args, "fire_belief", False) or \
+            getattr(args, "fire_belief_apply", False):
+        cfg = dataclasses.replace(
+            cfg, fire_belief_track=True,
+            fire_belief_apply=bool(getattr(args, "fire_belief_apply", False)))
+    return cfg
+
+
+def _fire_belief_file(cfg, state_dir, s3_uri=None):
+    """The watch daemon's fire-belief file: <state-dir>/fire_beliefs.json,
+    S3-mirrored under the state's prefix (object fire_beliefs.json) — or
+    None with cfg.fire_belief_track off (nothing written or read)."""
+    if not getattr(cfg, "fire_belief_track", False):
+        return None
+    from wgresponse.fire_belief import BeliefFile
+    return BeliefFile(state_dir, s3_uri=s3_uri)
+
+
+def _fire_belief_notes(args) -> list:
+    """Startup notes for --fire-belief / --fire-belief-apply (SEMANTICS 14)."""
+    if getattr(args, "fire_belief_apply", False):
+        return ["fire belief APPLIED (alert-timing change): each fire's "
+                "learned spread rate drives its footprint, P50 and P90 in "
+                "same-weather-pattern hours; physics returns for new weather, "
+                "surprises and rapid fires; P10 GUARDED = never later than "
+                "physics (docs/FIRE_BELIEF.md)"]
+    if getattr(args, "fire_belief", False):
+        return ["fire belief TRACKING: per-fire spread-rate belief learned "
+                "and published (status, world summary, fire_beliefs.json); "
+                "physics, alerts and dispatch unchanged"]
+    return []
+
+
 class _WatchDaemon:
     """The live watch loop: cycle -> persist -> serve, with injectable clock.
 
@@ -764,7 +816,11 @@ class _WatchDaemon:
 
     def __init__(self, monitor, engine, registry, tracker, store, cfg, aoi,
                  period_s, aoi_desc="", safe_zones=(), clock=time.time,
-                 sleep=time.sleep, startup_notes=()):
+                 sleep=time.sleep, startup_notes=(), belief_file=None):
+        # FIRE BELIEF (SAFETY SEMANTICS 14): its OWN file beside the state
+        # (fire_belief.BeliefFile); None (the default, and every TEST world)
+        # = nothing written or read.
+        self._belief_file = belief_file
         self._monitor = monitor
         self._engine = engine
         self._registry = registry
@@ -806,6 +862,7 @@ class _WatchDaemon:
         next cycle — Session-3 verifier F4, re-notify-ward). Absent/corrupt
         state is a loud note inside StateStore.load(); the daemon simply
         starts fresh."""
+        self._restore_fire_beliefs()
         try:
             loaded = self._store.load()
         except Exception:
@@ -922,7 +979,25 @@ class _WatchDaemon:
         False, never fatal (a full disk must not kill the alert loop).
         Serialized: the seed API (W1) persists from HTTP threads too."""
         with self._persist_lock:
-            return self._persist_locked(final)
+            ok = self._persist_locked(final)
+            self._save_fire_beliefs()
+            return ok
+
+    # ------------------------------------------ fire belief (SEMANTICS 14)
+
+    def _restore_fire_beliefs(self) -> None:
+        """Local fire_beliefs.json first, then the S3 mirror; independent of
+        the alert-state restore (never raises: a failure = the prior)."""
+        store = getattr(self._monitor, "fire_beliefs", None)
+        if self._belief_file is not None and store is not None:
+            self._belief_file.load_into(store)
+
+    def _save_fire_beliefs(self) -> None:
+        store = getattr(self._monitor, "fire_beliefs", None)
+        if self._belief_file is None or store is None:
+            return
+        self._belief_file.save(store, now_s=(self.last_result.t_s
+                                             if self.last_result else None))
 
     def _persist_locked(self, final: bool = False) -> bool:
         """persist_now's body, under the persist lock. The seeded store's
@@ -1031,6 +1106,12 @@ class _WatchDaemon:
             "clients": self._client_rows(res),
             "plan": res.plan,
         })
+        if getattr(self._cfg, "fire_belief_track", False):
+            # FIRE BELIEF (SEMANTICS 14): additive, only while tracking
+            from wgresponse.fire_belief import status_row
+            out["fire_status"] = {
+                iid: status_row(st) for iid, st in
+                sorted((getattr(res, "fire_status", None) or {}).items())}
         return out
 
     @staticmethod
@@ -1404,6 +1485,8 @@ def _cmd_watch(args) -> int:
         startup_notes_fix.append(
             "ladder MEDIAN BOUND ACTIVE: p50 never trails the nominal run "
             "(review N4)")
+    startup_notes_fix += _fire_belief_notes(args)
+    cfg = _fire_belief_cfg(cfg, args)       # SEMANTICS 14 (apply => track)
     problems = validate_config(cfg)
     if problems:
         # The review found validate_config never ran on this path and
@@ -1490,10 +1573,12 @@ def _cmd_watch(args) -> int:
             "durable state OFF: state lives on local disk only (set "
             "WGRESP_STATE_S3=s3://bucket/prefix to mirror it — App Runner "
             "wipes /tmp on every restart)")
+    belief_file = _fire_belief_file(cfg, state_dir, s3_uri)   # SEMANTICS 14
     daemon = _WatchDaemon(monitor=monitor, engine=engine, registry=registry,
                           tracker=tracker, store=store, cfg=cfg, aoi=aoi,
                           period_s=period_s, aoi_desc=aoi_desc,
-                          safe_zones=safe_zones, startup_notes=startup_notes)
+                          safe_zones=safe_zones, startup_notes=startup_notes,
+                          belief_file=belief_file)
     restored = daemon.restore()
 
     httpd = server_mod.serve(port=args.port, host=args.host,

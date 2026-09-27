@@ -31,6 +31,12 @@ per completed cycle from the daemon's last CycleResult:
      arrival), then every other incident by acreage, largest first (no
      acreage last); ties by incident id — deterministic.
 
+  5. BELIEF (contracts SAFETY SEMANTICS 14, 2026-09-27) — only while the
+     watcher tracks fire beliefs (cfg.fire_belief_track): each incident row
+     gains "belief" = wgresponse.fire_belief.status_row(FireStatus) (state,
+     n_obs, multiplier quantiles, last observation, new-pattern time, rapid,
+     known, reasons). Absent otherwise (byte-identical payload).
+
 summary_from_state(state) builds the same shape from a bare /api/state
 dict (no domains, no geometry) so the page also works over `serve --demo`
 or any state provider without a watch daemon behind it.
@@ -329,6 +335,12 @@ def build_summary(state: dict, result, geometry: bool = True) -> dict:
             "perimeter_rings_total": 0,
             "p50_rings": [],
         }
+        st = (getattr(result, "fire_status", None) or {}).get(iid)
+        if st is not None:
+            # FIRE BELIEF (contracts SAFETY SEMANTICS 14): additive, present
+            # only while cfg.fire_belief_track fills CycleResult.fire_status
+            from wgresponse.fire_belief import status_row
+            row["belief"] = status_row(st)
         if geometry:
             if inc.perimeter:
                 ring_list, total = display_perimeter(inc.perimeter)

@@ -237,6 +237,81 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
        survive restart; restart re-fires nothing already sent (persist law).
    No seeds = byte-identical cycles, persisted state and /api/state (pinned in
    tests/test_seeded_incidents.py against goldens computed before W1).
+14. THE PER-FIRE SPREAD-RATE BELIEF IS EVIDENCE, NEVER CLEARANCE (founder
+   2026-09-27, verbatim: "as a fire ages and becomes contained, the rate of
+   fire spread should be baynsian unless a new weather pattern emerges" and
+   "simulations are always corrected by the real data. This becomes a
+   baynesian feedback loop for each fire"; wgresponse.fire_belief,
+   docs/FIRE_BELIEF.md). Two knobs, both default OFF:
+   (a) cfg.fire_belief_track: per incident the watcher records the feed's
+       growth OBSERVATIONS — a perimeter with a newer own time (its polygon
+       area), a CHANGED reported acreage, and an acreage left unchanged for
+       cfg.fire_belief_static_h while the record kept being modified (a
+       zero-growth observation with 3x inflated error: a record can be
+       modified without its size being re-measured) — no two of one kind
+       closer than cfg.fire_belief_min_obs_spacing_h; the fire-centroid
+       forecast's current hour into a bounded hourly weather log; and after
+       each spread the NOMINAL member's growth curve. Consecutive
+       observations of one kind form a growth WINDOW whose radial rate
+       (equivalent-circle radius sqrt(A/pi) per hour: size-independent, so
+       point and perimeter fires both learn) is compared with the model's
+       over the same window. A 1-D grid posterior over theta = log(whole-fire
+       head-ROS multiplier) starts from the prior N(0, prior_sd^2) (prior_sd
+       = the engine's own measured model error) and weights each window
+       0.5^(age / cfg.fire_belief_half_life_h). Tracking changes NO arrival,
+       ETA, alert, notification or dispatch: it publishes
+       CycleResult.fire_status (a FireStatus per active incident), the
+       /api/state key 'fire_status', the world summary's per-incident
+       'belief' row, and its OWN file <state-dir>/fire_beliefs.json
+       (S3-mirrored beside the state file).
+   (b) cfg.fire_belief_apply (requires track): in SAME-PATTERN forecast
+       hours every ensemble member's head ROS follows the posterior (nominal
+       = the posterior median; member k = the posterior quantile at its
+       model-error stratum, the fast tail never narrower than
+       cfg.fire_belief_fast_sd_floor in log space, no multiplier below
+       cfg.fire_belief_mult_floor). THE P10 GUARD (cfg.fire_belief_apply_p10
+       OFF, the default): P10 = min(belief P10, physics P10) — the belief
+       moves the nominal, the P50 the alert ladder evaluates (alert timing
+       changes) and P90, but P10 (crew safety, corridors) is never later
+       than the legacy engine's. cfg.fire_belief_apply_p10 lets the belief
+       move P10 too — THE SAFETY-LAW CHANGE: measured UNSAFE for contained
+       fires (docs/FIRE_BELIEF.md §5: P10 too late on 38-43 % of newly
+       burned cells vs 1.6-2.9 % physics — a slow fire's front is part-way
+       across its next cells when a perimeter is drawn, and knowing its
+       average rate does not shrink that position uncertainty). Both stay
+       OFF until the founder arms them (watch --fire-belief-apply).
+   The belief REFUSES to slow a fire — the PRIOR applies (full physics + the
+   legacy model-error term, the exact legacy member call) — whenever:
+     * NEW WEATHER PATTERN: from the first forecast hour whose Rothermel head
+       ROS (the incident tile's dominant burnable fuel, flat ground) exceeds
+       cfg.fire_belief_novel_severity_ratio x the P90 over the logged
+       evidence hours, or whose wind >= cfg.fire_belief_novel_min_wind_mps
+       turns more than cfg.fire_belief_novel_shift_deg from the evidence's
+       speed-weighted mean direction, to the END of the horizon
+       (FireStatus.novel_from_s); no logged weather inside the evidence
+       windows => every hour is new;
+     * SURPRISE: a new window grew past the belief's P90 predictive growth
+       for that window — reset to the prior for cfg.fire_belief_reset_h
+       (sticky; evidence older than that window is dropped): slow to trust,
+       quick to distrust;
+     * RAPID: a window inside cfg.fire_belief_rapid_lookback_h grew —
+       counted at its lower bound beyond measurement noise, growth -
+       cfg.fire_belief_rapid_noise_z x its sd — at >= cfg.fire_belief_rapid_
+       acres_per_day (24-h equivalent) or at >= cfg.fire_belief_rapid_frac_
+       per_day with >= cfg.fire_belief_rapid_min_acres, a young fire grew
+       that fast since discovery, or a reset is active — member multipliers
+       take the LARGER of prior and posterior at each quantile;
+     * no usable evidence (state 'prior'), a SEEDED (drill) incident (never
+       observed, never learned), or any belief failure (fail-safe: legacy).
+   FireStatus is the interface the off-map road-crossing rule consumes.
+   DRILLS NEVER CHANGE REAL CONDITIONS: a TEST world gets a deep copy
+   (FireBeliefStore.copy(): persistent=False, never saved) through
+   ThreatMonitor(..., fire_beliefs=copy) and no belief file. Point
+   incidents are still SEEDED as a point at now_s (the belief learns their
+   rate from acreage; it does not re-anchor their extent).
+   All knobs OFF = byte-identical cycles, persisted state, /api/state and
+   /api/world/summary, and no fire_beliefs.json written or read (pinned in
+   tests/test_fire_belief.py against goldens computed on a8bebec).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -329,6 +404,20 @@ wgresponse.seeded   (W1, 2026-09-26; SAFETY SEMANTICS 12)
     seeded_forecast(ign, live_provider, loc, horizon_h, now_s) -> WeatherForecast
     parse_seed_request(payload, aoi) -> dict   # ValueError = HTTP 400
     class SeedSafeNotifier(real, drill)        # seeded incidents -> the log, never a client
+
+wgresponse.fire_belief   (SAFETY SEMANTICS 14, 2026-09-27; docs/FIRE_BELIEF.md)
+    class FireBeliefStore(persistent=True)
+        .observe(incidents, now_s, cfg) -> list[dict]   # growth obs, windows, resets
+        .before_spread(inc, tile, wxf, now_s, cfg) -> member_hour_scale | None
+        .after_spread(inc, ens, now_s, cfg, anchor_s, point)   # growth curve
+        .statuses(incidents, now_s, cfg) -> {incident_id: FireStatus}
+        .to_json() / from_json(d) / copy()   # copy(): persistent=False (drills)
+    class BeliefFile(state_dir, s3_uri=None)  .save(store, now_s) .load_into(store)
+    status_row(status: FireStatus) -> dict      # the world summary 'belief' row
+    # spread seams it drives: compute_arrival(hour_ros_scale=[...]) and
+    # ensemble_arrival(member_hour_scale=callable); both None = byte-identical.
+    # ThreatMonitor(..., fire_beliefs=store) injects a store (a TEST world's
+    # copy); .fire_beliefs exposes it; cli watch --fire-belief[-apply].
 
 wgresponse.safety
     corridor_safe(a: LatLon, b: LatLon, depart_s: float, speed_mps: float,
@@ -1198,6 +1287,61 @@ class CorridorVerdict:
 # Orchestration outputs
 # ---------------------------------------------------------------------------
 
+#: FireStatus.state values (SAFETY SEMANTICS 14): 'prior' = no usable
+#: evidence (full physics), 'learned' = the posterior from growth windows,
+#: 'reset' = a surprise reset is active (full physics, sticky).
+FIRE_BELIEF_STATES = ("prior", "learned", "reset")
+
+
+@dataclass(frozen=True)
+class FireObservation:
+    """The latest completed growth window of one fire (SAFETY SEMANTICS 14),
+    for display: its end time (unix s), the fire's size then (acres), the
+    series it came from ('perimeter' | 'reported'), the observed growth over
+    the window (acres) and the belief's median predicted growth for that
+    window made BEFORE it was seen (acres; None when the window could not
+    be modeled — no growth curve was pinned to its start)."""
+    t_s: float
+    acres: float
+    kind: str
+    growth_acres: Optional[float] = None
+    predicted_growth_acres: Optional[float] = None
+
+
+@dataclass(frozen=True)
+class FireStatus:
+    """Per-fire spread-rate belief status (SAFETY SEMANTICS 14) — the
+    interface the off-map road-crossing rule consumes. Published on
+    CycleResult.fire_status for every active incident only with
+    cfg.fire_belief_track.
+
+    known        at least one completed growth observation (window) exists
+    rapid        the fire is growing fast (thresholds in ResponseConfig
+                 fire_belief_rapid_*) or a surprise reset is active
+    reasons      human-readable why (rapid / reset / state / weather)
+    mult_p10/p50/p90  posterior quantiles of the whole-fire head-ROS
+                 multiplier vs the engine's physics; None = the prior applies
+                 (state 'prior' or 'reset')
+    n_obs        growth windows in the posterior
+    novel_from_s unix s of the first NEW-weather-pattern forecast hour this
+                 cycle (the prior applies from then on); None = no new pattern
+                 within the horizon, or no forecast consulted this cycle (the
+                 incident built no domain — reasons say which)
+    state        one of FIRE_BELIEF_STATES
+    last_obs     the latest completed window (FireObservation) or None"""
+    incident_id: str
+    known: bool
+    rapid: bool
+    reasons: tuple = ()
+    mult_p10: Optional[float] = None
+    mult_p50: Optional[float] = None
+    mult_p90: Optional[float] = None
+    n_obs: int = 0
+    novel_from_s: Optional[float] = None
+    state: str = "prior"
+    last_obs: Optional[FireObservation] = None
+
+
 @dataclass
 class CycleResult:
     t_s: float
@@ -1210,6 +1354,7 @@ class CycleResult:
     operator_events: list = field(default_factory=list)  # list[OperatorEvent] (SAFETY SEMANTICS 6)
     degraded: bool = False             # True when any provider was blind/failed this cycle
     timings: dict = field(default_factory=dict)  # cycle phase wall-times (s): feeds/assess/alerts/dispatch + per-incident terrain/weather/spread (cadence telemetry, review item 6)
+    fire_status: dict = field(default_factory=dict)  # incident_id -> FireStatus (SAFETY SEMANTICS 14; populated only with cfg.fire_belief_track)
 
 
 # ---------------------------------------------------------------------------
@@ -1684,6 +1829,43 @@ class ResponseConfig:
     containment_gate_enabled: bool = False   # WATCH ceiling for contained fires (SAFETY SEMANTICS 8, default OFF)
     containment_watch_ceiling_pct: float = 90.0
     containment_no_growth_h: float = 48.0
+    # FIRE BELIEF (SAFETY SEMANTICS 14; founder 2026-09-27 "the rate of fire
+    # spread should be bayesian unless a new weather pattern emerges" + "a
+    # bayesian feedback loop for each fire"; wgresponse.fire_belief,
+    # docs/FIRE_BELIEF.md). track = observe + learn + publish status, NO
+    # physics change; apply (requires track) = the posterior drives the
+    # ensemble's head-ROS multiplier in same-weather-pattern hours (footprint,
+    # P50 — alert timing — and P90 move; P10 guarded unless apply_p10, the
+    # P10 safety-law change), measured in the doc. All OFF = byte-identical.
+    # The rest tune the belief (defaults documented there).
+    fire_belief_track: bool = False
+    fire_belief_apply: bool = False
+    # apply's P10 GUARD (measured 2026-09-27, docs/FIRE_BELIEF.md §5): OFF =
+    # P10 = min(belief P10, physics P10) — the belief drives nominal, P50 and
+    # P90 but can never make P10 later than today's engine. ON = the belief
+    # moves P10 too (members at their posterior quantiles, fast-tail floor):
+    # measured UNSAFE for contained fires (P10 too late on 38-43 % of newly
+    # burned cells vs 1.6-2.9 % physics). Requires apply.
+    fire_belief_apply_p10: bool = False
+    fire_belief_prior_sd_log: float = 0.0     # prior sd of log multiplier; 0 = model_error_sd_log if > 0 else 0.71
+    fire_belief_half_life_h: float = 72.0     # evidence half-life (window weight 0.5^(age/half-life))
+    fire_belief_min_obs_spacing_h: float = 3.0   # min gap between two observations of one kind
+    fire_belief_area_rel_err: float = 0.03    # area measurement error, relative part (sd)
+    fire_belief_area_abs_err_acres: float = 10.0  # area measurement error, absolute part (sd, acres)
+    fire_belief_noise_nu: float = 4.0         # Student-t degrees of freedom of the growth-rate noise
+    fire_belief_discrepancy_frac: float = 0.30  # model discrepancy sd as a fraction of predicted growth rate
+    fire_belief_fast_sd_floor: float = 0.35   # apply: fast-tail spread never narrower than this (log sd)
+    fire_belief_mult_floor: float = 0.05      # apply: no member multiplier below this
+    fire_belief_novel_severity_ratio: float = 1.5  # new pattern: severity > ratio x evidence P90
+    fire_belief_novel_shift_deg: float = 60.0      # new pattern: wind turns more than this ...
+    fire_belief_novel_min_wind_mps: float = 4.0    # ... at an effective wind at least this
+    fire_belief_reset_h: float = 24.0         # surprise reset duration (sticky, prior applies)
+    fire_belief_static_h: float = 24.0        # unchanged acreage counts as zero growth after this
+    fire_belief_rapid_acres_per_day: float = 1000.0   # rapid: growth >= this per 24 h (equivalent)
+    fire_belief_rapid_frac_per_day: float = 0.25      # rapid: or >= this fraction of area per 24 h ...
+    fire_belief_rapid_min_acres: float = 100.0        # ... with at least this many acres grown
+    fire_belief_rapid_lookback_h: float = 48.0        # rapid: windows ending within this lookback
+    fire_belief_rapid_noise_z: float = 1.645          # rapid: growth counted at its lower bound grown - z*sd (0 = raw)
 
 
 # ---------------------------------------------------------------------------
@@ -1907,6 +2089,54 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("containment_watch_ceiling_pct must be within [0, 100]")
     if cfg.containment_no_growth_h < 0:
         problems.append("containment_no_growth_h must be >= 0")
+
+    # --- fire belief (SAFETY SEMANTICS 14) ---
+    if cfg.fire_belief_apply and not cfg.fire_belief_track:
+        problems.append("fire_belief_apply requires fire_belief_track (the "
+                        "posterior it applies is learned by the tracker)")
+    if cfg.fire_belief_apply_p10 and not cfg.fire_belief_apply:
+        problems.append("fire_belief_apply_p10 requires fire_belief_apply")
+    if not (0.0 <= cfg.fire_belief_prior_sd_log <= 3.0):
+        problems.append("fire_belief_prior_sd_log must be within [0, 3] "
+                        "(0 = the model-error term, else 0.71)")
+    if not cfg.fire_belief_half_life_h > 0:
+        problems.append("fire_belief_half_life_h must be > 0")
+    if cfg.fire_belief_min_obs_spacing_h < 0:
+        problems.append("fire_belief_min_obs_spacing_h must be >= 0")
+    if not (0.0 <= cfg.fire_belief_area_rel_err <= 1.0):
+        problems.append("fire_belief_area_rel_err must be within [0, 1]")
+    if not cfg.fire_belief_area_abs_err_acres > 0:
+        problems.append("fire_belief_area_abs_err_acres must be > 0 (a "
+                        "zero-error area makes the likelihood singular)")
+    if not (1.0 <= cfg.fire_belief_noise_nu <= 1000.0):
+        problems.append("fire_belief_noise_nu must be within [1, 1000]")
+    if not (0.0 <= cfg.fire_belief_discrepancy_frac <= 5.0):
+        problems.append("fire_belief_discrepancy_frac must be within [0, 5]")
+    if not (0.0 <= cfg.fire_belief_fast_sd_floor <= 3.0):
+        problems.append("fire_belief_fast_sd_floor must be within [0, 3]")
+    if not (0.0 < cfg.fire_belief_mult_floor <= 1.0):
+        problems.append("fire_belief_mult_floor must be within (0, 1]")
+    if not cfg.fire_belief_novel_severity_ratio >= 1.0:
+        problems.append("fire_belief_novel_severity_ratio must be >= 1 (a "
+                        "ratio below 1 calls the evidence weather itself new)")
+    if not (0.0 <= cfg.fire_belief_novel_shift_deg <= 180.0):
+        problems.append("fire_belief_novel_shift_deg must be within [0, 180]")
+    if cfg.fire_belief_novel_min_wind_mps < 0:
+        problems.append("fire_belief_novel_min_wind_mps must be >= 0")
+    if cfg.fire_belief_reset_h < 0:
+        problems.append("fire_belief_reset_h must be >= 0")
+    if not cfg.fire_belief_static_h > 0:
+        problems.append("fire_belief_static_h must be > 0")
+    if not cfg.fire_belief_rapid_acres_per_day > 0:
+        problems.append("fire_belief_rapid_acres_per_day must be > 0")
+    if not cfg.fire_belief_rapid_frac_per_day > 0:
+        problems.append("fire_belief_rapid_frac_per_day must be > 0")
+    if cfg.fire_belief_rapid_min_acres < 0:
+        problems.append("fire_belief_rapid_min_acres must be >= 0")
+    if not cfg.fire_belief_rapid_lookback_h > 0:
+        problems.append("fire_belief_rapid_lookback_h must be > 0")
+    if not (0.0 <= cfg.fire_belief_rapid_noise_z <= 5.0):
+        problems.append("fire_belief_rapid_noise_z must be within [0, 5]")
 
     # --- type discipline: bool-typed fields must hold bool, int-typed fields
     # must hold int (and not bool -- bool is an int subclass in Python) ---
