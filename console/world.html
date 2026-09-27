@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<!-- Wildfire Guardian — wgresponse WORLD VIEWER (W6 thin, 2026-09-26).
+     docs/LIVE_WORLD_PLAN.md §3 step 1: "a thin W6 over the existing watcher —
+     set its AOI to CONUS and put a zoomable map over /api/state".
+     Served at /world by the watch daemon (`wgresponse.cli watch`). Single
+     file, no build step. Leaflet 1.9.4 from unpkg CDN when reachable.
+     Polls /api/state (the console's payload) and /api/world/summary (the
+     read model wgresponse.worldview builds once per cycle: domains, the
+     "why no domain?" notes, display perimeters, P50 rings, the ranked list)
+     every 15 s with the X-Internal-API-Key header (prompted only on a 401,
+     then kept in localStorage exactly like the console).
+     THREE TIERS BY ZOOM (the tier law — worldview.TIER_* pins the same
+     numbers server side):
+       national  zoom <= 6   every incident as a marker scaled by acreage and
+                             coloured by source, a badge when it built a spread
+                             domain, enrolled-client clusters, crews + safe
+                             zones as small markers, the ranked list
+       regional  zoom 7..11  perimeters (feed polygons, else the point), the
+                             P50 rings + first-client ETAs of domain incidents,
+                             clients coloured by alert state, crews + status
+       local     zoom >= 12  everything the state offers: plan legs, egress
+                             zones, client cards; the shaded fire is W1's merge
+                             (a visible note marks where it will be drawn)
+     Time is the state's last_cycle_t_s; no time-scrub until W1.
+     Offline file mode: ?state=<json>&summary=<json> renders captured payloads.
+     ?z=<zoom>&lat=<deg>&lon=<deg> opens at a view.
+     AIR-GAPPED RESILIENCE: if the Leaflet CDN (unpkg) is unreachable, an
+     inline dependency-free SVG map shim (window.L below) renders the same
+     layers with the SAME web-mercator zoom law (wheel / drag / +/- buttons),
+     so the three tiers work with no basemap and no network. ?nomap=1
+     rehearses that mode (the console's switch). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WG Response — World</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+  :root {
+    --navy: #0e2038; --navy2: #122a4a; --navy3: #1a3a63;
+    --orange: #ff7a1a; --text: #e8eef7; --dim: #9db0c9;
+    --none: #8b93a1; --notice: #f2b04c; --watch: #ff8c1a;
+    --extreme: #e53935; --impacted: #111111; --cleared: #4caf50;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; font-family: "Segoe UI", system-ui, sans-serif;
+               background: var(--navy); color: var(--text); }
+  body { display: flex; flex-direction: column; }
+  #hdr { flex: 0 0 auto; min-height: 58px; z-index: 1500; position: relative;
+         display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px;
+         padding: 6px 14px; background: var(--navy2);
+         border-bottom: 3px solid var(--orange); }
+  #hdr .title { display: flex; flex-direction: column; min-width: 190px; }
+  #hdr h1 { margin: 0; font-size: 15px; letter-spacing: 2px; color: var(--orange);
+            text-transform: uppercase; white-space: nowrap; }
+  #hdr .sub { font-size: 11px; color: var(--dim); white-space: nowrap; }
+  #hdr .grp { display: flex; align-items: center; gap: 8px; font-size: 12px;
+              white-space: nowrap; }
+  #hdr .lbl { color: var(--dim); font-size: 10px; text-transform: uppercase;
+              letter-spacing: 1px; }
+  #counts b { color: #fff; }
+  .chip { display: inline-block; padding: 1px 8px; border-radius: 9px; font-size: 10px;
+          font-weight: 600; color: #fff; text-transform: uppercase; white-space: nowrap; }
+  #tierchip { background: var(--navy3); border: 1px solid var(--orange); }
+  #agechip { display: none; padding: 1px 8px; border-radius: 9px; font-size: 10px;
+             font-weight: 600; background: var(--navy3); color: var(--text);
+             border: 1px solid var(--orange); white-space: nowrap; }
+  #agechip.stale { background: #b3121f; color: #fff; border-color: #ff5252; }
+  #srclegend { display: flex; gap: 9px; flex-wrap: wrap; }
+  #srclegend span { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }
+  .sdot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #0008;
+          display: inline-block; flex: 0 0 auto; }
+  #app { flex: 1 1 auto; min-height: 0; display: flex; position: relative; }
+  #map { flex: 1 1 auto; min-width: 0; background: #16283f; position: relative; }
+  #side { flex: 0 0 360px; max-width: 42vw; display: flex; flex-direction: column;
+          background: var(--navy2); border-left: 3px solid var(--orange); overflow: hidden; }
+  #side h2 { font-size: 11px; letter-spacing: 1px; color: var(--orange);
+             text-transform: uppercase; margin: 8px 0 4px; }
+  #sidestatus { font-size: 11px; color: var(--dim); padding: 6px 12px;
+                border-bottom: 1px solid var(--navy3); }
+  #sidestatus .bad { color: var(--extreme); } #sidestatus .ok { color: var(--cleared); }
+  #rankwrap { flex: 1 1 60%; overflow-y: auto; padding: 0 12px 8px; }
+  #localwrap { flex: 0 1 40%; overflow-y: auto; padding: 0 12px 8px;
+               border-top: 1px solid var(--navy3); display: none; }
+  .rk { font-size: 12px; padding: 5px 6px; margin-bottom: 3px; border-radius: 4px;
+        background: var(--navy3); cursor: pointer; border-left: 3px solid transparent; }
+  .rk:hover { background: #22497a; }
+  .rk.dom { border-left-color: #fff; }
+  .rk .n { color: var(--dim); font-size: 10px; margin-right: 4px; }
+  .rk .nm { font-weight: 600; }
+  .rk .sub { color: var(--dim); font-size: 10px; margin-top: 2px; }
+  .rk .badge { background: #fff; color: #0e2038; border-radius: 8px; font-size: 10px;
+               font-weight: 700; padding: 0 6px; margin-left: 4px; }
+  .rksep { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px;
+           margin: 10px 0 4px; }
+  .card { font-size: 11px; padding: 5px 7px; margin-bottom: 4px; border-radius: 4px;
+          background: var(--navy3); }
+  .card .top { display: flex; justify-content: space-between; gap: 6px; }
+  .card .id { color: var(--dim); font-size: 10px; }
+  .card .ln { color: var(--dim); }
+  .card .tight { color: var(--extreme); }
+  #degradedbar { display: none; position: fixed; z-index: 3000; top: 0; left: 0;
+                 right: 0; background: #b3121f; color: #fff; text-align: center;
+                 font-size: 13px; font-weight: 700; letter-spacing: 1px;
+                 padding: 6px 10px; text-transform: uppercase;
+                 border-bottom: 2px solid #ff5252; }
+  #legend { position: absolute; z-index: 1000; bottom: 14px; left: 14px;
+            background: rgba(14,32,56,.9); border: 1px solid var(--navy3);
+            border-radius: 6px; padding: 8px 10px; font-size: 11px; max-width: 260px; }
+  #legend .row { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+  #legend .ring { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff;
+                  display: inline-block; }
+  /* local tier: where the shaded fire would be (W1's merge brings it) */
+  #w1chip { display: none; position: absolute; z-index: 1000; top: 10px; left: 50%;
+            transform: translateX(-50%); background: rgba(14,32,56,.92); color: #ffd9b3;
+            border: 1px dashed var(--orange); border-radius: 6px; padding: 4px 12px;
+            font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .w1-note { background: rgba(14,32,56,.88); color: #ffd9b3; border: 1px dashed #ff7a1a;
+             border-radius: 5px; font-size: 11px; font-weight: 600; padding: 3px 7px;
+             white-space: nowrap; text-align: center; }
+  .crew-icon { background: var(--orange); color: #0e2038; border-radius: 3px;
+               font-size: 10px; font-weight: 700; text-align: center;
+               line-height: 18px; border: 1px solid #0008; }
+  .zone-icon { background: var(--cleared); color: #06300d; border-radius: 50%;
+               font-size: 10px; font-weight: 700; text-align: center;
+               line-height: 16px; border: 1px solid #0008; }
+  .cl-icon { border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700;
+             text-align: center; border: 2px solid #fff; box-shadow: 0 0 0 2px #0e2038aa; }
+  .dom-badge { background: #fff; color: #0e2038; border-radius: 8px; font-size: 10px;
+               font-weight: 800; text-align: center; line-height: 14px;
+               border: 1px solid #0e2038; }
+  .eta-label { background: rgba(14,32,56,.9); color: #fff; border: 1px solid #fff;
+               border-radius: 4px; font-size: 10px; font-weight: 600; padding: 1px 5px;
+               white-space: nowrap; }
+  .leaflet-container { font: inherit; }
+  /* max-content: an absolutely positioned tooltip otherwise shrinks to one
+     word per line near the map edge */
+  .leaflet-tooltip { font-size: 11px; width: max-content; max-width: 320px;
+                     white-space: normal; }
+  /* --- offline SVG fallback map (no Leaflet, no tiles) --- */
+  #map.offline-map { position: relative; overflow: hidden; }
+  .fbmap-svg { width: 100%; height: 100%; display: block; cursor: grab; }
+  .fbmap-tip { position: absolute; z-index: 1200; pointer-events: none;
+               background: rgba(14,32,56,.95); border: 1px solid var(--navy3);
+               color: var(--text); font-size: 11px; padding: 4px 7px;
+               border-radius: 5px; max-width: 300px; display: none; }
+  .fbmap-banner { position: absolute; z-index: 1100; bottom: 8px; left: 50%;
+                  transform: translateX(-50%); background: rgba(229,57,53,.92);
+                  color: #fff; font-size: 11px; font-weight: 600; padding: 3px 10px;
+                  border-radius: 10px; letter-spacing: .5px; white-space: nowrap; }
+  .fbmap-zoom { position: absolute; z-index: 1100; top: 10px; left: 10px;
+                display: flex; flex-direction: column; gap: 2px; }
+  .fbmap-zoom button { width: 28px; height: 28px; font-size: 16px; font-weight: 700;
+                       background: var(--navy2); color: var(--text);
+                       border: 1px solid var(--navy3); border-radius: 4px; cursor: pointer; }
+  .fbmap-node { cursor: pointer; }
+  /* narrow screens (a phone, a split pane): the list goes under the map */
+  @media (max-width: 900px) {
+    #app { flex-direction: column; }
+    #side { flex: 0 0 40vh; max-width: none; border-left: none;
+            border-top: 3px solid var(--orange); }
+    #hdr .title { min-width: 0; }
+    #legend { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="degradedbar">DEGRADED — forecasts may be stale</div>
+<div id="hdr">
+  <div class="title"><h1>WG Response · World</h1>
+    <div class="sub" id="aoiname">AOI —</div></div>
+  <div class="grp"><span class="lbl">cycle</span><span id="cycleclock">–</span>
+    <span id="agechip"></span></div>
+  <div class="grp" id="counts">connecting…</div>
+  <div class="grp"><span class="chip" id="tierchip">national</span></div>
+  <div class="grp" id="srclegend"></div>
+</div>
+<div id="app">
+  <div id="map"><div id="w1chip">local detail arrives with the world merge (W1)</div></div>
+  <div id="side">
+    <div id="sidestatus">connecting…</div>
+    <div id="rankwrap"><h2>Incidents threatening clients</h2><div id="ranklist"></div></div>
+    <div id="localwrap"><h2>Local detail — clients in view</h2><div id="cardlist"></div></div>
+  </div>
+</div>
+<div id="legend">
+  <div class="row"><span class="ring"></span> built a spread domain (clients in range)</div>
+  <div class="row"><span class="sdot" style="background:#8b93a1"></span> none</div>
+  <div class="row"><span class="sdot" style="background:#f2b04c"></span> notice (72h)</div>
+  <div class="row"><span class="sdot" style="background:#ff8c1a"></span> watch</div>
+  <div class="row"><span class="sdot" style="background:#e53935"></span> extreme (24h)</div>
+  <div class="row"><span class="sdot" style="background:#111"></span> impacted</div>
+  <div class="row"><span class="sdot" style="background:#4caf50"></span> cleared / safe zone</div>
+  <div class="row" id="legendtier" style="color:#9db0c9"></div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- Air-gapped fallback: a dependency-free SVG map shim exposing the subset of
+     the Leaflet API this page uses — INCLUDING zoom (web mercator, the same
+     zoom law as Leaflet, so the national / regional / local tiers switch at
+     the same levels offline). Installed as window.L ONLY when the real
+     Leaflet failed to load (CDN/network unreachable). No external hosts, no
+     basemap tiles. -->
+<script>
+"use strict";
+// ?nomap=1 forces the offline fallback even when Leaflet loaded — rehearse the
+// air-gapped presentation on demand (identical switch to the ops console).
+if (new URLSearchParams(location.search).get("nomap") === "1") { window.L = undefined; }
+if (typeof window.L === "undefined") {
+  (function installFallbackLeaflet() {
+    const SVGNS = "http://www.w3.org/2000/svg";
+    const bannerText = "OFFLINE MAP · Leaflet CDN unreachable · no basemap";
+    const TILE = 256;
+    // web mercator world pixels at zoom z (Leaflet's own law)
+    function wpx(lat, lon, z) {
+      const s = TILE * Math.pow(2, z);
+      const la = Math.max(-85.05, Math.min(85.05, lat));
+      const sn = Math.sin(la * Math.PI / 180);
+      return [(lon + 180) / 360 * s,
+              (0.5 - Math.log((1 + sn) / (1 - sn)) / (4 * Math.PI)) * s];
+    }
+    function wll(x, y, z) {
+      const s = TILE * Math.pow(2, z);
+      const n = Math.PI - 2 * Math.PI * y / s;
+      return [180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))),
+              x / s * 360 - 180];
+    }
+    const toLL = p => Array.isArray(p) ? [p[0], p[1]]
+      : [p.lat, (p.lng != null ? p.lng : p.lon)];
+
+    class Layer {
+      constructor() { this._map = null; this._specs = []; this.tooltip = null; this._on = {}; }
+      addTo(target) {
+        if (target instanceof FallbackMap || target instanceof LayerGroup) target._add(this);
+        return this;
+      }
+      bindTooltip(html) { this.tooltip = html; return this; }
+      on(types, fn) {
+        for (const t of String(types).split(/\s+/)) if (t) (this._on[t] = this._on[t] || []).push(fn);
+        return this;
+      }
+    }
+    class Marker extends Layer {
+      constructor(latlng, opts) { super(); this._specs = [{ kind: "marker", latlng: toLL(latlng), opts: opts || {} }]; }
+    }
+    class CircleM extends Layer {
+      constructor(latlng, opts) { super(); this._specs = [{ kind: "circle", latlng: toLL(latlng), opts: opts || {} }]; }
+    }
+    class Path extends Layer {
+      constructor(kind, latlngs, opts) {
+        super(); this._specs = [{ kind, latlngs: (latlngs || []).map(toLL), opts: opts || {} }];
+      }
+    }
+    class LayerGroup {
+      constructor() { this._map = null; this._children = []; }
+      addTo(map) { this._map = map; map._groups.push(this); map._redraw(); return this; }
+      _add(layer) { layer._map = this._map; this._children.push(layer);
+                    if (this._map) this._map._redraw(); return this; }
+      clearLayers() { this._children = []; if (this._map) this._map._redraw(); return this; }
+    }
+    class Bounds {
+      constructor(s, w, n, e) { this.s = s; this.w = w; this.n = n; this.e = e; }
+      getSouth() { return this.s; } getNorth() { return this.n; }
+      getWest() { return this.w; } getEast() { return this.e; }
+      contains(p) { const [la, lo] = toLL(p);
+        return la >= this.s && la <= this.n && lo >= this.w && lo <= this.e; }
+    }
+
+    class FallbackMap {
+      constructor(elId, opts) {
+        opts = opts || {};
+        this.el = typeof elId === "string" ? document.getElementById(elId) : elId;
+        this.el.classList.add("offline-map");
+        this._groups = []; this._loose = []; this._handlers = {};
+        this._center = [39.5, -98.35]; this._zoom = 4;
+        this._minZoom = opts.minZoom != null ? opts.minZoom : 2;
+        this._maxZoom = opts.maxZoom != null ? opts.maxZoom : 18;
+        this._redrawQueued = false;
+        this.svg = document.createElementNS(SVGNS, "svg");
+        this.svg.setAttribute("class", "fbmap-svg");
+        this.el.appendChild(this.svg);
+        this.tip = document.createElement("div");
+        this.tip.className = "fbmap-tip";
+        this.el.appendChild(this.tip);
+        const banner = document.createElement("div");
+        banner.className = "fbmap-banner";
+        banner.textContent = bannerText;
+        this.el.appendChild(banner);
+        const zc = document.createElement("div");
+        zc.className = "fbmap-zoom";
+        const bin = document.createElement("button"); bin.textContent = "+"; bin.title = "zoom in";
+        const bout = document.createElement("button"); bout.textContent = "−"; bout.title = "zoom out";
+        bin.addEventListener("click", () => this.zoomIn());
+        bout.addEventListener("click", () => this.zoomOut());
+        zc.appendChild(bin); zc.appendChild(bout); this.el.appendChild(zc);
+        window.addEventListener("resize", () => this._redraw());
+        // wheel zoom about the cursor (one level per notch, throttled)
+        let lastWheel = 0;
+        this.svg.addEventListener("wheel", (ev) => {
+          ev.preventDefault();
+          const now = Date.now();
+          if (now - lastWheel < 180) return;
+          lastWheel = now;
+          const r = this.svg.getBoundingClientRect();
+          this._zoomAbout(this._zoom + (ev.deltaY < 0 ? 1 : -1),
+                          ev.clientX - r.left, ev.clientY - r.top);
+        }, { passive: false });
+        this.svg.addEventListener("dblclick", (ev) => {
+          const r = this.svg.getBoundingClientRect();
+          this._zoomAbout(this._zoom + 1, ev.clientX - r.left, ev.clientY - r.top);
+        });
+        // drag to pan
+        let drag = null;
+        this.svg.addEventListener("mousedown", (ev) => {
+          drag = { x: ev.clientX, y: ev.clientY,
+                   c: wpx(this._center[0], this._center[1], this._zoom), moved: false };
+        });
+        window.addEventListener("mousemove", (ev) => {
+          if (!drag) return;
+          const dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
+          if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true;
+          this._center = wll(drag.c[0] - dx, drag.c[1] - dy, this._zoom);
+          this._redraw();
+        });
+        window.addEventListener("mouseup", () => {
+          if (drag && drag.moved) this._fire("moveend");
+          drag = null;
+        });
+      }
+      _size() {
+        const r = this.svg.getBoundingClientRect();
+        return [r.width || this.el.clientWidth || 800, r.height || this.el.clientHeight || 600];
+      }
+      _project(lat, lon) {
+        const [W, H] = this._size();
+        const c = wpx(this._center[0], this._center[1], this._zoom);
+        const p = wpx(lat, lon, this._zoom);
+        return [p[0] - c[0] + W / 2, p[1] - c[1] + H / 2];
+      }
+      _unproject(x, y) {
+        const [W, H] = this._size();
+        const c = wpx(this._center[0], this._center[1], this._zoom);
+        return wll(c[0] + x - W / 2, c[1] + y - H / 2, this._zoom);
+      }
+      _clampZ(z) { return Math.max(this._minZoom, Math.min(this._maxZoom, Math.round(z))); }
+      _zoomAbout(z, x, y) {
+        z = this._clampZ(z);
+        if (z === this._zoom) return;
+        const [W, H] = this._size();
+        const ll = this._unproject(x, y);
+        const p = wpx(ll[0], ll[1], z);
+        this._center = wll(p[0] - (x - W / 2), p[1] - (y - H / 2), z);
+        this._zoom = z;
+        this._redraw(); this._fire("zoomend"); this._fire("moveend");
+      }
+      _fire(type) {
+        for (const fn of (this._handlers[type] || [])) {
+          try { fn({ type, target: this }); } catch (e) { console.error(e); }
+        }
+      }
+      on(types, fn) {
+        for (const t of String(types).split(/\s+/)) if (t) (this._handlers[t] = this._handlers[t] || []).push(fn);
+        return this;
+      }
+      setView(latlng, zoom) {
+        this._center = toLL(latlng);
+        const zChanged = zoom != null && this._clampZ(zoom) !== this._zoom;
+        if (zoom != null) this._zoom = this._clampZ(zoom);
+        this._redraw();
+        if (zChanged) this._fire("zoomend");
+        this._fire("moveend");
+        return this;
+      }
+      flyTo(latlng, zoom) { return this.setView(latlng, zoom != null ? zoom : this._zoom); }
+      fitBounds(b, opts) {
+        const sw = toLL(b[0]), ne = toLL(b[1]);
+        const s = Math.min(sw[0], ne[0]), n = Math.max(sw[0], ne[0]);
+        const w = Math.min(sw[1], ne[1]), e = Math.max(sw[1], ne[1]);
+        const [W, H] = this._size();
+        const maxZ = opts && opts.maxZoom != null ? Math.min(opts.maxZoom, this._maxZoom) : this._maxZoom;
+        let z = maxZ;
+        for (; z > this._minZoom; z--) {
+          const a = wpx(n, w, z), c = wpx(s, e, z);
+          if (Math.abs(c[0] - a[0]) <= W * 0.9 && Math.abs(c[1] - a[1]) <= H * 0.9) break;
+        }
+        return this.setView([(s + n) / 2, (w + e) / 2], z);
+      }
+      flyToBounds(b, opts) { return this.fitBounds(b, opts); }
+      getZoom() { return this._zoom; }
+      getCenter() { return { lat: this._center[0], lng: this._center[1] }; }
+      getBounds() {
+        const [W, H] = this._size();
+        const nw = this._unproject(0, 0), se = this._unproject(W, H);
+        return new Bounds(se[0], nw[1], nw[0], se[1]);
+      }
+      zoomIn() { return this.setView(this._center, this._zoom + 1); }
+      zoomOut() { return this.setView(this._center, this._zoom - 1); }
+      invalidateSize() { this._redraw(); return this; }
+      _add(layer) { layer._map = this; this._loose.push(layer); this._redraw(); return this; }
+      _allLayers() {
+        const out = this._loose.slice();
+        for (const g of this._groups) for (const c of g._children) out.push(c);
+        return out;
+      }
+      _redraw() {
+        if (this._redrawQueued) return;
+        this._redrawQueued = true;
+        const run = () => {
+          if (!this._redrawQueued) return;
+          this._redrawQueued = false;
+          this._redrawNow();
+        };
+        if (window.requestAnimationFrame) window.requestAnimationFrame(run);
+        setTimeout(run, 50);
+      }
+      _text(x, y, str, size, fill) {
+        const t = document.createElementNS(SVGNS, "text");
+        t.setAttribute("x", x); t.setAttribute("y", y);
+        t.setAttribute("text-anchor", "middle");
+        t.setAttribute("font-size", size); t.setAttribute("font-weight", "700");
+        t.setAttribute("fill", fill);
+        t.textContent = str;
+        return t;
+      }
+      // className-aware divIcon markers (clusters, domain badges, crews,
+      // zones, labels) so the offline map reads like the Leaflet one
+      _iconNode(sp, x, y) {
+        const o = sp.opts || {};
+        const icon = o.icon || {};
+        const cls = icon.className || "";
+        const label = String(icon.html || "").replace(/<[^>]*>/g, "").trim();
+        const size = icon.iconSize || [18, 16];
+        const anchor = icon.iconAnchor || [size[0] / 2, size[1] / 2];
+        const cx = x - anchor[0] + size[0] / 2, cy = y - anchor[1] + size[1] / 2;
+        const g = document.createElementNS(SVGNS, "g");
+        if (cls.indexOf("cl-icon") !== -1 || cls.indexOf("dom-badge") !== -1
+            || cls.indexOf("zone-icon") !== -1) {
+          const c = document.createElementNS(SVGNS, "circle");
+          c.setAttribute("cx", cx); c.setAttribute("cy", cy);
+          c.setAttribute("r", Math.max(6, size[0] / 2));
+          const fill = cls.indexOf("zone-icon") !== -1 ? "#4caf50"
+            : (cls.indexOf("dom-badge") !== -1 ? "#ffffff" : (icon.bg || "#1a3a63"));
+          c.setAttribute("fill", fill);
+          c.setAttribute("stroke", cls.indexOf("cl-icon") !== -1 ? "#ffffff" : "#0e2038");
+          c.setAttribute("stroke-width", cls.indexOf("cl-icon") !== -1 ? 2 : 1);
+          g.appendChild(c);
+          const tf = cls.indexOf("cl-icon") !== -1 ? "#ffffff" : "#0e2038";
+          g.appendChild(this._text(cx, cy + 3.5, label.slice(0, 5), 10, tf));
+          return g;
+        }
+        // rectangles: crews (orange), labels / notes (navy, dashed for W1)
+        const w = Math.max(size[0], label.length * 6 + 10);
+        const h = Math.max(14, size[1]);
+        const r = document.createElementNS(SVGNS, "rect");
+        r.setAttribute("x", cx - w / 2); r.setAttribute("y", cy - h / 2);
+        r.setAttribute("width", w); r.setAttribute("height", h); r.setAttribute("rx", 3);
+        const isCrew = cls.indexOf("crew-icon") !== -1;
+        r.setAttribute("fill", isCrew ? "#ff7a1a" : "rgba(14,32,56,.9)");
+        r.setAttribute("stroke", isCrew ? "#0008" : (cls.indexOf("w1-note") !== -1 ? "#ff7a1a" : "#ffffff"));
+        if (cls.indexOf("w1-note") !== -1) r.setAttribute("stroke-dasharray", "4 3");
+        g.appendChild(r);
+        if (label) g.appendChild(this._text(cx, cy + 3.5, label.slice(0, 60), 9,
+                                            isCrew ? "#0e2038" : "#ffd9b3"));
+        return g;
+      }
+      _redrawNow() {
+        if (!this.svg) return;
+        while (this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
+        for (const layer of this._allLayers()) for (const sp of layer._specs) {
+          const o = sp.opts || {};
+          let node = null;
+          if (sp.kind === "marker") {
+            if (!sp.latlng) continue;
+            const [x, y] = this._project(sp.latlng[0], sp.latlng[1]);
+            node = this._iconNode(sp, x, y);
+          } else if (sp.kind === "circle") {
+            if (!sp.latlng) continue;
+            const [x, y] = this._project(sp.latlng[0], sp.latlng[1]);
+            node = document.createElementNS(SVGNS, "circle");
+            node.setAttribute("cx", x); node.setAttribute("cy", y);
+            node.setAttribute("r", o.radius || 6);
+            node.setAttribute("fill", o.fill === false ? "none" : (o.fillColor || "#e53935"));
+            node.setAttribute("fill-opacity", o.fillOpacity != null ? o.fillOpacity : 0.9);
+            node.setAttribute("stroke", o.color || "#0e2038");
+            node.setAttribute("stroke-width", o.weight || 1.5);
+          } else { // polyline | polygon
+            if (!sp.latlngs || !sp.latlngs.length) continue;  // emptied layer: no-op
+            const d = sp.latlngs.map((p, i) =>
+              (i ? "L" : "M") + this._project(p[0], p[1]).join(" ")).join(" ") +
+              (sp.kind === "polygon" ? " Z" : "");
+            node = document.createElementNS(SVGNS, "path");
+            node.setAttribute("d", d);
+            node.setAttribute("fill", sp.kind === "polygon" && o.fill !== false
+              ? (o.fillColor || o.color || "#e53935") : "none");
+            node.setAttribute("fill-opacity", o.fillOpacity != null ? o.fillOpacity : 0.14);
+            node.setAttribute("stroke", o.color || "#ff7a1a");
+            node.setAttribute("stroke-width", o.weight || 2);
+            if (o.dashArray) node.setAttribute("stroke-dasharray", o.dashArray);
+            node.setAttribute("stroke-opacity", o.opacity != null ? o.opacity : 1);
+          }
+          if (!node) continue;
+          node.setAttribute("class", "fbmap-node");
+          if (layer.tooltip) {
+            const html = layer.tooltip;
+            node.addEventListener("mousemove", (ev) => {
+              const r = this.el.getBoundingClientRect();
+              this.tip.innerHTML = html;
+              this.tip.style.display = "block";
+              this.tip.style.left = (ev.clientX - r.left + 12) + "px";
+              this.tip.style.top = (ev.clientY - r.top + 12) + "px";
+            });
+            node.addEventListener("mouseleave", () => { this.tip.style.display = "none"; });
+          }
+          for (const fn of (layer._on.click || [])) {
+            node.addEventListener("click", (ev) => { ev.stopPropagation(); fn({ target: layer }); });
+          }
+          this.svg.appendChild(node);
+        }
+      }
+    }
+
+    // Public L.* surface used by this page (and no more).
+    window.L = {
+      map: (id, opts) => new FallbackMap(id, opts),
+      tileLayer: () => ({ addTo: () => ({}) }),   // no basemap offline
+      layerGroup: () => new LayerGroup(),
+      control: { layers: () => ({ addTo: () => ({}) }) },  // no layer switcher offline
+      circleMarker: (latlng, opts) => new CircleM(latlng, opts),
+      polygon: (latlngs, opts) => new Path("polygon", latlngs, opts),
+      polyline: (latlngs, opts) => new Path("polyline", latlngs, opts),
+      marker: (latlng, opts) => new Marker(latlng, opts),
+      divIcon: (opts) => opts,
+      _fallback: true,
+    };
+    console.warn("wgresponse world: Leaflet CDN unreachable — using offline SVG map fallback");
+  })();
+}
+// --------------------------------------------------------------------------
+// world viewer app
+// --------------------------------------------------------------------------
+const QS = new URLSearchParams(location.search);
+const FILE_STATE = QS.get("state");        // offline: captured /api/state JSON
+const FILE_SUMMARY = QS.get("summary");    // offline: captured summary JSON
+const OFFLINE_FILES = !!FILE_STATE;
+const POLL_MS = 15000;
+// TIER LAW (worldview.TIER_NATIONAL_MAX_ZOOM / TIER_REGIONAL_MAX_ZOOM pin
+// the same numbers server side): national <= 6, regional 7..11, local >= 12.
+const TIER_NATIONAL_MAX_ZOOM = 6;
+const TIER_REGIONAL_MAX_ZOOM = 11;
+function tierFor(z) {
+  if (z <= TIER_NATIONAL_MAX_ZOOM) return "national";
+  if (z <= TIER_REGIONAL_MAX_ZOOM) return "regional";
+  return "local";
+}
+// the console's alert-ladder colours
+const COLORS = { none:"#8b93a1", notice_72h:"#f2b04c", watch:"#ff8c1a",
+                 extreme_24h:"#e53935", impacted:"#111111", cleared:"#4caf50" };
+const colorFor = s => COLORS[s] || COLORS.none;
+const STATE_RANK = { none: 0, cleared: 1, notice_72h: 2, watch: 3, extreme_24h: 4, impacted: 5 };
+// incident source colours (seeded incidents arrive with W1 — same markers)
+const SOURCE_COLORS = { wfigs: "#ff6a2b", firis: "#c86bff", calfire: "#ffd23f",
+                        firms: "#ff2d55", seeded: "#2ec4ff", mock: "#9aa7b8",
+                        watchduty: "#b08968" };
+const SOURCE_LABELS = { wfigs: "WFIGS", firis: "FIRIS", calfire: "CAL FIRE",
+                        firms: "FIRMS", seeded: "SEEDED", mock: "MOCK",
+                        watchduty: "Watch Duty" };
+const srcColor = s => SOURCE_COLORS[s] || "#9e9e9e";
+const srcLabel = s => SOURCE_LABELS[s] || String(s || "other").toUpperCase();
+// P50 isochrone styles by lead (hours after the cycle time); 0 = modeled burn
+const RING_STYLE = {
+  0:  { color: "#ff3b30", weight: 2,   fillColor: "#7f0f0f", fillOpacity: 0.35, label: "modeled burn at the cycle time (P50)" },
+  6:  { color: "#e53935", weight: 2,   dashArray: null,  label: "P50 front +6 h" },
+  12: { color: "#ff8c1a", weight: 2,   dashArray: "7 4", label: "P50 front +12 h" },
+  24: { color: "#f2b04c", weight: 2,   dashArray: "7 4", label: "P50 front +24 h" },
+  48: { color: "#d8c77a", weight: 1.5, dashArray: "2 6", label: "P50 front +48 h" },
+  72: { color: "#b3ad8a", weight: 1.5, dashArray: "2 6", label: "P50 front +72 h" },
+};
+const $ = id => document.getElementById(id);
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;",
+    "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function radiusForAcres(a) {   // national marker scale: area on a log ramp
+  if (a == null || !(a > 0)) return 4;
+  return Math.max(4, Math.min(20, 2.5 + 2.6 * Math.log10(1 + a)));
+}
+function fmtAcres(a) {
+  if (a == null) return "size n/a";
+  if (a < 1) return "<1 ac";
+  return Math.round(a).toLocaleString("en-US") + " ac";
+}
+function fmtClock(t_s) {
+  if (t_s == null) return "–";
+  return new Date(t_s * 1000).toISOString().replace("T", " ").slice(5, 16) + "Z";
+}
+function fmtAge(s) {
+  if (s < 90) return s.toFixed(0) + "s";
+  if (s < 5400) return (s / 60).toFixed(0) + "m";
+  return (s / 3600).toFixed(1) + "h";
+}
+function hoursAfter(t_s, ref_s) {
+  if (t_s == null || ref_s == null) return null;
+  return (t_s - ref_s) / 3600.0;
+}
+function fmtH(h) { return h == null ? "unreached" : (h <= 0 ? "now" : "+" + h.toFixed(1) + " h"); }
+
+// ---- map ------------------------------------------------------------------
+// preferCanvas: a national map carries hundreds of markers + perimeter rings
+// (thousands with FIRMS hotspot clusters) — one canvas, not one SVG node each
+// zoomSnap 0.5: the CONUS fit lands at 4.5 (the country fills the map, not a
+// third of it); the buttons / wheel still step whole levels. The tier law is
+// on the number: national <= 6 < regional <= 11 < local.
+const map = L.map("map", { zoomControl: true, attributionControl: true,
+                           minZoom: 3, maxZoom: 18, worldCopyJump: true,
+                           preferCanvas: true, zoomSnap: 0.5, zoomDelta: 1 });
+map.setView([39.5, -98.35], 4);           // CONUS until the AOI arrives
+// incidents + their domain badges draw ABOVE the client-cluster icons (the
+// marker pane is 600): their own panes. The incident circles use an SVG
+// renderer there — Leaflet's SVG root is pointer-events:none, so the pane
+// never swallows a cluster icon's hover or click (a canvas would: it
+// catches every event over its whole area). The offline shim has no panes —
+// there the draw order is the group order.
+const INC_PANE = {}, BADGE_PANE = {};
+try {
+  if (map.createPane && L.svg) {
+    map.createPane("incPane").style.zIndex = 620;
+    map.createPane("badgePane").style.zIndex = 630;
+    INC_PANE.pane = "incPane";
+    INC_PANE.renderer = L.svg({ pane: "incPane" });
+    BADGE_PANE.pane = "badgePane";
+  }
+} catch (e) { /* offline shim */ }
+// a container resize (window, side panel) must reach Leaflet or tiles go stale
+window.addEventListener("resize", () => {
+  if (map.invalidateSize) { try { map.invalidateSize(false); } catch (e) { /* shim */ } }
+});
+try {
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    { maxZoom: 18, opacity: 0.55, attribution: "&copy; OpenStreetMap" }).addTo(map);
+} catch (e) { /* offline: navy background only */ }
+const layers = {
+  perims: L.layerGroup().addTo(map), rings: L.layerGroup().addTo(map),
+  routes: L.layerGroup().addTo(map), zones: L.layerGroup().addTo(map),
+  clusters: L.layerGroup().addTo(map), clients: L.layerGroup().addTo(map),
+  incidents: L.layerGroup().addTo(map), badges: L.layerGroup().addTo(map),
+  crews: L.layerGroup().addTo(map), notes: L.layerGroup().addTo(map),
+};
+let STATE = null, SUMMARY = null, fitted = false, lastCycleT = null, pollPeriod = null;
+let lastTier = null;
+{
+  const z = parseFloat(QS.get("z")), la = parseFloat(QS.get("lat")), lo = parseFloat(QS.get("lon"));
+  if (isFinite(z) && isFinite(la) && isFinite(lo)) { map.setView([la, lo], z); fitted = true; }
+}
+
+// ---- data -----------------------------------------------------------------
+function apiKey() { try { return localStorage.getItem("wgresp_key") || ""; } catch (e) { return ""; } }
+async function apiGet(path) {
+  // the key is sent when one is stored; a 401 prompts ONCE and retries (a
+  // dev-open daemon never prompts)
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const r = await fetch(path, { headers: { "X-Internal-API-Key": apiKey() } });
+    if (r.status === 401 && attempt === 0) {
+      const k = window.prompt("Wildfire Guardian ops API key (X-Internal-API-Key):") || "";
+      if (!k) throw new Error("unauthorized (401) — no key entered");
+      try { localStorage.setItem("wgresp_key", k); } catch (e) { /* private mode */ }
+      continue;
+    }
+    if (!r.ok) throw new Error(path.split("?")[0] + " " + r.status);
+    return r.json();
+  }
+  throw new Error("unauthorized (401)");
+}
+async function fetchAll() {
+  if (OFFLINE_FILES) {
+    STATE = await (await fetch(FILE_STATE)).json();
+    SUMMARY = FILE_SUMMARY ? await (await fetch(FILE_SUMMARY)).json() : summaryFromState(STATE);
+    return;
+  }
+  STATE = await apiGet("/api/state");
+  // the summary is an enrichment: if it fails, every incident still draws
+  // from /api/state (no domains claimed) and the status line says why
+  const since = SUMMARY && SUMMARY.t_s != null && !SUMMARY_ERROR
+    ? "?since=" + encodeURIComponent(SUMMARY.t_s) : "";
+  try {
+    const sm = await apiGet("/api/world/summary" + since);
+    if (!(sm && sm.unchanged)) SUMMARY = sm;
+    SUMMARY_ERROR = null;
+  } catch (e) {
+    SUMMARY_ERROR = String(e.message || e);
+    SUMMARY = summaryFromState(STATE);
+  }
+}
+let SUMMARY_ERROR = null;
+// same shape as worldview.summary_from_state: no domains claimed
+function summaryFromState(st) {
+  const rows = (st.incidents || []).filter(i => i && i.incident_id != null).map(i => ({
+    incident_id: String(i.incident_id), name: i.name || "", source: i.source || "unknown",
+    sources: [], lat: i.lat, lon: i.lon, acreage: i.acreage, containment_pct: i.containment_pct,
+    updated_at_s: i.updated_at_s, domain: null, notes: [], perimeter: null, p50_rings: [],
+    why_no_domain: "no watch-daemon cycle behind this state (domains unknown)" }));
+  rows.sort((a, b) => ((b.acreage || -1) - (a.acreage || -1)) ||
+                      (a.incident_id < b.incident_id ? -1 : 1));
+  rows.forEach((r, k) => { r.rank = k + 1; });
+  return { t_s: st.last_cycle_t_s ?? st.now_s ?? null, incidents: rows,
+           aoi_name: st.aoi_desc || "AOI", counts: null };
+}
+
+// ---- header ---------------------------------------------------------------
+function renderAgeChip() {
+  const el = $("agechip");
+  if (lastCycleT == null) { el.style.display = "none"; return; }
+  const age = Math.max(0, Date.now() / 1000 - lastCycleT);
+  const stale = pollPeriod != null && age > 2.5 * pollPeriod;
+  el.textContent = "last cycle " + fmtAge(age) + " ago";
+  el.className = stale ? "stale" : "";
+  el.title = stale ? "cycle overdue — the watch loop may be stalled"
+                   : "age of the last completed watch cycle";
+  el.style.display = "inline-block";
+}
+setInterval(renderAgeChip, 1000);
+function renderHeader() {
+  const d = STATE || {};
+  const opEvents = d.operator_events || [];
+  const degraded = !!d.degraded || opEvents.some(e =>
+    e && (e.kind === "degraded" || e.kind === "feed_blind" || e.kind === "provider_error"));
+  const stale = !!d.cycle_stale;
+  const bar = $("degradedbar");
+  bar.style.display = (degraded || stale) ? "block" : "none";
+  if (degraded) {
+    const lastOp = opEvents.length ? opEvents[opEvents.length - 1] : null;
+    bar.textContent = "DEGRADED — forecasts may be stale" +
+      (lastOp && lastOp.message ? " · " + lastOp.message : "") + (stale ? " · STALE" : "");
+  } else if (stale) {
+    const ageMin = typeof d.last_cycle_age_s === "number" ? Math.round(d.last_cycle_age_s / 60) : null;
+    bar.textContent = "STALE — last cycle " + (ageMin != null ? ageMin + " min ago" : "too old") +
+      " (loop slow or stalled)";
+  }
+  lastCycleT = typeof d.last_cycle_t_s === "number" ? d.last_cycle_t_s : null;
+  pollPeriod = typeof d.poll_period_s === "number" ? d.poll_period_s : null;
+  renderAgeChip();
+  $("cycleclock").textContent = fmtClock(lastCycleT);
+  $("aoiname").textContent = "AOI " + ((SUMMARY && SUMMARY.aoi_name) || d.aoi_desc || "—") +
+    (OFFLINE_FILES ? "  [OFFLINE FILES]" : "");
+  const inc = SUMMARY ? SUMMARY.incidents : [];
+  const nDom = inc.filter(r => r.domain).length;
+  const c = SUMMARY && SUMMARY.counts;
+  $("counts").innerHTML =
+    `<span class="lbl">incidents</span><b>${inc.length}</b>` +
+    `<span class="lbl">with domain</span><b>${nDom}</b>` +
+    `<span class="lbl">clients</span><b>${(d.clients || []).length}</b>` +
+    `<span class="lbl">crews</span><b>${(d.crews || []).length}</b>` +
+    (c && c.excluded_stale ? `<span class="lbl" title="incidents the staleness gate ` +
+      `excluded this cycle (updated_at older than 7 days — SAFETY SEMANTICS 9)">` +
+      `stale-gated</span><b>${c.excluded_stale}</b>` : "");
+  const tier = tierFor(map.getZoom());
+  $("tierchip").textContent = tier + " · z" + map.getZoom();
+  $("legendtier").textContent = {
+    national: "national tier (zoom ≤ 6): markers by acreage + source, client clusters",
+    regional: "regional tier (zoom 7–11): perimeters, P50 rings, alert states",
+    local: "local tier (zoom ≥ 12): plan legs, egress, client cards" }[tier];
+  // status line: the cycle's own cadence telemetry (per-phase wall times)
+  const ph = d.last_cycle_phases || {};
+  const phs = ["feeds_s", "assess_s", "alerts_s", "dispatch_s"].filter(k => typeof ph[k] === "number")
+    .map(k => k.replace("_s", "") + " " + (ph[k] < 90 ? ph[k].toFixed(1) + " s" : (ph[k] / 60).toFixed(1) + " min"));
+  const dur = typeof d.last_cycle_duration_s === "number"
+    ? " · last cycle took " + (d.last_cycle_duration_s / 60).toFixed(1) + " min" : "";
+  $("sidestatus").innerHTML = STATE
+    ? `<span class="${degraded ? "bad" : "ok"}">●</span> ${OFFLINE_FILES ? "file" : "live"} · cycles ` +
+      `${d.cycles_run ?? "–"}${dur}${phs.length ? "<br>" + phs.join(" · ") : ""}` +
+      ((d.notes || []).length === 1 && d.notes[0] === "no cycle has completed yet"
+        ? "<br>waiting for the first cycle…" : "") +
+      (SUMMARY_ERROR ? `<br><span class="bad">world summary unavailable (${esc(SUMMARY_ERROR)}) ` +
+        `— incidents drawn from /api/state, domains unknown</span>` : "")
+    : "connecting…";
+}
+function renderLegend() {
+  const srcs = ["wfigs", "firis", "calfire", "firms", "seeded"];
+  $("srclegend").innerHTML = srcs.map(s =>
+    `<span><i class="sdot" style="background:${srcColor(s)}"></i>${srcLabel(s)}</span>`).join("");
+}
+
+// ---- tooltips --------------------------------------------------------------
+function incidentTip(r) {
+  const t = SUMMARY && SUMMARY.t_s;
+  const lines = [`<b>${esc(r.name || r.incident_id)}</b> · ${esc(srcLabel(r.source))}` +
+    (r.sources && r.sources.length > 1 ? ` (${esc(r.sources.join(", "))})` : "")];
+  lines.push([fmtAcres(r.acreage), r.containment_pct != null ? Math.round(r.containment_pct) + "% contained" : null,
+              r.age_h != null ? "updated " + r.age_h.toFixed(1) + " h ago" : null].filter(Boolean).join(" · "));
+  if (r.domain) {
+    const d = r.domain;
+    lines.push(`<b>DOMAIN</b>: ${d.clients} client(s) in range · first client P10 ` +
+      `${fmtH(hoursAfter(d.eta_p10_s, t))} (P50 ${fmtH(hoursAfter(d.eta_p50_s, t))})` +
+      (d.cells ? ` · ${Number(d.cells).toLocaleString("en-US")} cells @ ${Math.round(d.cell_m)} m` : ""));
+  } else {
+    lines.push(`<i>why no domain?</i> ${esc(r.why_no_domain || "no domain this cycle")}`);
+  }
+  if (r.perimeter_rings_total && r.perimeter && r.perimeter_rings_total > r.perimeter.length) {
+    lines.push(`perimeter: ${r.perimeter.length} of ${r.perimeter_rings_total} rings drawn (largest first)`);
+  }
+  const extra = (r.notes || []).filter(n => n !== r.why_no_domain);
+  if (extra.length) lines.push(extra.map(esc).join("<br>"));
+  return lines.join("<br>");
+}
+function clientTip(c) {
+  const t = STATE && STATE.last_cycle_t_s;
+  return `<b>${esc(c.name || c.client_id)}</b><br>${esc(c.client_id)}<br>state: ${esc(c.state)}` +
+    `<br>P10 ${fmtH(hoursAfter(c.eta_p10_s, t))} · P50 ${fmtH(hoursAfter(c.eta_p50_s, t))}`;
+}
+
+// ---- drawing ---------------------------------------------------------------
+function flyToIncident(r) {
+  if (r.domain && Array.isArray(r.domain.bbox)) {
+    const [s, w, n, e] = r.domain.bbox;
+    map.flyToBounds([[s, w], [n, e]], { maxZoom: 11 });
+  } else if (r.lat != null && r.lon != null) {
+    map.flyTo([r.lat, r.lon], 9);
+  }
+}
+function drawIncidents(tier) {
+  const rows = SUMMARY ? SUMMARY.incidents : [];
+  for (const r of rows) {
+    if (r.lat == null || r.lon == null) continue;
+    const national = tier === "national";
+    const rad = national ? radiusForAcres(r.acreage) : (r.perimeter ? 5 : 7);
+    const m = L.circleMarker([r.lat, r.lon], { ...INC_PANE, radius: rad, color: "#0e2038",
+      weight: 1.5, fillColor: srcColor(r.source), fillOpacity: 0.9 })
+      .bindTooltip(incidentTip(r)).addTo(layers.incidents);
+    m.on("click", () => { if (national || !r.perimeter) flyToIncident(r); });
+    if (r.domain) {
+      // DOMAIN BADGE: a white ring + the in-range client count
+      L.circleMarker([r.lat, r.lon], { ...INC_PANE, radius: rad + 4, color: "#ffffff",
+        weight: 2, fill: false, fillOpacity: 0 }).bindTooltip(incidentTip(r)).addTo(layers.badges);
+      L.marker([r.lat, r.lon], { ...BADGE_PANE, icon: L.divIcon({ className: "dom-badge",
+        html: String(r.domain.clients), iconSize: [22, 14], iconAnchor: [-rad, rad + 10] }) })
+        .bindTooltip(incidentTip(r)).addTo(layers.badges);
+      if (!national && r.domain.eta_p10_s != null) {
+        // the ETA label only where the fire reaches a home within the
+        // horizon (an unreached domain keeps its badge; the tooltip says why)
+        const t = SUMMARY.t_s;
+        L.marker([r.lat, r.lon], { ...BADGE_PANE, icon: L.divIcon({ className: "eta-label",
+          html: `${r.domain.clients} homes · P10 ${fmtH(hoursAfter(r.domain.eta_p10_s, t))}`,
+          iconSize: [130, 16], iconAnchor: [-12, 26] }) })
+          .bindTooltip(incidentTip(r)).addTo(layers.badges);
+      }
+    }
+  }
+}
+function drawPerimetersAndRings() {
+  const rows = SUMMARY ? SUMMARY.incidents : [];
+  for (const r of rows) {
+    for (const ring of (r.perimeter || [])) {
+      L.polygon(ring, { color: srcColor(r.source), weight: 1.5, fillColor: srcColor(r.source),
+        fillOpacity: 0.18 }).bindTooltip(incidentTip(r)).addTo(layers.perims);
+    }
+    for (const iso of (r.p50_rings || [])) {
+      const st = RING_STYLE[iso.h] || { color: "#ffcf3f", weight: 1.5, dashArray: "3 5" };
+      for (const ring of iso.rings) {
+        const tip = `${esc(r.name || r.incident_id)}<br>${esc(st.label || ("P50 +" + iso.h + " h"))}`;
+        if (iso.h === 0) {
+          L.polygon(ring, { color: st.color, weight: st.weight, fillColor: st.fillColor,
+            fillOpacity: st.fillOpacity }).bindTooltip(tip).addTo(layers.rings);
+        } else {
+          L.polyline(ring, { color: st.color, weight: st.weight, dashArray: st.dashArray,
+            opacity: 0.95 }).bindTooltip(tip).addTo(layers.rings);
+        }
+      }
+    }
+  }
+}
+function drawClientClusters() {
+  // grid clustering in degrees, halving with each zoom level
+  const z = map.getZoom();
+  const cell = 360 / Math.pow(2, z + 2);
+  const buckets = new Map();
+  for (const c of (STATE && STATE.clients) || []) {
+    if (c.lat == null || c.lon == null) continue;
+    const k = Math.floor(c.lat / cell) + ":" + Math.floor(c.lon / cell);
+    let b = buckets.get(k);
+    if (!b) { b = { n: 0, lat: 0, lon: 0, worst: "none" }; buckets.set(k, b); }
+    b.n += 1; b.lat += c.lat; b.lon += c.lon;
+    if ((STATE_RANK[c.state] || 0) > (STATE_RANK[b.worst] || 0)) b.worst = c.state;
+  }
+  for (const b of buckets.values()) {
+    const bg = b.worst === "none" ? "#1a3a63" : colorFor(b.worst);
+    const size = Math.round(Math.max(22, Math.min(40, 16 + 6 * Math.log10(1 + b.n))));
+    L.marker([b.lat / b.n, b.lon / b.n], { icon: L.divIcon({ className: "cl-icon",
+      html: `<div style="background:${bg};width:${size - 4}px;height:${size - 4}px;` +
+            `line-height:${size - 4}px;border-radius:50%">${b.n}</div>`,
+      iconSize: [size, size], bg }) })
+      .bindTooltip(`${b.n} enrolled home(s)<br>worst alert state: ${esc(b.worst)}`)
+      .on("click", () => map.flyTo([b.lat / b.n, b.lon / b.n], Math.max(z + 3, 8)))
+      .addTo(layers.clusters);
+  }
+}
+function drawClients(tier) {
+  const rad = tier === "local" ? 7 : 5;
+  for (const c of (STATE && STATE.clients) || []) {
+    if (c.lat == null || c.lon == null) continue;   // roster gap: no dot, no NaN
+    L.circleMarker([c.lat, c.lon], { radius: rad, color: "#0e2038", weight: 1.2,
+      fillColor: colorFor(c.state), fillOpacity: 0.95 })
+      .bindTooltip(clientTip(c)).addTo(layers.clients);
+  }
+}
+function drawCrewsAndZones(tier) {
+  const small = tier === "national";
+  for (const z of (STATE && STATE.safe_zones) || []) {
+    if (small) {
+      L.circleMarker([z.lat, z.lon], { radius: 2.5, color: "#06300d", weight: 1,
+        fillColor: "#4caf50", fillOpacity: 0.9 })
+        .bindTooltip(`${esc(z.zone_id)} ${esc(z.name || "")} (safe zone)`).addTo(layers.zones);
+    } else {
+      L.marker([z.lat, z.lon], { icon: L.divIcon({ className: "zone-icon", html: "Z",
+        iconSize: [18, 18] }) })
+        .bindTooltip(`${esc(z.zone_id)} ${esc(z.name || "")} (safe zone)`).addTo(layers.zones);
+    }
+  }
+  for (const c of (STATE && STATE.crews) || []) {
+    if (c.lat == null || c.lon == null) continue;
+    const tip = `${esc(c.crew_id)} ${esc(c.name || "")}<br>status: ${esc(c.status || "?")}` +
+      (c.t_s ? `<br>beacon ${fmtClock(c.t_s)}` : "");
+    L.marker([c.lat, c.lon], { icon: L.divIcon({ className: "crew-icon",
+      html: small ? "" : esc(c.crew_id), iconSize: small ? [8, 8] : [30, 18] }) })
+      .bindTooltip(tip).addTo(layers.crews);
+  }
+}
+function planIndex() {
+  const out = { stops: {}, unserved: {}, routes: [] };
+  const plan = STATE && STATE.plan;
+  if (!plan || !plan.plans) return out;
+  for (const cid of Object.keys(plan.plans).sort()) {
+    const cp = plan.plans[cid];
+    for (const s of (cp.stops || [])) out.stops[s.client_id] = { crew_id: cid, ...s };
+    out.routes.push({ crew_id: cid, stops: cp.stops || [], egress: cp.egress_zone_id });
+  }
+  for (const u of (plan.unserved || [])) out.unserved[u.client_id] = u;
+  return out;
+}
+function drawLocal() {
+  // plan legs: crew -> its stops in plan order -> its egress zone (straight
+  // legs between plan points: road routes arrive with W1 / W3)
+  const idx = planIndex();
+  const byClient = {}; for (const c of (STATE.clients || [])) byClient[c.client_id] = c;
+  const byZone = {}; for (const z of (STATE.safe_zones || [])) byZone[z.zone_id] = z;
+  const byCrew = {}; for (const c of (STATE.crews || [])) byCrew[c.crew_id] = c;
+  for (const rt of idx.routes) {
+    const pts = [];
+    const crew = byCrew[rt.crew_id];
+    if (crew && crew.lat != null) pts.push([crew.lat, crew.lon]);
+    for (const s of rt.stops) { const c = byClient[s.client_id]; if (c && c.lat != null) pts.push([c.lat, c.lon]); }
+    const z = byZone[rt.egress];
+    if (z) pts.push([z.lat, z.lon]);
+    if (pts.length > 1) {
+      L.polyline(pts, { color: "#ff7a1a", weight: 3, opacity: 0.8, dashArray: "8 5" })
+        .bindTooltip(`${esc(rt.crew_id)} plan → egress ${esc(rt.egress || "?")}<br>` +
+                     `straight legs between plan points (road routes arrive with W1/W3)`)
+        .addTo(layers.routes);
+    }
+    if (z) {
+      L.circleMarker([z.lat, z.lon], { radius: 13, color: "#4caf50", weight: 2, fill: false })
+        .bindTooltip(`egress for ${esc(rt.crew_id)}: ${esc(z.zone_id)} ${esc(z.name || "")}`)
+        .addTo(layers.routes);
+    }
+  }
+  // where the shaded fire would be: the W1 merge note at every incident in view
+  const b = map.getBounds();
+  for (const r of (SUMMARY ? SUMMARY.incidents : [])) {
+    if (r.lat == null || !b.contains([r.lat, r.lon])) continue;
+    L.marker([r.lat, r.lon], { icon: L.divIcon({ className: "w1-note",
+      html: "local detail arrives with the world merge (W1)", iconSize: [270, 20],
+      iconAnchor: [135, -14] }) }).addTo(layers.notes);
+  }
+  // client cards (the side panel), clients in view, most urgent first
+  const t = STATE.last_cycle_t_s;
+  const inView = (STATE.clients || []).filter(c => c.lat != null && b.contains([c.lat, c.lon]));
+  inView.sort((a, c) => (STATE_RANK[c.state] || 0) - (STATE_RANK[a.state] || 0) ||
+    ((a.eta_p10_s ?? Infinity) - (c.eta_p10_s ?? Infinity)) || (a.client_id < c.client_id ? -1 : 1));
+  $("cardlist").innerHTML = inView.slice(0, 60).map(c => {
+    const s = idx.stops[c.client_id], u = idx.unserved[c.client_id];
+    const plan = s ? `crew ${esc(s.crew_id)} · arrive ${fmtClock(s.arrive_s)} · ` +
+        `<span class="${s.margin_h != null && s.margin_h < 1 ? "tight" : ""}">margin ` +
+        `${s.margin_h != null ? s.margin_h.toFixed(2) + " h" : "?"}</span>`
+      : (u ? `unserved: ${esc(u.reason)}` : "no dispatch job");
+    return `<div class="card"><div class="top"><b>${esc(c.name || c.client_id)}</b>` +
+      `<span class="chip" style="background:${colorFor(c.state)}">${esc(String(c.state).replace(/_/g, " "))}</span></div>` +
+      `<div class="id">${esc(c.client_id)}</div>` +
+      `<div class="ln">P10 ${fmtH(hoursAfter(c.eta_p10_s, t))} · P50 ${fmtH(hoursAfter(c.eta_p50_s, t))}</div>` +
+      `<div class="ln">${plan}</div></div>`;
+  }).join("") + (inView.length > 60 ? `<div class="rksep">+${inView.length - 60} more in view</div>` : "")
+    || `<div class="card"><span class="ln">no enrolled clients in view</span></div>`;
+}
+function renderRankList() {
+  const rows = SUMMARY ? SUMMARY.incidents : [];
+  const t = SUMMARY && SUMMARY.t_s;
+  const dom = rows.filter(r => r.domain), rest = rows.filter(r => !r.domain);
+  const item = r => `<div class="rk${r.domain ? " dom" : ""}" data-id="${esc(r.incident_id)}" ` +
+    `title="${esc(r.domain ? "" : ("why no domain? " + (r.why_no_domain || "")))}">` +
+    `<span class="n">${r.rank}</span><i class="sdot" style="background:${srcColor(r.source)}"></i> ` +
+    `<span class="nm">${esc(r.name || r.incident_id)}</span>` +
+    (r.domain ? `<span class="badge">${r.domain.clients} homes · P10 ${fmtH(hoursAfter(r.domain.eta_p10_s, t))}</span>` : "") +
+    `<div class="sub">${fmtAcres(r.acreage)}` +
+    (r.containment_pct != null ? ` · ${Math.round(r.containment_pct)}% contained` : "") +
+    ` · ${esc(srcLabel(r.source))}</div></div>`;
+  $("ranklist").innerHTML =
+    (dom.length ? dom.map(item).join("") : `<div class="rksep">no incident has clients in range this cycle</div>`) +
+    (rest.length ? `<div class="rksep">no clients in range — by acreage (${rest.length})</div>` +
+                   rest.map(item).join("") : "");
+}
+$("ranklist").addEventListener("click", (ev) => {
+  const el = ev.target.closest(".rk");
+  if (!el || !SUMMARY) return;
+  const r = SUMMARY.incidents.find(x => x.incident_id === el.getAttribute("data-id"));
+  if (r) flyToIncident(r);
+});
+
+function renderMap() {
+  Object.values(layers).forEach(g => g.clearLayers());
+  const tier = tierFor(map.getZoom());
+  if (tier === "national") {
+    drawClientClusters();
+    drawCrewsAndZones(tier);
+    drawIncidents(tier);
+  } else {
+    drawPerimetersAndRings();
+    drawCrewsAndZones(tier);
+    drawClients(tier);
+    drawIncidents(tier);
+    if (tier === "local") drawLocal();
+  }
+  $("w1chip").style.display = tier === "local" ? "block" : "none";
+  $("localwrap").style.display = tier === "local" ? "block" : "none";
+  lastTier = tier;
+  lastZoom = map.getZoom();
+}
+// the map + list only change with the cycle (or a crew beacon): a 15 s poll
+// that brings nothing new re-renders the header clock only — no flicker
+let lastDataSig = null;
+function dataSig() {
+  return [SUMMARY && SUMMARY.t_s, STATE && STATE.last_cycle_t_s,
+          JSON.stringify((STATE && STATE.crews) || [])].join("|");
+}
+function renderAll() {
+  if (!fitted && STATE && STATE.bbox && STATE.bbox.south != null) {
+    map.fitBounds([[STATE.bbox.south, STATE.bbox.west], [STATE.bbox.north, STATE.bbox.east]]);
+    fitted = true;
+  }
+  renderHeader();
+  const sig = dataSig();
+  if (sig === lastDataSig) return;
+  lastDataSig = sig;
+  renderRankList();
+  renderMap();
+}
+// zoom changes the tier (and the cluster grid) -> full redraw; a pan only
+// matters to the bounds-dependent local tier (W1 notes, client cards)
+let queued = false, lastZoom = null;
+map.on("zoomend moveend", () => {
+  if (queued) return;
+  queued = true;
+  setTimeout(() => {
+    queued = false;
+    if (!STATE) return;
+    const z = map.getZoom();
+    renderHeader();
+    if (z !== lastZoom || tierFor(z) === "local") { lastZoom = z; renderMap(); }
+  }, 60);
+});
+
+async function tick() {
+  try {
+    await fetchAll();
+    renderAll();
+  } catch (e) {
+    $("sidestatus").innerHTML = `<span class="bad">●</span> ${esc(e.message || e)}`;
+  }
+}
+renderLegend();
+tick();
+if (!OFFLINE_FILES) setInterval(tick, POLL_MS);
+</script>
+</body>
+</html>

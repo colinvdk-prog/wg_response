@@ -173,7 +173,18 @@ def _ring_from_raw(raw: list) -> list:
 
 
 class _ArcGisFeedBase:
-    """Shared ArcGIS FeatureServer query plumbing (f=json, pagination)."""
+    """Shared ArcGIS FeatureServer query plumbing (f=json, pagination).
+
+    PAGE CAP IS LOUD (W6 CONUS check, 2026-09-26): the layers page at
+    maxRecordCount = 2000 and the pager stops after _MAX_PAGES pages. On
+    2026-09-26 the national (CONUS-envelope) queries needed ONE page each
+    (378 incident points, 129 perimeters, 439 FIRIS polygons — every count
+    matched the layer's returnCountOnly), but a pager that runs out of pages
+    while the server still says exceededTransferLimit has DROPPED the tail.
+    That case now logs an ERROR, keeps every feature it did fetch, and sets
+    ``last_fetch_truncated`` — fetch_active then reports last_fetch_ok=False
+    (a partial fetch is a blind fetch: absence is not clearance). Any fetch
+    that ends within the cap is byte-identical to before."""
 
     _MAX_PAGES = 5
 
@@ -182,6 +193,7 @@ class _ArcGisFeedBase:
         # Health flag per the module docstring convention; True until a fetch
         # proves otherwise (optimistic pre-first-fetch default).
         self.last_fetch_ok = True
+        self.last_fetch_truncated = False
 
     def _query(self, layer_url: str, out_fields: str,
                bbox: Optional[BBox]) -> list:
@@ -208,6 +220,15 @@ class _ArcGisFeedBase:
             if not payload.get("exceededTransferLimit") or not page:
                 break
             offset += len(page)
+        else:
+            # every page was full and the server still has more: the tail
+            # beyond _MAX_PAGES pages is NOT in `features` — never silent.
+            self.last_fetch_truncated = True
+            log.error("ArcGIS page cap reached for %s: %d features over %d "
+                      "pages and the server still reports "
+                      "exceededTransferLimit — the rest are MISSING from "
+                      "this fetch (marked unhealthy: absence is not "
+                      "clearance)", layer_url, len(features), self._MAX_PAGES)
         return features
 
 
@@ -248,6 +269,7 @@ class WfigsFeed(_ArcGisFeedBase):
         ok = True
         points: list = []
         perims: list = []
+        self.last_fetch_truncated = False
         try:
             points = self._query(self.POINTS_URL, self.POINT_OUT_FIELDS, bbox)
         except Exception:
@@ -264,7 +286,9 @@ class WfigsFeed(_ArcGisFeedBase):
             log.warning("WFIGS parse failed", exc_info=True)
             self.last_fetch_ok = False
             return []
-        self.last_fetch_ok = ok
+        # a page-capped (truncated) layer is a partial fetch: keep the data,
+        # but it must not read as 'genuinely clear' (class docstring)
+        self.last_fetch_ok = ok and not self.last_fetch_truncated
         return out
 
     # -- parsing ------------------------------------------------------------
@@ -409,7 +433,9 @@ class FirisFeed(_ArcGisFeedBase):
 
     def fetch_active(self, bbox: Optional[BBox] = None) -> "list[FireIncident]":
         """Active CA perimeter incidents; never raises (logs + []).
-        Sets self.last_fetch_ok per the module health convention."""
+        Sets self.last_fetch_ok per the module health convention (a
+        page-capped fetch keeps its features but reports unhealthy)."""
+        self.last_fetch_truncated = False
         try:
             feats = self._query(self.LAYER_URL, "*", bbox)
             out = []
@@ -422,7 +448,7 @@ class FirisFeed(_ArcGisFeedBase):
                     continue
                 if inc is not None:
                     out.append(inc)
-            self.last_fetch_ok = True
+            self.last_fetch_ok = not self.last_fetch_truncated
             return out
         except Exception:
             log.warning("FIRIS ComboLayer fetch failed", exc_info=True)

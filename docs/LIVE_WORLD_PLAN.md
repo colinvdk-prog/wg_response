@@ -137,6 +137,133 @@ holds end to end.
 shows every WFIGS incident with clients in range; seeding on the corridor shows
 the fire in under 15 s (pre-warmed) and under a minute anywhere (W2/W3).
 
+#### W6 thin viewer (2026-09-26)
+
+§3 step 1, built: the existing watcher with its AOI set to CONUS and a zoomable
+map over its state. No physics changed and no engine knob added; the watcher,
+ThreatMonitor and request handler are extended only by new routes, a registry
+choice and one loud-failure fix in the feed pager.
+
+| Piece | What it is |
+|---|---|
+| `data/aoi_conus.json` | bbox W −125, S 24, E −66, N 50 (Alaska and Hawaii are outside it) + the union of every simulator preset's safe zones (42, all UNVERIFIED, as the corridor AOI) |
+| `--registry mock-presets` | `clients.preset_client_registry`: `--preset-homes N` (default 40) demo homes on each of the 13 presets = 520, placed by the simulator's own `place_clients` (RSF city-limits polygon, the 300 m driveway rule on the seven corridor tiles, seed law `f"{key}|{seed}"` — a SimSession of the same preset, N and seed places the same cells, pinned in `tests/test_registry_presets.py`). Same `protected_clients(bbox)` seam; `--registry mock` is byte-identical (its roster fingerprint is pinned from 09f94b5) |
+| `/world` (`console/world.html`) | one full-screen Leaflet map, three tiers by zoom. **National ≤ 6**: every incident as a marker scaled by acreage and coloured by source (WFIGS / FIRIS / CAL FIRE / FIRMS / SEEDED), a white ring + client-count badge when it built a spread domain, enrolled-client clusters, crews and safe zones small, and the ranked list "incidents threatening clients" (domain incidents first by earliest client P10, then the rest by acreage; a click flies to it). **Regional 7–11**: feed perimeters (else the point), P50 rings at the cycle time + 0/6/12/24/48/72 h, a "N homes · P10 +x h" label per domain, clients in the console's ladder colours, crews with status. **Local ≥ 12**: plan legs (crew → stops → egress zone, straight between plan points), egress zones ringed, client cards (state, P10/P50, crew stop and margin or the unserved reason); the shaded fire is W1's merge, and a visible "local detail arrives with the world merge (W1)" note sits where it will be drawn. Header: cycle clock + the console's age / staleness chip, AOI, counts, tier, source legend; hovering a marker says "why no domain?" in the cycle's own words. The offline SVG shim gained zoom (the same web-mercator law), so the tiers work air-gapped (`?nomap=1`) |
+| `GET /api/world/summary` | `wgresponse.worldview`, authed and read-only: the four things `/api/state` does not carry — domains (clients, earliest client P10/P50, grid, phase times), the per-incident note, display geometry (perimeters simplified for display, P50 rings traced by the simulator's own tracer), counts + the ranked list. Built once per cycle; `?since=<t_s>` answers `{"unchanged": true}` so the 15 s poll stays light |
+| Feed checks at CONUS scale | the ArcGIS pager's page cap is now LOUD (a fetch that runs out of pages while the server still reports more keeps its features but reports `last_fetch_ok=False`: absence is not clearance); FIRMS over a national AOI is one legal area request (the FIRMS docs' maximum boundary is the whole world) and a loud startup note on what does scale |
+
+**The national run** (2026-09-26 21:32–22:34 PDT, this machine, real feeds,
+live LANDFIRE via LFPS, the production physics flags, `--period 60`):
+
+| | |
+|---|---|
+| National fetch | WFIGS incident points: 414 US-wide, **378 in the CONUS envelope** (283 wildfire, 92 prescribed — dropped by design —, 3 complex); perimeters 163 → **129**; FIRIS 439 (California-only); CAL FIRE 10. Every count equal to the layer's `returnCountOnly`, each in ONE page (maxRecordCount 2,000, no `exceededTransferLimit`): **nothing dropped**. 290 WFIGS + 439 FIRIS + 10 CAL FIRE → 537 fused → 280 stale-gated → **257 incidents on the map** (256 from cycle 2) |
+| Domains | **18 of 257**: 14 LA County incidents (OTIS, DARK, ALAMO, LUCAS, ten LAC-numbered) whose 60 km radius reaches the Malibu demo homes, HIGHLAND and the 100%-contained Chileno Fire near Santa Rosa, DORADO near Rancho Santa Fe, and the 7,389-acre Willow fire reaching **204** demo homes across six Colorado presets. Grids 45,067–300,544 cells (Willow at the 300,000-cell cap, 129.5 m cells). The other 239 are markers, each with the cycle's "no protected clients within 60 km; spread skipped" |
+| Cycle 1 (cold) | **56.8 min**: feeds 29.0 s; assess 56.3 min, of which **55.7 min is 18 fresh LFPS tile jobs** (155–435 s each, mean 186 s, sequential) — spread 19.2 s and weather 13.4 s in total; alerts 0.04 s; dispatch 1.2 s. 100 alert events, 4 extreme-regime entries (HIGHLAND, LAC-345537, Chileno, DORADO), not degraded |
+| Cycles 2–5 (warm) | **39–49 s** each (the tile cache hits: terrain 1.2 s for all 18 domains): feeds 14–23 s, assess ~24 s (spread ~19 s — Willow 10.5 s, Chileno 4.3 s), dispatch ~1.1 s; well inside the 5-minute period and the 15-minute freshness rule while most of these fires do not spread |
+| Memory (working set / private) | 231 / 955 MB with the roster loaded; 402 / 1,127 MB after the cold cycle; **peak 746 / 1,469 MB** at the start of cycle 2 (the last result's 18 ensembles are still held while the next 18 are built); 570–600 / ~1,300 MB steady. Tile cache 144 MB on disk (18 tiles + 18 job zips) |
+| Viewer payloads | `/api/state` 276 KB; `/api/world/summary` 373 KB built in 0.31 s once per cycle (0.03 s cached), 63 bytes when `?since=` finds the cycle unchanged |
+| Alerts it produced | 520 demo homes: 418 none, **91 EXTREME_24H, 11 IMPACTED** — all from the two contained fires in finding 6 |
+
+**What strains at CONUS scale** (findings; only the pager was changed):
+
+1. **Terrain per incident is the cold-cycle cost.** Every domain fetches its
+   own LFPS tile, sequentially, at 155–435 s per job. The terrain cache
+   keys on the exact domain bbox, so the 14 LA County incidents whose domains
+   each wrap 26–40 of the same 40 Malibu demo homes cost 14 jobs and 14
+   near-duplicate tiles. W2's national COGs remove this; an interim is snapping domain boxes
+   to a shared grid so neighbouring incidents share a cached tile.
+2. **Feed volume at full geometry.** One CONUS cycle downloads ~52 MB: WFIGS
+   perimeters 29.3 MB for 129 polygons (4,513 rings; 126,102 vertices even
+   after the adapter's 200-vertex subsample), FIRIS 23.0 MB for 439 polygons,
+   incident points 0.12 MB — ~15 GB a day at the 5-minute period. ArcGIS
+   `maxAllowableOffset` would shrink it, but it changes the rings spread
+   seeds from, so it is a default-OFF engine knob for a later ticket, not a
+   viewer change. (The viewer draws a display copy: the 117 fresh perimeter
+   incidents' 4,509 rings / 119,757 vertices become 262 rings / 9,662
+   vertices, ~210 KB, in 0.1 s.)
+3. **The staleness gate carries the national picture.** 537 fused incidents,
+   280 excluded as older than 7 days (236 of them FIRIS "current" polygons;
+   median age 1,829 h, oldest 6,316 h), leaving 257. The exclusion note lists
+   every id with its age — an ~8 KB warning line per cycle in the log and in
+   `/api/state` notes.
+4. **The pager's page cap was a silent drop** (fixed: loud, data kept, fetch
+   marked unhealthy). Today every national count matched `returnCountOnly`
+   in one page (points 378 = 283 WF + 92 RX + 3 CX, the RX dropped by
+   design; perimeters 129; FIRIS 439). Paging without `orderByFields` is not
+   stable per the ArcGIS docs — moot at one page, a note for the day a layer
+   passes 2,000 features.
+5. **FIRMS** (not armed on this machine — no `FIRMS_MAP_KEY`): CONUS is one
+   legal area request (the docs' maximum boundary is the whole world; a
+   large request may count as several of the key's 5,000 transactions per
+   10 minutes). Downstream is quadratic: a synthetic 6,000-detection CONUS
+   day clusters into 5,170 FIRMS incidents in 8.5 s and fuses in 3.2 s per
+   cycle, and a FIRMS cluster never fuses with the WFIGS fire it sits on
+   (synthetic name, no IRWIN id), so one fire near clients can build several
+   domains. Spatial fusion (a hotspot inside or near a perimeter / incident
+   point) is the prerequisite for national FIRMS.
+6. **Days-old polygons of contained fires free-run into alerts** (engine
+   policy; not changed here — an owner decision). The perimeter-provenance
+   rule (a polygon burns at its OWN timestamp, never the fused record's) has
+   no ceiling: Chileno Fire (341 ac, **100% contained**, record 4.7 h old)
+   carries a FIRIS polygon 148 h old, and the engine spread it forward 148 h
+   under the current forecast — the modeled burn at the cycle time fills
+   most of its ~40 × 25 km domain and **11 Santa Rosa demo homes 23 km away
+   read IMPACTED** (P50 arrival 24–39 h in the past); Willow (80% contained,
+   polygon 249 h old) put **87 Colorado demo homes in EXTREME_24H**. The
+   7-day staleness gate reads the record's time, not the polygon's, so it
+   passes both; the containment WATCH ceiling (`containment_gate_enabled`,
+   default OFF, not in the production flag set) would cap Chileno but not
+   Willow (80% < 90%). Options: cap a polygon's free-run at a few hours past
+   the newest observation, treat a contained fire's polygon as the fire, or
+   arm the containment gate. `docs/img/world_viewer/w6_regional.jpg` and
+   `w6_regional_ranked1.jpg` show both; the SoCal shadow service runs the
+   same rule.
+7. **Memory holds every domain twice at the cycle boundary.** The last
+   CycleResult keeps all 18 ensembles (members + p10/p50/p90 as Python float
+   lists, ~10 MB per raster at 300,000 cells) while the next cycle builds
+   its own: a 746 MB working-set peak with mostly non-spreading fires. A busy
+   season on the 1-vCPU watch service is a W7 sizing item (the worker fleet,
+   or not retaining the members).
+8. **One home, many domains.** The Malibu demo homes sit inside up to 14 LA
+   County domains at once (842 client assessments for 520 homes); every domain
+   re-spreads the same ground and re-assesses the same homes. Correct for
+   the ladder (pairs key on client + incident) but it multiplies compute and
+   alert pairs — a W1 `IncidentDomain` shared by nearby incidents would not.
+9. **No crews in the national run** (the watcher has none until beacons
+   arrive), so every dispatch job was unserved (91) and the local tier's
+   plan legs were empty; they render from `/api/state`'s plan when crews
+   beacon (pinned at source level in `tests/test_world_viewer.py`).
+
+Start command (the production flags of `FIX_PROGRAM_2026-09-11.md`, dry-notify,
+demo roster; `WGRESP_DEV_OPEN=1` only on a local box — a deployment keeps
+`WGRESP_API_KEY` and the page prompts for it on the first 401):
+
+```
+py -3 -m wgresponse.cli watch --aoi data/aoi_conus.json --registry mock-presets \
+    --dry-notify --gust-blend 0.5 --grass-floor 0.10 --floor-gate \
+    --model-error 0.71 --extreme-regime --fail-closed --ember-radius 200 \
+    --p50-bound --solver-evals 20000 --phi-vector --state-dir state --port 8877
+# then open http://127.0.0.1:8877/world
+```
+
+The national run used `--period 60` to see several cycles quickly; the
+production cadence is the default 300 s. Screenshots of that run
+(`scratch_review/world_viewer_shots.py`, headless Chrome over the live
+daemon, cycle 5) in `docs/img/world_viewer/`: `w6_national.jpg` (all 256
+incidents, 18 domain badges, client clusters, the ranked list),
+`w6_regional.jpg` (Willow and the Vail → Aspen corridor homes, the modeled
+burn of finding 6), `w6_regional_ranked1.jpg` (Chileno Fire over Santa
+Rosa), `w6_regional_malibu.jpg` (the 14 LA County domains),
+`w6_local.jpg` (OTIS above Malibu: homes, client cards, the W1 note),
+`w6_why_no_domain.jpg` (the hover on a 373,927-acre complex with no homes
+in range) and `w6_national_offline.jpg` (the air-gapped shim).
+
+**Open (W6 proper):** `/api/world/region?bbox` and `/api/incident/<id>/view`
+(the thin viewer draws every incident in every tier — fine at 256, not at
+thousands of FIRMS clusters); teams / bases on the national tier (W4);
+seeding (6.2, the other half of W1's first piece); time-scrub (6.3).
+
 ### W7 — Scale, cost, operations
 
 | # | Ticket | Notes |

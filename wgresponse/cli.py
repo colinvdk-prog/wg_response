@@ -39,6 +39,28 @@ The AOI is either a bare "west,south,east,north" bbox or a zones JSON file:
 (multi-zone files watch the UNION bbox; safe_zones feed the dispatcher —
 without any, dispatch fails closed and every job is unserved).
 
+W6 THIN WORLD VIEWER (docs/LIVE_WORLD_PLAN.md §3 step 1 + "W6 thin viewer
+(2026-09-26)"): the watch daemon also serves
+    GET /world               console/world.html — one zoomable national map
+                             over the daemon's state (open like /console: the
+                             page is a key-prompt UI and carries no data)
+    GET /api/world/summary   AUTHED, read-only: counts, the ranked list
+                             "incidents threatening clients" (domain incidents
+                             first by earliest client P10 arrival, then the
+                             rest by acreage), per-incident domain facts, the
+                             cycle's "why no domain?" note, display-simplified
+                             perimeters and the P50 rings of every domain —
+                             wgresponse.worldview, built once per cycle
+                             (_WatchDaemon.world_summary); ?since=<t_s> equal
+                             to the cached cycle time answers
+                             {"unchanged": true} so a 15 s poll stays light.
+With `--aoi data/aoi_conus.json` the AOI is the contiguous US (the feed
+queries take the envelope; WFIGS pages at 2,000 features per layer) and
+`--registry mock-presets` seeds --preset-homes (default 40) demo homes on
+EVERY simulator preset with the simulator's own WUI placement
+(clients.preset_client_registry), so live fires near our communities build
+domains and everything else stays a marker.
+
 Real modules are imported lazily inside each subcommand so `--help` and the
 mock paths work before sibling modules land. All times printed are hours
 relative to the relevant anchor (stated per column); config units follow
@@ -134,9 +156,18 @@ def _build_parser() -> argparse.ArgumentParser:
     tgroup.add_argument("--synthetic-terrain", action="store_true",
                         help="force SyntheticTerrain (rehearsal mode; LOUD "
                              "warning — not real fuels)")
-    pw.add_argument("--registry", choices=("mock", "dynamo"), default="mock",
-                    help="client registry: deterministic mock (default) or "
-                         "the live read-only DynamoDB roster")
+    pw.add_argument("--registry", choices=("mock", "mock-presets", "dynamo"),
+                    default="mock",
+                    help="client registry: deterministic mock (default: 12 "
+                         "homes around the AOI centre), mock-presets (demo "
+                         "homes on EVERY simulator preset via the "
+                         "simulator's own WUI placement — the national "
+                         "demo roster, W6 thin viewer) or the live "
+                         "read-only DynamoDB roster")
+    pw.add_argument("--preset-homes", type=int, default=40,
+                    help="demo homes per simulator preset for --registry "
+                         "mock-presets (default 40: 13 presets -> 520 "
+                         "homes); ignored by the other registries")
     pw.add_argument("--gust-blend", type=float, default=0.0,
                     help="cfg.wind_gust_blend: effective wind = sustained + "
                          "blend x (gust - sustained); hindcast-calibrated "
@@ -428,6 +459,41 @@ def _live_feed_stack(map_key):
     return stack, notes
 
 
+#: W6 CONUS check (2026-09-26): an AOI spanning more than this many square
+#: degrees is "national" for the FIRMS note below (CONUS = 1,534 deg²; the
+#: SoCal shadow AOI 1.8, the Vail -> Aspen corridor 0.94).
+_FIRMS_NATIONAL_DEG2 = 100.0
+
+
+def _firms_scale_notes(feeds_stack, aoi) -> list:
+    """LOUD startup notes for FIRMS over a national AOI (W6 CONUS check).
+
+    Checked against the live FIRMS area-API docs on 2026-09-26: the area
+    endpoint takes any west,south,east,north box up to the whole world
+    ("Maximum boundary: -180, -90, 180, 90"; a larger request may count as
+    several of the MAP_KEY's 5000 transactions / 10 min), so a CONUS AOI is
+    ONE legal request per cycle — no tiling, no skip. What does scale is
+    downstream: every 2 km hotspot cluster (greedy, O(detections x
+    clusters)) becomes an incident assessed each cycle, and a FIRMS cluster
+    never name-joins a WFIGS fire (synthetic names, no IRWIN id), so a fire
+    near clients can build several domains. Said once, at startup; [] when
+    FIRMS is off or the AOI is regional."""
+    from wgresponse import feeds as feeds_mod
+    if not any(isinstance(f, feeds_mod.FirmsFeed) for f in feeds_stack):
+        return []
+    area = (aoi.east - aoi.west) * (aoi.north - aoi.south)
+    if area <= _FIRMS_NATIONAL_DEG2:
+        return []
+    return [f"FIRMS over a NATIONAL AOI ({area:,.0f} deg²): one area request "
+            f"per cycle (the FIRMS area API accepts any bbox up to the world "
+            f"— docs checked 2026-09-26; a large request may count as several "
+            f"of the key's 5000 transactions / 10 min). Every 2 km hotspot "
+            f"cluster becomes an incident assessed each cycle (agricultural "
+            f"and industrial heat included) and FIRMS clusters never "
+            f"name-join a WFIGS fire — expect hundreds of FIRMS incidents and "
+            f"more than one domain per fire near clients"]
+
+
 def _cmd_pull_feeds(args) -> int:
     try:
         bbox = _parse_bbox(args.bbox)
@@ -602,12 +668,35 @@ def _watch_terrain(args, state_dir):
         + f"; job email {email} — override with env {_LFPS_EMAIL_ENV})"]
 
 
-def _watch_registry(args, aoi):
-    """Client registry by flag: the live read-only DynamoDB roster, or a
-    deterministic mock seeded ACROSS THE AOI (so drills see clients)."""
+def _watch_registry(args, aoi, notes=None):
+    """Client registry by flag: the live read-only DynamoDB roster, a
+    deterministic mock seeded ACROSS THE AOI (so drills see clients), or
+    (mock-presets, W6 thin viewer) --preset-homes demo homes on every
+    simulator preset placed by the simulator's own WUI placement — its
+    placement record lands in `notes` (the daemon's startup notes)."""
     if args.registry == "dynamo":
         from wgresponse.clients import DynamoClientRegistry
         return DynamoClientRegistry(), "DynamoClientRegistry (read-only scan)"
+    if args.registry == "mock-presets":
+        from wgresponse import simui
+        from wgresponse.clients import preset_client_registry
+        n = int(getattr(args, "preset_homes", 40))
+        if n < 1:
+            raise ValueError("--preset-homes must be >= 1")
+        place_notes: list = []
+        registry = preset_client_registry(n, notes=place_notes)
+        roster = registry.protected_clients()
+        in_aoi = sum(1 for c in roster if aoi.contains(c.loc))
+        if notes is not None:
+            notes.extend(place_notes)
+            if in_aoi < len(roster):
+                notes.append(f"registry mock-presets: {len(roster) - in_aoi} "
+                             f"of {len(roster)} demo homes lie OUTSIDE the "
+                             f"AOI (their presets are not in it)")
+        return (registry,
+                f"MockClientRegistry over the simulator presets ({n} demo "
+                f"homes x {len(simui.LOCATIONS)} presets = {len(roster)} "
+                f"homes, simulator WUI placement; {in_aoi} inside the AOI)")
     from wgresponse import geo
     from wgresponse.clients import MockClientRegistry
     ctr = aoi.center()
@@ -935,6 +1024,42 @@ class _WatchDaemon:
                 "eta_p10_s": eta[1] if eta else None})
         return rows
 
+    # ------------------------------------------- world viewer (W6 thin)
+
+    _world_cache = None                 # ((t_s, cycles_run), summary dict)
+    _world_lock = threading.Lock()      # one summary build at a time
+
+    def world_summary(self, since=None) -> dict:
+        """GET /api/world/summary provider (W6 thin viewer; the payload is
+        wgresponse.worldview.build_summary over the last CycleResult and
+        this daemon's state()). Built ONCE per completed cycle and cached —
+        the page polls every 15 s, the P50 ring tracing runs once. `since`
+        (the query's ?since=, unix s) equal to the cached cycle time
+        answers {"unchanged": true, "t_s": ...} instead of the payload.
+        Before the first cycle: an empty summary that says so. Read-only:
+        never touches the engine, the monitor or the registry."""
+        from wgresponse import worldview
+        res = self.last_result
+        if res is None:
+            out = worldview.summary_from_state(self.state())
+            out["note"] = "no cycle has completed yet"
+            return out
+        key = (float(res.t_s), self.cycles_run)
+        with self._world_lock:
+            cached = self._world_cache
+            if cached is None or cached[0] != key:
+                summary = worldview.build_summary(self.state(), res)
+                self._world_cache = cached = (key, summary)
+        summary = cached[1]
+        try:
+            since_f = float(since) if since not in (None, "") else None
+        except (TypeError, ValueError):
+            since_f = None
+        if since_f is not None and abs(since_f - summary["t_s"]) < 1e-6:
+            return {"unchanged": True, "t_s": summary["t_s"],
+                    "cycles_run": summary.get("cycles_run")}
+        return summary
+
 
 def _cmd_watch(args) -> int:
     from wgresponse import crews as crews_mod
@@ -1089,7 +1214,14 @@ def _cmd_watch(args) -> int:
         for note in terrain_notes:
             print(f"error: {note}", file=sys.stderr)
         return 2
-    registry, registry_desc = _watch_registry(args, aoi)
+    try:
+        registry, registry_desc = _watch_registry(args, aoi,
+                                                  notes=startup_notes)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    # W6 CONUS check: FIRMS at national scale is said out loud, once.
+    startup_notes += _firms_scale_notes(feeds_stack, aoi)
     notifier, notifier_desc = _watch_notifier(args, state_dir)
     if not safe_zones:
         startup_notes.append(
@@ -1160,6 +1292,12 @@ def _cmd_watch(args) -> int:
     print(f"  state     : {store.path} "
           f"({'RESTORED — restart re-fires nothing' if restored else 'fresh'})")
     print(f"  console   : http://{host}:{port}/console  [auth: {auth}]")
+    # W6 THIN WORLD VIEWER: the national map over this daemon's state; its
+    # /api/world/summary provider is attached here (additive — serve() and
+    # every other route are untouched).
+    httpd.app.world_provider = daemon.world_summary
+    print(f"  world     : http://{host}:{port}/world  (national map; "
+          f"/api/world/summary)")
     for note in startup_notes:
         print(f"  NOTE      : {note}")
     print("  Ctrl-C stops cleanly (final persist).")
