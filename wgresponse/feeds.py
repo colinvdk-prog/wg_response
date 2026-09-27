@@ -41,6 +41,25 @@ means genuinely zero incidents; last_fetch_ok=False means the adapter is
 BLIND this cycle (it still returns [] per the robustness design above), and
 consumers (threat.ThreatMonitor) must treat the cycle as degraded — absence
 of an incident is then NOT clearance for its alert pairs.
+
+CONTAINMENT + CONFIRMATION EVIDENCE (contracts SAFETY SEMANTICS 13, founder
+ruling 2026-09-27): the adapters carry, in FireIncident.meta and only when
+the feed has them, the containment / control / out declarations
+(contained_at_s, controlled_at_s, out_at_s — WFIGS ContainmentDateTime /
+ControlDateTime / FireOutDateTime on the incident-locations layer and their
+attr_ twins on the perimeter layer, CAL FIRE ExtinguishedDate), the RECORD's
+reported size and its time (reported_acres + reported_at_s — WFIGS
+IncidentSize / attr_IncidentSize, CAL FIRE AcresBurned) and the POLYGON's
+own area (perimeter_acres — WFIGS poly_GISAcres, FIRIS area_acres). Checked
+against the live layer schemas and item description on 2026-09-27: the
+WFIGS *Current* layers hold only incidents NOT yet declared contained,
+controlled or out (0 of 285 CONUS wildfires carried a timestamp that day;
+71 reported PercentContained = 100), so in practice the percentage is the
+live signal and the timestamps are defense in depth. Fusion adds per-source
+containment_by_source / acres_by_source and perimeter_newest_at_s. The
+legacy fields (acreage, containment_pct, updated_at_s, perimeter,
+meta["perimeter_at_s"]) are unchanged — the monitor reads the new keys only
+under cfg.drop_contained_incidents / cfg.perimeter_confirmed_anchor.
 """
 from __future__ import annotations
 
@@ -125,6 +144,34 @@ def _when_s(v) -> Optional[float]:
         return dt.timestamp()
     except (ValueError, TypeError):
         return None
+
+
+#: SAFETY SEMANTICS 13 containment declarations: meta key -> ArcGIS field
+#: (the perimeter layer carries the same IRWIN fields prefixed attr_).
+_CONTAINMENT_FIELDS = (("contained_at_s", "ContainmentDateTime"),
+                       ("controlled_at_s", "ControlDateTime"),
+                       ("out_at_s", "FireOutDateTime"))
+
+
+def _containment_meta(attrs: dict, prefix: str = "") -> dict:
+    """{meta key: unix s} for each containment / control / out timestamp the
+    record carries (SAFETY SEMANTICS 13a); absent or unparseable = no key."""
+    out = {}
+    for key, fld in _CONTAINMENT_FIELDS:
+        t = _when_s(attrs.get(prefix + fld))
+        if t is not None and math.isfinite(t) and t > 0:
+            out[key] = float(t)
+    return out
+
+
+def _reported_meta(acres, at_s) -> dict:
+    """The record's reported size + its time (SAFETY SEMANTICS 13e), as a
+    pair or not at all: a size without a positive time cannot confirm."""
+    a = _maybe_float(acres)
+    if (a is None or not math.isfinite(a) or a < 0 or at_s is None
+            or not math.isfinite(at_s) or at_s <= 0):
+        return {}
+    return {"reported_acres": a, "reported_at_s": float(at_s)}
 
 
 def _subsample_ring(ring: list, max_vertices: int = 200) -> list:
@@ -241,6 +288,11 @@ class WfigsFeed(_ArcGisFeedBase):
     (subsampled to ~200 vertices) from the polygon layer. Prescribed burns
     (IncidentTypeCategory == 'RX') are dropped unless include_rx=True.
     Timestamps arrive as epoch milliseconds -> converted to unix seconds.
+
+    SAFETY SEMANTICS 13 fields (2026-09-27, both layers' live schema checked):
+    ContainmentDateTime / ControlDateTime / FireOutDateTime (points) and
+    attr_ContainmentDateTime / attr_ControlDateTime / attr_FireOutDateTime +
+    attr_IncidentSize (perimeters) ride in meta (module docstring).
     """
 
     PERIMETERS_URL = ("https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/"
@@ -249,11 +301,14 @@ class WfigsFeed(_ArcGisFeedBase):
                   "WFIGS_Incident_Locations_Current/FeatureServer/0/query")
     POINT_OUT_FIELDS = ("IncidentName,IrwinID,IncidentSize,PercentContained,"
                         "FireDiscoveryDateTime,ModifiedOnDateTime_dt,POOState,"
-                        "IncidentTypeCategory")
+                        "IncidentTypeCategory,ContainmentDateTime,ControlDateTime,"
+                        "FireOutDateTime")
     PERIM_OUT_FIELDS = ("poly_IncidentName,attr_IncidentName,poly_IRWINID,attr_IrwinID,"
                         "poly_GISAcres,attr_CalculatedAcres,attr_FinalAcres,"
                         "attr_PercentContained,attr_FireDiscoveryDateTime,"
-                        "attr_ModifiedOnDateTime_dt,poly_DateCurrent")
+                        "attr_ModifiedOnDateTime_dt,poly_DateCurrent,"
+                        "attr_ContainmentDateTime,attr_ControlDateTime,"
+                        "attr_FireOutDateTime,attr_IncidentSize")
 
     def __init__(self, http_get: Optional[HttpGet] = None,
                  max_ring_vertices: int = 200, include_rx: bool = False):
@@ -334,6 +389,20 @@ class WfigsFeed(_ArcGisFeedBase):
             pat = _perimeter_provenance_s(inc)
             if pat is not None:
                 base.meta["perimeter_at_s"] = pat
+            # SAFETY SEMANTICS 13: the polygon's own area travels with the
+            # polygon (like perimeter_at_s); the perimeter layer's copy of
+            # the IRWIN record fills declarations / the reported size the
+            # point record lacks (the point stays authoritative).
+            base.meta.pop("perimeter_acres", None)
+            if "perimeter_acres" in inc.meta:
+                base.meta["perimeter_acres"] = inc.meta["perimeter_acres"]
+            for key, _fld in _CONTAINMENT_FIELDS:
+                if key in inc.meta:
+                    base.meta.setdefault(key, inc.meta[key])
+            if ("reported_acres" not in base.meta
+                    and "reported_acres" in inc.meta):
+                base.meta["reported_acres"] = inc.meta["reported_acres"]
+                base.meta["reported_at_s"] = inc.meta["reported_at_s"]
             if base.acreage is None:
                 base.acreage = inc.acreage
             if base.containment_pct is None:
@@ -351,6 +420,10 @@ class WfigsFeed(_ArcGisFeedBase):
         name = attrs.get("IncidentName") or ""
         updated = _when_s(attrs.get("ModifiedOnDateTime_dt")) or 0.0
         native = attrs.get("OBJECTID")
+        meta = {"poo_state": attrs.get("POOState")}
+        # SAFETY SEMANTICS 13: declarations + the record's reported size
+        meta.update(_containment_meta(attrs))
+        meta.update(_reported_meta(attrs.get("IncidentSize"), updated))
         return FireIncident(
             incident_id=irwin or f"wfigs:{native if native is not None else name.lower()}",
             name=name,
@@ -363,7 +436,7 @@ class WfigsFeed(_ArcGisFeedBase):
             active=True,
             irwin_id=irwin,
             source_ids={"wfigs": irwin or str(native)},
-            meta={"poo_state": attrs.get("POOState")},
+            meta=meta,
         )
 
     def _from_perimeter(self, feat: dict):
@@ -393,6 +466,17 @@ class WfigsFeed(_ArcGisFeedBase):
         # even when the incident record — or a fused fresh member — is newer,
         # or the modeled front starts up to (fresh - perimeter age) hours LATE.
         perimeter_at = _when_s(attrs.get("poly_DateCurrent")) or updated
+        meta = ({"perimeter_at_s": float(perimeter_at)} if perimeter_at
+                else {})
+        # SAFETY SEMANTICS 13: the POLYGON's own area (poly_GISAcres, never
+        # the record's CalculatedAcres / FinalAcres), the IRWIN record's
+        # declarations and its reported size at the record's own time.
+        gis = _maybe_float(attrs.get("poly_GISAcres"))
+        if gis is not None and math.isfinite(gis) and gis > 0:
+            meta["perimeter_acres"] = gis
+        meta.update(_containment_meta(attrs, "attr_"))
+        meta.update(_reported_meta(attrs.get("attr_IncidentSize"),
+                                   _when_s(attrs.get("attr_ModifiedOnDateTime_dt"))))
         inc = FireIncident(
             incident_id=key,
             name=name,
@@ -406,8 +490,7 @@ class WfigsFeed(_ArcGisFeedBase):
             perimeter=rings,
             irwin_id=irwin,
             source_ids={"wfigs": irwin or str(native)},
-            meta=({"perimeter_at_s": float(perimeter_at)} if perimeter_at
-                  else {}),
+            meta=meta,
         )
         return inc, key
 
@@ -470,17 +553,26 @@ class FirisFeed(_ArcGisFeedBase):
         irwin = _norm_irwin(pick(self._IRWIN_KEYS))
         name = str(pick(self._NAME_KEYS) or "")
         native = attrs.get("objectid")
+        acreage = _maybe_float(pick(self._ACRES_KEYS))
+        # SAFETY SEMANTICS 13e: a FIRIS row IS a polygon — its acres are the
+        # polygon's own area (never a separate record size: FIRIS reports no
+        # incident size and no containment, so it can neither confirm its own
+        # polygon nor declare a fire contained).
+        meta = ({"perimeter_acres": acreage}
+                if acreage is not None and math.isfinite(acreage) and acreage > 0
+                else {})
         return FireIncident(
             incident_id=irwin or f"firis:{native if native is not None else name.lower()}",
             name=name,
             source=IncidentSource.FIRIS,
             origin=_ring_centroid(rings[0]),
             updated_at_s=_when_s(pick(self._UPDATED_KEYS)) or 0.0,
-            acreage=_maybe_float(pick(self._ACRES_KEYS)),
+            acreage=acreage,
             active=True,
             perimeter=rings,
             irwin_id=irwin,
             source_ids={"firis": irwin or str(native)},
+            meta=meta,
         )
 
 
@@ -528,19 +620,27 @@ class CalFireFeed:
         active = rec.get("IsActive")
         if not isinstance(active, bool):
             active = not bool(rec.get("Final"))
+        updated = _when_s(rec.get("Updated")) or 0.0
+        meta = {"county": rec.get("County"), "url": rec.get("Url")}
+        # SAFETY SEMANTICS 13: ExtinguishedDate is CAL FIRE's "out"
+        # declaration; AcresBurned at Updated is the record's reported size.
+        out_t = _when_s(rec.get("ExtinguishedDate"))
+        if out_t is not None and math.isfinite(out_t) and out_t > 0:
+            meta["out_at_s"] = float(out_t)
+        meta.update(_reported_meta(rec.get("AcresBurned"), updated))
         return FireIncident(
             incident_id=f"calfire:{uid}",
             name=str(rec.get("Name") or ""),
             source=IncidentSource.CALFIRE,
             origin=LatLon(lat, lon),
-            updated_at_s=_when_s(rec.get("Updated")) or 0.0,
+            updated_at_s=updated,
             discovered_at_s=_when_s(rec.get("Started")),
             acreage=_maybe_float(rec.get("AcresBurned")),
             containment_pct=_maybe_float(rec.get("PercentContained")),
             active=active,
             irwin_id=None,   # CAL FIRE API does not expose IRWIN ids
             source_ids={"calfire": uid},
-            meta={"county": rec.get("County"), "url": rec.get("Url")},
+            meta=meta,
         )
 
 
@@ -771,7 +871,12 @@ def fuse_incidents(batches: "list[list[FireIncident]]") -> "list[FireIncident]":
     the field set) wins; hotspots are unioned; source_ids merges provenance
     from every member; the perimeter owner's own currency time rides along as
     meta["perimeter_at_s"] (Session-3 F3 — an old polygon fused onto a fresh
-    record must not be rasterized as freshly burned). The fused incident_id
+    record must not be rasterized as freshly burned), with the polygon's own
+    area (meta["perimeter_acres"]) beside it; a multi-member group also gets
+    meta["perimeter_newest_at_s"] (newest polygon over EVERY member) and
+    meta containment_by_source / acres_by_source (each source's freshest
+    value) — SAFETY SEMANTICS 13 evidence, read only under its knobs; a
+    single-member group passes through untouched. The fused incident_id
     is STABLE across cycles: IRWIN id
     when known, else the most-preferred source's id (_CANONICAL_SOURCE_RANK,
     lexicographic tie-break) — never "whichever member is freshest today".
@@ -898,12 +1003,32 @@ def _merge_group(group: "list[FireIncident]") -> FireIncident:
     # age — never the fused freshness. The blind meta-merge above may have
     # pulled another member's stamp: always overwrite from the owner.
     meta.pop("perimeter_at_s", None)
+    # SAFETY SEMANTICS 13: the polygon's own area follows its owner exactly
+    # like perimeter_at_s; the NEWEST polygon time over every member tells
+    # the confirmed-perimeter anchor whether a newer polygon exists than the
+    # one this group carries (the group keeps the freshest RECORD's polygon,
+    # which is not always the freshest polygon).
+    meta.pop("perimeter_acres", None)
+    meta.pop("perimeter_newest_at_s", None)
     if perimeter is not None and perimeter != "":
         owner = next(m for m in newest_first
                      if m.perimeter is not None and m.perimeter != "")
         pat = _perimeter_provenance_s(owner)
         if pat is not None:
             meta["perimeter_at_s"] = pat
+        pacres = (owner.meta or {}).get("perimeter_acres")
+        if pacres is not None:
+            meta["perimeter_acres"] = pacres
+        newest = max((t for t in (_perimeter_provenance_s(m) for m in group
+                                  if m.perimeter) if t is not None),
+                     default=None)
+        if newest is not None:
+            meta["perimeter_newest_at_s"] = newest
+    # SAFETY SEMANTICS 13a: every source's own containment and acreage (the
+    # freshest member of each source) — the removal rule needs "no source
+    # below 100 %" and per-source growth, not just the freshest record's.
+    meta["containment_by_source"] = _by_source(newest_first, "containment_pct")
+    meta["acres_by_source"] = _by_source(newest_first, "acreage")
     return FireIncident(
         incident_id=_canonical_group_id(group, irwin),
         name=pick("name") or head.name,
@@ -920,6 +1045,23 @@ def _merge_group(group: "list[FireIncident]") -> FireIncident:
         source_ids=source_ids,
         meta=meta,
     )
+
+
+def _source_key(inc: FireIncident) -> str:
+    src = inc.source
+    return str(getattr(src, "value", None) or src)
+
+
+def _by_source(newest_first: list, attr: str) -> dict:
+    """{source: value} of `attr` from the FRESHEST member of each source that
+    carries a finite number (SAFETY SEMANTICS 13a fusion evidence)."""
+    out: dict = {}
+    for m in newest_first:
+        v = getattr(m, attr, None)
+        if (isinstance(v, (int, float)) and not isinstance(v, bool)
+                and math.isfinite(v)):
+            out.setdefault(_source_key(m), float(v))
+    return dict(sorted(out.items()))
 
 
 def _maybe_float(v) -> Optional[float]:

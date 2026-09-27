@@ -1,0 +1,388 @@
+{
+ "now_s": 1790524542.7457986,
+ "variants": {
+  "seed only": {
+   "stops": [
+    [
+     "E2",
+     "mock-client-001",
+     "seeded:ab3e53cc-00",
+     1.61,
+     18.21
+    ]
+   ],
+   "unserved": [],
+   "ensembles": [
+    "seeded:ab3e53cc-00"
+   ],
+   "terrain_s": {
+    "seeded:ab3e53cc-00": 0.1
+   },
+   "degraded": false,
+   "failures": []
+  },
+  "seed + Willow (legacy)": {
+   "stops": [],
+   "unserved": [
+    [
+     "mock-client-000",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-003",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-004",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-007",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-009",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-011",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-001",
+     "seeded:ab3e53cc-00",
+     "no_safe_corridor"
+    ]
+   ],
+   "ensembles": [
+    "548a8d28-1a04-48ee",
+    "seeded:ab3e53cc-00"
+   ],
+   "terrain_s": {
+    "548a8d28-1a04-48ee": 0.1,
+    "seeded:ab3e53cc-00": 0.1
+   },
+   "degraded": false,
+   "failures": [],
+   "willow": {
+    "burned_p50_km2_at_now": 634.8,
+    "boundary_reached_h_rel_now": -258.6,
+    "veto_reach_km": 1604.5,
+    "c001_in_domain": false,
+    "leg_E2_to_c001_Tstar_h_rel_now": -249.24,
+    "leg_samples_constrained": 147,
+    "clients_p10_p50_h": [
+     [
+      "000",
+      0.0,
+      19.8
+     ],
+     [
+      "002",
+      null,
+      null
+     ],
+     [
+      "003",
+      0.0,
+      70.9
+     ],
+     [
+      "004",
+      0.0,
+      null
+     ],
+     [
+      "007",
+      0.0,
+      19.3
+     ],
+     [
+      "008",
+      null,
+      null
+     ],
+     [
+      "009",
+      0.0,
+      0.0
+     ],
+     [
+      "010",
+      null,
+      null
+     ],
+     [
+      "011",
+      0.0,
+      null
+     ]
+    ],
+    "notes": []
+   }
+  },
+  "seed + Willow (both knobs)": {
+   "stops": [],
+   "unserved": [
+    [
+     "mock-client-001",
+     "seeded:ab3e53cc-00",
+     "no_safe_corridor"
+    ],
+    [
+     "mock-client-009",
+     "548a8d28-1a04-48ee",
+     "no_safe_corridor"
+    ]
+   ],
+   "ensembles": [
+    "548a8d28-1a04-48ee",
+    "seeded:ab3e53cc-00"
+   ],
+   "terrain_s": {
+    "548a8d28-1a04-48ee": 0.1,
+    "seeded:ab3e53cc-00": 0.1
+   },
+   "degraded": false,
+   "failures": [],
+   "willow": {
+    "burned_p50_km2_at_now": 91.0,
+    "boundary_reached_h_rel_now": -18.8,
+    "veto_reach_km": 121.8,
+    "c001_in_domain": false,
+    "leg_E2_to_c001_Tstar_h_rel_now": -9.38,
+    "leg_samples_constrained": 147,
+    "clients_p10_p50_h": [
+     [
+      "000",
+      null,
+      null
+     ],
+     [
+      "002",
+      null,
+      null
+     ],
+     [
+      "003",
+      72.0,
+      null
+     ],
+     [
+      "004",
+      null,
+      null
+     ],
+     [
+      "007",
+      44.4,
+      null
+     ],
+     [
+      "008",
+      null,
+      null
+     ],
+     [
+      "009",
+      29.0,
+      66.8
+     ],
+     [
+      "010",
+      null,
+      null
+     ],
+     [
+      "011",
+      null,
+      null
+     ]
+    ],
+    "notes": [
+     "incident 548a8d28-1a04-48ee-9011-aba023175d43: polygon 259.6 h old, record 19.7 h old \u2014 the record reports 7,389 ac, the polygon 7,259 ac (+1.8%, within 2%): the perimeter is CONFIRMED as of the record and seeded then, not 259.6 h ago (cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)"
+    ]
+   }
+  },
+  "HYPOTHETICAL option c: free-run scaled by (1 - 80%)": {
+   "stops": [
+    [
+     "E2",
+     "mock-client-001",
+     "seeded:ab3e53cc-00",
+     1.61,
+     18.21
+    ],
+    [
+     "E3",
+     "mock-client-009",
+     "548a8d28-1a04-48ee",
+     1.52,
+     33.47
+    ]
+   ],
+   "unserved": [],
+   "ensembles": [
+    "548a8d28-1a04-48ee",
+    "seeded:ab3e53cc-00"
+   ],
+   "terrain_s": {
+    "548a8d28-1a04-48ee": 0.1,
+    "seeded:ab3e53cc-00": 0.11
+   },
+   "degraded": false,
+   "failures": [],
+   "willow": {
+    "burned_p50_km2_at_now": 42.0,
+    "boundary_reached_h_rel_now": -0.1,
+    "veto_reach_km": 6.2,
+    "c001_in_domain": false,
+    "leg_E2_to_c001_Tstar_h_rel_now": 9.25,
+    "leg_samples_constrained": 147,
+    "clients_p10_p50_h": [
+     [
+      "000",
+      null,
+      null
+     ],
+     [
+      "002",
+      null,
+      null
+     ],
+     [
+      "003",
+      73.8,
+      null
+     ],
+     [
+      "004",
+      null,
+      null
+     ],
+     [
+      "007",
+      51.9,
+      null
+     ],
+     [
+      "008",
+      null,
+      null
+     ],
+     [
+      "009",
+      36.0,
+      66.6
+     ],
+     [
+      "010",
+      null,
+      null
+     ],
+     [
+      "011",
+      null,
+      null
+     ]
+    ],
+    "notes": [
+     "incident 548a8d28-1a04-48ee-9011-aba023175d43: polygon 259.6 h old, record 3.9 h old \u2014 the record reports 7,389 ac, the polygon 7,259 ac (+1.8%, within 2%): the perimeter is CONFIRMED as of the record and seeded then, not 259.6 h ago (cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)"
+    ]
+   }
+  },
+  "HYPOTHETICAL option d: contained polygon is the fire at now": {
+   "stops": [
+    [
+     "E2",
+     "mock-client-001",
+     "seeded:ab3e53cc-00",
+     1.61,
+     18.21
+    ],
+    [
+     "E3",
+     "mock-client-009",
+     "548a8d28-1a04-48ee",
+     1.52,
+     35.21
+    ]
+   ],
+   "unserved": [],
+   "ensembles": [
+    "548a8d28-1a04-48ee",
+    "seeded:ab3e53cc-00"
+   ],
+   "terrain_s": {
+    "548a8d28-1a04-48ee": 0.1,
+    "seeded:ab3e53cc-00": 0.11
+   },
+   "degraded": false,
+   "failures": [],
+   "willow": {
+    "burned_p50_km2_at_now": 29.1,
+    "boundary_reached_h_rel_now": 5.2,
+    "veto_reach_km": 0.0,
+    "c001_in_domain": false,
+    "leg_E2_to_c001_Tstar_h_rel_now": 14.58,
+    "leg_samples_constrained": 147,
+    "clients_p10_p50_h": [
+     [
+      "000",
+      null,
+      null
+     ],
+     [
+      "002",
+      null,
+      null
+     ],
+     [
+      "003",
+      74.5,
+      null
+     ],
+     [
+      "004",
+      null,
+      null
+     ],
+     [
+      "007",
+      null,
+      null
+     ],
+     [
+      "008",
+      null,
+      null
+     ],
+     [
+      "009",
+      37.7,
+      69.6
+     ],
+     [
+      "010",
+      null,
+      null
+     ],
+     [
+      "011",
+      null,
+      null
+     ]
+    ],
+    "notes": [
+     "incident 548a8d28-1a04-48ee-9011-aba023175d43: polygon 259.6 h old, record 0.0 h old \u2014 the record reports 7,389 ac, the polygon 7,259 ac (+1.8%, within 2%): the perimeter is CONFIRMED as of the record and seeded then, not 259.6 h ago (cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)"
+    ]
+   }
+  }
+ }
+}

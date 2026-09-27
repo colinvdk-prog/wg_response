@@ -443,6 +443,177 @@ in range) and `w6_national_offline.jpg` (the air-gapped shim).
 thousands of FIRMS clusters); teams / bases on the national tier (W4);
 seeding (6.2, the other half of W1's first piece); time-scrub (6.3).
 
+#### Contained fires leave the map; perimeters are anchored where the feed confirmed them (2026-09-27)
+
+Founder ruling, verbatim: *"a fire that is contained and no longer spreading
+is removed from the map."* The problem is finding 6 above: a polygon burns at
+its own timestamp and is spread forward to now with no ceiling, while the
+7-day staleness gate reads the record's age, not the polygon's. Both fixes
+are contracts SAFETY SEMANTICS 13, default-OFF knobs, armed by watch flags;
+with both off the cycles, `/api/state` and the persisted file are
+byte-identical to goldens computed on commit a8bebec on a world where both
+bite (`tests/test_contained_removal.py`).
+
+| Question | Answer as built |
+|---|---|
+| The removal definition (`drop_contained_incidents`, `--drop-contained`) | A feed incident is CONTAINED AND NO LONGER SPREADING when (1) the feed declares it contained: some source reports `containment_pct` >= 100, or the record carries a containment / control / out timestamp; (2) no source reports containment below 100 (fusion keeps every source's value in `meta["containment_by_source"]`; one source below 100 keeps the fire on the map); (3) it is not growing: no source's acreage (`meta["acres_by_source"]`) has risen above that source's value when the fire was first removed. Seeded fires are never removed. |
+| Feed fields behind it | WFIGS incident locations: `PercentContained`, `ContainmentDateTime`, `ControlDateTime`, `FireOutDateTime`, `IncidentSize`; WFIGS perimeters: `attr_PercentContained`, `attr_ContainmentDateTime`, `attr_ControlDateTime`, `attr_FireOutDateTime`, `attr_IncidentSize`, `poly_GISAcres`; CAL FIRE: `PercentContained`, `ExtinguishedDate` (its "out"), `AcresBurned`; FIRIS: `area_acres` only (it carries no containment and no incident size). The timestamps ride in `meta` as `contained_at_s` / `controlled_at_s` / `out_at_s`, present only when the feed sends them. Both WFIGS layer schemas were checked live. |
+| What removal does | The fire leaves the incident set after the staleness gate and before assessment: no domain, no ETAs, no dispatch job. It is absent from `/api/state` incidents and the world summary. |
+| Its pairs | They take the SEMANTICS 6 absence law exactly as a vanished feed incident's do: toward CLEARED after `clear_cycles` while every feed is healthy, frozen while any is blind. IMPACTED stays terminal. This is pinned cycle for cycle against a fire that simply leaves the feed. |
+| Nothing disappears silently | One cycle note counts the removed fires and lists each id with its reason. They are also in `CycleResult.removed_incidents`, in `/api/state` as `removed_contained` and `removed_incidents` (present only with the knob armed), in the world summary's `counts.removed_contained`, and in a header chip on `/world` ("contained, removed N", whose hover lists the fires). |
+| Return to the map | The decision is re-made every cycle. A source reporting < 100 % brings the fire back that cycle, with a note. So does growth, and then the fire stays on the map until `containment_no_growth_h` (48 h, SEMANTICS 8's no-growth window) passes without further growth. A declaration that merely goes quiet (the fire leaves the WFIGS Current layer, or a feed is blind) keeps the fire removed: only contradiction or growth returns it. |
+| The anchor (`perimeter_confirmed_anchor`, `--confirmed-perimeters`) | A polygon whose record reports the same size later than the polygon's own time is seeded at that report time (clamped to now), not at its own age. "Same size" means the record's `reported_acres` is within `perimeter_confirm_tolerance_frac` (2 %) either way of the polygon's own `perimeter_acres`. The anchor needs no newer polygon in any fused source (`perimeter_newest_at_s`). Fusion keeps the freshest record's polygon, which is not always the freshest polygon. |
+| The opposite risk | A record reporting more acres than its polygon beyond the tolerance means the polygon lags a growing fire. The legacy, pessimistic seeding at the polygon's own time stands, and the note says "the polygon lags a GROWING fire". The same legacy seeding applies to a smaller size beyond the tolerance, a newer polygon elsewhere, and a missing size or area. Every decision on a domain incident is one `incident <id>: polygon N h old, record M h old — …` note. |
+| Staleness | Unchanged. The gate still reads the record's own time: a confirmed polygon whose record then ages past 7 days is excluded (pinned on the recorded Willow payloads). |
+
+**The feeds, checked live (2026-09-27 15:55Z).** The WFIGS *Current* item
+description defines the layer as incidents that have "not been declared
+contained, controlled, nor out". Accordingly, 0 of the 285 CONUS wildfire
+points carried any of those timestamps, while 71 reported
+`PercentContained = 100`. The percentage is the working signal; the
+timestamps are defense in depth for records caught mid-transition and for
+other layers. After fusion and the 7-day gate, **39** fires on the map are at
+100 % and no other source contradicts any of them. All 7 CAL FIRE records had
+an empty `ExtinguishedDate`. FIRIS `displayStatus` (81 Active / 358 Inactive)
+is not used. Record size against polygon area, over 146 joined WFIGS
+perimeters: 107 within 1 %, 112 within 2 %, 116 within 5 %; 67 records are
+larger than their polygon, 16 of them by more than 5 %. Of the 252 fused
+incidents on the map, 108 carry a polygon and 86 of those have a size report
+newer than the polygon (76 by a day or more). The anchor takes **67**, removing
+29,372 h of free-running spread in total (~440 h per polygon). **10** are held
+on the legacy seeding as growing fires, 8 as smaller beyond 2 %, and 1
+because another source holds a newer polygon.
+
+**Before / after on ONE recorded snapshot.** The recorded national payloads
+were replayed through the real adapters, monitor, ladder and planner, with the
+production flags, the 520-home `mock-presets` roster, NWS forecasts cached so
+both variants see the same weather, and the W6 tile cache. Each variant ran 3
+cycles 5 minutes apart. Recipe, committed in `scratch_review/contained/`:
+`feedsnap.py record` writes the payloads into the gitignored `out/contained/`;
+then `ab_national.py [--options]`, `replay_69km.py [--options]`,
+`snapshot_stats.py`, `largest_fires.py`, `hindcast_guard.py` and
+`run_watch.py` (the live run). The results are in `ab_results.json`,
+`replay_69km_options.json` and `live_cycles_run1.jsonl`.
+
+| | A: production flags | B: + `--drop-contained --confirmed-perimeters` |
+|---|---|---|
+| Incidents on the map | 252 | **213** |
+| Removed as contained | — | **39** (all "wfigs reports 100% contained") |
+| Stale-gated | 282 | 282 |
+| Domains | 18 | 16 (Chileno and HIGHLAND removed) |
+| 520 demo homes by worst state | **120 EXTREME_24H · 6 IMPACTED** · 394 none | **520 none** |
+| Alert events (3 cycles) | 132 | 0 |
+| Chileno (341 ac, 100 %, FIRIS polygon 158 h old, record 15 h) | domain with 40 homes; today's forecast left its polygon unspread (1.4 km²), so no alerts this time | removed |
+| Willow (7,389 ac, 80 %, polygon 259.7 h old, record 19.9 h, +1.8 %) | polygon spread from its own time: P50 burn at now **1,209.7 km²** (the polygon is 29.4 km²); 120 EXTREME · 6 IMPACTED · 78 none | anchored at the record: P50 burn at now **110.2 km²**; 204 none (earliest client P10 +59.7 h in the live run) |
+| Warm cycle | 20.0–21.8 s (assess 17–19 s, dispatch 1.2 s) | 13.5–13.9 s (assess 11.7–12.1 s, nothing to dispatch) |
+
+Every alert of the legacy national picture came from these two cases, as in
+finding 6. Yesterday's W6 run gave 91 EXTREME + 11 IMPACTED; today's forecast
+kept Chileno quiet and Willow produced them all.
+
+**The live national run** (2026-09-27 16:25–16:30Z, this machine, real
+feeds, the production flags plus `--drop-contained --confirmed-perimeters`,
+`--period 60`, 6 cycles, tiles cached): each cycle took **32–42 s** (feeds
+18.7–28.5 s, assess 13.1–14.3 s, of which terrain 1.0 s and spread
+8.9–9.4 s over 16 domains; alerts ≤ 0.01 s; dispatch 0). The map held 212
+incidents, **38 removed as contained**, 281 stale-gated and 16 domains. All
+520 homes stayed at none with 0 alert events, and no cycle was degraded.
+Chileno was removed and Willow anchored (record 20.3 h, polygon 260.1 h)
+every cycle. Working set 405–453 MB (peak 664 MB), private 1.2 GB. The
+header chip reads "contained, removed 38":
+`docs/img/world_viewer/contained_national.jpg`, and
+`contained_regional_willow.jpg` beside finding 6's `w6_regional.jpg`, which
+shows the same fire before.
+
+**The corridor veto** (`safety._bound_arrival_s`, not changed here). Under
+`--fail-closed`, an off-raster corridor sample passed at now is refused
+within R = (now + 56 min − t_b) × 1.7 m/s of the domain edge the eroded P10
+first reaches at t_b.
+
+| Willow | legacy | both knobs |
+|---|---|---|
+| National domain (204 homes, 300,544 cells) | edge reached 253.7 h ago, **R 1,574 km** | 13.8 h ago, **R 91 km** |
+| W1 drill domain (Vail → Aspen AOI) | 258.6 h ago, **R 1,605 km** | 18.8 h ago, **R 122 km** |
+| Gypsum crew → client-001 chord leg, latest safe departure | now − 249.2 h | now − 9.4 h |
+| The phase-5 seeded job 69 km away (the drill's own seed, replayed) | `no_safe_corridor` | **still `no_safe_corridor`** |
+
+**The 69-km refusal does not disappear.** The anchored front reaches its own
+domain edge 0.9 h after the confirming report on the drill domain (6.1 h on
+the national one). The domain pad beyond the fire on its client-free sides is
+only 2 km. From that edge the bound extrapolates at 1.7 m/s for the rest of
+the time until now: 18.8 h on the drill domain, 13.8 h on the national one. The other 15
+national domains never reach their edge (R 0; DARK 0.1 km). The largest live fires
+build no domain today (no demo home within 60 km), so they veto nothing. If
+one did, its R would be at most (seeding age + 56 min) × 6.2 km/h:
+
+| Fire | Legacy R | New R | Why |
+|---|---|---|---|
+| Crosswhite (342,923 ac, 99 %) | 1,304 km | 1,304 km | not confirmed: its record is 3.4 % *smaller* than its polygon |
+| Little Giant | 312 km | 107 km | anchored |
+| Sinlahekin | 1,056 km | 98 km | anchored |
+| Widemouth 2 | 6,067 km | 115 km | anchored |
+| Aspen Acres | 7,139 km | 118 km | anchored |
+| Bench | 7,337 km | 863 km | anchored, but its record is 139 h old |
+| Kaiser Canyon (100 %) | 5,031 km | — | removed, no domain |
+
+The refusal lifts only when the modeled free run before now shrinks to a few
+hours (options c and d below). That, or capping the off-raster
+extrapolation, is the pending decision.
+
+**Containment scaling (report only, nothing built).** Today the only
+containment rule is SEMANTICS 8's WATCH ceiling: `containment_gate_enabled`,
+default OFF and not in the production flag set; ceiling 90 %; 48 h of
+alert-engine-tracked no growth. It caps new ladder escalations and never
+touches ETAs, P10, corridors or crew math. The spread physics ignores
+containment: an 80 %-contained fire is forecast as a free fire from its
+whole perimeter. Willow's record has re-confirmed a polygon unchanged for 259
+h (its `poly_PolygonDateTime` is ~68 days old), yet even anchored it is
+modeled at 3.7× its reported area by now. The options, on the same snapshot
+(national domain; the 69-km column is the drill replay):
+
+| Option | Willow P50 burn at now | Willow homes alerted | Willow veto R | 69-km job |
+|---|---|---|---|---|
+| legacy | 1,209.7 km² | 120 EXTREME · 6 IMPACTED | 1,574 km | refused |
+| (a) built: anchor | 110.2 km² | 0 | 91 km | refused |
+| (b) SEMANTICS 8 ceiling at 90 % (default), 48 h tracked | 1,209.7 km² | unchanged (80 < 90) | 1,574 km | refused |
+| (b′) the same at 80 % | 1,209.7 km² | 48 WATCH · 1 NOTICE (the ladder only) | 1,574 km | refused |
+| (c) the free run since the confirming report × (1 − containment) — 20 % of 19.9 h | 43.2 km² | 0 | 0 km | **served**, margin 18.2 h |
+| (d) a confirmed contained polygon IS the fire at now | 29.3 km² | 0 | 0 km | **served**, margin 18.2 h |
+
+(c) and (d) would be default-OFF knobs on top of the anchor. The evidence to
+arm one is a hindcast on containment-reporting fires: does reported
+containment predict no growth over 24–72 h? Either one also trades away
+pessimism that the fail-closed corridor law currently leans on, so it is the
+founder's call.
+
+**Hindcast guard.** `tools/hindcast_harness.py` seeds each corpus pair's
+first polygon at its own capture time straight into
+`spread.ensemble_arrival`. It never passes through `ThreatMonitor`, and the
+pairs carry no separate record time or size, so neither knob can apply.
+Measured on the August corpus with the deployed variant (gust 0.5,
+floor 0.10 gated, model error 0.71, extreme regime, p50 bound, phi vector),
+knobs off against on: 27 pairs / 145,760 cells, p10 adequacy 97.7 %, late
+miss 2.3 %, and every scored pair byte-identical.
+
+**Open:**
+
+- The removal memory (first-removal baselines, the regrowth latch, the
+  sticky "last reported contained") is in-process. A restart forgets it, and
+  a fire whose declaration has gone quiet then returns until its record ages
+  out, which errs in the pessimistic direction. Persisting it through the
+  StateStore should wait for the TEST/LIVE world split.
+- A fire declared contained leaves WFIGS Current by that layer's definition.
+  Its leftover FIRIS polygon (no containment, no record size) then runs on the
+  legacy law until its own 7-day gate.
+- Fusion keeps the freshest record's polygon, not the freshest polygon (1
+  fire today). The anchor refuses such a group, but the legacy seeding still
+  uses the older polygon.
+- The 2 % tolerance is a judgement call: Willow reads +1.8 %. A one-sided
+  rule (smaller always confirms) would anchor Crosswhite-type records.
+- Pairs already IMPACTED by earlier legacy cycles stay IMPACTED.
+- The off-raster veto is the dominant remaining dispatch constraint near
+  large fires.
+
 ### W7 — Scale, cost, operations
 
 | # | Ticket | Notes |

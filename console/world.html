@@ -719,6 +719,22 @@ function renderAgeChip() {
   el.style.display = "inline-block";
 }
 setInterval(renderAgeChip, 1000);
+// SAFETY SEMANTICS 13c (watch --drop-contained): contained fires removed from
+// the map this cycle are COUNTED in the header, never silently absent; the
+// hover names them (/api/state removed_incidents). Shown only when armed.
+function removedContainedChip(c, d) {
+  const n = c && typeof c.removed_contained === "number" ? c.removed_contained
+    : (typeof d.removed_contained === "number" ? d.removed_contained : null);
+  if (n == null) return "";
+  const names = (d.removed_incidents || []).map(r =>
+    (r.name || r.incident_id) + " — " + (r.reason || "contained")).slice(0, 40);
+  const more = (d.removed_incidents || []).length > names.length ? "\n…" : "";
+  return `<span class="lbl" title="${esc("contained fires removed from the map " +
+    "this cycle: the feed reports them contained and they are not growing " +
+    "(founder ruling 2026-09-27 — SAFETY SEMANTICS 13)" +
+    (names.length ? ":\n" + names.join("\n") + more : ""))}">contained, removed</span>` +
+    `<b>${n}</b>`;
+}
 function renderHeader() {
   const d = STATE || {};
   const opEvents = d.operator_events || [];
@@ -752,7 +768,8 @@ function renderHeader() {
     `<span class="lbl">crews</span><b>${(d.crews || []).length}</b>` +
     (c && c.excluded_stale ? `<span class="lbl" title="incidents the staleness gate ` +
       `excluded this cycle (updated_at older than 7 days — SAFETY SEMANTICS 9)">` +
-      `stale-gated</span><b>${c.excluded_stale}</b>` : "");
+      `stale-gated</span><b>${c.excluded_stale}</b>` : "") +
+    removedContainedChip(c, d);
   const tier = tierFor(map.getZoom());
   $("tierchip").textContent = tier + " · z" + map.getZoom();
   $("legendtier").textContent = {

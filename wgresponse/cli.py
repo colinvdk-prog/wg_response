@@ -254,6 +254,21 @@ def _build_parser() -> argparse.ArgumentParser:
     pw.add_argument("--p50-bound", action="store_true",
                     help="cfg.ensemble_p50_nominal_bound: the ladder median "
                          "never trails the nominal run (item 3, N4)")
+    # SAFETY SEMANTICS 13 (founder ruling 2026-09-27): default-OFF knobs.
+    pw.add_argument("--drop-contained", action="store_true",
+                    help="cfg.drop_contained_incidents: a fire the feed "
+                         "reports contained (a source at >= 100%% or a "
+                         "containment / control / out timestamp; no source "
+                         "below 100%%) and not growing leaves the map — no "
+                         "domain, no ETAs; its pairs take the absence law; "
+                         "the count is reported (notes, /api/state, /world)")
+    pw.add_argument("--confirmed-perimeters", action="store_true",
+                    help="cfg.perimeter_confirmed_anchor: a polygon whose "
+                         "fresher record reports the same size (within "
+                         "cfg.perimeter_confirm_tolerance_frac) is seeded at "
+                         "that report instead of being spread forward from "
+                         "its own age; a growing fire (record larger) keeps "
+                         "the legacy seeding")
     pw.add_argument("--dry-notify", action="store_true",
                     help="force log-only notifications (no SES even when "
                          "WGRESP_NOTIFY_SES=1)")
@@ -1031,7 +1046,22 @@ class _WatchDaemon:
             "clients": self._client_rows(res),
             "plan": res.plan,
         })
+        if getattr(self._cfg, "drop_contained_incidents", False):
+            # SAFETY SEMANTICS 13c: nothing leaves the map silently —
+            # additive keys, present only with the knob armed.
+            gone = list(getattr(res, "removed_incidents", None) or [])
+            out["removed_contained"] = len(gone)
+            out["removed_incidents"] = [self._removed_row(r) for r in gone]
         return out
+
+    @classmethod
+    def _removed_row(cls, rem) -> dict:
+        """One contained fire removed this cycle (SAFETY SEMANTICS 13c): its
+        incident row + the feed declarations that removed it."""
+        row = cls._incident_row(rem.incident)
+        row.update({"reason": rem.reason, "signals": list(rem.signals),
+                    "removed_since_s": rem.removed_since_s})
+        return row
 
     @staticmethod
     def _incident_row(inc) -> dict:
@@ -1404,6 +1434,23 @@ def _cmd_watch(args) -> int:
         startup_notes_fix.append(
             "ladder MEDIAN BOUND ACTIVE: p50 never trails the nominal run "
             "(review N4)")
+    if getattr(args, "drop_contained", False):
+        cfg = dataclasses.replace(cfg, drop_contained_incidents=True)
+        startup_notes_fix.append(
+            "CONTAINED FIRES LEAVE THE MAP: a fire the feed reports contained "
+            "(>= 100% or a containment / control / out timestamp, no source "
+            "below 100%) and not growing is removed before assessment; its "
+            "pairs take the absence law; it returns when a source reports < "
+            f"100% or it grows (then for {cfg.containment_no_growth_h:g} h "
+            "without growth) — founder ruling 2026-09-27, SAFETY SEMANTICS 13")
+    if getattr(args, "confirmed_perimeters", False):
+        cfg = dataclasses.replace(cfg, perimeter_confirmed_anchor=True)
+        startup_notes_fix.append(
+            "CONFIRMED PERIMETERS: a polygon whose fresher record reports the "
+            f"same size (within {cfg.perimeter_confirm_tolerance_frac:.0%}) "
+            "is seeded at that report, not spread forward from its own age; "
+            "a growing fire (record larger) keeps the legacy seeding "
+            "(SAFETY SEMANTICS 13e/f)")
     problems = validate_config(cfg)
     if problems:
         # The review found validate_config never ran on this path and

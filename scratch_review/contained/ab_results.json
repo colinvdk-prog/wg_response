@@ -1,0 +1,3015 @@
+{
+ "snapshot_utc": "2026-09-27T15:55:42Z",
+ "now0_s": 1790524542.7457986,
+ "variants": {
+  "A_legacy": {
+   "label": "A_legacy",
+   "cycles": [
+    {
+     "k": 0,
+     "now_s": 1790524542.7457986,
+     "wall_s": 384.4,
+     "phases_s": {
+      "feeds_s": 1.19,
+      "assess_s": 382.08,
+      "alerts_s": 0.01,
+      "dispatch_s": 1.09
+     },
+     "terrain_s": 363.1,
+     "spread_s": 16.7,
+     "incidents": 252,
+     "removed": 0,
+     "domains": 18,
+     "events": 126,
+     "degraded": false
+    },
+    {
+     "k": 1,
+     "now_s": 1790524842.7457986,
+     "wall_s": 20.0,
+     "phases_s": {
+      "feeds_s": 1.64,
+      "assess_s": 17.01,
+      "alerts_s": 0.0,
+      "dispatch_s": 1.21
+     },
+     "terrain_s": 1.2,
+     "spread_s": 15.3,
+     "incidents": 252,
+     "removed": 0,
+     "domains": 18,
+     "events": 6,
+     "degraded": false
+    },
+    {
+     "k": 2,
+     "now_s": 1790525142.7457986,
+     "wall_s": 21.8,
+     "phases_s": {
+      "feeds_s": 1.84,
+      "assess_s": 18.61,
+      "alerts_s": 0.0,
+      "dispatch_s": 1.27
+     },
+     "terrain_s": 1.3,
+     "spread_s": 16.7,
+     "incidents": 252,
+     "removed": 0,
+     "domains": 18,
+     "events": 0,
+     "degraded": false
+    }
+   ],
+   "now_s": 1790525142.7457986,
+   "incidents_on_map": 252,
+   "removed_contained": 0,
+   "removed": [],
+   "domains": {
+    "3047875a-2c3d-4100-9f17-4643a132cefb": {
+     "name": "DARK",
+     "acreage": 0.01,
+     "containment_pct": null,
+     "clients": 36,
+     "cells": 209397,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": 0.9,
+     "veto_reach_km": 0.1,
+     "pair_states": {
+      "none": 36
+     }
+    },
+    "38b6c2cb-3333-465e-9346-ead32f9678d0": {
+     "name": "HIGHLAND",
+     "acreage": 0.14,
+     "containment_pct": 100.0,
+     "clients": 40,
+     "cells": 220350,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "4cbe8308-8f89-4d7c-b668-803ecac7cc7c": {
+     "name": "DELL",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 160284,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "548a8d28-1a04-48ee-9011-aba023175d43": {
+     "name": "Willow",
+     "acreage": 7389.0,
+     "containment_pct": 80.0,
+     "clients": 204,
+     "cells": 300544,
+     "cell_m": 129.51153924086412,
+     "burned_p50_km2_at_now": 1209.7,
+     "boundary_reached_h_rel_now": -253.7,
+     "veto_reach_km": 1573.9,
+     "pair_states": {
+      "none": 78,
+      "extreme_24h": 120,
+      "impacted": 6
+     }
+    },
+    "61fb7582-25bd-4ec2-a5ce-6ffde6ad476a": {
+     "name": "LUCAS",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 26,
+     "cells": 118776,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": 2.9,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 26
+     }
+    },
+    "66d11f01-0111-4624-8e3b-5f90a57e3442": {
+     "name": "LAC-345615",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 257693,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "72f0e4aa-0e90-4390-9df4-cef671ceb75f": {
+     "name": "OTIS",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 45067,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "7e35a2cd-2943-4763-81e7-e0bf6eb70f57": {
+     "name": "LAC-345537",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 147965,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "8fb590ca-cd9b-4897-9c71-e954419fbccf": {
+     "name": "LAC-345163",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 26,
+     "cells": 155589,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 26
+     }
+    },
+    "97e8259c-1d77-4ea8-9bdb-78309ccbc325": {
+     "name": "LAC-344661",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 166664,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "b6b02697-430e-448c-86fb-5bf7952ac483": {
+     "name": "LAC-345628",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 248301,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "b72e44ff-b669-4a7c-bb39-6adc86ff910a": {
+     "name": "LAC-345864",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 242256,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "be068732-a28e-4ef9-a3d4-e7aeed95d325": {
+     "name": "LAC-344163",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 37,
+     "cells": 125136,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 37
+     }
+    },
+    "da6af8b5-067c-42bf-be22-8b7a6ca2113d": {
+     "name": "LAC-347778",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 38,
+     "cells": 194177,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 38
+     }
+    },
+    "df96eda9-9b27-47fb-86d5-dfb97a879a22": {
+     "name": "CHILENO",
+     "acreage": 341.0,
+     "containment_pct": 100.0,
+     "clients": 40,
+     "cells": 149700,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 1.4,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "e20bf44d-1483-4d29-b0e1-d52d1e74bf02": {
+     "name": "DORADO",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 72590,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "e461be78-cb2a-4027-b333-e4820a5259f6": {
+     "name": "ALAMO",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 156195,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "ef591c1b-2a79-4d3d-a1bf-fbedaac52b43": {
+     "name": "LAC-345734",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 161161,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    }
+   },
+   "clients_by_worst_state": {
+    "extreme_24h": 120,
+    "impacted": 6,
+    "none": 394
+   },
+   "pairs_by_state": {
+    "cleared": 0,
+    "extreme_24h": 120,
+    "impacted": 6,
+    "none": 721,
+    "notice_72h": 0,
+    "watch": 0
+   },
+   "chileno": {
+    "on_map": true,
+    "removed": false,
+    "domain": {
+     "name": "CHILENO",
+     "acreage": 341.0,
+     "containment_pct": 100.0,
+     "clients": 40,
+     "cells": 149700,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 1.4,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "pair_states": {
+     "none": 40
+    },
+    "notes": []
+   },
+   "willow": {
+    "on_map": true,
+    "domain": {
+     "name": "Willow",
+     "acreage": 7389.0,
+     "containment_pct": 80.0,
+     "clients": 204,
+     "cells": 300544,
+     "cell_m": 129.51153924086412,
+     "burned_p50_km2_at_now": 1209.7,
+     "boundary_reached_h_rel_now": -253.7,
+     "veto_reach_km": 1573.9,
+     "pair_states": {
+      "none": 78,
+      "extreme_24h": 120,
+      "impacted": 6
+     }
+    },
+    "pair_states": {
+     "none": 78,
+     "extreme_24h": 120,
+     "impacted": 6
+    },
+    "notes": []
+   },
+   "anchor_notes": [],
+   "stale_note_count": 282,
+   "degraded": false,
+   "operator_events": [],
+   "failure_notes": [],
+   "unserved": 120,
+   "unserved_reasons": {
+    "capacity": 120
+   },
+   "variant_wall_s": 427.6
+  },
+  "B_contained_anchor": {
+   "label": "B_contained_anchor",
+   "cycles": [
+    {
+     "k": 0,
+     "now_s": 1790524542.7457986,
+     "wall_s": 13.6,
+     "phases_s": {
+      "feeds_s": 1.46,
+      "assess_s": 12.13,
+      "alerts_s": 0.01,
+      "dispatch_s": 0.0
+     },
+     "terrain_s": 1.1,
+     "spread_s": 10.5,
+     "incidents": 213,
+     "removed": 39,
+     "domains": 16,
+     "events": 0,
+     "degraded": false
+    },
+    {
+     "k": 1,
+     "now_s": 1790524842.7457986,
+     "wall_s": 13.5,
+     "phases_s": {
+      "feeds_s": 1.76,
+      "assess_s": 11.7,
+      "alerts_s": 0.0,
+      "dispatch_s": 0.0
+     },
+     "terrain_s": 1.1,
+     "spread_s": 10.0,
+     "incidents": 213,
+     "removed": 39,
+     "domains": 16,
+     "events": 0,
+     "degraded": false
+    },
+    {
+     "k": 2,
+     "now_s": 1790525142.7457986,
+     "wall_s": 13.9,
+     "phases_s": {
+      "feeds_s": 1.76,
+      "assess_s": 12.1,
+      "alerts_s": 0.0,
+      "dispatch_s": 0.0
+     },
+     "terrain_s": 1.1,
+     "spread_s": 10.4,
+     "incidents": 213,
+     "removed": 39,
+     "domains": 16,
+     "events": 0,
+     "degraded": false
+    }
+   ],
+   "now_s": 1790525142.7457986,
+   "incidents_on_map": 213,
+   "removed_contained": 39,
+   "removed": [
+    {
+     "incident_id": "09290068-0244-4a3c-aed4-6d828812f2b1",
+     "name": "0432",
+     "acreage": 2183.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "22d5bb97-9b75-4fb1-a8f6-caacebb7c124",
+     "name": "Modrite",
+     "acreage": 57594.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "23230fe2-352a-4036-8a22-0e58c817554c",
+     "name": "0485 DEEP CANYON",
+     "acreage": 9170.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "23d4931b-a908-4d23-9e32-a1932d0481c2",
+     "name": "H2",
+     "acreage": 631.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "23d9d379-feb5-4d6c-b511-485c7d1c3089",
+     "name": "Skull",
+     "acreage": 67.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "280c8389-b628-44a5-9c12-975e51facebc",
+     "name": "Tusas",
+     "acreage": 233.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "28a994d6-89e3-4460-9a36-d7df4d839df2",
+     "name": "0444 TWICKENHAM",
+     "acreage": 254.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "2b640573-f5c1-4245-b66f-c944986175b2",
+     "name": "Tram Trail",
+     "acreage": 660.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "2cd16617-57f1-470f-8185-494063fbfe60",
+     "name": "1339 McMillan Road",
+     "acreage": 32.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "2d6683d6-91a2-4c00-8771-015c41600c5c",
+     "name": "QUAIL SPRINGS",
+     "acreage": 13619.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "31e8ab87-2d1e-4805-ba9b-1cf311a98bd1",
+     "name": "Flat",
+     "acreage": 134.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "38b6c2cb-3333-465e-9346-ead32f9678d0",
+     "name": "HIGHLAND",
+     "acreage": 0.14,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "3acbd250-d9c7-43ef-b29d-0477ac2d47fa",
+     "name": "0482 CHERRY CREEK",
+     "acreage": 16.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "3edfe380-85e3-453d-b351-aa7a07a8f819",
+     "name": "208",
+     "acreage": 89.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "4809f4ac-3b2c-4919-b7fe-706768e03b93",
+     "name": "0489 PARRISH",
+     "acreage": 404.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "4b2b0d85-329d-4cfb-b64b-fa01562c4a5e",
+     "name": "Carroll- CR 62",
+     "acreage": 143.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "4e89d5a2-91ac-4a93-b93f-b0e0279b5a98",
+     "name": "0450 COVE CREEK",
+     "acreage": 7208.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "54d88acc-f17f-48fc-8efa-ff90f52efb89",
+     "name": "BEE HAVEN BAY (24-06)",
+     "acreage": 170.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "69f4beb6-3800-4f24-ae46-f2cac8e746db",
+     "name": "Star Lake",
+     "acreage": 16412.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "6c455132-8cc9-4c80-8f08-4f734a489d03",
+     "name": "0501 PAT'S CABIN",
+     "acreage": 772.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "75a59419-a9f2-4169-aaea-5f794a4f3200",
+     "name": "0442 REDROCK",
+     "acreage": 256.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "793f4a9d-747d-4eee-b8ee-e99cdbd09a87",
+     "name": "Calvary Creek",
+     "acreage": 905.9,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "7e5c6440-6a00-4eb7-a9e4-3b302d545f58",
+     "name": "Mount Emma",
+     "acreage": 368.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "7feb8502-6a78-4387-b8a7-fe675182b1bb",
+     "name": "0512 BOX SPRINGS",
+     "acreage": 21432.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "80dc9935-6ce8-4b42-b4ec-2ba47ce13aa5",
+     "name": "FLORISTON",
+     "acreage": 622.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "91108fc9-6b48-4a39-9b8a-fcd66774d5be",
+     "name": "Cedar Hollow",
+     "acreage": 130.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "a430cf58-32e0-4019-8252-9b283afd65e9",
+     "name": "0502",
+     "acreage": 1816.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "aaff95b2-903a-4c6f-a199-d4836334bf60",
+     "name": "3470 Road",
+     "acreage": 10.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "b5597100-d6c9-49f9-bc74-6b8fc4432e92",
+     "name": "Kaiser Canyon",
+     "acreage": 138293.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "bbb22c77-2f2d-419e-a930-9b75a0a55f83",
+     "name": "Bologna",
+     "acreage": 4436.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "bc318834-b454-4aad-90a6-62d4de886b5c",
+     "name": "0611 GREEN MOUNTAIN",
+     "acreage": 2136.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "bd597c0e-ea04-44b0-a750-97f9913fdedf",
+     "name": "Merit Creek",
+     "acreage": 828.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "ccefd7d4-febd-496d-855e-ca0c9944bf0c",
+     "name": "0433 BREWER",
+     "acreage": 70821.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "d162d596-c8cd-422e-9b5e-75799f47ccfe",
+     "name": "Fairpoint",
+     "acreage": 510.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "d47af62e-d836-4c62-b3ac-76ae8454aded",
+     "name": "Gordie Branch",
+     "acreage": 271.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "ddd80047-fbd0-4196-8ff1-daadfc50d715",
+     "name": "Round Prarie",
+     "acreage": 738.55,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "df424a1d-f6d6-4095-8786-dd329a7fb229",
+     "name": "Mimms",
+     "acreage": 7093.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "df96eda9-9b27-47fb-86d5-dfb97a879a22",
+     "name": "CHILENO",
+     "acreage": 341.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "ff6762f8-a3ab-4432-9114-ff06358a7a84",
+     "name": "0446 CAMEL HUMP",
+     "acreage": 6789.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    }
+   ],
+   "domains": {
+    "3047875a-2c3d-4100-9f17-4643a132cefb": {
+     "name": "DARK",
+     "acreage": 0.01,
+     "containment_pct": null,
+     "clients": 36,
+     "cells": 209397,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": 0.9,
+     "veto_reach_km": 0.1,
+     "pair_states": {
+      "none": 36
+     }
+    },
+    "4cbe8308-8f89-4d7c-b668-803ecac7cc7c": {
+     "name": "DELL",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 160284,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "548a8d28-1a04-48ee-9011-aba023175d43": {
+     "name": "Willow",
+     "acreage": 7389.0,
+     "containment_pct": 80.0,
+     "clients": 204,
+     "cells": 300544,
+     "cell_m": 129.51153924086412,
+     "burned_p50_km2_at_now": 110.2,
+     "boundary_reached_h_rel_now": -13.8,
+     "veto_reach_km": 91.2,
+     "pair_states": {
+      "none": 204
+     }
+    },
+    "61fb7582-25bd-4ec2-a5ce-6ffde6ad476a": {
+     "name": "LUCAS",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 26,
+     "cells": 118776,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": 2.9,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 26
+     }
+    },
+    "66d11f01-0111-4624-8e3b-5f90a57e3442": {
+     "name": "LAC-345615",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 257693,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "72f0e4aa-0e90-4390-9df4-cef671ceb75f": {
+     "name": "OTIS",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 45067,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "7e35a2cd-2943-4763-81e7-e0bf6eb70f57": {
+     "name": "LAC-345537",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 147965,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "8fb590ca-cd9b-4897-9c71-e954419fbccf": {
+     "name": "LAC-345163",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 26,
+     "cells": 155589,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 26
+     }
+    },
+    "97e8259c-1d77-4ea8-9bdb-78309ccbc325": {
+     "name": "LAC-344661",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 166664,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "b6b02697-430e-448c-86fb-5bf7952ac483": {
+     "name": "LAC-345628",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 248301,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "b72e44ff-b669-4a7c-bb39-6adc86ff910a": {
+     "name": "LAC-345864",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 242256,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "be068732-a28e-4ef9-a3d4-e7aeed95d325": {
+     "name": "LAC-344163",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 37,
+     "cells": 125136,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 37
+     }
+    },
+    "da6af8b5-067c-42bf-be22-8b7a6ca2113d": {
+     "name": "LAC-347778",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 38,
+     "cells": 194177,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 38
+     }
+    },
+    "e20bf44d-1483-4d29-b0e1-d52d1e74bf02": {
+     "name": "DORADO",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 72590,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "e461be78-cb2a-4027-b333-e4820a5259f6": {
+     "name": "ALAMO",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 156195,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "ef591c1b-2a79-4d3d-a1bf-fbedaac52b43": {
+     "name": "LAC-345734",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 161161,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    }
+   },
+   "clients_by_worst_state": {
+    "none": 520
+   },
+   "pairs_by_state": {
+    "cleared": 0,
+    "extreme_24h": 0,
+    "impacted": 0,
+    "none": 767,
+    "notice_72h": 0,
+    "watch": 0
+   },
+   "chileno": {
+    "on_map": false,
+    "removed": true,
+    "domain": null,
+    "pair_states": {},
+    "notes": []
+   },
+   "willow": {
+    "on_map": true,
+    "domain": {
+     "name": "Willow",
+     "acreage": 7389.0,
+     "containment_pct": 80.0,
+     "clients": 204,
+     "cells": 300544,
+     "cell_m": 129.51153924086412,
+     "burned_p50_km2_at_now": 110.2,
+     "boundary_reached_h_rel_now": -13.8,
+     "veto_reach_km": 91.2,
+     "pair_states": {
+      "none": 204
+     }
+    },
+    "pair_states": {
+     "none": 204
+    },
+    "notes": [
+     "incident 548a8d28-1a04-48ee-9011-aba023175d43: polygon 259.7 h old, record 19.9 h old \u2014 the record reports 7,389 ac, the polygon 7,259 ac (+1.8%, within 2%): the perimeter is CONFIRMED as of the record and seeded then, not 259.7 h ago (cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)"
+    ]
+   },
+   "anchor_notes": [
+    "incident 548a8d28-1a04-48ee-9011-aba023175d43: polygon 259.7 h old, record 19.9 h old \u2014 the record reports 7,389 ac, the polygon 7,259 ac (+1.8%, within 2%): the perimeter is CONFIRMED as of the record and seeded then, not 259.7 h ago (cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)"
+   ],
+   "stale_note_count": 282,
+   "degraded": false,
+   "operator_events": [],
+   "failure_notes": [],
+   "unserved": null,
+   "unserved_reasons": null,
+   "variant_wall_s": 42.2
+  },
+  "C_gate90_legacy": {
+   "label": "C_gate90_legacy",
+   "cycles": [
+    {
+     "k": 0,
+     "now_s": 1790524542.7457986,
+     "wall_s": 18.7,
+     "phases_s": {
+      "feeds_s": 1.29,
+      "assess_s": 16.13,
+      "alerts_s": 0.01,
+      "dispatch_s": 1.27
+     },
+     "terrain_s": 1.1,
+     "spread_s": 14.5,
+     "incidents": 252,
+     "removed": 0,
+     "domains": 18,
+     "events": 126,
+     "degraded": false
+    },
+    {
+     "k": 1,
+     "now_s": 1790524842.7457986,
+     "wall_s": 19.4,
+     "phases_s": {
+      "feeds_s": 1.87,
+      "assess_s": 16.33,
+      "alerts_s": 0.0,
+      "dispatch_s": 1.08
+     },
+     "terrain_s": 1.1,
+     "spread_s": 14.7,
+     "incidents": 252,
+     "removed": 0,
+     "domains": 18,
+     "events": 6,
+     "degraded": false
+    },
+    {
+     "k": 2,
+     "now_s": 1790525142.7457986,
+     "wall_s": 18.8,
+     "phases_s": {
+      "feeds_s": 1.78,
+      "assess_s": 15.84,
+      "alerts_s": 0.0,
+      "dispatch_s": 1.08
+     },
+     "terrain_s": 1.1,
+     "spread_s": 14.2,
+     "incidents": 252,
+     "removed": 0,
+     "domains": 18,
+     "events": 0,
+     "degraded": false
+    }
+   ],
+   "now_s": 1790525142.7457986,
+   "incidents_on_map": 252,
+   "removed_contained": 0,
+   "removed": [],
+   "domains": {
+    "3047875a-2c3d-4100-9f17-4643a132cefb": {
+     "name": "DARK",
+     "acreage": 0.01,
+     "containment_pct": null,
+     "clients": 36,
+     "cells": 209397,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": 0.9,
+     "veto_reach_km": 0.1,
+     "pair_states": {
+      "none": 36
+     }
+    },
+    "38b6c2cb-3333-465e-9346-ead32f9678d0": {
+     "name": "HIGHLAND",
+     "acreage": 0.14,
+     "containment_pct": 100.0,
+     "clients": 40,
+     "cells": 220350,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "4cbe8308-8f89-4d7c-b668-803ecac7cc7c": {
+     "name": "DELL",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 160284,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "548a8d28-1a04-48ee-9011-aba023175d43": {
+     "name": "Willow",
+     "acreage": 7389.0,
+     "containment_pct": 80.0,
+     "clients": 204,
+     "cells": 300544,
+     "cell_m": 129.51153924086412,
+     "burned_p50_km2_at_now": 1209.7,
+     "boundary_reached_h_rel_now": -253.7,
+     "veto_reach_km": 1573.9,
+     "pair_states": {
+      "none": 78,
+      "extreme_24h": 120,
+      "impacted": 6
+     }
+    },
+    "61fb7582-25bd-4ec2-a5ce-6ffde6ad476a": {
+     "name": "LUCAS",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 26,
+     "cells": 118776,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": 2.9,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 26
+     }
+    },
+    "66d11f01-0111-4624-8e3b-5f90a57e3442": {
+     "name": "LAC-345615",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 257693,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "72f0e4aa-0e90-4390-9df4-cef671ceb75f": {
+     "name": "OTIS",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 45067,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "7e35a2cd-2943-4763-81e7-e0bf6eb70f57": {
+     "name": "LAC-345537",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 147965,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "8fb590ca-cd9b-4897-9c71-e954419fbccf": {
+     "name": "LAC-345163",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 26,
+     "cells": 155589,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 26
+     }
+    },
+    "97e8259c-1d77-4ea8-9bdb-78309ccbc325": {
+     "name": "LAC-344661",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 166664,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "b6b02697-430e-448c-86fb-5bf7952ac483": {
+     "name": "LAC-345628",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 248301,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "b72e44ff-b669-4a7c-bb39-6adc86ff910a": {
+     "name": "LAC-345864",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 242256,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "be068732-a28e-4ef9-a3d4-e7aeed95d325": {
+     "name": "LAC-344163",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 37,
+     "cells": 125136,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 37
+     }
+    },
+    "da6af8b5-067c-42bf-be22-8b7a6ca2113d": {
+     "name": "LAC-347778",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 38,
+     "cells": 194177,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 38
+     }
+    },
+    "df96eda9-9b27-47fb-86d5-dfb97a879a22": {
+     "name": "CHILENO",
+     "acreage": 341.0,
+     "containment_pct": 100.0,
+     "clients": 40,
+     "cells": 149700,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 1.4,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "e20bf44d-1483-4d29-b0e1-d52d1e74bf02": {
+     "name": "DORADO",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 72590,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "e461be78-cb2a-4027-b333-e4820a5259f6": {
+     "name": "ALAMO",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 156195,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "ef591c1b-2a79-4d3d-a1bf-fbedaac52b43": {
+     "name": "LAC-345734",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 161161,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    }
+   },
+   "clients_by_worst_state": {
+    "extreme_24h": 120,
+    "impacted": 6,
+    "none": 394
+   },
+   "pairs_by_state": {
+    "cleared": 0,
+    "extreme_24h": 120,
+    "impacted": 6,
+    "none": 721,
+    "notice_72h": 0,
+    "watch": 0
+   },
+   "chileno": {
+    "on_map": true,
+    "removed": false,
+    "domain": {
+     "name": "CHILENO",
+     "acreage": 341.0,
+     "containment_pct": 100.0,
+     "clients": 40,
+     "cells": 149700,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 1.4,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "pair_states": {
+     "none": 40
+    },
+    "notes": []
+   },
+   "willow": {
+    "on_map": true,
+    "domain": {
+     "name": "Willow",
+     "acreage": 7389.0,
+     "containment_pct": 80.0,
+     "clients": 204,
+     "cells": 300544,
+     "cell_m": 129.51153924086412,
+     "burned_p50_km2_at_now": 1209.7,
+     "boundary_reached_h_rel_now": -253.7,
+     "veto_reach_km": 1573.9,
+     "pair_states": {
+      "none": 78,
+      "extreme_24h": 120,
+      "impacted": 6
+     }
+    },
+    "pair_states": {
+     "none": 78,
+     "extreme_24h": 120,
+     "impacted": 6
+    },
+    "notes": []
+   },
+   "anchor_notes": [],
+   "stale_note_count": 282,
+   "degraded": false,
+   "operator_events": [],
+   "failure_notes": [],
+   "unserved": 120,
+   "unserved_reasons": {
+    "capacity": 120
+   },
+   "variant_wall_s": 59.2
+  },
+  "C_gate80_legacy": {
+   "label": "C_gate80_legacy",
+   "cycles": [
+    {
+     "k": 0,
+     "now_s": 1790524542.7457986,
+     "wall_s": 19.1,
+     "phases_s": {
+      "feeds_s": 1.43,
+      "assess_s": 16.47,
+      "alerts_s": 0.01,
+      "dispatch_s": 1.17
+     },
+     "terrain_s": 1.2,
+     "spread_s": 14.8,
+     "incidents": 252,
+     "removed": 0,
+     "domains": 18,
+     "events": 48,
+     "degraded": false
+    },
+    {
+     "k": 1,
+     "now_s": 1790524842.7457986,
+     "wall_s": 19.4,
+     "phases_s": {
+      "feeds_s": 1.82,
+      "assess_s": 16.26,
+      "alerts_s": 0.0,
+      "dispatch_s": 1.17
+     },
+     "terrain_s": 1.1,
+     "spread_s": 14.6,
+     "incidents": 252,
+     "removed": 0,
+     "domains": 18,
+     "events": 48,
+     "degraded": false
+    },
+    {
+     "k": 2,
+     "now_s": 1790525142.7457986,
+     "wall_s": 19.3,
+     "phases_s": {
+      "feeds_s": 1.92,
+      "assess_s": 16.19,
+      "alerts_s": 0.0,
+      "dispatch_s": 1.07
+     },
+     "terrain_s": 1.2,
+     "spread_s": 14.4,
+     "incidents": 252,
+     "removed": 0,
+     "domains": 18,
+     "events": 1,
+     "degraded": false
+    }
+   ],
+   "now_s": 1790525142.7457986,
+   "incidents_on_map": 252,
+   "removed_contained": 0,
+   "removed": [],
+   "domains": {
+    "3047875a-2c3d-4100-9f17-4643a132cefb": {
+     "name": "DARK",
+     "acreage": 0.01,
+     "containment_pct": null,
+     "clients": 36,
+     "cells": 209397,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": 0.9,
+     "veto_reach_km": 0.1,
+     "pair_states": {
+      "none": 36
+     }
+    },
+    "38b6c2cb-3333-465e-9346-ead32f9678d0": {
+     "name": "HIGHLAND",
+     "acreage": 0.14,
+     "containment_pct": 100.0,
+     "clients": 40,
+     "cells": 220350,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "4cbe8308-8f89-4d7c-b668-803ecac7cc7c": {
+     "name": "DELL",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 160284,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "548a8d28-1a04-48ee-9011-aba023175d43": {
+     "name": "Willow",
+     "acreage": 7389.0,
+     "containment_pct": 80.0,
+     "clients": 204,
+     "cells": 300544,
+     "cell_m": 129.51153924086412,
+     "burned_p50_km2_at_now": 1209.7,
+     "boundary_reached_h_rel_now": -253.7,
+     "veto_reach_km": 1573.9,
+     "pair_states": {
+      "none": 155,
+      "notice_72h": 1,
+      "watch": 48
+     }
+    },
+    "61fb7582-25bd-4ec2-a5ce-6ffde6ad476a": {
+     "name": "LUCAS",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 26,
+     "cells": 118776,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": 2.9,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 26
+     }
+    },
+    "66d11f01-0111-4624-8e3b-5f90a57e3442": {
+     "name": "LAC-345615",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 257693,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "72f0e4aa-0e90-4390-9df4-cef671ceb75f": {
+     "name": "OTIS",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 45067,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "7e35a2cd-2943-4763-81e7-e0bf6eb70f57": {
+     "name": "LAC-345537",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 147965,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "8fb590ca-cd9b-4897-9c71-e954419fbccf": {
+     "name": "LAC-345163",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 26,
+     "cells": 155589,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 26
+     }
+    },
+    "97e8259c-1d77-4ea8-9bdb-78309ccbc325": {
+     "name": "LAC-344661",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 166664,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "b6b02697-430e-448c-86fb-5bf7952ac483": {
+     "name": "LAC-345628",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 248301,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "b72e44ff-b669-4a7c-bb39-6adc86ff910a": {
+     "name": "LAC-345864",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 242256,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "be068732-a28e-4ef9-a3d4-e7aeed95d325": {
+     "name": "LAC-344163",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 37,
+     "cells": 125136,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 37
+     }
+    },
+    "da6af8b5-067c-42bf-be22-8b7a6ca2113d": {
+     "name": "LAC-347778",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 38,
+     "cells": 194177,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 38
+     }
+    },
+    "df96eda9-9b27-47fb-86d5-dfb97a879a22": {
+     "name": "CHILENO",
+     "acreage": 341.0,
+     "containment_pct": 100.0,
+     "clients": 40,
+     "cells": 149700,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 1.4,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "e20bf44d-1483-4d29-b0e1-d52d1e74bf02": {
+     "name": "DORADO",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 72590,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "e461be78-cb2a-4027-b333-e4820a5259f6": {
+     "name": "ALAMO",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 156195,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "ef591c1b-2a79-4d3d-a1bf-fbedaac52b43": {
+     "name": "LAC-345734",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 161161,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    }
+   },
+   "clients_by_worst_state": {
+    "none": 471,
+    "notice_72h": 1,
+    "watch": 48
+   },
+   "pairs_by_state": {
+    "cleared": 0,
+    "extreme_24h": 0,
+    "impacted": 0,
+    "none": 798,
+    "notice_72h": 1,
+    "watch": 48
+   },
+   "chileno": {
+    "on_map": true,
+    "removed": false,
+    "domain": {
+     "name": "CHILENO",
+     "acreage": 341.0,
+     "containment_pct": 100.0,
+     "clients": 40,
+     "cells": 149700,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 1.4,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "pair_states": {
+     "none": 40
+    },
+    "notes": []
+   },
+   "willow": {
+    "on_map": true,
+    "domain": {
+     "name": "Willow",
+     "acreage": 7389.0,
+     "containment_pct": 80.0,
+     "clients": 204,
+     "cells": 300544,
+     "cell_m": 129.51153924086412,
+     "burned_p50_km2_at_now": 1209.7,
+     "boundary_reached_h_rel_now": -253.7,
+     "veto_reach_km": 1573.9,
+     "pair_states": {
+      "none": 155,
+      "notice_72h": 1,
+      "watch": 48
+     }
+    },
+    "pair_states": {
+     "none": 155,
+     "notice_72h": 1,
+     "watch": 48
+    },
+    "notes": []
+   },
+   "anchor_notes": [],
+   "stale_note_count": 282,
+   "degraded": false,
+   "operator_events": [],
+   "failure_notes": [],
+   "unserved": 49,
+   "unserved_reasons": {
+    "capacity": 49
+   },
+   "variant_wall_s": 60.2
+  },
+  "D_optc_scaled_freerun": {
+   "label": "D_optc_scaled_freerun",
+   "cycles": [
+    {
+     "k": 0,
+     "now_s": 1790524542.7457986,
+     "wall_s": 11.2,
+     "phases_s": {
+      "feeds_s": 1.17,
+      "assess_s": 10.02,
+      "alerts_s": 0.01,
+      "dispatch_s": 0.0
+     },
+     "terrain_s": 0.9,
+     "spread_s": 8.6,
+     "incidents": 213,
+     "removed": 39,
+     "domains": 16,
+     "events": 0,
+     "degraded": false
+    },
+    {
+     "k": 1,
+     "now_s": 1790524842.7457986,
+     "wall_s": 12.0,
+     "phases_s": {
+      "feeds_s": 1.55,
+      "assess_s": 10.39,
+      "alerts_s": 0.0,
+      "dispatch_s": 0.0
+     },
+     "terrain_s": 1.0,
+     "spread_s": 8.8,
+     "incidents": 213,
+     "removed": 39,
+     "domains": 16,
+     "events": 0,
+     "degraded": false
+    },
+    {
+     "k": 2,
+     "now_s": 1790525142.7457986,
+     "wall_s": 12.0,
+     "phases_s": {
+      "feeds_s": 1.65,
+      "assess_s": 10.31,
+      "alerts_s": 0.0,
+      "dispatch_s": 0.0
+     },
+     "terrain_s": 1.0,
+     "spread_s": 8.8,
+     "incidents": 213,
+     "removed": 39,
+     "domains": 16,
+     "events": 0,
+     "degraded": false
+    }
+   ],
+   "now_s": 1790525142.7457986,
+   "incidents_on_map": 213,
+   "removed_contained": 39,
+   "removed": [
+    {
+     "incident_id": "09290068-0244-4a3c-aed4-6d828812f2b1",
+     "name": "0432",
+     "acreage": 2183.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "22d5bb97-9b75-4fb1-a8f6-caacebb7c124",
+     "name": "Modrite",
+     "acreage": 57594.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "23230fe2-352a-4036-8a22-0e58c817554c",
+     "name": "0485 DEEP CANYON",
+     "acreage": 9170.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "23d4931b-a908-4d23-9e32-a1932d0481c2",
+     "name": "H2",
+     "acreage": 631.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "23d9d379-feb5-4d6c-b511-485c7d1c3089",
+     "name": "Skull",
+     "acreage": 67.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "280c8389-b628-44a5-9c12-975e51facebc",
+     "name": "Tusas",
+     "acreage": 233.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "28a994d6-89e3-4460-9a36-d7df4d839df2",
+     "name": "0444 TWICKENHAM",
+     "acreage": 254.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "2b640573-f5c1-4245-b66f-c944986175b2",
+     "name": "Tram Trail",
+     "acreage": 660.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "2cd16617-57f1-470f-8185-494063fbfe60",
+     "name": "1339 McMillan Road",
+     "acreage": 32.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "2d6683d6-91a2-4c00-8771-015c41600c5c",
+     "name": "QUAIL SPRINGS",
+     "acreage": 13619.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "31e8ab87-2d1e-4805-ba9b-1cf311a98bd1",
+     "name": "Flat",
+     "acreage": 134.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "38b6c2cb-3333-465e-9346-ead32f9678d0",
+     "name": "HIGHLAND",
+     "acreage": 0.14,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "3acbd250-d9c7-43ef-b29d-0477ac2d47fa",
+     "name": "0482 CHERRY CREEK",
+     "acreage": 16.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "3edfe380-85e3-453d-b351-aa7a07a8f819",
+     "name": "208",
+     "acreage": 89.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "4809f4ac-3b2c-4919-b7fe-706768e03b93",
+     "name": "0489 PARRISH",
+     "acreage": 404.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "4b2b0d85-329d-4cfb-b64b-fa01562c4a5e",
+     "name": "Carroll- CR 62",
+     "acreage": 143.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "4e89d5a2-91ac-4a93-b93f-b0e0279b5a98",
+     "name": "0450 COVE CREEK",
+     "acreage": 7208.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "54d88acc-f17f-48fc-8efa-ff90f52efb89",
+     "name": "BEE HAVEN BAY (24-06)",
+     "acreage": 170.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "69f4beb6-3800-4f24-ae46-f2cac8e746db",
+     "name": "Star Lake",
+     "acreage": 16412.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "6c455132-8cc9-4c80-8f08-4f734a489d03",
+     "name": "0501 PAT'S CABIN",
+     "acreage": 772.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "75a59419-a9f2-4169-aaea-5f794a4f3200",
+     "name": "0442 REDROCK",
+     "acreage": 256.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "793f4a9d-747d-4eee-b8ee-e99cdbd09a87",
+     "name": "Calvary Creek",
+     "acreage": 905.9,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "7e5c6440-6a00-4eb7-a9e4-3b302d545f58",
+     "name": "Mount Emma",
+     "acreage": 368.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "7feb8502-6a78-4387-b8a7-fe675182b1bb",
+     "name": "0512 BOX SPRINGS",
+     "acreage": 21432.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "80dc9935-6ce8-4b42-b4ec-2ba47ce13aa5",
+     "name": "FLORISTON",
+     "acreage": 622.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "91108fc9-6b48-4a39-9b8a-fcd66774d5be",
+     "name": "Cedar Hollow",
+     "acreage": 130.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "a430cf58-32e0-4019-8252-9b283afd65e9",
+     "name": "0502",
+     "acreage": 1816.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "aaff95b2-903a-4c6f-a199-d4836334bf60",
+     "name": "3470 Road",
+     "acreage": 10.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "b5597100-d6c9-49f9-bc74-6b8fc4432e92",
+     "name": "Kaiser Canyon",
+     "acreage": 138293.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "bbb22c77-2f2d-419e-a930-9b75a0a55f83",
+     "name": "Bologna",
+     "acreage": 4436.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "bc318834-b454-4aad-90a6-62d4de886b5c",
+     "name": "0611 GREEN MOUNTAIN",
+     "acreage": 2136.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "bd597c0e-ea04-44b0-a750-97f9913fdedf",
+     "name": "Merit Creek",
+     "acreage": 828.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "ccefd7d4-febd-496d-855e-ca0c9944bf0c",
+     "name": "0433 BREWER",
+     "acreage": 70821.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "d162d596-c8cd-422e-9b5e-75799f47ccfe",
+     "name": "Fairpoint",
+     "acreage": 510.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "d47af62e-d836-4c62-b3ac-76ae8454aded",
+     "name": "Gordie Branch",
+     "acreage": 271.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "ddd80047-fbd0-4196-8ff1-daadfc50d715",
+     "name": "Round Prarie",
+     "acreage": 738.55,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "df424a1d-f6d6-4095-8786-dd329a7fb229",
+     "name": "Mimms",
+     "acreage": 7093.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "df96eda9-9b27-47fb-86d5-dfb97a879a22",
+     "name": "CHILENO",
+     "acreage": 341.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "ff6762f8-a3ab-4432-9114-ff06358a7a84",
+     "name": "0446 CAMEL HUMP",
+     "acreage": 6789.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    }
+   ],
+   "domains": {
+    "3047875a-2c3d-4100-9f17-4643a132cefb": {
+     "name": "DARK",
+     "acreage": 0.01,
+     "containment_pct": null,
+     "clients": 36,
+     "cells": 209397,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": 0.9,
+     "veto_reach_km": 0.1,
+     "pair_states": {
+      "none": 36
+     }
+    },
+    "4cbe8308-8f89-4d7c-b668-803ecac7cc7c": {
+     "name": "DELL",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 160284,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "548a8d28-1a04-48ee-9011-aba023175d43": {
+     "name": "Willow",
+     "acreage": 7389.0,
+     "containment_pct": 80.0,
+     "clients": 204,
+     "cells": 300544,
+     "cell_m": 129.51153924086412,
+     "burned_p50_km2_at_now": 43.2,
+     "boundary_reached_h_rel_now": 5.5,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 204
+     }
+    },
+    "61fb7582-25bd-4ec2-a5ce-6ffde6ad476a": {
+     "name": "LUCAS",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 26,
+     "cells": 118776,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": 2.9,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 26
+     }
+    },
+    "66d11f01-0111-4624-8e3b-5f90a57e3442": {
+     "name": "LAC-345615",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 257693,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "72f0e4aa-0e90-4390-9df4-cef671ceb75f": {
+     "name": "OTIS",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 45067,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "7e35a2cd-2943-4763-81e7-e0bf6eb70f57": {
+     "name": "LAC-345537",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 147965,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "8fb590ca-cd9b-4897-9c71-e954419fbccf": {
+     "name": "LAC-345163",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 26,
+     "cells": 155589,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 26
+     }
+    },
+    "97e8259c-1d77-4ea8-9bdb-78309ccbc325": {
+     "name": "LAC-344661",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 166664,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "b6b02697-430e-448c-86fb-5bf7952ac483": {
+     "name": "LAC-345628",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 248301,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "b72e44ff-b669-4a7c-bb39-6adc86ff910a": {
+     "name": "LAC-345864",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 242256,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "be068732-a28e-4ef9-a3d4-e7aeed95d325": {
+     "name": "LAC-344163",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 37,
+     "cells": 125136,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 37
+     }
+    },
+    "da6af8b5-067c-42bf-be22-8b7a6ca2113d": {
+     "name": "LAC-347778",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 38,
+     "cells": 194177,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 38
+     }
+    },
+    "e20bf44d-1483-4d29-b0e1-d52d1e74bf02": {
+     "name": "DORADO",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 72590,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "e461be78-cb2a-4027-b333-e4820a5259f6": {
+     "name": "ALAMO",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 156195,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "ef591c1b-2a79-4d3d-a1bf-fbedaac52b43": {
+     "name": "LAC-345734",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 161161,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    }
+   },
+   "clients_by_worst_state": {
+    "none": 520
+   },
+   "pairs_by_state": {
+    "cleared": 0,
+    "extreme_24h": 0,
+    "impacted": 0,
+    "none": 767,
+    "notice_72h": 0,
+    "watch": 0
+   },
+   "chileno": {
+    "on_map": false,
+    "removed": true,
+    "domain": null,
+    "pair_states": {},
+    "notes": []
+   },
+   "willow": {
+    "on_map": true,
+    "domain": {
+     "name": "Willow",
+     "acreage": 7389.0,
+     "containment_pct": 80.0,
+     "clients": 204,
+     "cells": 300544,
+     "cell_m": 129.51153924086412,
+     "burned_p50_km2_at_now": 43.2,
+     "boundary_reached_h_rel_now": 5.5,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 204
+     }
+    },
+    "pair_states": {
+     "none": 204
+    },
+    "notes": [
+     "incident 548a8d28-1a04-48ee-9011-aba023175d43: polygon 259.7 h old, record 4.0 h old \u2014 the record reports 7,389 ac, the polygon 7,259 ac (+1.8%, within 2%): the perimeter is CONFIRMED as of the record and seeded then, not 259.7 h ago (cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)"
+    ]
+   },
+   "anchor_notes": [
+    "incident 548a8d28-1a04-48ee-9011-aba023175d43: polygon 259.7 h old, record 4.0 h old \u2014 the record reports 7,389 ac, the polygon 7,259 ac (+1.8%, within 2%): the perimeter is CONFIRMED as of the record and seeded then, not 259.7 h ago (cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)"
+   ],
+   "stale_note_count": 282,
+   "degraded": false,
+   "operator_events": [],
+   "failure_notes": [],
+   "unserved": null,
+   "unserved_reasons": null,
+   "variant_wall_s": 36.3
+  },
+  "E_optd_polygon_is_fire": {
+   "label": "E_optd_polygon_is_fire",
+   "cycles": [
+    {
+     "k": 0,
+     "now_s": 1790524542.7457986,
+     "wall_s": 11.1,
+     "phases_s": {
+      "feeds_s": 1.18,
+      "assess_s": 9.93,
+      "alerts_s": 0.01,
+      "dispatch_s": 0.0
+     },
+     "terrain_s": 0.9,
+     "spread_s": 8.5,
+     "incidents": 213,
+     "removed": 39,
+     "domains": 16,
+     "events": 0,
+     "degraded": false
+    },
+    {
+     "k": 1,
+     "now_s": 1790524842.7457986,
+     "wall_s": 11.9,
+     "phases_s": {
+      "feeds_s": 1.58,
+      "assess_s": 10.27,
+      "alerts_s": 0.0,
+      "dispatch_s": 0.0
+     },
+     "terrain_s": 1.0,
+     "spread_s": 8.7,
+     "incidents": 213,
+     "removed": 39,
+     "domains": 16,
+     "events": 0,
+     "degraded": false
+    },
+    {
+     "k": 2,
+     "now_s": 1790525142.7457986,
+     "wall_s": 11.9,
+     "phases_s": {
+      "feeds_s": 1.63,
+      "assess_s": 10.22,
+      "alerts_s": 0.0,
+      "dispatch_s": 0.0
+     },
+     "terrain_s": 1.0,
+     "spread_s": 8.7,
+     "incidents": 213,
+     "removed": 39,
+     "domains": 16,
+     "events": 0,
+     "degraded": false
+    }
+   ],
+   "now_s": 1790525142.7457986,
+   "incidents_on_map": 213,
+   "removed_contained": 39,
+   "removed": [
+    {
+     "incident_id": "09290068-0244-4a3c-aed4-6d828812f2b1",
+     "name": "0432",
+     "acreage": 2183.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "22d5bb97-9b75-4fb1-a8f6-caacebb7c124",
+     "name": "Modrite",
+     "acreage": 57594.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "23230fe2-352a-4036-8a22-0e58c817554c",
+     "name": "0485 DEEP CANYON",
+     "acreage": 9170.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "23d4931b-a908-4d23-9e32-a1932d0481c2",
+     "name": "H2",
+     "acreage": 631.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "23d9d379-feb5-4d6c-b511-485c7d1c3089",
+     "name": "Skull",
+     "acreage": 67.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "280c8389-b628-44a5-9c12-975e51facebc",
+     "name": "Tusas",
+     "acreage": 233.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "28a994d6-89e3-4460-9a36-d7df4d839df2",
+     "name": "0444 TWICKENHAM",
+     "acreage": 254.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "2b640573-f5c1-4245-b66f-c944986175b2",
+     "name": "Tram Trail",
+     "acreage": 660.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "2cd16617-57f1-470f-8185-494063fbfe60",
+     "name": "1339 McMillan Road",
+     "acreage": 32.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "2d6683d6-91a2-4c00-8771-015c41600c5c",
+     "name": "QUAIL SPRINGS",
+     "acreage": 13619.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "31e8ab87-2d1e-4805-ba9b-1cf311a98bd1",
+     "name": "Flat",
+     "acreage": 134.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "38b6c2cb-3333-465e-9346-ead32f9678d0",
+     "name": "HIGHLAND",
+     "acreage": 0.14,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "3acbd250-d9c7-43ef-b29d-0477ac2d47fa",
+     "name": "0482 CHERRY CREEK",
+     "acreage": 16.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "3edfe380-85e3-453d-b351-aa7a07a8f819",
+     "name": "208",
+     "acreage": 89.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "4809f4ac-3b2c-4919-b7fe-706768e03b93",
+     "name": "0489 PARRISH",
+     "acreage": 404.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "4b2b0d85-329d-4cfb-b64b-fa01562c4a5e",
+     "name": "Carroll- CR 62",
+     "acreage": 143.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "4e89d5a2-91ac-4a93-b93f-b0e0279b5a98",
+     "name": "0450 COVE CREEK",
+     "acreage": 7208.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "54d88acc-f17f-48fc-8efa-ff90f52efb89",
+     "name": "BEE HAVEN BAY (24-06)",
+     "acreage": 170.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "69f4beb6-3800-4f24-ae46-f2cac8e746db",
+     "name": "Star Lake",
+     "acreage": 16412.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "6c455132-8cc9-4c80-8f08-4f734a489d03",
+     "name": "0501 PAT'S CABIN",
+     "acreage": 772.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "75a59419-a9f2-4169-aaea-5f794a4f3200",
+     "name": "0442 REDROCK",
+     "acreage": 256.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "793f4a9d-747d-4eee-b8ee-e99cdbd09a87",
+     "name": "Calvary Creek",
+     "acreage": 905.9,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "7e5c6440-6a00-4eb7-a9e4-3b302d545f58",
+     "name": "Mount Emma",
+     "acreage": 368.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "7feb8502-6a78-4387-b8a7-fe675182b1bb",
+     "name": "0512 BOX SPRINGS",
+     "acreage": 21432.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "80dc9935-6ce8-4b42-b4ec-2ba47ce13aa5",
+     "name": "FLORISTON",
+     "acreage": 622.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "91108fc9-6b48-4a39-9b8a-fcd66774d5be",
+     "name": "Cedar Hollow",
+     "acreage": 130.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "a430cf58-32e0-4019-8252-9b283afd65e9",
+     "name": "0502",
+     "acreage": 1816.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "aaff95b2-903a-4c6f-a199-d4836334bf60",
+     "name": "3470 Road",
+     "acreage": 10.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "b5597100-d6c9-49f9-bc74-6b8fc4432e92",
+     "name": "Kaiser Canyon",
+     "acreage": 138293.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "bbb22c77-2f2d-419e-a930-9b75a0a55f83",
+     "name": "Bologna",
+     "acreage": 4436.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "bc318834-b454-4aad-90a6-62d4de886b5c",
+     "name": "0611 GREEN MOUNTAIN",
+     "acreage": 2136.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "bd597c0e-ea04-44b0-a750-97f9913fdedf",
+     "name": "Merit Creek",
+     "acreage": 828.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "ccefd7d4-febd-496d-855e-ca0c9944bf0c",
+     "name": "0433 BREWER",
+     "acreage": 70821.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "d162d596-c8cd-422e-9b5e-75799f47ccfe",
+     "name": "Fairpoint",
+     "acreage": 510.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "d47af62e-d836-4c62-b3ac-76ae8454aded",
+     "name": "Gordie Branch",
+     "acreage": 271.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "ddd80047-fbd0-4196-8ff1-daadfc50d715",
+     "name": "Round Prarie",
+     "acreage": 738.55,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "df424a1d-f6d6-4095-8786-dd329a7fb229",
+     "name": "Mimms",
+     "acreage": 7093.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "df96eda9-9b27-47fb-86d5-dfb97a879a22",
+     "name": "CHILENO",
+     "acreage": 341.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    },
+    {
+     "incident_id": "ff6762f8-a3ab-4432-9114-ff06358a7a84",
+     "name": "0446 CAMEL HUMP",
+     "acreage": 6789.0,
+     "containment_pct": 100.0,
+     "reason": "wfigs reports 100% contained"
+    }
+   ],
+   "domains": {
+    "3047875a-2c3d-4100-9f17-4643a132cefb": {
+     "name": "DARK",
+     "acreage": 0.01,
+     "containment_pct": null,
+     "clients": 36,
+     "cells": 209397,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": 0.9,
+     "veto_reach_km": 0.1,
+     "pair_states": {
+      "none": 36
+     }
+    },
+    "4cbe8308-8f89-4d7c-b668-803ecac7cc7c": {
+     "name": "DELL",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 160284,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "548a8d28-1a04-48ee-9011-aba023175d43": {
+     "name": "Willow",
+     "acreage": 7389.0,
+     "containment_pct": 80.0,
+     "clients": 204,
+     "cells": 300544,
+     "cell_m": 129.51153924086412,
+     "burned_p50_km2_at_now": 29.3,
+     "boundary_reached_h_rel_now": 12.6,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 204
+     }
+    },
+    "61fb7582-25bd-4ec2-a5ce-6ffde6ad476a": {
+     "name": "LUCAS",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 26,
+     "cells": 118776,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": 2.9,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 26
+     }
+    },
+    "66d11f01-0111-4624-8e3b-5f90a57e3442": {
+     "name": "LAC-345615",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 257693,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "72f0e4aa-0e90-4390-9df4-cef671ceb75f": {
+     "name": "OTIS",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 45067,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "7e35a2cd-2943-4763-81e7-e0bf6eb70f57": {
+     "name": "LAC-345537",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 147965,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "8fb590ca-cd9b-4897-9c71-e954419fbccf": {
+     "name": "LAC-345163",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 26,
+     "cells": 155589,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 26
+     }
+    },
+    "97e8259c-1d77-4ea8-9bdb-78309ccbc325": {
+     "name": "LAC-344661",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 166664,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "b6b02697-430e-448c-86fb-5bf7952ac483": {
+     "name": "LAC-345628",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 248301,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "b72e44ff-b669-4a7c-bb39-6adc86ff910a": {
+     "name": "LAC-345864",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 242256,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "be068732-a28e-4ef9-a3d4-e7aeed95d325": {
+     "name": "LAC-344163",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 37,
+     "cells": 125136,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 37
+     }
+    },
+    "da6af8b5-067c-42bf-be22-8b7a6ca2113d": {
+     "name": "LAC-347778",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 38,
+     "cells": 194177,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 38
+     }
+    },
+    "e20bf44d-1483-4d29-b0e1-d52d1e74bf02": {
+     "name": "DORADO",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 72590,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "e461be78-cb2a-4027-b333-e4820a5259f6": {
+     "name": "ALAMO",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 156195,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    },
+    "ef591c1b-2a79-4d3d-a1bf-fbedaac52b43": {
+     "name": "LAC-345734",
+     "acreage": null,
+     "containment_pct": null,
+     "clients": 40,
+     "cells": 161161,
+     "cell_m": 90.0,
+     "burned_p50_km2_at_now": 0.0,
+     "boundary_reached_h_rel_now": null,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 40
+     }
+    }
+   },
+   "clients_by_worst_state": {
+    "none": 520
+   },
+   "pairs_by_state": {
+    "cleared": 0,
+    "extreme_24h": 0,
+    "impacted": 0,
+    "none": 767,
+    "notice_72h": 0,
+    "watch": 0
+   },
+   "chileno": {
+    "on_map": false,
+    "removed": true,
+    "domain": null,
+    "pair_states": {},
+    "notes": []
+   },
+   "willow": {
+    "on_map": true,
+    "domain": {
+     "name": "Willow",
+     "acreage": 7389.0,
+     "containment_pct": 80.0,
+     "clients": 204,
+     "cells": 300544,
+     "cell_m": 129.51153924086412,
+     "burned_p50_km2_at_now": 29.3,
+     "boundary_reached_h_rel_now": 12.6,
+     "veto_reach_km": 0.0,
+     "pair_states": {
+      "none": 204
+     }
+    },
+    "pair_states": {
+     "none": 204
+    },
+    "notes": [
+     "incident 548a8d28-1a04-48ee-9011-aba023175d43: polygon 259.7 h old, record 0.0 h old \u2014 the record reports 7,389 ac, the polygon 7,259 ac (+1.8%, within 2%): the perimeter is CONFIRMED as of the record and seeded then, not 259.7 h ago (cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)"
+    ]
+   },
+   "anchor_notes": [
+    "incident 548a8d28-1a04-48ee-9011-aba023175d43: polygon 259.7 h old, record 0.0 h old \u2014 the record reports 7,389 ac, the polygon 7,259 ac (+1.8%, within 2%): the perimeter is CONFIRMED as of the record and seeded then, not 259.7 h ago (cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)"
+   ],
+   "stale_note_count": 282,
+   "degraded": false,
+   "operator_events": [],
+   "failure_notes": [],
+   "unserved": null,
+   "unserved_reasons": null,
+   "variant_wall_s": 36.1
+  }
+ }
+}
