@@ -165,6 +165,17 @@ forecasts, eroded rasters, regime flags, registry rosters, failed incidents,
 feed health, notes and feed-blind events — shallow container copies around
 the cycle's own objects, never read by the live path (byte-neutral).
 
+FIRE BELIEF (contracts SAFETY SEMANTICS 14; wgresponse.fire_belief,
+docs/FIRE_BELIEF.md): with cfg.fire_belief_track the monitor owns a
+FireBeliefStore (``fire_beliefs``; injectable — a TEST world passes a
+copy()). Three thin hooks: observe() after the staleness gate (growth
+observations -> windows -> posterior; a surprise reset is a note +
+OperatorEvent('fire_belief')), before_spread()/after_spread() around each
+domain's ensemble (weather log, new-pattern rating, the nominal growth
+curve; with cfg.fire_belief_apply the per-hour member multipliers), and
+statuses() into CycleResult.fire_status. Any belief failure is a note and
+the legacy physics. Track off = byte-identical cycles.
+
 Units: times unix seconds, distances meters, config durations hours/minutes
 per contracts.
 """
@@ -176,6 +187,7 @@ import math
 import time
 from typing import Optional
 
+from wgresponse import fire_belief as fire_belief_mod
 from wgresponse import fuels, geo, spread
 from wgresponse import seeded as seeded_mod
 from wgresponse.contracts import (
@@ -394,6 +406,9 @@ class ThreatMonitor:
             monitor-side — a fire just outside the box that a feed still
             returns is assessed normally (dropping it could silence a
             threat to an in-AOI client).
+        fire_beliefs: optional wgresponse.fire_belief.FireBeliefStore
+            (SAFETY SEMANTICS 14) — a TEST world injects a copy of the live
+            store; None creates one when cfg.fire_belief_track is on.
     """
 
     #: TWO WORLDS (SAFETY SEMANTICS 16a): False once lock_live() made this
@@ -404,7 +419,8 @@ class ThreatMonitor:
 
     def __init__(self, feeds: list, weather_provider, terrain_provider,
                  registry, alert_engine, cfg: ResponseConfig, safe_zones: list,
-                 crew_tracker=None, dispatcher=None, aoi=None) -> None:
+                 crew_tracker=None, dispatcher=None, aoi=None,
+                 fire_beliefs=None) -> None:
         self._feeds = list(feeds)
         self._weather = weather_provider
         self._terrain = terrain_provider
@@ -424,6 +440,29 @@ class ThreatMonitor:
         # incident_id -> {since_s, acres {source: baseline}, last_growth_s,
         # growth, removed, signals, seen_s}; in-process (module docstring).
         self._contained: dict = {}
+        # FIRE BELIEF (SAFETY SEMANTICS 14; wgresponse.fire_belief): consulted
+        # only with cfg.fire_belief_track. `fire_beliefs` injects a store —
+        # a TEST (drill) world passes live_monitor.fire_beliefs.copy()
+        # (persistent=False: it learns, it never writes back).
+        if fire_beliefs is None and getattr(cfg, "fire_belief_track", False):
+            fire_beliefs = fire_belief_mod.FireBeliefStore()
+        self._fire_beliefs = fire_beliefs
+
+    @property
+    def fire_beliefs(self):
+        """The per-fire belief store (None unless tracking or injected)."""
+        return self._fire_beliefs
+
+    def use_fire_beliefs(self, store) -> None:
+        """Swap in a belief store (TWO WORLDS, SAFETY SEMANTICS 14/16): the
+        TEST world hands its monitor a fresh non-persistent copy of the LIVE
+        store before every drill cycle, so drills start from the rates the
+        live world has learned and never write back."""
+        self._fire_beliefs = store
+
+    def _belief_on(self) -> bool:
+        return (self._fire_beliefs is not None
+                and bool(getattr(self._cfg, "fire_belief_track", False)))
 
     # ------------------------------------------------- W1 seeded incidents
 
@@ -547,6 +586,10 @@ class ThreatMonitor:
             # silently; their pairs then take the absence law below.
             active, removed = self._drop_contained_incidents(active, now_s,
                                                              notes)
+        if self._belief_on():
+            # SAFETY SEMANTICS 14: this cycle's growth observations (the
+            # belief learns BEFORE the spread it may inform)
+            self._belief_observe(active, now_s, notes, operator_events)
 
         assessments: list = []
         ensembles: dict = {}
@@ -688,10 +731,21 @@ class ThreatMonitor:
         timings["alerts_s"] = time.monotonic() - _t
         _t = time.monotonic()
 
+        belief_status = None
+        if self._belief_on():
+            # SAFETY SEMANTICS 14: the per-fire status, computed BEFORE the
+            # planner so the off-domain horizon (SEMANTICS 15) OR-combines
+            # the belief's rapid / known with the feed's behaviour report
+            try:
+                belief_status = self._fire_beliefs.statuses(active, now_s,
+                                                            self._cfg)
+            except Exception as exc:
+                notes.append(f"fire belief: status failed ({exc})")
         offmap: dict = {}
         if self._cfg.corridor_offraster_per_fire and ensembles:
             # SAFETY SEMANTICS 15: each domain fire's off-domain horizon
-            offmap = self._offmap_horizons(active, ensembles, now_s, notes)
+            offmap = self._offmap_horizons(active, ensembles, now_s, notes,
+                                           status=belief_status)
         plan = self._maybe_dispatch(now_s, ensembles, clients_seen, etas,
                                     notes, forecasts,
                                     eroded_map=(eroded_map or None),
@@ -723,11 +777,54 @@ class ThreatMonitor:
         degraded = (not feeds_healthy) or bool(failed_incidents) or any(
             ev.kind in ("degraded", "feed_blind", "provider_error")
             for ev in operator_events)
-        return CycleResult(t_s=now_s, incidents=active, assessments=assessments,
-                           events=events, plan=plan, ensembles=ensembles,
-                           notes=notes, operator_events=operator_events,
-                           degraded=degraded, timings=timings,
-                           removed_incidents=removed, offmap=offmap)
+        res = CycleResult(t_s=now_s, incidents=active, assessments=assessments,
+                          events=events, plan=plan, ensembles=ensembles,
+                          notes=notes, operator_events=operator_events,
+                          degraded=degraded, timings=timings,
+                          removed_incidents=removed, offmap=offmap)
+        if belief_status is not None:
+            # SAFETY SEMANTICS 14: the per-fire status (off-map rule seam)
+            res.fire_status = belief_status
+        return res
+
+    # ------------------------------------------------ fire belief (SEM 14)
+
+    def _belief_observe(self, active: list, now_s: float, notes: list,
+                        operator_events: list) -> None:
+        """Feed this cycle's incidents to the belief store; a surprise reset
+        is a note + OperatorEvent('fire_belief'); a failure is a note (the
+        belief never breaks a cycle — the prior simply keeps applying)."""
+        try:
+            evs = self._fire_beliefs.observe(active, now_s, self._cfg)
+        except Exception as exc:
+            notes.append(f"fire belief: observe failed ({exc})")
+            return
+        for ev in evs:
+            msg = f"fire belief {ev['incident_id']}: {ev['message']}"
+            notes.append(msg)
+            operator_events.append(OperatorEvent(
+                t_s=now_s, kind="fire_belief", message=msg,
+                incident_id=ev["incident_id"], detail={"event": ev["kind"]}))
+
+    def _belief_before_spread(self, inc, tile, wxf, now_s: float, cfg,
+                              notes: list):
+        """member_hour_scale for this incident's ensemble, or None (legacy
+        physics — also on any belief failure: fail-safe to the prior)."""
+        try:
+            return self._fire_beliefs.before_spread(inc, tile, wxf, now_s, cfg)
+        except Exception as exc:
+            notes.append(f"fire belief {inc.incident_id}: prior applies "
+                         f"({exc})")
+            return None
+
+    def _belief_after_spread(self, inc, ens, now_s: float, cfg, anchor_s,
+                             point: bool, notes: list) -> None:
+        try:
+            self._fire_beliefs.after_spread(inc, ens, now_s, cfg, anchor_s,
+                                            point)
+        except Exception as exc:
+            notes.append(f"fire belief {inc.incident_id}: growth curve not "
+                         f"kept ({exc})")
 
     # ------------------------------------------------------------- internals
 
@@ -1272,10 +1369,29 @@ class ThreatMonitor:
             # report, not from its own age; a growing fire keeps the legacy.
             perimeter_at_s = self._confirmed_perimeter_at_s(
                 inc, provenance_s, perimeter_at_s, now_s, notes)
-        ens = spread.ensemble_arrival(tile, seeds, wxf, now_s, spread_cfg,
-                                      incident_id=inc.incident_id,
-                                      perimeter=perimeter,
-                                      perimeter_at_s=perimeter_at_s)
+        mhs = None
+        if self._belief_on():
+            # SAFETY SEMANTICS 14: weather log + novelty; with
+            # fire_belief_apply the per-hour member multipliers (None = the
+            # unchanged legacy call below)
+            mhs = self._belief_before_spread(inc, tile, wxf, now_s,
+                                             spread_cfg, notes)
+        if mhs is not None:
+            # the belief drives the members; P10 guarded unless
+            # fire_belief_apply_p10 (fire_belief.applied_ensemble)
+            ens = fire_belief_mod.applied_ensemble(
+                tile, seeds, wxf, now_s, spread_cfg, inc.incident_id,
+                perimeter, perimeter_at_s, mhs)
+        else:
+            ens = spread.ensemble_arrival(tile, seeds, wxf, now_s, spread_cfg,
+                                          incident_id=inc.incident_id,
+                                          perimeter=perimeter,
+                                          perimeter_at_s=perimeter_at_s)
+        if self._belief_on():
+            self._belief_after_spread(
+                inc, ens, now_s, spread_cfg,
+                perimeter_at_s if perimeter is not None else now_s,
+                perimeter is None, notes)
         _tm["spread_s"] = time.monotonic() - _t
         _tm["cells"] = tile.spec.nrows * tile.spec.ncols
         _tm["clients"] = len(near)
@@ -1387,7 +1503,7 @@ class ThreatMonitor:
             return []
 
     def _offmap_horizons(self, active: list, ensembles: dict, now_s: float,
-                         notes: list) -> dict:
+                         notes: list, status: Optional[dict] = None) -> dict:
         """SAFETY SEMANTICS 15 (cfg.corridor_offraster_per_fire): the per-
         fire off-domain horizon of every domain incident (wgresponse.offmap)
         — one note each — handed to dispatch.plan(offmap=...). INTEGRATOR
@@ -1397,7 +1513,8 @@ class ThreatMonitor:
         the flat legacy bound (never a raise out of cycle())."""
         from wgresponse import offmap as offmap_mod
         try:
-            table = offmap_mod.horizons(active, ensembles, now_s, self._cfg)
+            table = offmap_mod.horizons(active, ensembles, now_s, self._cfg,
+                                        status=status)
         except Exception as exc:  # degrade to the legacy law, loudly
             notes.append(f"off-domain horizons failed ({exc}); every fire "
                          f"keeps the flat {self._cfg.corridor_offraster_ros_mps:g}"

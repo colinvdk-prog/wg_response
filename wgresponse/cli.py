@@ -300,6 +300,22 @@ def _build_parser() -> argparse.ArgumentParser:
                          "rapid — rapid / unknown fires keep 1.7 m/s — and a "
                          "bounded sample needs a 60-min crossing margin; "
                          "inert without --fail-closed")
+    # FIRE BELIEF (contracts SAFETY SEMANTICS 14; docs/FIRE_BELIEF.md)
+    pw.add_argument("--fire-belief", action="store_true",
+                    help="cfg.fire_belief_track: learn a per-fire spread-rate "
+                         "belief from the feeds' growth observations and "
+                         "publish it (status, /api/world/summary, "
+                         "<state-dir>/fire_beliefs.json); it changes no "
+                         "arrival, alert or dispatch")
+    pw.add_argument("--fire-belief-apply", action="store_true",
+                    help="cfg.fire_belief_apply (implies --fire-belief): the "
+                         "learned belief drives the ensemble's head-ROS "
+                         "multiplier in same-weather-pattern hours (the "
+                         "footprint, the ladder's P50 and P90 move: alert "
+                         "timing changes); P10 stays guarded, never later "
+                         "than physics (cfg.fire_belief_apply_p10 lifts the "
+                         "guard: config only, measured unsafe for contained "
+                         "fires, docs/FIRE_BELIEF.md)")
     pw.add_argument("--dry-notify", action="store_true",
                     help="force log-only notifications (no SES even when "
                          "WGRESP_NOTIFY_SES=1)")
@@ -793,6 +809,42 @@ def _watch_notifier(args, state_dir):
     return LogNotifier(), "LogNotifier (set WGRESP_NOTIFY_SES=1 for SES)"
 
 
+def _fire_belief_cfg(cfg, args):
+    """cfg with the --fire-belief / --fire-belief-apply flags applied (SAFETY
+    SEMANTICS 14; apply implies track). No flag = cfg unchanged."""
+    if getattr(args, "fire_belief", False) or \
+            getattr(args, "fire_belief_apply", False):
+        cfg = dataclasses.replace(
+            cfg, fire_belief_track=True,
+            fire_belief_apply=bool(getattr(args, "fire_belief_apply", False)))
+    return cfg
+
+
+def _fire_belief_file(cfg, state_dir, s3_uri=None):
+    """The watch daemon's fire-belief file: <state-dir>/fire_beliefs.json,
+    S3-mirrored under the state's prefix (object fire_beliefs.json) — or
+    None with cfg.fire_belief_track off (nothing written or read)."""
+    if not getattr(cfg, "fire_belief_track", False):
+        return None
+    from wgresponse.fire_belief import BeliefFile
+    return BeliefFile(state_dir, s3_uri=s3_uri)
+
+
+def _fire_belief_notes(args) -> list:
+    """Startup notes for --fire-belief / --fire-belief-apply (SEMANTICS 14)."""
+    if getattr(args, "fire_belief_apply", False):
+        return ["fire belief APPLIED (alert-timing change): each fire's "
+                "learned spread rate drives its footprint, P50 and P90 in "
+                "same-weather-pattern hours; physics returns for new weather, "
+                "surprises and rapid fires; P10 GUARDED = never later than "
+                "physics (docs/FIRE_BELIEF.md)"]
+    if getattr(args, "fire_belief", False):
+        return ["fire belief TRACKING: per-fire spread-rate belief learned "
+                "and published (status, world summary, fire_beliefs.json); "
+                "physics, alerts and dispatch unchanged"]
+    return []
+
+
 class _WatchDaemon:
     """The live watch loop: cycle -> persist -> serve, with injectable clock.
 
@@ -810,7 +862,8 @@ class _WatchDaemon:
 
     def __init__(self, monitor, engine, registry, tracker, store, cfg, aoi,
                  period_s, aoi_desc="", safe_zones=(), clock=time.time,
-                 sleep=time.sleep, startup_notes=(), test_world=None):
+                 sleep=time.sleep, startup_notes=(), test_world=None,
+                 belief_file=None):
         # TWO WORLDS (contracts SAFETY SEMANTICS 16a): this daemon IS the
         # LIVE world — its monitor refuses every seed from here on (drills
         # run in `test_world`, a wgresponse.worlds.TestWorld, or nowhere).
@@ -821,6 +874,10 @@ class _WatchDaemon:
         self._live_busy = threading.Event()
         self._test_world = test_world
         self.migration_note = None
+        # FIRE BELIEF (SAFETY SEMANTICS 14): its OWN file beside the state
+        # (fire_belief.BeliefFile); None (the default, and every TEST world)
+        # = nothing written or read.
+        self._belief_file = belief_file
         self._monitor = monitor
         self._engine = engine
         self._registry = registry
@@ -885,6 +942,7 @@ class _WatchDaemon:
             except Exception:
                 log.exception("watch: TEST world restore failed; it starts "
                               "IDLE (the live world is unaffected)")
+        self._restore_fire_beliefs()
         try:
             loaded = self._store.load()
         except Exception:
@@ -1043,7 +1101,25 @@ class _WatchDaemon:
         (SAFETY SEMANTICS 16f) no test action ever calls it — the test world
         persists into its own namespace."""
         with self._persist_lock:
-            return self._persist_locked(final)
+            ok = self._persist_locked(final)
+            self._save_fire_beliefs()
+            return ok
+
+    # ------------------------------------------ fire belief (SEMANTICS 14)
+
+    def _restore_fire_beliefs(self) -> None:
+        """Local fire_beliefs.json first, then the S3 mirror; independent of
+        the alert-state restore (never raises: a failure = the prior)."""
+        store = getattr(self._monitor, "fire_beliefs", None)
+        if self._belief_file is not None and store is not None:
+            self._belief_file.load_into(store)
+
+    def _save_fire_beliefs(self) -> None:
+        store = getattr(self._monitor, "fire_beliefs", None)
+        if self._belief_file is None or store is None:
+            return
+        self._belief_file.save(store, now_s=(self.last_result.t_s
+                                             if self.last_result else None))
 
     def _persist_locked(self, final: bool = False) -> bool:
         """persist_now's body, under the persist lock. The LIVE world never
@@ -1163,6 +1239,12 @@ class _WatchDaemon:
                 h = table.get(row["incident_id"])
                 row["offmap"] = (offmap_mod.horizon_row(h)
                                  if h is not None else None)
+        if getattr(self._cfg, "fire_belief_track", False):
+            # FIRE BELIEF (SEMANTICS 14): additive, only while tracking
+            from wgresponse.fire_belief import status_row
+            out["fire_status"] = {
+                iid: status_row(st) for iid, st in
+                sorted((getattr(res, "fire_status", None) or {}).items())}
         return out
 
     @classmethod
@@ -1303,6 +1385,14 @@ class _WatchDaemon:
                 "safe_zones": [{"zone_id": z.zone_id, "lat": z.loc.lat,
                                 "lon": z.loc.lon, "name": z.name}
                                for z in self._safe_zones]}
+
+    def clone_fire_beliefs(self):
+        """A non-persistent deep copy of the live per-fire spread beliefs
+        (SAFETY SEMANTICS 14/16), or None when the live monitor tracks none.
+        The test world calls it while the live loop is idle; the copy can
+        learn inside a drill but never reaches the live store or its file."""
+        store = getattr(self._monitor, "fire_beliefs", None)
+        return store.copy() if store is not None else None
 
     def clone_crews(self, now_s: float) -> list:
         """The live roster as virtual test crews (SEMANTICS 16c/d): the crew
@@ -1586,6 +1676,8 @@ def _cmd_watch(args) -> int:
             + ("" if getattr(args, "fail_closed", False) else
                " [INERT: the rule changes the fail-closed bound, and "
                "--fail-closed is not armed]"))
+    startup_notes_fix += _fire_belief_notes(args)
+    cfg = _fire_belief_cfg(cfg, args)       # SEMANTICS 14 (apply => track)
     problems = validate_config(cfg)
     if problems:
         # The review found validate_config never ran on this path and
@@ -1682,11 +1774,13 @@ def _cmd_watch(args) -> int:
         registry=registry, terrain=terrain, clients_by_id=clients_by_id,
         state_dir=state_dir, s3_uri=s3_uri, period_s=period_s,
         dispatcher=dispatch_mod)
+    belief_file = _fire_belief_file(cfg, state_dir, s3_uri)   # SEMANTICS 14
     daemon = _WatchDaemon(monitor=monitor, engine=engine, registry=registry,
                           tracker=tracker, store=store, cfg=cfg, aoi=aoi,
                           period_s=period_s, aoi_desc=aoi_desc,
                           safe_zones=safe_zones, startup_notes=startup_notes,
-                          test_world=test_world)
+                          test_world=test_world,
+                          belief_file=belief_file)
     restored = daemon.restore()
 
     httpd = server_mod.serve(port=args.port, host=args.host,

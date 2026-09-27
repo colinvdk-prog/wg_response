@@ -917,6 +917,19 @@ class TestWorld:
             t = max(t, float(snap.t_s),
                     self._last_t if self._last_t is not None else -math.inf)
             t_wall = time.monotonic()
+            # SAFETY SEMANTICS 14: the drill starts from the live world's
+            # learned spread rates, a fresh non-persistent copy every cycle
+            # ("simulations are always corrected by the real data").
+            clone = getattr(self._live, "clone_fire_beliefs", None)
+            if callable(clone):
+                try:
+                    beliefs = clone()
+                except Exception:
+                    log.exception("test world: live fire beliefs not copied "
+                                  "this cycle (the drill keeps its last copy)")
+                    beliefs = None
+                if beliefs is not None:
+                    self.monitor.use_fire_beliefs(beliefs)
             res = self.monitor.cycle_over(
                 snap, t, seeded_ladder_only=(trigger != _TRIGGER_LIVE))
             self.last_cycle_duration_s = time.monotonic() - t_wall

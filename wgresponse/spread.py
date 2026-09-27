@@ -87,6 +87,15 @@ before t0_s at the OLD rate; `embers_aloft` lands the embers still in flight
 at t0_s; `ember_log` records the embers a solve throws so the next re-anchor
 can find the ones in flight. See compute_arrival.
 
+PER-HOUR ROS MULTIPLIER SEAM (fire belief, contracts SAFETY SEMANTICS 14;
+2026-09-27): compute_arrival(hour_ros_scale=[...]) multiplies each weather
+hour's head ROS by its own factor (folded into the per-hour weather tuple and
+the ROS memo key, so the memo stays exact) and ensemble_arrival(
+member_hour_scale=callable) asks the callable for each member's list. Both
+default None => byte-identical (no member call gains a keyword). Only the
+live watcher's cfg.fire_belief_apply path passes them; the simulator never
+does.
+
 Stdlib only; deterministic (ensemble perturbations via contracts.seeded_rng).
 """
 from __future__ import annotations
@@ -386,8 +395,22 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     kept: dict = None,
                     embers_aloft: list = None,
                     ember_log: list = None,
-                    kept_wx: list = None) -> Raster:
+                    kept_wx: list = None,
+                    hour_ros_scale: list = None) -> Raster:
     """Fire arrival-time raster (absolute unix SECONDS per cell; UNREACHED=inf).
+
+    hour_ros_scale (PER-HOUR ROS MULTIPLIER SEAM, contracts SAFETY SEMANTICS
+    14 — the fire-belief apply path; default None => byte-identical, the
+    branch never runs): a list of positive finite multipliers indexed by the
+    weather HOUR bucket relative to t0_s (hour 0 = [t0_s, t0_s + 1 h)).
+    Hour h's head ROS (and, linearly, Byram intensity) is multiplied by
+    hour_ros_scale[h] AFTER the fuel-class floor and after ros_scale; hours
+    before t0_s (perimeter hindcast hours, kept-history spans) use the first
+    value, hours past the end use the last. The multiplier is folded into the
+    per-hour effective-weather tuple AND the ROS memo key, so the memo stays
+    exact (a hit returns what recomputation would). A value of exactly 1.0
+    skips the multiply (the legacy float operations). Never used by the
+    simulator.
 
     kept / kept_wx / embers_aloft / ember_log (RE-ANCHOR HISTORY, simulator
     finding 2026-09-26; all default None => byte-identical to a call without
@@ -750,9 +773,11 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         brg = math.degrees(math.atan2(px, py)) % 360.0 if phi_e > 1e-12 else 0.0
         return phi_e, brg
 
-    def _pack_params(res, wind10: float, wdir: float, brg: float, code: int):
+    def _pack_params(res, wind10: float, wdir: float, brg: float, code: int,
+                     hscale: float = 1.0):
         """(head_ros_mps, lb, bearing_deg, spot) from a RosResult + effective
-        weather (shared tail of the memo and reference paths).
+        weather (shared tail of the memo and reference paths). hscale is the
+        hour's hour_ros_scale multiplier (1.0 = none: the legacy operations).
 
         Two sim-only calibrations live HERE so the memo and reference paths
         apply them identically (byte-identical by construction):
@@ -777,6 +802,10 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         if ros_scale != 1.0:
             head_ros = head_ros * ros_scale
             intensity = intensity * ros_scale
+        if hscale != 1.0:
+            # PER-HOUR ROS MULTIPLIER SEAM (hour_ros_scale; SEMANTICS 14)
+            head_ros = head_ros * hscale
+            intensity = intensity * hscale
         spot = None
         if spotting and wind10 > 0.0 and intensity > 0.0:
             u20 = wind10 / 1.15
@@ -793,6 +822,25 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     hour_wx = {}     # hour -> (wind10, m_dead, wdir) after scaling + offset
     bed_cache = {}   # (fuel_code, m_dead) -> fuel-bed intermediate (or None)
     ros_cache = {}   # (fuel_code, slope, aspect, wind10, m_dead, wdir) -> p
+    # PER-HOUR ROS MULTIPLIER SEAM (hour_ros_scale; SEMANTICS 14): None keeps
+    # every tuple/key/operation above exactly the legacy one. When given, the
+    # hour's multiplier rides as a 4th element of the hour_wx tuple and a 7th
+    # element of the ros_cache key (the memo stays exact).
+    hscales = None
+    if hour_ros_scale is not None:
+        hscales = [float(v) for v in hour_ros_scale]
+        if not hscales or not all(math.isfinite(v) and v > 0.0
+                                  for v in hscales):
+            raise ValueError("hour_ros_scale must be a non-empty list of "
+                             "positive finite multipliers")
+
+    def _hour_scale(hour):
+        """hour_ros_scale for an hour bucket: hours before t0_s and the
+        RE-ANCHOR ('kept_wx', j) spans use the first value, hours past the
+        list's end the last."""
+        if hour.__class__ is tuple or hour < 0:
+            return hscales[0]
+        return hscales[hour] if hour < len(hscales) else hscales[-1]
 
     def _weather_sample(hour):
         """The WeatherSample an hour bucket (int, relative to t0_s) prices —
@@ -824,11 +872,18 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         wt = hour_wx.get(hour)
         if wt is None:
             wt = _eff_weather(_weather_sample(hour))
+            if hscales is not None:
+                wt = wt + (_hour_scale(hour),)
             hour_wx[hour] = wt
-        wind10, m_dead, wdir = wt
         slope = slope_d[idx]
         aspect = aspect_d[idx]
-        key = (fuel.code, slope, aspect, wind10, m_dead, wdir)
+        if hscales is None:
+            wind10, m_dead, wdir = wt
+            hs = 1.0
+            key = (fuel.code, slope, aspect, wind10, m_dead, wdir)
+        else:
+            wind10, m_dead, wdir, hs = wt
+            key = (fuel.code, slope, aspect, wind10, m_dead, wdir, hs)
         p = ros_cache.get(key)
         if p is None:
             bkey = (fuel.code, m_dead)
@@ -845,7 +900,7 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                 u_slope = rothermel.effective_wind_from_bed(bed, 0.0, slope)
                 u_eff, brg = _max_spread_vector(u_wind, u_slope, wdir, aspect)
                 res = rothermel.surface_ros_from_bed(bed, u_eff, 0.0)
-            p = _pack_params(res, wind10, wdir, brg, fuel.code)
+            p = _pack_params(res, wind10, wdir, brg, fuel.code, hs)
             if len(ros_cache) < _ROS_CACHE_MAX:
                 ros_cache[key] = p
         return p
@@ -880,7 +935,8 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                                             aspect_d[idx])
             res = rothermel.surface_ros_mps(fuel, m_dead, herb, woody,
                                             u_eff, 0.0)
-        return _pack_params(res, wind10, wdir, brg, fuel.code)
+        return _pack_params(res, wind10, wdir, brg, fuel.code,
+                            1.0 if hscales is None else _hour_scale(hour))
 
     if os.environ.get("WGRESP_NO_ROS_MEMO") == "1":
         cell_params = cell_params_reference
@@ -1227,7 +1283,8 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                      kept: dict = None,
                      embers_aloft: list = None,
                      ember_log: list = None,
-                     kept_wx: list = None) -> EnsembleArrival:
+                     kept_wx: list = None,
+                     member_hour_scale=None) -> EnsembleArrival:
     """Ensemble v2 (Sprint 2 ticket A4, Council-1 model F2+F6): nominal member
     (k=0, unperturbed) + (cfg.ensemble_n - 1) perturbed members, plus per-cell
     p10/p50/p90 quantile rasters (unix seconds; p10 = EARLIEST/pessimistic).
@@ -1281,6 +1338,21 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     too). ember_log goes to the NOMINAL member only (the truth's embers are
     what a later re-anchor carries).
 
+    member_hour_scale (PER-HOUR ROS MULTIPLIER SEAM, contracts SAFETY
+    SEMANTICS 14 — the fire-belief apply path; default None => every member
+    is the legacy call, byte-identical): a callable
+    member_hour_scale(k, q_k, legacy_scale) -> list | None consulted once per
+    member. k = member index (0 = nominal); q_k = the member's MODEL-ERROR
+    stratum level in (0, 1) (0.5 for the nominal; for k >= 1 the fourth
+    Latin-hypercube dimension's midpoint, (u_e + 1) / 2 — the level whose
+    standard-normal quantile z_k the model-error term uses); legacy_scale =
+    the member's legacy head-ROS scale (exp(model_error_sd_log * z_k), 1.0
+    for the nominal or with the term off). A returned list becomes that
+    member's compute_arrival hour_ros_scale (its FULL multiplier per hour —
+    the member-wide ros_scale is then 1.0); None keeps the legacy call for
+    that member. The seam knows nothing about beliefs: wgresponse.fire_belief
+    builds the callable. Never used by the simulator.
+
     NOTE: ensemble_n counts TOTAL members (nominal + n-1 perturbed), so
     ensemble_n=1 is nominal-only, matching the v1 convention the suite pins;
     contracts' config comment reads it as perturbed-count — the discrepancy
@@ -1294,13 +1366,21 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     # own lognormal ember distances (member_k), stable across cycles because the
     # seed is (incident_id, k) — never t0. With spotting OFF it is an inert
     # no-op, so every member stays byte-identical to the pre-SEMANTICS-11 field.
+    # PER-HOUR ROS MULTIPLIER SEAM (member_hour_scale; SEMANTICS 14): absent
+    # => no member call gains a keyword (the legacy calls, byte-identical).
+    hs_kw = {}
+    if member_hour_scale is not None:
+        hs0 = member_hour_scale(0, 0.5, 1.0)
+        if hs0 is not None:
+            hs_kw = {"hour_ros_scale": hs0}
     members = [compute_arrival(tile, pts, wx, t0_s, cfg,
                                perimeter=perimeter,
                                perimeter_at_s=perimeter_at_s,
                                incident_id=incident_id, member_k=0,
                                seed_spotting=seed_spotting, kept=kept,
                                embers_aloft=embers_aloft,
-                               ember_log=ember_log, kept_wx=kept_wx)]
+                               ember_log=ember_log, kept_wx=kept_wx,
+                               **hs_kw)]
     draws = _stratified_member_draws(incident_id, n_members - 1)
     dir_lead = min(1.0, (cfg.horizon_h * 0.5) / _DIR_RAMP_SATURATION_H)
     sd_log = float(getattr(cfg, "model_error_sd_log", 0.0) or 0.0)
@@ -1317,6 +1397,14 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             # quantile of its stratum midpoint — a lognormal, median-unbiased
             # spread of the engine's own speed error around the nominal run.
             r_scale = math.exp(sd_log * NormalDist().inv_cdf(0.5 * (u_e + 1.0)))
+        hs_kw = {}
+        if member_hour_scale is not None:
+            # SEMANTICS 14: the belief's per-hour list carries this member's
+            # FULL multiplier (legacy_scale in new-weather-pattern hours).
+            hs = member_hour_scale(k, 0.5 * (u_e + 1.0), r_scale)
+            if hs is not None:
+                hs_kw = {"hour_ros_scale": hs}
+                r_scale = 1.0
         members.append(compute_arrival(tile, pts, wx, t0_s, cfg,
                                        moisture_scale=m_scale, wind_scale=w_scale,
                                        dir_offset_deg=d_off,
@@ -1326,7 +1414,7 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                                        ros_scale=r_scale,
                                        seed_spotting=seed_spotting,
                                        kept=kept, embers_aloft=embers_aloft,
-                                       kept_wx=kept_wx))
+                                       kept_wx=kept_wx, **hs_kw))
 
     ncells = tile.spec.nrows * tile.spec.ncols
     if len(members) == 1:

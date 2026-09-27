@@ -1004,10 +1004,42 @@ function incidentTip(r) {
   }
   const om = offmapLine(r);
   if (om) lines.push(om);
+  const bt = beliefText(r.belief);
+  if (bt) lines.push(`<i>belief</i>: ${esc(bt)}`);
   const extra = (r.notes || []).filter(n => n !== r.why_no_domain &&
-    !(r.offmap && String(n).startsWith("off-domain horizon")));
+    !(r.offmap && String(n).startsWith("off-domain horizon")) &&
+    !(r.belief && String(n).startsWith("fire belief")));
   if (extra.length) lines.push(extra.map(esc).join("<br>"));
   return lines.join("<br>");
+}
+// FIRE BELIEF (contracts SAFETY SEMANTICS 14): r.belief exists only while
+// the watcher tracks beliefs (watch --fire-belief); one plain sentence.
+function beliefText(b) {
+  if (!b) return null;
+  const x = v => (v == null ? "?" : Number(v).toFixed(2)) + "x";
+  const day = t => { const d = new Date(t * 1000);
+    return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()] + " " +
+      d.toISOString().slice(11, 16) + "Z"; };
+  let s;
+  if (b.state === "learned") {
+    s = `Spread rate learned from ${b.n_obs} report${b.n_obs === 1 ? "" : "s"}: ` +
+      `${x(b.mult_p50)} physics (${x(b.mult_p10)}-${x(b.mult_p90)}).`;
+    if (b.novel_from_s == null) s += " Weather: same pattern through the forecast.";
+    else if (SUMMARY && b.novel_from_s <= SUMMARY.t_s) s += " Weather: new pattern now (physics applies).";
+    else s += ` Weather: same pattern until ${day(b.novel_from_s)}, then new pattern (physics applies).`;
+  } else if (b.state === "reset") {
+    s = "Spread rate reset to physics: the fire outgrew its learned rate.";
+  } else {
+    s = "Spread rate: physics (nothing learned yet).";
+  }
+  if (b.rapid) s += " RAPID growth.";
+  const lo = b.last_obs;
+  const sg = v => (v >= 0 ? "+" : "") + Math.round(v);
+  if (lo && lo.growth_acres != null) {
+    s += ` Last ${lo.kind === "perimeter" ? "perimeter" : "size report"}: ${sg(lo.growth_acres)} ac` +
+      (lo.predicted_growth_acres != null ? ` (belief predicted ${sg(lo.predicted_growth_acres)})` : "") + ".";
+  }
+  return s;
 }
 function clientTip(c) {
   const t = STATE && STATE.last_cycle_t_s;
