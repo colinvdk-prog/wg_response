@@ -114,6 +114,21 @@ CycleResult.offmap and dispatch.plan(offmap=...), where it replaces the flat
 1.7 m/s off-raster bound for that fire only. Off = {} and no kwarg: byte-
 identical cycles.
 
+SPREAD READS THE LOCAL WEATHER FORECAST (SAFETY SEMANTICS 17; founder
+2026-09-27, "ensure that fire spread includes local weather forecast";
+cfg.weather_grid_km, default 0 = OFF). After the fire-centroid forecast
+(fetched exactly as before — its failure is the legacy provider failure),
+a FEED incident's domain also gets the forecasts of the global lattice nodes
+inside it (wgresponse.wxfield.build_field, through the same provider; a
+failed node's zone falls back to the centroid forecast with a note naming
+it) and spreads on the per-cell nearest-point zones
+(spread.ensemble_arrival(weather_field=...)). The centroid forecast stays
+the ONE forecast for everything else: the extreme-regime posture, the
+dispatch gel windows (forecasts=...), the off-domain horizon (it reads the
+P10 raster the zones produced). Seeded (drill) incidents keep their single
+point (SEMANTICS 12f). The field rides CycleResult.weather_fields; notes say
+what was asked and what failed. Off = no field, no note: byte-identical.
+
 Collaborator seams (contracts law): feeds FireFeed / WeatherProvider /
 TerrainProvider / ClientRegistry protocols, AlertEngine.evaluate/.states
 (+ optional pop_operator_events), CrewTracker.crews, dispatcher.plan(crews,
@@ -600,12 +615,14 @@ class ThreatMonitor:
         roster_seen: dict = {}          # incident_id -> {client_id} registry returned
         extreme_flags: dict = {}        # incident_id -> bool (extreme spread regime)
         eroded_map: dict = {}           # incident_id -> tiered eroded raster
+        weather_fields: dict = {}       # incident_id -> WeatherField (SEMANTICS 17)
         for inc in active:
             try:
                 self._assess_incident(inc, now_s, assessments, ensembles,
                                       clients_seen, etas, notes, roster_seen,
                                       forecasts, extreme_flags, eroded_map,
-                                      timings=timings)
+                                      timings=timings,
+                                      weather_fields=weather_fields)
             except _ProviderFailure as pf:
                 failed_incidents.add(inc.incident_id)
                 notes.append(
@@ -781,7 +798,8 @@ class ThreatMonitor:
                           events=events, plan=plan, ensembles=ensembles,
                           notes=notes, operator_events=operator_events,
                           degraded=degraded, timings=timings,
-                          removed_incidents=removed, offmap=offmap)
+                          removed_incidents=removed, offmap=offmap,
+                          weather_fields=weather_fields)
         if belief_status is not None:
             # SAFETY SEMANTICS 14: the per-fire status (off-map rule seam)
             res.fire_status = belief_status
@@ -1221,7 +1239,8 @@ class ThreatMonitor:
                          forecasts: Optional[dict] = None,
                          extreme_flags: Optional[dict] = None,
                          eroded_map: Optional[dict] = None,
-                         timings: Optional[dict] = None) -> None:
+                         timings: Optional[dict] = None,
+                         weather_fields: Optional[dict] = None) -> None:
         """Spread one incident and append per-client ThreatAssessments.
 
         Domain = bbox around (ignition geometry + protected clients within the
@@ -1265,6 +1284,12 @@ class ThreatMonitor:
         instead of its own time (_confirmed_perimeter_at_s; SAFETY SEMANTICS
         13e/f) — decided after the client-range filter, so only domain
         incidents carry the note.
+
+        LOCAL WEATHER (cfg.weather_grid_km > 0; SAFETY SEMANTICS 17): after
+        the centroid forecast, a feed incident's domain gets its weather
+        field (_local_weather_field) and spreads on it; ``weather_fields``
+        (when given) records it. The centroid forecast still feeds
+        ``forecasts`` and the extreme-regime posture.
         """
         ign = inc.ignition_points()
         if inc.perimeter:
@@ -1343,6 +1368,17 @@ class ThreatMonitor:
             wxf = self._incident_forecast(inc, fire_centroid, now_s, notes)
         except Exception as exc:
             raise _ProviderFailure("weather", exc)
+        wfield = None
+        if self._cfg.weather_grid_km > 0.0:
+            # SAFETY SEMANTICS 17: the lattice forecasts across the domain
+            # (the centroid forecast above stays the primary and the one
+            # forecast everything below this block consumes).
+            wfield = self._local_weather_field(inc, wxf, fire_centroid, tile,
+                                               notes)
+            if wfield is not None:
+                _tm["weather_points"] = len(wfield.points)
+                if weather_fields is not None:
+                    weather_fields[inc.incident_id] = wfield
         _tm["weather_s"] = time.monotonic() - _t
         _t = time.monotonic()
         if forecasts is not None:
@@ -1369,6 +1405,11 @@ class ThreatMonitor:
             # report, not from its own age; a growing fire keeps the legacy.
             perimeter_at_s = self._confirmed_perimeter_at_s(
                 inc, provenance_s, perimeter_at_s, now_s, notes)
+        # SAFETY SEMANTICS 17d: per-(zone, hour) weather; no field (knob off,
+        # a seeded fire) or a domain with no lattice node inside spreads on
+        # the centroid alone — the legacy call, no extra argument.
+        zoned = ({"weather_field": wfield}
+                 if wfield is not None and len(wfield.forecasts) > 1 else {})
         mhs = None
         if self._belief_on():
             # SAFETY SEMANTICS 14: weather log + novelty; with
@@ -1381,12 +1422,13 @@ class ThreatMonitor:
             # fire_belief_apply_p10 (fire_belief.applied_ensemble)
             ens = fire_belief_mod.applied_ensemble(
                 tile, seeds, wxf, now_s, spread_cfg, inc.incident_id,
-                perimeter, perimeter_at_s, mhs)
+                perimeter, perimeter_at_s, mhs, **zoned)
         else:
             ens = spread.ensemble_arrival(tile, seeds, wxf, now_s, spread_cfg,
                                           incident_id=inc.incident_id,
                                           perimeter=perimeter,
-                                          perimeter_at_s=perimeter_at_s)
+                                          perimeter_at_s=perimeter_at_s,
+                                          **zoned)
         if self._belief_on():
             self._belief_after_spread(
                 inc, ens, now_s, spread_cfg,
@@ -1412,6 +1454,34 @@ class ThreatMonitor:
                 eta=eta, computed_at_s=now_s))
             clients_seen[client.client_id] = client
             etas[(client.client_id, inc.incident_id)] = eta
+
+    def _local_weather_field(self, inc: FireIncident, wxf, centroid: LatLon,
+                             tile, notes: list):
+        """SAFETY SEMANTICS 17: the WeatherField of one domain (wgresponse.
+        wxfield.build_field: the centroid forecast `wxf` + the global lattice
+        nodes on the tile's grid, fetched through the monitor's provider),
+        with its notes; None for a SEEDED incident (single-point drill
+        weather, SEMANTICS 12f/17d — noted). A failed NODE is inside the
+        field (its zone carries `wxf`, noted by name); anything else going
+        wrong here is noted and the incident spreads on `wxf` alone (the
+        legacy law) — never a raise, never a silent fallback."""
+        from wgresponse import wxfield
+        if inc.source is IncidentSource.SEEDED:
+            notes.append(f"incident {inc.incident_id}: local weather not "
+                         f"applied — a seeded (drill) fire keeps its "
+                         f"single-point weather (SAFETY SEMANTICS 17d)")
+            return None
+        try:
+            field = wxfield.build_field(self._weather, wxf, centroid,
+                                        tile.spec, self._cfg,
+                                        self._cfg.horizon_h)
+        except Exception as exc:  # degrade loudly to the legacy single point
+            notes.append(f"incident {inc.incident_id}: local weather failed "
+                         f"({exc}); spread prices the fire-centroid forecast "
+                         f"alone (legacy; SAFETY SEMANTICS 17)")
+            return None
+        notes.extend(wxfield.field_notes(inc.incident_id, field, self._cfg))
+        return field
 
     def _confirmed_perimeter_at_s(self, inc: FireIncident,
                                   provenance_s: float, perimeter_at_s: float,

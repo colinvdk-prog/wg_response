@@ -167,6 +167,25 @@ py -3 -m wgresponse.cli watch --aoi data/aoi_conus.json --registry mock-presets 
 #                               + an offmap block per incident; /world shows
 #                               it. Inert without --fail-closed. Measured in
 #                               docs/LIVE_WORLD_PLAN.md (ticket 1.5 section).
+# 5e. SPREAD READS THE LOCAL WEATHER FORECAST (SAFETY SEMANTICS 17, founder
+#     2026-09-27: "ensure that fire spread includes local weather forecast";
+#     default OFF, add to either command above):
+#       --weather-grid-km KM    besides the fire-centroid forecast (still the
+#                               primary: extreme-regime posture, gel windows),
+#                               every domain fetches the NWS forecast at the
+#                               nodes of a global lat/lon lattice at KM
+#                               spacing inside it (coarsened in sqrt-2 steps
+#                               until within --weather-points-max N,
+#                               default 16), and
+#                               every cell spreads on its nearest point's
+#                               forecast. A failed node falls back to the
+#                               centroid (noted); a failed centroid is the
+#                               usual provider failure. Seeded fires keep one
+#                               point. NWS points mapping cached, gridpoints
+#                               for 30 min. /api/state gains weather_grid + a
+#                               weather block per incident; /world draws the
+#                               points. Measured in docs/LIVE_WORLD_PLAN.md
+#                               ("Spread reads the local weather forecast").
 
 # 6. THE INTERACTIVE SIMULATOR (docs/SIMULATOR_DESIGN.md): thirteen real WUI
 #    locations on cached LANDFIRE tiles, click-to-ignite fires, the REAL
@@ -223,6 +242,7 @@ py -3 -m pip install -r requirements.txt   # tifffile + numpy + imagecodecs (+ b
 | `wgresponse.seeded` | W1 seeded incidents (SAFETY SEMANTICS 12): the thread-safe `SeededIncidentStore` (create / retire / list / persistence rows, 12-active cap), `seeded_forecast` (the per-incident weather override through the weather seam), `parse_seed_request` (the `POST /api/test/seed` body), `SeedSafeNotifier` (a seeded fire's notifications go to the drill log, never a client), `DrillOnlyNotifier` (the TEST world's notifier: no client channel at all), `LiveWorldRefused`. |
 | `wgresponse.offmap` | The per-fire off-domain horizon (SAFETY SEMANTICS 15, `corridor_offraster_per_fire`): the feed's behaviour status (`status_for` → known / rapid), the OR-combine seam for other status sources (`merge_status`), the raw-P10 boundary front speed (`front_speed_stats`: P90 + max) and each domain fire's `OffDomainHorizon` (speed, reason, crossing margin) for `dispatch.plan(offmap=...)`. |
 | `wgresponse.worlds` | TWO WORLDS (SAFETY SEMANTICS 16): `TestWorld` — the test map: the live cycle's snapshot read-only ∪ seeded fires through the same `ThreatMonitor.cycle()` (live domains shared, never recomputed), its own ladder (`DrillOnlyNotifier`), `VirtualCrewTracker` crews, plan and `test_world/` state namespace; IDLE until a drill starts; one worker thread that yields to the live loop; `TestTerrainOverlay`; `split_legacy_seeds` (the migration of a pre-two-worlds live file). |
+| `wgresponse.wxfield` | Local weather across a spread domain (SAFETY SEMANTICS 17, `weather_grid_km`): the global lat/lon lattice nodes inside a domain (`lattice_points`, coarsened in √2 steps to fit `weather_points_max`), the nearest-point zone of every cell (`zone_map`, cached), the `WeatherField` (`build_field`: the centroid forecast + each node's, a failed node falling back to the centroid) that `spread.ensemble_arrival(weather_field=...)` prices per (zone, hour), and the `/api/state` + world-summary `weather` block (`field_row`). |
 | `wgresponse.safety` | P10 departure deadlines, eroded-grid corridor checks, egress-to-safe-zone verdicts. |
 | `wgresponse.dispatch` | Deadline-TOPTW planner: regret-2 insertion + ILS, commitment/churn stability. |
 | `wgresponse.travel` | Tier-0 travel time (haversine x circuity / class speed x fire-traffic factor). |
@@ -323,6 +343,9 @@ the shipped values.
 | `live_woody_frac` | 0.60 | Live woody moisture default. |
 | `edge_weather_piecewise` | False | EDGE-WEATHER PIECEWISE INTEGRATION (review code finding, late-biased frozen departure-hour weather): True continues a traversal that crosses an hour boundary with each subsequent hour's rate for the distance still unburned. Default OFF = byte-identical; hindcast A/B decides the live flip. |
 | `slope_phi_vector` | False | PHI-VECTOR SLOPE/WIND COMBINATION (review code finding: speed-space vector combination runs −11 to −33% slow on opposed slopes, the downslope Santa Ana geometry): True combines the Rothermel phi factors as vectors (the ELMFIRE/FARSITE convention) for both the effective wind and the max-spread bearing. Default OFF = byte-identical; hindcast A/B decides the live flip. |
+| `weather_grid_km` | 0.0 | SPREAD READS THE LOCAL WEATHER FORECAST (founder 2026-09-27, *"ensure that fire spread includes local weather forecast"*; contracts SAFETY SEMANTICS 17; `wgresponse.wxfield`). Legacy: ONE hourly forecast at the fire centroid prices every edge of a domain 50–75 km across. > 0 (km, ≥ 1): the centroid stays the primary forecast and the nodes of a GLOBAL lat/lon lattice at this spacing (row i at lat i·s/M_PER_DEG_LAT, node j at lon j·s/m_per_deg_lon(lat_i)) that fall inside the domain are fetched through the same provider, coarsened in √2 steps (every second step exactly ×2, so those levels nest) until centroid + nodes ≤ `weather_points_max`; every cell spreads on its nearest point's forecast (Voronoi zones in local metres; per (zone, hour) weather; ensemble perturbations alike in every zone; embers fly on their source zone's wind). A failed node's zone falls back to the centroid forecast (cycle note); a failed centroid is the legacy provider failure. The centroid forecast stays the one forecast for the extreme-regime posture and the gel windows; seeded fires keep one point. `/api/state` gains `weather_grid` + a `weather` block per incident (points, their next hours, how far they disagree); so do the world-summary rows, and `/world` draws the points. Default 0 = byte-identical; watch `--weather-grid-km KM`. |
+| `weather_points_max` | 16 | SEMANTICS 17 cap on forecast points per domain, the centroid included (1–255; each point costs up to two NWS requests on a cold cache). Read only with `weather_grid_km` > 0; watch `--weather-points-max N`. |
+| `weather_cache_ttl_s` | 1800.0 | SEMANTICS 17: how long `NwsWeather` reuses a gridpoint's decoded forecast (s, 0–21600) in its process-level cache; the points → gridpoint mapping is static and kept. A failed refresh raises like an uncached fetch (an expired forecast is never served). Read only with `weather_grid_km` > 0. |
 
 ### Dispatch
 

@@ -316,6 +316,23 @@ def _build_parser() -> argparse.ArgumentParser:
                          "than physics (cfg.fire_belief_apply_p10 lifts the "
                          "guard: config only, measured unsafe for contained "
                          "fires, docs/FIRE_BELIEF.md)")
+    # SAFETY SEMANTICS 17 (founder 2026-09-27): default-OFF knob.
+    pw.add_argument("--weather-grid-km", type=float, default=0.0,
+                    help="cfg.weather_grid_km: spread reads the LOCAL weather "
+                         "forecast — the fire centroid plus the nodes of a "
+                         "global lat/lon lattice at this spacing (km) that "
+                         "fall inside each domain (coarsened in sqrt-2 steps "
+                         "until centroid + nodes <= --weather-points-max); "
+                         "every cell spreads on its nearest point's forecast; a "
+                         "failed node falls back to the centroid (noted); NWS "
+                         "forecasts are cached (points mapping static, "
+                         "gridpoints cfg.weather_cache_ttl_s); 0 = off (one "
+                         "forecast at the fire centroid)")
+    pw.add_argument("--weather-points-max", type=int, default=None,
+                    help="cfg.weather_points_max: forecast points per domain, "
+                         "the centroid included (default 16; each costs up to "
+                         "two NWS requests on a cold cache); needs "
+                         "--weather-grid-km")
     pw.add_argument("--dry-notify", action="store_true",
                     help="force log-only notifications (no SES even when "
                          "WGRESP_NOTIFY_SES=1)")
@@ -1245,6 +1262,18 @@ class _WatchDaemon:
             out["fire_status"] = {
                 iid: status_row(st) for iid, st in
                 sorted((getattr(res, "fire_status", None) or {}).items())}
+        if getattr(self._cfg, "weather_grid_km", 0.0) > 0.0:
+            # SAFETY SEMANTICS 17f: the rule + each incident's forecast
+            # points and their next hours (null = no field this cycle: no
+            # domain, or a seeded fire's single point) — additive keys,
+            # present only with the knob armed.
+            from wgresponse import wxfield
+            fields = getattr(res, "weather_fields", None) or {}
+            out["weather_grid"] = wxfield.rule_summary(self._cfg)
+            for row in out["incidents"]:
+                fld = fields.get(row["incident_id"])
+                row["weather"] = (wxfield.field_row(fld, res.t_s)
+                                  if fld is not None else None)
         return out
 
     @classmethod
@@ -1678,6 +1707,26 @@ def _cmd_watch(args) -> int:
                "--fail-closed is not armed]"))
     startup_notes_fix += _fire_belief_notes(args)
     cfg = _fire_belief_cfg(cfg, args)       # SEMANTICS 14 (apply => track)
+    if getattr(args, "weather_grid_km", 0.0):
+        cfg = dataclasses.replace(
+            cfg, weather_grid_km=float(args.weather_grid_km))
+        if getattr(args, "weather_points_max", None) is not None:
+            cfg = dataclasses.replace(
+                cfg, weather_points_max=int(args.weather_points_max))
+        startup_notes_fix.append(
+            f"LOCAL WEATHER ACROSS EACH DOMAIN: the fire centroid plus the "
+            f"nodes of a global {cfg.weather_grid_km:g} km lattice inside "
+            f"the domain (coarsened in sqrt-2 steps until <= "
+            f"{cfg.weather_points_max} points), every cell spreading on its "
+            f"nearest point's forecast; "
+            f"a failed node falls back to the centroid forecast (noted); NWS "
+            f"points mapping cached, gridpoints for "
+            f"{cfg.weather_cache_ttl_s:g} s; seeded fires keep one point — "
+            f"founder 2026-09-27, SAFETY SEMANTICS 17")
+    elif getattr(args, "weather_points_max", None) is not None:
+        print("error: --weather-points-max needs --weather-grid-km (the "
+              "lattice it caps)", file=sys.stderr)
+        return 2
     problems = validate_config(cfg)
     if problems:
         # The review found validate_config never ran on this path and

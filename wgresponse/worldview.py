@@ -35,6 +35,13 @@ per completed cycle from the daemon's last CycleResult:
      offmap_rule): each row's "offmap" (the speed its fail-closed corridor
      bound extrapolates at beyond its domain, why, the crossing margin;
      null without a domain), the rule itself and counts.offmap by kind.
+  6. LOCAL WEATHER (contracts SAFETY SEMANTICS 17; only when the daemon runs
+     --weather-grid-km, i.e. its /api/state carries weather_grid): each
+     row's "weather" (wxfield.field_row: the forecast points its domain
+     spread on — lat, lon, role, source, ok, zone cells — with each point's
+     wind / gust / direction / RH at the next few hours and how far the
+     points disagree; null without a field), the rule itself and
+     counts.weather (domains on a field, points, failed points).
 
   5. BELIEF (contracts SAFETY SEMANTICS 14, 2026-09-27) — only while the
      watcher tracks fire beliefs (cfg.fire_belief_track): each incident row
@@ -315,6 +322,15 @@ def _counts(state: dict, rows: list, notes) -> dict:
             if k:
                 kinds[k] = kinds.get(k, 0) + 1
         out["offmap"] = dict(sorted(kinds.items()))
+    if isinstance(state.get("weather_grid"), dict):
+        # SAFETY SEMANTICS 17f (the daemon's --weather-grid-km): domains that
+        # spread on a local-weather field — additive, only when armed
+        blocks = [r.get("weather") for r in rows if r.get("weather")]
+        out["weather"] = {
+            "domains": len(blocks),
+            "points": sum(int(b.get("points_n") or 0) for b in blocks),
+            "failed": sum(int(b.get("failed") or 0) for b in blocks),
+        }
     return out
 
 
@@ -333,6 +349,10 @@ def build_summary(state: dict, result, geometry: bool = True) -> dict:
     # when the daemon armed it (its /api/state carries offmap_rule)
     per_fire = isinstance(state.get("offmap_rule"), dict)
     horizons = getattr(result, "offmap", None) or {}
+    # SAFETY SEMANTICS 17f: the local-weather field, present only when the
+    # daemon armed it (its /api/state carries weather_grid)
+    local_wx = isinstance(state.get("weather_grid"), dict)
+    wx_fields = getattr(result, "weather_fields", None) or {}
     rows = []
     for inc in incs:
         iid = inc.incident_id
@@ -376,6 +396,10 @@ def build_summary(state: dict, result, geometry: bool = True) -> dict:
             from wgresponse.offmap import horizon_row
             h = horizons.get(iid)
             row["offmap"] = horizon_row(h) if h is not None else None
+        if local_wx:
+            from wgresponse.wxfield import field_row
+            fld = wx_fields.get(iid)
+            row["weather"] = field_row(fld, t_s) if fld is not None else None
         rows.append(row)
     rows = rank_incidents(rows)
     out = {
@@ -393,6 +417,8 @@ def build_summary(state: dict, result, geometry: bool = True) -> dict:
     }
     if per_fire:
         out["offmap_rule"] = dict(state["offmap_rule"])
+    if local_wx:
+        out["weather_grid"] = dict(state["weather_grid"])
     return out
 
 

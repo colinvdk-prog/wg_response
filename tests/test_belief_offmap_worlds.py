@@ -122,3 +122,38 @@ def test_no_live_belief_leaves_the_drill_monitor_alone(tmp_path):
     daemon.run_cycle()
     assert monitor.fire_beliefs is None
     assert tw.monitor.fire_beliefs is None
+
+
+def test_the_belief_applied_ensemble_prices_per_zone_and_guards_p10_there():
+    """SAFETY SEMANTICS 14 x 17 (integrator 2026-09-27): a belief-applied
+    fire with a weather field runs BOTH of applied_ensemble's ensembles per
+    (zone, hour) — the belief's members and the physics run behind the P10
+    guard — so local weather reaches belief-applied fires and P10 stays
+    min(belief, physics) under the same local weather."""
+    from test_weather_field import T0 as WT0, _B3_TILES, _zoned_field
+    from wgresponse import fire_belief, geo, spread
+    from wgresponse.contracts import ResponseConfig
+    tile = _B3_TILES["mixed"]()
+    ign = geo.rc_to_latlon(tile.spec, tile.spec.nrows // 2, 4)
+    field = _zoned_field(tile, "veer", ign)
+    cfg = ResponseConfig(ensemble_n=5, horizon_h=96.0, model_error_sd_log=0.7)
+
+    def half_speed(k, q, legacy):
+        return [0.5] * 96
+
+    got = fire_belief.applied_ensemble(
+        tile, [ign], field.forecasts[0], WT0, cfg, "bz", None, None,
+        half_speed, weather_field=field)
+    want = spread.ensemble_arrival(
+        tile, [ign], field.forecasts[0], WT0, cfg, incident_id="bz",
+        member_hour_scale=half_speed, weather_field=field)
+    phys = spread.ensemble_arrival(
+        tile, [ign], field.forecasts[0], WT0, cfg, incident_id="bz",
+        weather_field=field)
+    assert got.p50.data == want.p50.data and got.p90.data == want.p90.data
+    assert got.p10.data == [a if a <= b else b
+                            for a, b in zip(want.p10.data, phys.p10.data)]
+    one = fire_belief.applied_ensemble(
+        tile, [ign], field.forecasts[0], WT0, cfg, "bz", None, None,
+        half_speed)
+    assert one.p50.data != got.p50.data          # the zones reach the belief

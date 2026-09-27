@@ -1061,6 +1061,228 @@ command. No existing test was re-pinned.
 - The "left the domain" half of ticket 1.5 (crews and the map) is not part of
   this build.
 
+#### Spread reads the local weather forecast (2026-09-27)
+
+Founder, verbatim: *"ensure that fire spread includes local weather
+forecast."* Built as contracts SAFETY SEMANTICS 17 (`wgresponse/wxfield.py`),
+three default-OFF knobs, armed by `watch --weather-grid-km KM
+[--weather-points-max N]`. With the knob off, the arrival rasters, cycles,
+plans, `/api/state`, the persisted file and `/api/world/summary` are
+byte-identical to goldens computed on commit b5ce62c, on a world whose
+forecast varies across the domain (`tests/test_weather_field.py`).
+
+**For the founder.** Fire spread already used the National Weather Service's
+hourly forecast (wind, gusts, humidity, temperature), but it asked for one
+forecast per fire, at the middle of the fire, and used it across the whole
+area the engine models around that fire. On the national map that area is
+50 to 75 km across, so ridges, valleys and coastline all got the same
+weather. With the new option on, the engine also asks for the forecast at a
+grid of points across that area: every 10 km, or every 14 or 20 km on the
+largest areas, so one fire never costs more than 16 forecasts. Each patch of
+ground then burns with the forecast of the nearest point. "Local weather"
+now means the Weather Service's own forecast grid, whose squares are 2.5 km
+across. It captures the large contrasts: cooler, moister air over the
+Continental Divide, damp marine air along the coast, stronger gusts on one
+side of a valley. It cannot see what happens inside one square: wind
+funnelled up a single canyon, a gust off one ridge line, or the wind a large
+fire makes for itself. Between our points the engine uses the nearest
+point's forecast rather than blending, so the patches meet at sharp edges.
+On today's forecasts the change mattered for Willow, the one national fire
+that spreads toward homes. Toward Aspen, the fire now has to cross air over
+the Divide that is about 14 % more humid and 3 °C cooler than at the fire.
+The pessimistic forecast no longer brings it to 21 Aspen homes within four
+days (it did at 61 to 74 hours before). Toward Vail, stronger forecast gusts
+bring the pessimistic front to four Vail homes at 25 to 28 hours, and to one
+Eagle–Vail home six hours sooner. So the option makes forecasts more local,
+not more cautious: some homes are warned sooner, others later or not at all.
+Everything else that needs a single forecast (the extreme-fire posture, gel
+timing) keeps using the forecast at the fire. If one of the extra points
+fails to load, its patch falls back to the fire's own forecast and the log
+names the point. If the fire's own forecast fails, the fire is flagged
+exactly as it is today.
+
+| Question | Answer as built |
+|---|---|
+| What was there | `ThreatMonitor._assess_incident` fetched ONE hourly forecast per fire at the fire centroid (`NwsWeather`: points → forecastGridData, RLE-decoded). `spread.compute_arrival` priced every edge with it at the departure hour. National domains are the bbox of the fire + the protected clients within the threat radius, padded 2 km, ≤ ~300,000 cells: 50–75 km across. |
+| The points | The fire centroid stays the PRIMARY forecast (point 0). The others are the nodes of a GLOBAL lat/lon lattice that fall on the domain's grid. At level L the spacing is s = `weather_grid_km` × 2^(L//2), × √2 on odd levels. Row i (from the equator) sits at lat = i·s / `geo.M_PER_DEG_LAT`, and its nodes at lon = j·s / `geo.m_per_deg_lon(lat)` (j from Greenwich). A node depends on (s, i, j) only, so overlapping domains at one level ask the SAME points (and hit the same cache entries), and level L+2 nests in level L exactly. L grows until centroid + nodes ≤ `weather_points_max`. √2 steps halve the node count per step, where ×2 steps would quarter it: on the 40 × 53 km Malibu domain with 16 points, ×2 fell from ~20 nodes at 10 km straight to 4 at 20 km; √2 keeps 11 at 14.1 km. |
+| The zones | Every cell takes its NEAREST point (Voronoi in local metres: east–west measured at the cell's row latitude; ties to the lower index). Per row the squared distance to each point is a line in the column index plus a common term, so a row is filled by walking the lower envelope of the lines: 8 ms for Willow's 300,544 cells with 16 points (39 ms with 54), against 0.2 s (0.7 s) brute force, identical cell for cell (`zone_map_cost.py`). Cached per (grid, points). Zones are discrete, never blended per cell. |
+| The spread | `compute_arrival` / `ensemble_arrival(weather_field=...)`: an edge leaving cell u is priced with u's zone forecast. The ROS memo's per-hour weather is keyed (zone, hour) instead of hour; the ROS cache keys on the effective-weather VALUES, so cells of different zones with equal weather still share entries. Ensemble perturbations (wind / moisture scale, direction offset, gust blend, model error) apply identically in every zone. A spotting ember flies on its SOURCE cell's zone wind (bearing, Sardoy distance, flight time). The spread.py change is additive: one optional argument, a validated `_zone_tables` helper and a keyed lookup in the two weather reads; absent, every line runs as before. |
+| One forecast where one is needed | The centroid forecast stays the one forecast for the extreme-regime posture, dispatch's gel windows (`plan(forecasts=...)`) and any per-fire belief or novelty logic. The per-fire off-domain horizon reads the P10 raster the zones produced (tested: with zones that all carry the same forecast it is bit for bit the per-fire result). |
+| Failures | A failed CENTROID is today's provider failure (the incident is blind, SEMANTICS 6). A failed or empty NODE falls back to the centroid forecast for its zone, `WeatherPoint.ok = False`, one note naming the point; the cycle is not degraded, because that zone prices exactly the legacy weather. Anything else going wrong while building the field is a note and the legacy single point. |
+| NWS cache | Only with the knob on: a process-level `NwsForecastCache` in `weather.py` keeps the points → forecastGridData mapping (static) and each gridpoint's DECODED series by URL for `weather_cache_ttl_s` (30 min), the centroid's included. A refresh that fails raises like an uncached fetch; an expired forecast is never served, and a kept mapping whose gridpoint then fails is dropped and re-resolved next time. Nodes are fetched four at a time; results are kept by index, so the field never depends on completion order. |
+| Knobs | `weather_grid_km` (0 = off; ≥ 1 km), `weather_points_max` (16, centroid included, 1–255), `weather_cache_ttl_s` (1800 s, 0–21600). Flags: `--weather-grid-km KM`, `--weather-points-max N` (refused without the grid). |
+| Surfacing | One note per domain incident ("local weather — 16 forecast points (fire centroid + 15 nodes of the 20 km lattice (coarsened from 10 km to fit 16 points)), 0 failed; …") and one per failed node; `CycleResult.weather_fields`; `/api/state` gains `weather_grid` (the rule) and a `weather` block on every incident row (null without a field): the points (lat, lon, role, source, ok, zone cells), each point's wind, gust, direction, RH and temperature at +0/3/6/12/24 h, and how far the points disagree at each lead. The world-summary rows carry the same block, `counts.weather` counts domains, points and failed points, and `/world` draws each point with an arrow for its wind (regional and local tiers) and a "LOCAL WEATHER" tooltip line. All only with the knob on. |
+| Unchanged | Seeded (drill) fires keep their single-point weather (SEMANTICS 12f; noted). The simulator never passes a field. A domain with no lattice node inside spreads on the centroid alone (the legacy call). |
+
+**A. How much the forecast differs across one domain.** The recorded
+national snapshot (2026-09-27 15:55Z, 16 domains with clients) replayed with
+the production flags + `--drop-contained --confirmed-perimeters`, and FRESH
+NWS forecasts for every point, fetched once and replayed from disk so that
+every variant sees one forecast vintage
+(`scratch_review/wxfield/national_wxfield.py`, `national_wxfield.json`). For
+each domain, over the next 48 h hour by hour: the spread across its points of
+the sustained wind (max − min), the smallest arc that holds every point's
+direction, and the RH spread; median / max over the 49 hours.
+
+| Domain | Size | Points @ spacing | Wind spread (m/s) | Direction arc | RH spread |
+|---|---|---|---|---|---|
+| Willow (CO, live fire) | 66.3 × 76.0 km | 16 @ 20 km | 2.6 / 3.6 | 170° / 290° | 25 / 34 % |
+| Malibu tile (LAC-345615 domain) | 39.5 × 52.8 km | 12 @ 14.1 km | 2.1 / 4.1 | 90° / 240° | 24 / 37 % |
+| DARK | 28.2 × 60.2 km | 9 @ 14.1 km | 2.1 / 4.1 | 40° / 210° | 27 / 35 % |
+| LAC-347778 | 24.9 × 63.1 km | 13 @ 10 km | 2.1 / 4.1 | 70° / 240° | 22 / 40 % |
+| LUCAS | 15.1 × 63.6 km | 7 @ 10 km | 1.0 / 3.6 | 30° / 200° | 13 / 20 % |
+| OTIS (smallest) | 16.8 × 21.7 km | 3 @ 10 km | 1.0 / 1.5 | 20° / 60° | 9 / 21 % |
+
+Every domain's points disagree by 1–2.6 m/s of sustained wind and 7–27 % RH
+at the median hour. The direction arcs are wide because today's winds are
+light (the strongest point in Willow's domain peaks at 5.1 m/s), and a light
+wind's direction is loosely defined. The same points under a wind event
+would disagree less on direction and more on speed. What the fire feels is
+per zone. Mean signed difference from the centroid over the next 72 h,
+Willow (`zone_signed.py`):
+
+| Willow zone (from the fire) | Wind | Gust | RH | Temp | Dead-fuel moisture |
+|---|---|---|---|---|---|
+| 14: 10.7 km W, toward Independence Pass / Aspen | +1.5 m/s | +2.5 m/s | **+14.0 %** | **−2.8 °C** | **+6.3 pts** |
+| 13: 30.7 km W, the Aspen side | −0.2 | +0.9 | −4.1 % | +1.3 °C | −1.5 pts |
+| 11: 19.7 km NNE, toward Leadville / Vail | −0.1 | **+2.4** | +10.0 % | −2.4 °C | +4.1 pts |
+| 15: 9.4 km E | +0.3 | +0.4 | +2.0 % | 0.0 | +1.6 pts |
+| 8: 57.4 km WNW | +0.3 | +1.3 | −6.8 % | +4.9 °C | −2.4 pts |
+
+Malibu (the hypothetical fire below): the coastal and offshore zones 15–45 km
+south and south-east of the fire read **+12 to +16 % RH** (marine air), i.e.
++2.3 to +3.4 points of dead-fuel moisture; the zones just east of it (1.6
+and 15.6 km) run about 2 °C cooler.
+
+**B. What it changes in the fire.** Same replay, one cycle each way (the
+production ensemble: 7 members, model-error term 0.71, gust blend 0.5).
+Of the 16 domains, 13 have fires that do not spread at all under this
+forecast (burned P50 area 0 at +96 h either way), and DARK (37.9 km²) and
+LUCAS (5.8 km²) burn out within a few km of their centroid: LUCAS does not
+change, DARK by 0.8 km² of P10 at +24 h and 0.1 km² of P50 at +48 h (at the
+edge of its western neighbour zone, 7 km out), and neither by +72 h. Willow is the one live fire that changes. Because the
+SoCal fires do not spread, the second domain is a HYPOTHETICAL point fire on
+the real Malibu domain tile (the burnable cell nearest 34.09, −118.72, GS1,
+in the Santa Monica Mountains above the Malibu demo homes), spread both ways
+through the same `ensemble_arrival` (`domain_wxfield.py`,
+`domain_malibu.json`; client-like points: the 40 demo homes and 28 ring
+points 2–20 km from the fire).
+
+*Willow (live, 204 demo homes in range).* No home is reached by the median
+(P50) within 96 h either way. 27 homes are reached by the pessimistic
+arrival (P10) in one run or both:
+
+| Homes | One point (legacy) | Local weather |
+|---|---|---|
+| 21 Aspen homes (aspen_co-c002 … c040) | P10 +61.5 to +74.1 h | not reached within 96 h |
+| aspen_co-c004 | +60.7 h | +60.9 h |
+| eagle_vail_co-c019 | +27.8 h | **+21.8 h** |
+| vail_co-c014, c018, c022, c036 | not reached | **+25.4 to +28.3 h** |
+
+Burned area (km²) by hour after the snapshot:
+
+| Hours | 0 | 6 | 12 | 24 | 36 | 48 | 72 | 96 |
+|---|---|---|---|---|---|---|---|---|
+| P50, one point | 108.9 | 136.5 | 189.9 | 278.3 | 381.1 | 417.3 | 657.3 | 976.4 |
+| P50, local weather | 92.2 | 116.9 | 164.5 | 287.5 | 472.7 | **556.1** | 740.3 | 973.4 |
+| P10, one point | 296.2 | 420.4 | 619.1 | 894.8 | 1,063.6 | 1,146.2 | 1,585.7 | 1,587.6 |
+| P10, local weather | 187.3 | 310.7 | 534.6 | 991.6 | 1,347.5 | 1,457.5 | 1,658.1 | 1,670.2 |
+
+Where the front differs most: at +48 h, 172.8 km² burn only with local
+weather, centred 20 km NORTH of the fire (bearing 10°; 144 km² of it in zone
+11, the gustier zone toward Leadville and Vail, reaching 29.5 km). Another
+34.0 km² burn only with the one point, 10.8 km EAST (zone 15). At +24 h the
+two pictures are 49.6 km² (north) and 40.4 km² (east). The smaller burn at
++0 h is a consequence of the confirmed-perimeter anchor: Willow's polygon
+burns from its confirming report 19.9 h before the snapshot, and the hours
+before the forecast's first sample take each zone's FIRST forecast hour. The
+Aspen homes drop out because the zones between the fire and Aspen are moister
+and cooler (zone 14: +6.3 points of dead-fuel moisture). The Vail homes come
+in because zone 11's gusts are 2.4 m/s stronger, and gusts enter the
+production wind as blend 0.5.
+
+*Malibu (hypothetical, 40 demo homes + 28 ring points; 12 points at
+14.1 km).* The fire spreads the same way for its first 6 h. Then the
+coastal zones' marine air slows it: burned P50 at +24 h 54.2 → 50.1 km²
+(−8 %), +36 h 138.0 → 125.1 km² (−9 %), +48 h 221.7 → 211.2 km² (−5 %); it
+converges by +96 h (351.0 → 350.0). 21 demo homes are reached within 96 h
+both ways. Median arrivals move later by 0.9 h on average (up to +5.8 h;
+8 homes by more than 1 h). P10 moves +0.1 h on average, but two homes swing
+far: malibu_ca-c035 +15.3 → +27.9 h, malibu_ca-c030 +26.8 → +17.9 h. The
+front differs most 18 km EAST along the range (zone 2: 11.1 km² burn only
+with the one point at +48 h).
+
+![Local weather on Willow and the Malibu domain](review/wxfield_local_weather_2026-09-27.png)
+
+**C. Cost.** The same national replay (16 domains, 181 forecast points
+with the knob on: 82 distinct points URLs, 79 distinct gridpoints, because
+the SoCal domains overlap and share lattice nodes). The LIVE run hits the
+network for every request (`national_wxfield.py --live`,
+`national_wxfield_live.json`); requests per cycle are what `NwsWeather`
+issued.
+
+| Cycle | Wall | Weather phase | Spread phase | NWS requests |
+|---|---|---|---|---|
+| Knob off (legacy) | 15.9 s | 2.9 s | 10.4 s | 32 (16 points + 16 gridpoints) |
+| On, cold cache (first cycle) | 21.6 s | 7.3 s | 11.3 s | 161 (82 + 79) |
+| On, warm (within the 30-min TTL) | 14.7 s | 0.2 s | 11.0 s | **0** |
+| On, after the TTL | 19.1 s | 4.2 s | 11.2 s | 79 (gridpoints only; mapping kept) |
+| On, no cache | 27.3 s | 11.8 s | 11.4 s | 362 (181 + 181) |
+
+So the steady state is a gridpoint refresh every 30 min (~+3 s per cycle
+then) and warm cycles otherwise. Warm cycles are slightly faster than
+today's, because the centroid forecasts are cached too. The spread itself does not
+slow: 10.4–11.4 s for all 16 domains either way. Willow's nominal member
+solves in 0.73 s one-point vs 0.69 s zoned, with 51,753 vs 52,605 Rothermel
+evaluations (+1.6 %: on this 129.5 m grid the ROS memo shares little either
+way; `real_memo_parity.py`). The zone map costs 8 ms per new (grid, points).
+Memory: one byte per cell per cached zone map (≤ 32 kept), a decoded series
+per gridpoint (≤ 512 kept).
+
+**D. Byte identity and memo parity.** `tests/test_weather_field.py` (52
+tests): the knob OFF reproduces the b5ce62c goldens (three cycles, the
+`/api/state` payload, the persisted file bytes, the world summary) on the
+gradient world `tests/wxfield_stack.py`, where the knob (7 points at
+7.07 km) moves the downwind client's arrival from +17.6 h to +13.0 h; the companion knobs
+are inert with the grid off; spread with no field, or a field whose zones all
+carry the one forecast (memo and reference paths, ensemble, all physics
+knobs, spotting), is the legacy raster bit for bit; knob-off `NwsWeather`
+makes exactly the legacy requests. With zones ON, the memo path equals the
+`WGRESP_NO_ROS_MEMO=1` reference path over the B3 matrix (3 tiles × 2 wind
+regimes × {no perimeter, stale perimeter} × {0, +17.3° offset}, every case
+also differing from the one-point raster), with the piecewise walker +
+phi-vector + floor gate + gust blend + ros_scale, with spotting, for the
+5-member ensemble with the model-error term, and for a re-anchor with
+kept / kept_wx. On the REAL Willow and DARK domains with their real fields
+the nominal member is memo = reference bit for bit, zoned and one-point
+(`real_memo_parity.json`). Full suite (serial): 2,097 collected, 2,084
+passed, 13 skipped, 0 failed; no existing test was re-pinned.
+
+**What it cannot see.** Wind finer than the forecast grid (NWS 2.5 km):
+canyon channelling, slope and valley flows, a sea-breeze front inside one
+cell. Anything between lattice nodes: nearest point, no interpolation, so a
+zone edge is a step. The fire's own wind, and the forecast's own error (the
+ensemble perturbs every zone alike). Past hours of an anchored perimeter take
+each zone's first forecast hour. A node that fails takes the centroid's
+weather, which is exactly today's error for that zone.
+
+**Open:**
+
+- The owner decides whether to arm it, and at what spacing. The effect runs
+  both ways by construction. Willow's P10 dropped 21 Aspen homes out of its
+  96-h window and brought 4 Vail homes in. A hindcast A/B
+  (`tools/hindcast_*`, the two-sided rule) should decide the live flip, as
+  it did for the other physics knobs.
+- The cap: 16 points on a 76 km domain means 20 km spacing. The Willow P10
+  change comes from zones 11 and 14, 10–20 km from the fire. A finer lattice
+  near the fire (a spacing that grows with distance) would spend the same
+  budget where the fire goes first.
+- Past hours before the NWS series starts (an anchored perimeter's growth
+  before now) use each zone's first forecast hour. Observed weather (RAWS)
+  for the past hours would be the honest input.
+- Blending across zone edges (inverse-distance or bilinear per cell) would
+  remove the steps, at the cost of per-cell weather and most of the ROS memo.
+
 ### W7 — Scale, cost, operations
 
 | # | Ticket | Notes |

@@ -1299,7 +1299,8 @@ def member_scale_fn(post: Posterior, h_new: int, H: int, cfg, rapid: bool):
 
 
 def applied_ensemble(tile, seeds, wxf, now_s: float, cfg, incident_id: str,
-                     perimeter, perimeter_at_s, member_hour_scale):
+                     perimeter, perimeter_at_s, member_hour_scale,
+                     weather_field=None):
     """The ensemble of a fire whose belief is APPLIED (before_spread returned
     a member_hour_scale): every member runs the belief's per-hour
     multipliers, and — unless cfg.fire_belief_apply_p10 — the P10 raster is
@@ -1314,17 +1315,22 @@ def applied_ensemble(tile, seeds, wxf, now_s: float, cfg, incident_id: str,
     position uncertainty the P10 must cover."""
     from wgresponse import spread
     from wgresponse.contracts import Raster
+    # WEATHER ZONES (SAFETY SEMANTICS 17): both runs price per (zone, hour)
+    # when the caller has a field; None = the one-forecast call, unchanged.
+    zoned = ({"weather_field": weather_field}
+             if weather_field is not None else {})
     ens = spread.ensemble_arrival(tile, seeds, wxf, now_s, cfg,
                                   incident_id=incident_id,
                                   perimeter=perimeter,
                                   perimeter_at_s=perimeter_at_s,
-                                  member_hour_scale=member_hour_scale)
+                                  member_hour_scale=member_hour_scale,
+                                  **zoned)
     if getattr(cfg, "fire_belief_apply_p10", False):
         return ens
     phys = spread.ensemble_arrival(tile, seeds, wxf, now_s, cfg,
                                    incident_id=incident_id,
                                    perimeter=perimeter,
-                                   perimeter_at_s=perimeter_at_s)
+                                   perimeter_at_s=perimeter_at_s, **zoned)
     ens.p10 = Raster(ens.spec, [a if a <= b else b for a, b in
                                 zip(ens.p10.data, phys.p10.data)])
     return ens

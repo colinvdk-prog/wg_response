@@ -512,6 +512,74 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
        is logged — never raised into the live loop.
    No test activity = the pre-two-worlds live world, byte for byte (the W1
    goldens in tests/test_seeded_incidents.py still pin it).
+17. SPREAD READS THE LOCAL WEATHER FORECAST ACROSS ITS DOMAIN (founder
+   2026-09-27, verbatim: "ensure that fire spread includes local weather
+   forecast"; docs/LIVE_WORLD_PLAN.md "Spread reads the local weather
+   forecast (2026-09-27)"; cfg.weather_grid_km, default 0 = OFF; watch
+   --weather-grid-km KM [--weather-points-max N]; wgresponse.wxfield). The
+   legacy law prices every edge of a domain with ONE hourly forecast fetched
+   at the fire centroid; national domains measure 50-75 km across, with
+   ridges, valleys and coast inside one of them.
+   (a) THE POINTS. The fire centroid stays the PRIMARY forecast (point 0).
+       The others are the nodes of a GLOBAL lat/lon lattice that fall on the
+       domain's grid (geo.latlon_to_rc): at level L the spacing is
+       s = weather_grid_km x 2^(L//2), x sqrt 2 on odd levels
+       (wxfield.level_spacing_km); row i sits at lat_i = i x s /
+       geo.M_PER_DEG_LAT (i integer, counted from the equator) and holds
+       nodes at lon = j x s / geo.m_per_deg_lon(lat_i) (j integer, counted
+       from Greenwich). A node is a function of (s, i, j) only, so
+       overlapping domains at one level ask the SAME points (and hit the
+       same cache entries), and level L+2's nodes are a subset of level
+       L's. L starts at 0 and grows until centroid + nodes <=
+       cfg.weather_points_max (a sqrt 2 step halves the node count, so a
+       domain keeps about half its point budget or more).
+   (b) THE FETCH. Every point goes through the same WeatherProvider as the
+       centroid (the watch daemon: NWS). A failed CENTROID is today's
+       provider failure (SEMANTICS 6: the incident is BLIND — never a silent
+       fallback). A failed SECONDARY point falls back to the centroid
+       forecast for its zone, with a cycle note naming the point; the cycle
+       is not degraded, because that zone prices exactly the legacy weather.
+       With the knob on, NwsWeather keeps a process-level cache: the points
+       -> forecastGridData mapping (static) and each gridpoint's decoded
+       hourly series by URL for cfg.weather_cache_ttl_s (the centroid's
+       included; a failed refresh raises, a stale series is never served).
+   (c) THE ZONES. Every domain cell takes the forecast of its NEAREST point
+       — a Voronoi partition in local metres (east-west measured at the
+       cell's row latitude; ties to the lower point index), computed once
+       per (grid, points) and cached. Zones are discrete, never blended per
+       cell, so the ROS memo keeps sharing entries between cells of equal
+       effective weather and stays exact (memo = WGRESP_NO_ROS_MEMO=1
+       reference path, with zones on too).
+   (d) THE SPREAD. An edge leaving a cell is priced with THAT cell's zone
+       forecast at the departure hour (and at each later hour under
+       edge_weather_piecewise): the per-hour effective weather becomes per
+       (zone, hour). Ensemble perturbations (wind / moisture scale,
+       direction offset, gust blend, model error) apply identically in
+       every zone. A spotting ember flies on its SOURCE cell's zone wind
+       (bearing, Sardoy distance and flight time). Seeded (drill) incidents
+       keep their single-point weather (SEMANTICS 12f).
+   (e) ONE FORECAST WHERE ONE IS NEEDED. Everything else that consumes a
+       single forecast keeps the centroid's: the extreme-regime posture,
+       dispatch's gel-window forecasts (plan(forecasts=...)), the per-fire
+       off-domain horizon (which reads the P10 raster the zones produced)
+       and any per-fire belief or novelty logic.
+   (f) NEVER SILENT. One cycle note per domain incident (points asked,
+       failed, lattice spacing used), CycleResult.weather_fields, and with
+       the knob armed a "weather_grid" rule block on /api/state plus a
+       "weather" block on every incident row and world-summary row: the
+       points (lat, lon, role, source, ok, cells), each point's wind, gust,
+       direction and RH at the next few hours, and how far the points
+       disagree.
+   (g) WHAT IT CANNOT SEE: winds finer than the forecast's own grid (NWS
+       2.5 km: canyon channelling, slope and valley flows, a sea-breeze
+       front inside one cell), anything between lattice nodes (nearest
+       point, no interpolation — zone edges are discontinuities), the
+       fire's own wind, and the forecast's own error (the ensemble still
+       perturbs every zone alike).
+   Knob OFF = byte-identical arrival rasters, cycles, plans, persisted
+   state, /api/state and /api/world/summary (pinned in
+   tests/test_weather_field.py against goldens computed on commit b5ce62c,
+   before this rule existed, on a world whose forecast varies in space).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -559,6 +627,10 @@ wgresponse.spread
         # TRUE arrival (final, quiet), the weather it burned under and the embers
         # still aloft — nothing arrives at or before t0_s; a no-op re-solve is the
         # continuous solve cell for cell. wgresponse.simui's re-anchor uses them.
+        # SAFETY SEMANTICS 17 (2026-09-27): optional weather_field (a
+        # contracts.WeatherField: one forecast per zone + the per-cell zone
+        # index; also on ensemble_arrival; default None = byte-identical)
+        # prices each edge with its source cell's zone forecast.
     ensemble_arrival(tile, ignition, wx, t0_s, cfg, incident_id: str = '') -> EnsembleArrival
         # Sprint 2 (Council-1 model F2+F6): members perturb wind SPEED, dead-fuel
         # MOISTURE, and wind DIRECTION (lead-scaled, up to cfg.dir_perturb_deg at max
@@ -592,6 +664,9 @@ wgresponse.feeds
 
 wgresponse.weather
     class NwsWeather / OpenMeteoWeather / MockWeather   (WeatherProvider protocol)
+    # SAFETY SEMANTICS 17: NwsWeather(cfg) with cfg.weather_grid_km > 0 keeps a
+    # process-level NwsForecastCache (points -> forecastGridData, static; each
+    # gridpoint's decoded series for cfg.weather_cache_ttl_s); off = no cache.
 
 wgresponse.terrain
     class LfpsTerrain / SyntheticTerrain                (TerrainProvider protocol)
@@ -632,6 +707,15 @@ wgresponse.offmap   (2026-09-27; SAFETY SEMANTICS 15 — the per-fire off-domain
         # world's monitor (seeds refused: seeded.LiveWorldRefused; none ever
         # unioned); .last_snapshot -> WorldSnapshot | None, the read-only
         # record of the last completed cycle the TEST world builds on.
+
+wgresponse.wxfield   (2026-09-27; SAFETY SEMANTICS 17 — local weather across a domain)
+    level_spacing_km(grid_km, level) -> float  # x sqrt 2 per level, x2 per two
+    lattice_points(spec, cfg) -> (nodes: list[LatLon], spacing_km, level)
+    zone_map(spec, points) -> bytes           # nearest point per cell (cached)
+    build_field(provider, primary_wx, primary_loc, spec, cfg, horizon_h) -> WeatherField
+    field_notes(incident_id, field, cfg) -> list[str]
+    field_row(field, now_s) -> dict | None    # the /api/state + world-summary block
+    rule_summary(cfg) -> dict
 
 wgresponse.seeded   (W1, 2026-09-26; SAFETY SEMANTICS 12)
     class SeededIncidentStore  .create(...) -> SeededIgnition  .add(ign)
@@ -925,6 +1009,9 @@ wgresponse.cli
     # GET /api/test/state, POST /api/test/crews/reset | /api/test/crews/place
     # {crew_id, lat, lon, status?, name?} | /api/test/reset;
     # /api/world/summary?world=live|test (default live).
+    # SAFETY SEMANTICS 17: --weather-grid-km KM arms weather_grid_km
+    # (--weather-points-max N sets weather_points_max); /api/state gains
+    # weather_grid + a "weather" block per incident; so do the summary rows.
 ============================================================================
 """
 from __future__ import annotations
@@ -1290,6 +1377,43 @@ class WeatherForecast:
 
 class WeatherProvider(Protocol):
     def forecast(self, loc: LatLon, horizon_h: float) -> WeatherForecast: ...
+
+
+@dataclass(frozen=True)
+class WeatherPoint:
+    """One forecast point of a WeatherField (SAFETY SEMANTICS 17). role:
+    'primary' (the fire centroid, zone 0) | 'lattice' (a global-lattice
+    node). ok: False when this point's own fetch failed and its zone prices
+    the primary forecast instead (error = the provider's message). source:
+    the forecast's source tag ('nws', ...; the primary's when ok is False).
+    cells: domain cells in its zone."""
+    lat: float
+    lon: float
+    role: str
+    ok: bool = True
+    source: str = ""
+    error: str = ""
+    cells: int = 0
+
+
+@dataclass
+class WeatherField:
+    """LOCAL WEATHER across one spread domain (SAFETY SEMANTICS 17;
+    cfg.weather_grid_km). forecasts[z] is zone z's hourly forecast (zone 0 =
+    the primary, the fire-centroid forecast; a failed secondary point carries
+    the primary's forecast); zone_of[i] is the zone of flat cell i (row-major
+    on `spec`, len nrows*ncols; bytes, so <= 256 zones); points[z] describes
+    zone z's point. spacing_km / level: the lattice spacing used (after
+    coarsening) and its level (spacing = wxfield.level_spacing_km(
+    cfg.weather_grid_km, level)).
+    spread.compute_arrival(weather_field=...) prices every edge with its
+    source cell's zone forecast."""
+    spec: GridSpec
+    forecasts: list                    # list[WeatherForecast], index = zone
+    zone_of: bytes
+    points: list                       # list[WeatherPoint], index = zone
+    spacing_km: float = 0.0
+    level: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -1683,6 +1807,7 @@ class CycleResult:
     removed_incidents: list = field(default_factory=list)  # list[RemovedIncident]: contained fires removed this cycle (SAFETY SEMANTICS 13; [] unless cfg.drop_contained_incidents)
     offmap: dict = field(default_factory=dict)  # incident_id -> OffDomainHorizon per domain incident (SAFETY SEMANTICS 15; {} unless cfg.corridor_offraster_per_fire)
     fire_status: dict = field(default_factory=dict)  # incident_id -> FireStatus (SAFETY SEMANTICS 14; populated only with cfg.fire_belief_track)
+    weather_fields: dict = field(default_factory=dict)  # incident_id -> WeatherField per domain incident that spread on one (SAFETY SEMANTICS 17; {} unless cfg.weather_grid_km > 0)
 
 
 @dataclass(frozen=True)
@@ -2031,6 +2156,25 @@ class ResponseConfig:
     # effective_wind_from_bed's wind_slope_angle seam). Default OFF =
     # byte-identical; hindcast A/B decides the live flip.
     slope_phi_vector: bool = False
+    # LOCAL WEATHER ACROSS THE DOMAIN (founder 2026-09-27: "ensure that fire
+    # spread includes local weather forecast"; SAFETY SEMANTICS 17;
+    # wgresponse.wxfield). Legacy: ONE forecast at the fire centroid prices
+    # every edge of a 50-75 km domain. When > 0, the centroid stays the
+    # primary forecast and the nodes of a GLOBAL lat/lon lattice at this
+    # spacing (km) that fall inside the domain are fetched too (coarsened in
+    # sqrt-2 steps until centroid + nodes <= weather_points_max); every cell
+    # takes its nearest point's forecast (Voronoi zones) and spread prices
+    # edges per (zone, hour). A failed secondary point falls back to the
+    # centroid for its zone (noted); a failed centroid is the legacy
+    # provider failure.
+    # 0 = legacy single point, byte-identical; watch --weather-grid-km.
+    weather_grid_km: float = 0.0
+    # ... the cap on forecast points per domain (centroid included; each is
+    # up to two NWS requests on a cold cache). Read only when armed.
+    weather_points_max: int = 16
+    # ... how long NwsWeather reuses a gridpoint's decoded forecast (s; the
+    # points -> gridpoint mapping is static and kept). Read only when armed.
+    weather_cache_ttl_s: float = 1800.0
     # --- dispatch ---
     replan_period_s: float = 900.0
     commitment_horizon_min: float = 20.0
@@ -2454,6 +2598,19 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("dir_perturb_deg must be within [0, 180] degrees")
     if not (0.0 <= cfg.model_error_sd_log <= 3.0):
         problems.append("model_error_sd_log must be within [0, 3]")
+    # --- local weather across the domain (SAFETY SEMANTICS 17) ---
+    if not (cfg.weather_grid_km == 0.0
+            or (math.isfinite(cfg.weather_grid_km)
+                and cfg.weather_grid_km >= 1.0)):
+        problems.append("weather_grid_km must be 0 (off) or a finite spacing "
+                        ">= 1 km (a sub-km lattice is fabricated precision "
+                        "for any forecast grid; NWS cells are 2.5 km)")
+    if not (1 <= cfg.weather_points_max <= 255):
+        problems.append("weather_points_max must be within [1, 255] (zones "
+                        "are stored one byte per cell)")
+    if not (0.0 <= cfg.weather_cache_ttl_s <= 21_600.0):
+        problems.append("weather_cache_ttl_s must be within [0, 21600] s (a "
+                        "cached forecast older than 6 h is stale weather)")
 
     # --- dispatch ---
     if cfg.replan_period_s <= 0:

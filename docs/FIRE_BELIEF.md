@@ -257,6 +257,23 @@ windows / 240 weather hours / 337 curve hours; windows lighter than 1e-3 leave t
   `/api/state` key `fire_status`; `worldview.build_summary` row key `belief`
   (`fire_belief.status_row`); `console/world.html` `beliefText()` in the incident tooltip.
 
+### 4a. How it joins the other 2026-09-27 rules (integrator)
+
+- **The road rule (SAFETY SEMANTICS 15).** The belief's status table is
+  computed before the planner and combined with the feed's behaviour report.
+  Growth beyond measurement noise, or an active surprise reset, makes a fire
+  rapid, so roads beyond its modelled area keep the 6 km/h cap. A completed
+  growth window makes an unreported fire known, so it extrapolates at its own
+  forecast front. With both rules armed, tracking alone can therefore change
+  which roads open. Pinned in `tests/test_belief_offmap_worlds.py`.
+- **The test map (SAFETY SEMANTICS 16).** Before every drill cycle the test
+  world takes a fresh, non-persistent copy of the live store. Drills start
+  from the rates the live world has learned and never write back.
+- **Local weather (SAFETY SEMANTICS 17).** A belief-applied fire with a
+  weather field prices both of its ensembles, the belief's members and the
+  physics run behind the P10 guard, per zone and hour. The belief's own
+  weather log and new-pattern test still read the centroid forecast.
+
 ## 5. Measured results
 
 ### A. Synthetic truth study
