@@ -345,7 +345,8 @@ Two founder decisions, taken after the re-anchor fix above:
   its own terms — at every internal step, a crew on burned ground is only ever on black
   older than its fuel's cold-black window, never a live front
   (`test_burned_out_map_crews_only_on_old_black`). Whether old black should count as a
-  violation at all is a separate safety-law decision, not taken.
+  violation at all was a separate safety-law decision — taken the same day (next
+  section: it does not; that test now pins no rows at all).
 - **"Match production."** The simulator now arms `ensemble_p50_nominal_bound` (the live
   watcher's `--p50-bound`): the ladder median is never later than the fire the page shades,
   so homes inside the burn read IMPACTED on time and job adoption / outcome tags stop
@@ -353,6 +354,190 @@ Two founder decisions, taken after the re-anchor fix above:
   every home on ground burned a tick ago IMPACTED —
   `test_default_median_never_lags_the_shaded_fire`). The shading tests that measure the old
   lag pin the bound off. Crew safety was already bound the same way (P10 ≤ nominal).
+
+### Old black is a refuge; crews that leave the map are out (2026-09-26)
+
+Founder rulings, verbatim: *"old burned ground does not count as a violation. crews once
+leave a map are no longer part of the simulation"*. Three default-OFF knobs (contracts SAFETY
+SEMANTICS 10, README config table), all armed in the simulator's sim-defaults block
+(explicit `cfg_overrides` win): `old_black_refuge`, `left_map_out`, `escape_prefer_on_map`.
+The live engine is untouched (below).
+
+**Rule 1 — old black is a refuge.** A cell whose nominal (ground-truth) arrival is at least
+its cold-black window in the past (`_cold_black_pass_s`: the transit rule's per-fuel windows,
+grass 5–10 min … slash 90; flat 45 min when `transit_cold_black_by_class` is off) is OLD
+BLACK — burned out, it cannot burn again. `SimSession._exposure_at(pos, t)` reads such a cell
+as unreached, and every SEM-10 judgement goes through it:
+
+- the **10c audit** counts no row for a crew on old black — neither *burned* nor *imminent*
+  (the eroded-P10 band that reaches an old-black cell from nearby fuel does not count);
+- the **sweep** never relocates a crew off old black, and SEM-10e never decamps it;
+- a **zone** on old black is currently safe (10b) and a "forever" zone for the longevity /
+  durable tests; an **escape destination** on it is lawful with an unbounded horizon;
+- **route / exposure metrics** (`_metrics_of_points`) and the **road-network escape
+  search** charge its samples nothing, each judged at its own pass time — the black behind
+  the front becomes a lawful escape (extended stress basalt_carbondale_co, t51: the searched
+  node 2.05 km out on 3.5-h-old black instead of the old 19.5-h node on unburned ground).
+
+Black still inside its window is exactly as before: counted, fled, impassable. Two
+deliberate refinements, both measured:
+
+- **The audit judges old black over the whole step.** It looks once per step, so it excuses
+  black only if it was already old when the step began, or when the crew got there if later
+  (`_SimCrew.pos_since_s`). A front that overruns a crew between two audits is reported once
+  even though its fuel burned out before the audit looked — without this a 5–10 min grass
+  window inside a 15-min tick hid the overrun entirely (a fire lit on a placed crew:
+  `test_armed_fire_lit_on_a_placed_crew_reported_then_rests_on_the_black`).
+- **The SEM-10e zone fallback keeps its strict crossing reject.** It lets a *voluntary* move
+  ride pessimistic-exposed transit and rejects any route over a front-passed cell "however
+  cold". Relaxed to hot black only, it sent three basalt_carbondale_co crews (standard probe,
+  t36) 16 km to zone z1 over old black *and* unburned band — 3 imminent-while-egressing rows
+  where the strict rule decamps them 2.1 km by road with none. Kept strict.
+
+**Rule 2 — a crew that leaves the map is out.** *The map* = the terrain tile (its grid, or
+the rectangle the page draws for it — they differ by a sliver at the east edge because the
+grid's longitude scale follows each row's latitude; a road node 9.5 m past the grid but
+inside the drawn rectangle "left" three basalt_carbondale_co crews until the map included
+the rectangle) plus `ZONE_ON_MAP_M` = 1.5 km (the road fetch's zone pad) around every
+catalog zone. **Five**
+standard-tile zones sit past the edge — the three known ones, malibu_ca z1 Zuma Beach
+(1.24 km), santa_rosa_ca z3 Windsor (1.45 km), park_city_ut z3 Jeremy Ranch (28 m), and two
+more: malibu_ca z3 US-101 / Las Virgenes (1.13 km) and paradise_ca z2 Neal Rd / Hwy 99
+(1.00 km); no extended tile has one. All are within 1.45 km, so the operator's decision
+(zones are on the map) holds for every preset.
+
+- **Leave trigger** (`_leaving_map`, checked after each step's movement): the crew is off the
+  map and nothing it still has to do brings it back — no itinerary stop and no egress target
+  on the map (stopped / parked there, or on a final leg that ends there; in practice a
+  road-network escape to a node past the tile edge). Transit through off-tile road toward an
+  on-map home, zone or node is not leaving (PCH toward Zuma); an INBOUND reinforcement at its
+  tile-edge entry has not entered; placement already refuses off-tile points.
+- **Out for good**: never again in `dispatch.plan`'s crew set, no movement, no beacons, no
+  shift or safety sweep, no audit row; its commitments are released (loud note naming them;
+  re-planned next tick); status UNKNOWN (no longer tracked). Reported: `crews[i].left_map`
+  / `left_map_at_s`, `scoreboard.crews_left_map`, a `CREW LEFT THE MAP` note; the page greys
+  the marker at its last position with a "left the map" chip, greys its card, pins a feed
+  line, adds a scoreboard row, legend rows and tooltip text (also for a crew on old black).
+- **The tie-break** (`escape_prefer_on_map`). An off-tile road node has no fire field, so it
+  reads an unbounded horizon: it ties with every long-safe on-map refuge at the 24 h cap and
+  beats every shorter one. Decided on the numbers: (1) among lawful destinations on the same
+  exposure and capped-horizon steps, an ON-map refuge ranks first (then zone before node,
+  then drive time) — the 60-scenario bench's departures fell **23 → 6** with served **792 →
+  793**, 10c rows unchanged (12), and aspen_co's three standard-probe departures disappeared
+  with identical served / rows / relocations; (2) the VOLUNTARY SEM-10e road decamp (every
+  candidate already lawful, exposure-free, durable) prefers any on-map refuge to any off-map
+  one — the corridor measurement found that decamp leaving the map for nodes 0.8–1 km past
+  the edge over durable on-map refuges 3.7–13 h out (departures 37 → 29 in local2_road, served
+  679 either way). An emergency escape still takes a strictly safer off-map node.
+
+**Numbers** (before = all three knobs off, byte-identical to HEAD; after = the simulator
+defaults; 10c rows are crew-overrun rows summed over every tick; "old-black crew-ticks" are
+the crew-ticks the strict audit would count on the same trajectory that the new audit does
+not):
+
+| set | served | departure rows | 10c rows (reason/mode) | relocations | crews left the map | old-black crew-ticks (inside an active front's band) |
+|---|---|---|---|---|---|---|
+| 600× coarse-jump pair, first 300 h | – | 0 → 0 | 0 → 0 | 1 → 1 | 0 → 0 | 0 |
+| 600× burned-out stretch (300–900 h, per internal step) | – | 0 → 0 | 1,006 (972 burned on 19.5 min–23 d old black, 34 imminent) → **0** | 1,011 → **3** | 0 → 0 | 1,172 (0) |
+| pinned Camp-Fire-scale extended run | 17 → 17 | 0 → 0 | 0 → 0 | 4 → 4 | 0 → 0 | 33 (0) |
+| offroad probe, standard + extended, 24 sessions × 40 ticks | 669 → 669 | 0 → 0 | 8 → 8 (imminent/egress) | 100 → 100 | 0 → **5** (beaver_creek_co std) | 0 |
+| extended stress, 6 × 80 ticks EXTREME | 164 → 164 | 0 → 0 | 1 → 1 (imminent/egress) | 31 → 31 | 0 → 0 | 29 (0) |
+| 60-scenario bench, plan-on-roads | 791 → **793** | 0 → 0 | 12 → 12 (imminent/egress) | 80 → 83 | 0 → **6** | 0 |
+| corridor local2_road (vail, beaver, glenwood; 54) | 683 → **679** | 0 → 0 | 11 → 11 (imminent/egress) | 131 → 128 | 0 → **29** | 729 (312) |
+| corridor alerted2_road (9) | 263 → 263 | 0 → 0 | 1 → 1 | 30 → 29 | 0 → 0 | 516 (0) |
+
+(Without the tie-break: probe 8 departures, bench 23 with served 792, corridor local2 39 with
+served 681.) Departure-audit violations stay **0** everywhere. The pinned
+`test_sem10d_extended_campfire_scale_no_overrun_ever` passes unchanged. Tick time unchanged
+(eagle_vail_co std median 33.2 → 33.5 ms; boulder_co ext 21.5 → 19.3 ms;
+`scratch_review/old_black_ticktime.py`).
+
+- **Where crews still leave.** Every departure goes to a road node 0.06–2.0 km past the tile
+  edge (corridor median 0.82 km). In the corridor, 21 of 29 are emergency escapes whose best
+  on-map refuge was lawful but worse on the model's safety steps — a *finite* horizon
+  (0.9–22.6 h) against the off-map node's "never", which is only the absence of a fire field
+  past the edge, or more exposure on the way; 8 are voluntary decamps with no on-map durable
+  refuge at all. (beaver_creek_co's standard-probe crews: on-map refuges of 13.0 / 7.8 / 2.6 h
+  against a node 147 m past the edge.) Served: corridor local2 −4 (five scenarios
+  −2, four +1/+2; `scratch_review/old_black_corridor_diag.py`), bench +2, probe and alerted
+  unchanged. **Open (owner):** a horizon for off-tile nodes read from the nearest on-tile
+  cell's P10 (or the corridor law's fail-closed boundary bound) would compare them honestly
+  and keep most emergency escapes on the map — a model change, not made here.
+- **Old black in the validation sets.** The standard probe, the extended stress set (bar one
+  session) and the bench never put a crew on old black; the corridor does, because the road
+  search now treats the black behind the front as a refuge (beaver_creek_co local2: 458
+  crew-ticks, 308 inside an active front's band). No served loss follows from it (every
+  corridor scenario with old-black crew-ticks served the same), and no 10c imminent row ever
+  came from old black alone around an unburnable cell (0 "history-only" rows in every set).
+
+**Doctrine nuance (quantified, not ruled on).** Good black must be large enough around the
+crew (safety-zone sizing ~4× flame length); the model's rule is per 90–500 m cell. Of the
+crew-ticks the new rule stops counting, the nearest actively burning cell (inside its
+window) was:
+
+| set | crew-ticks | inside an active front's eroded-P10 band | < 100 m | 100–300 m | 300 m–1 km | 1–3 km | ≥ 3 km / nothing burning |
+|---|---|---|---|---|---|---|---|
+| corridor local2_road | 729 | 312 (beaver_creek_co 308, vail_co 4) | 0 | 60 (min 113 m) | 463 | 206 | 0 |
+| corridor alerted2_road | 516 | 0 | 0 | 0 | 9 | 263 | 244 |
+| extended stress | 29 | 0 | 0 | 0 | 3 | 26 | 0 |
+| Camp-Fire-scale run | 33 | 0 | 0 | 0 | 0 | 8 | 25 |
+| burned-out map (600×) | 1,172 | 0 | 0 | 0 | 0 | 0 | 1,172 (4 at 14.6 km) |
+| fire lit on a placed crew | 11 | 0 | 0 | 0 | 0 | 1 | 10 |
+
+The black under the corridor local2 crews was 47–845 min old (windows 5–60 min; alerted:
+236–3,221 min). 60 crew-ticks (all corridor local2) rest on black 113–300 m from flame —
+beyond 4× flame length for grass or shrub (1–10 m flames), not for a timber crown run; the
+per-cell rule cannot tell, and "inside an active front's band" (312) marks where doctrine
+would ask.
+
+**Byte-identity.** Knobs off = HEAD at every tick: 24/24 standard-probe sessions (984
+states) and 6/6 extended-stress sessions (486 states), hashes with `map_view`, `cmd_log` and
+the new additive keys stripped (`scratch_review/old_black_hashcmp.py`). A session where no
+crew leaves is byte-identical with `left_map_out` on or off (tie-break pinned off): 22/24 +
+6/6 (the two others are exactly the sessions where crews leave). The old-black refuge alone
+changes nothing in the standard probe (24/24) and one extended session (the escape into the
+black). New state keys (additive): `crews[i].left_map`, `left_map_at_s`, `on_old_black`,
+`scoreboard.crews_left_map`.
+
+**Live engine.** No crew-position audit or relocation exists outside the simulator:
+`cli watch` only reports beacon positions; `threat.py` hands eligible crews to
+`dispatch.plan`; `sim.py`'s audit covers serviced-stop departures only. The one related live
+rule is the planner's corridor law (`safety.LegOracle`, samples include the leg's start):
+a leg that starts or ends inside the eroded-P10 band is infeasible, so a crew beaconing from
+old black gets no ingress assignment and an old-black zone is never an egress target. Left
+unchanged — the ruling is recorded for the simulator's audit; the live side is a separate
+decision. (In the simulator the same planner rule means a crew resting on old black is out
+of dispatch until something moves it.)
+
+**Tests.** New: `tests/test_sim_old_black.py`, `tests/test_sim_left_map.py`. Changed because
+of the ruling (strict-law pins kept by pinning `old_black_refuge=False`, armed truth in the
+new files): `test_simui.py::test_dynamic_safe_zone_validity_excludes_overrun_zone` and
+`::test_no_safe_zone_fail_closed_alarm_and_safest_pick` (fires lit ON zones burn them out:
+a burned-out zone is a refuge), `test_sim_crew_placement.py::test_crew_placed_where_the_fire_
+starts_is_reported_never_silent` (armed: reported at the first tick, then rests on the black
+— `test_armed_fire_lit_on_a_placed_crew_reported_then_rests_on_the_black`),
+`test_escape_proactive.py::test_picker_fallback_rejects_nominal_crossing` and
+`test_sim_escape_roads.py::test_proactive_counterpart_every_road_exposed_holds` (4-h-old
+black is a refuge the lawful road decamp may cross); re-pinned to the new truth:
+`test_sim_coarse_substep.py::test_burned_out_map_crews_only_on_old_black` (no rows at all,
+relocations ≤ 5, measured 3); schema: `test_simui.py::test_map_view_is_additive_display_only`
+(the three additive crew keys).
+
+**Frames** (`docs/img/old_black_left_map/`, `scratch_review/old_black_shots.py`, a private
+server): `a01_crew_resting_on_old_black` (+ `a01b` tooltip) — boulder_co, crew 1 placed on a
+grass road, a HIGH fire lit 600 m upwind overruns it inside the first tick (reported), then
+it rests in the black behind the front, not moved, violations 0; `a02_crews_left_the_map`
+(+ `a02b` tooltip and greyed cards) — beaver_creek_co probe session, three crews greyed at a
+node 147 m past the dashed tile edge, "crews left the map 3", pinned feed lines.
+
+**Records.** `scratch_review/old_black/`: the probe arms in compact form (per-tick hashes,
+summaries, measurements; `probe_head*` = the HEAD tree's run), the corridor arms
+(`corridor_{off,on,on2,noprefer}/` — `on` = the plain tie-break, `on2` = shipped) with their
+`violations.json`, `doctrine.json`, `campfire.json`, `corridor_leave_diag.json`;
+`scratch_review/bench_oldblack_{off,on2,noprefer}_por.json`. Scripts:
+`scratch_review/old_black_*.py` (metrics, A/B drivers, hash compare, state diff, traces,
+diagnoses, frames); the probe, bench and corridor grid gained read-only measurement hooks
+(`roads_offroad_probe.py` always; `BENCH_OLD_BLACK_METRICS=1`, `CORRIDOR_OLD_BLACK_METRICS=1`).
 
 ## Slider observability — what the buffer demonstrably changes (measured 2026-07-10)
 

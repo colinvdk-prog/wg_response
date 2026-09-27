@@ -1,0 +1,1353 @@
+[
+ {
+  "seed": "corr|glenwood_springs_co|+0|6000|moderate",
+  "served": 16,
+  "left": {
+   "sim-g2": {
+    "at_s": 1790027000.0,
+    "lat": 39.45517,
+    "lon": -107.26249,
+    "edge_m": 978.6,
+    "zone_m": 1996.4,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 29,
+    "kind": "SEM-10e",
+    "edge_m": 978.6,
+    "off_map": {
+     "exposure_s": 0.0,
+     "horizon_h": null,
+     "drive_min": 7.4,
+     "key": [
+      0,
+      1,
+      0,
+      -48,
+      1
+     ]
+    },
+    "best_on_map": null
+   }
+  ]
+ },
+ {
+  "seed": "corr|glenwood_springs_co|+30|6000|moderate",
+  "served": 7,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|glenwood_springs_co|-30|6000|moderate",
+  "served": 12,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|glenwood_springs_co|+0|8000|moderate",
+  "served": 19,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790023400.0,
+    "lat": 39.46273,
+    "lon": -107.25777,
+    "edge_m": 137.9,
+    "zone_m": 1775.3,
+    "dropped": []
+   },
+   "sim-g2": {
+    "at_s": 1790023400.0,
+    "lat": 39.46273,
+    "lon": -107.25777,
+    "edge_m": 137.9,
+    "zone_m": 1775.3,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 25,
+    "kind": "SEM-10e",
+    "edge_m": 137.9,
+    "off_map": {
+     "exposure_s": 0.0,
+     "horizon_h": null,
+     "drive_min": 6.8,
+     "key": [
+      0,
+      1,
+      0,
+      -48,
+      1
+     ]
+    },
+    "best_on_map": null
+   },
+   {
+    "tick": 25,
+    "kind": "SEM-10e",
+    "edge_m": 137.9,
+    "off_map": {
+     "exposure_s": 0.0,
+     "horizon_h": null,
+     "drive_min": 6.8,
+     "key": [
+      0,
+      1,
+      0,
+      -48,
+      1
+     ]
+    },
+    "best_on_map": null
+   }
+  ]
+ },
+ {
+  "seed": "corr|glenwood_springs_co|+30|8000|moderate",
+  "served": 14,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|glenwood_springs_co|-30|8000|moderate",
+  "served": 14,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|glenwood_springs_co|+0|6000|high",
+  "served": 8,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|glenwood_springs_co|+30|6000|high",
+  "served": 18,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790025200.0,
+    "lat": 39.45639,
+    "lon": -107.25839,
+    "edge_m": 842.9,
+    "zone_m": 2131.2,
+    "dropped": []
+   },
+   "sim-g2": {
+    "at_s": 1790006300.0,
+    "lat": 39.58034,
+    "lon": -107.20383,
+    "edge_m": 950.5,
+    "zone_m": 6999.8,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 6,
+    "kind": "SEM-10d",
+    "edge_m": 950.5,
+    "off_map": {
+     "exposure_s": 0.0,
+     "horizon_h": null,
+     "drive_min": 24.6,
+     "key": [
+      0,
+      0,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 0.0,
+     "horizon_h": 3.02,
+     "drive_min": 13.6,
+     "key": [
+      0,
+      0,
+      -6,
+      0,
+      1
+     ]
+    }
+   },
+   {
+    "tick": 27,
+    "kind": "SEM-10e",
+    "edge_m": 842.9,
+    "off_map": {
+     "exposure_s": 0.0,
+     "horizon_h": null,
+     "drive_min": 8.0,
+     "key": [
+      0,
+      1,
+      0,
+      -48,
+      1
+     ]
+    },
+    "best_on_map": null
+   }
+  ]
+ },
+ {
+  "seed": "corr|glenwood_springs_co|-30|6000|high",
+  "served": 5,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|glenwood_springs_co|+0|8000|high",
+  "served": 5,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|glenwood_springs_co|+30|8000|high",
+  "served": 16,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790018900.0,
+    "lat": 39.45639,
+    "lon": -107.25839,
+    "edge_m": 842.9,
+    "zone_m": 2131.2,
+    "dropped": []
+   },
+   "sim-g2": {
+    "at_s": 1790018900.0,
+    "lat": 39.45639,
+    "lon": -107.25839,
+    "edge_m": 842.9,
+    "zone_m": 2131.2,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 20,
+    "kind": "SEM-10e",
+    "edge_m": 842.9,
+    "off_map": {
+     "exposure_s": 0.0,
+     "horizon_h": null,
+     "drive_min": 8.0,
+     "key": [
+      0,
+      1,
+      0,
+      -48,
+      1
+     ]
+    },
+    "best_on_map": null
+   },
+   {
+    "tick": 20,
+    "kind": "SEM-10e",
+    "edge_m": 842.9,
+    "off_map": {
+     "exposure_s": 0.0,
+     "horizon_h": null,
+     "drive_min": 8.0,
+     "key": [
+      0,
+      1,
+      0,
+      -48,
+      1
+     ]
+    },
+    "best_on_map": null
+   }
+  ]
+ },
+ {
+  "seed": "corr|glenwood_springs_co|-30|8000|high",
+  "served": 5,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|glenwood_springs_co|+0|6000|extreme",
+  "served": 7,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|glenwood_springs_co|+30|6000|extreme",
+  "served": 13,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790053100.0,
+    "lat": 39.45639,
+    "lon": -107.25839,
+    "edge_m": 842.9,
+    "zone_m": 2131.2,
+    "dropped": []
+   },
+   "sim-g2": {
+    "at_s": 1790053100.0,
+    "lat": 39.45639,
+    "lon": -107.25839,
+    "edge_m": 842.9,
+    "zone_m": 2131.2,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 58,
+    "kind": "SEM-10d",
+    "edge_m": 842.9,
+    "off_map": {
+     "exposure_s": 285.4,
+     "horizon_h": null,
+     "drive_min": 8.0,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 1174.1,
+     "horizon_h": null,
+     "drive_min": 20.2,
+     "key": [
+      0,
+      4,
+      -48,
+      0,
+      1
+     ]
+    }
+   },
+   {
+    "tick": 58,
+    "kind": "SEM-10d",
+    "edge_m": 842.9,
+    "off_map": {
+     "exposure_s": 285.4,
+     "horizon_h": null,
+     "drive_min": 8.0,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 1174.1,
+     "horizon_h": null,
+     "drive_min": 20.2,
+     "key": [
+      0,
+      4,
+      -48,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|glenwood_springs_co|-30|6000|extreme",
+  "served": 5,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|glenwood_springs_co|+0|8000|extreme",
+  "served": 8,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|glenwood_springs_co|+30|8000|extreme",
+  "served": 6,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|glenwood_springs_co|-30|8000|extreme",
+  "served": 4,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|beaver_creek_co|+0|6000|moderate",
+  "served": 20,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790024300.0,
+    "lat": 39.64108,
+    "lon": -106.67699,
+    "edge_m": 1029.6,
+    "zone_m": 6785.3,
+    "dropped": []
+   },
+   "sim-g2": {
+    "at_s": 1790008100.0,
+    "lat": 39.60963,
+    "lon": -106.45308,
+    "edge_m": 147.3,
+    "zone_m": 2021.9,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 8,
+    "kind": "SEM-10d",
+    "edge_m": 147.3,
+    "off_map": {
+     "exposure_s": 251.0,
+     "horizon_h": null,
+     "drive_min": 5.2,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 595.1,
+     "horizon_h": null,
+     "drive_min": 14.0,
+     "key": [
+      0,
+      2,
+      -48,
+      0,
+      1
+     ]
+    }
+   },
+   {
+    "tick": 25,
+    "kind": "SEM-10d",
+    "edge_m": 1029.6,
+    "off_map": {
+     "exposure_s": 76.4,
+     "horizon_h": null,
+     "drive_min": 19.7,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 76.4,
+     "horizon_h": 22.64,
+     "drive_min": 24.5,
+     "key": [
+      0,
+      1,
+      -45,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|beaver_creek_co|+30|6000|moderate",
+  "served": 16,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|beaver_creek_co|-30|6000|moderate",
+  "served": 11,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790016200.0,
+    "lat": 39.64108,
+    "lon": -106.67699,
+    "edge_m": 1029.6,
+    "zone_m": 6785.3,
+    "dropped": []
+   },
+   "sim-g2": {
+    "at_s": 1790007200.0,
+    "lat": 39.60963,
+    "lon": -106.45308,
+    "edge_m": 147.3,
+    "zone_m": 2021.9,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 7,
+    "kind": "SEM-10e",
+    "edge_m": 147.3,
+    "off_map": {
+     "exposure_s": 0.0,
+     "horizon_h": null,
+     "drive_min": 5.2,
+     "key": [
+      0,
+      1,
+      0,
+      -48,
+      1
+     ]
+    },
+    "best_on_map": null
+   },
+   {
+    "tick": 16,
+    "kind": "SEM-10d",
+    "edge_m": 1029.6,
+    "off_map": {
+     "exposure_s": 256.6,
+     "horizon_h": null,
+     "drive_min": 19.7,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 256.6,
+     "horizon_h": 19.5,
+     "drive_min": 24.5,
+     "key": [
+      0,
+      1,
+      -38,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|beaver_creek_co|+0|8000|moderate",
+  "served": 13,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790010800.0,
+    "lat": 39.64108,
+    "lon": -106.67699,
+    "edge_m": 1029.6,
+    "zone_m": 6785.3,
+    "dropped": []
+   },
+   "sim-g2": {
+    "at_s": 1790011700.0,
+    "lat": 39.64108,
+    "lon": -106.67699,
+    "edge_m": 1029.6,
+    "zone_m": 6785.3,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 10,
+    "kind": "SEM-10d",
+    "edge_m": 1029.6,
+    "off_map": {
+     "exposure_s": 59.1,
+     "horizon_h": null,
+     "drive_min": 19.7,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 59.1,
+     "horizon_h": 16.24,
+     "drive_min": 19.1,
+     "key": [
+      0,
+      1,
+      -32,
+      0,
+      1
+     ]
+    }
+   },
+   {
+    "tick": 11,
+    "kind": "SEM-10d",
+    "edge_m": 1029.6,
+    "off_map": {
+     "exposure_s": 87.1,
+     "horizon_h": null,
+     "drive_min": 19.7,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 87.1,
+     "horizon_h": 15.71,
+     "drive_min": 16.7,
+     "key": [
+      0,
+      1,
+      -31,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|beaver_creek_co|+30|8000|moderate",
+  "served": 17,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|beaver_creek_co|-30|8000|moderate",
+  "served": 10,
+  "left": {
+   "sim-g2": {
+    "at_s": 1790013500.0,
+    "lat": 39.64108,
+    "lon": -106.67699,
+    "edge_m": 1029.6,
+    "zone_m": 6785.3,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 13,
+    "kind": "SEM-10d",
+    "edge_m": 1029.6,
+    "off_map": {
+     "exposure_s": 309.9,
+     "horizon_h": null,
+     "drive_min": 19.7,
+     "key": [
+      0,
+      2,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 309.9,
+     "horizon_h": 11.63,
+     "drive_min": 24.5,
+     "key": [
+      0,
+      2,
+      -23,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|beaver_creek_co|+0|6000|high",
+  "served": 17,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|beaver_creek_co|+30|6000|high",
+  "served": 18,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|beaver_creek_co|-30|6000|high",
+  "served": 16,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790018900.0,
+    "lat": 39.60963,
+    "lon": -106.45308,
+    "edge_m": 147.3,
+    "zone_m": 2021.9,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 20,
+    "kind": "SEM-10e",
+    "edge_m": 147.3,
+    "off_map": {
+     "exposure_s": 0.0,
+     "horizon_h": null,
+     "drive_min": 5.2,
+     "key": [
+      0,
+      1,
+      0,
+      -48,
+      1
+     ]
+    },
+    "best_on_map": null
+   }
+  ]
+ },
+ {
+  "seed": "corr|beaver_creek_co|+0|8000|high",
+  "served": 17,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|beaver_creek_co|+30|8000|high",
+  "served": 15,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|beaver_creek_co|-30|8000|high",
+  "served": 14,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|beaver_creek_co|+0|6000|extreme",
+  "served": 10,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|beaver_creek_co|+30|6000|extreme",
+  "served": 15,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|beaver_creek_co|-30|6000|extreme",
+  "served": 13,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790004500.0,
+    "lat": 39.60963,
+    "lon": -106.45308,
+    "edge_m": 147.3,
+    "zone_m": 2021.9,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 4,
+    "kind": "SEM-10d",
+    "edge_m": 147.3,
+    "off_map": {
+     "exposure_s": 155.5,
+     "horizon_h": null,
+     "drive_min": 14.1,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 155.5,
+     "horizon_h": 20.21,
+     "drive_min": 13.0,
+     "key": [
+      0,
+      1,
+      -40,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|beaver_creek_co|+0|8000|extreme",
+  "served": 7,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790001800.0,
+    "lat": 39.60963,
+    "lon": -106.45308,
+    "edge_m": 147.3,
+    "zone_m": 2021.9,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 1,
+    "kind": "SEM-10d",
+    "edge_m": 147.3,
+    "off_map": {
+     "exposure_s": 38.3,
+     "horizon_h": null,
+     "drive_min": 16.0,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 178.4,
+     "horizon_h": 15.54,
+     "drive_min": 36.1,
+     "key": [
+      0,
+      1,
+      -31,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|beaver_creek_co|+30|8000|extreme",
+  "served": 10,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|beaver_creek_co|-30|8000|extreme",
+  "served": 12,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790005400.0,
+    "lat": 39.60997,
+    "lon": -106.45407,
+    "edge_m": 62.5,
+    "zone_m": 1932.2,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 5,
+    "kind": "SEM-10d",
+    "edge_m": 62.5,
+    "off_map": {
+     "exposure_s": 21.8,
+     "horizon_h": null,
+     "drive_min": 10.7,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 21.8,
+     "horizon_h": 11.77,
+     "drive_min": 9.8,
+     "key": [
+      0,
+      1,
+      -23,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|vail_co|+0|6000|moderate",
+  "served": 21,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790009000.0,
+    "lat": 39.59269,
+    "lon": -106.24524,
+    "edge_m": 817.8,
+    "zone_m": 5520.2,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 9,
+    "kind": "SEM-10d",
+    "edge_m": 817.8,
+    "off_map": {
+     "exposure_s": 471.8,
+     "horizon_h": null,
+     "drive_min": 15.6,
+     "key": [
+      0,
+      2,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 928.1,
+     "horizon_h": 1.98,
+     "drive_min": 23.2,
+     "key": [
+      0,
+      4,
+      -3,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|vail_co|+30|6000|moderate",
+  "served": 17,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|vail_co|-30|6000|moderate",
+  "served": 29,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790009000.0,
+    "lat": 39.59269,
+    "lon": -106.24524,
+    "edge_m": 817.8,
+    "zone_m": 5520.2,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 9,
+    "kind": "SEM-10d",
+    "edge_m": 817.8,
+    "off_map": {
+     "exposure_s": 108.7,
+     "horizon_h": null,
+     "drive_min": 15.6,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 783.2,
+     "horizon_h": 10.3,
+     "drive_min": 23.2,
+     "key": [
+      0,
+      3,
+      -20,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|vail_co|+0|8000|moderate",
+  "served": 8,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790004500.0,
+    "lat": 39.5947,
+    "lon": -106.2533,
+    "edge_m": 127.1,
+    "zone_m": 4917.3,
+    "dropped": []
+   },
+   "sim-g2": {
+    "at_s": 1790009900.0,
+    "lat": 39.59269,
+    "lon": -106.24524,
+    "edge_m": 817.8,
+    "zone_m": 5520.2,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 4,
+    "kind": "SEM-10d",
+    "edge_m": 127.1,
+    "off_map": {
+     "exposure_s": 95.7,
+     "horizon_h": null,
+     "drive_min": 24.3,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 95.7,
+     "horizon_h": 3.11,
+     "drive_min": 9.6,
+     "key": [
+      0,
+      1,
+      -6,
+      0,
+      1
+     ]
+    }
+   },
+   {
+    "tick": 10,
+    "kind": "SEM-10d",
+    "edge_m": 817.8,
+    "off_map": {
+     "exposure_s": 646.6,
+     "horizon_h": null,
+     "drive_min": 15.6,
+     "key": [
+      0,
+      3,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 1020.6,
+     "horizon_h": 0.93,
+     "drive_min": 23.2,
+     "key": [
+      0,
+      4,
+      -1,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|vail_co|+30|8000|moderate",
+  "served": 14,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|vail_co|-30|8000|moderate",
+  "served": 23,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790008100.0,
+    "lat": 39.59269,
+    "lon": -106.24524,
+    "edge_m": 817.8,
+    "zone_m": 5520.2,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 8,
+    "kind": "SEM-10d",
+    "edge_m": 817.8,
+    "off_map": {
+     "exposure_s": 26.8,
+     "horizon_h": null,
+     "drive_min": 14.5,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 832.0,
+     "horizon_h": 9.39,
+     "drive_min": 24.0,
+     "key": [
+      0,
+      3,
+      -18,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|vail_co|+0|6000|high",
+  "served": 17,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|vail_co|+30|6000|high",
+  "served": 11,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|vail_co|-30|6000|high",
+  "served": 12,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|vail_co|+0|8000|high",
+  "served": 10,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|vail_co|+30|8000|high",
+  "served": 4,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790004500.0,
+    "lat": 39.5947,
+    "lon": -106.2533,
+    "edge_m": 127.1,
+    "zone_m": 4917.3,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 3,
+    "kind": "SEM-10d",
+    "edge_m": 127.1,
+    "off_map": {
+     "exposure_s": 7.9,
+     "horizon_h": null,
+     "drive_min": 34.5,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 7.9,
+     "horizon_h": 7.37,
+     "drive_min": 8.9,
+     "key": [
+      0,
+      1,
+      -14,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|vail_co|-30|8000|high",
+  "served": 20,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|vail_co|+0|6000|extreme",
+  "served": 18,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|vail_co|+30|6000|extreme",
+  "served": 2,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790003600.0,
+    "lat": 39.59269,
+    "lon": -106.24524,
+    "edge_m": 817.8,
+    "zone_m": 5520.2,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 3,
+    "kind": "SEM-10d",
+    "edge_m": 817.8,
+    "off_map": {
+     "exposure_s": 122.5,
+     "horizon_h": null,
+     "drive_min": 15.6,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 220.6,
+     "horizon_h": 11.59,
+     "drive_min": 19.5,
+     "key": [
+      0,
+      1,
+      -23,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|vail_co|-30|6000|extreme",
+  "served": 8,
+  "left": {},
+  "off_map_picks": []
+ },
+ {
+  "seed": "corr|vail_co|+0|8000|extreme",
+  "served": 5,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790005400.0,
+    "lat": 39.59269,
+    "lon": -106.24524,
+    "edge_m": 817.8,
+    "zone_m": 5520.2,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 5,
+    "kind": "SEM-10d",
+    "edge_m": 817.8,
+    "off_map": {
+     "exposure_s": 41.0,
+     "horizon_h": null,
+     "drive_min": 15.6,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 200.3,
+     "horizon_h": 1.66,
+     "drive_min": 5.5,
+     "key": [
+      0,
+      1,
+      -3,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|vail_co|+30|8000|extreme",
+  "served": 5,
+  "left": {
+   "sim-g1": {
+    "at_s": 1790002700.0,
+    "lat": 39.59269,
+    "lon": -106.24524,
+    "edge_m": 817.8,
+    "zone_m": 5520.2,
+    "dropped": []
+   }
+  },
+  "off_map_picks": [
+   {
+    "tick": 2,
+    "kind": "SEM-10d",
+    "edge_m": 817.8,
+    "off_map": {
+     "exposure_s": 78.3,
+     "horizon_h": null,
+     "drive_min": 15.6,
+     "key": [
+      0,
+      1,
+      -48,
+      1,
+      1
+     ]
+    },
+    "best_on_map": {
+     "exposure_s": 175.9,
+     "horizon_h": 11.14,
+     "drive_min": 19.5,
+     "key": [
+      0,
+      1,
+      -22,
+      0,
+      1
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "seed": "corr|vail_co|-30|8000|extreme",
+  "served": 22,
+  "left": {},
+  "off_map_picks": []
+ }
+]

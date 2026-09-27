@@ -1,0 +1,132 @@
+[
+ {
+  "arm": "alerted2_road",
+  "map": "vail_co",
+  "seed": "corr-alert|vail_co|+0|high",
+  "viol_reported": 1,
+  "departure_rows_max": 0,
+  "overrun_ticks": 1,
+  "kinds": {
+   "imminent|egress": 1
+  },
+  "worst_past_p10_min": 0.0,
+  "burned_rows": []
+ },
+ {
+  "arm": "local2_road",
+  "map": "beaver_creek_co",
+  "seed": "corr|beaver_creek_co|+0|6000|moderate",
+  "viol_reported": 1,
+  "departure_rows_max": 0,
+  "overrun_ticks": 1,
+  "kinds": {
+   "imminent|egress": 1
+  },
+  "worst_past_p10_min": 0.0,
+  "burned_rows": []
+ },
+ {
+  "arm": "local2_road",
+  "map": "beaver_creek_co",
+  "seed": "corr|beaver_creek_co|+0|8000|moderate",
+  "viol_reported": 1,
+  "departure_rows_max": 0,
+  "overrun_ticks": 1,
+  "kinds": {
+   "imminent|egress": 1
+  },
+  "worst_past_p10_min": 0.0,
+  "burned_rows": []
+ },
+ {
+  "arm": "local2_road",
+  "map": "beaver_creek_co",
+  "seed": "corr|beaver_creek_co|+0|6000|extreme",
+  "viol_reported": 1,
+  "departure_rows_max": 0,
+  "overrun_ticks": 1,
+  "kinds": {
+   "imminent|egress": 1
+  },
+  "worst_past_p10_min": 0.0,
+  "burned_rows": []
+ },
+ {
+  "arm": "local2_road",
+  "map": "beaver_creek_co",
+  "seed": "corr|beaver_creek_co|+0|8000|extreme",
+  "viol_reported": 1,
+  "departure_rows_max": 0,
+  "overrun_ticks": 1,
+  "kinds": {
+   "imminent|egress": 1
+  },
+  "worst_past_p10_min": 0.0,
+  "burned_rows": []
+ },
+ {
+  "arm": "local2_road",
+  "map": "glenwood_springs_co",
+  "seed": "corr|glenwood_springs_co|+0|6000|moderate",
+  "viol_reported": 1,
+  "departure_rows_max": 0,
+  "overrun_ticks": 1,
+  "kinds": {
+   "imminent|egress": 1
+  },
+  "worst_past_p10_min": 0.0,
+  "burned_rows": []
+ },
+ {
+  "arm": "local2_road",
+  "map": "glenwood_springs_co",
+  "seed": "corr|glenwood_springs_co|-30|6000|high",
+  "viol_reported": 2,
+  "departure_rows_max": 0,
+  "overrun_ticks": 1,
+  "kinds": {
+   "imminent|egress": 2
+  },
+  "worst_past_p10_min": 0.0,
+  "burned_rows": []
+ },
+ {
+  "arm": "local2_road",
+  "map": "glenwood_springs_co",
+  "seed": "corr|glenwood_springs_co|+0|8000|extreme",
+  "viol_reported": 1,
+  "departure_rows_max": 0,
+  "overrun_ticks": 2,
+  "kinds": {
+   "imminent|egress": 2
+  },
+  "worst_past_p10_min": 0.0,
+  "burned_rows": []
+ },
+ {
+  "arm": "local2_road",
+  "map": "vail_co",
+  "seed": "corr|vail_co|-30|6000|moderate",
+  "viol_reported": 1,
+  "departure_rows_max": 0,
+  "overrun_ticks": 1,
+  "kinds": {
+   "imminent|egress": 1
+  },
+  "worst_past_p10_min": 0.0,
+  "burned_rows": []
+ },
+ {
+  "arm": "local2_road",
+  "map": "vail_co",
+  "seed": "corr|vail_co|+30|8000|moderate",
+  "viol_reported": 1,
+  "departure_rows_max": 0,
+  "overrun_ticks": 1,
+  "kinds": {
+   "imminent|egress": 1
+  },
+  "worst_past_p10_min": 0.0,
+  "burned_rows": []
+ }
+]

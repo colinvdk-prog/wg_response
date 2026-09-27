@@ -207,6 +207,18 @@
   .chip.inb { background: #46566b; color: #dbe6f5; text-transform: none; }
   .crew-block.reloc { border: 1px solid var(--amber); }
   .crew-block.caught { border: 1px solid #ff1a1a; background: #3a0a0d; }
+  /* LEFT THE MAP: the crew card greys out (out of the simulation for good);
+     OLD BLACK: a charcoal chip — resting on burned-out ground, a refuge */
+  .crew-block.leftmap { opacity: 0.55; filter: grayscale(0.9);
+                        border: 1px dashed #6b7686; }
+  .chip.leftmap { background: #4b5563; color: #e5e7eb; text-transform: none;
+                  white-space: nowrap; }
+  .chip.oldblack { background: #1f1f1f; color: #d6d3d1; border: 1px solid #7f0f0f;
+                   text-transform: none; white-space: nowrap; }
+  .evt.leftmap { background: #262b33; border: 1px dashed #6b7686; }
+  #sb_leftmap { font-weight: 700; padding: 1px 10px; border-radius: 6px; color: var(--dim); }
+  #sb_leftmap_row.hot #sb_leftmap { background: #3a3f47; color: #e5e7eb;
+                                    border: 1px dashed #9aa4b2; }
   /* honest fallback: leg with no road route (on_roads=false) */
   .chip.offroad { background: #38424f; color: #dbe6f5; border: 1px dashed #9db0c9;
                   text-transform: none; }
@@ -389,6 +401,23 @@
                      box-shadow: 0 0 9px 3px rgba(255,26,26,.9);
                      animation: crewburn 0.5s steps(1) infinite; }
   @keyframes crewburn { 0%,100% { background: #b3121f; } 50% { background: #ff5252; } }
+  /* A CREW THAT LEAVES THE MAP IS OUT (founder ruling 2026-09-26, "crews once
+     leave a map are no longer part of the simulation"; state crews[i].left_map):
+     the marker is greyed out at its LAST position with a "left the map" chip
+     and never moves again. OLD BLACK IS A REFUGE (crews[i].on_old_black): a
+     crew resting on burned-out ground gets a thin charcoal ring — not a
+     violation, never flashed red. */
+  .crew-icon.leftmap { background: #3a3f47 !important; color: #c5ccd6 !important;
+                       border-style: dotted !important; border-color: #9aa4b2 !important;
+                       opacity: 0.7; filter: grayscale(1); }
+  .crew-icon.leftmap .crew-arrow { display: none; }
+  .crew-icon .cleft { display: none; position: absolute; left: 50%; top: -14px;
+                      transform: translateX(-50%); white-space: nowrap; font-size: 9px;
+                      font-weight: 700; color: #e5e7eb; background: rgba(38,43,51,.92);
+                      border: 1px dashed #9aa4b2; border-radius: 6px; padding: 0 4px;
+                      line-height: 12px; pointer-events: none; }
+  .crew-icon.leftmap .cleft { display: block; }
+  .crew-icon.oldblack { box-shadow: 0 0 0 2px #1b1b1b, 0 0 0 3px #d6d3d1; }
   .leaflet-container { font: inherit; }
   /* --- offline SVG fallback map (no Leaflet, no tiles) --- */
   #map.offline-map { position: relative; }
@@ -598,6 +627,9 @@
       <!-- SAFETY SEMANTICS 10c: crews CAUGHT in fire, broken out of violations
            (which already folds them in and flips red) — the founder's G1/G2 bug. -->
       <div class="sbrow" id="sb_overruns_row" style="align-items:center"><span class="k">crews caught in fire</span><span id="sb_overruns">0</span></div>
+      <!-- A CREW THAT LEAVES THE MAP IS OUT (founder ruling 2026-09-26):
+           scoreboard.crews_left_map — crews out of the simulation for good. -->
+      <div class="sbrow" id="sb_leftmap_row" style="align-items:center"><span class="k">crews left the map (out of the simulation)</span><span id="sb_leftmap">0</span></div>
       <div class="sbrow"><span class="k">rule in force</span><span id="sb_rule">buffer 30 + slack 15 min</span></div>
       <div class="sbrow"><span class="k">safety surface</span>
         <label><input type="checkbox" id="safetytoggle"> show eroded-P10</label></div>
@@ -634,7 +666,7 @@
        actual fire (the engine's nominal member, the ground truth the crews
        are audited against); the bands are the ladder's MEDIAN (P50) forecast,
        drawn only beyond the fire's edge (state.fire_view) -->
-  <div class="row"><span class="sw" style="background:#7f0f0f;border:1.5px solid #ff3b30"></span> burned — the simulated fire</div>
+  <div class="row"><span class="sw" style="background:#7f0f0f;border:1.5px solid #ff3b30"></span> burned — the simulated fire (old black: a crew refuge)</div>
   <div class="row"><span class="sw" style="background:#ff3b30;border:1.5px solid #ffcf3f"></span> burning now — front still flaming (its fuel's cold-black window)</div>
   <div class="row"><span class="sw" style="background:rgba(229,57,53,.18);border:2px solid #e53935"></span> reached in &lt;1 h (red)</div>
   <div class="row"><span class="sw" style="background:rgba(255,140,26,.14);border:2px solid #ff8c1a"></span> reached in &lt;5 h (orange)</div>
@@ -654,6 +686,10 @@
   <div class="row"><span class="dot" style="background:#46566b;border:2px dashed #9db0c9"></span> inbound crew (reinforcement en route)</div>
   <div class="row"><span class="dot" style="background:transparent;border:2px solid #ffb300"></span> crew repositioning (zone threatened)</div>
   <div class="row"><span class="dot" style="background:#b3121f;border:2px solid #ff1a1a"></span> crew OVERRUN — caught in fire</div>
+  <!-- founder rulings 2026-09-26: old burned ground is a refuge (not a
+       violation); a crew that leaves the map is out of the simulation -->
+  <div class="row"><span class="dot" style="background:#1b1b1b;border:2px solid #d6d3d1"></span> crew on old black — burned out, a refuge (not a violation)</div>
+  <div class="row"><span class="dot" style="background:#3a3f47;border:2px dotted #9aa4b2"></span> crew left the map — out of the simulation (last position)</div>
   <div class="row"><span class="dot" style="background:transparent;border:2px solid #2196f3"></span> gel applied (protected)</div>
   <!-- LAW 8 OUTCOME TAG: the two "why unprotected" affordance rings -->
   <div class="row"><span class="dot" style="background:transparent;border:2px dashed #9aa4b2"></span> abandoned — unsavable (fire beat crews)</div>
@@ -2267,6 +2303,10 @@ function styleCrewMarker(R, c, caught) {
   el.classList.toggle("inbound", !!c.inbound);
   el.classList.toggle("relocating", !!c.relocating);
   el.classList.toggle("overrun", !!caught);
+  // founder rulings 2026-09-26: LEFT THE MAP (greyed, parked at its last
+  // position, "left the map" chip) and OLD BLACK (a refuge — charcoal ring)
+  el.classList.toggle("leftmap", !!c.left_map);
+  el.classList.toggle("oldblack", !!c.on_old_black && !c.left_map && !caught);
   const chip = el.querySelector(".cinb");
   if (chip) {
     if (c.inbound) {
@@ -2374,6 +2414,10 @@ function render(st) {
   $("sb_relocations").textContent = sb.relocations ?? 0;
   $("sb_overruns").textContent = nOverruns;
   $("sb_overruns_row").classList.toggle("hot", nOverruns > 0);
+  // A CREW THAT LEAVES THE MAP IS OUT (founder ruling 2026-09-26)
+  const nLeft = sb.crews_left_map ?? 0;
+  $("sb_leftmap").textContent = nLeft;
+  $("sb_leftmap_row").classList.toggle("hot", nLeft > 0);
   $("sb_rule").textContent = `buffer ${sb.buffer_min} + slack ${sb.slack_min} min`;
 
   // LAW 8 OUTCOME TAG (FOUNDER ROUND 4): the per-home outcome breakdown from
@@ -2670,6 +2714,8 @@ function render(st) {
           html: '<span class="creloc-ring"></span>' +
                 '<span class="crew-arrow">&#10148;</span>' +
                 '<span class="cinb"></span>' +
+                // cleft = "left the map" chip (shown via .leftmap)
+                '<span class="cleft">&#8677; left the map</span>' +
                 `<span class="cnum">${String(c.crew_id).replace("sim-", "")}</span>`,
           iconSize: [26, 20] }) }).addTo(layers.crews),
         arrowEl: null, shown: [c.lat, c.lon],
@@ -2716,6 +2762,13 @@ function render(st) {
         ? `<br>⟳ REPOSITIONING — ${c.relocate_reason === "proactive_escape" ? "proactive escape" : c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened"}` : "") +
       (overrunIds[c.crew_id]
         ? `<br>⚠ CAUGHT IN FIRE (${overrunIds[c.crew_id].reason || ""})` : "") +
+      // founder rulings 2026-09-26 (state crews[i].left_map / on_old_black)
+      (c.left_map
+        ? `<br>⇥ LEFT THE MAP at ${fmtClock(c.left_map_at_s)} — out of the ` +
+          `simulation: no dispatch, no movement, no audit (last position shown)` : "") +
+      (c.on_old_black && !c.left_map && !overrunIds[c.crew_id]
+        ? `<br>▪ on old black — burned out, it cannot burn again: a refuge, ` +
+          `not a violation` : "") +
       (placedRecs[c.crew_id]
         ? `<br>◎ start placed by you — ${placedWhere(placedRecs[c.crew_id])}` +
           `<br>escape target stays safe zone ${c.anchor_zone_id || ""}` : ""));
@@ -2864,7 +2917,15 @@ function render(st) {
     `<span>${o.crew_id} caught in fire</span>` +
     `<span class="t">${String(o.reason || "").replace(/_/g, " ")}` +
     `${o.mode ? " · " + o.mode : ""}</span></div>`).join("");
-  $("alertlist").innerHTML = cos + wds + (ladder ||
+  // crews that LEFT THE MAP (founder ruling 2026-09-26) pinned under the
+  // withdrawals: out of the simulation for good — never silently gone
+  const lefts = (st.crews || []).filter(c => c.left_map).map(c =>
+    `<div class="evt leftmap" title="out of the simulation: no dispatch, no movement, no safety sweep, no audit">` +
+    `<span class="t">${fmtClock(c.left_map_at_s)}</span>` +
+    `<span class="chip leftmap">left the map</span>` +
+    `<span>${c.crew_id}</span>` +
+    `<span class="t">out of the simulation</span></div>`).join("");
+  $("alertlist").innerHTML = cos + wds + lefts + (ladder ||
     `<div class="evt"><span class="t">no alerts yet — ignite a fire</span></div>`);
 
   // per-crew itinerary cards: arrive/service/depart vs latest-depart + margin bar
@@ -2927,8 +2988,16 @@ function render(st) {
       badges += ` <span class="chip amber" title="continuous crew safety (SEMANTICS 10a/10e): the fire threatens (or is projected to reach) this crew's position — it is repositioning to a currently-safe zone">⟳ repositioning — ${c.relocate_reason === "proactive_escape" ? "proactive escape" : c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened"}</span>`;
     if (overrunIds[c.crew_id])
       badges += ` <span class="chip caught" title="SEMANTICS 10c: a crew is standing in the fire (the founder's G1/G2 bug) — audited so violations can never read 0 while a crew is in the burn">⚠ CAUGHT IN FIRE (${overrunIds[c.crew_id].reason || ""})</span>`;
+    // founder rulings 2026-09-26: a crew that LEFT THE MAP is out of the
+    // simulation (card greyed); a crew on OLD BLACK rests on a refuge
+    if (c.left_map)
+      badges += ` <span class="chip leftmap" title="founder ruling 2026-09-26: a crew that leaves the map is no longer part of the simulation — no dispatch, no movement, no safety sweep, no audit">⇥ left the map · ${fmtClock(c.left_map_at_s)}</span>`;
+    else if (c.on_old_black && !overrunIds[c.crew_id])
+      badges += ` <span class="chip oldblack" title="founder ruling 2026-09-26: old burned ground does not count as a violation — black older than its fuel's cold-black window cannot burn again">▪ on old black (refuge)</span>`;
     let tail = "";
-    if (c.inbound)
+    if (c.left_map)
+      tail = `<div class="tt" style="color:var(--dim)">out of the simulation since ${fmtClock(c.left_map_at_s)} — its last position stays on the map</div>`;
+    else if (c.inbound)
       tail = `<div class="tt" style="color:var(--amber)">▸ mobilized from ${regionTag} — arrives in ${inbMin != null ? inbMin + "m" : "—"} (not dispatch-eligible until arrival)</div>`;
     else if (!stops && !done) {
       // CREW PLACEMENT: a crew still resting on the start the user placed
@@ -2938,7 +3007,8 @@ function render(st) {
         ? `<div class="tt" style="color:var(--safety)">idle — at its placed start (${pr.snapped ? "road node" : "raw point"}) · escape zone ${c.anchor_zone_id || "base"}</div>`
         : `<div class="tt" style="color:var(--dim)">idle — staged at ${c.anchor_zone_id || "base"}</div>`;
     }
-    const cls = overrunIds[c.crew_id] ? " caught" : (c.relocating ? " reloc" : "");
+    const cls = c.left_map ? " leftmap"
+      : (overrunIds[c.crew_id] ? " caught" : (c.relocating ? " reloc" : ""));
     return `<div class="crew-block${cls}"><span class="cid">${c.crew_id}</span> ` +
       `<span class="st">${c.status}</span>${badges}${dep}${offroad}${stops}${done}${tail}</div>`;
   }).join("") || `<div class="evt"><span class="t">no crews</span></div>`;

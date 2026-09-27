@@ -438,10 +438,16 @@ def test_proactive_counterpart_every_road_exposed_holds():
     """Every point off the zones inside the eroded-P10 band (and long burned):
     no lawful road path exists, so the armed picker still returns None — a
     voluntary move never buys exposure (the scripted _crew_exposure is what
-    the search judges)."""
+    the search judges).
+
+    Pinned with old_black_refuge OFF: "long burned" (4 h) is OLD BLACK, and
+    under the founder's 2026-09-26 ruling old black is a refuge that costs
+    no exposure, so the armed simulator decamps over it; with the band on
+    UNBURNED ground it still holds — tests/test_sim_old_black.py::test_armed_
+    proactive_road_decamp_rides_old_black_not_the_band."""
     if not (DEFAULT_TILE_DIR.parent / "roads" / "boulder_co.wgr").exists():
         pytest.skip("LOUD SKIP: boulder_co road graph not cached")
-    s = _scripted_session()
+    s = _scripted_session(old_black_refuge=False)
     cs = next(iter(s._crew_sims.values()))
     now = s._now_s
     _script(s, {z.zone_id: now + 1800.0 for z in s._loc.safe_zones},

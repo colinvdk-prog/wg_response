@@ -161,8 +161,12 @@ def cold_black_minutes(code: int) -> float:
     model (docs/transit_hazard_determination.md, founder 2026-07-30).
 
     How long after the flaming front's arrival a cell of this fuel remains
-    actively hazardous for TRANSIT ROUTE SELECTION (the SEM-10 carve-out;
-    the 10c audit never consults this). Derived as max(class floor,
+    actively hazardous for TRANSIT ROUTE SELECTION (the SEM-10 carve-out)
+    and — under contracts old_black_refuge only (founder ruling 2026-09-26,
+    "old burned ground does not count as a violation") — the age at which
+    burned ground becomes OLD BLACK, a crew refuge the 10c audit no longer
+    counts; with that knob off the audit never consults it. Derived as
+    max(class floor,
     3 x Anderson 1969 residence t_r = 384/sigma of the heaviest-loaded
     timelag class present) — the same t_r formula the engine already uses in
     rothermel.surface_ros_from_bed. The legacy flat 45 min is numerically

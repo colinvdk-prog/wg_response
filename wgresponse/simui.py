@@ -190,6 +190,27 @@ ONE additive key, crew_placement {setup, locked_reason, max_road_m,
 snaps_to_roads, placeable, placed}; with no placement every other key is
 unchanged (byte-identical sessions).
 
+OLD BLACK IS A REFUGE; A CREW THAT LEAVES THE MAP IS OUT (founder rulings
+2026-09-26, verbatim: "old burned ground does not count as a violation. crews
+once leave a map are no longer part of the simulation"; contracts SAFETY
+SEMANTICS 10, knobs old_black_refuge / left_map_out / escape_prefer_on_map,
+all armed by the simulator; docs/SIMULATOR_DESIGN.md "Old black is a refuge;
+crews that leave the map are out (2026-09-26)"). OLD BLACK: a cell the
+nominal front passed at least its cold-black window ago (_cold_black_pass_s,
+the transit rule's per-fuel window) — every SEM-10 judgement reads crew and
+route cells through _exposure_at, which returns an old-black cell as
+unreached: not burned, not imminent, no exposure, an unbounded horizon (the
+10c audit, the sweep, zone validity, route metrics and the road-escape
+search); the audit judges it over the whole step, so an overrun between two
+audits is still reported. Hot black is untouched. THE MAP: the tile (its grid
+or the rectangle the page draws) plus ZONE_ON_MAP_M around every catalog zone
+(_on_map). After each step's movement a crew off the map with nothing that
+brings it back (no on-map stop or egress target) has LEFT (_check_left_map):
+it is released from every commitment and never moves, plans, flees or is
+audited again; crews[i].left_map / left_map_at_s / on_old_black and
+scoreboard.crews_left_map report it (additive keys — a session where no crew
+leaves is byte-identical with them stripped).
+
 WUI band definition (SIMULATOR_DESIGN.md): developed cells (FBFM40 91/93)
 within 3 cells (Chebyshev) of burnable fuel, UNION burnable cells within
 1 cell of a developed cell. place_clients draws distinct band cells with
@@ -342,8 +363,10 @@ _ROAD_PLAN_CACHE_MAX = 50_000
 #: in grass/shrub; 45 min is a conservative bound incl. heavy fuels) — so a
 #: crew stranded inside a large burn scar can drive OUT through the black
 #: (park_city finding: 44 ticks standing in the burn with zero candidates).
-#: ROUTE-SELECTION policy only; the 10c audit still reports any crew standing
-#: on a front-passed cell, and cells inside the window remain undriveable.
+#: ROUTE-SELECTION policy (with contracts old_black_refuge OFF the 10c audit
+#: still reports any crew standing on a front-passed cell; with it ON — the
+#: simulator — black past this window is a refuge the audit does not count:
+#: founder ruling 2026-09-26), and cells inside the window remain undriveable.
 _COLD_BLACK_PASS_S = 45.0 * 60.0
 
 #: Synthetic-fallback tile edge length (km). Real cached tiles are ~18x18 km;
@@ -541,6 +564,19 @@ CREW_PLACE_MAX_ROAD_M = 2000.0
 #: page shows it as the disabled mode's tooltip).
 CREW_PLACE_LOCKED_REASON = ("crews are now dispatched by the engine — reset "
                             "the scenario to re-stage")
+
+#: THE MAP (founder ruling 2026-09-26 "crews once leave a map are no longer
+#: part of the simulation"; contracts left_map_out): the simulated terrain
+#: tile (its grid, or the rectangle the page draws for it — SimSession.
+#: _on_map) PLUS this radius (m) around every catalog safe zone. Five standard
+#: tiles have a zone just past their edge — malibu_ca z1 Zuma Beach (1.24 km
+#: out) and z3 US-101 / Las Virgenes (1.13 km), paradise_ca z2 Neal Rd /
+#: Hwy 99 (1.00 km), santa_rosa_ca z3 Windsor (1.45 km), park_city_ut z3
+#: Jeremy Ranch (28 m); no extended tile does — and crews stage there and are
+#: sent there as the lawful refuge. Same value as the road fetch's safe-zone
+#: pad (tools/fetch_sim_roads.py ZONE_PAD_M), the road network cached around
+#: each zone.
+ZONE_ON_MAP_M = 1500.0
 
 
 def _dp_keep(xy: list, eps_m: float) -> list:
@@ -1648,6 +1684,15 @@ class _SimCrew(_CrewSim):
         # road path it drove this tick (state map_view.moved_path). Pure
         # bookkeeping: never read by the kinematics.
         self.driven = []
+        # OLD BLACK AUDIT (contracts old_black_refuge): the sim time from
+        # which the crew has stood at its CURRENT position (-inf = since
+        # before anything happened: a start / staging spot). The 10c audit
+        # excuses old black only when it was already old black when the
+        # crew got there (or at the step start, if later), so a front that
+        # overruns a crew between two audits is never hidden by the audit
+        # looking after the fuel burned out. Bookkeeping only: never read by
+        # the kinematics.
+        self.pos_since_s = -math.inf
 
     # -- legs (roads seam) ---------------------------------------------------
 
@@ -1701,10 +1746,13 @@ class _SimCrew(_CrewSim):
                 if seg > 1e-9:
                     self.pos = _interp(self.pos, pts[0], budget / seg)
                     self.driven.append(self.pos)
+                    self.pos_since_s = t_end_s    # (audit bookkeeping)
                 return t_end_s, False
             t += seg / speed
             self.pos = pts.pop(0)
             self.driven.append(self.pos)
+            if seg > 1e-9:
+                self.pos_since_s = t              # (audit bookkeeping)
             if kinds:                          # consume this edge's render kind
                 kinds.pop(0)
         return t, True
@@ -2286,6 +2334,22 @@ class SimSession:
         # Explicit override wins.
         if "ensemble_p50_nominal_bound" not in overrides:
             cfg.ensemble_p50_nominal_bound = True
+        # OLD BLACK IS A REFUGE / A CREW THAT LEAVES THE MAP IS OUT (founder
+        # rulings 2026-09-26, verbatim: "old burned ground does not count as
+        # a violation. crews once leave a map are no longer part of the
+        # simulation"; contracts SAFETY SEMANTICS 10). The simulator's crew-
+        # safety law treats black older than its cold-black window as a
+        # refuge, removes a crew that leaves the map from the simulation, and
+        # ranks an on-map refuge before an off-map one when the two are
+        # equally safe (in a voluntary SEM-10e decamp: whenever an on-map
+        # durable refuge exists). Explicit override wins; ResponseConfig
+        # defaults stay OFF (the live engine audits no crew position).
+        if "old_black_refuge" not in overrides:
+            cfg.old_black_refuge = True
+        if "left_map_out" not in overrides:
+            cfg.left_map_out = True
+        if "escape_prefer_on_map" not in overrides:
+            cfg.escape_prefer_on_map = True
 
         # --- roads (contracts wgresponse.roads seam; loaded ONCE per
         # configure). LAZY import: the sibling module lands independently —
@@ -2619,6 +2683,15 @@ class SimSession:
         self._esc_edge_cache = {}
         self._escape_kind_last = None
         self._net_fallback_noted = set()
+        # A CREW THAT LEAVES THE MAP IS OUT (contracts left_map_out): crew_id
+        # -> its exit record {at_s, lat, lon, edge_m, zone_m, dropped}; a
+        # crew in it is out of the simulation for good (_check_left_map).
+        # Empty and never read when the knob is off.
+        self._left_map = {}
+        # OLD BLACK AUDIT (contracts old_black_refuge): the start of the step
+        # the running _run_audit judges (set by _tick_step around the call;
+        # None = a direct call, which judges the instant)
+        self._audit_since_s = None
         # FOUNDER ROUND 5 COATING HOLD state: released latches True the first
         # time the feasibility gate fails (no stop-start churn); _hold_noted
         # one-shots the activation note; _preposition_target avoids re-issuing
@@ -2987,6 +3060,7 @@ class SimSession:
         every engine field stay as they are."""
         cs = self._crew_sims[cid]
         cs.pos = pos
+        cs.pos_since_s = -math.inf       # a setup start: there "all along"
         self._tracker.restage(CrewBeacon(crew_id=cid, loc=pos, t_s=self._now_s,
                                          status=cs.status))
         self._tracks[cid].clear()
@@ -3315,8 +3389,10 @@ class SimSession:
         Under cfg.transit_cold_black_by_class (TRANSIT-HAZARD STAGE 1): the
         point's own fuel class sets the window (fuels.cold_black_minutes —
         grass minutes, timber STRICTER than the flat rule). Off-tile or
-        unreadable fuel falls back to the flat window. The 10c audit never
-        consults this."""
+        unreadable fuel falls back to the flat window. Under contracts
+        old_black_refuge it is also the age at which burned ground becomes
+        OLD BLACK (_exposure_at, the 10c audit); with that knob off the audit
+        never consults it."""
         if not getattr(self._cfg, "transit_cold_black_by_class", False):
             return _COLD_BLACK_PASS_S
         rc = geo.latlon_to_rc(self._tile.spec, p)
@@ -3391,6 +3467,34 @@ class SimSession:
                     p10 = ev
         return nom, p10
 
+    def _exposure_at(self, pos, t: float):
+        """_crew_exposure(pos) as the SEM-10 crew-safety law judges the cell
+        at time t. OLD BLACK IS A REFUGE (contracts old_black_refuge; founder
+        ruling 2026-09-26 "old burned ground does not count as a
+        violation"): a cell the nominal front passed at least its cold-black
+        window before t (_cold_black_pass_s — the transit rule's per-fuel
+        window) is burned out and cannot burn again, so it reads
+        (UNREACHED, UNREACHED): not burned, not imminent (the eroded-P10 band
+        that reaches it from nearby fuel does not count), no exposure, an
+        unbounded horizon. Hot black (inside its window) and every unburned
+        cell read exactly _crew_exposure. Knob off = _crew_exposure verbatim.
+        Honors an instance-level _crew_exposure (scripted worlds)."""
+        nom, p10 = self._crew_exposure(pos)
+        if (getattr(self._cfg, "old_black_refuge", False)
+                and not math.isinf(nom)
+                and (t - nom) >= self._cold_black_pass_s(pos)):
+            return UNREACHED, UNREACHED
+        return nom, p10
+
+    def _on_old_black(self, pos, t: float) -> bool:
+        """True iff old_black_refuge is on and `pos` is OLD BLACK at t (the
+        cell _exposure_at turns into a refuge) — display + probes."""
+        if not getattr(self._cfg, "old_black_refuge", False):
+            return False
+        nom, _p10 = self._crew_exposure(pos)
+        return (not math.isinf(nom)
+                and (t - nom) >= self._cold_black_pass_s(pos))
+
     def _cell_unsafe(self, pos, now, lead_s: float = 0.0):
         """(unsafe, burned, imminent) for a cell at time `now` (SAFETY SEMANTICS
         10): BURNED iff the nominal front has already passed (nom <= now),
@@ -3398,8 +3502,10 @@ class SimSession:
         proactive `lead_s`) of now. lead_s>0 is the sweep's look-ahead so a crew
         LEAVES a threatened cell one step BEFORE the zero-lead audit would flag
         it — keeping the audit (SEMANTICS 10c) an honest backstop that fires only
-        on genuine, unavoidable overrun."""
-        nom, p10 = self._crew_exposure(pos)
+        on genuine, unavoidable overrun. OLD BLACK (contracts
+        old_black_refuge) is neither: _exposure_at reads it as unreached, so a
+        zone on old black is a lawful refuge."""
+        nom, p10 = self._exposure_at(pos, now)
         buffer_s = self._cfg.egress_buffer_min * 60.0
         burned = (not math.isinf(nom)) and nom <= now
         imminent = (not math.isinf(p10)) and p10 < now + buffer_s + lead_s
@@ -3521,7 +3627,9 @@ class SimSession:
         prev_dt = 0.0
         for q, dt in pts:
             pass_t = now + dt
-            nom, p10 = self._crew_exposure(q)
+            # OLD BLACK at its pass time reads unreached (contracts
+            # old_black_refuge): no exposure, never burned, margin +inf
+            nom, p10 = self._exposure_at(q, pass_t)
             # BURNED = the FLAMING FRONT crosses this cell within the cold-
             # black window of the crew's pass time. Two deliberate carve-outs
             # (both from the park_city stranded-crew finding, 44 ticks in the
@@ -3531,9 +3639,11 @@ class SimSession:
             #   COLD BLACK — a cell the front consumed >= _COLD_BLACK_PASS_S
             #   before the crew passes is OLD BURN, passable (the hazard is
             #   the front's flaming residence, minutes — not the black behind
-            #   it, which is the classic survival ground). The 10c AUDIT is
-            #   unchanged — standing in ANY front-passed cell still reports —
-            #   this only lets a black-stranded crew LEAVE.
+            #   it, which is the classic survival ground). With the knob OFF
+            #   the 10c AUDIT still reports a crew standing in ANY front-
+            #   passed cell — this only lets a black-stranded crew LEAVE;
+            #   with old_black_refuge ON (the simulator) the audit, the sweep
+            #   and this judgement all read that old black as a refuge.
             if ((not math.isinf(nom)) and nom <= pass_t and dt > 0.0
                     and (pass_t - nom) < self._cold_black_pass_s(q)):
                 burned = True
@@ -3567,7 +3677,9 @@ class SimSession:
             burned, _e, worst, _t, _dm = self._route_metrics(
                 pos, z.loc, now, speed_mps, lead_s)
             if not burned and worst >= 0.0:
-                _nom, p10 = self._crew_exposure(z.loc)
+                # a zone on OLD BLACK never burns again: a 'forever' zone
+                # (contracts old_black_refuge; knob off = _crew_exposure)
+                _nom, p10 = self._exposure_at(z.loc, now)
                 lawful.append((z, p10, geo.haversine_m(pos, z.loc)))
         if not lawful:
             return None
@@ -3737,7 +3849,8 @@ class SimSession:
         return out
 
     def _esc_net_key(self, expo: float, total: float, dm: float,
-                     lead_s: float, kind: int, ident) -> tuple:
+                     lead_s: float, kind: int, ident,
+                     off_map: bool = False, voluntary: bool = False) -> tuple:
         """SEM-10d ROAD-NETWORK ESCAPE destination rule — an ascending key
         (module constants ESCAPE_NET_*). A LAWFUL destination (dm >= 0: its
         safety horizon covers the egress buffer + lead at arrival) always
@@ -3752,12 +3865,43 @@ class SimSession:
         zone keeps the crew in play. With no lawful destination: the one
         that stays lawful LONGEST (max dm), then exposure, then drive time —
         the legacy least-bad order. kind (0 catalog zone, 1 road node) + id
-        break exact ties."""
+        break exact ties.
+
+        ON-MAP TIE-BREAK (contracts escape_prefer_on_map, read only with
+        left_map_out): among lawful destinations equal on the two safety
+        steps, one ON the map (off_map False) ranks before one OFF it, then
+        zone before node as above — a road node beyond the tile edge has an
+        unbounded fire horizon (no raster there), so it ties with every
+        long-safe on-map refuge, and reaching it takes the crew out of the
+        simulation. The safety steps still come first: an off-map node wins
+        whenever it is strictly safer. A VOLUNTARY move (voluntary=True: the
+        SEM-10e proactive decamp, whose candidates are all lawful, exposure-
+        free and durable by construction) ranks every on-map refuge before
+        every off-map one, whatever their horizons: the crew is not in
+        danger, and the corridor measurement (docs/SIMULATOR_DESIGN.md "Old
+        black is a refuge; crews that leave the map are out") found this
+        decamp leaving the map for nodes 0.8-1 km past the tile edge — read
+        as "never burns" only because no fire field exists there — over
+        durable on-map refuges 3.7-13 h out. Off: the legacy key,
+        byte-identical."""
         eq = 0 if expo <= 0.0 else math.ceil(expo / ESCAPE_NET_EXPOSURE_Q_S)
         if dm >= 0.0:
             hz = dm + self._cfg.egress_buffer_min * 60.0 + lead_s
+            if self._esc_prefer_on_map():
+                off = 1 if off_map else 0
+                if voluntary:
+                    return (0, off, eq, -self._esc_horizon_step(hz), kind,
+                            total, ident)
+                return (0, eq, -self._esc_horizon_step(hz), off, kind, total,
+                        ident)
             return (0, eq, -self._esc_horizon_step(hz), kind, total, ident)
         return (1, -dm, eq, total, kind, ident)
+
+    def _esc_prefer_on_map(self) -> bool:
+        """The SEM-10d on-map tie-break is armed (contracts
+        escape_prefer_on_map, meaningful only with left_map_out)."""
+        return bool(getattr(self._cfg, "left_map_out", False)
+                    and getattr(self._cfg, "escape_prefer_on_map", False))
 
     def _esc_horizon_step(self, hz: float) -> int:
         """The safety horizon capped at cfg.escape_road_horizon_cap_h, in
@@ -3791,6 +3935,17 @@ class SimSession:
         (ESCAPE_NET_MAX_NODES settled; nodes beyond ESCAPE_NET_MAX_DRIVE_S are
         not expanded).
 
+        OLD BLACK (contracts old_black_refuge): a sample past its cold-black
+        window at its pass time costs no exposure and a node on it has an
+        unbounded horizon — the black behind the front is a lawful refuge.
+        ON-MAP TIE-BREAK (contracts escape_prefer_on_map, with left_map_out):
+        a node off the map (off the tile, away from every catalog zone —
+        _on_map) ranks after an equally safe on-map one — and, in the
+        voluntary lawful_only decamp, after EVERY on-map candidate — so the
+        early stop waits for an ON-map full-cap node, and the search also
+        stops once the exposure step passes a lawful on-map best's (nothing
+        later beats it).
+
         lawful_only (the SEM-10e proactive decamp, a VOLUNTARY move): an
         exposed sample is impassable too, and a candidate must be lawful at
         arrival with its own eroded-P10 arrival >= min_p10_s (durable).
@@ -3813,6 +3968,13 @@ class SimSession:
         fields = self._esc_fields()
         INF = math.inf
         crew_exposure = self._crew_exposure
+        # OLD BLACK IS A REFUGE (contracts old_black_refuge): a sample the
+        # front passed at least its cold-black window before its pass time
+        # costs no exposure and, as a destination, has an unbounded horizon
+        # (_exposure_at's law, applied to the precomputed samples)
+        old_black = bool(getattr(cfg, "old_black_refuge", False))
+        # ON-MAP TIE-BREAK (contracts escape_prefer_on_map)
+        prefer_on_map = self._esc_prefer_on_map()
 
         def drive(samples, t, e):
             """(t, e, p10 at the last sample) after driving `samples` from
@@ -3838,6 +4000,10 @@ class SimSession:
                                     p10 = w
                 if nom <= pass_t and (pass_t - nom) < cb:
                     return None
+                if old_black and nom <= pass_t:
+                    # past its window at its pass time: OLD BLACK, a refuge
+                    p10 = INF
+                    continue
                 if p10 < INF and p10 - (pass_t + buffer_s + lead_s) < 0.0:
                     if lawful_only:
                         return None
@@ -3865,17 +4031,27 @@ class SimSession:
             if u in done:
                 continue
             done.add(u)
+            if (prefer_on_map and best is not None and best[0][0] == 0
+                    and not best[6] and qe > best[5]):
+                # ON-MAP TIE-BREAK: pops come in exposure-step order, so no
+                # later node can beat a lawful ON-map best on a smaller step
+                break
             if (geo.haversine_m(pos, g.nodes[u]) >= ESCAPE_NET_MIN_FLEE_M
                     and p10_at[u] >= min_p10_s):
                 # the destination margin exactly as _metrics_of_points takes
                 # it: the last sample's p10 against its pass time
                 dm = p10_at[u] - (now + t + buffer_s + lead_s)
-                key = self._esc_net_key(e, t, dm, lead_s, 1, u)
+                off = prefer_on_map and not self._on_map(g.nodes[u])
+                key = self._esc_net_key(e, t, dm, lead_s, 1, u, off_map=off,
+                                        voluntary=lawful_only)
                 if (not lawful_only or key[0] == 0) and (
                         best is None or key < best[0]):
-                    best = (key, u, t, e, dm)
-                if key[0] == 0 and key[2] == top_step:
-                    break           # lawful, full-cap horizon: unbeatable
+                    best = (key, u, t, e, dm, qz(e), off)
+                if (dm >= 0.0 and not off and -self._esc_horizon_step(
+                        dm + buffer_s + lead_s) == top_step):
+                    # lawful, full-cap horizon (and on the map when the
+                    # on-map tie-break is armed): unbeatable
+                    break
             if len(done) >= ESCAPE_NET_MAX_NODES:
                 break
             if t > ESCAPE_NET_MAX_DRIVE_S:
@@ -3896,7 +4072,7 @@ class SimSession:
                     heapq.heappush(heap, (nl[0], t2, e2, v))
         if best is None:
             return None
-        key, node, t, e, dm = best
+        key, node, t, e, dm = best[:5]
         node_path, edge_path = [node], []
         cur = node
         while parent[cur] is not None:
@@ -4070,7 +4246,9 @@ class SimSession:
         bar = now + self._cfg.egress_buffer_min * 60.0 + lead_s + pro_s
         durable = []
         for z in sorted(self._loc.safe_zones, key=lambda z: z.zone_id):
-            _nom, zp10 = self._crew_exposure(z.loc)
+            # a zone on OLD BLACK never burns again (contracts
+            # old_black_refuge): durable; knob off = _crew_exposure
+            _nom, zp10 = self._exposure_at(z.loc, now)
             if math.isinf(zp10) or zp10 >= bar:
                 durable.append((z, zp10))
         if durable:
@@ -4113,6 +4291,13 @@ class SimSession:
             # strict nominal-crossing reject (window-free burned test): the
             # 10c audit flags a crew STANDING on any front-passed cell no
             # matter how cold, so a proactive route may not touch one.
+            # KEPT STRICT under old_black_refuge (measured 2026-09-26): the
+            # audit no longer counts old black, but this fallback lets a
+            # VOLUNTARY move ride pessimistic-exposed transit, and relaxing
+            # the reject to hot black only let three basalt_carbondale_co
+            # crews (standard probe, t36) take a 16 km route to z1 over old
+            # black AND the unburned band — 3 imminent-while-egressing rows
+            # where the strict rule decamped them 2.1 km by road with none.
             crosses = False
             for q, dt in self._route_points_with_times(pos, z.loc, speed_mps):
                 if dt <= 0.0:
@@ -4177,6 +4362,107 @@ class SimSession:
             f"buffer of the current P10); crew repositioning to a safe zone "
             f"now, gel NOT applied")
 
+    # -- A CREW THAT LEAVES THE MAP IS OUT (founder ruling 2026-09-26, "crews
+    # -- once leave a map are no longer part of the simulation"; contracts
+    # -- left_map_out) ---------------------------------------------------------
+
+    def _on_map(self, p) -> bool:
+        """True iff `p` is on THE MAP: on the loaded terrain tile — its grid,
+        or the rectangle the page draws for it (state.terrain.bbox,
+        _tile_bbox: the two differ by a sliver at the east edge because the
+        grid's longitude scale follows each row's latitude; a road node
+        metres from the drawn edge is on the map either way) — or within
+        ZONE_ON_MAP_M of a catalog safe zone (five standard tiles have a zone
+        just past their edge — crews stage there and are sent there as the
+        lawful refuge; reaching one's own zone must never remove a crew)."""
+        if geo.latlon_to_rc(self._tile.spec, p) is not None:
+            return True
+        west, south, east, north = self._tile_bbox()
+        if south <= p.lat <= north and west <= p.lon <= east:
+            return True
+        return any(geo.haversine_m(p, z.loc) <= ZONE_ON_MAP_M
+                   for z in self._loc.safe_zones)
+
+    def _leaving_map(self, cs) -> bool:
+        """True iff crew `cs` has LEFT THE MAP: it is off the map (_on_map)
+        and nothing it still has to do brings it back — no remaining stop
+        and no egress target on the map. That is a crew stopped / parked off
+        the map, or one on a final leg that ends off it (in practice a road-
+        network escape to a node beyond the tile edge). Transit through
+        off-tile road toward an on-map home, zone or node is NOT leaving
+        (PCH toward Zuma runs outside the Malibu tile); an INBOUND
+        reinforcement at its tile-edge entry has not entered yet."""
+        if cs.status == CrewStatus.INBOUND or self._on_map(cs.pos):
+            return False
+        for s in cs.itinerary:
+            if self._on_map(s["loc"]):
+                return False
+        return cs.egress_loc is None or not self._on_map(cs.egress_loc)
+
+    def _off_tile_m(self, p) -> float:
+        """Metres from p to the loaded tile's rectangle (0 on the tile) —
+        the "N km beyond the edge" the left-map note reports."""
+        west, south, east, north = self._tile_bbox()
+        dlat = max(0.0, p.lat - north, south - p.lat) * geo.M_PER_DEG_LAT
+        dlon = (max(0.0, p.lon - east, west - p.lon)
+                * geo.m_per_deg_lon(p.lat))
+        return math.hypot(dlat, dlon)
+
+    def _check_left_map(self, now: float) -> None:
+        """After each step's movement (tick() step 6'): every crew that has
+        LEFT THE MAP (_leaving_map) is taken out of the simulation for good
+        (_take_off_map). Deterministic: crews in id order, a pure function of
+        the step's positions and plans."""
+        for cid in _idsort(self._crew_sims):
+            if cid in self._left_map:
+                continue
+            cs = self._crew_sims[cid]
+            if self._leaving_map(cs):
+                self._take_off_map(cid, cs, now)
+
+    def _take_off_map(self, cid, cs, now: float) -> None:
+        """Remove crew `cid` from the simulation (contracts left_map_out):
+        every in-flight commitment is released (its stops return to the job
+        pool — re-planned next tick), it keeps its last position, its status
+        becomes UNKNOWN (no longer tracked) and from now on it is never in
+        dispatch.plan's crew set, never moves, never flees and is never
+        audited. Recorded for state() (crews[i].left_map / left_map_at_s,
+        scoreboard.crews_left_map) and said LOUDLY in state.notes."""
+        dropped = [s["client_id"] for s in cs.itinerary]
+        for d in dropped:
+            self._assigned.discard(d)
+            self._superseded.discard(d)
+            self._stop_rule.pop(d, None)
+        escaping = cs.egress_zone_id == "escape"
+        cs.itinerary = []
+        cs.egress_loc = None
+        cs.egress_zone_id = ""
+        cs._egress_plan = None
+        cs._leg = None
+        cs._mode = "idle"
+        cs.status = CrewStatus.UNKNOWN
+        self._relocating.pop(cid, None)
+        self._net_escape.pop(cid, None)
+        self._net_fallback_noted.discard(cid)
+        self._resting_until.pop(cid, None)
+        self._preposition_target.pop(cid, None)
+        pos = cs.pos
+        edge_m = self._off_tile_m(pos)
+        zone_m = min(geo.haversine_m(pos, z.loc) for z in self._loc.safe_zones)
+        self._left_map[cid] = {
+            "at_s": now, "lat": round(pos.lat, 6), "lon": round(pos.lon, 6),
+            "edge_m": round(edge_m, 1), "zone_m": round(zone_m, 1),
+            "dropped": list(dropped)}
+        how = ("on a road-network escape (SEM-10d) to a road point beyond "
+               "the tile edge" if escaping else "stopped beyond the tile edge")
+        self._notes.append(
+            f"CREW LEFT THE MAP: {cid} is {edge_m / 1000.0:.1f} km past the "
+            f"edge of the simulated terrain, {zone_m / 1000.0:.1f} km from the "
+            f"nearest safe zone ({how}) — it is out of the simulation from "
+            f"now on: no dispatch, no movement, no safety sweep, no audit"
+            + (f"; released {len(dropped)} stop(s) ({', '.join(dropped)}), "
+               f"re-planned next tick" if dropped else ""))
+
     def _crew_safety_sweep(self, lead_s: float) -> None:
         """CONTINUOUS CREW-SAFETY MONITOR (contracts SAFETY SEMANTICS 10a/10b),
         run every tick AFTER advance() and BEFORE _run_audit, over every ARRIVED
@@ -4194,7 +4480,13 @@ class SimSession:
         (crews in id order, deterministic zone pick). A crew resting safely
         clears its relocating flag; the leg re-resolves from actual position each
         tick so a relocating crew keeps advancing toward the zone. EXTENDS the
-        P10 / corridor / buffer law to every crew's live cell; never weakens it."""
+        P10 / corridor / buffer law to every crew's live cell; never weakens it.
+
+        OLD BLACK IS A REFUGE (contracts old_black_refuge): a crew standing on
+        old black is neither burned nor imminent here (_exposure_at), so the
+        sweep never moves it off — no relocation, no proactive decamp. A crew
+        that LEFT THE MAP (contracts left_map_out) is out of the simulation
+        and skipped like an INBOUND one."""
         now = self._now_s
         # relocation TARGETS use one tick of lead too, so a fleeing crew is sent
         # to a zone that will still be safe when it arrives (not one about to be
@@ -4220,12 +4512,14 @@ class SimSession:
                                  if (k[2], k[3]) in live}
         for cid in _idsort(self._crew_sims):
             cs = self._crew_sims[cid]
-            if cs.status == CrewStatus.INBOUND:
+            if cs.status == CrewStatus.INBOUND or cid in self._left_map:
                 continue
             # a crew at rest is not (any longer) repositioning — telemetry off.
             if cs._mode == "idle":
                 self._relocating.pop(cid, None)
-            nom, p10 = self._crew_exposure(cs.pos)
+            # OLD BLACK reads unreached (contracts old_black_refuge): a crew
+            # resting on it is safe here — never relocated, never decamped
+            nom, p10 = self._exposure_at(cs.pos, now)
             burned = (not math.isinf(nom)) and nom <= now
             imminent = (not math.isinf(p10)) and p10 < now + buffer_s + lead_s
             # DYNAMIC SAFE ZONES (10b): keep a committed crew's escape pointed at
@@ -4412,8 +4706,8 @@ class SimSession:
         fire_active = bool(self._fires)
         for idx, cid in enumerate(_idsort(self._crew_sims)):
             cs = self._crew_sims[cid]
-            if cs.status == CrewStatus.INBOUND:
-                continue
+            if cs.status == CrewStatus.INBOUND or cid in self._left_map:
+                continue            # (a crew that LEFT THE MAP is out)
             # rest complete -> new full shift
             rest_end = self._resting_until.get(cid)
             if rest_end is not None and now >= rest_end:
@@ -4451,6 +4745,7 @@ class SimSession:
                     oid != cid
                     and oid not in self._resting_until   # a fleeing resting
                     # crew is transiently EGRESSING but is NOT on duty
+                    and oid not in self._left_map        # out of the sim
                     and self._crew_sims[oid].status not in
                     (CrewStatus.INBOUND, CrewStatus.OFF_DUTY)
                     for oid in self._crew_sims)
@@ -4619,12 +4914,15 @@ class SimSession:
         work stays put. SEMANTICS 9: an INBOUND reinforcement is NOT available
         (still mobilizing / off-map), so it is excluded even though its mode is
         'idle' — it never enters the job pool or a dispatch plan and is never an
-        idle-with-work failure of the full-utilization law."""
+        idle-with-work failure of the full-utilization law. A crew that LEFT
+        THE MAP (contracts left_map_out) is out of the simulation: never
+        again in dispatch.plan's crew set."""
         return [cid for cid in _idsort(self._crew_sims)
                 if self._crew_sims[cid]._mode in ("idle", "travel")
                 and self._crew_sims[cid].status != CrewStatus.INBOUND
                 # CREW SHIFTS (ROUND 6b): a resting crew is never dispatchable
-                and self._crew_sims[cid].status != CrewStatus.OFF_DUTY]
+                and self._crew_sims[cid].status != CrewStatus.OFF_DUTY
+                and cid not in self._left_map]
 
     def _incumbent_from_crews(self, eligible_ids, now: float):
         """Reconstruct a DispatchPlan from the eligible crews' CURRENT
@@ -4716,13 +5014,17 @@ class SimSession:
             if avail is None or now < avail:
                 continue
             cs.pos = cs.crew.home_base          # staging safe zone
+            cs.pos_since_s = now                # (old-black audit bookkeeping)
             cs.status = CrewStatus.AVAILABLE
             cs._mode = "idle"
             cs._leg = None
             arrived.add(cid)                    # ROADS LEGIBILITY: a jump
 
-        # 1. crew beacons -> the real tracker (+ console trails)
+        # 1. crew beacons -> the real tracker (+ console trails). A crew that
+        # LEFT THE MAP (contracts left_map_out) is out: no more beacons.
         for cid in _idsort(self._crew_sims):
+            if cid in self._left_map:
+                continue
             cs = self._crew_sims[cid]
             self._tracker.ingest(CrewBeacon(crew_id=cid, loc=cs.pos, t_s=now,
                                             status=cs.status,
@@ -4948,6 +5250,10 @@ class SimSession:
         # a graph is loaded) + service completion
         jumps = self._map_jumps(arrived)     # display only (ROADS LEGIBILITY)
         for cid in _idsort(self._crew_sims):
+            if cid in self._left_map:
+                # LEFT THE MAP (contracts left_map_out): no movement ever again
+                self._crew_sims[cid].driven = [self._crew_sims[cid].pos]
+                continue
             self._crew_sims[cid].advance(now, now + step, self._serviced)
         self._record_map_paths(jumps)        # display only (ROADS LEGIBILITY)
 
@@ -5005,6 +5311,13 @@ class SimSession:
         if count:
             self._tick_n += 1
 
+        # 6'. A CREW THAT LEAVES THE MAP IS OUT (founder ruling 2026-09-26;
+        # contracts left_map_out): a crew this step's movement left off the
+        # map with nothing that brings it back is removed from the simulation
+        # before the shift sweep, the safety sweep and the audit see it.
+        if getattr(cfg, "left_map_out", False):
+            self._check_left_map(self._now_s)
+
         # 6a. CREW SHIFTS (ROUND 6b fatigue law): rest/return transitions run
         # BEFORE the safety sweep so a crew that just went OFF_DUTY is already
         # in its resting state when the sweep checks its cell (a threatened
@@ -5021,8 +5334,13 @@ class SimSession:
 
         # 6c. SAFETY AUDIT (SAFETY SEMANTICS 10c backstop): every serviced stop's
         # departure AND any arrived crew standing in the burn — scoreboard
-        # violations can therefore never read 0 while a crew is overrun.
+        # violations can therefore never read 0 while a crew is overrun. The
+        # step start is handed over so OLD BLACK (contracts old_black_refuge)
+        # is judged over the whole step: a front that overran a crew since
+        # the last audit is reported even if its fuel burned out meanwhile.
+        self._audit_since_s = now
         self._run_audit()
+        self._audit_since_s = None
 
         if not emit:
             return None
@@ -5224,7 +5542,7 @@ class SimSession:
             return None
         return [pts]
 
-    def _run_audit(self) -> None:
+    def _run_audit(self, since_s: Optional[float] = None) -> None:
         """sim.py's SAFETY AUDIT, every tick: each serviced stop's departure
         vs the CURRENT pessimistic arrival minus the stop's captured rule —
         adoption-time minutes, TIGHTENED in place if the slider tightened
@@ -5239,7 +5557,13 @@ class SimSession:
         folds these in, so it can NEVER read 0 while a crew stands in the burn.
         A STRICT SUPERSET of the old audit — byte-identical when no crew is
         exposed. The continuous sweep (10a) is what keeps this backstop empty in
-        an escapable scenario; when it fires, escape was genuinely impossible."""
+        an escapable scenario; when it fires, escape was genuinely impossible.
+
+        OLD BLACK IS A REFUGE (contracts old_black_refuge): no row for a crew
+        on black that was already past its cold-black window when the step
+        began (since_s; tick() sets it through _audit_since_s) or when the
+        crew got there, if later; a direct call outside a tick judges the
+        instant."""
         cfg = self._cfg
         now = self._now_s
         buffer_s = cfg.egress_buffer_min * 60.0
@@ -5293,12 +5617,33 @@ class SimSession:
         # (still fires with relocation disabled), so the scoreboard can never
         # silently read 0 while a crew sits in the burn. Empty (byte-identical
         # audit) when nothing is exposed.
+        # OLD BLACK IS A REFUGE (founder ruling 2026-09-26 "old burned ground
+        # does not count as a violation"; contracts old_black_refuge): a crew
+        # standing on black older than its cold-black window is neither
+        # burned nor imminent — no row. Black still inside its window counts
+        # exactly as before. The audit looks once per step, so "older than
+        # its window" is judged at the later of this step's start (since_s)
+        # and the moment the crew reached its spot (_SimCrew.pos_since_s):
+        # black that was still burning while the crew stood on it during
+        # the step counts as `burned` (the front overran the crew between
+        # two audits — a 5-10 min grass window inside a 15-min tick must
+        # never hide that); black that was old all that time is the refuge.
+        # Direct calls outside a tick judge the instant. A crew that LEFT
+        # THE MAP (contracts left_map_out) is out of the simulation: no rows.
+        old_black = bool(getattr(cfg, "old_black_refuge", False))
+        if since_s is None:                    # tick(): the step start
+            since_s = getattr(self, "_audit_since_s", None)
+        t_since = now if since_s is None else since_s
         overruns = []
         for cid in _idsort(self._crew_sims):
             cs = self._crew_sims[cid]
-            if cs.status == CrewStatus.INBOUND:
+            if cs.status == CrewStatus.INBOUND or cid in self._left_map:
                 continue
             nom, p10 = self._crew_exposure(cs.pos)
+            if old_black and not math.isinf(nom):
+                t_ref = max(t_since, getattr(cs, "pos_since_s", -math.inf))
+                if (min(t_ref, now) - nom) >= self._cold_black_pass_s(cs.pos):
+                    continue                   # old black the whole time
             burned = (not math.isinf(nom)) and nom <= now
             imminent = (not math.isinf(p10)) and p10 < now + buffer_s
             if not (burned or imminent):
@@ -6163,6 +6508,20 @@ class SimSession:
                 # preview and a reason for every straight stretch.
                 "map_view": self._map_view(cid, cs, route_segments,
                                            egress_segments),
+                # A CREW THAT LEAVES THE MAP IS OUT (contracts left_map_out;
+                # additive): True once the crew left the simulated map (it
+                # keeps its last position; out of dispatch / movement /
+                # sweep / audit for good) and the sim time it was found off
+                # the map; else False / None.
+                "left_map": cid in self._left_map,
+                "left_map_at_s": (self._left_map[cid]["at_s"]
+                                  if cid in self._left_map else None),
+                # OLD BLACK IS A REFUGE (contracts old_black_refuge;
+                # additive, display): the crew stands on black older than
+                # its cold-black window — not a violation, not fled.
+                "on_old_black": (cid not in self._left_map
+                                 and cs.status != CrewStatus.INBOUND
+                                 and self._on_old_black(cs.pos, now)),
             })
 
         unserved = []
@@ -6198,6 +6557,10 @@ class SimSession:
             "crews_resting": sum(
                 1 for c in self._crew_sims.values()
                 if c.status == CrewStatus.OFF_DUTY),
+            # A CREW THAT LEAVES THE MAP IS OUT (contracts left_map_out;
+            # additive): crews that left the simulated map (cumulative —
+            # they never come back)
+            "crews_left_map": len(self._left_map),
             "buffer_min": cfg.egress_buffer_min,
             "slack_min": cfg.slack_min,
             "deploy_min": cfg.deploy_min,

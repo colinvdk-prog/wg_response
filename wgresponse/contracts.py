@@ -133,6 +133,51 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    Crew telemetry gains relocating/relocate_reason so the UI shows a crew
    repositioning ("zone threatened"). This is EXTENSION, not weakening: same
    eroded-P10 transform, same egress_buffer_min threshold.
+   OLD BLACK IS A REFUGE (founder ruling 2026-09-26, verbatim: "old burned
+   ground does not count as a violation"; cfg.old_black_refuge, default OFF,
+   armed by the SIMULATOR — the live engine audits no crew position). A cell
+   whose NOMINAL arrival is at least its fuel's cold-black window in the past
+   (the SEM-10 transit window: fuels.cold_black_minutes per class under
+   transit_cold_black_by_class, else the flat 45 min) is OLD BLACK — burned
+   out, it cannot burn again. With the knob on, (c) counts no row for a crew
+   standing on it, neither burned nor imminent (the eroded-P10 band that
+   reaches an old-black cell from nearby fuel does not count); (a) never
+   moves a crew off it; (b) and the SEM-10d/e escapes treat a zone or escape
+   destination on it as a lawful refuge with an unbounded horizon; every
+   route / exposure metric charges its samples nothing (judged at each
+   sample's pass time). Burned ground still INSIDE its window (flaming, hot)
+   is unchanged: counted, fled, impassable. The audit looks once per step,
+   so it excuses black only if it was already old when the step began (or
+   when the crew reached it, if later): a front that overran a crew between
+   two audits is still reported once, even when its fuel burned out before
+   the audit looked. The SEM-10e exposed-transit ZONE fallback keeps its
+   strict nominal-crossing reject (relaxing it measured 3 extra imminent
+   rows: the voluntary route over old black also crossed unburned band).
+   The rule is PER CELL — doctrine's
+   "good black" must also be large enough around the crew (safety-zone sizing
+   ~4x flame length); the model does not size it (measured in
+   docs/SIMULATOR_DESIGN.md "Old black is a refuge; crews that leave the map
+   are out (2026-09-26)").
+   A CREW THAT LEAVES THE MAP IS OUT (founder ruling 2026-09-26, verbatim:
+   "crews once leave a map are no longer part of the simulation";
+   cfg.left_map_out, default OFF, armed by the SIMULATOR). The map is the
+   simulated terrain tile (its grid, or the rectangle the page draws for it)
+   plus the surroundings of every catalog safe zone (within
+   simui.ZONE_ON_MAP_M — five standard tiles have a zone just past their
+   edge; crews stage and refuge there). A crew LEAVES when it is off the
+   map with nothing that brings it back: stopped there, or on a final leg that
+   ends off the map (in practice a road-network escape to a node beyond the
+   tile edge). Transit through off-tile road toward an on-map destination is
+   not leaving; an INBOUND reinforcement has not entered yet. From then on the
+   crew is permanently out: never in dispatch.plan's crew set, no movement, no
+   sweep, no audit row; its in-flight commitments are released (re-planned
+   next tick, loud note). Reported: state crews[i].left_map / left_map_at_s,
+   scoreboard.crews_left_map and a note. With cfg.escape_prefer_on_map the
+   SEM-10d destination rule ranks an on-map refuge before an off-map one when
+   the two are equally safe (same lawful / exposure / capped-horizon steps),
+   and the VOLUNTARY SEM-10e road decamp prefers any on-map durable refuge
+   (an off-tile node reads an unbounded horizon only because no fire field
+   exists there).
 11. EMBER SPOTTING MUST BE FUNCTIONAL (2026-07-10, founder). The Sardoy/ELMFIRE
    spotting hook exists but throws one ember at the MEAN distance (~200 m in
    grass) — measured negligible (never gets ahead of the front). To model real
@@ -1088,9 +1133,47 @@ class ResponseConfig:
     # windows replace the flat 45-min carve-out in SEM-10 ROUTE SELECTION
     # (fuels.cold_black_minutes: grass 5-10 min, grass-shrub 10-20, shrub
     # 20-30, timber-understory 45, timber-litter 60, slash 90 — grass opens,
-    # timber stricter). The 10c audit is never consulted here and never
-    # relaxed. False = flat 45 min, byte-identical.
+    # timber stricter). The 10c audit consults these windows only under
+    # old_black_refuge (below: the window is what makes black OLD); with
+    # that knob off it never does. False = flat 45 min, byte-identical.
     transit_cold_black_by_class: bool = False
+    # OLD BLACK IS A REFUGE (founder ruling 2026-09-26: "old burned ground
+    # does not count as a violation"; SAFETY SEMANTICS 10, OLD BLACK). When
+    # True, a cell whose nominal arrival is at least its cold-black window
+    # (the transit window above) in the past is a REFUGE in the simulator's
+    # crew-safety law: the 10c audit counts no burned / imminent row for a
+    # crew standing on it, the sweep never relocates a crew off it, a zone or
+    # escape destination on it is lawful with an unbounded horizon, and route
+    # / exposure metrics charge its samples nothing. Hot black (inside its
+    # window) is unchanged — counted, fled, impassable. The live engine has
+    # no crew-position audit, so only the simulator reads it. False = the
+    # strict audit (any front-passed cell counts), byte-identical. The
+    # SIMULATOR arms it (explicit override wins).
+    old_black_refuge: bool = False
+    # A CREW THAT LEAVES THE MAP IS OUT (founder ruling 2026-09-26: "crews
+    # once leave a map are no longer part of the simulation"; SAFETY
+    # SEMANTICS 10, LEFT THE MAP). When True, a crew off the simulated
+    # terrain tile and away from every catalog zone (simui.ZONE_ON_MAP_M)
+    # with nothing that brings it back — stopped there, or on a final leg
+    # that ends there — is removed from the simulation for good: no
+    # dispatch, no movement, no sweep, no audit rows; its in-flight
+    # commitments are released and it is reported (state crews[i].left_map /
+    # left_map_at_s, scoreboard.crews_left_map, a note). Zones just past the
+    # tile edge are part of the map; transit through off-tile road toward
+    # the map is not leaving. False = legacy (a crew off the tile stays in
+    # play, unaudited there), byte-identical. The SIMULATOR arms it.
+    left_map_out: bool = False
+    # ... and its SEM-10d TIE-BREAK: among equally safe escape destinations
+    # (same lawful / exposure-step / capped-horizon step) one ON the map
+    # ranks before one OFF it (then catalog zone before road node, then
+    # drive time, as before). An off-tile road node has an unbounded fire
+    # horizon, so it ties with every long-safe on-map refuge; leaving would
+    # take the crew out of the simulation. In an emergency escape a strictly
+    # safer off-map node still wins; in the VOLUNTARY SEM-10e road decamp
+    # (candidates all lawful, exposure-free, durable) every on-map refuge
+    # ranks before every off-map one. Read only with left_map_out. False =
+    # the legacy order, byte-identical. The SIMULATOR arms it.
+    escape_prefer_on_map: bool = False
     # --- gel product parameters (UNVERIFIED — pending supplier data) ---
     gel_window_h: float = 72.0         # operational window after application (outer weathering/wash-off horizon still UNVERIFIED)
     gel_full_strength_h: float = 72.0  # == gel_window_h: GraphGel is Class A at 1/8" DRY — flat effectiveness, no decay ramp (product data 2026-07-11)

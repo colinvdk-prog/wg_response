@@ -137,8 +137,16 @@ def test_picker_fallback_rejects_nominal_crossing():
     cell (however cold the black) — the 10c audit flags a crew standing on
     any front-passed cell, so a proactive move may not buy overrun ticks.
     The 6000 m sibling measured exactly this: 5 crews flagged on one tick
-    mid-egress crossing 4-h-old burn the route law legally allows."""
-    s = _session()
+    mid-egress crossing 4-h-old burn the route law legally allows.
+
+    Pinned with old_black_refuge OFF: under the founder's 2026-09-26 ruling
+    ("old burned ground does not count as a violation") 4-h-old black is a
+    refuge, so the armed picker's lawful-only ROAD decamp (escape_road_
+    network) now rides it to a durable road node and returns that instead
+    of None. The zone fallback's strict crossing reject itself is kept under
+    the knob — tests/test_sim_old_black.py::test_proactive_zone_fallback_
+    keeps_the_strict_crossing_reject."""
+    s = _session(old_black_refuge=False)
     cs = _crew(s)
     now = s._now_s
     z1, z2, z3 = _zones(s)

@@ -417,6 +417,8 @@ def _state_hash(st, strip=(), top_strip=()):
             c.pop(k, None)
     for k in top_strip:
         st.pop(k, None)
+    for k in NEW_SCOREBOARD_KEYS:
+        (st.get("scoreboard") or {}).pop(k, None)
     return hashlib.sha256(json.dumps(st, sort_keys=True,
                                      allow_nan=False).encode()).hexdigest()
 
@@ -430,7 +432,12 @@ ENGINE_TOP_STRIP = ("cmd_log",)
 
 #: crew-level state keys added by the 2026-09-25 roads-legibility fix; the
 #: byte-identity hash strips them so before/after compare the engine output.
-NEW_CREW_KEYS = ("map_view",)
+#: + the 2026-09-26 founder rulings' additive keys (old black is a refuge; a
+#: crew that leaves the map is out): crews[i].left_map / left_map_at_s /
+#: on_old_black and scoreboard.crews_left_map — stripped the same way, so a
+#: session where no crew leaves hashes exactly as before the rulings.
+NEW_CREW_KEYS = ("map_view", "left_map", "left_map_at_s", "on_old_black")
+NEW_SCOREBOARD_KEYS = ("crews_left_map",)
 
 
 def run_one(job):
@@ -476,10 +483,14 @@ def run_one(job):
     ov_ticks = 0
     ov_kinds = {}
     dep_viol_max = 0
+    # the 2026-09-26 rulings' measurements (scratch_review/old_black_metrics)
+    from scratch_review.old_black_metrics import Acc
+    ob = Acc()
     for k in range(1, ticks + 1):
         REC.tick = k
         pre_pos = {cid: cs.pos for cid, cs in s._crew_sims.items()}
         st = s.tick()
+        ob.add_tick(s, st, k)
         hashes.append(_state_hash(st, NEW_CREW_KEYS))
         engine_hashes.append(_state_hash(st, NEW_CREW_KEYS, ENGINE_TOP_STRIP))
         state_kb.append(round(len(json.dumps(st)) / 1024.0, 1))
@@ -624,6 +635,9 @@ def run_one(job):
         "served": st["scoreboard"]["served"],
         "overrun_rows": ov_rows, "overrun_ticks": ov_ticks,
         "overrun_kinds": ov_kinds, "departure_viol_max": dep_viol_max,
+        "old_black": ob.as_dict(),
+        "left_map": {cid: dict(rec) for cid, rec in
+                     sorted((getattr(s, "_left_map", {}) or {}).items())},
         "notes": [n for n in st["notes"] if "road" in n.lower() or "ROAD" in n
                   or "FIRE ZONE" in n or "escape" in n.lower()],
         "hashes": hashes, "engine_hashes": engine_hashes,
@@ -715,6 +729,16 @@ def summarize(r):
                                      if s["kind"] == "chord") / 1000, 1),
         "cap_m": r["cap_m"], "graph": r["graph_meta_key"], "graph_nodes": r["graph_nodes"],
         "state_kb_max": r["state_kb_max"], "wall_s": r["wall_s"],
+        # 2026-09-26 rulings (old black is a refuge; left the map is out)
+        "ob_rows_by_reason": (r.get("old_black") or {}).get("rows_by_reason_mode"),
+        "ob_stopped": (r.get("old_black") or {}).get("stopped_crew_ticks", 0),
+        "ob_stopped_in_active_band": (r.get("old_black") or {}).get(
+            "stopped_in_active_band", 0),
+        "ob_dist_burning_m": (r.get("old_black") or {}).get(
+            "stopped_dist_burning_m", []),
+        "ob_hist_only": (r.get("old_black") or {}).get(
+            "imminent_rows_history_only", 0),
+        "left_map": len(r.get("left_map") or {}),
     }
 
 
@@ -760,6 +784,21 @@ def print_tables(summ):
               f"{s['relocations']:>6}{s.get('overrun_rows', 0):>5}"
               f"{s.get('overrun_ticks', 0):>5}{s.get('departure_viol_max', 0):>5}"
               f"{s['served']:>5}  {s.get('overrun_kinds') or ''}")
+    print("\nOLD BLACK + LEFT THE MAP (founder rulings 2026-09-26): crew-ticks "
+          "the strict audit counts that the session's audit does not "
+          "(stopped), of them inside the active-front eroded-P10 band "
+          "(inAct), imminent rows whose band is old black only (hist), crews "
+          "that left the map")
+    print(f"{'preset':<22}{'zone':<5}{'stop':>6}{'inAct':>6}{'hist':>6}"
+          f"{'left':>5}  nearest burning cell (m) of the stopped crew-ticks")
+    for s in summ:
+        z = "ext" if s["zone"] == "extended" else "std"
+        ds = [d for d in (s.get("ob_dist_burning_m") or []) if d is not None]
+        dtxt = (f"min {min(ds):.0f} / median {sorted(ds)[len(ds) // 2]:.0f}"
+                if ds else "-")
+        print(f"{s['key']:<22}{z:<5}{s.get('ob_stopped', 0):>6}"
+              f"{s.get('ob_stopped_in_active_band', 0):>6}"
+              f"{s.get('ob_hist_only', 0):>6}{s.get('left_map', 0):>5}  {dtxt}")
 
 
 def main(argv=None):

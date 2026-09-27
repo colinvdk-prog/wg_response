@@ -105,32 +105,34 @@ def test_overrun_rows_are_the_union_over_the_jump(tmp_path):
 def test_burned_out_map_crews_only_on_old_black(tmp_path):
     """The burned-out stretch of the 600x coarse-jump scenario (founder
     2026-09-26, "split the test"): 900 h of 150 h jumps burn out the whole
-    synthetic tile, safe zone included. Checked at EVERY internal step: no
-    stop ever departs past its rule, every crew-overrun row is reported in
-    the scoreboard, and a crew on burned ground is only ever on OLD black —
-    burned longer ago than its fuel's cold-black window, never a live front.
-    (The strict audit still counts that ground as "burned"; whether old
-    black should count is a separate safety-law decision.)"""
-    from wgresponse.contracts import LatLon
+    synthetic tile, safe zone included.
+
+    OLD BLACK IS A REFUGE (founder ruling 2026-09-26, "old burned ground does
+    not count as a violation"; contracts old_black_refuge, armed by the
+    simulator). Checked at EVERY internal step: no stop ever departs past its
+    rule and NO crew-overrun row is ever raised — the crews rest on old
+    black, which is not a violation — and the shuttling between that black
+    and the pessimistic band (~300 relocations per 150 h jump) is gone.
+    Measured 2026-09-26 (scratch_review/coarse_jump_diag.py): before the
+    ruling rows on 5 of 6 jumps (burned on days-old black; imminent at the
+    escape point), relocations 1 / 1 / 111 / 411 / 711 / 1,011; after, no
+    rows, relocations 1 / 1 / 3 / 3 / 3 / 3. The strict law (knob off) is
+    pinned in tests/test_sim_old_black.py::test_knob_off_keeps_the_strict_
+    audit_on_the_burned_out_map."""
     s = _session(tmp_path, n_clients=8, n_crews=2)
     st = s.tick()
     assert st["scoreboard"]["violations"] == 0
     s.set_speed(600.0)
     orig = s._tick_step
-    seen = {"burned": 0, "steps": 0}
+    seen = {"old_black": 0, "steps": 0}
 
     def checked(step, *, emit=True, count=True):
         out = orig(step, emit=emit, count=count)
         seen["steps"] += 1
-        now = s._now_s
-        for o in s._crew_overruns:
-            if o["reason"] == "burned":
-                seen["burned"] += 1
-                age_s = now - o["nominal_arrival_s"]
-                window_s = s._cold_black_pass_s(LatLon(o["lat"], o["lon"]))
-                assert age_s > window_s, (o, age_s, window_s)
-            else:
-                assert o["reason"] == "imminent" and o["mode"] != "idle", o
+        assert s._crew_overruns == [], s._crew_overruns
+        for cs in s._crew_sims.values():
+            if s._on_old_black(cs.pos, s._now_s):
+                seen["old_black"] += 1
         return out
 
     s._tick_step = checked
@@ -138,7 +140,9 @@ def test_burned_out_map_crews_only_on_old_black(tmp_path):
         st = s.tick()
         for a in st["audit"]:
             assert a["violation"] is False, a
-        assert st["scoreboard"]["violations"] == len(st["crew_overruns"])
+        assert st["crew_overruns"] == []
+        assert st["scoreboard"]["violations"] == 0
     assert seen["steps"] == 6 * 150
-    assert seen["burned"] > 0, "the tile no longer burns out — rebuild the pin"
+    assert seen["old_black"] > 0, "the tile no longer burns out — rebuild the pin"
+    assert st["scoreboard"]["relocations"] <= 5        # measured 3 (was 1,011)
     assert st["sim_now_s"] - st["t0_s"] >= 6 * 600.0 * 900.0

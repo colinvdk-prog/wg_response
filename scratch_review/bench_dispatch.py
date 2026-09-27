@@ -68,8 +68,16 @@ def run_scenario(sc, overrides, horizon=HORIZON_TICKS):
     ov_ticks = 0          # for overruns — final-tick reads can hide transients)
     dep_max = 0           # per-TICK max of departure-audit rows alone
     ov_rows = 0           # 10c crew-overrun rows summed over every tick
-    for _ in range(horizon):
+    # BENCH_OLD_BLACK_METRICS=1 (founder rulings 2026-09-26; read-only): the
+    # per-tick measurements of scratch_review/old_black_metrics.py
+    ob = None
+    if os.environ.get("BENCH_OLD_BLACK_METRICS"):
+        from scratch_review.old_black_metrics import Acc
+        ob = Acc()
+    for _k in range(horizon):
         st = s.tick()
+        if ob is not None:
+            ob.add_tick(s, st, _k + 1)
         v = st["scoreboard"].get("violations", 0)
         if v > max_viol:
             max_viol = v
@@ -86,7 +94,13 @@ def run_scenario(sc, overrides, horizon=HORIZON_TICKS):
           if isinstance(s.get("gel_fresh_frac"), (int, float))]
     avg_fresh = round(sum(fr) / len(fr), 3) if fr else None
     min_fresh = round(min(fr), 3) if fr else None
-    return dict(
+    extra = {}
+    if ob is not None:
+        extra = dict(ob=ob.as_dict(),
+                     crews_left_map=int(sb.get("crews_left_map", 0) or 0),
+                     left_map=dict(sorted((getattr(s, "_left_map", {})
+                                           or {}).items())))
+    return dict(**extra,
         seed=sc["seed"], map=sc["map"], wind_off=sc["wind_off"],
         dist=sc["dist"], inten=sc["inten"],
         served=int(sb.get("served", 0)),

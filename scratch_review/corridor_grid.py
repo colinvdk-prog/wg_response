@@ -232,8 +232,17 @@ def run_one(job):
     max_viol = 0
     ov_ticks = 0
     first_alert_lead_h = None
-    for _ in range(ticks):
+    # CORRIDOR_OLD_BLACK_METRICS=1 (founder rulings 2026-09-26; read-only):
+    # scratch_review/old_black_metrics.py per tick; unset = the grid of
+    # record's rows, unchanged
+    ob = None
+    if os.environ.get("CORRIDOR_OLD_BLACK_METRICS"):
+        from scratch_review.old_black_metrics import Acc
+        ob = Acc()
+    for _k in range(ticks):
         st = s.tick()
+        if ob is not None:
+            ob.add_tick(s, st, _k + 1)
         v = st["scoreboard"].get("violations", 0)
         max_viol = max(max_viol, v)
         if st.get("crew_overruns"):
@@ -274,7 +283,12 @@ def run_one(job):
                           arr_h=None if arr is None else round(arr, 3),
                           outcome=row["outcome"]))
     sb = st["scoreboard"]
-    return dict(seed=sc["seed"], map=sc["map"], arm=arm, inten=sc["inten"],
+    extra = {}
+    if ob is not None:
+        extra = dict(ob=ob.as_dict(),
+                     crews_left_map=int(sb.get("crews_left_map", 0) or 0),
+                     relocations=sb.get("relocations"))
+    return dict(**extra, seed=sc["seed"], map=sc["map"], arm=arm, inten=sc["inten"],
                 wind_off=sc["wind_off"], dist=sc["dist"],
                 viol=max_viol, ov_ticks=ov_ticks,
                 min_margin_h=sb.get("min_margin_h"),

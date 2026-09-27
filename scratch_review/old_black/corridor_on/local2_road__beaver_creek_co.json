@@ -1,0 +1,8942 @@
+{
+ "arm": "local2_road",
+ "map": "beaver_creek_co",
+ "cfg": {
+  "spotting_enabled": true,
+  "grass_ros_floor_frac": 0.1,
+  "dispatch_plan_on_roads": true,
+  "dispatch_hold_h": 24.0,
+  "deploy_min": 15.0,
+  "model_error_sd_log": 0.71,
+  "ros_floor_extinction_gate": true,
+  "slope_phi_vector": true
+ },
+ "crews": [
+  2,
+  0
+ ],
+ "base": null,
+ "placement": "road",
+ "clients": 40,
+ "mobilize_min": 15.0,
+ "rows": [
+  {
+   "ob": {
+    "rows_by_reason_mode": {
+     "imminent|egress": 1
+    },
+    "rows": 1,
+    "stopped_crew_ticks": 0,
+    "stopped_in_active_band": 0,
+    "stopped_modes": {},
+    "stopped_dist_burning_m": [],
+    "stopped_dist_burning_min_m": null,
+    "stopped_dist_burning_median_m": null,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [],
+    "stopped_ages_min": [],
+    "stopped_windows_min": [],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 2,
+    "examples": []
+   },
+   "crews_left_map": 2,
+   "relocations": 2,
+   "seed": "corr|beaver_creek_co|+0|6000|moderate",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "moderate",
+   "wind_off": 0,
+   "dist": 6000,
+   "viol": 1,
+   "ov_ticks": 1,
+   "min_margin_h": 0.2839,
+   "served": 20,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.92,
+   "homes": [
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 46.608,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.395,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 270.0,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 44.503,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 13.993,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.927,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 449.8,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 254.5,
+     "arr_h": 20.821,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.528,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 899.6,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 59.536,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 7.388,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 360.0,
+     "arr_h": 17.092,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.458,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 11.77,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.522,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 127.2,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 648.8,
+     "arr_h": 19.66,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 50.001,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 360.0,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 270.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 12.528,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 8.113,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 90.0,
+     "arr_h": 15.058,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 636.3,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 939.4,
+     "arr_h": 28.089,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 11.197,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 180.0,
+     "arr_h": 15.997,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1272.2,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 829.4,
+     "arr_h": null,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 180.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.651,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 29.668,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 76,
+    "stopped_in_active_band": 36,
+    "stopped_modes": {
+     "idle": 76
+    },
+    "stopped_dist_burning_m": [
+     812.9,
+     812.9,
+     765.1,
+     765.1,
+     675.1,
+     675.1,
+     675.1,
+     675.1,
+     675.1,
+     675.1,
+     585.1,
+     585.1,
+     949.8,
+     949.8,
+     949.8,
+     949.8,
+     968.3,
+     968.3,
+     968.3,
+     968.3,
+     1068.8,
+     1068.8,
+     495.1,
+     495.1,
+     495.1,
+     495.1,
+     495.1,
+     495.1,
+     495.1,
+     495.1,
+     1097.9,
+     1097.9,
+     405.1,
+     405.1,
+     1130.3,
+     1130.3,
+     1130.3,
+     1130.3,
+     1010.0,
+     1010.0,
+     1255.0,
+     1255.0,
+     1064.7,
+     1064.7,
+     1138.8,
+     1138.8,
+     994.0,
+     994.0,
+     994.0,
+     994.0,
+     994.0,
+     994.0,
+     922.5,
+     922.5,
+     922.5,
+     922.5,
+     922.5,
+     922.5,
+     1263.2,
+     1263.2,
+     1218.2,
+     1218.2,
+     1218.2,
+     1218.2,
+     1218.2,
+     1218.2,
+     904.5,
+     904.5,
+     985.3,
+     985.3,
+     895.4,
+     895.4,
+     1075.2,
+     1075.2,
+     1305.1,
+     1305.1
+    ],
+    "stopped_dist_burning_min_m": 405.1,
+    "stopped_dist_burning_median_m": 968.3,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [
+     765.1,
+     765.1,
+     675.1,
+     675.1,
+     675.1,
+     675.1,
+     699.9,
+     699.9,
+     585.1,
+     585.1,
+     585.1,
+     585.1,
+     1039.4,
+     1039.4,
+     968.3,
+     968.3,
+     968.3,
+     968.3,
+     502.4,
+     502.4,
+     495.1,
+     495.1,
+     495.1,
+     495.1,
+     646.4,
+     646.4,
+     413.9,
+     413.9,
+     413.9,
+     413.9,
+     405.1,
+     405.1,
+     405.1,
+     405.1,
+     360.3,
+     360.3,
+     360.3,
+     360.3,
+     1010.0,
+     1010.0,
+     1064.7,
+     1064.7,
+     1064.7,
+     1064.7,
+     994.0,
+     994.0,
+     994.0,
+     994.0,
+     1213.9,
+     1213.9,
+     922.5,
+     922.5,
+     922.5,
+     922.5,
+     1128.4,
+     1128.4,
+     1190.7,
+     1190.7,
+     1218.2,
+     1218.2,
+     528.5,
+     528.5,
+     528.5,
+     528.5,
+     904.5,
+     904.5,
+     904.5,
+     904.5,
+     895.4,
+     895.4,
+     895.4,
+     895.4,
+     1247.5,
+     1247.5,
+     815.7,
+     815.7
+    ],
+    "stopped_ages_min": [
+     186.7,
+     186.7,
+     201.7,
+     201.7,
+     216.7,
+     216.7,
+     231.7,
+     231.7,
+     246.7,
+     246.7,
+     261.7,
+     261.7,
+     276.7,
+     276.7,
+     291.7,
+     291.7,
+     306.7,
+     306.7,
+     321.7,
+     321.7,
+     336.7,
+     336.7,
+     351.7,
+     351.7,
+     366.7,
+     366.7,
+     381.7,
+     381.7,
+     396.7,
+     396.7,
+     411.7,
+     411.7,
+     426.7,
+     426.7,
+     441.7,
+     441.7,
+     456.7,
+     456.7,
+     471.7,
+     471.7,
+     486.7,
+     486.7,
+     501.7,
+     501.7,
+     516.7,
+     516.7,
+     531.7,
+     531.7,
+     546.7,
+     546.7,
+     561.7,
+     561.7,
+     576.7,
+     576.7,
+     591.7,
+     591.7,
+     606.7,
+     606.7,
+     621.7,
+     621.7,
+     636.7,
+     636.7,
+     651.7,
+     651.7,
+     666.7,
+     666.7,
+     681.7,
+     681.7,
+     696.7,
+     696.7,
+     711.7,
+     711.7,
+     726.7,
+     726.7,
+     741.7,
+     741.7
+    ],
+    "stopped_windows_min": [
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0
+    ],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 0,
+    "examples": [
+     {
+      "tick": 23,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62248,
+      "lon": -106.5036,
+      "age_min": 186.7,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 812.9
+     },
+     {
+      "tick": 23,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62248,
+      "lon": -106.5036,
+      "age_min": 186.7,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 812.9
+     },
+     {
+      "tick": 24,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62248,
+      "lon": -106.5036,
+      "age_min": 201.7,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 765.1
+     },
+     {
+      "tick": 24,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62248,
+      "lon": -106.5036,
+      "age_min": 201.7,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 765.1
+     },
+     {
+      "tick": 25,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62248,
+      "lon": -106.5036,
+      "age_min": 216.7,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 675.1
+     },
+     {
+      "tick": 25,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62248,
+      "lon": -106.5036,
+      "age_min": 216.7,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 675.1
+     },
+     {
+      "tick": 26,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62248,
+      "lon": -106.5036,
+      "age_min": 231.7,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 675.1
+     },
+     {
+      "tick": 26,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62248,
+      "lon": -106.5036,
+      "age_min": 231.7,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 675.1
+     },
+     {
+      "tick": 27,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62248,
+      "lon": -106.5036,
+      "age_min": 246.7,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 675.1
+     },
+     {
+      "tick": 27,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62248,
+      "lon": -106.5036,
+      "age_min": 246.7,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 675.1
+     },
+     {
+      "tick": 28,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62248,
+      "lon": -106.5036,
+      "age_min": 261.7,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 585.1
+     },
+     {
+      "tick": 28,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62248,
+      "lon": -106.5036,
+      "age_min": 261.7,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 585.1
+     }
+    ]
+   },
+   "crews_left_map": 0,
+   "relocations": 2,
+   "seed": "corr|beaver_creek_co|+30|6000|moderate",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "moderate",
+   "wind_off": 30,
+   "dist": 6000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.5914,
+   "served": 16,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.17,
+   "homes": [
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 270.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1018.1,
+     "arr_h": 45.199,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 13.046,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": 15.356,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1210.6,
+     "arr_h": 48.662,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 702.7,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 702.6,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 180.0,
+     "arr_h": 15.687,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 19.23,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.863,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 270.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 10.22,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 8.216,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 270.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 201.3,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1399.7,
+     "arr_h": 60.628,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 458.8,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.863,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1005.8,
+     "arr_h": 29.493,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1718.1,
+     "arr_h": 20.287,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 67.8,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 449.9,
+     "arr_h": 29.243,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 636.5,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 9.509,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 7.165,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1464.1,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 973.3,
+     "arr_h": 64.214,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 576.2,
+     "arr_h": 33.602,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 0.956,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.843,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 9.189,
+     "outcome": "abandoned_unsavable"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 0,
+    "stopped_in_active_band": 0,
+    "stopped_modes": {},
+    "stopped_dist_burning_m": [],
+    "stopped_dist_burning_min_m": null,
+    "stopped_dist_burning_median_m": null,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [],
+    "stopped_ages_min": [],
+    "stopped_windows_min": [],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 2,
+    "examples": []
+   },
+   "crews_left_map": 2,
+   "relocations": 2,
+   "seed": "corr|beaver_creek_co|-30|6000|moderate",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "moderate",
+   "wind_off": -30,
+   "dist": 6000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.2514,
+   "served": 11,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.43,
+   "homes": [
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.113,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 324.4,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 702.4,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 10.599,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 270.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 180.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.497,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 254.8,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 2.049,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 64.673,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1272.3,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 360.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 402.4,
+     "arr_h": 17.254,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1209.7,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 2.36,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 23.851,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 58.369,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 127.4,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 127.4,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.907,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 90.0,
+     "arr_h": 16.485,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 127.2,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 127.2,
+     "arr_h": 15.819,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 14.709,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 900.0,
+     "arr_h": 26.703,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 44.914,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 44.632,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 13.213,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 42.825,
+     "outcome": "abandoned_unsavable"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {
+     "imminent|egress": 1
+    },
+    "rows": 1,
+    "stopped_crew_ticks": 0,
+    "stopped_in_active_band": 0,
+    "stopped_modes": {},
+    "stopped_dist_burning_m": [],
+    "stopped_dist_burning_min_m": null,
+    "stopped_dist_burning_median_m": null,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [],
+    "stopped_ages_min": [],
+    "stopped_windows_min": [],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 2,
+    "examples": []
+   },
+   "crews_left_map": 2,
+   "relocations": 2,
+   "seed": "corr|beaver_creek_co|+0|8000|moderate",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "moderate",
+   "wind_off": 0,
+   "dist": 8000,
+   "viol": 1,
+   "ov_ticks": 1,
+   "min_margin_h": 0.5223,
+   "served": 13,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.77,
+   "homes": [
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 12.089,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 576.0,
+     "arr_h": 19.519,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.101,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 180.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 956.5,
+     "arr_h": null,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 39.863,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.9,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1006.4,
+     "arr_h": 16.397,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 270.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 127.3,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 11.267,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 28.523,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 702.8,
+     "arr_h": 23.361,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 381.7,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 180.0,
+     "arr_h": 18.25,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 8.248,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 7.566,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.55,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 4.82,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1018.6,
+     "arr_h": 15.374,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1272.5,
+     "arr_h": 32.794,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 127.2,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.898,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.25,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 37.329,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 127.3,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1719.2,
+     "arr_h": null,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.877,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 9.757,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 127.2,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1405.5,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 49.979,
+     "outcome": "triaged"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 66,
+    "stopped_in_active_band": 66,
+    "stopped_modes": {
+     "idle": 66
+    },
+    "stopped_dist_burning_m": [
+     113.1,
+     113.1,
+     113.1,
+     113.1,
+     337.1,
+     337.1,
+     337.1,
+     337.1,
+     328.7,
+     328.7,
+     328.7,
+     328.7,
+     328.7,
+     328.7,
+     282.1,
+     282.1,
+     282.1,
+     282.1,
+     282.1,
+     282.1,
+     282.1,
+     282.1,
+     568.5,
+     568.5,
+     378.4,
+     378.4,
+     688.5,
+     688.5,
+     688.5,
+     688.5,
+     688.5,
+     688.5,
+     1017.2,
+     1017.2,
+     613.5,
+     613.5,
+     401.6,
+     401.6,
+     613.5,
+     613.5,
+     729.8,
+     729.8,
+     795.7,
+     795.7,
+     491.5,
+     491.5,
+     408.0,
+     408.0,
+     887.7,
+     887.7,
+     937.4,
+     937.4,
+     496.7,
+     496.7,
+     414.0,
+     414.0,
+     496.7,
+     496.7,
+     496.7,
+     496.7,
+     786.2,
+     786.2,
+     786.2,
+     786.2,
+     585.9,
+     585.9
+    ],
+    "stopped_dist_burning_min_m": 113.1,
+    "stopped_dist_burning_median_m": 496.7,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [
+     215.6,
+     215.6,
+     215.6,
+     215.6,
+     221.8,
+     221.8,
+     328.7,
+     328.7,
+     328.7,
+     328.7,
+     240.8,
+     240.8,
+     240.8,
+     240.8,
+     282.1,
+     282.1,
+     311.6,
+     311.6,
+     327.5,
+     327.5,
+     327.5,
+     327.5,
+     378.4,
+     378.4,
+     359.1,
+     359.1,
+     359.1,
+     359.1,
+     409.0,
+     409.0,
+     963.5,
+     963.5,
+     613.5,
+     613.5,
+     401.6,
+     401.6,
+     401.6,
+     401.6,
+     795.7,
+     795.7,
+     853.0,
+     853.0,
+     491.5,
+     491.5,
+     408.0,
+     408.0,
+     408.0,
+     408.0,
+     889.6,
+     889.6,
+     496.7,
+     496.7,
+     414.0,
+     414.0,
+     414.0,
+     414.0,
+     941.1,
+     941.1,
+     517.8,
+     517.8,
+     517.8,
+     517.8,
+     585.9,
+     585.9,
+     585.9,
+     585.9
+    ],
+    "stopped_ages_min": [
+     47.2,
+     47.2,
+     62.2,
+     62.2,
+     77.2,
+     77.2,
+     92.2,
+     92.2,
+     107.2,
+     107.2,
+     122.2,
+     122.2,
+     137.2,
+     137.2,
+     152.2,
+     152.2,
+     167.2,
+     167.2,
+     182.2,
+     182.2,
+     197.2,
+     197.2,
+     212.2,
+     212.2,
+     227.2,
+     227.2,
+     242.2,
+     242.2,
+     257.2,
+     257.2,
+     272.2,
+     272.2,
+     287.2,
+     287.2,
+     302.2,
+     302.2,
+     317.2,
+     317.2,
+     332.2,
+     332.2,
+     347.2,
+     347.2,
+     362.2,
+     362.2,
+     377.2,
+     377.2,
+     392.2,
+     392.2,
+     407.2,
+     407.2,
+     422.2,
+     422.2,
+     437.2,
+     437.2,
+     452.2,
+     452.2,
+     467.2,
+     467.2,
+     482.2,
+     482.2,
+     497.2,
+     497.2,
+     512.2,
+     512.2,
+     527.2,
+     527.2
+    ],
+    "stopped_windows_min": [
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0,
+     5.0
+    ],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 0,
+    "examples": [
+     {
+      "tick": 28,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62899,
+      "lon": -106.50173,
+      "age_min": 47.2,
+      "window_min": 5.0,
+      "in_active_band": true,
+      "dist_burning_m": 113.1
+     },
+     {
+      "tick": 28,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62899,
+      "lon": -106.50173,
+      "age_min": 47.2,
+      "window_min": 5.0,
+      "in_active_band": true,
+      "dist_burning_m": 113.1
+     },
+     {
+      "tick": 29,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62899,
+      "lon": -106.50173,
+      "age_min": 62.2,
+      "window_min": 5.0,
+      "in_active_band": true,
+      "dist_burning_m": 113.1
+     },
+     {
+      "tick": 29,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62899,
+      "lon": -106.50173,
+      "age_min": 62.2,
+      "window_min": 5.0,
+      "in_active_band": true,
+      "dist_burning_m": 113.1
+     },
+     {
+      "tick": 30,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62899,
+      "lon": -106.50173,
+      "age_min": 77.2,
+      "window_min": 5.0,
+      "in_active_band": true,
+      "dist_burning_m": 337.1
+     },
+     {
+      "tick": 30,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62899,
+      "lon": -106.50173,
+      "age_min": 77.2,
+      "window_min": 5.0,
+      "in_active_band": true,
+      "dist_burning_m": 337.1
+     },
+     {
+      "tick": 31,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62899,
+      "lon": -106.50173,
+      "age_min": 92.2,
+      "window_min": 5.0,
+      "in_active_band": true,
+      "dist_burning_m": 337.1
+     },
+     {
+      "tick": 31,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62899,
+      "lon": -106.50173,
+      "age_min": 92.2,
+      "window_min": 5.0,
+      "in_active_band": true,
+      "dist_burning_m": 337.1
+     },
+     {
+      "tick": 32,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62899,
+      "lon": -106.50173,
+      "age_min": 107.2,
+      "window_min": 5.0,
+      "in_active_band": true,
+      "dist_burning_m": 328.7
+     },
+     {
+      "tick": 32,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62899,
+      "lon": -106.50173,
+      "age_min": 107.2,
+      "window_min": 5.0,
+      "in_active_band": true,
+      "dist_burning_m": 328.7
+     },
+     {
+      "tick": 33,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62899,
+      "lon": -106.50173,
+      "age_min": 122.2,
+      "window_min": 5.0,
+      "in_active_band": true,
+      "dist_burning_m": 328.7
+     },
+     {
+      "tick": 33,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62899,
+      "lon": -106.50173,
+      "age_min": 122.2,
+      "window_min": 5.0,
+      "in_active_band": true,
+      "dist_burning_m": 328.7
+     }
+    ]
+   },
+   "crews_left_map": 0,
+   "relocations": 4,
+   "seed": "corr|beaver_creek_co|+30|8000|moderate",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "moderate",
+   "wind_off": 30,
+   "dist": 8000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.3633,
+   "served": 17,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": -0.06,
+   "homes": [
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.045,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 180.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.287,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 11.395,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 4.672,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1173.2,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.315,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 371.2,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1018.3,
+     "arr_h": 28.179,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 4.094,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 381.7,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 11.475,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 8.142,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 381.5,
+     "arr_h": 16.242,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 201.4,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.105,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 7.105,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.686,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 13.753,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.242,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 42.744,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.799,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 36.609,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 10.941,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 14.163,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 2.441,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 44.161,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 201.2,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 576.2,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.951,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.085,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 4.156,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 127.4,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1223.8,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 43,
+    "stopped_in_active_band": 0,
+    "stopped_modes": {
+     "idle": 43
+    },
+    "stopped_dist_burning_m": [
+     536.9,
+     498.1,
+     185.0,
+     185.0,
+     185.0,
+     185.0,
+     519.4,
+     519.4,
+     519.4,
+     806.5,
+     808.3,
+     808.3,
+     910.7,
+     824.8,
+     933.4,
+     935.0,
+     1039.1,
+     841.9,
+     729.6,
+     729.6,
+     729.6,
+     735.8,
+     787.7,
+     868.0,
+     715.9,
+     715.9,
+     715.9,
+     715.9,
+     839.4,
+     839.4,
+     839.4,
+     701.2,
+     817.7,
+     817.7,
+     817.7,
+     1754.8,
+     805.5,
+     805.5,
+     805.5,
+     925.9,
+     1153.8,
+     1425.1,
+     1425.1
+    ],
+    "stopped_dist_burning_min_m": 185.0,
+    "stopped_dist_burning_median_m": 805.5,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [
+     498.1,
+     185.0,
+     185.0,
+     626.3,
+     519.4,
+     519.4,
+     707.4,
+     806.5,
+     806.5,
+     754.2,
+     754.2,
+     868.5,
+     824.8,
+     824.8,
+     929.4,
+     929.4,
+     841.9,
+     729.6,
+     729.6,
+     735.8,
+     735.8,
+     868.0,
+     902.3,
+     715.9,
+     715.9,
+     783.9,
+     783.9,
+     839.4,
+     839.4,
+     668.7,
+     668.7,
+     701.2,
+     817.7,
+     1546.7,
+     1070.7,
+     805.5,
+     805.5,
+     1038.3,
+     925.9,
+     925.9,
+     1153.8,
+     1123.9,
+     1123.9
+    ],
+    "stopped_ages_min": [
+     137.2,
+     152.2,
+     167.2,
+     182.2,
+     197.2,
+     212.2,
+     227.2,
+     242.2,
+     257.2,
+     272.2,
+     287.2,
+     302.2,
+     317.2,
+     332.2,
+     347.2,
+     362.2,
+     377.2,
+     392.2,
+     407.2,
+     422.2,
+     437.2,
+     452.2,
+     467.2,
+     482.2,
+     497.2,
+     512.2,
+     527.2,
+     542.2,
+     557.2,
+     572.2,
+     587.2,
+     602.2,
+     617.2,
+     632.2,
+     647.2,
+     662.2,
+     677.2,
+     692.2,
+     707.2,
+     722.2,
+     737.2,
+     752.2,
+     767.2
+    ],
+    "stopped_windows_min": [
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0
+    ],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 1,
+    "examples": [
+     {
+      "tick": 18,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 137.2,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 536.9
+     },
+     {
+      "tick": 19,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 152.2,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 498.1
+     },
+     {
+      "tick": 20,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 167.2,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 185.0
+     },
+     {
+      "tick": 21,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 182.2,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 185.0
+     },
+     {
+      "tick": 22,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 197.2,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 185.0
+     },
+     {
+      "tick": 23,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 212.2,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 185.0
+     },
+     {
+      "tick": 24,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 227.2,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 519.4
+     },
+     {
+      "tick": 25,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 242.2,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 519.4
+     },
+     {
+      "tick": 26,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 257.2,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 519.4
+     },
+     {
+      "tick": 27,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 272.2,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 806.5
+     },
+     {
+      "tick": 28,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 287.2,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 808.3
+     },
+     {
+      "tick": 29,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 302.2,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 808.3
+     }
+    ]
+   },
+   "crews_left_map": 1,
+   "relocations": 3,
+   "seed": "corr|beaver_creek_co|-30|8000|moderate",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "moderate",
+   "wind_off": -30,
+   "dist": 8000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.2819,
+   "served": 10,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.98,
+   "homes": [
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 254.8,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 32.573,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 90.0,
+     "arr_h": 15.181,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 27.752,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 2.805,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.646,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1653.0,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 2.827,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 9.848,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 29.152,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 9.108,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 648.8,
+     "arr_h": 20.122,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 26.612,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 7.523,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 449.9,
+     "arr_h": 18.458,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.382,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 44.66,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 636.3,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.648,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 201.3,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.662,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1083.3,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 763.4,
+     "arr_h": 23.342,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 47.26,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 9.48,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 35.112,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 284.5,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 30.159,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 458.8,
+     "arr_h": 29.811,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 270.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 29,
+    "stopped_in_active_band": 29,
+    "stopped_modes": {
+     "idle": 29
+    },
+    "stopped_dist_burning_m": [
+     782.9,
+     782.9,
+     709.2,
+     709.2,
+     1294.5,
+     1455.2,
+     977.2,
+     877.8,
+     877.8,
+     877.8,
+     703.8,
+     703.8,
+     703.8,
+     703.8,
+     926.1,
+     795.9,
+     795.9,
+     787.8,
+     596.1,
+     596.1,
+     519.9,
+     519.9,
+     969.4,
+     675.8,
+     707.0,
+     983.7,
+     385.6,
+     385.6,
+     385.6
+    ],
+    "stopped_dist_burning_min_m": 385.6,
+    "stopped_dist_burning_median_m": 709.2,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [
+     782.9,
+     709.2,
+     709.2,
+     844.5,
+     719.8,
+     719.8,
+     877.8,
+     877.8,
+     885.1,
+     703.8,
+     703.8,
+     797.2,
+     797.2,
+     926.1,
+     795.9,
+     795.9,
+     787.8,
+     596.1,
+     596.1,
+     519.9,
+     519.9,
+     1049.1,
+     675.8,
+     675.8,
+     707.0,
+     385.6,
+     385.6,
+     727.3,
+     458.3
+    ],
+    "stopped_ages_min": [
+     400.1,
+     415.1,
+     430.1,
+     445.1,
+     460.1,
+     475.1,
+     490.1,
+     505.1,
+     520.1,
+     535.1,
+     550.1,
+     565.1,
+     580.1,
+     595.1,
+     610.1,
+     625.1,
+     640.1,
+     655.1,
+     670.1,
+     685.1,
+     700.1,
+     715.1,
+     730.1,
+     745.1,
+     760.1,
+     775.1,
+     790.1,
+     805.1,
+     820.1
+    ],
+    "stopped_windows_min": [
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0,
+     60.0
+    ],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 0,
+    "examples": [
+     {
+      "tick": 32,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.63523,
+      "lon": -106.55123,
+      "age_min": 400.1,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 782.9
+     },
+     {
+      "tick": 33,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.63523,
+      "lon": -106.55123,
+      "age_min": 415.1,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 782.9
+     },
+     {
+      "tick": 34,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.63523,
+      "lon": -106.55123,
+      "age_min": 430.1,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 709.2
+     },
+     {
+      "tick": 35,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.63523,
+      "lon": -106.55123,
+      "age_min": 445.1,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 709.2
+     },
+     {
+      "tick": 36,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.63523,
+      "lon": -106.55123,
+      "age_min": 460.1,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 1294.5
+     },
+     {
+      "tick": 37,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.63523,
+      "lon": -106.55123,
+      "age_min": 475.1,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 1455.2
+     },
+     {
+      "tick": 38,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.63523,
+      "lon": -106.55123,
+      "age_min": 490.1,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 977.2
+     },
+     {
+      "tick": 39,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.63523,
+      "lon": -106.55123,
+      "age_min": 505.1,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 877.8
+     },
+     {
+      "tick": 40,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.63523,
+      "lon": -106.55123,
+      "age_min": 520.1,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 877.8
+     },
+     {
+      "tick": 41,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.63523,
+      "lon": -106.55123,
+      "age_min": 535.1,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 877.8
+     },
+     {
+      "tick": 42,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.63523,
+      "lon": -106.55123,
+      "age_min": 550.1,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 703.8
+     },
+     {
+      "tick": 43,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.63523,
+      "lon": -106.55123,
+      "age_min": 565.1,
+      "window_min": 60.0,
+      "in_active_band": true,
+      "dist_burning_m": 703.8
+     }
+    ]
+   },
+   "crews_left_map": 0,
+   "relocations": 2,
+   "seed": "corr|beaver_creek_co|+0|6000|high",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "high",
+   "wind_off": 0,
+   "dist": 6000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.3779,
+   "served": 17,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.66,
+   "homes": [
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 284.5,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1463.6,
+     "arr_h": 36.79,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 127.2,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 254.4,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1017.2,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 11.998,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.28,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 78.073,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 127.2,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1781.2,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1464.6,
+     "arr_h": 53.047,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 74.374,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1144.3,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 201.1,
+     "arr_h": 17.35,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1145.1,
+     "arr_h": 46.455,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 458.8,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 72.787,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 12.66,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 886.1,
+     "arr_h": 43.087,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 636.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 9.281,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 773.6,
+     "arr_h": 24.999,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 763.2,
+     "arr_h": 16.775,
+     "outcome": "abandoned_unsavable"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 40,
+    "stopped_in_active_band": 40,
+    "stopped_modes": {
+     "idle": 40
+    },
+    "stopped_dist_burning_m": [
+     702.3,
+     702.3,
+     614.8,
+     614.8,
+     614.8,
+     614.8,
+     584.0,
+     584.0,
+     584.0,
+     584.0,
+     584.0,
+     584.0,
+     584.0,
+     584.0,
+     735.2,
+     735.2,
+     677.3,
+     677.3,
+     677.3,
+     677.3,
+     698.1,
+     698.1,
+     1818.8,
+     1818.8,
+     565.9,
+     565.9,
+     565.9,
+     565.9,
+     596.3,
+     596.3,
+     671.0,
+     671.0,
+     753.4,
+     753.4,
+     1657.3,
+     1657.3,
+     936.6,
+     936.6,
+     936.6,
+     936.6
+    ],
+    "stopped_dist_burning_min_m": 565.9,
+    "stopped_dist_burning_median_m": 677.3,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [
+     595.8,
+     595.8,
+     595.8,
+     595.8,
+     584.0,
+     584.0,
+     584.0,
+     584.0,
+     645.2,
+     645.2,
+     665.4,
+     665.4,
+     665.4,
+     665.4,
+     677.3,
+     677.3,
+     677.3,
+     677.3,
+     698.1,
+     698.1,
+     1031.9,
+     1031.9,
+     565.9,
+     565.9,
+     565.9,
+     565.9,
+     596.3,
+     596.3,
+     596.3,
+     596.3,
+     753.4,
+     753.4,
+     753.4,
+     753.4,
+     936.6,
+     936.6,
+     700.0,
+     700.0,
+     700.0,
+     700.0
+    ],
+    "stopped_ages_min": [
+     455.1,
+     455.1,
+     470.1,
+     470.1,
+     485.1,
+     485.1,
+     500.1,
+     500.1,
+     515.1,
+     515.1,
+     530.1,
+     530.1,
+     545.1,
+     545.1,
+     560.1,
+     560.1,
+     575.1,
+     575.1,
+     590.1,
+     590.1,
+     605.1,
+     605.1,
+     620.1,
+     620.1,
+     635.1,
+     635.1,
+     650.1,
+     650.1,
+     665.1,
+     665.1,
+     680.1,
+     680.1,
+     695.1,
+     695.1,
+     710.1,
+     710.1,
+     725.1,
+     725.1,
+     740.1,
+     740.1
+    ],
+    "stopped_windows_min": [
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0
+    ],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 0,
+    "examples": [
+     {
+      "tick": 41,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 455.1,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 702.3
+     },
+     {
+      "tick": 41,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 455.1,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 702.3
+     },
+     {
+      "tick": 42,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 470.1,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 614.8
+     },
+     {
+      "tick": 42,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 470.1,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 614.8
+     },
+     {
+      "tick": 43,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 485.1,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 614.8
+     },
+     {
+      "tick": 43,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 485.1,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 614.8
+     },
+     {
+      "tick": 44,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 500.1,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 584.0
+     },
+     {
+      "tick": 44,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 500.1,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 584.0
+     },
+     {
+      "tick": 45,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 515.1,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 584.0
+     },
+     {
+      "tick": 45,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 515.1,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 584.0
+     },
+     {
+      "tick": 46,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 530.1,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 584.0
+     },
+     {
+      "tick": 46,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 530.1,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 584.0
+     }
+    ]
+   },
+   "crews_left_map": 0,
+   "relocations": 2,
+   "seed": "corr|beaver_creek_co|+30|6000|high",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "high",
+   "wind_off": 30,
+   "dist": 6000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.8545,
+   "served": 18,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.37,
+   "homes": [
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 39.636,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1405.6,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.312,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 44.782,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 41.038,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 603.9,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1138.5,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 769.3,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 66.177,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.292,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 61.308,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 10.863,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 891.1,
+     "arr_h": 74.734,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 180.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 9.802,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 508.7,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 2.966,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 39.923,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 41.575,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 569.5,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 201.4,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 7.207,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 994.1,
+     "arr_h": 27.895,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 30.778,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 324.3,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 939.4,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 11.498,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.588,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 180.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 10.241,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 127.2,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 0,
+    "stopped_in_active_band": 0,
+    "stopped_modes": {},
+    "stopped_dist_burning_m": [],
+    "stopped_dist_burning_min_m": null,
+    "stopped_dist_burning_median_m": null,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [],
+    "stopped_ages_min": [],
+    "stopped_windows_min": [],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 1,
+    "examples": []
+   },
+   "crews_left_map": 1,
+   "relocations": 2,
+   "seed": "corr|beaver_creek_co|-30|6000|high",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "high",
+   "wind_off": -30,
+   "dist": 6000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.3675,
+   "served": 16,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.04,
+   "homes": [
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 85.956,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 61.846,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 95.129,
+     "outcome": "monitoring"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.722,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.832,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 7.739,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 76.677,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "monitoring"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 2.136,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 44.843,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1526.3,
+     "arr_h": 40.418,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1399.1,
+     "arr_h": 38.687,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 78.904,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 648.6,
+     "arr_h": 24.966,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 284.7,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 926.3,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1260.0,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 450.2,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.203,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 636.1,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 66.378,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 201.3,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.072,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1654.0,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "monitoring"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 58,
+    "stopped_in_active_band": 24,
+    "stopped_modes": {
+     "idle": 58
+    },
+    "stopped_dist_burning_m": [
+     114.1,
+     114.1,
+     114.1,
+     114.1,
+     204.0,
+     204.0,
+     305.5,
+     305.5,
+     392.9,
+     392.9,
+     294.0,
+     294.0,
+     188.6,
+     188.6,
+     188.6,
+     188.6,
+     188.6,
+     188.6,
+     188.6,
+     188.6,
+     185.0,
+     185.0,
+     185.0,
+     185.0,
+     185.0,
+     185.0,
+     185.0,
+     185.0,
+     766.8,
+     766.8,
+     766.8,
+     766.8,
+     730.2,
+     730.2,
+     766.8,
+     766.8,
+     793.5,
+     793.5,
+     817.4,
+     817.4,
+     817.4,
+     817.4,
+     819.8,
+     819.8,
+     819.8,
+     819.8,
+     819.8,
+     819.8,
+     1039.1,
+     1039.1,
+     1039.1,
+     1039.1,
+     754.9,
+     754.9,
+     1039.1,
+     1039.1,
+     735.8,
+     735.8
+    ],
+    "stopped_dist_burning_min_m": 114.1,
+    "stopped_dist_burning_median_m": 730.2,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [
+     114.1,
+     114.1,
+     204.0,
+     204.0,
+     435.9,
+     435.9,
+     392.9,
+     392.9,
+     294.0,
+     294.0,
+     149.6,
+     149.6,
+     149.6,
+     149.6,
+     218.9,
+     218.9,
+     367.8,
+     367.8,
+     185.0,
+     185.0,
+     185.0,
+     185.0,
+     276.5,
+     276.5,
+     640.6,
+     640.6,
+     766.8,
+     766.8,
+     766.8,
+     766.8,
+     730.2,
+     730.2,
+     730.2,
+     730.2,
+     817.4,
+     817.4,
+     817.4,
+     817.4,
+     829.1,
+     829.1,
+     819.8,
+     819.8,
+     819.8,
+     819.8,
+     1084.0,
+     1084.0,
+     1039.1,
+     1039.1,
+     953.1,
+     953.1,
+     754.9,
+     754.9,
+     754.9,
+     754.9,
+     735.8,
+     735.8,
+     735.8,
+     735.8
+    ],
+    "stopped_ages_min": [
+     67.0,
+     67.0,
+     82.0,
+     82.0,
+     97.0,
+     97.0,
+     112.0,
+     112.0,
+     127.0,
+     127.0,
+     142.0,
+     142.0,
+     157.0,
+     157.0,
+     172.0,
+     172.0,
+     187.0,
+     187.0,
+     202.0,
+     202.0,
+     217.0,
+     217.0,
+     232.0,
+     232.0,
+     247.0,
+     247.0,
+     262.0,
+     262.0,
+     277.0,
+     277.0,
+     292.0,
+     292.0,
+     307.0,
+     307.0,
+     322.0,
+     322.0,
+     337.0,
+     337.0,
+     352.0,
+     352.0,
+     367.0,
+     367.0,
+     382.0,
+     382.0,
+     397.0,
+     397.0,
+     412.0,
+     412.0,
+     427.0,
+     427.0,
+     442.0,
+     442.0,
+     457.0,
+     457.0,
+     472.0,
+     472.0,
+     487.0,
+     487.0
+    ],
+    "stopped_windows_min": [
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0
+    ],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 0,
+    "examples": [
+     {
+      "tick": 32,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 67.0,
+      "window_min": 30.0,
+      "in_active_band": true,
+      "dist_burning_m": 114.1
+     },
+     {
+      "tick": 32,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 67.0,
+      "window_min": 30.0,
+      "in_active_band": true,
+      "dist_burning_m": 114.1
+     },
+     {
+      "tick": 33,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 82.0,
+      "window_min": 30.0,
+      "in_active_band": true,
+      "dist_burning_m": 114.1
+     },
+     {
+      "tick": 33,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 82.0,
+      "window_min": 30.0,
+      "in_active_band": true,
+      "dist_burning_m": 114.1
+     },
+     {
+      "tick": 34,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 97.0,
+      "window_min": 30.0,
+      "in_active_band": true,
+      "dist_burning_m": 204.0
+     },
+     {
+      "tick": 34,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 97.0,
+      "window_min": 30.0,
+      "in_active_band": true,
+      "dist_burning_m": 204.0
+     },
+     {
+      "tick": 35,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 112.0,
+      "window_min": 30.0,
+      "in_active_band": true,
+      "dist_burning_m": 305.5
+     },
+     {
+      "tick": 35,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 112.0,
+      "window_min": 30.0,
+      "in_active_band": true,
+      "dist_burning_m": 305.5
+     },
+     {
+      "tick": 36,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 127.0,
+      "window_min": 30.0,
+      "in_active_band": true,
+      "dist_burning_m": 392.9
+     },
+     {
+      "tick": 36,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 127.0,
+      "window_min": 30.0,
+      "in_active_band": true,
+      "dist_burning_m": 392.9
+     },
+     {
+      "tick": 37,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 142.0,
+      "window_min": 30.0,
+      "in_active_band": true,
+      "dist_burning_m": 294.0
+     },
+     {
+      "tick": 37,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 142.0,
+      "window_min": 30.0,
+      "in_active_band": true,
+      "dist_burning_m": 294.0
+     }
+    ]
+   },
+   "crews_left_map": 0,
+   "relocations": 4,
+   "seed": "corr|beaver_creek_co|+0|8000|high",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "high",
+   "wind_off": 0,
+   "dist": 8000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.2592,
+   "served": 17,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 1.17,
+   "homes": [
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 955.8,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 69.034,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 180.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1025.2,
+     "arr_h": 21.26,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 43.819,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 180.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 38.742,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1464.9,
+     "arr_h": 82.245,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 324.3,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 324.3,
+     "arr_h": 39.966,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.805,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 90.0,
+     "arr_h": 15.66,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1718.2,
+     "arr_h": 33.182,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 47.819,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 13.008,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 284.7,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1653.4,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 853.6,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 284.4,
+     "arr_h": 18.323,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 449.8,
+     "arr_h": 21.035,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 324.4,
+     "arr_h": 19.439,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 576.0,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 55.359,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.44,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 63.273,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 11.839,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1781.1,
+     "arr_h": 67.661,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1658.3,
+     "arr_h": 32.091,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 10.897,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.728,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 37.002,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 78.499,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 484.5,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.579,
+     "outcome": "abandoned_unsavable"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 16,
+    "stopped_in_active_band": 16,
+    "stopped_modes": {
+     "idle": 16
+    },
+    "stopped_dist_burning_m": [
+     565.9,
+     565.9,
+     981.3,
+     981.3,
+     671.0,
+     671.0,
+     1105.8,
+     1105.8,
+     1105.8,
+     1105.8,
+     936.6,
+     936.6,
+     936.6,
+     936.6,
+     1058.7,
+     1058.7
+    ],
+    "stopped_dist_burning_min_m": 565.9,
+    "stopped_dist_burning_median_m": 981.3,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [
+     981.3,
+     981.3,
+     596.3,
+     596.3,
+     596.3,
+     596.3,
+     753.4,
+     753.4,
+     753.4,
+     753.4,
+     936.6,
+     936.6,
+     700.0,
+     700.0,
+     700.0,
+     700.0
+    ],
+    "stopped_ages_min": [
+     639.8,
+     639.8,
+     654.8,
+     654.8,
+     669.8,
+     669.8,
+     684.8,
+     684.8,
+     699.8,
+     699.8,
+     714.8,
+     714.8,
+     729.8,
+     729.8,
+     744.8,
+     744.8
+    ],
+    "stopped_windows_min": [
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0
+    ],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 0,
+    "examples": [
+     {
+      "tick": 53,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 639.8,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 565.9
+     },
+     {
+      "tick": 53,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 639.8,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 565.9
+     },
+     {
+      "tick": 54,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 654.8,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 981.3
+     },
+     {
+      "tick": 54,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 654.8,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 981.3
+     },
+     {
+      "tick": 55,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 669.8,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 671.0
+     },
+     {
+      "tick": 55,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 669.8,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 671.0
+     },
+     {
+      "tick": 56,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 684.8,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 1105.8
+     },
+     {
+      "tick": 56,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 684.8,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 1105.8
+     },
+     {
+      "tick": 57,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 699.8,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 1105.8
+     },
+     {
+      "tick": 57,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 699.8,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 1105.8
+     },
+     {
+      "tick": 58,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 714.8,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 936.6
+     },
+     {
+      "tick": 58,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 714.8,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 936.6
+     }
+    ]
+   },
+   "crews_left_map": 0,
+   "relocations": 2,
+   "seed": "corr|beaver_creek_co|+30|8000|high",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "high",
+   "wind_off": 30,
+   "dist": 8000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.7297,
+   "served": 15,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.46,
+   "homes": [
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 4.854,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 849.6,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 4.242,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.776,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 382.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 547.5,
+     "arr_h": 22.386,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 41.462,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 7.241,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 201.4,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 29.965,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 9.762,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 33.77,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 450.0,
+     "arr_h": 19.138,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 926.9,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 180.0,
+     "arr_h": 17.312,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 31.342,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 10.861,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 127.4,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1253.1,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.172,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 4.851,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 360.0,
+     "arr_h": 36.497,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1782.1,
+     "arr_h": 61.812,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 848.8,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 38.116,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 90.0,
+     "arr_h": 17.095,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 926.5,
+     "arr_h": 42.857,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.801,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 31.902,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 957.4,
+     "arr_h": 25.62,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 33,
+    "stopped_in_active_band": 0,
+    "stopped_modes": {
+     "idle": 33
+    },
+    "stopped_dist_burning_m": [
+     1002.2,
+     995.6,
+     895.3,
+     895.3,
+     895.3,
+     519.4,
+     519.4,
+     519.4,
+     519.4,
+     985.0,
+     985.0,
+     914.0,
+     1084.0,
+     824.8,
+     1352.2,
+     1578.1,
+     1187.4,
+     1189.9,
+     1199.8,
+     1225.3,
+     1225.3,
+     1250.0,
+     1250.0,
+     1736.0,
+     1210.0,
+     1039.1,
+     1039.1,
+     1039.1,
+     841.9,
+     841.9,
+     1314.5,
+     1314.5,
+     1067.9
+    ],
+    "stopped_dist_burning_min_m": 519.4,
+    "stopped_dist_burning_median_m": 1039.1,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [
+     995.6,
+     895.3,
+     895.3,
+     1030.7,
+     519.4,
+     519.4,
+     1060.4,
+     985.0,
+     985.0,
+     1100.4,
+     914.0,
+     914.0,
+     824.8,
+     824.8,
+     1352.2,
+     1187.4,
+     1154.0,
+     1154.0,
+     1188.7,
+     1225.3,
+     929.4,
+     929.4,
+     1203.6,
+     1210.0,
+     1039.1,
+     1039.1,
+     1074.9,
+     841.9,
+     841.9,
+     1257.7,
+     1314.5,
+     1067.9,
+     1067.9
+    ],
+    "stopped_ages_min": [
+     365.3,
+     380.3,
+     395.3,
+     410.3,
+     425.3,
+     440.3,
+     455.3,
+     470.3,
+     485.3,
+     500.3,
+     515.3,
+     530.3,
+     545.3,
+     560.3,
+     575.3,
+     590.3,
+     605.3,
+     620.3,
+     635.3,
+     650.3,
+     665.3,
+     680.3,
+     695.3,
+     710.3,
+     725.3,
+     740.3,
+     755.3,
+     770.3,
+     785.3,
+     800.3,
+     815.3,
+     830.3,
+     845.3
+    ],
+    "stopped_windows_min": [
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0
+    ],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 0,
+    "examples": [
+     {
+      "tick": 28,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 365.3,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 1002.2
+     },
+     {
+      "tick": 29,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 380.3,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 995.6
+     },
+     {
+      "tick": 30,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 395.3,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 895.3
+     },
+     {
+      "tick": 31,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 410.3,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 895.3
+     },
+     {
+      "tick": 32,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 425.3,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 895.3
+     },
+     {
+      "tick": 33,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 440.3,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 519.4
+     },
+     {
+      "tick": 34,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 455.3,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 519.4
+     },
+     {
+      "tick": 35,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 470.3,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 519.4
+     },
+     {
+      "tick": 36,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 485.3,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 519.4
+     },
+     {
+      "tick": 37,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 500.3,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 985.0
+     },
+     {
+      "tick": 38,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 515.3,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 985.0
+     },
+     {
+      "tick": 39,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.65196,
+      "lon": -106.53696,
+      "age_min": 530.3,
+      "window_min": 30.0,
+      "in_active_band": false,
+      "dist_burning_m": 914.0
+     }
+    ]
+   },
+   "crews_left_map": 0,
+   "relocations": 2,
+   "seed": "corr|beaver_creek_co|-30|8000|high",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "high",
+   "wind_off": -30,
+   "dist": 8000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.3676,
+   "served": 14,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.68,
+   "homes": [
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 2.06,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 402.2,
+     "arr_h": 22.182,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 804.7,
+     "arr_h": 25.922,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 59.042,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 449.7,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 725.5,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 83.019,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 635.9,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 525.2,
+     "arr_h": 25.467,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.623,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 60.448,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 13.046,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 57.349,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 956.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 57.293,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 810.0,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 12.396,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.34,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1591.6,
+     "arr_h": 37.782,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 4.759,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.993,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1278.2,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 829.2,
+     "arr_h": 29.194,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 180.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 402.2,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.756,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 49.299,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 53.054,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 810.0,
+     "arr_h": null,
+     "outcome": "saved"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {
+     "imminent|egress": 1
+    },
+    "rows": 1,
+    "stopped_crew_ticks": 0,
+    "stopped_in_active_band": 0,
+    "stopped_modes": {},
+    "stopped_dist_burning_m": [],
+    "stopped_dist_burning_min_m": null,
+    "stopped_dist_burning_median_m": null,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [],
+    "stopped_ages_min": [],
+    "stopped_windows_min": [],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 0,
+    "examples": []
+   },
+   "crews_left_map": 0,
+   "relocations": 3,
+   "seed": "corr|beaver_creek_co|+0|6000|extreme",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "extreme",
+   "wind_off": 0,
+   "dist": 6000,
+   "viol": 1,
+   "ov_ticks": 1,
+   "min_margin_h": 0.4592,
+   "served": 10,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": -0.09,
+   "homes": [
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 12.278,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 324.3,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 90.922,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 8.881,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1083.4,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 10.135,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1210.4,
+     "arr_h": 43.784,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1591.4,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 0.168,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 201.2,
+     "arr_h": 16.853,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 4.369,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 14.436,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1781.4,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 60.939,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 381.6,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1399.5,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1017.2,
+     "arr_h": 22.748,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 127.4,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1591.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 127.2,
+     "arr_h": 16.595,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.151,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1497.1,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": 15.299,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 68,
+    "stopped_in_active_band": 68,
+    "stopped_modes": {
+     "idle": 68
+    },
+    "stopped_dist_burning_m": [
+     614.8,
+     614.8,
+     584.0,
+     584.0,
+     584.0,
+     584.0,
+     229.5,
+     229.5,
+     229.5,
+     229.5,
+     229.5,
+     229.5,
+     229.5,
+     229.5,
+     283.8,
+     283.8,
+     311.4,
+     311.4,
+     792.5,
+     792.5,
+     511.9,
+     511.9,
+     511.9,
+     511.9,
+     511.9,
+     511.9,
+     511.9,
+     511.9,
+     676.2,
+     676.2,
+     676.2,
+     676.2,
+     676.2,
+     676.2,
+     677.3,
+     677.3,
+     677.3,
+     677.3,
+     700.0,
+     700.0,
+     1059.4,
+     1059.4,
+     1225.8,
+     1225.8,
+     928.4,
+     928.4,
+     928.4,
+     928.4,
+     1250.0,
+     1250.0,
+     753.4,
+     753.4,
+     1278.1,
+     1278.1,
+     1296.6,
+     1296.6,
+     396.1,
+     396.1,
+     1001.5,
+     1001.5,
+     897.7,
+     897.7,
+     832.2,
+     832.2,
+     1375.7,
+     1375.7,
+     1356.4,
+     1356.4
+    ],
+    "stopped_dist_burning_min_m": 229.5,
+    "stopped_dist_burning_median_m": 677.3,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [
+     584.0,
+     584.0,
+     584.0,
+     584.0,
+     229.5,
+     229.5,
+     229.5,
+     229.5,
+     292.1,
+     292.1,
+     291.1,
+     291.1,
+     283.8,
+     283.8,
+     283.8,
+     283.8,
+     353.1,
+     353.1,
+     353.1,
+     353.1,
+     511.9,
+     511.9,
+     605.0,
+     605.0,
+     605.0,
+     605.0,
+     596.3,
+     596.3,
+     596.3,
+     596.3,
+     728.4,
+     728.4,
+     677.3,
+     677.3,
+     677.3,
+     677.3,
+     700.0,
+     700.0,
+     700.0,
+     700.0,
+     1225.8,
+     1225.8,
+     928.4,
+     928.4,
+     858.6,
+     858.6,
+     858.6,
+     858.6,
+     753.4,
+     753.4,
+     753.4,
+     753.4,
+     977.8,
+     977.8,
+     396.1,
+     396.1,
+     396.1,
+     396.1,
+     897.7,
+     897.7,
+     832.2,
+     832.2,
+     832.2,
+     832.2,
+     1326.1,
+     1326.1,
+     519.6,
+     519.6
+    ],
+    "stopped_ages_min": [
+     326.0,
+     326.0,
+     341.0,
+     341.0,
+     356.0,
+     356.0,
+     371.0,
+     371.0,
+     386.0,
+     386.0,
+     401.0,
+     401.0,
+     416.0,
+     416.0,
+     431.0,
+     431.0,
+     446.0,
+     446.0,
+     461.0,
+     461.0,
+     476.0,
+     476.0,
+     491.0,
+     491.0,
+     506.0,
+     506.0,
+     521.0,
+     521.0,
+     536.0,
+     536.0,
+     551.0,
+     551.0,
+     566.0,
+     566.0,
+     581.0,
+     581.0,
+     596.0,
+     596.0,
+     611.0,
+     611.0,
+     626.0,
+     626.0,
+     641.0,
+     641.0,
+     656.0,
+     656.0,
+     671.0,
+     671.0,
+     686.0,
+     686.0,
+     701.0,
+     701.0,
+     716.0,
+     716.0,
+     731.0,
+     731.0,
+     746.0,
+     746.0,
+     761.0,
+     761.0,
+     776.0,
+     776.0,
+     791.0,
+     791.0,
+     806.0,
+     806.0,
+     821.0,
+     821.0
+    ],
+    "stopped_windows_min": [
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0
+    ],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 0,
+    "examples": [
+     {
+      "tick": 27,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 326.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 614.8
+     },
+     {
+      "tick": 27,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 326.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 614.8
+     },
+     {
+      "tick": 28,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 341.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 584.0
+     },
+     {
+      "tick": 28,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 341.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 584.0
+     },
+     {
+      "tick": 29,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 356.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 584.0
+     },
+     {
+      "tick": 29,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 356.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 584.0
+     },
+     {
+      "tick": 30,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 371.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 229.5
+     },
+     {
+      "tick": 30,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 371.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 229.5
+     },
+     {
+      "tick": 31,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 386.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 229.5
+     },
+     {
+      "tick": 31,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 386.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 229.5
+     },
+     {
+      "tick": 32,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 401.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 229.5
+     },
+     {
+      "tick": 32,
+      "crew": "sim-g2",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 401.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 229.5
+     }
+    ]
+   },
+   "crews_left_map": 0,
+   "relocations": 3,
+   "seed": "corr|beaver_creek_co|+30|6000|extreme",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "extreme",
+   "wind_off": 30,
+   "dist": 6000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.7122,
+   "served": 15,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.44,
+   "homes": [
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1592.0,
+     "arr_h": 93.099,
+     "outcome": "monitoring"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 575.8,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 459.0,
+     "arr_h": 27.636,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 39.299,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 484.9,
+     "arr_h": 24.043,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 12.884,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 43.11,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 180.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 742.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 127.2,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 127.3,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.683,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 649.4,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 127.2,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 5.824,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 37.602,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 725.7,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 13.61,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.797,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.49,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 270.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 10.027,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 13.568,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.984,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 14.027,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 0.805,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.311,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "monitoring"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1271.7,
+     "arr_h": 23.347,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1138.5,
+     "arr_h": 91.035,
+     "outcome": "monitoring"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 0,
+    "stopped_in_active_band": 0,
+    "stopped_modes": {},
+    "stopped_dist_burning_m": [],
+    "stopped_dist_burning_min_m": null,
+    "stopped_dist_burning_median_m": null,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [],
+    "stopped_ages_min": [],
+    "stopped_windows_min": [],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 1,
+    "examples": []
+   },
+   "crews_left_map": 1,
+   "relocations": 3,
+   "seed": "corr|beaver_creek_co|-30|6000|extreme",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "extreme",
+   "wind_off": -30,
+   "dist": 6000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.3039,
+   "served": 13,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": -0.07,
+   "homes": [
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1025.7,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1137.9,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1278.5,
+     "arr_h": 28.84,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 58.904,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 270.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 8.306,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 449.7,
+     "arr_h": 17.741,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 201.2,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": 15.229,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 284.7,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.56,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1272.2,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 180.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1422.4,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 899.6,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 49.042,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 636.1,
+     "arr_h": 21.04,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 88.717,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 63.823,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 52.109,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 0.539,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 201.1,
+     "arr_h": 23.508,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 0.417,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 66.236,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 54.643,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.838,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {
+     "imminent|egress": 1
+    },
+    "rows": 1,
+    "stopped_crew_ticks": 0,
+    "stopped_in_active_band": 0,
+    "stopped_modes": {},
+    "stopped_dist_burning_m": [],
+    "stopped_dist_burning_min_m": null,
+    "stopped_dist_burning_median_m": null,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [],
+    "stopped_ages_min": [],
+    "stopped_windows_min": [],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 1,
+    "examples": []
+   },
+   "crews_left_map": 1,
+   "relocations": 2,
+   "seed": "corr|beaver_creek_co|+0|8000|extreme",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "extreme",
+   "wind_off": 0,
+   "dist": 8000,
+   "viol": 1,
+   "ov_ticks": 1,
+   "min_margin_h": 0.2795,
+   "served": 7,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.22,
+   "homes": [
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 11.42,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 636.2,
+     "arr_h": 23.797,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 94.059,
+     "outcome": "monitoring"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 12.318,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 804.6,
+     "arr_h": 28.67,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 956.5,
+     "arr_h": 33.198,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.509,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1405.4,
+     "arr_h": 37.493,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 127.2,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 449.8,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 127.3,
+     "arr_h": 16.444,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 773.9,
+     "arr_h": 55.73,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 603.5,
+     "arr_h": 27.718,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 0.687,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 180.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 9.946,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.642,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 90.0,
+     "arr_h": 17.631,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 890.3,
+     "arr_h": 25.668,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 180.0,
+     "arr_h": 25.019,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1025.2,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 32.334,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 81.821,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1097.6,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 9.713,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 7.906,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1780.2,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 201.1,
+     "arr_h": 22.268,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 7.993,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 12.546,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 10.929,
+     "outcome": "abandoned_unsavable"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 29,
+    "stopped_in_active_band": 29,
+    "stopped_modes": {
+     "idle": 29
+    },
+    "stopped_dist_burning_m": [
+     229.5,
+     229.5,
+     283.8,
+     311.4,
+     511.9,
+     511.9,
+     511.9,
+     511.9,
+     676.2,
+     676.2,
+     676.2,
+     677.3,
+     677.3,
+     1059.4,
+     1059.4,
+     1059.4,
+     928.4,
+     928.4,
+     1250.0,
+     753.4,
+     1286.0,
+     1296.6,
+     1001.5,
+     1001.5,
+     1313.4,
+     832.2,
+     1375.7,
+     1356.4,
+     519.6
+    ],
+    "stopped_dist_burning_min_m": 229.5,
+    "stopped_dist_burning_median_m": 753.4,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [
+     291.1,
+     283.8,
+     283.8,
+     353.1,
+     511.9,
+     538.2,
+     605.0,
+     596.3,
+     596.3,
+     728.4,
+     677.3,
+     677.3,
+     1059.4,
+     700.0,
+     700.0,
+     928.4,
+     928.4,
+     858.6,
+     753.4,
+     753.4,
+     977.8,
+     977.8,
+     396.1,
+     396.1,
+     832.2,
+     832.2,
+     1326.1,
+     519.6,
+     519.6
+    ],
+    "stopped_ages_min": [
+     407.0,
+     422.0,
+     437.0,
+     452.0,
+     467.0,
+     482.0,
+     497.0,
+     512.0,
+     527.0,
+     542.0,
+     557.0,
+     572.0,
+     587.0,
+     602.0,
+     617.0,
+     632.0,
+     647.0,
+     662.0,
+     677.0,
+     692.0,
+     707.0,
+     722.0,
+     737.0,
+     752.0,
+     767.0,
+     782.0,
+     797.0,
+     812.0,
+     827.0
+    ],
+    "stopped_windows_min": [
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0,
+     10.0
+    ],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 0,
+    "examples": [
+     {
+      "tick": 32,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 407.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 229.5
+     },
+     {
+      "tick": 33,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 422.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 229.5
+     },
+     {
+      "tick": 34,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 437.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 283.8
+     },
+     {
+      "tick": 35,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 452.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 311.4
+     },
+     {
+      "tick": 36,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 467.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 511.9
+     },
+     {
+      "tick": 37,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 482.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 511.9
+     },
+     {
+      "tick": 38,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 497.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 511.9
+     },
+     {
+      "tick": 39,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 512.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 511.9
+     },
+     {
+      "tick": 40,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 527.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 676.2
+     },
+     {
+      "tick": 41,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 542.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 676.2
+     },
+     {
+      "tick": 42,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 557.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 676.2
+     },
+     {
+      "tick": 43,
+      "crew": "sim-g1",
+      "mode": "idle",
+      "lat": 39.62674,
+      "lon": -106.50237,
+      "age_min": 572.0,
+      "window_min": 10.0,
+      "in_active_band": true,
+      "dist_burning_m": 677.3
+     }
+    ]
+   },
+   "crews_left_map": 0,
+   "relocations": 2,
+   "seed": "corr|beaver_creek_co|+30|8000|extreme",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "extreme",
+   "wind_off": 30,
+   "dist": 8000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 1.6011,
+   "served": 10,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.38,
+   "homes": [
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 27.072,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 13.512,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 381.9,
+     "arr_h": 30.103,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 815.1,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 720.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 30.9,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.919,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 540.0,
+     "arr_h": 18.792,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 66.804,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1288.9,
+     "arr_h": 39.523,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 547.3,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 524.6,
+     "arr_h": 23.339,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.422,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 4.279,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 34.392,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1210.7,
+     "arr_h": 48.405,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1451.8,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 63.386,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 30.967,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 4.182,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 127.2,
+     "arr_h": 22.583,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 11.764,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 381.8,
+     "arr_h": 32.207,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 720.0,
+     "arr_h": 24.779,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 402.7,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 0,
+    "stopped_in_active_band": 0,
+    "stopped_modes": {},
+    "stopped_dist_burning_m": [],
+    "stopped_dist_burning_min_m": null,
+    "stopped_dist_burning_median_m": null,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [],
+    "stopped_ages_min": [],
+    "stopped_windows_min": [],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 1,
+    "examples": []
+   },
+   "crews_left_map": 1,
+   "relocations": 2,
+   "seed": "corr|beaver_creek_co|-30|8000|extreme",
+   "map": "beaver_creek_co",
+   "arm": "local2_road",
+   "inten": "extreme",
+   "wind_off": -30,
+   "dist": 8000,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.481,
+   "served": 12,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 0.09,
+   "homes": [
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 11.169,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.828,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 70.023,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 484.5,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1052.8,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 3.465,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 449.8,
+     "arr_h": 22.692,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 63.458,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 201.2,
+     "arr_h": 22.724,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 93.33,
+     "outcome": "monitoring"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 0.342,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 2.353,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 0.518,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 1.093,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 6.109,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 0.0,
+     "arr_h": 0.617,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1526.2,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 55.785,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 58.24,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 449.7,
+     "arr_h": 23.627,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 61.325,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 127.2,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 90.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": null,
+     "arr_h": 61.253,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 180.0,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    }
+   ]
+  }
+ ]
+}

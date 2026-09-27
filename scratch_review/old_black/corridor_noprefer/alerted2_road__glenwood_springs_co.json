@@ -1,0 +1,973 @@
+{
+ "arm": "alerted2_road",
+ "map": "glenwood_springs_co",
+ "cfg": {
+  "spotting_enabled": true,
+  "grass_ros_floor_frac": 0.1,
+  "dispatch_plan_on_roads": true,
+  "dispatch_hold_h": 24.0,
+  "deploy_min": 15.0,
+  "model_error_sd_log": 0.71,
+  "ros_floor_extinction_gate": true,
+  "slope_phi_vector": true,
+  "escape_prefer_on_map": false
+ },
+ "crews": [
+  2,
+  0
+ ],
+ "base": null,
+ "placement": "road",
+ "clients": 40,
+ "mobilize_min": 15.0,
+ "rows": [
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 0,
+    "stopped_in_active_band": 0,
+    "stopped_modes": {},
+    "stopped_dist_burning_m": [],
+    "stopped_dist_burning_min_m": null,
+    "stopped_dist_burning_median_m": null,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [],
+    "stopped_ages_min": [],
+    "stopped_windows_min": [],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 0,
+    "examples": []
+   },
+   "crews_left_map": 0,
+   "relocations": 2,
+   "seed": "corr-alert|glenwood_springs_co|+0|high",
+   "map": "glenwood_springs_co",
+   "arm": "alerted2_road",
+   "inten": "high",
+   "wind_off": 0,
+   "dist": 15000.0,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.7548,
+   "served": 20,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 2.64,
+   "homes": [
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 359.8,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 239.2,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 819.1,
+     "arr_h": 91.044,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 583.3,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 728.0,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 91.6,
+     "arr_h": 3.394,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 106.439,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 59.9,
+     "arr_h": 47.774,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 97.5,
+     "arr_h": 4.58,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 66.8,
+     "arr_h": 39.476,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 209.5,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 101.959,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 113.6,
+     "arr_h": 32.645,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 103.8,
+     "arr_h": 59.217,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 98.29,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 118.3,
+     "arr_h": 49.607,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 69.9,
+     "arr_h": 6.962,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 88.3,
+     "arr_h": 50.66,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 101.959,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 639.2,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 67.1,
+     "arr_h": 38.162,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 791.9,
+     "arr_h": 73.917,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 58.8,
+     "arr_h": 56.25,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 107.037,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 67.1,
+     "arr_h": 35.536,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 448.2,
+     "arr_h": 74.747,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 542.5,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 253.9,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 122.9,
+     "arr_h": 40.135,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 88.622,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 285.6,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 96.92,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1105.1,
+     "arr_h": 81.175,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 189.7,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 163.7,
+     "arr_h": 34.413,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 123.5,
+     "arr_h": 23.134,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1871.6,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 0,
+    "stopped_in_active_band": 0,
+    "stopped_modes": {},
+    "stopped_dist_burning_m": [],
+    "stopped_dist_burning_min_m": null,
+    "stopped_dist_burning_median_m": null,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [],
+    "stopped_ages_min": [],
+    "stopped_windows_min": [],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 0,
+    "examples": []
+   },
+   "crews_left_map": 0,
+   "relocations": 3,
+   "seed": "corr-alert|glenwood_springs_co|+30|high",
+   "map": "glenwood_springs_co",
+   "arm": "alerted2_road",
+   "inten": "high",
+   "wind_off": 30,
+   "dist": 15000.0,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.3193,
+   "served": 34,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 3.59,
+   "homes": [
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 109.0,
+     "arr_h": 40.643,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 103.4,
+     "arr_h": 52.983,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 221.6,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 196.9,
+     "arr_h": 60.068,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 299.5,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 68.5,
+     "arr_h": 23.487,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1379.1,
+     "arr_h": 61.678,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 34.4,
+     "arr_h": 10.19,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 431.8,
+     "arr_h": 65.304,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 666.0,
+     "arr_h": null,
+     "outcome": "saved"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 184.1,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 95.5,
+     "arr_h": 14.936,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 158.1,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 102.8,
+     "arr_h": 12.021,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 167.5,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 213.7,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 399.3,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 124.6,
+     "arr_h": 26.727,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 73.3,
+     "arr_h": 26.727,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 147.1,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 148.8,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 364.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 38.0,
+     "arr_h": 44.951,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 158.4,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 145.4,
+     "arr_h": 10.199,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 464.1,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1019.3,
+     "arr_h": 62.081,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 933.7,
+     "arr_h": 62.073,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 135.1,
+     "arr_h": 52.456,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 370.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 122.3,
+     "arr_h": 19.065,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 125.8,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 124.7,
+     "arr_h": 28.978,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 348.1,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 33.7,
+     "arr_h": 44.881,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 34.1,
+     "arr_h": 56.984,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 1198.2,
+     "arr_h": 60.6,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 658.3,
+     "arr_h": 64.529,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 135.2,
+     "arr_h": 39.296,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 132.6,
+     "arr_h": 20.335,
+     "outcome": "protected_then_impacted"
+    }
+   ]
+  },
+  {
+   "ob": {
+    "rows_by_reason_mode": {},
+    "rows": 0,
+    "stopped_crew_ticks": 0,
+    "stopped_in_active_band": 0,
+    "stopped_modes": {},
+    "stopped_dist_burning_m": [],
+    "stopped_dist_burning_min_m": null,
+    "stopped_dist_burning_median_m": null,
+    "stopped_no_burning_on_tile": 0,
+    "stopped_dist_front_m": [],
+    "stopped_ages_min": [],
+    "stopped_windows_min": [],
+    "imminent_rows_history_only": 0,
+    "crews_left_map": 0,
+    "examples": []
+   },
+   "crews_left_map": 0,
+   "relocations": 3,
+   "seed": "corr-alert|glenwood_springs_co|-30|high",
+   "map": "glenwood_springs_co",
+   "arm": "alerted2_road",
+   "inten": "high",
+   "wind_off": -30,
+   "dist": 15000.0,
+   "viol": 0,
+   "ov_ticks": 0,
+   "min_margin_h": 0.4492,
+   "served": 25,
+   "withdrawn": 0,
+   "eagle_delay_min": null,
+   "first_alert_lead_h": 1.48,
+   "homes": [
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 94.1,
+     "arr_h": 3.83,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": 115.717,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 88.2,
+     "arr_h": 12.814,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 112.9,
+     "arr_h": 22.394,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 87.1,
+     "arr_h": 53.885,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 130.6,
+     "arr_h": 3.52,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 126.5,
+     "arr_h": 15.742,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 193.8,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1810.3,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 62.3,
+     "arr_h": 15.21,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 135.8,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 377.8,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 406.2,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 63.5,
+     "arr_h": 48.304,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 444.1,
+     "arr_h": null,
+     "outcome": "not_threatened"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 143.0,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 224.3,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 1849.2,
+     "arr_h": 81.42,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 80.8,
+     "arr_h": 58.125,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 158.1,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 144.2,
+     "arr_h": 10.105,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": 598.2,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 117.1,
+     "arr_h": 37.128,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 38.3,
+     "arr_h": 14.589,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 447.2,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 61.4,
+     "arr_h": 27.563,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": false,
+     "dist": null,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 190.8,
+     "arr_h": null,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 217.5,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 107.7,
+     "arr_h": 25.302,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 142.0,
+     "arr_h": 56.045,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 145.2,
+     "arr_h": 54.136,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 32.5,
+     "arr_h": 55.858,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": false,
+     "front": true,
+     "dist": 145.1,
+     "arr_h": 22.811,
+     "outcome": "abandoned_unsavable"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 78.7,
+     "arr_h": 57.088,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": false,
+     "dist": 431.9,
+     "arr_h": 61.829,
+     "outcome": "saved"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 85.5,
+     "arr_h": 5.463,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 48.4,
+     "arr_h": 2.646,
+     "outcome": "protected_then_impacted"
+    },
+    {
+     "gelled": true,
+     "front": true,
+     "dist": 308.7,
+     "arr_h": null,
+     "outcome": "protected_then_impacted"
+    }
+   ]
+  }
+ ]
+}

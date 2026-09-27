@@ -2742,13 +2742,15 @@ def _idle_crews_in_burn(session, now):
 
 
 def _crewsafe_session(tmp_path, key="boulder_co", seed="cs", n_clients=10,
-                      n_crews=2, hamlet_half=3):
+                      n_crews=2, hamlet_half=3, **cfg):
     """A controlled-tile session sized so crews finish work in the community
     and an extreme fire then threatens them — the fast, deterministic proxy for
-    the founder Paradise scenario (roads pinned off; synthetic tile)."""
+    the founder Paradise scenario (roads pinned off; synthetic tile). Extra
+    keyword arguments are ResponseConfig overrides."""
     d = _controlled_tile_dir(tmp_path, key, hamlet_half=hamlet_half)
     return SimSession(key, n_clients, n_crews, seed=seed,
-                      cfg_overrides=dict(FAST), tile_dir=d, roads_module=None)
+                      cfg_overrides=dict(FAST, **cfg), tile_dir=d,
+                      roads_module=None)
 
 
 def test_crew_safety_normal_case_relocates_and_escapes(tmp_path):
@@ -2886,8 +2888,15 @@ def test_dynamic_safe_zone_validity_excludes_overrun_zone(tmp_path):
     no longer 'currently safe' and is FILTERED OUT of the candidate set handed
     to dispatch / adopt / egress selection, so it can never be picked as a
     staging / egress / anchor target. Igniting a fire ON a safe zone flips
-    _zone_currently_safe() to False for it while far zones stay True."""
-    s = _crewsafe_session(tmp_path, seed="dz", n_clients=8, n_crews=2)
+    _zone_currently_safe() to False for it while far zones stay True.
+
+    Pinned with old_black_refuge OFF (the strict law): under the founder's
+    2026-09-26 ruling a zone whose cell has burned OUT (older than its cold-
+    black window — 6 h here) is a lawful refuge again; the armed truth is
+    tests/test_sim_old_black.py::test_armed_zone_excluded_while_hot_then_a_
+    refuge_once_old_black."""
+    s = _crewsafe_session(tmp_path, seed="dz", n_clients=8, n_crews=2,
+                          old_black_refuge=False)
     zones = s._loc.safe_zones
     z_hit = zones[0]
     # all zones start safe (no fire ignited)
@@ -2918,8 +2927,16 @@ def test_no_safe_zone_fail_closed_alarm_and_safest_pick(tmp_path):
     buffer of EVERY zone, _currently_safe_zones fails closed to the SINGLE
     latest-arrival (safest available) zone and the sweep raises a LOUD operator
     alarm ONCE — a crew is never routed to a nearer burned zone (mirrors
-    safety.egress_choice's no_safe_egress)."""
-    s = _crewsafe_session(tmp_path, seed="nsz", n_clients=8, n_crews=2)
+    safety.egress_choice's no_safe_egress).
+
+    Pinned with old_black_refuge OFF (the strict law): fires lit ON every zone
+    burn the zones' own cells out within their cold-black windows, and under
+    the founder's 2026-09-26 ruling burned-out ground is a lawful refuge, so
+    the armed simulator never fails closed here; the armed fail-closed law
+    (every zone inside the UNBURNED band) is tests/test_sim_old_black.py::
+    test_armed_fail_closed_when_every_zone_is_in_the_unburned_band."""
+    s = _crewsafe_session(tmp_path, seed="nsz", n_clients=8, n_crews=2,
+                          old_black_refuge=False)
     for z in s._loc.safe_zones:                   # a fire on every zone
         s.ignite(z.loc.lat, z.loc.lon, intensity="extreme")
     s.set_speed(2.0)
@@ -3244,6 +3261,10 @@ _LEGACY_CREW_KEYS = {
     "egress_spur_mask", "egress_segments", "eta_s", "track", "itinerary"}
 _MAP_VIEW_KEYS = {"moved_path", "jumped", "trail", "route_why", "egress_why",
                   "egress_preview", "queue"}
+#: the founder rulings of 2026-09-26 (old black is a refuge; a crew that
+#: leaves the map is out) add three more ADDITIVE crew keys — display /
+#: reporting only (tests/test_sim_left_map.py, tests/test_sim_old_black.py)
+_RULING_CREW_KEYS = {"left_map", "left_map_at_s", "on_old_black"}
 
 
 def _ll(p):
@@ -3258,12 +3279,13 @@ def _max_off_polyline_m(pts, poly):
 
 def test_map_view_is_additive_display_only(tmp_path):
     """Every crew gains ONE key, map_view, with the documented fields; the
-    legacy crew schema is untouched and the whole state stays strict JSON."""
+    legacy crew schema is untouched and the whole state stays strict JSON.
+    (2026-09-26: plus the rulings' three additive keys, _RULING_CREW_KEYS.)"""
     s = _road_session(tmp_path, _FakeRoads(speed_mps=6.0), seed="mv-shape")
     for _ in range(3):
         st = s.tick()
         for c in st["crews"]:
-            assert set(c) == _LEGACY_CREW_KEYS | {"map_view"}
+            assert set(c) == _LEGACY_CREW_KEYS | {"map_view"} | _RULING_CREW_KEYS
             assert set(c["map_view"]) == _MAP_VIEW_KEYS
         json.dumps(st, sort_keys=True, allow_nan=False)
 

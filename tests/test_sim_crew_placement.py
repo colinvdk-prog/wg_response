@@ -139,7 +139,7 @@ class _RoadsModule:
 
 
 def _session(tmp_path, n_clients=8, n_crews=2, seed="cp1", graph="plus",
-             **kw):
+             cfg=None, **kw):
     d = _tile_dir(tmp_path)
     mod = None
     if graph == "plus":
@@ -147,8 +147,8 @@ def _session(tmp_path, n_clients=8, n_crews=2, seed="cp1", graph="plus",
     elif graph is not None:
         mod = _RoadsModule(graph)
     return SimSession(KEY, n_clients, n_crews, seed=seed,
-                      cfg_overrides=dict(FAST), tile_dir=d, roads_module=mod,
-                      **kw)
+                      cfg_overrides=dict(FAST, **(cfg or {})), tile_dir=d,
+                      roads_module=mod, **kw)
 
 
 def _crew(st, cid):
@@ -544,8 +544,14 @@ def test_crew_placed_where_the_fire_starts_is_reported_never_silent(tmp_path):
     reaches it before any relocation can drive it out, so the 10c audit
     MUST report it (every tick the crew's own cell is burned / imminent has
     its crew_overrun row and a nonzero violation count) while the sweep
-    moves it away; departure violations stay 0."""
-    s = _session(tmp_path, seed="worst")
+    moves it away; departure violations stay 0.
+
+    Pinned with old_black_refuge OFF (the strict law): 15 min after the
+    ignition the grass under the crew has burned out (window 5-10 min), and
+    under the founder's 2026-09-26 ruling old black is a refuge — the armed
+    truth is test_armed_fire_lit_on_a_placed_crew_reported_then_rests_on_
+    the_black below."""
+    s = _session(tmp_path, seed="worst", cfg={"old_black_refuge": False})
     at_fire = _on_ew_road(8_000.0)
     s.place_crew("sim-g1", at_fire.lat, at_fire.lon)
     s.ignite(at_fire.lat, at_fire.lon, intensity="high")
@@ -563,6 +569,36 @@ def test_crew_placed_where_the_fire_starts_is_reported_never_silent(tmp_path):
     assert reported >= 1, "a crew under the ignition must be reported"
     assert st["crew_overruns"] == []
     assert geo.haversine_m(s._crew_sims["sim-g1"].pos, at_fire) > 1_000.0
+
+
+def test_armed_fire_lit_on_a_placed_crew_reported_then_rests_on_the_black(
+        tmp_path):
+    """The same worst case with the simulator's law (old black is a refuge,
+    founder ruling 2026-09-26). The audit judges old black over the whole
+    step, so the overrun is REPORTED at the first tick (the front crossed the
+    crew during it) even though the grass has burned out by the audit —
+    never silent. From then on the crew stands on old black: no row, no
+    relocation (the black behind the front is the refuge), no departure
+    violation."""
+    s = _session(tmp_path, seed="worst")
+    at_fire = _on_ew_road(8_000.0)
+    s.place_crew("sim-g1", at_fire.lat, at_fire.lon)
+    s.ignite(at_fire.lat, at_fire.lon, intensity="high")
+    placed = s._crew_sims["sim-g1"].pos
+    st = s.tick()
+    rows = [o for o in st["crew_overruns"] if o["crew_id"] == "sim-g1"]
+    assert [o["reason"] for o in rows] == ["burned"]
+    assert st["scoreboard"]["violations"] >= 1
+    nom, _p10 = s._crew_exposure(placed)
+    assert s._now_s - nom >= s._cold_black_pass_s(placed)   # burned out now
+    assert _crew(st, "sim-g1")["on_old_black"] is True
+    for _ in range(5):
+        st = s.tick()
+        assert all(a["violation"] is False for a in st["audit"])
+        assert [o for o in st["crew_overruns"]
+                if o["crew_id"] == "sim-g1"] == []
+        assert _crew(st, "sim-g1")["relocating"] is False
+    assert s._crew_sims["sim-g1"].pos == placed
 
 
 # ---------------------------------------------------------------------------

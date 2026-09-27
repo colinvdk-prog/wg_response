@@ -366,7 +366,12 @@ shipped on 2026-09-11, and it divides into two classes:
   the crews staged there sit on the zone's black for the next two hours —
   the survivable place, counted honestly. The egress rows at Eagle are crews
   on escape legs through 3–8-hour-old black within 1.4–3 km of the exit 147
-  node.
+  node. Under the founder's ruling of 2026-09-26 (*"old burned ground does
+  not count as a violation"*; docs/SIMULATOR_DESIGN.md "Old black is a
+  refuge; crews that leave the map are out (2026-09-26)") every one of these
+  burned rows on cold black 102–662 minutes old would no longer count — only
+  the 9-minute Eagle GS2 row, still inside its 10-minute window, would — and
+  the table above stays the historical record under the strict audit.
 
 **What that means for the program.** Two of the planning-grade zones —
 Glenwood's No Name (bearing 053°) and Eagle's exit 147 (077°) — sit
