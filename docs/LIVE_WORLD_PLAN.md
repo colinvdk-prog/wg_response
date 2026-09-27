@@ -84,7 +84,10 @@ to the simulator's for the same commands.
 Ticket 1.2 is built, and the first slice of 1.3 (live ∪ seeded in one
 cycle): **a user lights a fire at a point and the live watcher runs it
 through the same code as a feed incident.** The law is contracts SAFETY
-SEMANTICS 12; the module is `wgresponse/seeded.py`.
+SEMANTICS 12; the module is `wgresponse/seeded.py`. *(Superseded in one
+respect on 2026-09-27: seeds now run in the isolated TEST world only —
+`POST /api/test/seed`; the live world refuses them. See "Test map and live
+map (2026-09-27)" below; everything else in this section holds there.)*
 
 | Question | Answer as built |
 |---|---|
@@ -183,11 +186,239 @@ What remains of W1:
   the planner serves with an 18.2 h margin when Willow is absent. A
   per-domain horizon that knows where each fire can actually go is what keeps
   one large fire from freezing dispatch across a region.
-- **Policy before real crews (W4):** a seeded fire is real to the engine —
+- ~~**Policy before real crews (W4):** a seeded fire is real to the engine —
   its P10 enters every corridor check and its jobs enter the plan — so on a
   daemon with real crews a drill would re-route them. The drill-safe notifier
   covers clients only; drills on a live crew roster need a drill window, a
-  drill flag on crews, or a separate drill world.
+  drill flag on crews, or a separate drill world.~~ **RESOLVED 2026-09-27 —
+  a separate drill world** (founder ruling: "we need a test map and a live
+  map so all simulations or drills do not impact real conditions"; section
+  "Test map and live map (2026-09-27)" below; contracts SAFETY SEMANTICS 13).
+  A seeded fire now exists ONLY in the TEST world: its P10 enters only the
+  test world's corridor checks, its jobs only the test world's plan, which is
+  planned for VIRTUAL crews (a clone of the live roster) and never leaves the
+  process. The live world's monitor is locked (every seed refused), its plan
+  is computed from live incidents and real beacons alone, and the proof runs
+  the same live script with and without heavy drill activity and compares
+  every live byte.
+
+#### Test map and live map (2026-09-27)
+
+Founder ruling, verbatim: *"we need a test map and a live map so all
+simulations or drills do not impact real conditions."* The watch daemon now
+runs **two fully isolated worlds in one process**. The law is contracts
+SAFETY SEMANTICS 13 ("TWO WORLDS"); the module is `wgresponse/worlds.py`;
+the daemon glue is `cli._WatchDaemon` (+ `_watch_test_world`); the routes
+are in `server.py`.
+
+| World | What it is |
+|---|---|
+| **LIVE** | Real conditions only: feed incidents, the real client registry, real crews (beacons), the real alert engine, the real dispatch plan, the real notifier, the live `StateStore` file + S3 object. Its `ThreatMonitor` is **locked** (`lock_live()`: `create_seed` / `add_seed` / `restore_seeds` raise `seeded.LiveWorldRefused`, and `_seeded_incidents` unions nothing, ever). `POST /api/seed` and `DELETE /api/seed/<id>` answer **409** with a pointer to `/api/test/seed`; `GET /api/seed[/<id>]` stays one release as a read-only alias of the TEST list. `/api/state`, `/api/plan`, `/healthz` and `/api/world/summary` (default `?world=live`) are unchanged. |
+| **TEST** | Drills and simulations: `worlds.TestWorld`. It sees the live world's incidents and forecasts READ-ONLY and adds SEEDED fires; its own alert engine, crews, plan and state namespace. Everything it emits goes to the drill log. |
+
+**What the test world shares and what it owns.**
+
+| Shares (read-only, by reference) | Owns |
+|---|---|
+| The live cycle's own `WorldSnapshot` (`ThreatMonitor.last_snapshot`, recorded after the planner every cycle — shallow container copies around the cycle's objects): the post-gate incident set (the test world reads copies with their own `meta`), every `ThreatAssessment`, the **ensembles** (the arrival rasters — never recomputed, never copied, never mutated: pinned), in-domain clients, ETAs, fire-centroid forecasts, tiered eroded rasters, the regime flags, the registry roster per incident, the live-failed incidents, feed health, the feed notes and feed-blind events | The seeded store and the **seeded domains** (computed through the unchanged `ThreatMonitor._assess_incident`), an `AlertEngine` whose notifier is `seeded.DrillOnlyNotifier` (it holds **no client channel at all** — every send, a seeded fire's or a live incident's as seen from the test map, lands in the drill log and is ledgered), `VirtualCrewTracker` crews, its incumbent plan, its regime postures, the drill log |
+| The `dispatch` module (pure functions; the corridor memo is a per-raster pure memo) and a stateless mock registry | Its OWN weather provider instance, its OWN registry instance when the live one caches (the Dynamo TTL roster), a `TestTerrainOverlay` (reads the live LANDFIRE tile cache read-only, fetches / caches everything else under `<state-dir>/test_world/terrain_cache` and `s3://<prefix>/test_world/terrain/`), its own `StateStore` (`<state-dir>/test_world/wgresponse_state.json`, `s3://<prefix>/test_world/state.json`), its worker thread |
+
+**How a test cycle runs.** `_TestWorldMonitor` is a `ThreatMonitor` whose
+`cycle()` — the SAME code the live world runs — has two seams overridden:
+`_fetch_and_fuse` returns the live snapshot's incident set and feed health
+(no feed is fetched), and `_assess_incident` hands every LIVE incident the
+live cycle's results verbatim (a live-failed assessment fails on the test map
+too, so its pairs are BLIND there as well) while a SEEDED incident runs the
+real `_assess_incident`. Everything after — the seed union, the staleness
+gate, blind pairs, regime postures, the ladder, the seed auto-retire, the
+planner — is the live code path on the test world's own engine, crews and
+incumbent. Every completed live cycle hands its snapshot to the test world
+(`on_live_cycle`: a flag and an event; the live loop never waits), which runs
+**one** test cycle at the live cycle's own time — so a live pair on the TEST
+map moves exactly as on the LIVE map (pinned: states AND streaks, cycle for
+cycle, the same events and plan when no seed is lit). A test action (seed,
+retire, crew staging) re-runs the drill at once at the test clock, but that
+re-run evaluates **only the seeded fires' pairs** (the additive
+`AlertEngine.evaluate(only_incidents=...)`, default None = unchanged); the
+planner re-plans on every run. The worker waits for the live loop to be idle
+before it clones or cycles, and a test-world failure is logged, never raised
+into the live loop.
+
+**Drills.** The test world is **IDLE** — no cycle, zero cost; the TEST map
+mirrors the live picture read-only — until a drill starts: the first seed,
+or a test-crew reset / placement. The start clones the live crew roster at
+once (positions and statuses; a crew the live dispatcher would not use —
+stale beacon, UNKNOWN, OFF_DUTY — is cloned ineligible; the clone READS the
+live tracker, never `stale()`, which flips live statuses) and, while the live
+loop is idle, the live ladder + notified ledger + growth clocks, the incumbent
+plan and the regime postures — so a drill answers *"what would we do right
+now"*. From then on each world evolves alone. **Test crews are virtual**: they
+never beacon and never move (W1.4), `POST /api/test/crews/reset` re-clones
+them, `POST /api/test/crews/place` stages one; no test plan leaves the
+process and no test position ever enters the live `CrewTracker`.
+`POST /api/test/reset` wipes the test world (and writes an empty IDLE state
+into its namespace) — 200, or 202 when a test cycle is running (applied
+before the next one, or at shutdown). Test state is restart-safe: seeds,
+ladder, ledger, plan, virtual crews and drill log come back and nothing
+re-fires. **Migration:** a live file written by the pre-two-worlds build
+with seeds in it is partitioned at load (`worlds.split_legacy_seeds`): the
+seed rows, their alert pairs, ledgered drill sends and growth clocks go to
+the test world (which starts a drill), the live incumbent loses its seeded
+stops, and a loud WARNING + startup note says so — a seed never runs live.
+
+**API** (authed like every write path): `GET /api/test/state` (the
+`/api/state` keys + `world`, `banner`, `drill`, `seeds`, `live_crews`,
+`drill_log`), `POST /api/test/seed` (the W1 body), `GET /api/test/seed[/<id>]`,
+`DELETE /api/test/seed/<id>`, `POST /api/test/crews/reset`,
+`POST /api/test/crews/place {crew_id, lat, lon, status?, name?}`,
+`POST /api/test/reset`, `GET /api/world/summary?world=test` (rows marked
+`world` live / test and `read_only`; a `rev` token drives `?since=`, since
+several test cycles can share a cycle time).
+
+**The page.** `/world` gets a **LIVE | TEST** switch in the header (LIVE by
+default; `/world?world=test` opens the test map). The TEST map is
+unmistakable: an amber banner across the top — *"TEST MAP — drills and
+simulations. Nothing here affects real conditions, crews or clients."* — an
+amber frame over the map, an amber header; seeded fires in the seeded colour
+with a dashed amber ring; the **Seed a fire** control (arm, click the map,
+choose the intensity / wind / note, Seed) and a **retire** button on every
+seeded fire, **Reset test crews to live**, **Reset test map**, the drill log
+— all of it only on the TEST map (hidden by CSS on LIVE, and every handler
+returns unless the page is on TEST). The virtual test crews are drawn amber
+and dashed ("T·E1"), the live crews ghosted grey and read-only. The offline
+SVG shim gained map clicks, so seeding works air-gapped too. `/console` is
+LIVE-only (a seeded row is never drawn there). The simulator page carries a
+**TEST** chip and a legend line: it is a sandbox and never touches the
+watcher's live or test maps.
+
+**The isolation proof** (`tests/test_worlds_isolation.py`,
+`tests/test_test_world_api.py`). The core test runs the SAME mocked daemon —
+real `ThreatMonitor`, `AlertEngine`, dispatch planner, `CrewTracker` with GPS
+beacons (one goes stale mid-run), `StateStore` with an S3 mirror, the real
+HTTP server — through the same 8-cycle live script (a second fire appears
+and vanishes, the feeds go BLIND for a cycle and recover) twice: once with no
+test activity, once with heavy test activity over HTTP between the cycles
+(five seeds — two threatening the live fire's own clients — a retirement, a
+test-map reset and a new drill, crew placements and a crew reset, an extra
+test cycle, the refused live seed POST, a seed outside the AOI, and test
+state / summary / alias reads every cycle). It asserts the LIVE world's
+per-cycle CycleResult digests, persisted state-file bytes, `/api/state`,
+`/api/plan`, `/healthz` and `/api/world/summary` bytes (wall-clock telemetry
+masked), plan, S3 objects and keys, the real notifier's calls, the live
+providers' call logs, the live wake flag and even the live clock's read
+count are identical between the two runs — and that the drill really ran
+(a seeded domain, seeded pairs, a test plan, drill-log lines about a client
+the live fire also threatens) and never wrote a key outside
+`<prefix>/test_world/`. Also pinned: with no seed the test world mirrors the
+live ladder (states and streaks), events, plan and the very ensemble objects
+cycle for cycle; the shared rasters and live incident objects are never
+mutated; the live loop completes three cycles while a test cycle hangs in its
+terrain call (and a reset queued behind it lands at shutdown); a failing test
+world never breaks the live cycle; a live restart re-fires nothing and a test
+restart restores the drill; a pre-two-worlds live file is migrated; the live
+monitor refuses every seed and unions none even if one is smuggled into its
+store; no drill fire appears in one byte of `/api/state`, `/api/plan`,
+`/healthz`, `/api/world/summary` or the live state file; and
+`AlertEngine.evaluate(only_incidents=...)` leaves every other pair exactly as
+it was. Result: all green — 12 tests in `test_worlds_isolation.py`, 35 in
+`test_test_world_api.py`, the 54 W1 engine tests and 46 seed-route tests
+re-pointed at the test world, the full suite 1,977 passed / 12 skipped / 0
+failed (5 min 22 s) — and the W1 byte-identity goldens of commit 09f94b5 still pass
+unchanged: no test activity = the pre-two-worlds live world, byte for byte.
+
+**Measured cost** (2026-09-27 09:35–10:45 PDT, this machine, one daemon:
+`watch --aoi data/aoi_vail_aspen.json --registry mock-presets --dry-notify`
++ the production physics flags `--gust-blend 0.5 --grass-floor 0.10
+--floor-gate --model-error 0.71 --extreme-regime --fail-closed
+--ember-radius 200 --p50-bound --solver-evals 20000 --phi-vector`,
+`--period 120`, port 18989, its own state dir with the W1/W6 runs' cached
+LANDFIRE tiles copied in; live WFIGS / FIRIS / CAL FIRE feeds; three live
+crews beaconing every 60 s from the Eagle, Gypsum and Avon bases; driven by
+`scratch_review/worlds_cost_run.py`, memory = the daemon process's working
+set / private bytes every 2 s). The live world held the WFIGS **Willow** fire
+(7,389 ac, 80 % contained): one 300,544-cell domain reaching 204 of the 279
+in-AOI demo homes (126 alerted — finding 6's free-running polygon), spread
+9.3–11.3 s. Seeds: HIGH, wind FROM 245, 6 km WSW of the Vail, Eagle, Aspen,
+Glenwood Springs and Basalt presets — each a ~300,000-cell domain reaching
+168–280 homes (the Eagle one on FBFM40 91, said out loud by the cycle note).
+
+| Phase | Live cycle (wall) | Test cycle per live cycle (wall) | Working set median / max | Private median / max |
+|---|---|---|---|---|
+| A — IDLE (no drill) | 12.45–12.93 s | **none** (the test world does nothing) | 207 / 242 MB | 931 / 967 MB |
+| B — drill, 0 seeds (3 crews + 204 live pairs cloned) | 12.42–13.30 s | **0.11–0.12 s** (dispatch 0.11–0.12, alerts 0.0002; the Willow domain shared) | 208 / 242 MB | 932 / 966 MB |
+| C — 1 seed, cold | 12.65–13.23 s | 403.5 s once (a fresh LANDFIRE tile: LFPS 402.3 s) | 237 / 307 MB | 960 / 1,031 MB |
+| C — 1 seed, warm | 12.23–12.49 s | **1.20–1.35 s** (tile load 0.10 s, spread 0.9–1.0 s at 300,348 cells / 195 homes, dispatch 0.21 s) | 244 / 311 MB | 967 / 1,035 MB |
+| D — 5 seeds, cold | 12.26–15.10 s | 448.7 s + 1,280.4 s once (4 fresh tiles, one LFPS job each, 6.5–7.5 min) | 457 / 517 MB | 1,180 / 1,242 MB |
+| D — 5 seeds, warm | 14.36–14.42 s | **13.0–13.6 s** (spreads 0.6 / 1.1 / 3.0 / 2.3 / 4.3 s, 0.10–0.13 s tile loads, dispatch 1.1 s) | 419 / 559 MB | 1,143 / 1,284 MB |
+
+- **The added cycle time is the test cycle, and it runs beside the live
+  cycle, never in it**: +0.12 s per live cycle for a drill with no seed
+  (~1 % of the 12.5 s live cycle), +1.2–1.35 s for one seed (~10 %), +13–14 s
+  for five (each seed is a full ~300,000-cell domain — the W1 law that a
+  domain is built only where a fire meets clients applies to drills too). It
+  runs on the test world's thread after the live cycle, inside the 120 s
+  period; the live cadence held at 120 s even through the 403 s and 1,280 s
+  cold test cycles (live cycles every ~120 s, 12.3–15.1 s each).
+- **The live cycle is not slowed by the drill** — controlled check: after a
+  hard kill + restart with the 5-seed drill restored, three live cycles took
+  13.9–15.2 s (Willow spread 11.2–11.3 s); then `POST /api/test/reset` (IDLE:
+  the test world computes nothing) and three more took 14.0–14.5 s (Willow
+  spread 11.0–11.3 s). The rise from ~12.5 s over the hour is Willow's own
+  spread growing (9.3 s at the first cycle → ~11 s), not the test world.
+- **Memory**: +37 MB working set / +36 MB private for one warm seed, +212 /
+  +212 MB for five (their ensembles and tiles; the live domains are shared,
+  not copied); 0 for an IDLE test world and ~0 for a seedless drill. CPython
+  keeps the high-water mark after a reset (377 MB / 1,101 MB median after the
+  reset above) — the arenas are not returned to the OS until a restart.
+- **Payloads**: `/api/test/state` 81 KB (0 seeds) → 157 KB (5 seeds);
+  `/api/world/summary?world=test` 27 → 40 KB, built in 0.07–0.37 s once per
+  test cycle (`rev`-cached).
+- **Isolation on the real run**: the live `/api/state` never carried a
+  `seeded:` id; the live tile cache kept its 44 files (the five seed tiles
+  landed in `test_world/terrain_cache`); the TEST map alerted 144 homes while
+  the LIVE map stayed at Willow's 126; every drill line went to the drill log
+  ("DRILL (TEST MAP, …) — NOT sent to any client channel").
+- **Restart on the real run**: hard kill (TerminateProcess, no final persist)
+  with the 5-seed drill active → restart: live `restored: true` and 0 events
+  on its first cycle; test `restored: true`, drill active, 5 seeds, the staged
+  crew still at Edwards, the test cycle counter continued (16 → 17); the
+  persisted drill log (75 lines) and the drill ledger (207 sends) identical
+  before and after, 0 DRILL lines in the new process — nothing re-fired in
+  either world. The live state file's keys stayed the pre-W1 six (204
+  records, 0 seeded ids).
+
+Screenshots of this run (`scratch_review/worlds_shots.py`, headless Chrome on
+its own DevTools port, 5-seed drill active, one test crew staged at Edwards)
+in `docs/img/worlds/`: `live_regional.jpg` / `test_regional.jpg` (the same
+view on both maps: Willow and the live crews vs the banner, the frame, five
+seeded fires, the test crews, the drill panel), `test_seed_control.jpg` (the
+seed control armed: the pending ignition and the intensity form),
+`live_crews.jpg` / `test_crews.jpg` (live A1 at Avon vs the staged virtual
+T·A1 at Edwards with its ghosted live self), `live_local.jpg` /
+`test_local.jpg` (the local tier), `test_national.jpg`, `test_offline.jpg`
+(the TEST map in the offline SVG shim).
+
+**What remains.**
+
+- **W1.1 so seeded fires grow.** A seeded fire is still a point re-lit at
+  the cycle time every cycle (no ground truth); with the `IncidentDomain`
+  (ticket 1.1) a seeded domain carries the simulator's nominal burn and
+  re-anchors from its own history — the TEST map is where that lands first.
+- **Test crews do not move** (W1.4): a drill plans from where the virtual
+  crews stand; kinematics, the safety sweep and "stage this team here" on
+  the map (W4.4) are the next step for drills.
+- **Cold seeds cost an LFPS job each** (measured above: 6.5–7.5 min per
+  fresh seed domain, one after another inside one test cycle) until the
+  national COGs (W2); a drill near a live fire reuses the live tile only
+  when the domain box matches exactly. Warm, five seeds cost ~13 s of test
+  cycle per live cycle — the per-domain budget of W1.3 applies to drills.
+- **A drill that is never reset keeps running** (alerts + dispatch over the
+  live snapshot each live cycle); cheap (measured), but an idle-timeout or an
+  auto-IDLE once no seed or seeded pair is active is a policy call.
+- **One process.** The test world shares the interpreter (and the GIL) with
+  the live loop; it yields to a running live cycle but a long test cycle can
+  still overlap the next one. The W7 worker fleet is where the test world
+  moves out of process if drills grow heavy.
 
 ### W2 — Terrain anywhere, in seconds
 

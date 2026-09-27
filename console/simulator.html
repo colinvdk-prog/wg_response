@@ -431,12 +431,20 @@
                   color: #fff; font-size: 11px; font-weight: 600; padding: 3px 10px;
                   border-radius: 10px; letter-spacing: .5px; white-space: nowrap; }
   .fbmap-node { cursor: default; }
+  /* TWO WORLDS (contracts SAFETY SEMANTICS 13): the sandbox chip */
+  .sandboxchip { display: inline-block; vertical-align: middle; margin-left: 6px;
+                 padding: 1px 7px; border-radius: 8px; background: #ffb300; color: #1a1200;
+                 font-size: 10px; font-weight: 800; letter-spacing: 1px; }
 </style>
 </head>
 <body>
 <div id="app">
   <div id="left">
-    <h1>WG Simulator</h1>
+    <!-- TWO WORLDS (contracts SAFETY SEMANTICS 13): the simulator is a
+         SANDBOX — its own sessions, never the watcher's LIVE map or its TEST
+         map (the drill world lives at /world -> TEST on the watch daemon) -->
+    <h1>WG Simulator <span id="sandboxchip" class="sandboxchip"
+        title="TEST — a sandbox: this simulator never touches the watcher's live map or its test map">TEST</span></h1>
     <div class="sub">real engine · real terrain · watch the safety math work</div>
 
     <div class="ctl">
@@ -702,6 +710,8 @@
   <div class="row"><span class="dot" style="background:#111"></span> impacted</div>
   <div class="row"><span class="dot" style="background:#4caf50"></span> cleared / safe zone</div>
   <div class="row"><span class="line"></span> eroded-P10 safety surface</div>
+  <!-- TWO WORLDS (contracts SAFETY SEMANTICS 13) -->
+  <div class="row" id="sandboxnote" style="color:#ffb300;font-size:10px"><span class="sandboxchip">TEST</span> sandbox — this simulator never touches the watcher's live map or its test map</div>
   </div>
 </div>
 <div id="synthbanner">SYNTHETIC TERRAIN — rehearsal grade</div>

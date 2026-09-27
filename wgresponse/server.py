@@ -104,6 +104,23 @@ All authed; served only when the watch daemon wires app.seed_api (else 404):
     GET    /api/seed/<id>  {seed} | 404
     DELETE /api/seed/<id>  retire (?by=name) -> 200 | 404 unknown | 409 already
                            retired. Any other DELETE -> 405.
+TWO WORLDS (2026-09-27, contracts SAFETY SEMANTICS 13): the watch daemon's
+/api/seed now answers GET with the TEST world's list (a read-only alias for
+one release) and POST / DELETE with 409 (the LIVE world accepts no seed);
+the seeding API moved to the TEST map, routed to app.test_api (else 404):
+    GET    /api/test/state          the TEST world's state payload
+    POST   /api/test/seed           the POST /api/seed body -> 201
+    GET    /api/test/seed[/<id>]    list / one seed (404 unknown)
+    DELETE /api/test/seed/<id>      retire (?by=name) -> 200 | 404 | 409
+    POST   /api/test/crews/reset    re-clone the virtual test crews (body
+                                    optional: {by?})
+    POST   /api/test/crews/place    {crew_id, lat, lon, status?, name?}
+    POST   /api/test/reset          wipe the test world -> 200 (202 queued
+                                    behind a running test cycle); body
+                                    optional ({by?})
+    GET    /api/world/summary?world=test   the TEST map's read model
+                                    (?world=live, the default, unchanged)
+Wrong method on a known /api/test route -> 405, unknown -> 404.
 
 State providers wired to a live ThreatMonitor should include the CycleResult's
 `degraded`, `operator_events`, and `t_s` in the state dict so /api/state and
@@ -844,7 +861,14 @@ class _App:
     #: W1 SEEDED INCIDENTS: the /api/seed provider — the watch daemon sets
     #: httpd.app.seed_api after serve() (seed_list / seed_get / seed_create /
     #: seed_retire, each -> (status, payload)); None = the routes answer 404.
+    #: Since TWO WORLDS (contracts SAFETY SEMANTICS 13) the daemon answers
+    #: GET with the TEST list (a read-only alias) and POST / DELETE with 409.
     seed_api = None
+    #: TWO WORLDS: the /api/test/* provider (the watch daemon: test_state /
+    #: test_seed_list / test_seed_get / test_seed_create / test_seed_retire /
+    #: test_crews_reset / test_crews_place / test_reset / test_world_summary,
+    #: each -> (status, payload)); None = the routes answer 404.
+    test_api = None
     #: W6 THIN WORLD VIEWER (additive): the page served at /world, and the
     #: optional /api/world/summary provider — callable(since=None) -> dict.
     #: The watch daemon attaches _WatchDaemon.world_summary after serve();
@@ -1007,6 +1031,9 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/seed" or path.startswith("/api/seed/"):
             self._seed_request("GET", path)
             return
+        if path == "/api/test" or path.startswith("/api/test/"):
+            self._test_request("GET", path)
+            return
         self._send_json(404, {"error": "not found"})
 
     def do_POST(self):
@@ -1020,6 +1047,9 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/seed" or path.startswith("/api/seed/"):
             self._seed_request("POST", path)
             return
+        if path == "/api/test" or path.startswith("/api/test/"):
+            self._test_request("POST", path)
+            return
         self._send_json(404, {"error": "not found"})
 
     def do_DELETE(self):
@@ -1027,7 +1057,110 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/seed" or path.startswith("/api/seed/"):
             self._seed_request("DELETE", path)
             return
+        if path == "/api/test" or path.startswith("/api/test/"):
+            self._test_request("DELETE", path)
+            return
         self._send_json(405, {"error": "method not allowed"})
+
+    # -- TWO WORLDS: the TEST map's routes (contracts SAFETY SEMANTICS 13) -----
+
+    #: POST routes under /api/test that take an OPTIONAL body ({} when empty)
+    _TEST_OPTIONAL_BODY = ("/api/test/crews/reset", "/api/test/reset")
+
+    def _test_request(self, method: str, path: str):
+        """/api/test/* routing (the handlers live on the injected
+        app.test_api — cli._WatchDaemon, which forwards to its
+        worlds.TestWorld). Authed like every write path; the bounded body is
+        read BEFORE any answer (the _seed_request keep-alive discipline).
+
+            GET    /api/test/state          the TEST world's state
+            GET    /api/test/seed[/<id>]    list / one seed
+            POST   /api/test/seed           light a fire (201)
+            DELETE /api/test/seed/<id>      retire (?by=name)
+            POST   /api/test/crews/reset    re-clone the virtual crews
+            POST   /api/test/crews/place    {crew_id, lat, lon, status?, name?}
+            POST   /api/test/reset          wipe the test world (200 / 202)
+
+        Wrong method on a known route -> 405; unknown route -> 404; no test
+        world wired -> 404; empty POST body -> 400 except on the two routes
+        whose body is optional; malformed JSON -> 400."""
+        raw = b""
+        if method in ("POST", "DELETE"):
+            try:
+                n = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                n = 0
+            if n > _MAX_BODY_BYTES:
+                self.close_connection = True
+                if not self._auth_ok():
+                    self._send_json(401, {"error": "unauthorized"})
+                else:
+                    self._send_json(413, {"error": "body too large"})
+                return
+            if n > 0:
+                raw = self.rfile.read(n)
+        if self._reject_unauthorized():
+            return
+        api = self.app.test_api
+        if api is None:
+            self._send_json(404, {"error": "the TEST map is served by the "
+                                           "watch daemon only (wgresponse.cli "
+                                           "watch)"})
+            return
+        payload = None
+        if method == "POST":
+            if raw:
+                try:
+                    payload = json.loads(raw.decode("utf-8"))
+                except (UnicodeDecodeError, json.JSONDecodeError) as e:
+                    self._send_json(400, {"error": f"malformed JSON: {e}"})
+                    return
+            elif path not in self._TEST_OPTIONAL_BODY:
+                self._send_json(400, {"error": "empty body"})
+                return
+        parts = path.split("/")          # ['', 'api', 'test', <res>(, <id>)]
+        res = parts[3] if len(parts) > 3 else ""
+        try:
+            code, out = self._test_route(api, method, path, parts, res,
+                                         payload)
+        except Exception as e:           # a test-world bug never wedges the server
+            _LOG.exception("test api failed")
+            code, out = 500, {"error": f"test api: {e}"}
+        self._send_json(code, out)
+
+    def _test_route(self, api, method, path, parts, res, payload):
+        n = len(parts)
+        if res == "state" and n == 4:
+            if method != "GET":
+                return 405, {"error": "use GET"}
+            return api.test_state()
+        if res == "seed" and n in (4, 5):
+            seed_id = unquote(parts[4]) if n == 5 else None
+            if n == 5 and not seed_id:
+                return 404, {"error": "not found"}
+            if method == "GET":
+                return (api.test_seed_get(seed_id) if seed_id
+                        else api.test_seed_list())
+            if method == "POST":
+                if seed_id:
+                    return 405, {"error": "POST /api/test/seed (no id) lights "
+                                          "a fire; DELETE retires one"}
+                return api.test_seed_create(payload)
+            if not seed_id:
+                return 405, {"error": "DELETE /api/test/seed/<id>"}
+            by = parse_qs(urlparse(self.path).query).get("by", ["api"])[0]
+            return api.test_seed_retire(seed_id, by=by[:64] or "api")
+        if res == "crews" and n == 5 and parts[4] in ("reset", "place"):
+            if method != "POST":
+                return 405, {"error": "use POST"}
+            if parts[4] == "reset":
+                return api.test_crews_reset(payload)
+            return api.test_crews_place(payload)
+        if res == "reset" and n == 4:
+            if method != "POST":
+                return 405, {"error": "use POST"}
+            return api.test_reset(payload)
+        return 404, {"error": "not found"}
 
     # -- W1 seeded incidents (the watch daemon's /api/seed) -------------------
 
@@ -1035,9 +1168,13 @@ class _Handler(BaseHTTPRequestHandler):
         """/api/seed routing (contracts SAFETY SEMANTICS 12; the handlers live
         on the injected app.seed_api — cli._WatchDaemon). Authed like every
         write path. GET /api/seed = list, GET /api/seed/<id> = one,
-        POST /api/seed = light a fire (201), DELETE /api/seed/<id>[?by=name]
-        = retire. The (bounded) request body is read BEFORE any answer, the
-        401 included: HTTP/1.1 keep-alive must never read leftover body bytes
+        POST /api/seed = light a fire, DELETE /api/seed/<id>[?by=name]
+        = retire — since TWO WORLDS (SAFETY SEMANTICS 13) the watch daemon
+        answers the GETs with the TEST world's seeds (a read-only alias) and
+        the POST / DELETE with 409 (the live world refuses; the seeding API
+        is /api/test/seed). The (bounded) request body is read BEFORE any
+        answer, the 401 included: HTTP/1.1 keep-alive must never read
+        leftover body bytes
         as the next request, and closing a socket with unread data makes
         Windows reset the connection before the client reads the reply. An
         oversized body is answered (401 unauthenticated, else 413) and the
@@ -1086,8 +1223,9 @@ class _Handler(BaseHTTPRequestHandler):
                 code, out = (api.seed_get(seed_id) if seed_id
                              else api.seed_list())
             elif method == "POST":
-                code, out = ((405, {"error": "POST /api/seed (no id) lights "
-                                             "a fire; DELETE retires one"})
+                code, out = ((405, {"error": "POST /api/seed/<id> is not a "
+                                             "route (seeding: POST "
+                                             "/api/test/seed)"})
                              if seed_id else api.seed_create(payload))
             else:
                 by = parse_qs(urlparse(self.path).query).get("by", ["api"])[0]
@@ -1234,8 +1372,31 @@ class _Handler(BaseHTTPRequestHandler):
     def _world_summary(self):
         """GET /api/world/summary (authed by the caller; read-only). The
         app's world_provider(since=...) when attached (the watch daemon),
-        else a domain-less summary derived from the state_provider."""
-        since = parse_qs(urlparse(self.path).query).get("since", [None])[0]
+        else a domain-less summary derived from the state_provider.
+        ?world=live (the default — byte-identical to before) | test (TWO
+        WORLDS, contracts SAFETY SEMANTICS 13: the TEST map's read model via
+        app.test_api; 404 when no test world is wired); anything else 400."""
+        query = parse_qs(urlparse(self.path).query)
+        since = query.get("since", [None])[0]
+        world = query.get("world", ["live"])[0] or "live"
+        if world not in ("live", "test"):
+            self._send_json(400, {"error": "world must be 'live' (default) "
+                                           "or 'test'"})
+            return
+        if world == "test":
+            api = self.app.test_api
+            if api is None:
+                self._send_json(404, {"error": "the TEST map is served by "
+                                               "the watch daemon only "
+                                               "(wgresponse.cli watch)"})
+                return
+            try:
+                code, payload = api.test_world_summary(since=since)
+            except Exception as e:
+                _LOG.exception("test world summary failed")
+                code, payload = 500, {"error": f"world summary: {e}"}
+            self._send_json(code, payload)
+            return
         try:
             provider = self.app.world_provider
             if provider is not None:
