@@ -50,15 +50,17 @@ EXPLICIT = SeedWeather(wind_speed_mps=5.0, wind_gust_mps=6.5, rh_pct=30.0,
 #: PRE-W1 GOLDENS: tests/seeded_stack.baseline_run() digests computed on
 #: commit 09f94b5 (the Live World Plan commit), before any seeded-incident
 #: code existed — 3 cycles of a feed fire + 2 clients + 1 crew + 1 safe zone
-#: through the REAL monitor / ladder / planner / StateStore / _WatchDaemon.
-#: The W1 build must reproduce every byte with no seed lit.
+#: through the REAL monitor / ladder / planner / StateStore / _WatchDaemon —
+#: and recomputed on the `git archive 09f94b5` engine tree with these exact
+#: digest functions (the state digest normalizes CRLF, so it is the same on
+#: every OS). The W1 build must reproduce every byte with no seed lit.
 _GOLDEN_CYCLES = [
     "ac17b00f24122fdc679d82b1113770e90cebf14bbf6cf6dacbe8ffe5e6280968",
     "55163466e7cbec27b678a36939eb8119aba291ceae8b1f391874d4a2dab242e0",
     "f828a6bb41344d6f1d72570ad9365d8efe9c817abe74a763dbfc68f338fea846",
 ]
 _GOLDEN_API = "388b5a434ad3369c48087accc06846f61b111cb6ebf9555bc571d4b289394d6d"
-_GOLDEN_STATE = "3181202aa4f25dd1f2d125f5369349291b75f51ab16193e6d5d11a456abf379c"
+_GOLDEN_STATE = "16b7b049904028d0c8270699aa247f1622725680cdc0e4ede12b9ce53fa69798"
 
 
 # ---------------------------------------------------------------------------

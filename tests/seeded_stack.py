@@ -332,9 +332,11 @@ _SOLVER_S = re.compile(rb'"solver_s": [-+0-9.eE]+')
 
 def state_digest(store) -> str:
     """sha256 of the persisted state file's BYTES, the planner's wall-clock
-    solver_s value masked (see _mask_wall) — every other byte (key order,
-    indentation, float text) is compared as written."""
-    raw = _SOLVER_S.sub(b'"solver_s": 0', store.path.read_bytes())
+    solver_s value masked (see _mask_wall) and line endings normalized to LF
+    (StateStore writes in text mode: CRLF on Windows, LF elsewhere) — every
+    other byte (key order, indentation, float text) is compared as written."""
+    raw = store.path.read_bytes().replace(b"\r\n", b"\n")
+    raw = _SOLVER_S.sub(b'"solver_s": 0', raw)
     return hashlib.sha256(raw).hexdigest()
 
 
