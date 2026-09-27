@@ -87,6 +87,21 @@ before t0_s at the OLD rate; `embers_aloft` lands the embers still in flight
 at t0_s; `ember_log` records the embers a solve throws so the next re-anchor
 can find the ones in flight. See compute_arrival.
 
+WEATHER ZONES (contracts SAFETY SEMANTICS 17, 2026-09-27; optional
+compute_arrival / ensemble_arrival argument `weather_field`, default None =>
+BYTE-IDENTICAL, branch-guarded): a contracts.WeatherField carries one hourly
+forecast per ZONE and the zone of every cell (wgresponse.wxfield: the fire
+centroid + the global lattice nodes inside the domain, nearest-point
+Voronoi). With it, an edge leaving cell u is priced with u's ZONE forecast:
+the ROS memo's hour_wx is keyed by (zone, hour) instead of hour (the
+reference path reads the same zone sample), so the effective weather is per
+(zone, hour) and every perturbation (wind / moisture scale, direction
+offset, gust blend, ros_scale) applies identically in every zone. ros_cache
+keys on the effective weather VALUES, so cells of different zones with equal
+weather still share entries and the memo stays exact (memo = reference,
+zones on). Spotting reads the source cell's params, so an ember flies on its
+source zone's wind. kept_wx history spans stay domain-wide.
+
 Stdlib only; deterministic (ensemble perturbations via contracts.seeded_rng).
 """
 from __future__ import annotations
@@ -386,8 +401,18 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     kept: dict = None,
                     embers_aloft: list = None,
                     ember_log: list = None,
-                    kept_wx: list = None) -> Raster:
+                    kept_wx: list = None,
+                    weather_field=None) -> Raster:
     """Fire arrival-time raster (absolute unix SECONDS per cell; UNREACHED=inf).
+
+    weather_field (WEATHER ZONES, contracts SAFETY SEMANTICS 17; default None
+    => byte-identical): a contracts.WeatherField on this tile's grid. Cell i
+    prices every edge it owns with weather_field.forecasts[zone_of[i]] at
+    the departure hour (each later hour under cfg.edge_weather_piecewise)
+    instead of `wx`; `wx` stays the caller's primary forecast (by convention
+    forecasts[0]). Ensemble knobs apply alike in every zone; an ember flies
+    on its source cell's zone wind. ValueError when the field's grid is not
+    the tile's or its zone index is out of range.
 
     kept / kept_wx / embers_aloft / ember_log (RE-ANCHOR HISTORY, simulator
     finding 2026-09-26; all default None => byte-identical to a call without
@@ -790,6 +815,14 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     # dir_offset are invocation constants; everything else that can move a
     # float is in the keys, so hits are byte-identical to recomputation.
     gust_blend = getattr(cfg, "wind_gust_blend", 0.0)
+    # WEATHER ZONES (weather_field; SAFETY SEMANTICS 17): zone_of[i] is cell
+    # i's zone, zone_wx[z] its forecast, and hour_wx is keyed (zone, hour).
+    # None => the legacy single forecast: hour_wx keys stay bare hours and
+    # every lookup below is unchanged.
+    zone_of = None
+    zone_wx = None
+    if weather_field is not None:
+        zone_of, zone_wx = _zone_tables(weather_field, spec)
     hour_wx = {}     # hour -> (wind10, m_dead, wdir) after scaling + offset
     bed_cache = {}   # (fuel_code, m_dead) -> fuel-bed intermediate (or None)
     ros_cache = {}   # (fuel_code, slope, aspect, wind10, m_dead, wdir) -> p
@@ -797,8 +830,14 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     def _weather_sample(hour):
         """The WeatherSample an hour bucket (int, relative to t0_s) prices —
         or, for a ('kept_wx', j) key, span j of the RE-ANCHOR HISTORY
-        weather (_kept_edge_arrival)."""
+        weather (_kept_edge_arrival). WEATHER ZONES: a (zone, hour) key
+        reads that zone's forecast (kept_wx spans stay domain-wide)."""
         if hour.__class__ is tuple:
+            if hour[0].__class__ is int:
+                zone, hour = hour
+                if hour.__class__ is tuple:
+                    return kept_wx[hour[1]][1]
+                return zone_wx[zone].at(t0_s + hour * 3600.0)
             return kept_wx[hour[1]][1]
         return wx.at(t0_s + hour * 3600.0)
 
@@ -821,10 +860,11 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
 
     def cell_params(idx: int, hour: int):
         fuel = fuel_of[idx]
-        wt = hour_wx.get(hour)
+        wkey = hour if zone_of is None else (zone_of[idx], hour)
+        wt = hour_wx.get(wkey)
         if wt is None:
-            wt = _eff_weather(_weather_sample(hour))
-            hour_wx[hour] = wt
+            wt = _eff_weather(_weather_sample(wkey))
+            hour_wx[wkey] = wt
         wind10, m_dead, wdir = wt
         slope = slope_d[idx]
         aspect = aspect_d[idx]
@@ -854,7 +894,7 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         """WGRESP_NO_ROS_MEMO=1 escape hatch: the pre-B3 structure — every
         quantity computed fresh per settled cell through the classic rothermel
         seams. The byte-identity oracle for the memo path above."""
-        s = _weather_sample(hour)
+        s = _weather_sample(hour if zone_of is None else (zone_of[idx], hour))
         fuel = fuel_of[idx]
         ws_eff = (s.wind_speed_mps
                   + gust_blend * max(0.0, s.wind_gust_mps
@@ -1147,6 +1187,30 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     return Raster(spec, best)
 
 
+def _zone_tables(weather_field, spec) -> tuple:
+    """(zone_of, zone_wx) of a contracts.WeatherField checked against the
+    tile's grid (WEATHER ZONES, SAFETY SEMANTICS 17): the field must sit on
+    exactly `spec` and every zone index must name one of its forecasts, each
+    with samples — a mismatch is a caller bug and raises ValueError instead
+    of pricing cells with another domain's weather."""
+    fspec = weather_field.spec
+    if (fspec.nrows != spec.nrows or fspec.ncols != spec.ncols
+            or fspec.cell_m != spec.cell_m or fspec.north_lat != spec.north_lat
+            or fspec.west_lon != spec.west_lon):
+        raise ValueError("weather_field grid does not match the tile grid")
+    zone_of = weather_field.zone_of
+    zone_wx = list(weather_field.forecasts)
+    if len(zone_of) != spec.nrows * spec.ncols:
+        raise ValueError(f"weather_field zone_of has {len(zone_of)} cells, "
+                         f"the tile {spec.nrows * spec.ncols}")
+    if not zone_wx or any(not getattr(f, "samples", None) for f in zone_wx):
+        raise ValueError("weather_field needs a non-empty forecast per zone")
+    if len(zone_of) and max(zone_of) >= len(zone_wx):
+        raise ValueError(f"weather_field zone {max(zone_of)} has no forecast "
+                         f"({len(zone_wx)} zones)")
+    return zone_of, zone_wx
+
+
 def _quantile(sorted_vals: list, q: float) -> float:
     """Linear-interpolated quantile of pre-sorted values (may contain inf),
     using HAZEN plotting positions (sample i sits at quantile (i+0.5)/n).
@@ -1227,7 +1291,8 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                      kept: dict = None,
                      embers_aloft: list = None,
                      ember_log: list = None,
-                     kept_wx: list = None) -> EnsembleArrival:
+                     kept_wx: list = None,
+                     weather_field=None) -> EnsembleArrival:
     """Ensemble v2 (Sprint 2 ticket A4, Council-1 model F2+F6): nominal member
     (k=0, unperturbed) + (cfg.ensemble_n - 1) perturbed members, plus per-cell
     p10/p50/p90 quantile rasters (unix seconds; p10 = EARLIEST/pessimistic).
@@ -1281,6 +1346,10 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     too). ember_log goes to the NOMINAL member only (the truth's embers are
     what a later re-anchor carries).
 
+    weather_field (WEATHER ZONES, SAFETY SEMANTICS 17; default None =
+    byte-identical) is forwarded to EVERY member: each prices its edges per
+    (zone, hour) under its own perturbation, identical in every zone.
+
     NOTE: ensemble_n counts TOTAL members (nominal + n-1 perturbed), so
     ensemble_n=1 is nominal-only, matching the v1 convention the suite pins;
     contracts' config comment reads it as perturbed-count — the discrepancy
@@ -1300,7 +1369,8 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                                incident_id=incident_id, member_k=0,
                                seed_spotting=seed_spotting, kept=kept,
                                embers_aloft=embers_aloft,
-                               ember_log=ember_log, kept_wx=kept_wx)]
+                               ember_log=ember_log, kept_wx=kept_wx,
+                               weather_field=weather_field)]
     draws = _stratified_member_draws(incident_id, n_members - 1)
     dir_lead = min(1.0, (cfg.horizon_h * 0.5) / _DIR_RAMP_SATURATION_H)
     sd_log = float(getattr(cfg, "model_error_sd_log", 0.0) or 0.0)
@@ -1326,7 +1396,8 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                                        ros_scale=r_scale,
                                        seed_spotting=seed_spotting,
                                        kept=kept, embers_aloft=embers_aloft,
-                                       kept_wx=kept_wx))
+                                       kept_wx=kept_wx,
+                                       weather_field=weather_field))
 
     ncells = tile.spec.nrows * tile.spec.ncols
     if len(members) == 1:

@@ -21,6 +21,18 @@ Network goes through injectable ``http_get(url, headers) -> (status, bytes)``;
 NWS REQUIRES a User-Agent header (taken from cfg.user_agent). Stdlib only.
 Live adapters raise RuntimeError on failure so callers can fall back
 (NWS -> OpenMeteo); they never invent weather.
+
+FORECAST CACHE (contracts SAFETY SEMANTICS 17, 2026-09-27; only with
+cfg.weather_grid_km > 0 — local weather across the spread domain asks up to
+cfg.weather_points_max points per domain every cycle): NwsWeather then keeps
+a PROCESS-LEVEL NwsForecastCache (module singleton, injectable for tests):
+the points -> forecastGridData URL mapping, which is static (a lat/lon
+always resolves to the same 2.5 km gridpoint), and each gridpoint's DECODED
+hourly series by URL for cfg.weather_cache_ttl_s. Lattice nodes are fixed
+global coordinates and several nodes (and overlapping domains) resolve to
+the same gridpoint, so most points cost no request after the first cycle.
+A refresh that fails raises exactly like an uncached fetch — an expired
+series is never served. Knob off: no cache, the legacy calls unchanged.
 """
 from __future__ import annotations
 
@@ -28,6 +40,8 @@ import json
 import logging
 import math
 import re
+import threading
+import time
 import urllib.request
 from datetime import datetime, timezone
 from typing import Callable, Optional
@@ -144,6 +158,108 @@ def _temp_to_c(uom: str) -> Callable[[float], float]:
 _IDENT = lambda v: v
 
 
+def _decode_grid_series(grid: dict) -> tuple:
+    """(speed, gust, dir, rh, temp) hourly dicts {hour unix s: value} of one
+    NWS gridpoint ``properties`` payload (RLE-expanded, units converted per
+    each variable's uom). Raises RuntimeError when there is no wind speed."""
+
+    def series(key: str, conv_for_uom) -> dict:
+        var = grid.get(key) or {}
+        return _expand_rle_hourly(var.get("values") or [],
+                                  conv_for_uom(var.get("uom") or ""))
+
+    speed = series("windSpeed", _speed_to_mps)
+    gust = series("windGust", _speed_to_mps)
+    wdir = series("windDirection", lambda u: _IDENT)
+    rh = series("relativeHumidity", lambda u: _IDENT)
+    temp = series("temperature", _temp_to_c)
+    if not speed:
+        raise RuntimeError("NWS gridpoint response had no windSpeed data")
+    return speed, gust, wdir, rh, temp
+
+
+class NwsForecastCache:
+    """PROCESS-LEVEL NWS forecast cache (contracts SAFETY SEMANTICS 17; used
+    only by an NwsWeather whose cfg arms weather_grid_km).
+
+    points : points URL (lat/lon at 1e-4 deg) -> forecastGridData URL —
+             static, kept (bounded at max_points, oldest evicted first).
+    grids  : forecastGridData URL -> (fetched at, decoded hourly series) —
+             served while clock() - fetched < the caller's ttl_s (bounded
+             at max_grids; the decoded series, ~0.1 MB, not the ~0.3 MB
+             payload). A hit is shared by every point and domain that
+             resolves to the same gridpoint.
+    Thread-safe (one lock); stats() counts hits and misses."""
+
+    def __init__(self, clock: Callable[[], float] = time.monotonic,
+                 max_points: int = 4096, max_grids: int = 512):
+        self._clock = clock
+        self._max_points = int(max_points)
+        self._max_grids = int(max_grids)
+        self._lock = threading.Lock()
+        self._points: dict = {}
+        self._grids: dict = {}
+        self._stats = {"points_hits": 0, "points_misses": 0,
+                       "grid_hits": 0, "grid_misses": 0}
+
+    def points_get(self, points_url: str) -> Optional[str]:
+        with self._lock:
+            url = self._points.get(points_url)
+            self._stats["points_hits" if url else "points_misses"] += 1
+            return url
+
+    def points_put(self, points_url: str, grid_url) -> None:
+        if not isinstance(grid_url, str) or not grid_url:
+            return
+        with self._lock:
+            self._points[points_url] = grid_url
+            while len(self._points) > self._max_points:
+                self._points.pop(next(iter(self._points)))
+
+    def points_drop(self, points_url: str) -> None:
+        """Forget one mapping (its gridpoint fetch failed: the next call
+        re-resolves the point instead of trusting the kept URL)."""
+        with self._lock:
+            self._points.pop(points_url, None)
+
+    def grid_get(self, grid_url: str, ttl_s: float):
+        with self._lock:
+            ent = self._grids.get(grid_url)
+            if ent is not None and self._clock() - ent[0] < ttl_s:
+                self._stats["grid_hits"] += 1
+                return ent[1]
+            self._stats["grid_misses"] += 1
+            return None
+
+    def grid_put(self, grid_url: str, series: tuple) -> None:
+        with self._lock:
+            self._grids.pop(grid_url, None)
+            self._grids[grid_url] = (self._clock(), series)
+            while len(self._grids) > self._max_grids:
+                self._grids.pop(next(iter(self._grids)))
+
+    def clear(self) -> None:
+        with self._lock:
+            self._points.clear()
+            self._grids.clear()
+            for k in self._stats:
+                self._stats[k] = 0
+
+    def stats(self) -> dict:
+        with self._lock:
+            return dict(self._stats, points=len(self._points),
+                        grids=len(self._grids))
+
+
+#: the process-level cache every armed NwsWeather shares (SEMANTICS 17)
+_PROCESS_CACHE = NwsForecastCache()
+
+
+def nws_forecast_cache() -> NwsForecastCache:
+    """The process-level NWS forecast cache (SEMANTICS 17)."""
+    return _PROCESS_CACHE
+
+
 class NwsWeather:
     """NOAA/NWS api.weather.gov provider (primary; keyless, US coverage).
 
@@ -153,16 +269,29 @@ class NwsWeather:
     (unix s). red_flag_active(): alerts/active?point= scan for Red Flag
     Warning / Extreme Fire Danger events. A User-Agent header (cfg.user_agent)
     is sent on every call — NWS requires it. Raises RuntimeError on transport/
-    shape failure; callers fall back to OpenMeteoWeather."""
+    shape failure; callers fall back to OpenMeteoWeather.
+
+    SAFETY SEMANTICS 17: with cfg.weather_grid_km > 0, forecast() goes
+    through the process-level NwsForecastCache (module docstring; `cache`
+    injects another one, e.g. for tests) with ttl cfg.weather_cache_ttl_s;
+    red_flag_active() is never cached. Knob off: no cache — exactly the
+    legacy requests."""
 
     POINTS_URL = "https://api.weather.gov/points/{lat:.4f},{lon:.4f}"
     ALERTS_URL = "https://api.weather.gov/alerts/active?point={lat:.4f},{lon:.4f}"
     _RED_FLAG_EVENTS = ("red flag warning", "extreme fire danger")
 
     def __init__(self, http_get: Optional[HttpGet] = None,
-                 cfg: Optional[ResponseConfig] = None):
+                 cfg: Optional[ResponseConfig] = None,
+                 cache: Optional[NwsForecastCache] = None):
         self._http_get = http_get or _default_http_get
         self._cfg = cfg or ResponseConfig()
+        self._cache = None
+        self._cache_ttl_s = 0.0
+        if float(getattr(self._cfg, "weather_grid_km", 0.0) or 0.0) > 0.0:
+            # SAFETY SEMANTICS 17: armed — the process cache (or the given one)
+            self._cache = cache if cache is not None else _PROCESS_CACHE
+            self._cache_ttl_s = float(self._cfg.weather_cache_ttl_s)
 
     def _get_json(self, url: str) -> dict:
         headers = {"User-Agent": self._cfg.user_agent,
@@ -175,28 +304,49 @@ class NwsWeather:
         except (ValueError, UnicodeDecodeError) as e:
             raise RuntimeError(f"NWS returned unparseable JSON from {url}") from e
 
+    @property
+    def cache(self) -> Optional[NwsForecastCache]:
+        """The forecast cache in use (None = knob off, legacy requests)."""
+        return self._cache
+
+    def _grid_series(self, loc: LatLon) -> tuple:
+        """The decoded hourly series of the gridpoint covering loc: the
+        points lookup then the gridpoint fetch — through the cache when
+        armed (SAFETY SEMANTICS 17), else exactly the legacy two requests."""
+        points_url = self.POINTS_URL.format(lat=loc.lat, lon=loc.lon)
+        cache = self._cache
+        grid_url = cache.points_get(points_url) if cache is not None else None
+        kept = grid_url is not None
+        if grid_url is None:
+            pts = self._get_json(points_url)
+            try:
+                grid_url = pts["properties"]["forecastGridData"]
+            except (KeyError, TypeError) as e:
+                raise RuntimeError(
+                    "NWS points response missing forecastGridData") from e
+            if cache is not None:
+                cache.points_put(points_url, grid_url)
+        if cache is not None:
+            hit = cache.grid_get(grid_url, self._cache_ttl_s)
+            if hit is not None:
+                return hit
+        try:
+            grid = self._get_json(grid_url).get("properties") or {}
+            series = _decode_grid_series(grid)
+        except RuntimeError:
+            if kept:
+                # a kept mapping whose gridpoint now fails (an NWS grid
+                # change, say) is re-resolved next time, never trusted again
+                cache.points_drop(points_url)
+            raise
+        if cache is not None:
+            cache.grid_put(grid_url, series)
+        return series
+
     def forecast(self, loc: LatLon, horizon_h: float) -> WeatherForecast:
         """Hourly forecast at loc out to horizon_h hours (clipped to NWS's ~191 h
         grid horizon). Returns WeatherForecast with ascending hourly samples."""
-        pts = self._get_json(self.POINTS_URL.format(lat=loc.lat, lon=loc.lon))
-        try:
-            grid_url = pts["properties"]["forecastGridData"]
-        except (KeyError, TypeError) as e:
-            raise RuntimeError("NWS points response missing forecastGridData") from e
-        grid = self._get_json(grid_url).get("properties") or {}
-
-        def series(key: str, conv_for_uom) -> dict:
-            var = grid.get(key) or {}
-            return _expand_rle_hourly(var.get("values") or [],
-                                      conv_for_uom(var.get("uom") or ""))
-
-        speed = series("windSpeed", _speed_to_mps)
-        gust = series("windGust", _speed_to_mps)
-        wdir = series("windDirection", lambda u: _IDENT)
-        rh = series("relativeHumidity", lambda u: _IDENT)
-        temp = series("temperature", _temp_to_c)
-        if not speed:
-            raise RuntimeError("NWS gridpoint response had no windSpeed data")
+        speed, gust, wdir, rh, temp = self._grid_series(loc)
 
         t0 = min(speed)
         t_end = min(max(speed), t0 + int(horizon_h * 3600.0))

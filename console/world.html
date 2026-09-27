@@ -646,6 +646,9 @@ const layers = {
   incidents: L.layerGroup().addTo(map), badges: L.layerGroup().addTo(map),
   crews: L.layerGroup().addTo(map), notes: L.layerGroup().addTo(map),
 };
+// SAFETY SEMANTICS 17 (watch --weather-grid-km): the forecast points each
+// domain spread on, drawn at the regional and local tiers (drawWeather)
+layers.weather = L.layerGroup().addTo(map);
 let STATE = null, SUMMARY = null, fitted = false, lastCycleT = null, pollPeriod = null;
 let lastTier = null;
 {
@@ -816,6 +819,36 @@ function offmapChip(c) {
     "SAFETY SEMANTICS 15): " + (parts.join(", ") || "none this cycle"))}">off-domain per fire</span>` +
     `<b>${parts.length ? esc(parts.join(" · ")) : "—"}</b>`;
 }
+// SAFETY SEMANTICS 17 (watch --weather-grid-km): where the local weather
+// differs — the forecast points a domain spread on (every cell takes its
+// nearest point's forecast) and how far they disagree. Present only when the
+// daemon armed the rule (the row carries a "weather" block).
+function wxColor(mps) {
+  return mps >= 12 ? "#d7263d" : mps >= 8 ? "#f46036" : mps >= 5 ? "#f6ae2d" : "#2e86ab";
+}
+function wxRange(x) {
+  if (!x) return "";
+  return `${Number(x.wind_mps[0]).toFixed(1)}–${Number(x.wind_mps[1]).toFixed(1)} m/s, ` +
+    `directions within ${Math.round(x.dir_arc_deg)}°, RH ${Math.round(x.rh_pct[0])}–${Math.round(x.rh_pct[1])}%`;
+}
+function weatherLine(r) {
+  const w = r && r.weather;
+  if (!w) return "";
+  const a = w.across_points || [];
+  const now = a[0], last = a[a.length - 1];
+  return `<b>LOCAL WEATHER</b>: ${w.points_n} forecast point(s), ${esc(w.spacing_km)} km lattice` +
+    (w.failed ? ` · <span class="bad">${w.failed} failed (their zones use the centroid)</span>` : "") +
+    (now ? `<br><i>now</i>: ${esc(wxRange(now))}` : "") +
+    (last && last !== now ? `<br><i>+${esc(last.h)} h</i>: ${esc(wxRange(last))}` : "");
+}
+function weatherPointTip(r, p) {
+  const hrs = (p.hours || []).map(h => `+${h.h} h: ${Number(h.wind_mps).toFixed(1)} m/s ` +
+    `(gust ${Number(h.gust_mps).toFixed(1)}) from ${Math.round(h.dir_deg)}° · RH ${Math.round(h.rh_pct)}%`);
+  return `<b>${esc(r.name || r.incident_id)}</b> · weather point ${esc(p.zone)} ` +
+    `(${p.role === "primary" ? "fire centroid" : "lattice node"}, ${esc(p.cells)} cells)` +
+    (p.ok ? "" : `<br><span class="bad">fetch failed — this zone spreads on the centroid forecast</span>`) +
+    `<br>${hrs.map(esc).join("<br>")}`;
+}
 function incidentTip(r) {
   const t = SUMMARY && SUMMARY.t_s;
   const lines = [`<b>${esc(r.name || r.incident_id)}</b> · ${esc(srcLabel(r.source))}` +
@@ -835,6 +868,8 @@ function incidentTip(r) {
   }
   const om = offmapLine(r);
   if (om) lines.push(om);
+  const wl = weatherLine(r);
+  if (wl) lines.push(wl);
   const extra = (r.notes || []).filter(n => n !== r.why_no_domain &&
     !(r.offmap && String(n).startsWith("off-domain horizon")));
   if (extra.length) lines.push(extra.map(esc).join("<br>"));
@@ -902,6 +937,32 @@ function drawPerimetersAndRings() {
           L.polyline(ring, { color: st.color, weight: st.weight, dashArray: st.dashArray,
             opacity: 0.95 }).bindTooltip(tip).addTo(layers.rings);
         }
+      }
+    }
+  }
+}
+function drawWeather() {
+  // each point: a dot coloured by its wind now, and a stroke toward where
+  // that wind blows (length ~0.9 km per m/s, capped at 15 km)
+  const rows = SUMMARY ? SUMMARY.incidents : [];
+  for (const r of rows) {
+    const w = r.weather;
+    if (!w || !Array.isArray(w.points)) continue;
+    for (const p of w.points) {
+      if (p.lat == null || p.lon == null) continue;
+      const h0 = (p.hours || [])[0];
+      const spd = h0 ? Number(h0.wind_mps) : 0;
+      const col = p.ok ? wxColor(spd) : "#8a8a8a";
+      const tip = weatherPointTip(r, p);
+      L.circleMarker([p.lat, p.lon], { radius: p.role === "primary" ? 6 : 4.5, color: "#0e2038",
+        weight: 1, fillColor: col, fillOpacity: 0.9 }).bindTooltip(tip).addTo(layers.weather);
+      if (h0 && spd > 0) {
+        const km = Math.min(15, 0.9 * spd);
+        const b = (Number(h0.dir_deg) + 180) * Math.PI / 180;
+        const dlat = km / 111.19 * Math.cos(b);
+        const dlon = km / (111.19 * Math.cos(p.lat * Math.PI / 180)) * Math.sin(b);
+        L.polyline([[p.lat, p.lon], [p.lat + dlat, p.lon + dlon]], { color: col, weight: 2.5,
+          opacity: 0.9 }).bindTooltip(tip).addTo(layers.weather);
       }
     }
   }
@@ -1062,6 +1123,7 @@ function renderMap() {
     drawIncidents(tier);
   } else {
     drawPerimetersAndRings();
+    drawWeather();
     drawCrewsAndZones(tier);
     drawClients(tier);
     drawIncidents(tier);

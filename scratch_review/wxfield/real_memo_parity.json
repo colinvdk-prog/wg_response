@@ -1,0 +1,68 @@
+{
+ "now_s": 1790524542.7457986,
+ "grid_km": 10.0,
+ "domains": [
+  {
+   "incident_id": "548a8d28-1a04-48ee-9011-aba023175d43",
+   "name": "Willow",
+   "cells": 300544,
+   "zones": 16,
+   "solves": {
+    "legacy_memo": {
+     "wall_s": 0.73,
+     "rothermel_evals": 51753,
+     "reached": 58163
+    },
+    "zoned_memo": {
+     "wall_s": 0.69,
+     "rothermel_evals": 52605,
+     "reached": 57975
+    },
+    "zoned_ref": {
+     "wall_s": 1.56,
+     "rothermel_evals": 56860,
+     "reached": 57975
+    },
+    "legacy_ref": {
+     "wall_s": 1.5,
+     "rothermel_evals": 57048,
+     "reached": 58163
+    }
+   },
+   "zoned_memo_eq_ref": true,
+   "legacy_memo_eq_ref": true,
+   "zoned_differs_from_legacy": true
+  },
+  {
+   "incident_id": "3047875a-2c3d-4100-9f17-4643a132cefb",
+   "name": "DARK",
+   "cells": 209397,
+   "zones": 9,
+   "solves": {
+    "legacy_memo": {
+     "wall_s": 0.09,
+     "rothermel_evals": 4649,
+     "reached": 4680
+    },
+    "zoned_memo": {
+     "wall_s": 0.08,
+     "rothermel_evals": 4649,
+     "reached": 4680
+    },
+    "zoned_ref": {
+     "wall_s": 0.15,
+     "rothermel_evals": 4680,
+     "reached": 4680
+    },
+    "legacy_ref": {
+     "wall_s": 0.14,
+     "rothermel_evals": 4680,
+     "reached": 4680
+    }
+   },
+   "zoned_memo_eq_ref": true,
+   "legacy_memo_eq_ref": true,
+   "zoned_differs_from_legacy": true
+  }
+ ]
+}
