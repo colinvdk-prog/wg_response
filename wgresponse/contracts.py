@@ -296,6 +296,67 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    Both knobs OFF = byte-identical cycles, persisted state and /api/state
    (pinned in tests/test_contained_removal.py against goldens computed on
    commit a8bebec, before this rule existed, on a world where both bite).
+15. THE OFF-DOMAIN HORIZON IS PER FIRE (founder rule 2026-09-27, verbatim:
+   "the cap at extrapolation should include the rate of fire spread vs.
+   drive time through the region. the pathway only becomes unaccessible
+   when the crossing time between fire and road is less than 1 hour unless
+   the fire has shown rapid rate of spread"; docs/LIVE_WORLD_PLAN.md ticket
+   1.5, "The off-domain horizon is per fire (2026-09-27)";
+   cfg.corridor_offraster_per_fire, default OFF; watch --offmap-per-fire).
+   Measured stake: under --fail-closed the flat 1.7 m/s bound let the 80 %-
+   contained Willow fire, reported "Minimal | Smoldering, Creeping", veto a
+   seeded job ~69 km away that is served when Willow is absent. The rule
+   changes ONLY the fail-closed bound of SEMANTICS 3 (corridor_fail_closed /
+   corridor_unreached_bound): the arrival given to a corridor sample OFF a
+   fire's forecast raster, or UNREACHED inside it, = min over that fire's
+   reached boundary runs of t_run + distance / speed.
+   (a) SPEED PER FIRE. corridor_offraster_ros_mps (1.7 m/s) is the CEILING.
+       A fire extrapolates at the ceiling when it is RAPID, or when its
+       behaviour is UNKNOWN (a new or unreported fire has not shown it is
+       slow; seeded fires are always unknown). A KNOWN, not-rapid fire
+       extrapolates at clamp(front, corridor_offraster_ros_floor_mps,
+       ceiling): front = the P90 (nearest rank) over the fire's RAW (un-
+       eroded) P10 raster's reached boundary cells of the outward front
+       speed cell_m / (arrival(boundary cell) - arrival(inward neighbour)),
+       counting only cells whose inward neighbour burned earlier — the
+       forecast's own speed where the fire crosses its domain edge. No such
+       cell (the raw front never crosses the edge) = the ceiling.
+   (b) STATUS FROM THE FEED (wgresponse.offmap.status_for). WFIGS incident
+       points carry FireBehaviorGeneral + FireBehaviorGeneral1-3 (meta
+       fire_behavior, fire_behavior_descriptors, fire_behavior_at_s = the
+       record's ModifiedOnDateTime). KNOWN = a report in the recognized
+       IRWIN vocabulary no older than cfg.fire_behavior_max_age_h. RAPID = a
+       known report whose general behaviour is Very Active or Extreme, or
+       with any descriptor Running, Wind Driven Runs, Uphill Runs, Crowning
+       or Long-range Spotting. Contradictions resolve toward rapid (a 100 %-
+       contained fire still reported Extreme | Running is rapid; so is
+       "Minimal" beside a Running descriptor). Other status sources OR-
+       combine (offmap.merge_status): rapid if any says rapid, known if any
+       knows.
+   (c) THE CROSSING-TIME MARGIN. A sample whose arrival came from that bound
+       is unsafe when bound - pass_time < max(the leg's own margin,
+       cfg.corridor_offraster_margin_min) — the founder's hour
+       (--offmap-per-fire sets 60). Samples inside the forecast keep their
+       calibrated margins (route_margin_min / route_margin_roads_min). For
+       rapid and unknown fires the speed is the legacy ceiling, so there the
+       margin can only add conservatism.
+   (d) NEVER SILENT. Per domain incident: one cycle note, CycleResult.offmap
+       (contracts.OffDomainHorizon: speed, reason, margin, status), and with
+       the knob armed an "offmap" block on its /api/state incident row and
+       its /api/world/summary row. dispatch.plan takes the table as
+       offmap={incident_id: OffDomainHorizon}; the simulator never passes it.
+   (e) WHAT IT CANNOT SEE: the front speed is the forecast's speed at the
+       edge crossing. A known-slow fire that runs faster beyond its domain —
+       an unforecast wind event, a forecast wind shift after it crossed its
+       edge, a behaviour report lagging the fire (the record's modified time
+       is not the behaviour's own time) — is extrapolated LATE; the floor
+       and the margin absorb only part of it (measured in the plan section).
+       A fire that never reaches its edge within the horizon keeps the
+       legacy law (no bound at all).
+   Knob OFF = byte-identical cycles, plans, persisted state, /api/state and
+   /api/world/summary (pinned in tests/test_offmap_horizon.py against goldens
+   computed on commit 6c748c5, before this rule existed, on a world where it
+   bites).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -368,6 +429,11 @@ wgresponse.feeds
     # each source's freshest member) and perimeter_newest_at_s (the newest
     # polygon time over every member); perimeter_acres follows the perimeter
     # owner like perimeter_at_s.
+    # SAFETY SEMANTICS 15 (2026-09-27) WFIGS incident-point meta (each set
+    # only when the record carries a behaviour report): fire_behavior (str,
+    # FireBehaviorGeneral), fire_behavior_descriptors (list[str],
+    # FireBehaviorGeneral1-3, non-empty ones in field order),
+    # fire_behavior_at_s (the record's ModifiedOnDateTime, unix s).
 
 wgresponse.weather
     class NwsWeather / OpenMeteoWeather / MockWeather   (WeatherProvider protocol)
@@ -394,6 +460,16 @@ wgresponse.threat
         # SAFETY SEMANTICS 13: contained_signals(inc) -> (signals,
         # contradictions); CycleResult.removed_incidents carries this cycle's
         # RemovedIncident rows ([] unless cfg.drop_contained_incidents).
+        # SAFETY SEMANTICS 15: CycleResult.offmap = {incident_id:
+        # OffDomainHorizon} for every domain incident ({} unless
+        # cfg.corridor_offraster_per_fire), forwarded to dispatch.plan(offmap=).
+
+wgresponse.offmap   (2026-09-27; SAFETY SEMANTICS 15 — the per-fire off-domain horizon)
+    status_for(inc, now_s, cfg) -> (known, rapid, reasons)   # the feed's behaviour status
+    merge_status(*statuses) -> (known, rapid, reasons)       # OR-combine (tuples or .known/.rapid/.reasons)
+    front_speed_stats(p10) -> (p90_mps | None, max_mps | None, n)
+    horizon_for(incident_id, p10, status, cfg) -> OffDomainHorizon
+    horizons(incidents, ensembles, now_s, cfg, status=None) -> dict[str, OffDomainHorizon]
 
 wgresponse.seeded   (W1, 2026-09-26; SAFETY SEMANTICS 12)
     class SeededIncidentStore  .create(...) -> SeededIgnition  .add(ign)
@@ -414,6 +490,10 @@ wgresponse.dispatch
     plan(crews: list[Crew], jobs: list[DispatchJob], ens: dict[str, EnsembleArrival],
          safe_zones: list[SafeZone], cfg: ResponseConfig, now_s: float,
          incumbent: DispatchPlan | None = None) -> DispatchPlan
+        # SAFETY SEMANTICS 15: optional offmap={incident_id: OffDomainHorizon
+        # | (ros_mps, margin_min, reason)} — that incident's fail-closed bound
+        # extrapolates at ros_mps with margin max(leg margin, margin_min);
+        # None / a missing incident = the legacy flat law, byte-identical.
 
 wgresponse.travel
     travel_time_s(a: LatLon, b: LatLon, cfg: ResponseConfig) -> float
@@ -635,6 +715,9 @@ wgresponse.cli
     # SAFETY SEMANTICS 13: --drop-contained arms drop_contained_incidents
     # (/api/state gains removed_contained + removed_incidents),
     # --confirmed-perimeters arms perimeter_confirmed_anchor.
+    # SAFETY SEMANTICS 15: --offmap-per-fire arms corridor_offraster_per_fire
+    # with corridor_offraster_margin_min = 60 (the founder's hour); /api/state
+    # incidents and the world summary rows gain an "offmap" block.
 ============================================================================
 """
 from __future__ import annotations
@@ -1270,6 +1353,39 @@ class CorridorVerdict:
     worst_margin_h: float = UNREACHED  # min(arrival - pass_time) along the leg, hours
 
 
+@dataclass(frozen=True)
+class OffDomainHorizon:
+    """One fire's OFF-DOMAIN HORIZON for the fail-closed corridor bound
+    (SAFETY SEMANTICS 15; cfg.corridor_offraster_per_fire). Built by
+    wgresponse.offmap per domain incident each cycle, carried on
+    CycleResult.offmap and handed to dispatch.plan(offmap=...): a corridor
+    sample off this fire's raster (or UNREACHED inside it) gets the arrival
+    min over its reached boundary runs of t_run + distance / ros_mps and is
+    unsafe when that arrival - pass_time < max(the leg's margin, margin_min).
+
+    kind: 'rapid' | 'unknown' (both at the ceiling) | 'per_fire' (the P90
+    front speed, inside [floor, ceiling]) | 'floor' (front slower than the
+    floor) | 'ceiling_front' (front faster than the ceiling) | 'no_front'
+    (known slow, but the raw front never crosses the edge: the ceiling) |
+    'no_bound' (the forecast stays well inside its domain: nothing is
+    extrapolated, legacy). reason: the human line ('ceiling: rapid', 'per-
+    fire: P90 front speed 1.4 km/h', ...). known / rapid / status_reasons:
+    the behaviour status that chose the kind. front_p90_mps / front_max_mps /
+    front_n: the raw-P10 boundary front statistics (None / 0 when no cell
+    crosses the edge)."""
+    incident_id: str
+    ros_mps: float
+    margin_min: float
+    reason: str
+    kind: str
+    known: bool = False
+    rapid: bool = False
+    status_reasons: tuple = ()
+    front_p90_mps: Optional[float] = None
+    front_max_mps: Optional[float] = None
+    front_n: int = 0
+
+
 # ---------------------------------------------------------------------------
 # Orchestration outputs
 # ---------------------------------------------------------------------------
@@ -1302,6 +1418,7 @@ class CycleResult:
     degraded: bool = False             # True when any provider was blind/failed this cycle
     timings: dict = field(default_factory=dict)  # cycle phase wall-times (s): feeds/assess/alerts/dispatch + per-incident terrain/weather/spread (cadence telemetry, review item 6)
     removed_incidents: list = field(default_factory=list)  # list[RemovedIncident]: contained fires removed this cycle (SAFETY SEMANTICS 13; [] unless cfg.drop_contained_incidents)
+    offmap: dict = field(default_factory=dict)  # incident_id -> OffDomainHorizon per domain incident (SAFETY SEMANTICS 15; {} unless cfg.corridor_offraster_per_fire)
 
 
 # ---------------------------------------------------------------------------
@@ -1393,6 +1510,41 @@ class ResponseConfig:
     corridor_fail_closed: bool = False
     corridor_unreached_bound: bool = False
     corridor_offraster_ros_mps: float = 1.7
+    # OFF-DOMAIN HORIZON PER FIRE (founder rule 2026-09-27, verbatim: "the
+    # cap at extrapolation should include the rate of fire spread vs. drive
+    # time through the region. the pathway only becomes unaccessible when
+    # the crossing time between fire and road is less than 1 hour unless the
+    # fire has shown rapid rate of spread"; SAFETY SEMANTICS 15). Measured
+    # stake: the flat 1.7 m/s bound above let the 80 %-contained Willow fire
+    # (WFIGS "Minimal | Smoldering, Creeping, Smoldering") veto a seeded job
+    # ~69 km away. When True, each fire's bound extrapolates at ITS OWN
+    # forecast front speed where it crosses its domain edge (P90 over the
+    # raw P10's boundary cells, clamped to [corridor_offraster_ros_floor_mps,
+    # corridor_offraster_ros_mps]) — only when a fresh feed behaviour report
+    # says the fire is known and not rapid; rapid and unknown fires keep the
+    # 1.7 m/s ceiling (unknown = rapid: a fire that has not shown it is slow
+    # is not trusted to be). This LOOSENS the law for known-slow fires (an
+    # unforecast run beyond the domain is extrapolated late — measured in
+    # docs/LIVE_WORLD_PLAN.md). Changes only the fail-closed bound, so it is
+    # inert without corridor_fail_closed / corridor_unreached_bound. False =
+    # legacy, byte-identical; watch --offmap-per-fire (+ the 60-min margin).
+    corridor_offraster_per_fire: bool = False
+    # ... its FLOOR (m/s, ~1 km/h): a known-slow fire never extrapolates
+    # slower than this, whatever its forecast front says. Read only with
+    # corridor_offraster_per_fire.
+    corridor_offraster_ros_floor_mps: float = 0.28
+    # ... the founder's CROSSING-TIME margin (minutes): a corridor sample
+    # whose arrival came from the extrapolated bound (off-raster or
+    # unreached) is unsafe when bound - pass_time < max(the leg's own margin,
+    # this); samples inside the forecast keep their calibrated margins.
+    # 0 = the leg's own margin (legacy); --offmap-per-fire sets 60. Read only
+    # with corridor_offraster_per_fire.
+    corridor_offraster_margin_min: float = 0.0
+    # ... a WFIGS fire-behaviour report (FireBehaviorGeneral / 1-3) older
+    # than this many hours — by its record's ModifiedOnDateTime, the only
+    # time the feed gives — is STALE: behaviour unknown, the ceiling applies.
+    # Read only with corridor_offraster_per_fire.
+    fire_behavior_max_age_h: float = 48.0
     ember_buffer_min: float = 0.0      # extra safety on top of P10 (default-OFF; enable in wind events)
     # ESCAPE-TARGET HYSTERESIS (founder 2026-07-30 "fix escape target churn";
     # caught-crew dissection: a threatened crew was re-targeted to a fresh
@@ -1911,6 +2063,22 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append(f"corridor_sample_m must be > 0 and <= {MAX_CORRIDOR_SAMPLE_M:g} m")
     if cfg.corridor_offraster_ros_mps <= 0:
         problems.append("corridor_offraster_ros_mps must be > 0")
+    # --- per-fire off-domain horizon (SAFETY SEMANTICS 15) ---
+    if not cfg.corridor_offraster_ros_floor_mps > 0:
+        problems.append("corridor_offraster_ros_floor_mps must be > 0 (a "
+                        "zero floor extrapolates a fire that never arrives)")
+    elif (cfg.corridor_offraster_per_fire
+          and cfg.corridor_offraster_ros_floor_mps > cfg.corridor_offraster_ros_mps):
+        problems.append("corridor_offraster_ros_floor_mps must be <= "
+                        "corridor_offraster_ros_mps (the floor above the "
+                        "ceiling would extrapolate a known-slow fire faster "
+                        "than a rapid one)")
+    if (cfg.corridor_offraster_margin_min < 0
+            or cfg.corridor_offraster_margin_min > MAX_MARGIN_MIN):
+        problems.append(f"corridor_offraster_margin_min must be within "
+                        f"[0, {MAX_MARGIN_MIN:g}] minutes")
+    if not cfg.fire_behavior_max_age_h > 0:
+        problems.append("fire_behavior_max_age_h must be > 0")
     if cfg.route_alternatives < 1:
         problems.append("route_alternatives must be >= 1")
 

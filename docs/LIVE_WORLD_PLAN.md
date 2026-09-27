@@ -182,7 +182,11 @@ What remains of W1:
   boundary cell) let the live Willow fire veto a seeded job ~69 km away that
   the planner serves with an 18.2 h margin when Willow is absent. A
   per-domain horizon that knows where each fire can actually go is what keeps
-  one large fire from freezing dispatch across a region.
+  one large fire from freezing dispatch across a region. **Built 2026-09-27
+  as the per-fire off-domain horizon** (SAFETY SEMANTICS 15, default OFF,
+  watch `--offmap-per-fire`): with the contained-fire flags it serves that
+  job; the "left the domain" half of 1.5 is still open. See "The off-domain
+  horizon is per fire (ticket 1.5, 2026-09-27)" under W6 below.
 - **Policy before real crews (W4):** a seeded fire is real to the engine —
   its P10 enters every corridor check and its jobs enter the plan — so on a
   daemon with real crews a drill would re-route them. The drill-safe notifier
@@ -612,7 +616,219 @@ miss 2.3 %, and every scored pair byte-identical.
   rule (smaller always confirms) would anchor Crosswhite-type records.
 - Pairs already IMPACTED by earlier legacy cycles stay IMPACTED.
 - The off-raster veto is the dominant remaining dispatch constraint near
-  large fires.
+  large fires. The per-fire off-domain horizon (next section) lifts it for
+  fires the feed reports slow.
+
+#### The off-domain horizon is per fire (ticket 1.5, 2026-09-27)
+
+Founder rule, verbatim: *"the cap at extrapolation should include the rate of
+fire spread vs. drive time through the region. the pathway only becomes
+unaccessible when the crossing time between fire and road is less than 1 hour
+unless the fire has shown rapid rate of spread"*. Built as contracts SAFETY
+SEMANTICS 15 (`wgresponse/offmap.py`), four default-OFF knobs, armed by
+`watch --offmap-per-fire`. With the knob off, the cycles, plans, `/api/state`,
+the persisted file and `/api/world/summary` are byte-identical to goldens
+computed on commit 6c748c5 on a world where the rule bites
+(`tests/test_offmap_horizon.py`).
+
+**For the founder.** Until now, once a fire's forecast reached the edge of
+the area we model around it, the engine assumed the fire could keep running
+beyond that edge at 6 km/h, the pace of a wind-driven grass fire at its worst,
+for every fire and forever. That is why Willow, which the national feed
+reports as 80 % contained and "Minimal: smoldering, creeping", closed every
+road within about 128 km, including the road to a job 69 km away. With the
+new option on, a fire the feed has reported as not running within the last
+two days is extrapolated at its own pace: the speed its forecast front was
+moving where it left the modelled area, never slower than 1 km/h. A road
+beyond the modelled area stays open unless that fire could reach it within one
+hour of the crew driving through. Willow's roads then close within about 57 km
+instead of 128 km (for a crew passing an hour from now), and the 69-km job is
+served, with the same 18-hour margin it has when Willow is absent. Roads near
+Willow stay closed, and so does Willow's own client-009 job. Nothing opens up
+for a fire the feed reports running, crowning or spotting long-range, for a
+fire with no report or an old one, or for a drill fire. Those keep 6 km/h and
+now also need the full hour. Two things it cannot see: a wind change the
+weather forecast does not carry, and faster fuel beyond the modelled area
+(grass past an edge that sits in timber). In both cases the engine's estimate
+of when the fire reaches a distant road can come too late. In the tests below
+a crew the rule lets through could be caught from 13 to 38 km beyond the edge,
+depending on the surprise. What catches a surprise is the next weather
+forecast, once it carries the wind, or the feed's "running" report, which
+arrives as fast as the incident team updates IRWIN, often once a day.
+
+| Question | Answer as built |
+|---|---|
+| What changes | Only the fail-closed corridor bound (`--fail-closed`): the arrival given to a corridor sample off a fire's forecast raster, or unreached inside it, is min over that fire's reached boundary runs of t_run + distance / speed. The rule gives each domain fire its own speed and a crossing-time margin. It is inert without `--fail-closed`, and the simulator never passes it. |
+| Knobs | `corridor_offraster_per_fire` (False); `corridor_offraster_ros_floor_mps` (0.28, about 1 km/h); `corridor_offraster_margin_min` (0 = the leg's own margin; the flag sets 60); `fire_behavior_max_age_h` (48). The ceiling stays `corridor_offraster_ros_mps` (1.7 m/s, 6.1 km/h). |
+| The speed | RAPID or UNKNOWN: the ceiling. Unknown defaults to rapid: a new or unreported fire has not shown it is slow, and every seeded fire is unknown. KNOWN and not rapid: clamp(front, floor, ceiling). A fire whose forecast stays inside its domain extrapolates nothing (`no_bound`), as before. |
+| The front speed | Over the RAW (un-eroded) P10 raster's reached boundary cells whose inward neighbour burned earlier: cell / (arrival(boundary) − arrival(inward neighbour)), the speed the forecast front crosses the domain edge. The statistic is the **P90 (nearest rank)**; see the P90-vs-max evidence below. No crossing cell: the ceiling (`no_front`). |
+| The status (feed) | WFIGS incident points now carry `FireBehaviorGeneral` + `FireBehaviorGeneral1-3` (meta `fire_behavior`, `fire_behavior_descriptors`, `fire_behavior_at_s` = the record's `ModifiedOnDateTime`; live schema and values checked today). KNOWN: a report in the recognized IRWIN vocabulary no older than 48 h. RAPID: a known report with general Very Active / Extreme, or any descriptor Running / Wind Driven Runs / Uphill Runs / Crowning / Long-range Spotting. Contradictions resolve toward rapid (0433 BREWER: 100 % contained yet "Extreme \| Torching, Spotting, Running"; "Minimal" beside "Uphill Runs"). A term outside the vocabulary never vouches for a slow fire. |
+| The margin | A BOUNDED sample is unsafe when bound − pass < max(the leg's margin, 60 min). Samples inside the forecast keep 56 min (chord, every live watcher leg) / 30 min (road). For rapid and unknown fires the speed is the legacy ceiling, so the hour only adds conservatism there (chord 56 → 60 min). |
+| Status seam | `offmap.status_for(inc, now_s, cfg) -> (known, rapid, reasons)`; `offmap.merge_status(...)` OR-combines tuples or objects with `.known/.rapid/.reasons` (rapid if any says rapid, known if any knows); `offmap.horizons(..., status={incident_id: FireStatus})` takes the per-fire spread belief when it lands (one argument in `ThreatMonitor._offmap_horizons`). |
+| Surfacing | One cycle note per domain fire ("incident <id>: off-domain horizon 2.7 km/h (per-fire: P90 front speed 2.7 km/h); bounded samples clear max(leg margin, 60 min) — behaviour: …"); `CycleResult.offmap` (`contracts.OffDomainHorizon`); `/api/state` `offmap_rule` + an `offmap` block on every incident row (null without a domain); the world summary rows, `counts.offmap` and the `/world` tooltip, rank list and header chip. All present only with the knob armed. |
+
+**The Willow replay** (`scratch_review/offmap/willow_offmap.py`,
+`willow_offmap.json`). This is the W1 drill's phase-5 seed and three beacon
+crews on the Vail → Aspen AOI, beside Willow as recorded at 15:55Z, with the
+production flags (all of them include `--fail-closed`), the drill's cached
+LANDFIRE tiles and cached NWS forecasts. The recorded points body carries the
+behaviour of the same record revisions: 368 of the 377 recorded point records
+are unchanged in a live query at 17:01Z, 145 of them with a behaviour report.
+Willow's is "Minimal \| Smoldering, Creeping, Smoldering", 19.7 h old: known,
+not rapid. Recipe: `py -3 scratch_review/offmap/behavior_snapshot.py record`
+writes the live behaviour fields to the gitignored `out/offmap/`; then run
+`willow_offmap.py`, `national_offmap.py` and `miss_case.py`. The recorded
+payloads, tiles and NWS cache are the contained-fire study's `out/contained/`.
+
+| Variant | Willow beyond its domain | Latest safe departure, E2 → client-001 | The 69-km seeded job | Willow's own homes |
+|---|---|---|---|---|
+| seed only (no Willow) | — | — | served: E2, arrive +1.61 h, margin 18.21 h | — |
+| A: production flags | 6.1 km/h from an edge crossed 258.6 h ago | now − 249.2 h | `no_safe_corridor` | 6 `infeasible_deadline` |
+| B: + contained-fire flags | 6.1 km/h from 18.8 h ago | now − 9.4 h | `no_safe_corridor` | client-009 `no_safe_corridor` |
+| **C: B + `--offmap-per-fire`** | **per-fire 2.7 km/h (P90), 60-min margin** | **now + 4.2 h** | **served: E2, arrive +1.61 h, margin 18.21 h** | client-009 `no_safe_corridor` |
+| D: A + `--offmap-per-fire` (no anchor) | per-fire 2.6 km/h from 258.6 h ago | now − 234.5 h | `no_safe_corridor` | 6 `infeasible_deadline` |
+| E: C with Willow reported "Active \| Running" (hypothetical) | ceiling: rapid, 60-min margin | now − 9.5 h | `no_safe_corridor` | client-009 `no_safe_corridor` |
+
+The two rules need each other. The anchor (SAFETY SEMANTICS 13e) says when
+Willow reached its edge: 18.8 h ago, not 258.6 h ago. The per-fire horizon
+says how fast it goes from there. D shows the per-fire speed alone does not
+lift the refusal: 258.6 h at 2.6 km/h is still ~670 km.
+
+**Veto reach** (measurement 2): Willow's real ensemble under B (the
+contained-fire flags on; 477 × 631 cells at 91.5 m; the front first crossed
+the edge 18.8 h ago). This is the distance beyond the edge the front crossed
+first at which a sample passed one hour from now is refused:
+R = ((pass + margin − t_b) × v + 0.71 cell) / 0.99.
+
+| Extrapolation | Speed | Margin, chord / road leg | Reach, chord / road |
+|---|---|---|---|
+| (a) today | 6.12 km/h | 56 / 30 min | **127.9 / 125.3 km** |
+| (b) the rule, known slow | 2.72 km/h (P90) | 60 / 60 min | **57.0 / 57.0 km** |
+| (b′) the rule with the max statistic | 1,601.6 km/h, clamped to 6.12 | 60 / 60 min | 128.3 / 128.3 km |
+| (c) the rule, rapid or unknown | 6.12 km/h | 60 / 60 min | 128.3 / 128.3 km |
+
+![Willow's off-domain veto, today vs the per-fire rule](review/offmap_willow_veto_2026-09-27.png)
+
+The left panel shows where Willow's bound refuses a sample passed one hour from
+now: (a) and (c) cover the whole corridor, while (b) leaves the job, E2's leg and
+E1 outside and still closes the roads within about 57 km of the edge (E3
+at Avon is inside). The right panel shows the reach growing with the pass time
+at each speed. A per-fire horizon opens a road for a while, not for good:
+E2 can leave for client-001 until +4.2 h.
+
+**P90, not max.** On the real domains, the upper tail of the boundary speeds
+is made of artefacts. There are oblique crossings, where a front running
+nearly parallel to an edge reads v / cos(angle), and single-cell teleports
+(spotting, quantile seams).
+
+| Domain | Crossing cells | P50 | P90 | P95 | Max |
+|---|---|---|---|---|---|
+| Willow, drill domain (anchored) | 628 | 0.73 | **2.72** | 5.52 | 1,601.6 km/h |
+| Willow, drill domain (legacy seeding) | 1,351 | 0.54 | **2.59** | 4.71 | 1,124.8 km/h |
+| Willow, national domain (anchored) | 471 | 0.73 | **2.28** | 5.24 | 191.8 km/h |
+| DARK (national; no report, so the ceiling applies) | 107 | 1.3 | **5.28** | 7.74 | 860.0 km/h |
+| LUCAS (national; no report) | 9 | 0.85 | 16.56 | 16.56 | 16.6 km/h |
+
+The max is above the ceiling on every domain that crosses its edge, so a max
+rule would equal the legacy law everywhere. P90 needs 10 % of the crossing
+cells to agree. It still sits above the median (oblique crossings only ever
+read fast), and it can sit below the head's speed when the head crosses fewer
+than 10 % of the cells (a fire that crosses long flanks and a short head).
+The ceiling clamps what is left. Below 10 crossing cells the nearest-rank P90
+is the maximum (LUCAS).
+
+**Who the rule touches** (`scratch_review/offmap/national_offmap.py`,
+`national_offmap.json`: the recorded national snapshot, production flags,
+contained-fire flags, the rule, one cycle in 13.2 s). Of the 213 incidents
+on the map, 50 are known slow, 4 are rapid and 159 are unknown (141 with no
+report, 18 stale beyond 48 h). The rapid ones are Timber Fire (77 %,
+"Minimal \| Creeping, Backing, Uphill Runs"), Stone Bridge (60 %, "Extreme \|
+Spotting, Uphill Runs"), SECOND STREET (60 %, "Extreme \| Running") and Dome
+Fire (30 %, "Moderate \| Flanking, Uphill Runs, Single Tree Torching"). 13 of
+the 16 domains never reach their edge, so the bound, and with it the rule, is
+moot there. Of the other three, Willow extrapolates at 2.28 km/h (the reach
+for a pass one hour from now goes from 96.3 to 36.0 km). DARK and LUCAS have no
+report and keep the ceiling. DARK's reach grows from 6.2 to 6.7 km: that is
+the hour margin.
+
+**What it can miss** (measurement 3; `scratch_review/offmap/miss_case.py`,
+`miss_case.json`). The engine serves as its own truth, so only the rule is on
+trial. A point fire starts in uniform fuel with a client 1 km downwind, and the
+operational domain is the live law's bbox + 2 km (5.0 × 4.0 km). The forecast
+ensemble runs with the production physics flags. The rule reads its P10 crossing
+with a fresh known-slow report. The truth is the nominal run on a 72 × 24 km
+domain under the weather or fuel that actually happens. "Late" means the bound
+reaches a point along the downwind line later than the truth does. The law
+passes a crew while bound − pass ≥ its margin, so a crew it lets through can
+be overrun once the bound is later than the truth by more than the margin: 60
+min for the rule, 56 min for the legacy chord law.
+
+| Scenario | Rule speed (P90) | Truth beyond the edge | Rule late from | Rule: crew can be overrun from | Legacy 6.1 km/h: overrun from |
+|---|---|---|---|---|---|
+| S0 steady 4 m/s, grass | 4.0 km/h | 1.7 km/h | never | never | never |
+| S1 forecast wind 4 → 12 m/s at +1 h | 6.1 km/h (P90 6.7 over the ceiling) | 5.0 km/h | never | never | never |
+| S2 **unforecast** wind 4 → 12 m/s at +1 h | 4.0 km/h | 5.0 km/h | 16 km | **38.5 km** (118 min late at 60 km) | never |
+| S3 **unforecast** extreme 4 → 20 m/s | 4.0 km/h | 8.3 km/h | 5 km | **13 km** (414 min late at 60 km) | 37 km (late from 14.5 km) |
+| S4 timber domain, **grass beyond it**, 6 m/s | 1.8 km/h | 2.5 km/h | 19.5 km | **26.5 km** | never |
+| S5 = S2 without the ensemble model-error term | 1.6 km/h | 5.0 km/h | 0 km | **2.25 km** | never (≤ 5 min late) |
+| S6 timber domain, grass beyond, 2 m/s | 1.0 km/h (floor; P90 0.6) | 0.8 km/h | never | never (22.5 km without the floor) | never |
+
+What guards what:
+
+- **The floor** (1 km/h) catches S6. The raw 0.6 km/h front would let crews
+  be overrun from 22.5 km. It does nothing in S2–S5, whose fronts are faster
+  than 1 km/h.
+- **The hour margin** turns "late" into "a crew can be caught" only past
+  38.5 km (S2), 13 km (S3), 26.5 km (S4) and 2.25 km (S5). Lateness grows by
+  (1/v − 1/u) per km, about 2.7 min/km in S2, 7.5 in S3 and 8.7 in S4.
+- **The rapid flag** is feed-driven and none of these runs has it. It catches
+  a surprise run only once the incident team reports Running / Wind Driven
+  Runs and WFIGS republishes the record, which is often the daily ICS-209
+  cadence. The first hours of a surprise are exactly what it misses. Its
+  timestamp is the record's modified time, not the behaviour's own, so a
+  record refreshed for any other field keeps an old "Minimal" fresh.
+- **Not a guard of this rule, but it is what keeps S0 safe and S2 safe out
+  to 38.5 km.** The production ensemble's model-error term (`--model-error
+  0.71`) makes the P10 front the rule reads run 2.4 × the nominal (4.0 vs
+  1.7 km/h in S0). Without it (S5) the bound is late from the edge.
+- **The forecast refresh.** Every cycle re-forecasts. A fire anchored in the
+  past re-runs its past hours with the current forecast's earliest weather
+  (hours before the NWS series use its first hour), so a wind change reaches
+  its crossing speed as soon as the forecast carries it for the current
+  hours. A wind shift forecast for later hours does not reach a fire that
+  crossed its edge before now. That fire's extrapolated front has a head start
+  of speed × time since the crossing: Willow's is about 51 km today. What
+  stays invisible is wind the forecast never carries (S2, S3) and fuel beyond
+  the domain (S4, S6).
+- The legacy ceiling is not safe against the most extreme runs either (S3:
+  crews could be caught from 37 km).
+
+**Tests and suite.** `tests/test_offmap_horizon.py` (49 tests;
+`tests/offmap_stack.py` is the Willow-shaped world: a known-slow fire whose
+flat bound refuses a job 80 km away, served under the rule) pins the byte
+identity, the status vocabulary and contradictions, the floor and ceiling,
+`no_bound` / `no_front`, the margin per sample, T* = verdict, monotonicity,
+the status seam, the surfacing (incl. the `/world` page), the flag and the
+simulator's non-use.
+`tests/test_fix_program_2.py` parses `--offmap-per-fire` with the production
+command. No existing test was re-pinned.
+
+**Open:**
+
+- The owner decides whether to arm it. It loosens the law for known-slow
+  fires by design, and the miss cases above are the price.
+- The behaviour time is the record's `ModifiedOnDateTime`, not the report's.
+  WFIGS carries no per-field time.
+- Fuel beyond the domain is invisible (S4). A fuel-aware extrapolation (the
+  national LANDFIRE layer, W2) would close it.
+- P90 can undershoot the head when flanks dominate the crossings. A per-edge
+  statistic is the next refinement if that shows up on real domains.
+- For unknown and rapid fires the hour margin tightens bounded samples: chord
+  56 → 60 min (+0.4 km of reach at 6.1 km/h). Road legs (30 → 60 min) would
+  follow only if the watcher planned on roads; today only the simulator does,
+  and it never passes the rule.
+- The "left the domain" half of ticket 1.5 (crews and the map) is not part of
+  this build.
 
 ### W7 — Scale, cost, operations
 

@@ -30,6 +30,11 @@ per completed cycle from the daemon's last CycleResult:
      are all unreached within the horizon after every domain with a finite
      arrival), then every other incident by acreage, largest first (no
      acreage last); ties by incident id — deterministic.
+  5. OFF-DOMAIN HORIZONS (contracts SAFETY SEMANTICS 15; only when the
+     daemon runs --offmap-per-fire, i.e. its /api/state carries
+     offmap_rule): each row's "offmap" (the speed its fail-closed corridor
+     bound extrapolates at beyond its domain, why, the crossing margin;
+     null without a domain), the rule itself and counts.offmap by kind.
 
 summary_from_state(state) builds the same shape from a bare /api/state
 dict (no domains, no geometry) so the page also works over `serve --demo`
@@ -295,6 +300,15 @@ def _counts(state: dict, rows: list, notes) -> dict:
         # SAFETY SEMANTICS 13c (the daemon's --drop-contained): contained
         # fires removed from the map this cycle — additive, only when armed
         out["removed_contained"] = int(state.get("removed_contained") or 0)
+    if isinstance(state.get("offmap_rule"), dict):
+        # SAFETY SEMANTICS 15d (the daemon's --offmap-per-fire): domain
+        # fires by off-domain horizon kind — additive, only when armed
+        kinds: dict = {}
+        for r in rows:
+            k = (r.get("offmap") or {}).get("kind")
+            if k:
+                kinds[k] = kinds.get(k, 0) + 1
+        out["offmap"] = dict(sorted(kinds.items()))
     return out
 
 
@@ -309,6 +323,10 @@ def build_summary(state: dict, result, geometry: bool = True) -> dict:
     notes = list(getattr(result, "notes", None) or [])
     incs = list(getattr(result, "incidents", None) or [])
     note_map = incident_notes(notes, [i.incident_id for i in incs])
+    # SAFETY SEMANTICS 15d: the per-fire off-domain horizon, present only
+    # when the daemon armed it (its /api/state carries offmap_rule)
+    per_fire = isinstance(state.get("offmap_rule"), dict)
+    horizons = getattr(result, "offmap", None) or {}
     rows = []
     for inc in incs:
         iid = inc.incident_id
@@ -342,9 +360,13 @@ def build_summary(state: dict, result, geometry: bool = True) -> dict:
             ens = (result.ensembles or {}).get(iid)
             if ens is not None:
                 row["p50_rings"] = p50_rings(ens, t_s)
+        if per_fire:
+            from wgresponse.offmap import horizon_row
+            h = horizons.get(iid)
+            row["offmap"] = horizon_row(h) if h is not None else None
         rows.append(row)
     rows = rank_incidents(rows)
-    return {
+    out = {
         "schema": SCHEMA,
         "t_s": t_s,
         "cycles_run": state.get("cycles_run"),
@@ -357,6 +379,9 @@ def build_summary(state: dict, result, geometry: bool = True) -> dict:
         "counts": _counts(state, rows, notes),
         "incidents": rows,
     }
+    if per_fire:
+        out["offmap_rule"] = dict(state["offmap_rule"])
+    return out
 
 
 def summary_from_state(state: dict) -> dict:

@@ -1,0 +1,410 @@
+{
+ "now_s": 1790524542.7457986,
+ "snapshot_utc": "2026-09-27T15:55:42Z",
+ "behavior_augment": {
+  "records": 377,
+  "same_revision": 368,
+  "revision_changed_or_gone": 9,
+  "same_revision_with_behavior": 145
+ },
+ "willow_status": [
+  true,
+  false,
+  [
+   "reported 'Minimal | Smoldering, Creeping, Smoldering' 19.7 h ago"
+  ]
+ ],
+ "client_001": [
+  39.327316486624476,
+  -107.23897254462759
+ ],
+ "client_001_km_from_willow": 69.5,
+ "variants": {
+  "seed only": {
+   "stops": [
+    [
+     "E2",
+     "mock-client-001",
+     "seeded:ab3e53cc-00",
+     1.61,
+     18.21
+    ]
+   ],
+   "unserved": [],
+   "degraded": false,
+   "failures": []
+  },
+  "A legacy": {
+   "stops": [],
+   "unserved": [
+    [
+     "mock-client-000",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-003",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-004",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-007",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-009",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-011",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-001",
+     "seeded:ab3e53cc-00",
+     "no_safe_corridor"
+    ]
+   ],
+   "degraded": false,
+   "failures": [],
+   "willow": {
+    "burned_p50_km2_at_now": 634.8,
+    "domain": [
+     477,
+     631,
+     91.48911740000446
+    ],
+    "edge_reached_h_rel_now": -258.61,
+    "front_p50_kmh": 0.54,
+    "front_p95_kmh": 4.71,
+    "front_p90_kmh": 2.59,
+    "front_max_kmh": 1124.82,
+    "front_cells": 1351,
+    "horizon": null,
+    "leg_E2_c001_min_km_beyond_edge": 4.6,
+    "leg_E2_c001_Tstar_h_rel_now_flat": -249.24,
+    "leg_E2_c001_Tstar_h_rel_now_variant": -249.24,
+    "notes": []
+   }
+  },
+  "B contained-fire flags": {
+   "stops": [],
+   "unserved": [
+    [
+     "mock-client-001",
+     "seeded:ab3e53cc-00",
+     "no_safe_corridor"
+    ],
+    [
+     "mock-client-009",
+     "548a8d28-1a04-48ee",
+     "no_safe_corridor"
+    ]
+   ],
+   "degraded": false,
+   "failures": [],
+   "willow": {
+    "burned_p50_km2_at_now": 91.0,
+    "domain": [
+     477,
+     631,
+     91.48911740000446
+    ],
+    "edge_reached_h_rel_now": -18.75,
+    "front_p50_kmh": 0.73,
+    "front_p95_kmh": 5.52,
+    "front_p90_kmh": 2.72,
+    "front_max_kmh": 1601.6,
+    "front_cells": 628,
+    "horizon": null,
+    "leg_E2_c001_min_km_beyond_edge": 45.0,
+    "leg_E2_c001_Tstar_h_rel_now_flat": -9.38,
+    "leg_E2_c001_Tstar_h_rel_now_variant": -9.38,
+    "notes": [
+     "incident 548a8d28-1a04-48ee-9011-aba023175d43: polygon 259.6 h old, record 19.7 h old \u2014 the record reports 7,389 ac, the polygon 7,259 ac (+1.8%, within 2%): the perimeter is CONFIRMED as of the record and seeded then, not 259.6 h ago (cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)"
+    ]
+   }
+  },
+  "C contained-fire flags + per-fire": {
+   "stops": [
+    [
+     "E2",
+     "mock-client-001",
+     "seeded:ab3e53cc-00",
+     1.61,
+     18.21
+    ]
+   ],
+   "unserved": [
+    [
+     "mock-client-009",
+     "548a8d28-1a04-48ee",
+     "no_safe_corridor"
+    ]
+   ],
+   "degraded": false,
+   "failures": [],
+   "willow": {
+    "burned_p50_km2_at_now": 91.0,
+    "domain": [
+     477,
+     631,
+     91.48911740000446
+    ],
+    "edge_reached_h_rel_now": -18.75,
+    "front_p50_kmh": 0.73,
+    "front_p95_kmh": 5.52,
+    "front_p90_kmh": 2.72,
+    "front_max_kmh": 1601.6,
+    "front_cells": 628,
+    "horizon": {
+     "kind": "per_fire",
+     "ros_kmh": 2.72,
+     "reason": "per-fire: P90 front speed 2.7 km/h",
+     "margin_min": 60.0,
+     "status": [
+      "reported 'Minimal | Smoldering, Creeping, Smoldering' 19.7 h ago"
+     ]
+    },
+    "leg_E2_c001_min_km_beyond_edge": 45.0,
+    "leg_E2_c001_Tstar_h_rel_now_flat": -9.38,
+    "leg_E2_c001_Tstar_h_rel_now_variant": 4.22,
+    "notes": [
+     "incident 548a8d28-1a04-48ee-9011-aba023175d43: polygon 259.6 h old, record 19.7 h old \u2014 the record reports 7,389 ac, the polygon 7,259 ac (+1.8%, within 2%): the perimeter is CONFIRMED as of the record and seeded then, not 259.6 h ago (cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)",
+     "incident 548a8d28-1a04-48ee-9011-aba023175d43: off-domain horizon 2.7 km/h (per-fire: P90 front speed 2.7 km/h); bounded samples clear max(leg margin, 60 min) \u2014 behaviour: reported 'Minimal | Smoldering, Creeping, Smoldering' 19.7 h ago (SAFETY SEMANTICS 15)"
+    ]
+   }
+  },
+  "D per-fire only (legacy seeding)": {
+   "stops": [],
+   "unserved": [
+    [
+     "mock-client-000",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-003",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-004",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-007",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-009",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-011",
+     "548a8d28-1a04-48ee",
+     "infeasible_deadline"
+    ],
+    [
+     "mock-client-001",
+     "seeded:ab3e53cc-00",
+     "no_safe_corridor"
+    ]
+   ],
+   "degraded": false,
+   "failures": [],
+   "willow": {
+    "burned_p50_km2_at_now": 634.8,
+    "domain": [
+     477,
+     631,
+     91.48911740000446
+    ],
+    "edge_reached_h_rel_now": -258.61,
+    "front_p50_kmh": 0.54,
+    "front_p95_kmh": 4.71,
+    "front_p90_kmh": 2.59,
+    "front_max_kmh": 1124.82,
+    "front_cells": 1351,
+    "horizon": {
+     "kind": "per_fire",
+     "ros_kmh": 2.59,
+     "reason": "per-fire: P90 front speed 2.6 km/h",
+     "margin_min": 60.0,
+     "status": [
+      "reported 'Minimal | Smoldering, Creeping, Smoldering' 19.7 h ago"
+     ]
+    },
+    "leg_E2_c001_min_km_beyond_edge": 4.6,
+    "leg_E2_c001_Tstar_h_rel_now_flat": -249.24,
+    "leg_E2_c001_Tstar_h_rel_now_variant": -234.46,
+    "notes": [
+     "incident 548a8d28-1a04-48ee-9011-aba023175d43: off-domain horizon 2.6 km/h (per-fire: P90 front speed 2.6 km/h); bounded samples clear max(leg margin, 60 min) \u2014 behaviour: reported 'Minimal | Smoldering, Creeping, Smoldering' 19.7 h ago (SAFETY SEMANTICS 15)"
+    ]
+   }
+  },
+  "E = C, Willow reported 'Active | Running' (HYPOTHETICAL)": {
+   "stops": [],
+   "unserved": [
+    [
+     "mock-client-001",
+     "seeded:ab3e53cc-00",
+     "no_safe_corridor"
+    ],
+    [
+     "mock-client-009",
+     "548a8d28-1a04-48ee",
+     "no_safe_corridor"
+    ]
+   ],
+   "degraded": false,
+   "failures": [],
+   "willow": {
+    "burned_p50_km2_at_now": 91.0,
+    "domain": [
+     477,
+     631,
+     91.48911740000446
+    ],
+    "edge_reached_h_rel_now": -18.75,
+    "front_p50_kmh": 0.73,
+    "front_p95_kmh": 5.52,
+    "front_p90_kmh": 2.72,
+    "front_max_kmh": 1601.6,
+    "front_cells": 628,
+    "horizon": {
+     "kind": "rapid",
+     "ros_kmh": 6.12,
+     "reason": "ceiling: rapid",
+     "margin_min": 60.0,
+     "status": [
+      "reported Running ('Active | Running', 19.7 h ago)",
+      "general 'Active' contradicts a rapid descriptor: resolved toward rapid"
+     ]
+    },
+    "leg_E2_c001_min_km_beyond_edge": 45.0,
+    "leg_E2_c001_Tstar_h_rel_now_flat": -9.38,
+    "leg_E2_c001_Tstar_h_rel_now_variant": -9.45,
+    "notes": [
+     "incident 548a8d28-1a04-48ee-9011-aba023175d43: polygon 259.6 h old, record 19.7 h old \u2014 the record reports 7,389 ac, the polygon 7,259 ac (+1.8%, within 2%): the perimeter is CONFIRMED as of the record and seeded then, not 259.6 h ago (cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)",
+     "incident 548a8d28-1a04-48ee-9011-aba023175d43: off-domain horizon 6.1 km/h (ceiling: rapid); bounded samples clear max(leg margin, 60 min) \u2014 behaviour: reported Running ('Active | Running', 19.7 h ago); general 'Active' contradicts a rapid descriptor: resolved toward rapid (SAFETY SEMANTICS 15)"
+    ]
+   }
+  }
+ },
+ "veto_reach_pass_plus_1h": {
+  "points_refused": {
+   "E1": {
+    "inside_domain": false,
+    "a": {
+     "bound_h_rel_now": -8.73,
+     "refused": true
+    },
+    "b": {
+     "bound_h_rel_now": 3.62,
+     "refused": false
+    },
+    "c": {
+     "bound_h_rel_now": -8.73,
+     "refused": true
+    }
+   },
+   "E2": {
+    "inside_domain": false,
+    "a": {
+     "bound_h_rel_now": -7.8,
+     "refused": true
+    },
+    "b": {
+     "bound_h_rel_now": 5.72,
+     "refused": false
+    },
+    "c": {
+     "bound_h_rel_now": -7.8,
+     "refused": true
+    }
+   },
+   "E3": {
+    "inside_domain": false,
+    "a": {
+     "bound_h_rel_now": -11.2,
+     "refused": true
+    },
+    "b": {
+     "bound_h_rel_now": -2.01,
+     "refused": true
+    },
+    "c": {
+     "bound_h_rel_now": -11.2,
+     "refused": true
+    }
+   },
+   "client-001": {
+    "inside_domain": false,
+    "a": {
+     "bound_h_rel_now": -6.44,
+     "refused": true
+    },
+    "b": {
+     "bound_h_rel_now": 8.97,
+     "refused": false
+    },
+    "c": {
+     "bound_h_rel_now": -6.44,
+     "refused": true
+    }
+   }
+  },
+  "ensemble": "B contained-fire flags (the anchored Willow)",
+  "edge_first_reached_h_rel_now": -18.75,
+  "cell_m": 91.48911740000446,
+  "front_p90_kmh": 2.72,
+  "front_max_kmh": 1601.6,
+  "front_cells": 628,
+  "rows": [
+   {
+    "variant": "(a) today: 1.7 m/s, the leg's margin",
+    "speed_kmh": 6.12,
+    "chord_margin_min": 56.0,
+    "road_margin_min": 30.0,
+    "reach_km_chord": 127.9,
+    "reach_km_road": 125.3
+   },
+   {
+    "variant": "(b) per-fire, known slow: 2.72 km/h (per_fire), margin 60",
+    "speed_kmh": 2.72,
+    "chord_margin_min": 60.0,
+    "road_margin_min": 60.0,
+    "reach_km_chord": 57.0,
+    "reach_km_road": 57.0
+   },
+   {
+    "variant": "(b') the same with the MAX front statistic (6.12 km/h)",
+    "speed_kmh": 6.12,
+    "chord_margin_min": 60.0,
+    "road_margin_min": 60.0,
+    "reach_km_chord": 128.3,
+    "reach_km_road": 128.3
+   },
+   {
+    "variant": "(c) per-fire, rapid: 1.7 m/s, margin 60",
+    "speed_kmh": 6.12,
+    "chord_margin_min": 60.0,
+    "road_margin_min": 60.0,
+    "reach_km_chord": 128.3,
+    "reach_km_road": 128.3
+   }
+  ]
+ }
+}

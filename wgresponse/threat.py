@@ -104,6 +104,16 @@ do a newer polygon elsewhere, a smaller size beyond the tolerance and a
 missing size; every decision on a domain incident is one note. The
 staleness gate still reads the record's own time.
 
+THE OFF-DOMAIN HORIZON IS PER FIRE (SAFETY SEMANTICS 15; founder rule
+2026-09-27; cfg.corridor_offraster_per_fire, default OFF). After the alerts
+and before dispatch, every domain incident gets its contracts.
+OffDomainHorizon from wgresponse.offmap — its behaviour status from the feed
+(known / rapid), the P90 front speed where its raw P10 crosses its domain
+edge, the crossing-time margin — with one note each; the table rides
+CycleResult.offmap and dispatch.plan(offmap=...), where it replaces the flat
+1.7 m/s off-raster bound for that fire only. Off = {} and no kwarg: byte-
+identical cycles.
+
 Collaborator seams (contracts law): feeds FireFeed / WeatherProvider /
 TerrainProvider / ClientRegistry protocols, AlertEngine.evaluate/.states
 (+ optional pop_operator_events), CrewTracker.crews, dispatcher.plan(crews,
@@ -635,9 +645,14 @@ class ThreatMonitor:
         timings["alerts_s"] = time.monotonic() - _t
         _t = time.monotonic()
 
+        offmap: dict = {}
+        if self._cfg.corridor_offraster_per_fire and ensembles:
+            # SAFETY SEMANTICS 15: each domain fire's off-domain horizon
+            offmap = self._offmap_horizons(active, ensembles, now_s, notes)
         plan = self._maybe_dispatch(now_s, ensembles, clients_seen, etas,
                                     notes, forecasts,
-                                    eroded_map=(eroded_map or None))
+                                    eroded_map=(eroded_map or None),
+                                    offmap=(offmap or None))
         timings["dispatch_s"] = time.monotonic() - _t
 
         degraded = (not feeds_healthy) or bool(failed_incidents) or any(
@@ -647,7 +662,7 @@ class ThreatMonitor:
                            events=events, plan=plan, ensembles=ensembles,
                            notes=notes, operator_events=operator_events,
                            degraded=degraded, timings=timings,
-                           removed_incidents=removed)
+                           removed_incidents=removed, offmap=offmap)
 
     # ------------------------------------------------------------- internals
 
@@ -1304,11 +1319,33 @@ class ThreatMonitor:
                          f"planning with 0 crews")
             return []
 
+    def _offmap_horizons(self, active: list, ensembles: dict, now_s: float,
+                         notes: list) -> dict:
+        """SAFETY SEMANTICS 15 (cfg.corridor_offraster_per_fire): the per-
+        fire off-domain horizon of every domain incident (wgresponse.offmap)
+        — one note each — handed to dispatch.plan(offmap=...). INTEGRATOR
+        SEAM: another per-fire status table (the spread belief's
+        {incident_id: FireStatus}) OR-combines with the feed's via
+        offmap.horizons(..., status=that_table). A failure here is a note and
+        the flat legacy bound (never a raise out of cycle())."""
+        from wgresponse import offmap as offmap_mod
+        try:
+            table = offmap_mod.horizons(active, ensembles, now_s, self._cfg)
+        except Exception as exc:  # degrade to the legacy law, loudly
+            notes.append(f"off-domain horizons failed ({exc}); every fire "
+                         f"keeps the flat {self._cfg.corridor_offraster_ros_mps:g}"
+                         f" m/s bound (SAFETY SEMANTICS 15)")
+            return {}
+        for iid in sorted(table):
+            notes.append(offmap_mod.horizon_note(table[iid]))
+        return table
+
     def _maybe_dispatch(self, now_s: float, ensembles: dict,
                         clients_seen: dict, etas: dict,
                         notes: list,
                         forecasts: Optional[dict] = None,
-                        eroded_map: Optional[dict] = None) -> Optional[object]:
+                        eroded_map: Optional[dict] = None,
+                        offmap: Optional[dict] = None) -> Optional[object]:
         """Build DispatchJobs for pairs in an active alert state and call the
         injected dispatcher. Returns the DispatchPlan or None; the returned
         plan becomes the incumbent (warm start) for the next cycle.
@@ -1361,6 +1398,21 @@ class ThreatMonitor:
             # eroded_map (FUEL-TIERED EROSION): pre-eroded corridor rasters
             # built where the fuel tile lives (_assess_incident); None when
             # tiering is off. Stub dispatchers degrade kwarg-by-kwarg.
+            if offmap:
+                # SAFETY SEMANTICS 15 (cfg.corridor_offraster_per_fire only):
+                # a dispatcher without the kwarg keeps the flat law, loudly.
+                try:
+                    return self._dispatcher.plan(
+                        crews, jobs, dict(ensembles), list(self._safe_zones),
+                        self._cfg, now_s, incumbent=self._incumbent,
+                        forecasts=dict(forecasts or {}),
+                        eroded_rasters=eroded_map, offmap=dict(offmap))
+                except TypeError as exc:
+                    if "offmap" not in str(exc):
+                        raise
+                    notes.append("dispatch: this dispatcher takes no per-fire "
+                                 "off-domain horizons; every fire keeps the "
+                                 "flat bound (SAFETY SEMANTICS 15)")
             try:
                 return self._dispatcher.plan(crews, jobs, dict(ensembles),
                                              list(self._safe_zones), self._cfg,

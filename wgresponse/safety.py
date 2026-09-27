@@ -30,6 +30,11 @@ Safety rules implemented here (contracts SAFETY SEMANTICS 2-4):
   2026-08-31 item 1): such samples are BOUNDED by the earliest arrival the
   fire could carry to them through a boundary cell it actually reaches
   (_boundary_runs / _bound_arrival_s), and a leg with no raster is unsafe.
+  PER-FIRE OFF-DOMAIN HORIZON (contracts SAFETY SEMANTICS 15): LegOracle's
+  optional offraster_ros_mps / offraster_margin_min give ONE raster's bound
+  its own speed and a bounded-sample margin of max(leg margin, that);
+  dispatch passes them per incident only under cfg.corridor_offraster_per_fire
+  (wgresponse.offmap builds them). Omitted = the flat legacy law.
 
 geo.py is built concurrently by a sibling cluster: geo.haversine_m /
 geo.sample_polyline / geo.erode_min are resolved lazily with stdlib fallbacks
@@ -445,15 +450,27 @@ class LegOracle:
     wgresponse.dispatch insertion scans; it agrees with verdict(depart_s).safe
     up to float rounding of the rearranged expression (~1e-7 s at unix-time
     scale; property-tested with a 1 ms guard band).
+
+    PER-FIRE OFF-DOMAIN HORIZON (contracts SAFETY SEMANTICS 15; passed by
+    dispatch only under cfg.corridor_offraster_per_fire): offraster_ros_mps
+    replaces corridor_offraster_ros_mps as THIS raster's bound speed, and a
+    BOUNDED sample (off-raster or unreached, the ones the bound gave an
+    arrival) must clear max(leg margin, offraster_margin_min) instead of the
+    leg margin; modelled samples keep the leg margin. Both None (default) =
+    the legacy law, byte-identical — and so is (corridor_offraster_ros_mps,
+    0): the per-sample margins only exist when some margin differs
+    (sample_margin_s, None otherwise, parallel to samples).
     """
 
     __slots__ = ("n_pts", "samples", "margin_s", "latest_safe_depart_s",
-                 "unverifiable")
+                 "unverifiable", "sample_margin_s")
 
     def __init__(self, a: LatLon, b: LatLon, speed_mps: float,
                  eroded_p10: "Raster | None", cfg: ResponseConfig,
                  path: "list | None" = None,
-                 margin_min: "float | None" = None):
+                 margin_min: "float | None" = None,
+                 offraster_ros_mps: "float | None" = None,
+                 offraster_margin_min: "float | None" = None):
         """path (PLAN-ON-ROADS, 2026-07-12): optional ordered list[LatLon] of
         the ACTUAL route geometry a->b (e.g. roads.RoadRoute.polyline). When
         given, samples are laid every cfg.corridor_sample_m ALONG THE PATH
@@ -465,7 +482,10 @@ class LegOracle:
         margin_min: override of cfg.route_margin_min (minutes) — road-sampled
         legs pass cfg.route_margin_roads_min (the chord margin's extra width
         was the flat-travel-model error compensator, redundant once the
-        geometry is honest; see contracts). None = cfg.route_margin_min."""
+        geometry is honest; see contracts). None = cfg.route_margin_min.
+
+        offraster_ros_mps / offraster_margin_min: the per-fire off-domain
+        horizon (class docstring; SAFETY SEMANTICS 15). None = legacy."""
         if speed_mps <= 0.0:
             raise ValueError("speed_mps must be > 0")
         m = cfg.route_margin_min if margin_min is None else margin_min
@@ -476,15 +496,23 @@ class LegOracle:
         runs = None
         ros_max = 0.0
         cell_m = 0.0
+        bound_margin_s = None             # SEMANTICS 15c: bounded-sample margin
         if eroded_p10 is None:
             # No forecast raster: legacy = everywhere-unreached = safe;
             # fail-closed = no forecast, no verdict.
             self.unverifiable = fail_closed
         elif fail_closed or unreached_bound:
             runs = _boundary_runs(eroded_p10)
-            ros_max = float(getattr(cfg, "corridor_offraster_ros_mps", 1.7))
+            ros_max = (float(getattr(cfg, "corridor_offraster_ros_mps", 1.7))
+                       if offraster_ros_mps is None
+                       else float(offraster_ros_mps))
             cell_m = float(eroded_p10.spec.cell_m)
+            if offraster_margin_min is not None:
+                bm = max(self.margin_s, float(offraster_margin_min) * 60.0)
+                if bm != self.margin_s:
+                    bound_margin_s = bm
         samples = []                      # (orig index, point, arrival_s, dt_s)
+        sample_margin = [] if bound_margin_s is not None else None
         n_pts = 0
         if eroded_p10 is not None:
             if path is not None and len(path) >= 2:
@@ -499,26 +527,39 @@ class LegOracle:
                     cum_m += _haversine_m(prev, p)
                 prev = p
                 v = _raster_value_at(eroded_p10, p)
+                bounded = False
                 if v is None:                    # outside the raster
                     if not (fail_closed and runs):
                         continue
                     v = _bound_arrival_s(p, runs, ros_max, cell_m)
+                    bounded = True
                 elif math.isinf(v):              # UNREACHED in-domain
                     if not (unreached_bound and runs):
                         continue
                     v = _bound_arrival_s(p, runs, ros_max, cell_m)
+                    bounded = True
                 if math.isinf(v):
                     continue
                 # dt = cum_m / speed matches the in-loop `depart + cum/speed`
                 # rounding exactly (the quotient is rounded once either way).
                 samples.append((i, p, v, cum_m / speed_mps))
+                if sample_margin is not None:
+                    sample_margin.append(bound_margin_s if bounded
+                                         else self.margin_s)
         self.n_pts = n_pts
         self.samples = samples
+        self.sample_margin_s = sample_margin
         tstar = UNREACHED                 # unconstrained: any departure is safe
-        for _i, _p, v, dt in samples:
-            t = v - self.margin_s - dt
-            if t < tstar:
-                tstar = t
+        if sample_margin is None:
+            for _i, _p, v, dt in samples:
+                t = v - self.margin_s - dt
+                if t < tstar:
+                    tstar = t
+        else:
+            for (_i, _p, v, dt), ms in zip(samples, sample_margin):
+                t = v - ms - dt
+                if t < tstar:
+                    tstar = t
         self.latest_safe_depart_s = -math.inf if self.unverifiable else tstar
 
     def verdict(self, depart_s: float) -> CorridorVerdict:
@@ -530,6 +571,8 @@ class LegOracle:
                 False, "corridor unverifiable: no forecast raster for the leg "
                        "(fail-closed, contracts corridor_fail_closed)",
                 -math.inf)
+        if self.sample_margin_s is not None:
+            return self._verdict_per_sample(depart_s)
         margin_s = self.margin_s
         worst_h = UNREACHED
         safe = True
@@ -544,6 +587,27 @@ class LegOracle:
                 reason = (f"corridor unsafe at sample {i + 1}/{self.n_pts} "
                           f"({p.lat:.5f},{p.lon:.5f}): eroded p10 arrival {v:.0f}s < "
                           f"pass {t_pass:.0f}s + margin {margin_s:.0f}s")
+        return CorridorVerdict(safe, reason, worst_h)
+
+    def _verdict_per_sample(self, depart_s: float) -> CorridorVerdict:
+        """verdict() under the SEMANTICS 15 crossing-time margin: the same
+        loop with each sample's own margin (bounded samples: max(leg margin,
+        offraster margin); modelled samples: the leg margin)."""
+        worst_h = UNREACHED
+        safe = True
+        reason = ""
+        for (i, p, v, dt), ms in zip(self.samples, self.sample_margin_s):
+            t_pass = depart_s + dt
+            m_h = (v - t_pass) / 3600.0
+            if m_h < worst_h:
+                worst_h = m_h
+            if safe and (v - t_pass) < ms:
+                safe = False
+                what = ("eroded p10 arrival" if ms == self.margin_s else
+                        "off-domain bound (SAFETY SEMANTICS 15)")
+                reason = (f"corridor unsafe at sample {i + 1}/{self.n_pts} "
+                          f"({p.lat:.5f},{p.lon:.5f}): {what} {v:.0f}s < "
+                          f"pass {t_pass:.0f}s + margin {ms:.0f}s")
         return CorridorVerdict(safe, reason, worst_h)
 
 

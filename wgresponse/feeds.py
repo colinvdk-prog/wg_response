@@ -60,6 +60,17 @@ containment_by_source / acres_by_source and perimeter_newest_at_s. The
 legacy fields (acreage, containment_pct, updated_at_s, perimeter,
 meta["perimeter_at_s"]) are unchanged — the monitor reads the new keys only
 under cfg.drop_contained_incidents / cfg.perimeter_confirmed_anchor.
+
+FIRE BEHAVIOUR (contracts SAFETY SEMANTICS 15, founder rule 2026-09-27): the
+WFIGS incident-locations query also asks for FireBehaviorGeneral and
+FireBehaviorGeneral1-3 (IRWIN; live schema + values checked 2026-09-27: 146
+of 283 CONUS wildfire points carried a report — Minimal 119, Active 14,
+Extreme 7, Moderate 6 — with descriptors Smoldering, Creeping, Backing, ...
+Running, Crowning, Long-range Spotting). meta carries fire_behavior,
+fire_behavior_descriptors and fire_behavior_at_s (the record's
+ModifiedOnDateTime: the layer has no per-field time), only for a record
+with a report. Read only under cfg.corridor_offraster_per_fire (the per-
+fire off-domain horizon, wgresponse.offmap); no output path serializes it.
 """
 from __future__ import annotations
 
@@ -172,6 +183,35 @@ def _reported_meta(acres, at_s) -> dict:
             or not math.isfinite(at_s) or at_s <= 0):
         return {}
     return {"reported_acres": a, "reported_at_s": float(at_s)}
+
+
+#: SAFETY SEMANTICS 15 fire-behaviour fields on the WFIGS incident-locations
+#: layer (IRWIN): the general behaviour + up to three descriptors.
+_BEHAVIOR_FIELDS = ("FireBehaviorGeneral1", "FireBehaviorGeneral2",
+                    "FireBehaviorGeneral3")
+
+
+def _behavior_meta(attrs: dict, at_s) -> dict:
+    """The record's fire-behaviour report (SAFETY SEMANTICS 15b):
+    fire_behavior (FireBehaviorGeneral), fire_behavior_descriptors (the non-
+    empty FireBehaviorGeneral1-3, field order) and fire_behavior_at_s (the
+    record's ModifiedOnDateTime — the feed gives no per-field time). No
+    report (every field empty) = no keys at all; a report without a positive
+    record time carries no fire_behavior_at_s (the monitor then reads the
+    behaviour as unknown)."""
+    gen = attrs.get("FireBehaviorGeneral")
+    gen = gen.strip() if isinstance(gen, str) else ""
+    descs = []
+    for fld in _BEHAVIOR_FIELDS:
+        v = attrs.get(fld)
+        if isinstance(v, str) and v.strip():
+            descs.append(v.strip())
+    if not gen and not descs:
+        return {}
+    out = {"fire_behavior": gen, "fire_behavior_descriptors": descs}
+    if at_s is not None and math.isfinite(at_s) and at_s > 0:
+        out["fire_behavior_at_s"] = float(at_s)
+    return out
 
 
 def _subsample_ring(ring: list, max_vertices: int = 200) -> list:
@@ -293,6 +333,8 @@ class WfigsFeed(_ArcGisFeedBase):
     ContainmentDateTime / ControlDateTime / FireOutDateTime (points) and
     attr_ContainmentDateTime / attr_ControlDateTime / attr_FireOutDateTime +
     attr_IncidentSize (perimeters) ride in meta (module docstring).
+    SAFETY SEMANTICS 15 (2026-09-27): FireBehaviorGeneral + 1-3 (points) ride
+    in meta as fire_behavior / fire_behavior_descriptors / fire_behavior_at_s.
     """
 
     PERIMETERS_URL = ("https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/"
@@ -302,7 +344,8 @@ class WfigsFeed(_ArcGisFeedBase):
     POINT_OUT_FIELDS = ("IncidentName,IrwinID,IncidentSize,PercentContained,"
                         "FireDiscoveryDateTime,ModifiedOnDateTime_dt,POOState,"
                         "IncidentTypeCategory,ContainmentDateTime,ControlDateTime,"
-                        "FireOutDateTime")
+                        "FireOutDateTime,FireBehaviorGeneral,FireBehaviorGeneral1,"
+                        "FireBehaviorGeneral2,FireBehaviorGeneral3")
     PERIM_OUT_FIELDS = ("poly_IncidentName,attr_IncidentName,poly_IRWINID,attr_IrwinID,"
                         "poly_GISAcres,attr_CalculatedAcres,attr_FinalAcres,"
                         "attr_PercentContained,attr_FireDiscoveryDateTime,"
@@ -424,6 +467,8 @@ class WfigsFeed(_ArcGisFeedBase):
         # SAFETY SEMANTICS 13: declarations + the record's reported size
         meta.update(_containment_meta(attrs))
         meta.update(_reported_meta(attrs.get("IncidentSize"), updated))
+        # SAFETY SEMANTICS 15: the record's fire-behaviour report
+        meta.update(_behavior_meta(attrs, updated))
         return FireIncident(
             incident_id=irwin or f"wfigs:{native if native is not None else name.lower()}",
             name=name,
