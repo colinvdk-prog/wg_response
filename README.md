@@ -81,6 +81,25 @@ py -3 -m wgresponse.cli watch --aoi "-121.0,32.5,-114.0,36.0" --state-dir state
 # watcher has no ground truth for live fires); a seed/retire persists at once
 # and wakes the loop. Seeded fires notify the DRILL LOG only — never a client
 # channel — and auto-retire once their horizon passes with nothing threatened.
+# 5b. THE NATIONAL WORLD VIEWER (W6 thin, docs/LIVE_WORLD_PLAN.md): the same
+#     daemon over the contiguous US with demo homes on every simulator
+#     preset, and a zoomable map at /world (national markers -> regional
+#     perimeters + P50 rings -> local plan legs + client cards).
+py -3 -m wgresponse.cli watch --aoi data/aoi_conus.json --registry mock-presets \
+    --dry-notify --gust-blend 0.5 --grass-floor 0.10 --floor-gate \
+    --model-error 0.71 --extreme-regime --fail-closed --ember-radius 200 \
+    --p50-bound --solver-evals 20000 --phi-vector --state-dir state
+# then open http://127.0.0.1:8877/world (the key prompt appears only on a 401).
+# --registry mock-presets = --preset-homes N (default 40) demo homes on EACH of
+# the 13 simulator presets, placed by the simulator's own WUI placement (city-
+# limits polygon, 300 m driveway rule), so live WFIGS fires near Vail / Aspen /
+# Park City / Boulder / Malibu / Paradise / Santa Rosa / Rancho Santa Fe build
+# spread domains and every other fire stays a marker; `--registry mock` (12
+# homes around the AOI centre) is unchanged. GET /api/world/summary (authed,
+# read-only) is the page's read model: counts, the ranked "incidents
+# threatening clients" list, each incident's domain facts or the cycle's
+# "why no domain?" line, display perimeters and P50 rings — built once per
+# cycle (?since=<t_s> answers {"unchanged": true}).
 
 # 6. THE INTERACTIVE SIMULATOR (docs/SIMULATOR_DESIGN.md): thirteen real WUI
 #    locations on cached LANDFIRE tiles, click-to-ignite fires, the REAL
@@ -130,7 +149,7 @@ py -3 -m pip install -r requirements.txt   # tifffile + numpy + imagecodecs (+ b
 | `wgresponse.feeds` | WFIGS / FIRIS / CAL FIRE / FIRMS adapters + Watch Duty Enterprise stub + deterministic mock; IRWIN-id fusion. |
 | `wgresponse.weather` | NWS gridpoint + Open-Meteo adapters + mock (`WeatherProvider` protocol). |
 | `wgresponse.terrain` | LANDFIRE LFPS job-API tiles + synthetic terrain; dependency-free ASCII tile cache. |
-| `wgresponse.clients` | `DynamoClientRegistry` (wg-consumer-profiles) + mock registry. |
+| `wgresponse.clients` | `DynamoClientRegistry` (wg-consumer-profiles) + mock registry + `preset_client_registry` (the watch daemon's `--registry mock-presets`: N demo homes on every simulator preset via the simulator's own WUI placement). |
 | `wgresponse.crews` | Phone-GPS beacon ingest, crew state, staleness. |
 | `wgresponse.alerts` | Alert ladder state machine with hysteresis (`ALERT_TRANSITIONS` enforced). |
 | `wgresponse.threat` | `ThreatMonitor.cycle()` — the full orchestration loop (feeds ∪ seeded incidents → domains → ladder → dispatch). |
@@ -142,6 +161,7 @@ py -3 -m pip install -r requirements.txt   # tifffile + numpy + imagecodecs (+ b
 | `wgresponse.sim` | Seeded synthetic scenarios + full-loop sim harness (the acceptance test and the demo). |
 | `wgresponse.server` | Stdlib HTTP: `POST /api/beacon`, `GET /api/state`, `GET /api/plan`, `GET /console`; `/healthz` carries last-cycle age + degraded + cycle count; `/simulator` + `/api/sim/*` session API (LRU-capped, per-session ticker; `POST /api/sim/<id>/crew` = setup-phase crew placement, road-snapped, 409 once a fire is lit); `/api/seed` GET/POST/DELETE routed to the watch daemon (404 elsewhere). `X-Internal-API-Key`, fail-closed. |
 | `wgresponse.simui` | `SimSession`: the interactive simulator over the REAL engine — thirteen cached LFPS WUI tiles (five originals, Rancho Santa Fe, the six Vail→Aspen corridor communities, the whole-valley Eagle→Vail corridor on one ~60 km @ 200 m tile), seeded WUI client placement, setup-phase crew placement on the road network (`place_crew` / `reset_crews`: nearest road node within 2 km, escape targets stay the safe zones, replayed by reset), perimeter-seeded ensembles, live safety-slider re-plans (in-flight deploys re-checked, never grandfathered), per-tick safety audit. |
+| `wgresponse.worldview` | The W6 thin world viewer's read model behind `GET /api/world/summary`: per-incident domain facts (clients, earliest client P10/P50), the cycle's "why no domain?" note, display-simplified perimeters, P50 rings traced from each domain's ensemble, counts and the ranked "incidents threatening clients" list — built once per cycle, read-only (page: `console/world.html` at `/world`). |
 | `wgresponse.persist` | `StateStore`: atomic-write (fsync'd) versioned JSON persistence for alert records, the notified ledger, the incumbent plan, and watch metadata — restart re-fires nothing already sent (an applied-but-never-sent active alert IS re-fired: re-notify-ward); ANY corrupt state — including non-UTF-8 bytes and type-corrupt fields — loads fresh with a loud note, never a crash. |
 | `wgresponse.cli` | `simulate \| forecast \| plan \| serve \| pull-feeds \| watch \| simui` (watch = the live operator daemon: AOI-bounded feeds, per-cycle persistence, console + healthz off the live loop, the `/api/seed` seeding API; simui = the interactive simulator UI). |
 

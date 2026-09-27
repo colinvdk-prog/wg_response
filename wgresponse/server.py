@@ -7,6 +7,14 @@ Endpoints:
     GET  /console      serves console/index.html (open: it is the key-prompt UI
                        and contains no data; every data endpoint stays authed)
     GET  /simulator    serves console/simulator.html (open, same rationale)
+    GET  /world        serves console/world.html — the W6 thin world viewer
+                       (open, same rationale; docs/LIVE_WORLD_PLAN.md W6)
+    GET  /api/world/summary  (auth) the world viewer's read model
+                       (wgresponse.worldview): the app's world_provider
+                       (the watch daemon attaches _WatchDaemon.world_summary;
+                       ?since=<t_s> -> {"unchanged": true} when the cycle has
+                       not moved), else worldview.summary_from_state over the
+                       state_provider (no domains claimed). Read-only.
     GET  /healthz      liveness probe (always open). When the state_provider's
                        dict carries degradation keys (SAFETY SEMANTICS 6:
                        `degraded` bool, `t_s`/`now_s`/`last_cycle_t_s` unix s,
@@ -133,6 +141,7 @@ _LOG = logging.getLogger("wgresponse.server")
 _CONSOLE_DIR = Path(__file__).resolve().parent.parent / "console"
 _DEFAULT_CONSOLE = _CONSOLE_DIR / "index.html"
 _DEFAULT_SIMULATOR = _CONSOLE_DIR / "simulator.html"
+_DEFAULT_WORLD = _CONSOLE_DIR / "world.html"      # W6 thin world viewer
 _MAX_BODY_BYTES = 1_000_000
 
 
@@ -836,6 +845,12 @@ class _App:
     #: httpd.app.seed_api after serve() (seed_list / seed_get / seed_create /
     #: seed_retire, each -> (status, payload)); None = the routes answer 404.
     seed_api = None
+    #: W6 THIN WORLD VIEWER (additive): the page served at /world, and the
+    #: optional /api/world/summary provider — callable(since=None) -> dict.
+    #: The watch daemon attaches _WatchDaemon.world_summary after serve();
+    #: None = derive a domain-less summary from state_provider.
+    world_path = _DEFAULT_WORLD
+    world_provider: Optional[Callable] = None
 
     def __init__(self, state_provider: Optional[Callable] = None,
                  beacon_sink=None, plan_provider: Optional[Callable] = None,
@@ -954,6 +969,14 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path == "/simulator":
             self._serve_simulator()
+            return
+        if path == "/world":                      # W6 thin world viewer
+            self._serve_html(self.app.world_path, "world viewer not installed")
+            return
+        if path == "/api/world/summary":
+            if self._reject_unauthorized():
+                return
+            self._world_summary()
             return
         if path.startswith("/api/sim"):
             if self._reject_unauthorized():
@@ -1205,6 +1228,27 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.end_headers()
         self.wfile.write(body)
+
+    # -- W6 thin world viewer ------------------------------------------------
+
+    def _world_summary(self):
+        """GET /api/world/summary (authed by the caller; read-only). The
+        app's world_provider(since=...) when attached (the watch daemon),
+        else a domain-less summary derived from the state_provider."""
+        since = parse_qs(urlparse(self.path).query).get("since", [None])[0]
+        try:
+            provider = self.app.world_provider
+            if provider is not None:
+                payload = provider(since=since)
+            else:
+                from wgresponse import worldview
+                payload = worldview.summary_from_state(
+                    self.app.state_provider() or {})
+        except Exception as e:     # provider is injected; never 500-loop
+            _LOG.exception("world summary failed")
+            self._send_json(500, {"error": f"world summary: {e}"})
+            return
+        self._send_json(200, payload)
 
 
 def serve(port: int = 8877, state_provider: Optional[Callable] = None,

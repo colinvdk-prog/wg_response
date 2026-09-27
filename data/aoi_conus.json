@@ -1,0 +1,268 @@
+{
+  "_comment": "CONUS AOI (W6 thin viewer, docs/LIVE_WORLD_PLAN.md section 3 'what to build first': set the watcher's AOI to CONUS and put a zoomable map over its state). One bbox over the contiguous United States (W -125, S 24, E -66, N 50; Alaska and Hawaii are outside it). Safe zones are the UNION of every simulator preset's zones (wgresponse.simui.LOCATIONS: the five originals, Rancho Santa Fe, the six Vail -> Aspen corridor communities and the whole-valley Eagle -> Vail tile, whose six I-70 anchors share coordinates with the corridor presets' zones under their own ids): PLANNING-GRADE highway / arterial nodes, NOT ground-verified -- per HOA_40_PLAYBOOK a real deployment requires ground-verified zones before any crew dispatch. Shadow / demo use only (--registry mock-presets, --dry-notify) until real clients and crews are enrolled. Regenerate with py -3 tools/gen_aoi_conus.py.",
+  "zones": [
+    {
+      "name": "conus",
+      "bbox": [
+        -125.0,
+        24.0,
+        -66.0,
+        50.0
+      ]
+    }
+  ],
+  "safe_zones": [
+    {
+      "zone_id": "malibu_ca-z1",
+      "lat": 34.021,
+      "lon": -118.831,
+      "name": "UNVERIFIED Zuma Beach / PCH west"
+    },
+    {
+      "zone_id": "malibu_ca-z2",
+      "lat": 34.035,
+      "lon": -118.655,
+      "name": "UNVERIFIED Carbon Beach / PCH east"
+    },
+    {
+      "zone_id": "malibu_ca-z3",
+      "lat": 34.146,
+      "lon": -118.705,
+      "name": "UNVERIFIED US-101 / Las Virgenes"
+    },
+    {
+      "zone_id": "paradise_ca-z1",
+      "lat": 39.71,
+      "lon": -121.705,
+      "name": "UNVERIFIED Skyway / Chico SW node"
+    },
+    {
+      "zone_id": "paradise_ca-z2",
+      "lat": 39.685,
+      "lon": -121.62,
+      "name": "UNVERIFIED Neal Rd / Hwy 99"
+    },
+    {
+      "zone_id": "paradise_ca-z3",
+      "lat": 39.7,
+      "lon": -121.52,
+      "name": "UNVERIFIED Hwy 70 / Pentz Rd"
+    },
+    {
+      "zone_id": "santa_rosa_ca-z1",
+      "lat": 38.44,
+      "lon": -122.715,
+      "name": "UNVERIFIED US-101 / Santa Rosa"
+    },
+    {
+      "zone_id": "santa_rosa_ca-z2",
+      "lat": 38.44,
+      "lon": -122.6,
+      "name": "UNVERIFIED Hwy 12 / Calistoga Rd"
+    },
+    {
+      "zone_id": "santa_rosa_ca-z3",
+      "lat": 38.53,
+      "lon": -122.77,
+      "name": "UNVERIFIED US-101 / Windsor"
+    },
+    {
+      "zone_id": "boulder_co-z1",
+      "lat": 40.015,
+      "lon": -105.26,
+      "name": "UNVERIFIED US-36 / Boulder SE"
+    },
+    {
+      "zone_id": "boulder_co-z2",
+      "lat": 39.995,
+      "lon": -105.09,
+      "name": "UNVERIFIED US-287 / Lafayette"
+    },
+    {
+      "zone_id": "boulder_co-z3",
+      "lat": 39.92,
+      "lon": -105.07,
+      "name": "UNVERIFIED US-36 / Broomfield"
+    },
+    {
+      "zone_id": "rancho_santa_fe_ca-z1",
+      "lat": 32.977,
+      "lon": -117.244,
+      "name": "UNVERIFIED I-5 / Via de la Valle"
+    },
+    {
+      "zone_id": "rancho_santa_fe_ca-z2",
+      "lat": 33.047,
+      "lon": -117.261,
+      "name": "UNVERIFIED Encinitas Blvd / El Camino Real"
+    },
+    {
+      "zone_id": "rancho_santa_fe_ca-z3",
+      "lat": 32.95,
+      "lon": -117.235,
+      "name": "UNVERIFIED Del Mar Heights / El Camino Real"
+    },
+    {
+      "zone_id": "park_city_ut-z1",
+      "lat": 40.724,
+      "lon": -111.476,
+      "name": "UNVERIFIED Kimball Junction / I-80"
+    },
+    {
+      "zone_id": "park_city_ut-z2",
+      "lat": 40.646,
+      "lon": -111.498,
+      "name": "UNVERIFIED Park City Old Town"
+    },
+    {
+      "zone_id": "park_city_ut-z3",
+      "lat": 40.757,
+      "lon": -111.657,
+      "name": "UNVERIFIED Jeremy Ranch / I-80 west"
+    },
+    {
+      "zone_id": "vail_co-z1",
+      "lat": 39.6305,
+      "lon": -106.287,
+      "name": "UNVERIFIED I-70 exit 180 / East Vail"
+    },
+    {
+      "zone_id": "vail_co-z2",
+      "lat": 39.615,
+      "lon": -106.437,
+      "name": "UNVERIFIED I-70 exit 171 / Dowd Junction"
+    },
+    {
+      "zone_id": "vail_co-z3",
+      "lat": 39.5865,
+      "lon": -106.4305,
+      "name": "UNVERIFIED Minturn / US-24"
+    },
+    {
+      "zone_id": "beaver_creek_co-z1",
+      "lat": 39.6365,
+      "lon": -106.523,
+      "name": "UNVERIFIED I-70 exit 167 / Avon"
+    },
+    {
+      "zone_id": "beaver_creek_co-z2",
+      "lat": 39.6495,
+      "lon": -106.5985,
+      "name": "UNVERIFIED I-70 exit 163 / Edwards"
+    },
+    {
+      "zone_id": "beaver_creek_co-z3",
+      "lat": 39.621,
+      "lon": -106.4715,
+      "name": "UNVERIFIED I-70 exit 169 / Eagle-Vail"
+    },
+    {
+      "zone_id": "eagle_co-z1",
+      "lat": 39.6605,
+      "lon": -106.8285,
+      "name": "UNVERIFIED I-70 exit 147 / Eagle (corridor base)"
+    },
+    {
+      "zone_id": "eagle_co-z2",
+      "lat": 39.6465,
+      "lon": -106.9425,
+      "name": "UNVERIFIED I-70 exit 140 / Gypsum, airport"
+    },
+    {
+      "zone_id": "eagle_co-z3",
+      "lat": 39.6215,
+      "lon": -106.8295,
+      "name": "UNVERIFIED Brush Creek Rd / Eagle Ranch"
+    },
+    {
+      "zone_id": "glenwood_springs_co-z1",
+      "lat": 39.5595,
+      "lon": -107.353,
+      "name": "UNVERIFIED I-70 exit 114 / West Glenwood"
+    },
+    {
+      "zone_id": "glenwood_springs_co-z2",
+      "lat": 39.5665,
+      "lon": -107.2835,
+      "name": "UNVERIFIED I-70 exit 119 / No Name"
+    },
+    {
+      "zone_id": "glenwood_springs_co-z3",
+      "lat": 39.4695,
+      "lon": -107.2765,
+      "name": "UNVERIFIED SH-82 / Cattle Creek"
+    },
+    {
+      "zone_id": "basalt_carbondale_co-z1",
+      "lat": 39.4105,
+      "lon": -107.2135,
+      "name": "UNVERIFIED SH-82 / SH-133 Carbondale"
+    },
+    {
+      "zone_id": "basalt_carbondale_co-z2",
+      "lat": 39.3705,
+      "lon": -107.0315,
+      "name": "UNVERIFIED SH-82 / Basalt Ave"
+    },
+    {
+      "zone_id": "basalt_carbondale_co-z3",
+      "lat": 39.3835,
+      "lon": -107.0725,
+      "name": "UNVERIFIED SH-82 / Willits Ln"
+    },
+    {
+      "zone_id": "aspen_co-z1",
+      "lat": 39.2485,
+      "lon": -106.8845,
+      "name": "UNVERIFIED SH-82 / Brush Creek intercept lot"
+    },
+    {
+      "zone_id": "aspen_co-z2",
+      "lat": 39.1905,
+      "lon": -106.8195,
+      "name": "UNVERIFIED Aspen Main St / Mill St"
+    },
+    {
+      "zone_id": "aspen_co-z3",
+      "lat": 39.2125,
+      "lon": -106.937,
+      "name": "UNVERIFIED Snowmass Village Town Park"
+    },
+    {
+      "zone_id": "eagle_vail_co-z1",
+      "lat": 39.6605,
+      "lon": -106.8285,
+      "name": "UNVERIFIED I-70 exit 147 / Eagle (corridor base)"
+    },
+    {
+      "zone_id": "eagle_vail_co-z2",
+      "lat": 39.6465,
+      "lon": -106.9425,
+      "name": "UNVERIFIED I-70 exit 140 / Gypsum, airport"
+    },
+    {
+      "zone_id": "eagle_vail_co-z3",
+      "lat": 39.6495,
+      "lon": -106.5985,
+      "name": "UNVERIFIED I-70 exit 163 / Edwards"
+    },
+    {
+      "zone_id": "eagle_vail_co-z4",
+      "lat": 39.6365,
+      "lon": -106.523,
+      "name": "UNVERIFIED I-70 exit 167 / Avon"
+    },
+    {
+      "zone_id": "eagle_vail_co-z5",
+      "lat": 39.615,
+      "lon": -106.437,
+      "name": "UNVERIFIED I-70 exit 171 / Dowd Junction"
+    },
+    {
+      "zone_id": "eagle_vail_co-z6",
+      "lat": 39.6305,
+      "lon": -106.287,
+      "name": "UNVERIFIED I-70 exit 180 / East Vail"
+    }
+  ]
+}

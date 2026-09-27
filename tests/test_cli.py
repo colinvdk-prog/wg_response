@@ -539,6 +539,21 @@ def test_console_has_last_cycle_age_chip():
     assert "d.incidents" in html
 
 
+def test_watch_daemon_world_summary_over_the_cycle(tmp_path):
+    """W6 thin world viewer: the daemon's /api/world/summary provider ranks
+    the cycle's incidents, marks the one that built a spread domain, and
+    answers {"unchanged": true} for a poll that brings the same cycle time
+    (the full suite lives in tests/test_world_viewer.py)."""
+    daemon, _, _, _, _ = _daemon(tmp_path)
+    res = daemon.run_cycle()
+    summary = daemon.world_summary()
+    (row,) = summary["incidents"]
+    assert row["incident_id"] == "inc-1" and row["rank"] == 1
+    assert row["domain"]["clients"] == 1                   # c1 is in range
+    assert summary["counts"]["with_domain"] == 1
+    assert daemon.world_summary(since=str(res.t_s))["unchanged"] is True
+
+
 def test_normalize_argv_joins_negative_aoi_and_bbox():
     from wgresponse.cli import _normalize_argv
     assert _normalize_argv(["watch", "--aoi", "-121,32,-114,36"]) == [

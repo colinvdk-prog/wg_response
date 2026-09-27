@@ -2,6 +2,11 @@
 
     MockClientRegistry     deterministic synthetic clients (contracts.seeded_rng)
     DynamoClientRegistry   reads the existing wg-consumer-profiles table
+    preset_client_registry a MockClientRegistry over preset_roster(): N demo
+                           homes on EVERY simulator preset, placed by the
+                           simulator's own WUI placement (the watch daemon's
+                           --registry mock-presets; W6 thin, 2026-09-26 —
+                           see the PRESET DEMO ROSTER section at the bottom)
 
 Source-of-truth mapping (docs/research/reusable_assets.md §1): the firerisk
 consumer golden record ``ConsumerProfile`` (DynamoDB table
@@ -263,3 +268,112 @@ class DynamoClientRegistry:
             if not lek:
                 return items
             kwargs["ExclusiveStartKey"] = lek
+
+
+# ---------------------------------------------------------------------------
+# PRESET DEMO ROSTER (W6 thin viewer, 2026-09-26; docs/LIVE_WORLD_PLAN.md §3)
+# ---------------------------------------------------------------------------
+#
+# The watch daemon's `--registry mock` seeds 12 homes around the AOI CENTRE —
+# at CONUS scale that is 12 random points up to ~1,300 km from southeast
+# Kansas, nowhere near our communities, and every live fire stays a bare
+# marker. `--registry mock-presets` instead puts N demo homes on EVERY
+# simulator preset (wgresponse.simui.LOCATIONS: the five originals, Rancho
+# Santa Fe, the six Vail -> Aspen corridor communities, the whole-valley
+# Eagle -> Vail tile), placed by the SIMULATOR'S OWN WUI placement
+# (simui.place_clients on the preset's cached tile, its city-limits polygon
+# and its place_near_road_m driveway rule) with the simulator's seed law
+# f"{key}|{seed}" — so preset K's demo homes sit on exactly the cells a
+# simulator session of (K, N, seed) would place. Live WFIGS incidents within
+# the threat radius of those homes build spread domains; everything else
+# stays a marker. Same ClientRegistry seam (protected_clients(bbox)) as
+# every registry; the plain `mock` roster is untouched.
+#
+# DEMO DATA, NOT CLIENTS: ids "<preset>-c<k:03d>", names "<preset name> ·
+# demo home k", no contact address (nothing can ever be delivered to one).
+# The whole-valley eagle_vail_co tile overlaps the vail_co / beaver_creek_co
+# / eagle_co tiles, so a few demo homes from different presets may share a
+# cell — harmless for a demo roster, and every id stays unique.
+
+#: Default demo homes per simulator preset (13 presets -> 520 homes).
+PRESET_HOMES_DEFAULT = 40
+
+#: Sentinel: resolve the real wgresponse.roads module lazily.
+_ROADS_AUTO = object()
+
+
+def preset_roster(n_per_preset: int = PRESET_HOMES_DEFAULT,
+                  seed: object = "watch-presets",
+                  keys=None, tile_dir=None, road_dir=None,
+                  roads_module=_ROADS_AUTO,
+                  notes: Optional[list] = None) -> "list[ClientProperty]":
+    """Deterministic demo roster: `n_per_preset` homes on every simulator
+    preset (or on `keys`), sorted by preset key then placement order.
+
+    Placement = simui.place_clients(tile, n, seed=f"{key}|{seed}",
+    bounds_poly=preset.bounds_poly, road_graph=<preset road graph>,
+    near_road_m=preset.place_near_road_m) on simui.load_tile(key) — the
+    simulator's own call (a SimSession on the standard zone places the same
+    cells). A missing cached tile falls back to the simulator's synthetic
+    tile and a missing road graph to the whole WUI band; both are appended
+    to `notes` LOUDLY, never silent. `tile_dir` / `road_dir` /
+    `roads_module` are test seams (roads_module=None = no road graphs).
+    Same (n_per_preset, seed, keys, tiles, graphs) -> identical list."""
+    import dataclasses
+
+    from wgresponse import simui    # lazy: heavy module, no import cycle
+    if n_per_preset < 1:
+        raise ValueError("n_per_preset must be >= 1")
+    roads_mod = roads_module
+    if roads_mod is _ROADS_AUTO:
+        try:
+            from wgresponse import roads as roads_mod
+        except Exception:        # pragma: no cover - roads ships in-repo
+            roads_mod = None
+    out: list = []
+    for key in sorted(keys if keys is not None else simui.LOCATIONS):
+        loc = simui.LOCATIONS[key]
+        tile, synthetic = simui.load_tile(key, tile_dir=tile_dir)
+        if synthetic and notes is not None:
+            notes.append(f"preset roster: {key} tile not cached — homes "
+                         f"placed on the SYNTHETIC fallback tile")
+        near_road_m = float(getattr(loc, "place_near_road_m", 0.0) or 0.0)
+        graph = None
+        if near_road_m > 0.0 and roads_mod is not None:
+            try:
+                graph = roads_mod.load_road_graph(key, road_dir=road_dir)
+            except Exception as exc:
+                graph = None
+                if notes is not None:
+                    notes.append(f"preset roster: {key} road graph failed "
+                                 f"to load ({exc})")
+        if near_road_m > 0.0 and graph is None and notes is not None:
+            notes.append(f"preset roster: {key} has the {near_road_m:g} m "
+                         f"driveway rule but no road graph — homes drawn "
+                         f"from the WHOLE WUI band")
+        place_notes: list = []
+        placed = simui.place_clients(
+            tile, n_per_preset, seed=f"{key}|{seed}", notes=place_notes,
+            bounds_poly=getattr(loc, "bounds_poly", ()), road_graph=graph,
+            near_road_m=near_road_m)
+        if notes is not None:
+            # the placement's own record (driveway-rule / city-limits pool
+            # sizes, any burnable-adjacent overflow) — never silent
+            notes.extend(f"preset roster: {key}: {n}" for n in place_notes)
+        for k, c in enumerate(placed, start=1):
+            out.append(dataclasses.replace(
+                c, client_id=f"{key}-c{k:03d}",
+                name=f"{loc.name} · demo home {k}",
+                address="", contact_email="", contact_phone=""))
+    return out
+
+
+def preset_client_registry(n_per_preset: int = PRESET_HOMES_DEFAULT,
+                           seed: object = "watch-presets",
+                           notes: Optional[list] = None,
+                           **kwargs) -> MockClientRegistry:
+    """The watch daemon's `--registry mock-presets`: a MockClientRegistry
+    serving preset_roster(...) — the same protected_clients(bbox) seam, the
+    same bbox filter, no new registry semantics."""
+    roster = preset_roster(n_per_preset, seed=seed, notes=notes, **kwargs)
+    return MockClientRegistry(seed, clients=roster)

@@ -191,6 +191,21 @@ def test_console_served(ctx):
     assert "WG Response" in text
 
 
+def test_world_viewer_served_and_summary_authed(ctx):
+    """W6 thin world viewer (docs/LIVE_WORLD_PLAN.md): /world is open like
+    /console (a key-prompt UI, no data); /api/world/summary stays authed and,
+    with no world_provider attached, derives a domain-less summary from the
+    state provider (the full suite lives in tests/test_world_viewer.py)."""
+    status, data = ctx.request("GET", "/world")
+    assert status == 200 and "WG Response — World" in data.decode("utf-8")
+    status, _ = ctx.get_json("/api/world/summary")
+    assert status == 401
+    status, body = ctx.get_json("/api/world/summary", key=KEY)
+    assert status == 200
+    assert [r["incident_id"] for r in body["incidents"]] == ["inc-1"]
+    assert body["incidents"][0]["domain"] is None
+
+
 def test_unknown_path_404(ctx):
     status, _ = ctx.get_json("/nope", key=KEY)
     assert status == 404
