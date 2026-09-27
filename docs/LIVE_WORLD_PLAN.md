@@ -103,6 +103,75 @@ the COGs at the same cell size (or the difference is recorded and explained).
 service within the class-speed model's tolerance; a domain anywhere in CONUS
 gets a road graph in under 30 s.
 
+#### W3.2 road graphs from OSM extracts (2026-09-26)
+
+`tools/fetch_roads_pbf.py` cuts a domain `.wgr` from a local Geofabrik
+`.osm.pbf` and passes the ways, unchanged, through
+`tools.fetch_sim_roads.build_graph`. Same highway regex, same simplification,
+`roads.save_road_graph` on the way out. A preset `--key` uses
+`bbox_for(LOCATIONS[key])` formatted the way the Overpass query sends it
+(each edge to 6 decimals): a way is kept when any node lies inside that
+inclusive box, and the way's full geometry is kept, not clipped.
+
+**Dependency.** osmium 4.3.1 (pyosmium). On this Windows / CPython 3.14.5
+machine, `py -3 -m pip install osmium` installed
+`osmium-4.3.1-cp314-cp314-win_amd64.whl`. pyrosm does not install here:
+`py -3 -m pip install pyrosm --only-binary=:all:` fails because `cykhash`
+has no cp314 wheel, and pyrosm would return a GeoDataFrame rather than the
+Overpass way elements `build_graph` already consumes. A hand-rolled protobuf
+reader was unnecessary once the osmium wheel imported. The extra is
+recorded in `requirements.txt`; cached `.wgr` files stay stdlib-only.
+
+The first pass writes `out/osm/<extract>.osm.pbf.wgridx` (highway ways and
+coordinates for the whole extract, 126 MB for Colorado: 752,075 ways,
+7,211,411 node refs). Later domains reuse it. Colorado extract:
+`colorado-latest.osm.pbf`, 365 MB, MD5 `8e574e1c76c0b6af264df52e1da95a34`,
+Geofabrik timestamp `2026-09-26T20:22:51Z`. The committed Overpass graphs
+were fetched 2026-09-24 (vail, eagle) and 2026-09-26T01:01Z (eagle_vail),
+so counts are not required to be identical; these are the measured deltas.
+Snap distances are the gap from the preset point to its nearest graph node.
+Every safe zone and the location center agreed exactly (snap points 0 m
+apart). `roads.route` uses the same seeded WUI pair as `tests/test_roads.py`.
+
+| key | nodes (ov → pbf) | edges (ov → pbf) | LCC % (ov → pbf) | safe-zone snap \|Δ\| | route on_roads | route dist |
+|---|---|---|---|---|---|---|
+| vail_co | 1,170 → 1,170 (+0.00%) | 1,425 → 1,425 (+0.00%) | 98.32 → 98.32 (+0.00 pp) | 0.0 m (z1 31.0, z2 55.9, z3 17.1) | True / True | 7,137.4 m (+0.00%) |
+| eagle_co | 2,124 → 2,140 (+0.75%) | 2,774 → 2,797 (+0.83%) | 99.07 → 99.07 (+0.00 pp) | 0.0 m (z1 18.2, z2 20.5, z3 889.4) | True / True | 5,458.9 m (+0.00%) |
+| eagle_vail_co | 6,836 → 6,854 (+0.26%) | 8,462 → 8,486 (+0.28%) | 93.18 → 93.20 (+0.02 pp) | 0.0 m (z1 18.2, z2 20.5, z3 270.0, z4 4.8, z5 55.9, z6 31.0) | True / True | 27,275.1 m (+0.00%) |
+
+Wall time and peak working set, separate processes, after the memory
+counters were read correctly (`GetProcessMemoryInfo` needs ctypes
+`argtypes` on Win64):
+
+| run | wall | peak RSS | peak commit |
+|---|---|---|---|
+| vail_co cold (index build + cut) | 26.4 s | 1,290 MB | 1,591 MB |
+| vail_co warm (index reused) | 0.12 s | 182 MB | 181 MB |
+| eagle_co warm | 0.14 s | 182 MB | 181 MB |
+| eagle_vail_co warm | 0.32 s | 224 MB | 223 MB |
+
+The cold peak is the osmium node-location cache for the whole state
+extract (~1.1 GB RSS while ways are scanned, then released; the process
+ends near 280 MB). A domain after that pass is a fraction of a second,
+under the 2-minute target. `corridor_vail_aspen` is out of scope: it was
+built with a major-roads regex, not `HIGHWAY_REGEX`.
+
+Commands used:
+
+```
+py -3 -m pip install osmium
+py -3 -m pip install pyrosm --only-binary=:all:
+curl.exe -L -o out/osm/colorado-latest.osm.pbf https://download.geofabrik.de/north-america/us/colorado-latest.osm.pbf
+py -3 tools/fetch_roads_pbf.py --pbf out/osm/colorado-latest.osm.pbf --key vail_co --out out/roads/vail_co.wgr --compare
+py -3 tools/fetch_roads_pbf.py --pbf out/osm/colorado-latest.osm.pbf --key eagle_co --out out/roads/eagle_co.wgr --compare
+py -3 tools/fetch_roads_pbf.py --pbf out/osm/colorado-latest.osm.pbf --key eagle_vail_co --out out/roads/eagle_vail_co.wgr --compare
+py -3 tools/fetch_roads_pbf.py --pbf out/osm/colorado-latest.osm.pbf --key vail_co --out out/roads/vail_co.wgr --compare --force --rebuild-index
+```
+
+`--bbox W,S,E,N --out path` is the direct alternative to `--key`. An
+existing output is left in place unless `--force`; a git-tracked
+`data/roads/*.wgr` is refused without it.
+
 ### W4 — Crews and teams
 
 | # | Ticket | Notes |

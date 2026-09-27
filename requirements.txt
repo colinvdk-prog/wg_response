@@ -20,3 +20,14 @@ imagecodecs
 # optional S3 state/terrain mirror (env WGRESP_STATE_S3, docs/DURABLE_STATE.md).
 # Imported lazily; tests inject scan_fn / a fake S3 client and never need it.
 boto3
+
+# OSM PBF road-graph cuts (tools/fetch_roads_pbf.py). Cached .wgr files stay
+# stdlib-only; this extra is needed only while cutting a graph from a local
+# Geofabrik extract. Tested on Windows / CPython 3.14.5 (2026-09-26):
+# `py -3 -m pip install osmium` installed osmium 4.3.1 from
+# osmium-4.3.1-cp314-cp314-win_amd64.whl. pyrosm does not install here
+# (`py -3 -m pip install pyrosm --only-binary=:all:` fails: cykhash has no
+# cp314 wheel). The tool writes a highway index beside the extract so later
+# domains do not re-read the PBF.
+# Install: py -3 -m pip install osmium
+osmium
