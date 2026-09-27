@@ -55,6 +55,32 @@ py -3 -m wgresponse.cli watch --aoi "-121.0,32.5,-114.0,36.0" --state-dir state
 # else SyntheticTerrain with a LOUD rehearsal-grade warning. The LFPS job API
 # requires an Email parameter on submit: watch sends env LFPS_EMAIL when set,
 # else ops@thewildfireguardian.com.
+#
+# SEEDED INCIDENTS (W1, docs/LIVE_WORLD_PLAN.md; contracts SAFETY SEMANTICS
+# 12): light a fire at a point and the watcher runs it exactly like a feed
+# incident — listed in /api/state (source "seeded"), a domain + ensemble +
+# ETAs + alert ladder + dispatch when protected clients are in range (none
+# in range = listed, no domain: the live law), persisted across restarts.
+# Authed like every write path (X-Internal-API-Key unless WGRESP_DEV_OPEN=1):
+#   POST   /api/seed        {"lat": 39.626, "lon": -106.936,
+#                            "intensity": "high", "wind_dir_deg": 240,
+#                            "note": "drill", "created_by": "colin"}
+#                            -> 201 {"incident_id": "seeded:<uuid>", "seed"}
+#                            (400 bad body / outside the AOI, 409 at 12 active)
+#   GET    /api/seed[/<id>] seeds (active + recently retired): weather mode,
+#                            last-cycle domain, pair states
+#   DELETE /api/seed/<id>   retire (?by=name): absent from the next cycle; its
+#                            pairs take the absence law like a vanished feed
+#                            incident (-> CLEARED after clear_cycles while every
+#                            feed is healthy; frozen while any is blind)
+# Weather is LIVE at the fire (NWS) unless the seed overrides it: "intensity"
+# (the simulator's low/moderate/high/extreme presets) or "weather"
+# ({wind_speed_mps, rh_pct, temp_c, wind_gust_mps?}) sets the conditions,
+# "wind_dir_deg" fixes the direction; both = fully synthetic, no network. A
+# seeded fire is a point incident spread from its point every cycle (the
+# watcher has no ground truth for live fires); a seed/retire persists at once
+# and wakes the loop. Seeded fires notify the DRILL LOG only — never a client
+# channel — and auto-retire once their horizon passes with nothing threatened.
 
 # 6. THE INTERACTIVE SIMULATOR (docs/SIMULATOR_DESIGN.md): thirteen real WUI
 #    locations on cached LANDFIRE tiles, click-to-ignite fires, the REAL
@@ -107,16 +133,17 @@ py -3 -m pip install -r requirements.txt   # tifffile + numpy + imagecodecs (+ b
 | `wgresponse.clients` | `DynamoClientRegistry` (wg-consumer-profiles) + mock registry. |
 | `wgresponse.crews` | Phone-GPS beacon ingest, crew state, staleness. |
 | `wgresponse.alerts` | Alert ladder state machine with hysteresis (`ALERT_TRANSITIONS` enforced). |
-| `wgresponse.threat` | `ThreatMonitor.cycle()` — the full orchestration loop. |
+| `wgresponse.threat` | `ThreatMonitor.cycle()` — the full orchestration loop (feeds ∪ seeded incidents → domains → ladder → dispatch). |
+| `wgresponse.seeded` | W1 seeded incidents (SAFETY SEMANTICS 12): the thread-safe `SeededIncidentStore` (create / retire / list / persistence rows, 12-active cap), `seeded_forecast` (the per-incident weather override through the weather seam), `parse_seed_request` (the `POST /api/seed` body), `SeedSafeNotifier` (a seeded fire's notifications go to the drill log, never a client). |
 | `wgresponse.safety` | P10 departure deadlines, eroded-grid corridor checks, egress-to-safe-zone verdicts. |
 | `wgresponse.dispatch` | Deadline-TOPTW planner: regret-2 insertion + ILS, commitment/churn stability. |
 | `wgresponse.travel` | Tier-0 travel time (haversine x circuity / class speed x fire-traffic factor). |
 | `wgresponse.notify` | Notifier protocol; SES/SMS stubs, log notifier. |
 | `wgresponse.sim` | Seeded synthetic scenarios + full-loop sim harness (the acceptance test and the demo). |
-| `wgresponse.server` | Stdlib HTTP: `POST /api/beacon`, `GET /api/state`, `GET /api/plan`, `GET /console`; `/healthz` carries last-cycle age + degraded + cycle count; `/simulator` + `/api/sim/*` session API (LRU-capped, per-session ticker; `POST /api/sim/<id>/crew` = setup-phase crew placement, road-snapped, 409 once a fire is lit). `X-Internal-API-Key`, fail-closed. |
+| `wgresponse.server` | Stdlib HTTP: `POST /api/beacon`, `GET /api/state`, `GET /api/plan`, `GET /console`; `/healthz` carries last-cycle age + degraded + cycle count; `/simulator` + `/api/sim/*` session API (LRU-capped, per-session ticker; `POST /api/sim/<id>/crew` = setup-phase crew placement, road-snapped, 409 once a fire is lit); `/api/seed` GET/POST/DELETE routed to the watch daemon (404 elsewhere). `X-Internal-API-Key`, fail-closed. |
 | `wgresponse.simui` | `SimSession`: the interactive simulator over the REAL engine — thirteen cached LFPS WUI tiles (five originals, Rancho Santa Fe, the six Vail→Aspen corridor communities, the whole-valley Eagle→Vail corridor on one ~60 km @ 200 m tile), seeded WUI client placement, setup-phase crew placement on the road network (`place_crew` / `reset_crews`: nearest road node within 2 km, escape targets stay the safe zones, replayed by reset), perimeter-seeded ensembles, live safety-slider re-plans (in-flight deploys re-checked, never grandfathered), per-tick safety audit. |
 | `wgresponse.persist` | `StateStore`: atomic-write (fsync'd) versioned JSON persistence for alert records, the notified ledger, the incumbent plan, and watch metadata — restart re-fires nothing already sent (an applied-but-never-sent active alert IS re-fired: re-notify-ward); ANY corrupt state — including non-UTF-8 bytes and type-corrupt fields — loads fresh with a loud note, never a crash. |
-| `wgresponse.cli` | `simulate \| forecast \| plan \| serve \| pull-feeds \| watch \| simui` (watch = the live operator daemon: AOI-bounded feeds, per-cycle persistence, console + healthz off the live loop; simui = the interactive simulator UI). |
+| `wgresponse.cli` | `simulate \| forecast \| plan \| serve \| pull-feeds \| watch \| simui` (watch = the live operator daemon: AOI-bounded feeds, per-cycle persistence, console + healthz off the live loop, the `/api/seed` seeding API; simui = the interactive simulator UI). |
 
 ## Config knobs (`contracts.ResponseConfig`)
 

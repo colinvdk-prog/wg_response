@@ -54,7 +54,8 @@ import urllib.request
 from datetime import datetime, timezone
 from typing import Callable, Optional
 
-from .contracts import BBox, FireIncident, IncidentSource, LatLon, seeded_rng
+from .contracts import (SEEDED_ID_PREFIX, BBox, FireIncident, IncidentSource,
+                        LatLon, seeded_rng)
 
 log = logging.getLogger(__name__)
 
@@ -748,12 +749,24 @@ def fuse_incidents(batches: "list[list[FireIncident]]") -> "list[FireIncident]":
     is STABLE across cycles: IRWIN id
     when known, else the most-preferred source's id (_CANONICAL_SOURCE_RANK,
     lexicographic tie-break) — never "whichever member is freshest today".
-    Output sorted by canonical incident_id. All times unix seconds."""
+    Output sorted by canonical incident_id. All times unix seconds.
+
+    SEEDED INCIDENTS NEVER FUSE (W1, contracts SAFETY SEMANTICS 12a): an
+    incident of IncidentSource.SEEDED or with a 'seeded:' id is its own
+    group — it joins nothing and nothing joins it (no IRWIN key, no name
+    key), whatever its name or position. The watch monitor unions seeds
+    AFTER fusion anyway; this guard keeps any caller that batches them
+    honest. No seeded input = byte-identical fusion."""
     incidents = [inc for batch in batches for inc in batch]
     groups: "list[list[FireIncident]]" = []
     group_norms: "list[list[str]]" = []      # parallel: normalized member names
     by_irwin: dict = {}
     for inc in incidents:
+        if (inc.source is IncidentSource.SEEDED
+                or str(inc.incident_id).startswith(SEEDED_ID_PREFIX)):
+            groups.append([inc])
+            group_norms.append([""])         # "" never name-joins (below)
+            continue
         nm = _norm_name(inc.name)
         gi = None
         key = _norm_irwin(inc.irwin_id)

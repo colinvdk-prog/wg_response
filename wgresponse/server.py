@@ -87,6 +87,16 @@ Sessions live in an in-memory LRU dict (cap 4); a background ticker thread
 per RUNNING session advances the engine (run = auto-tick at speed, step =
 single tick). Malformed JSON -> 400; unknown session -> 404.
 
+W1 SEEDED INCIDENTS (contracts SAFETY SEMANTICS 12; docs/LIVE_WORLD_PLAN.md).
+All authed; served only when the watch daemon wires app.seed_api (else 404):
+    POST   /api/seed       {lat, lon, intensity?, wind_dir_deg?, weather?,
+                           note?, created_by?} -> 201 {incident_id, seed};
+                           400 bad body / outside the AOI; 409 at the cap
+    GET    /api/seed       {seeds: [...], active, max_active}
+    GET    /api/seed/<id>  {seed} | 404
+    DELETE /api/seed/<id>  retire (?by=name) -> 200 | 404 unknown | 409 already
+                           retired. Any other DELETE -> 405.
+
 State providers wired to a live ThreatMonitor should include the CycleResult's
 `degraded`, `operator_events`, and `t_s` in the state dict so /api/state and
 the console degradation banner surface provider outages.
@@ -112,7 +122,7 @@ from collections import OrderedDict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Callable, Optional
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from wgresponse import geo, simui
 from wgresponse.contracts import CrewBeacon, CrewStatus, LatLon
@@ -822,6 +832,11 @@ class SimSessionManager:
 class _App:
     """Request-independent wiring shared by all handler threads."""
 
+    #: W1 SEEDED INCIDENTS: the /api/seed provider — the watch daemon sets
+    #: httpd.app.seed_api after serve() (seed_list / seed_get / seed_create /
+    #: seed_retire, each -> (status, payload)); None = the routes answer 404.
+    seed_api = None
+
     def __init__(self, state_provider: Optional[Callable] = None,
                  beacon_sink=None, plan_provider: Optional[Callable] = None,
                  console_path=None, simulator_path=None, sim_manager=None):
@@ -966,6 +981,9 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/beacon":
             self._send_json(405, {"error": "use POST"})
             return
+        if path == "/api/seed" or path.startswith("/api/seed/"):
+            self._seed_request("GET", path)
+            return
         self._send_json(404, {"error": "not found"})
 
     def do_POST(self):
@@ -976,7 +994,87 @@ class _Handler(BaseHTTPRequestHandler):
         if path.startswith("/api/sim"):
             self._sim_post(path)
             return
+        if path == "/api/seed" or path.startswith("/api/seed/"):
+            self._seed_request("POST", path)
+            return
         self._send_json(404, {"error": "not found"})
+
+    def do_DELETE(self):
+        path = urlparse(self.path).path.rstrip("/")
+        if path == "/api/seed" or path.startswith("/api/seed/"):
+            self._seed_request("DELETE", path)
+            return
+        self._send_json(405, {"error": "method not allowed"})
+
+    # -- W1 seeded incidents (the watch daemon's /api/seed) -------------------
+
+    def _seed_request(self, method: str, path: str):
+        """/api/seed routing (contracts SAFETY SEMANTICS 12; the handlers live
+        on the injected app.seed_api — cli._WatchDaemon). Authed like every
+        write path. GET /api/seed = list, GET /api/seed/<id> = one,
+        POST /api/seed = light a fire (201), DELETE /api/seed/<id>[?by=name]
+        = retire. The (bounded) request body is read BEFORE any answer, the
+        401 included: HTTP/1.1 keep-alive must never read leftover body bytes
+        as the next request, and closing a socket with unread data makes
+        Windows reset the connection before the client reads the reply. An
+        oversized body is answered (401 unauthenticated, else 413) and the
+        connection closed. Empty body -> 400, malformed JSON -> 400 (the
+        beacon endpoint's codes and messages)."""
+        raw = b""
+        if method in ("POST", "DELETE"):
+            try:
+                n = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                n = 0
+            if n > _MAX_BODY_BYTES:
+                self.close_connection = True
+                if not self._auth_ok():
+                    self._send_json(401, {"error": "unauthorized"})
+                else:
+                    self._send_json(413, {"error": "body too large"})
+                return
+            if n > 0:
+                raw = self.rfile.read(n)
+        if self._reject_unauthorized():
+            return
+        parts = path.split("/")          # ['', 'api', 'seed'(, <id>)]
+        seed_id = unquote(parts[3]) if len(parts) == 4 else None
+        payload = None
+        if method == "POST":             # (a DELETE body carries nothing)
+            if not raw:
+                self._send_json(400, {"error": "empty body"})
+                return
+            try:
+                payload = json.loads(raw.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as e:
+                self._send_json(400, {"error": f"malformed JSON: {e}"})
+                return
+        api = self.app.seed_api
+        if api is None:
+            self._send_json(404, {"error": "seeding is served by the watch "
+                                           "daemon only (wgresponse.cli "
+                                           "watch)"})
+            return
+        if len(parts) > 4 or (len(parts) == 4 and not seed_id):
+            self._send_json(404, {"error": "not found"})
+            return
+        try:
+            if method == "GET":
+                code, out = (api.seed_get(seed_id) if seed_id
+                             else api.seed_list())
+            elif method == "POST":
+                code, out = ((405, {"error": "POST /api/seed (no id) lights "
+                                             "a fire; DELETE retires one"})
+                             if seed_id else api.seed_create(payload))
+            else:
+                by = parse_qs(urlparse(self.path).query).get("by", ["api"])[0]
+                code, out = ((405, {"error": "DELETE /api/seed/<id>"})
+                             if not seed_id
+                             else api.seed_retire(seed_id, by=by[:64] or "api"))
+        except Exception as e:           # a seed bug must never wedge the server
+            _LOG.exception("seed api failed")
+            code, out = 500, {"error": f"seed api: {e}"}
+        self._send_json(code, out)
 
     def _post_beacon(self):
         if self._reject_unauthorized():

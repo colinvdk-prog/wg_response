@@ -39,6 +39,31 @@ The AOI is either a bare "west,south,east,north" bbox or a zones JSON file:
 (multi-zone files watch the UNION bbox; safe_zones feed the dispatcher —
 without any, dispatch fails closed and every job is unserved).
 
+SEEDED INCIDENTS (W1, docs/LIVE_WORLD_PLAN.md; contracts SAFETY SEMANTICS 12):
+the daemon also serves a seeding API — a user lights a fire at a point and
+the watcher treats it exactly like a feed incident (incident set, domain when
+protected clients are in range, alert ladder, dispatch, persistence):
+
+    POST   /api/seed         {lat, lon, intensity?, wind_dir_deg?, weather?,
+                              note?, created_by?} -> 201 {incident_id:
+                              'seeded:<uuid>', seed}; 400 = bad body / point
+                              outside the AOI; 409 = too many active seeds
+    GET    /api/seed         every seed (active + recently retired) with its
+                              weather mode, last-cycle domain and pair states
+    GET    /api/seed/<id>    one seed (404 unknown)
+    DELETE /api/seed/<id>    retire (?by=name): absent from the next cycle, its
+                              pairs take the absence law like a vanished feed
+                              incident (404 unknown, 409 already retired)
+
+Authed like every write path (X-Internal-API-Key unless WGRESP_DEV_OPEN=1).
+Weather: live at the fire unless the seed overrides it (intensity = the
+simulator's preset conditions, weather = explicit conditions, wind_dir_deg =
+a fixed direction). A seed/retire persists immediately and wakes the loop so
+the next cycle runs now instead of after the period. Seeded incidents'
+notifications go to the DRILL LOG only (seeded.SeedSafeNotifier) — never a
+client channel, whatever notifier the daemon runs. /api/state lists them with
+source "seeded" (+ a `seeds` key once any seed exists).
+
 Real modules are imported lazily inside each subcommand so `--help` and the
 mock paths work before sibling modules land. All times printed are hours
 relative to the relevant anchor (stated per column); config units follow
@@ -663,7 +688,15 @@ class _WatchDaemon:
         self._safe_zones = list(safe_zones)
         self._period_s = float(period_s)
         self._clock = clock
-        self._sleep = sleep
+        # W1 SEEDED INCIDENTS: the live loop's default sleep is WAKEABLE —
+        # a seed lit or retired through the API wakes it so the next cycle
+        # runs now, not after the period. An injected sleep (tests, drills)
+        # is used verbatim.
+        self._wake = threading.Event()
+        self._sleep = self._wakeable_sleep if sleep is time.sleep else sleep
+        # persist_now runs on the cycle thread AND (seed API) on HTTP
+        # threads: one writer at a time, never two saves interleaving.
+        self._persist_lock = threading.Lock()
         self._startup_notes = list(startup_notes)
         self.cycles_run = 0
         self.started_at_s = None       # stamped at the first cycle
@@ -698,6 +731,20 @@ class _WatchDaemon:
             return False
         if not loaded:
             return False
+        # W1 SEEDED INCIDENTS (SAFETY SEMANTICS 12h): the operator's fires
+        # come back first and independently — a failed alert-engine restore
+        # (below: start fresh, re-alert) must not also put them out.
+        seed_rows = loaded.get("seeded_incidents") or []
+        restore_seeds = getattr(self._monitor, "restore_seeds", None)
+        if seed_rows and callable(restore_seeds):
+            try:
+                n = restore_seeds(seed_rows)
+                log.info("watch: restored %d seeded incident(s) (%d active)",
+                         n, len(self._monitor.seeded.active()))
+            except Exception:
+                log.exception("watch: seeded-incident restore failed; "
+                              "starting with NO seeds (re-seed via "
+                              "POST /api/seed)")
         try:
             self._engine.restore(loaded["alert_records"],
                                  notified_ledger=loaded["notified_ledger"],
@@ -766,9 +813,33 @@ class _WatchDaemon:
             self.persist_now(final=True)
             return ran
 
+    def wake(self) -> None:
+        """Cut the current (or next) inter-cycle sleep short (W1: a seed was
+        lit or retired). A no-op for an injected sleep."""
+        self._wake.set()
+
+    def _wakeable_sleep(self, seconds: float) -> None:
+        """The live loop's sleep: `seconds`, or until wake(). Waits in <= 1 s
+        slices so a Ctrl-C still lands promptly (an Event wait is not
+        reliably interruptible on Windows)."""
+        end = time.monotonic() + max(0.0, float(seconds))
+        while True:
+            remaining = end - time.monotonic()
+            if remaining <= 0.0 or self._wake.wait(min(remaining, 1.0)):
+                break
+        self._wake.clear()
+
     def persist_now(self, final: bool = False) -> bool:
         """Persist durable state via StateStore; disk failure is a LOUD log +
-        False, never fatal (a full disk must not kill the alert loop)."""
+        False, never fatal (a full disk must not kill the alert loop).
+        Serialized: the seed API (W1) persists from HTTP threads too."""
+        with self._persist_lock:
+            return self._persist_locked(final)
+
+    def _persist_locked(self, final: bool = False) -> bool:
+        """persist_now's body, under the persist lock. The seeded store's
+        rows ride along once any seed exists (SEMANTICS 12h) — never before,
+        so a daemon that never seeded writes the pre-W1 file."""
         try:
             states = self._engine.states()
             ledger_fn = getattr(self._engine, "notified_ledger", None)
@@ -782,12 +853,17 @@ class _WatchDaemon:
                                    if self.last_result else None),
                 "final": bool(final),
             }
+            extra = {}
+            seeds = getattr(self._monitor, "seeded", None)
+            if seeds is not None and len(seeds):
+                extra["seeded_incidents"] = seeds.rows()
             self._store.save(states,
                              ledger_fn() if callable(ledger_fn) else {},
                              getattr(self._monitor, "incumbent", None),
                              meta,
                              incident_growth=(growth_fn()
-                                              if callable(growth_fn) else None))
+                                              if callable(growth_fn) else None),
+                             **extra)
             return True
         except Exception:
             log.exception("watch: persist FAILED — state not saved this "
@@ -834,6 +910,10 @@ class _WatchDaemon:
             "events": list(self._events),
             "operator_log": list(self._op_log),
         }
+        seed_rows = self._seed_rows()
+        if seed_rows is not None:
+            # W1 (SEMANTICS 12): additive, present once any seed exists
+            out["seeds"] = seed_rows
         res = self.last_result
         if res is None:
             out.update({"degraded": False, "operator_events": [],
@@ -868,11 +948,152 @@ class _WatchDaemon:
     @staticmethod
     def _incident_row(inc) -> dict:
         src = getattr(inc.source, "value", None) or str(inc.source)
-        return {"incident_id": inc.incident_id, "name": inc.name,
-                "source": src, "lat": inc.origin.lat, "lon": inc.origin.lon,
-                "acreage": inc.acreage,
-                "containment_pct": inc.containment_pct,
-                "updated_at_s": inc.updated_at_s}
+        row = {"incident_id": inc.incident_id, "name": inc.name,
+               "source": src, "lat": inc.origin.lat, "lon": inc.origin.lon,
+               "acreage": inc.acreage,
+               "containment_pct": inc.containment_pct,
+               "updated_at_s": inc.updated_at_s}
+        if src == "seeded":
+            # W1 (SEMANTICS 12f): when it was lit, by whom, which weather
+            row["seed"] = dict((inc.meta or {}).get("seed") or {})
+        return row
+
+    # ------------------------------------ W1 seeded incidents (the /api/seed seam)
+    # wgresponse.server routes /api/seed to app.seed_api = this daemon; every
+    # method returns (http_status, json_payload) like SimSessionManager.
+
+    def _seed_store(self):
+        return getattr(self._monitor, "seeded", None)
+
+    def _seed_row(self, entry) -> dict:
+        """One seed for the API / state: its summary, lifecycle, weather
+        label, whether the last cycle carried it, the domain it built (grid
+        + clients in range) and its pairs' alert states."""
+        from wgresponse import seeded as seeded_mod
+        ign = entry.ignition
+        iid = ign.incident_id
+        row = ign.summary()
+        row.update({
+            "status": "active" if entry.active else "retired",
+            "seq": entry.seq,
+            "retired_at_s": entry.retired_at_s,
+            "retired_reason": entry.retired_reason or None,
+            "retired_by": entry.retired_by or None,
+            "weather_label": seeded_mod.weather_label(ign),
+            "in_last_cycle": False, "domain": None, "pairs": {},
+        })
+        res = self.last_result
+        if res is not None:
+            row["in_last_cycle"] = any(i.incident_id == iid
+                                       for i in res.incidents)
+            ens = (res.ensembles or {}).get(iid)
+            if ens is not None:
+                tm = ((res.timings or {}).get("incidents") or {}).get(iid) or {}
+                sp = ens.spec
+                row["domain"] = {"north_lat": sp.north_lat,
+                                 "west_lon": sp.west_lon, "cell_m": sp.cell_m,
+                                 "nrows": sp.nrows, "ncols": sp.ncols,
+                                 "cells": sp.nrows * sp.ncols,
+                                 "clients": tm.get("clients"),
+                                 "phases_s": {k: tm.get(k) for k in (
+                                     "terrain_s", "weather_s", "spread_s")}}
+        try:
+            states = self._engine.states()
+        except Exception:
+            states = {}
+        pairs: dict = {}
+        for (_cid, pid), rec in states.items():
+            if pid == iid:
+                sv = getattr(rec.state, "value", None) or str(rec.state)
+                pairs[sv] = pairs.get(sv, 0) + 1
+        row["pairs"] = dict(sorted(pairs.items()))
+        return row
+
+    def _seed_rows(self):
+        """Every seed as a row, or None when no seed was ever lit (so the
+        pre-W1 /api/state stays byte-identical)."""
+        store = self._seed_store()
+        if store is None or not len(store):
+            return None
+        return [self._seed_row(e) for e in store.entries()]
+
+    def seed_list(self):
+        """GET /api/seed."""
+        store = self._seed_store()
+        if store is None:
+            return 404, {"error": "this monitor has no seeded-incident store"}
+        rows = self._seed_rows() or []
+        return 200, {"seeds": rows,
+                     "active": sum(1 for r in rows if r["status"] == "active"),
+                     "max_active": store.max_active}
+
+    def seed_get(self, incident_id: str):
+        """GET /api/seed/<id>."""
+        store = self._seed_store()
+        entry = store.entry(incident_id) if store is not None else None
+        if entry is None:
+            return 404, {"error": f"unknown seed {incident_id!r}"}
+        return 200, {"seed": self._seed_row(entry)}
+
+    def seed_create(self, payload):
+        """POST /api/seed: validate (seeded.parse_seed_request — 400 on a bad
+        body or a point outside the AOI), light the fire at the daemon clock
+        (409 at the active cap), persist NOW (the seed survives a crash before
+        the next cycle) and wake the loop. 201 {incident_id, seed}."""
+        from wgresponse import seeded as seeded_mod
+        store = self._seed_store()
+        if store is None:
+            return 404, {"error": "this monitor has no seeded-incident store"}
+        try:
+            kw = seeded_mod.parse_seed_request(payload, self._aoi)
+        except ValueError as e:
+            return 400, {"error": str(e)}
+        now = float(self._clock())
+        try:
+            ign = self._monitor.create_seed(
+                kw["lat"], kw["lon"], now, intensity=kw["intensity"],
+                weather=kw["weather"], wind_dir_deg=kw["wind_dir_deg"],
+                created_by=kw["created_by"], note=kw["note"])
+        except seeded_mod.SeedConflict as e:
+            return 409, {"error": str(e)}
+        except ValueError as e:
+            return 400, {"error": str(e)}
+        persisted = self.persist_now()
+        self.wake()
+        log.warning("watch: SEEDED fire %s lit at (%.5f, %.5f) by %s — %s",
+                    ign.incident_id, ign.loc.lat, ign.loc.lon, ign.created_by,
+                    seeded_mod.weather_label(ign))
+        return 201, {"ok": True, "incident_id": ign.incident_id,
+                     "persisted": persisted,
+                     "takes_effect": "next cycle (the loop was woken)",
+                     "seed": self._seed_row(store.entry(ign.incident_id))}
+
+    def seed_retire(self, incident_id: str, by: str = "api"):
+        """DELETE /api/seed/<id>: retire at the daemon clock (404 unknown,
+        409 already retired), persist NOW, wake the loop."""
+        from wgresponse import seeded as seeded_mod
+        if self._seed_store() is None:
+            return 404, {"error": "this monitor has no seeded-incident store"}
+        now = float(self._clock())
+        try:
+            entry = self._monitor.retire_seed(incident_id, now, by=by or "api")
+        except KeyError:
+            return 404, {"error": f"unknown seed {incident_id!r}"}
+        except seeded_mod.SeedAlreadyRetired as e:
+            return 409, {"error": str(e)}
+        persisted = self.persist_now()
+        self.wake()
+        log.warning("watch: SEEDED fire %s retired by %s", incident_id,
+                    entry.retired_by)
+        return 200, {"ok": True, "incident_id": incident_id,
+                     "retired_at_s": entry.retired_at_s,
+                     "persisted": persisted,
+                     "ladder": ("absent from the next cycle; its client pairs "
+                                "follow the absence law like a vanished feed "
+                                "incident — clear streak toward CLEARED while "
+                                "every feed is healthy, frozen while any is "
+                                "blind (SAFETY SEMANTICS 6/12e)"),
+                     "seed": self._seed_row(entry)}
 
     def _crew_rows(self) -> list:
         if self._tracker is None:
@@ -1091,6 +1312,11 @@ def _cmd_watch(args) -> int:
         return 2
     registry, registry_desc = _watch_registry(args, aoi)
     notifier, notifier_desc = _watch_notifier(args, state_dir)
+    # W1 SEEDED INCIDENTS (SAFETY SEMANTICS 12g): a seeded (drill) fire's
+    # notifications go to the drill log, never to a client channel.
+    from wgresponse.seeded import SeedSafeNotifier
+    notifier = SeedSafeNotifier(notifier)
+    notifier_desc += " · seeded fires -> drill log only"
     if not safe_zones:
         startup_notes.append(
             "no safe zones configured — dispatch fails closed (every job "
@@ -1149,6 +1375,8 @@ def _cmd_watch(args) -> int:
     else:
         auth = "FAIL-CLOSED — set WGRESP_API_KEY (healthz/console only)"
     host, port = httpd.server_address[:2]
+    # W1 SEEDED INCIDENTS: /api/seed routes to this daemon (server.py).
+    httpd.app.seed_api = daemon
 
     print("wgresponse watch — live operator daemon")
     print(f"  AOI       : {aoi_desc}")
@@ -1160,6 +1388,9 @@ def _cmd_watch(args) -> int:
     print(f"  state     : {store.path} "
           f"({'RESTORED — restart re-fires nothing' if restored else 'fresh'})")
     print(f"  console   : http://{host}:{port}/console  [auth: {auth}]")
+    print(f"  seeding   : POST/GET http://{host}:{port}/api/seed, DELETE "
+          f"/api/seed/<id> ({len(monitor.seeded.active())} active seed(s); "
+          f"SAFETY SEMANTICS 12)")
     for note in startup_notes:
         print(f"  NOTE      : {note}")
     print("  Ctrl-C stops cleanly (final persist).")
