@@ -100,6 +100,22 @@ py -3 -m wgresponse.cli watch --aoi data/aoi_conus.json --registry mock-presets 
 # threatening clients" list, each incident's domain facts or the cycle's
 # "why no domain?" line, display perimeters and P50 rings — built once per
 # cycle (?since=<t_s> answers {"unchanged": true}).
+# 5c. CONTAINED FIRES + CONFIRMED PERIMETERS (SAFETY SEMANTICS 13, founder
+#     ruling 2026-09-27; both default OFF, add to either command above):
+#       --drop-contained        a fire the feed reports contained (a source at
+#                               >= 100 %, or a containment / control / out
+#                               timestamp; no source below 100 %) and not
+#                               growing leaves the map before any domain — its
+#                               pairs take the absence law; /api/state gains
+#                               removed_contained + removed_incidents and the
+#                               /world header counts them. It comes back when
+#                               a source reports < 100 % or it grows.
+#       --confirmed-perimeters  a polygon whose fresher record reports the
+#                               same size (within 2 %) is seeded at that report
+#                               instead of being spread forward from its own
+#                               age; a growing fire (record larger) keeps the
+#                               legacy seeding. Measured in
+#                               docs/LIVE_WORLD_PLAN.md (2026-09-27 section).
 
 # 6. THE INTERACTIVE SIMULATOR (docs/SIMULATOR_DESIGN.md): thirteen real WUI
 #    locations on cached LANDFIRE tiles, click-to-ignite fires, the REAL
@@ -310,7 +326,10 @@ the shipped values.
 | `incident_stale_h` | 168.0 | Incidents with `updated_at_s` older than this are excluded from alerting/dispatch with a note (SAFETY SEMANTICS 9 — kills zombie perimeters). |
 | `containment_gate_enabled` | False | WATCH ceiling for highly-contained, non-growing fires (SAFETY SEMANTICS 8). **Default OFF pending founder policy approval**; never touches crew-safety math. |
 | `containment_watch_ceiling_pct` | 90.0 | Containment at/above this (with no growth) engages the WATCH ceiling when the gate is enabled. |
-| `containment_no_growth_h` | 48.0 | Hours without acreage growth required before the WATCH ceiling engages. |
+| `containment_no_growth_h` | 48.0 | Hours without acreage growth required before the WATCH ceiling engages. Also the SAFETY SEMANTICS 13 regrowth window: a removed contained fire seen growing stays on the map until this many hours pass without growth. |
+| `drop_contained_incidents` | False | CONTAINED FIRES LEAVE THE MAP (founder ruling 2026-09-27, "a fire that is contained and no longer spreading is removed from the map"; SAFETY SEMANTICS 13a–d). True = a feed incident the feed declares contained (a source at `containment_pct` >= 100, or a containment / control / out timestamp: WFIGS `ContainmentDateTime` / `ControlDateTime` / `FireOutDateTime` + `attr_` twins, CAL FIRE `ExtinguishedDate`) with no source below 100 and no acreage growth since removal leaves the incident set after the staleness gate — no domain, no ETAs, no dispatch; its pairs take the absence law like a vanished feed incident; the count + ids go to the cycle notes, `CycleResult.removed_incidents`, `/api/state` (`removed_contained`, `removed_incidents`) and the `/world` header. It returns the cycle a source reports < 100 or it grows. Default OFF = byte-identical; watch `--drop-contained`. |
+| `perimeter_confirmed_anchor` | False | CONFIRMED PERIMETERS (SAFETY SEMANTICS 13e–f): True = a polygon whose record reports the SAME size (`reported_acres` vs the polygon's own `perimeter_acres`, within the tolerance below) later than the polygon's own time, with no newer polygon in any fused source, is seeded at that report instead of being spread forward from its own age (measured: an 80 %-contained fire's 259.6-h-old polygon re-confirmed 19.7 h ago). A record reporting MORE acres beyond the tolerance — a growing fire the polygon lags — keeps the legacy, pessimistic seeding; the staleness gate still reads the record's time. Default OFF = byte-identical; watch `--confirmed-perimeters`. |
+| `perimeter_confirm_tolerance_frac` | 0.02 | "Same size" for the anchor: \|reported − polygon\| <= this × polygon acres. Live WFIGS 2026-09-27: record size within 1 % of its polygon for 107 of 146 perimeters, 2 % for 112, 5 % for 116 (Willow reads +1.8 %). Every percent admitted is growth a lagging polygon may hide — keep it small. |
 
 ## Feed & data licensing posture
 

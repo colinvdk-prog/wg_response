@@ -40,6 +40,7 @@ computed and PERSISTED but not delivered. Humans watch dashboards.
 | 1.3 | CloudWatch alarms: feed staleness > threshold, cycle overrun, ladder freeze events, violation counter > 0 (page immediately — it has never fired) | the "absence is not clearance" law gets an operational mirror |
 | 1.4 | Nightly hindcast regression + weekly report (coverage %, late-miss, per-fuel bias) | tracks the 68.8%→90% calibration effort on real incidents |
 | 1.5 | LFPS tile pipeline for the live AOI(s) (`fetch_sim_tiles.py` productized, tile provenance pinned) | per-community onboarding artifact |
+| 1.6 | Arm `--drop-contained --confirmed-perimeters` on the shadow service before the 7-day gate (contracts SAFETY SEMANTICS 13, built 2026-09-27, default OFF): contained fires leave the map and re-confirmed polygons stop free-running into alerts — every alert of the W6 national run came from exactly those two cases | owner decision; measured in `LIVE_WORLD_PLAN.md` (2026-09-27 section); the off-raster corridor veto stays open |
 
 **Exit gate:** 7 consecutive days: zero missed cycles > 15 min, zero false
 "all clear" (spot-audited), hindcast report generated, alarms tested by fault

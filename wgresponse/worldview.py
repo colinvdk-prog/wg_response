@@ -278,7 +278,7 @@ def _counts(state: dict, rows: list, notes) -> dict:
     clients = [c for c in state.get("clients") or [] if isinstance(c, dict)]
     alerted = sum(1 for c in clients
                   if c.get("state") not in (None, "none", "cleared"))
-    return {
+    out = {
         "incidents": len(rows),
         "with_domain": sum(1 for r in rows if r.get("domain")),
         "with_perimeter": sum(1 for r in rows if r.get("perimeter")),
@@ -291,6 +291,11 @@ def _counts(state: dict, rows: list, notes) -> dict:
         "crews": len(state.get("crews") or []),
         "safe_zones": len(state.get("safe_zones") or []),
     }
+    if "removed_contained" in state:
+        # SAFETY SEMANTICS 13c (the daemon's --drop-contained): contained
+        # fires removed from the map this cycle — additive, only when armed
+        out["removed_contained"] = int(state.get("removed_contained") or 0)
+    return out
 
 
 def build_summary(state: dict, result, geometry: bool = True) -> dict:

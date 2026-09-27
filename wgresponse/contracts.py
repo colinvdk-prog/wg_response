@@ -237,6 +237,65 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
        survive restart; restart re-fires nothing already sent (persist law).
    No seeds = byte-identical cycles, persisted state and /api/state (pinned in
    tests/test_seeded_incidents.py against goldens computed before W1).
+13. CONTAINED FIRES LEAVE THE MAP; A PERIMETER BURNS FROM WHERE THE FEED LAST
+   CONFIRMED IT (founder ruling 2026-09-27, verbatim: "a fire that is
+   contained and no longer spreading is removed from the map";
+   docs/LIVE_WORLD_PLAN.md "Contained fires leave the map ... (2026-09-27)").
+   Measured on the W6 national run: SEMANTICS 9's gate reads the RECORD's
+   age, not the polygon's, so a 100 %-contained fire's 148-h-old polygon was
+   spread forward 148 h (11 homes 23 km away IMPACTED) and an 80 %-contained
+   fire's 249-h-old polygon 249 h (87 homes EXTREME_24H).
+   (a) REMOVAL (cfg.drop_contained_incidents, default OFF; watch
+       --drop-contained). A feed incident is CONTAINED AND NO LONGER SPREADING
+       when the feed declares it contained — some source reports
+       containment_pct >= 100, or the record carries a containment / control
+       / out timestamp (meta contained_at_s / controlled_at_s / out_at_s:
+       WFIGS ContainmentDateTime / ControlDateTime / FireOutDateTime and the
+       perimeter layer's attr_ twins, CAL FIRE ExtinguishedDate) — AND no
+       source reports containment below 100 (a contradicting source keeps it
+       on the map) AND it is not growing: per source, its acreage has not
+       risen above that source's acreage when it was removed (the monitor's
+       memory, in-process); a fire seen growing stays on the map until
+       cfg.containment_no_growth_h pass without further growth (SEMANTICS 8's
+       no-growth window). The incident leaves the set after the SEMANTICS 9
+       gate and BEFORE assessment: no domain, no ETAs, no dispatch job, not
+       in /api/state incidents nor the world summary. Seeded incidents are
+       never removed.
+   (b) ABSENCE LAW. Its client pairs follow SEMANTICS 6 exactly like a
+       vanished feed incident's: clear streak toward CLEARED while every
+       feed is healthy, frozen while any is blind; IMPACTED stays terminal.
+   (c) NOTHING DISAPPEARS SILENTLY: the count and every removed id with its
+       reason land in the cycle notes, CycleResult.removed_incidents,
+       /api/state removed_contained / removed_incidents (present only with
+       the knob on) and the world page header.
+   (d) RETURN: the removal is re-decided every cycle from the feed. A removed
+       fire that later reports containment < 100 (any source) or grows is
+       back on the map that cycle, with a note naming why. A declaration that
+       merely goes quiet (the fire left the WFIGS Current layer, which holds
+       no declared-contained fire; a feed is blind) keeps it removed — only
+       contradiction or growth returns a fire. The memory is in-process: a
+       restart forgets it, and a quiet fire then returns until its record
+       ages out (the pessimistic direction).
+   (e) CONFIRMED PERIMETER (cfg.perimeter_confirmed_anchor, default OFF; watch
+       --confirmed-perimeters). The F3 provenance rule stands — a polygon
+       burns at its OWN time — EXCEPT when the feed has since confirmed it:
+       the record's reported size (meta reported_acres, reported at
+       reported_at_s) is fresher than the polygon, equals the polygon's own
+       area (meta perimeter_acres) within cfg.perimeter_confirm_tolerance_frac
+       either way, and no fused source carries a newer polygon (meta
+       perimeter_newest_at_s). Then the polygon is the fire's extent as of
+       that report and is seeded at reported_at_s (clamped to now_s; never
+       earlier than its own time).
+   (f) A GROWING FIRE KEEPS THE PESSIMISTIC LAW: a record reporting MORE acres
+       than its polygon beyond the tolerance means the polygon lags a growing
+       fire — the legacy seeding at the polygon's own time stands (a note
+       says so); so do a smaller size beyond the tolerance, a newer polygon
+       elsewhere, and a missing size or area. The anchor never touches the
+       SEMANTICS 9 staleness gate (a record older than incident_stale_h is
+       still excluded), hotspot seeds, ensembles, P10 or any crew-safety law.
+   Both knobs OFF = byte-identical cycles, persisted state and /api/state
+   (pinned in tests/test_contained_removal.py against goldens computed on
+   commit a8bebec, before this rule existed, on a world where both bite).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -298,6 +357,17 @@ wgresponse.feeds
     # after each fetch_active call — True iff HTTP + parse succeeded (an empty
     # result with last_fetch_ok=True means genuinely zero incidents; False means
     # BLIND, and consumers must apply SAFETY SEMANTICS 6, never treat as clear).
+    # SAFETY SEMANTICS 13 (2026-09-27) FireIncident.meta keys (additive; each
+    # set only when the feed carries it): contained_at_s / controlled_at_s /
+    # out_at_s (unix s; WFIGS ContainmentDateTime / ControlDateTime /
+    # FireOutDateTime + attr_ twins, CAL FIRE ExtinguishedDate), reported_acres
+    # + reported_at_s (the RECORD's reported size and its time: WFIGS
+    # IncidentSize / attr_IncidentSize, CAL FIRE AcresBurned), perimeter_acres
+    # (the POLYGON's own area: WFIGS poly_GISAcres, FIRIS area_acres). Fused
+    # groups add containment_by_source / acres_by_source ({source: value} of
+    # each source's freshest member) and perimeter_newest_at_s (the newest
+    # polygon time over every member); perimeter_acres follows the perimeter
+    # owner like perimeter_at_s.
 
 wgresponse.weather
     class NwsWeather / OpenMeteoWeather / MockWeather   (WeatherProvider protocol)
@@ -321,6 +391,9 @@ wgresponse.threat
         # W1 SEEDED INCIDENTS (SAFETY SEMANTICS 12): .seeded (the store),
         # .create_seed(...) / .add_seed(ign) / .retire_seed(id, now_s, ...) /
         # .list_seeds() / .restore_seeds(rows); consulted every cycle.
+        # SAFETY SEMANTICS 13: contained_signals(inc) -> (signals,
+        # contradictions); CycleResult.removed_incidents carries this cycle's
+        # RemovedIncident rows ([] unless cfg.drop_contained_incidents).
 
 wgresponse.seeded   (W1, 2026-09-26; SAFETY SEMANTICS 12)
     class SeededIncidentStore  .create(...) -> SeededIgnition  .add(ign)
@@ -559,6 +632,9 @@ wgresponse.cli
     # wind_dir_deg?, weather?, note?, created_by?} -> 201 {incident_id};
     # GET /api/seed[/<id>]; DELETE /api/seed/<id> (retire) — authed like
     # every write path; seeds persist and survive restart.
+    # SAFETY SEMANTICS 13: --drop-contained arms drop_contained_incidents
+    # (/api/state gains removed_contained + removed_incidents),
+    # --confirmed-perimeters arms perimeter_confirmed_anchor.
 ============================================================================
 """
 from __future__ import annotations
@@ -1198,6 +1274,21 @@ class CorridorVerdict:
 # Orchestration outputs
 # ---------------------------------------------------------------------------
 
+@dataclass(frozen=True)
+class RemovedIncident:
+    """One feed incident removed from a cycle's incident set as CONTAINED AND
+    NO LONGER SPREADING (SAFETY SEMANTICS 13a; cfg.drop_contained_incidents).
+    `incident` is the fused record exactly as the feeds returned it (never
+    assessed); `signals` the feed declarations that removed it (e.g. 'wfigs
+    reports 100% contained', 'declared out 3.0 h ago'); `reason` their
+    human join; `removed_since_s` when the monitor first removed it (unix s;
+    in-process memory, reset by a restart)."""
+    incident: FireIncident
+    reason: str
+    signals: tuple = ()
+    removed_since_s: float = 0.0
+
+
 @dataclass
 class CycleResult:
     t_s: float
@@ -1210,6 +1301,7 @@ class CycleResult:
     operator_events: list = field(default_factory=list)  # list[OperatorEvent] (SAFETY SEMANTICS 6)
     degraded: bool = False             # True when any provider was blind/failed this cycle
     timings: dict = field(default_factory=dict)  # cycle phase wall-times (s): feeds/assess/alerts/dispatch + per-incident terrain/weather/spread (cadence telemetry, review item 6)
+    removed_incidents: list = field(default_factory=list)  # list[RemovedIncident]: contained fires removed this cycle (SAFETY SEMANTICS 13; [] unless cfg.drop_contained_incidents)
 
 
 # ---------------------------------------------------------------------------
@@ -1683,7 +1775,38 @@ class ResponseConfig:
     incident_stale_h: float = 168.0    # exclude incidents staler than this from alerting (SAFETY SEMANTICS 9)
     containment_gate_enabled: bool = False   # WATCH ceiling for contained fires (SAFETY SEMANTICS 8, default OFF)
     containment_watch_ceiling_pct: float = 90.0
+    # (also the SEMANTICS 13a regrowth window: a removed contained fire seen
+    # growing stays on the map until this many hours pass without growth)
     containment_no_growth_h: float = 48.0
+    # CONTAINED FIRES LEAVE THE MAP (founder ruling 2026-09-27: "a fire that
+    # is contained and no longer spreading is removed from the map"; SAFETY
+    # SEMANTICS 13a-d). When True, a feed incident the feed declares contained
+    # (a source at containment_pct >= 100, or a containment / control / out
+    # timestamp in its meta), with no source below 100 and no acreage growth
+    # since it was removed, leaves the cycle's incident set after the
+    # staleness gate: no domain, no ETAs, no dispatch; its pairs take the
+    # SEMANTICS 6 absence law; the count + ids are reported (notes,
+    # CycleResult.removed_incidents, /api/state, the world header). It returns
+    # the cycle it reports < 100 or grows. False = legacy, byte-identical; the
+    # watch daemon arms it via --drop-contained.
+    drop_contained_incidents: bool = False
+    # CONFIRMED PERIMETER ANCHOR (SAFETY SEMANTICS 13e-f; measured: an 80 %-
+    # contained fire's 249-h-old polygon, re-confirmed by a 19-h-old record
+    # of the same size, was spread forward 249 h into 87 EXTREME homes). When
+    # True, a polygon whose record reports the SAME size later than the
+    # polygon's own time (|reported - polygon| <= tolerance x polygon acres)
+    # and no newer polygon exists in any fused source is seeded at the
+    # record's report time instead of its own time. A record reporting MORE
+    # acres beyond the tolerance (a growing fire the polygon lags) keeps the
+    # legacy, pessimistic seeding. False = legacy, byte-identical; the watch
+    # daemon arms it via --confirmed-perimeters.
+    perimeter_confirmed_anchor: bool = False
+    # ... its "same size" tolerance, a fraction of the polygon's own acres
+    # (either way). Live WFIGS 2026-09-27: record size vs polygon area within
+    # 1 % for 107 of 146 perimeters, 2 % for 112, 5 % for 116 (the 80 %-
+    # contained Willow reads +1.8 %). Every percent admitted is a growing
+    # fire's unmapped growth the anchor may under-state — keep it small.
+    perimeter_confirm_tolerance_frac: float = 0.02
 
 
 # ---------------------------------------------------------------------------
@@ -1907,6 +2030,10 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("containment_watch_ceiling_pct must be within [0, 100]")
     if cfg.containment_no_growth_h < 0:
         problems.append("containment_no_growth_h must be >= 0")
+    # --- confirmed perimeter anchor (SAFETY SEMANTICS 13e) ---
+    if not (0.0 <= cfg.perimeter_confirm_tolerance_frac < 1.0):
+        problems.append("perimeter_confirm_tolerance_frac must be within [0, 1) "
+                        "(1 would call any size the polygon's own)")
 
     # --- type discipline: bool-typed fields must hold bool, int-typed fields
     # must hold int (and not bool -- bool is an int subclass in Python) ---

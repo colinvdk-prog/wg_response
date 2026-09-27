@@ -163,10 +163,15 @@ def test_watch_parser_accepts_the_production_start_command():
     assert args.floor_gate and args.fail_closed and args.p50_bound
     # the knobs that are built but deliberately NOT armed live
     assert args.edge_piecewise is False and args.regime_floor == 0.0
+    # ... incl. SAFETY SEMANTICS 13 (2026-09-27): built, owner arms them
+    assert args.drop_contained is False and args.confirmed_perimeters is False
     # every optional watch flag is parseable together
     extra = PRODUCTION_WATCH_ARGS + ["--edge-piecewise", "--regime-floor", "0.10",
-                                     "--grass-only"]
-    assert _build_parser().parse_args(extra).edge_piecewise is True
+                                     "--grass-only", "--drop-contained",
+                                     "--confirmed-perimeters"]
+    parsed = _build_parser().parse_args(extra)
+    assert parsed.edge_piecewise is True
+    assert parsed.drop_contained is True and parsed.confirmed_perimeters is True
 
 
 # ------------------------------------------------------- solver determinism

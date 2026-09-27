@@ -72,6 +72,38 @@ perimeter_at_s = min(updated_at_s, now_s) before seeding, so a feed clock
 running ahead of ours can never stamp a perimeter interior as burning in the
 future (which would freeze interior clients' hours_out above zero).
 
+CONTAINED FIRES LEAVE THE MAP (contracts SAFETY SEMANTICS 13a-d; founder
+ruling 2026-09-27, "a fire that is contained and no longer spreading is
+removed from the map"; cfg.drop_contained_incidents, default OFF). After the
+staleness gate, every FEED incident the feed declares contained
+(contained_signals: a source at containment_pct >= 100, or a containment /
+control / out timestamp in meta) with no source below 100 and no acreage
+growth since it was removed leaves the incident set before assessment: no
+domain, no ETAs, no dispatch, absent from /api/state incidents and the world
+summary; its pairs take the SEMANTICS 6 absence law exactly like a vanished
+feed incident's. CycleResult.removed_incidents lists them and ONE note
+counts them every cycle. The monitor remembers each removed fire in-process
+(first removal time, per-source acreage baseline): a source reporting < 100
+brings it back that cycle; so does growth, and then it stays until
+cfg.containment_no_growth_h pass without growth; a declaration that merely
+goes quiet (the fire left the WFIGS Current layer, a feed went blind) keeps
+it removed — only contradiction or growth returns a fire. A restart forgets
+the memory (a fire whose declaration went quiet returns until its record
+ages out — the pessimistic direction). Seeded incidents are never removed.
+
+CONFIRMED PERIMETERS (SAFETY SEMANTICS 13e-f; cfg.perimeter_confirmed_anchor,
+default OFF). The F3 rule above seeds a polygon at its OWN time; with no
+ceiling, a days-old polygon re-confirmed by a fresh record of the same size
+was spread forward for days (the W6 national run). Under the knob, a polygon
+whose record reports the same size (meta reported_acres vs the polygon's own
+perimeter_acres, within cfg.perimeter_confirm_tolerance_frac) LATER than the
+polygon's time, with no newer polygon in any fused source, is seeded at that
+report time (clamped to now). A record reporting more acres beyond the
+tolerance — a growing fire the polygon lags — keeps the legacy seeding, as
+do a newer polygon elsewhere, a smaller size beyond the tolerance and a
+missing size; every decision on a domain incident is one note. The
+staleness gate still reads the record's own time.
+
 Collaborator seams (contracts law): feeds FireFeed / WeatherProvider /
 TerrainProvider / ClientRegistry protocols, AlertEngine.evaluate/.states
 (+ optional pop_operator_events), CrewTracker.crews, dispatcher.plan(crews,
@@ -134,8 +166,10 @@ from wgresponse.contracts import (
     IncidentSource,
     LatLon,
     OperatorEvent,
+    RemovedIncident,
     ResponseConfig,
     ThreatAssessment,
+    is_seeded_id,
 )
 
 log = logging.getLogger(__name__)
@@ -227,6 +261,77 @@ def regime_spread_cfg(tile, wxf, now_s: float, cfg):
     return cfg, flag
 
 
+# ------------------------------------------------ SAFETY SEMANTICS 13 helpers
+
+def _finite_num(v) -> Optional[float]:
+    """A finite float from an int/float (never a bool); else None."""
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        return None
+    f = float(v)
+    return f if math.isfinite(f) else None
+
+
+def _source_name(inc: FireIncident) -> str:
+    src = inc.source
+    return str(getattr(src, "value", None) or src)
+
+
+#: containment / control / out declarations (feeds meta key, note label)
+_DECLARATIONS = (("contained_at_s", "declared contained"),
+                 ("controlled_at_s", "declared controlled"),
+                 ("out_at_s", "declared out"))
+
+
+def contained_signals(inc: FireIncident,
+                      now_s: Optional[float] = None) -> "tuple[list, list]":
+    """(signals, contradictions): the feed's containment declarations for
+    one incident (contracts SAFETY SEMANTICS 13a).
+
+    signals — every source reporting containment_pct >= 100 ('wfigs reports
+    100% contained') and every containment / control / out timestamp in
+    meta ('declared out 3.0 h ago' when now_s is given); contradictions —
+    every source reporting containment BELOW 100. Per-source values come
+    from fusion's meta['containment_by_source'] when present (a multi-source
+    group), else the incident's own containment_pct. The feed declares the
+    incident contained iff signals and not contradictions: one source below
+    100 keeps a fire on the map whatever the others say."""
+    meta = inc.meta or {}
+    by_src = meta.get("containment_by_source")
+    if not isinstance(by_src, dict) or not by_src:
+        by_src = ({_source_name(inc): inc.containment_pct}
+                  if inc.containment_pct is not None else {})
+    signals: list = []
+    contra: list = []
+    for src in sorted(by_src):
+        pct = _finite_num(by_src[src])
+        if pct is None:
+            continue
+        (signals if pct >= 100.0 else contra).append(
+            f"{src} reports {pct:g}% contained")
+    for key, label in _DECLARATIONS:
+        t = _finite_num(meta.get(key))
+        if t is None or t <= 0.0:
+            continue
+        signals.append(f"{label} {max(0.0, now_s - t) / 3600.0:.1f} h ago"
+                       if now_s is not None else label)
+    return signals, contra
+
+
+def _acres_by_source(inc: FireIncident) -> dict:
+    """{source: acres} — fusion's meta['acres_by_source'] (each source's
+    freshest value) when present, else the incident's own acreage."""
+    by = (inc.meta or {}).get("acres_by_source")
+    if not isinstance(by, dict) or not by:
+        by = ({_source_name(inc): inc.acreage}
+              if inc.acreage is not None else {})
+    out = {}
+    for src, v in by.items():
+        f = _finite_num(v)
+        if f is not None:
+            out[str(src)] = f
+    return out
+
+
 class _ProviderFailure(RuntimeError):
     """A tagged external-provider failure inside one incident assessment.
 
@@ -288,6 +393,10 @@ class ThreatMonitor:
         # W1 SEEDED INCIDENTS (contracts SAFETY SEMANTICS 12): user-lit fires,
         # consulted every cycle; empty = byte-identical cycles.
         self._seeded = seeded_mod.SeededIncidentStore()
+        # SAFETY SEMANTICS 13a memory (cfg.drop_contained_incidents only):
+        # incident_id -> {since_s, acres {source: baseline}, last_growth_s,
+        # growth, removed, signals, seen_s}; in-process (module docstring).
+        self._contained: dict = {}
 
     # ------------------------------------------------- W1 seeded incidents
 
@@ -352,7 +461,9 @@ class ThreatMonitor:
         incidents (SAFETY SEMANTICS 12; after the fused ones, creation order)
         (after the SAFETY
         SEMANTICS 9 staleness gate — incidents older than
-        cfg.incident_stale_h are excluded from the cycle with a note),
+        cfg.incident_stale_h are excluded from the cycle with a note — and,
+        under cfg.drop_contained_incidents, the SAFETY SEMANTICS 13 removal
+        of contained, not-growing feed fires, listed in removed_incidents),
         per-client ThreatAssessments (etas in absolute unix seconds),
         AlertEvents emitted this cycle, the DispatchPlan (None unless a
         dispatcher is configured AND at least one pair is in an active alert
@@ -376,6 +487,13 @@ class ThreatMonitor:
         if seeded_now:
             active = active + seeded_now
         active = self._gate_stale_incidents(active, now_s, notes)
+        removed: list = []
+        if self._cfg.drop_contained_incidents:
+            # SAFETY SEMANTICS 13a-d: contained, not-growing feed fires leave
+            # the set here — before any domain — and are counted, never
+            # silently; their pairs then take the absence law below.
+            active, removed = self._drop_contained_incidents(active, now_s,
+                                                             notes)
 
         assessments: list = []
         ensembles: dict = {}
@@ -528,7 +646,8 @@ class ThreatMonitor:
         return CycleResult(t_s=now_s, incidents=active, assessments=assessments,
                            events=events, plan=plan, ensembles=ensembles,
                            notes=notes, operator_events=operator_events,
-                           degraded=degraded, timings=timings)
+                           degraded=degraded, timings=timings,
+                           removed_incidents=removed)
 
     # ------------------------------------------------------------- internals
 
@@ -783,6 +902,121 @@ class ThreatMonitor:
             log.warning("%s", note)
         return fresh
 
+    def _drop_contained_incidents(self, active: list, now_s: float,
+                                  notes: list) -> "tuple[list, list]":
+        """REMOVAL RULE (contracts SAFETY SEMANTICS 13a-d; founder ruling
+        2026-09-27): split this cycle's post-staleness-gate set into (kept,
+        [RemovedIncident]). Per FEED incident (seeds pass through):
+
+          contradiction (a source reports containment < 100)
+              -> on the map; the memory is dropped (a later declaration
+                 re-baselines); "back on the map" note if it was removed
+          growth since removal (a source's acreage above its baseline)
+              -> on the map this cycle and until cfg.containment_no_growth_h
+                 pass without further growth (note every cycle)
+          declared contained now (contained_signals)
+              -> REMOVED (the first removal fixes since_s + the per-source
+                 acreage baseline)
+          removed before, declaration merely quiet now (the fire left the
+          WFIGS Current layer, a feed is blind)
+              -> stays REMOVED: only contradiction or growth returns a fire
+          otherwise -> on the map (legacy)
+
+        Memory of fires not seen for cfg.incident_stale_h is forgotten. One
+        note per cycle counts and lists the removed ids with their reasons
+        (13c). Never raises on dirty values (non-finite sizes are ignored)."""
+        cfg = self._cfg
+        hold_s = max(0.0, float(cfg.containment_no_growth_h)) * 3600.0
+        kept: list = []
+        removed: list = []
+        for inc in active:
+            if (inc.source is IncidentSource.SEEDED
+                    or is_seeded_id(inc.incident_id)):
+                kept.append(inc)            # 13a: a seeded fire is never removed
+                continue
+            iid = inc.incident_id
+            signals, contra = contained_signals(inc, now_s)
+            mem = self._contained.get(iid)
+            if contra:
+                if mem is not None:
+                    if mem.get("removed"):
+                        notes.append(
+                            f"incident {iid}: back on the map — {contra[0]} "
+                            f"(removed as contained since "
+                            f"{(now_s - mem['since_s']) / 3600.0:.1f} h ago; "
+                            f"SAFETY SEMANTICS 13d)")
+                    del self._contained[iid]
+                kept.append(inc)
+                continue
+            if mem is None:
+                if not signals:
+                    kept.append(inc)        # never declared: the legacy path
+                    continue
+                mem = {"since_s": float(now_s),
+                       "acres": _acres_by_source(inc),
+                       "last_growth_s": None, "growth": None,
+                       "removed": False, "signals": list(signals)}
+                self._contained[iid] = mem
+            else:
+                grown = []
+                for src, a in sorted(_acres_by_source(inc).items()):
+                    base = mem["acres"].get(src)
+                    if base is None:
+                        mem["acres"][src] = a     # a new source: its baseline
+                    elif a > base + 1e-9 * max(1.0, abs(base)):
+                        grown.append((src, base, a))
+                        mem["acres"][src] = a     # growth measured from here
+                if grown:
+                    mem["last_growth_s"] = float(now_s)
+                    mem["growth"] = grown
+                if signals:
+                    mem["signals"] = list(signals)
+            mem["seen_s"] = float(now_s)
+            lg = mem["last_growth_s"]
+            if lg is not None and (lg >= now_s or now_s - lg < hold_s):
+                src, a0, a1 = mem["growth"][0]
+                verb = "back on the map" if mem["removed"] else "kept on the map"
+                notes.append(
+                    f"incident {iid}: {verb} — the feed reports it contained "
+                    f"({'; '.join(mem['signals'])}) but it GREW ({src} "
+                    f"{a0:,.1f} -> {a1:,.1f} ac, {(now_s - lg) / 3600.0:.1f} "
+                    f"h ago): on the map until {cfg.containment_no_growth_h:g} "
+                    f"h pass without growth (SAFETY SEMANTICS 13a/d)")
+                mem["removed"] = False
+                kept.append(inc)
+                continue
+            if not signals and not mem["removed"]:
+                # returned by growth earlier and no longer declared: legacy
+                del self._contained[iid]
+                kept.append(inc)
+                continue
+            reason = ("; ".join(signals) if signals else
+                      f"last reported contained ({'; '.join(mem['signals'])}); "
+                      f"no source contradicts it")
+            mem["removed"] = True
+            removed.append(RemovedIncident(
+                incident=inc, reason=reason,
+                signals=tuple(signals or mem["signals"]),
+                removed_since_s=mem["since_s"]))
+        stale_s = float(cfg.incident_stale_h) * 3600.0
+        for iid in [k for k, m in self._contained.items()
+                    if now_s - m.get("seen_s", now_s) > stale_s]:
+            del self._contained[iid]
+        if removed:
+            listed = ", ".join(
+                f"{r.incident.incident_id} ({r.incident.name or '?'}: "
+                f"{r.reason})" for r in removed)
+            note = (f"removed {len(removed)} contained incident(s) from the "
+                    f"map — reported contained by the feed and not growing "
+                    f"(cfg.drop_contained_incidents; SAFETY SEMANTICS 13, "
+                    f"founder ruling 2026-09-27): no domain, no ETAs, no "
+                    f"dispatch; their client pairs follow the absence law "
+                    f"(toward CLEARED while every feed is healthy, frozen "
+                    f"while any is blind; IMPACTED stays terminal): {listed}")
+            notes.append(note)
+            log.info("%s", note)
+        return kept, removed
+
     def _threat_radius_m(self) -> float:
         """Client-search radius, meters: how far a fire could plausibly run
         within cfg.horizon_h at ~1.7 m/s sustained, capped at 60 km."""
@@ -847,7 +1081,11 @@ class ThreatMonitor:
         ring vertices + hotspots. Incidents WITHOUT a perimeter build seeds
         exactly as ignition_points() does (hotspots, else origin) and pass no
         perimeter — byte-identical to the legacy path (pinned in
-        tests/test_threat.py).
+        tests/test_threat.py). Under cfg.perimeter_confirmed_anchor a polygon
+        the feed has since CONFIRMED is seeded at the confirming report
+        instead of its own time (_confirmed_perimeter_at_s; SAFETY SEMANTICS
+        13e/f) — decided after the client-range filter, so only domain
+        incidents carry the note.
         """
         ign = inc.ignition_points()
         if inc.perimeter:
@@ -882,6 +1120,7 @@ class ThreatMonitor:
         else:
             perimeter = None
             perimeter_at_s = None
+            provenance_s = None
             seeds = list(ign)
             geom_pts = list(ign)
         radius_m = self._threat_radius_m()
@@ -945,6 +1184,12 @@ class ThreatMonitor:
             if extreme_flags is not None:
                 extreme_flags[inc.incident_id] = flag
 
+        if perimeter and self._cfg.perimeter_confirmed_anchor:
+            # SAFETY SEMANTICS 13e/f: a polygon the feed has since confirmed
+            # (same size, later report, no newer polygon) burns from that
+            # report, not from its own age; a growing fire keeps the legacy.
+            perimeter_at_s = self._confirmed_perimeter_at_s(
+                inc, provenance_s, perimeter_at_s, now_s, notes)
         ens = spread.ensemble_arrival(tile, seeds, wxf, now_s, spread_cfg,
                                       incident_id=inc.incident_id,
                                       perimeter=perimeter,
@@ -969,6 +1214,64 @@ class ThreatMonitor:
                 eta=eta, computed_at_s=now_s))
             clients_seen[client.client_id] = client
             etas[(client.client_id, inc.incident_id)] = eta
+
+    def _confirmed_perimeter_at_s(self, inc: FireIncident,
+                                  provenance_s: float, perimeter_at_s: float,
+                                  now_s: float, notes: list) -> float:
+        """The seeding time of a perimeter under cfg.perimeter_confirmed_
+        anchor (contracts SAFETY SEMANTICS 13e/f). `provenance_s` is the
+        polygon's own time (F3), `perimeter_at_s` the legacy seeding time
+        (provenance clamped to now_s). Returns min(reported_at_s, now_s)
+        when the record's reported size is fresher than the polygon, equals
+        the polygon's own area within cfg.perimeter_confirm_tolerance_frac
+        either way, and no fused source carries a newer polygon; else the
+        legacy perimeter_at_s. Every decision taken on a record fresher than
+        its polygon is ONE note in the "incident <id>: ..." format (the
+        world summary shows it per incident); a record no fresher than its
+        polygon has nothing to confirm and is silent."""
+        meta = inc.meta or {}
+        rep_at = _finite_num(meta.get("reported_at_s"))
+        if rep_at is None or min(rep_at, float(now_s)) <= perimeter_at_s:
+            return perimeter_at_s
+        age_h = lambda t: max(0.0, float(now_s) - t) / 3600.0  # noqa: E731
+        head = (f"incident {inc.incident_id}: polygon "
+                f"{age_h(provenance_s):.1f} h old, record "
+                f"{age_h(rep_at):.1f} h old — ")
+        newest = _finite_num(meta.get("perimeter_newest_at_s"))
+        if newest is not None and newest > provenance_s + 1.0:
+            notes.append(head + f"a NEWER polygon ({age_h(newest):.1f} h old) "
+                         f"exists in another source: seeded at this polygon's "
+                         f"own time (legacy; SAFETY SEMANTICS 13f)")
+            return perimeter_at_s
+        rep = _finite_num(meta.get("reported_acres"))
+        poly = _finite_num(meta.get("perimeter_acres"))
+        if rep is None or poly is None or poly <= 0.0:
+            notes.append(head + "no size to compare (the record's reported "
+                         "acres or the polygon's own area is unknown): seeded "
+                         "at the polygon's own time (legacy; SAFETY "
+                         "SEMANTICS 13f)")
+            return perimeter_at_s
+        tol = float(self._cfg.perimeter_confirm_tolerance_frac)
+        rel = (rep - poly) / poly
+        if rel > tol:
+            notes.append(head + f"the record reports {rep:,.0f} ac, {rel:+.1%} "
+                         f"over the polygon's {poly:,.0f} ac: the polygon "
+                         f"lags a GROWING fire — seeded at the polygon's own "
+                         f"time (legacy, pessimistic; SAFETY SEMANTICS 13f)")
+            return perimeter_at_s
+        if rel < -tol:
+            notes.append(head + f"the record reports {rep:,.0f} ac, {rel:+.1%} "
+                         f"under the polygon's {poly:,.0f} ac: the sizes "
+                         f"disagree — seeded at the polygon's own time "
+                         f"(legacy; SAFETY SEMANTICS 13f)")
+            return perimeter_at_s
+        anchored = min(rep_at, float(now_s))
+        notes.append(head + f"the record reports {rep:,.0f} ac, the polygon "
+                     f"{poly:,.0f} ac ({rel:+.1%}, within {tol:.0%}): the "
+                     f"perimeter is CONFIRMED as of the record and seeded "
+                     f"then, not {age_h(provenance_s):.1f} h ago "
+                     f"(cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)")
+        return anchored
 
     def _eligible_crews(self, now_s: float, notes: list) -> list:
         """Crews the dispatcher may route at unix time now_s.
