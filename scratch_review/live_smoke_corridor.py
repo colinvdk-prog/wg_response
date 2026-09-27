@@ -109,4 +109,10 @@ print("  fire_view present:", bool(fv), "| keys:", sorted(fv)[:8] if isinstance(
 assert fv, "no fire_view in the live state"
 pl = st.get("crew_placement") or {}
 print("  crew_placement:", {k: pl.get(k) for k in ("setup", "locked_reason") if k in pl})
+# OLD BLACK / LEFT THE MAP (founder rulings 2026-09-26): the fields exist
+sb = st.get("scoreboard", {})
+print("  scoreboard crews_left_map:", sb.get("crews_left_map"),
+      "| crew keys:", sorted(k for k in crews[0] if k in ("left_map", "left_map_at_s", "on_old_black")))
+assert "crews_left_map" in sb, "scoreboard lacks crews_left_map"
+assert all("on_old_black" in c and "left_map" in c for c in crews), "crew rows lack the new keys"
 print(f"LIVE SMOKE OK in {time.time() - t0:.0f}s (session {sid} left to expire)")
