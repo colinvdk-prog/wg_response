@@ -300,12 +300,19 @@ def test_count_reported_in_state_and_world_summary(tmp_path):
 
 
 def test_a_seeded_fire_is_never_removed(tmp_path):
+    """Since TWO WORLDS (SAFETY SEMANTICS 16) a seed lives only in the TEST
+    world, which runs the same cycle under the same cfg: the contained feed
+    fire leaves both maps and the seed stays on the test map (SEMANTICS 13a)."""
     clock, daemon, monitor, *_ = _stack(tmp_path, [cs.contained_incident()])
-    monitor.add_seed(ss.seed())
+    tw = daemon.test_world
+    tw.add_seed(ss.seed())
     res = _run(daemon, clock, 0)
-    assert "seeded:test-near" in [i.incident_id for i in res.incidents]
     assert [r.incident.incident_id for r in res.removed_incidents] == [
         "inc-contained"]
+    assert "seeded:test-near" not in [i.incident_id for i in res.incidents]
+    test_ids = [i.incident_id for i in tw.last_result.incidents]
+    assert "seeded:test-near" in test_ids
+    assert "inc-contained" not in test_ids
 
 
 def test_removal_runs_after_the_staleness_gate(tmp_path):

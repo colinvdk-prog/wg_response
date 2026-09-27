@@ -3,9 +3,11 @@
 docs/LIVE_WORLD_PLAN.md W1 ticket 1.2 ("the simulator's ignite becomes 'seed
 into the world'"); contracts SAFETY SEMANTICS 12 is the law this module
 implements. A seed is a contracts.SeededIgnition; the watch daemon's
-POST /api/seed creates one, ThreatMonitor holds them in a SeededIncidentStore
-and unions them into every cycle's incident set, where they run through the
-SAME code as a feed incident (domain, ensemble, ETAs, ladder, dispatch).
+POST /api/test/seed creates one (TWO WORLDS, SAFETY SEMANTICS 16: the TEST
+world's ThreatMonitor — the live one refuses seeds), the monitor holds them in
+a SeededIncidentStore and unions them into every cycle's incident set, where
+they run through the SAME code as a feed incident (domain, ensemble, ETAs,
+ladder, dispatch).
 
     SeededIncidentStore   thread-safe add / retire / list (the HTTP threads
                           write, the cycle thread reads). MAX_ACTIVE cap;
@@ -18,10 +20,20 @@ SAME code as a feed incident (domain, ensemble, ETAs, ladder, dispatch).
                           is seeded on the incident id: contracts determinism).
     seeded_forecast       the per-incident weather override (SEMANTICS 12f)
                           through the weather seam, for that incident only.
-    parse_seed_request    POST /api/seed body -> validated create() kwargs
-                          (ValueError -> HTTP 400).
+    parse_seed_request    POST /api/test/seed body -> validated create()
+                          kwargs (ValueError -> HTTP 400).
     SeedSafeNotifier      routes every seeded incident's notification to the
                           drill log — never a client channel (SEMANTICS 12g).
+    DrillOnlyNotifier     TWO WORLDS (SEMANTICS 16e): the TEST world's
+                          notifier — holds NO client channel; every send
+                          (seeded or a live incident seen from the test
+                          world) goes to the drill log and is ledgered.
+    LiveWorldRefused      a seed offered to the LIVE world (SEMANTICS 16a;
+                          HTTP 409 with the /api/test/seed pointer).
+
+TWO WORLDS (2026-09-27, contracts SAFETY SEMANTICS 16): seeds are lit only
+in the TEST world (wgresponse.worlds); the live world's monitor is locked
+and refuses them.
 
 Units per contracts: unix seconds, degrees, m/s, percent, Celsius. Stdlib
 only; the simulator's intensity presets (simui.INTENSITY_WEATHER) are read
@@ -74,6 +86,23 @@ class SeedCapacityError(SeedConflict):
 
 class SeedAlreadyRetired(SeedConflict):
     """Retire on a seed that is already retired."""
+
+
+#: The pointer every live-world refusal carries (SAFETY SEMANTICS 16a).
+TEST_SEED_ROUTE = "/api/test/seed"
+LIVE_REFUSAL = ("the LIVE world accepts no seeded fires (TWO WORLDS, contracts "
+                "SAFETY SEMANTICS 16): drills and simulations run on the TEST "
+                "map — POST " + TEST_SEED_ROUTE + " (the /world page: switch "
+                "to TEST)")
+
+
+class LiveWorldRefused(SeedConflict):
+    """A seed offered to the LIVE world (SAFETY SEMANTICS 16a) — HTTP 409.
+    The live world's ThreatMonitor is locked (lock_live) and refuses every
+    seed; drills belong to the TEST world."""
+
+    def __init__(self, msg: str = LIVE_REFUSAL) -> None:
+        super().__init__(msg)
 
 
 def norm_dir_deg(v: float) -> float:
@@ -257,7 +286,8 @@ class SeededIncidentStore:
         if n_active >= self.max_active:
             raise SeedCapacityError(
                 f"{n_active} seeded fires are already active (max "
-                f"{self.max_active}); retire one first (DELETE /api/seed/<id>)")
+                f"{self.max_active}); retire one first (DELETE "
+                f"{TEST_SEED_ROUTE}/<id>)")
         self._entries[ign.incident_id] = SeedEntry(ignition=ign, seq=int(seq))
         self._seq = max(self._seq, int(seq))
         return ign
@@ -443,7 +473,7 @@ def seeded_forecast(ign: SeededIgnition, live_provider, loc: LatLon,
 
 
 # ---------------------------------------------------------------------------
-# the POST /api/seed body
+# the POST /api/test/seed body (the W1 POST /api/seed body, unchanged)
 # ---------------------------------------------------------------------------
 
 SEED_REQUEST_KEYS = ("lat", "lon", "intensity", "wind_dir_deg", "weather",
@@ -462,9 +492,10 @@ def _number(payload: dict, key: str, where: str = "") -> float:
 
 
 def parse_seed_request(payload, aoi=None) -> dict:
-    """Validate a POST /api/seed body into SeededIncidentStore.create kwargs
-    (minus t_ignite_s, which is the daemon's clock). Raises ValueError with
-    the reason (HTTP 400) on: a non-object body, unknown keys, missing /
+    """Validate a POST /api/test/seed body into SeededIncidentStore.create
+    kwargs (minus t_ignite_s, which is the TEST world's clock). Raises
+    ValueError with the reason (HTTP 400) on: a non-object body, unknown
+    keys, missing /
     non-numeric / non-finite / out-of-range lat-lon, a point outside the
     watch AOI, an unknown intensity, a non-finite wind_dir_deg, a malformed
     or out-of-range explicit weather object, intensity AND weather together,
@@ -541,34 +572,101 @@ def parse_seed_request(payload, aoi=None) -> dict:
 # notifications (SEMANTICS 12g)
 # ---------------------------------------------------------------------------
 
-class _DrillLog:
-    """Log-only notifier for seeded incidents: every send is logged loudly
-    as a DRILL and reported delivered (so the ledger records it and a
-    restart re-fires nothing). Keeps the last 200 sends for inspection."""
+DRILL_LOG_KEEP = 200
 
-    def __init__(self) -> None:
-        self.sent: deque = deque(maxlen=200)
+
+class DrillLog:
+    """Log-only notifier: every send is logged loudly as a DRILL and reported
+    delivered (so the ledger records it and a restart re-fires nothing).
+    Keeps the last DRILL_LOG_KEEP sends for inspection: ``sent`` holds this
+    process's (event, client) pairs, ``rows()`` the JSON-able lines (the
+    TEST world persists and serves them — SAFETY SEMANTICS 16e/f).
+    ``label`` names the world in the log line."""
+
+    def __init__(self, label: str = "", keep: int = DRILL_LOG_KEEP) -> None:
+        self.sent: deque = deque(maxlen=int(keep))
+        self._rows: deque = deque(maxlen=int(keep))
+        self._label = str(label or "")
+        self._lock = threading.Lock()
 
     def send(self, event, client) -> bool:
-        self.sent.append((event, client))
-        log.warning("DRILL (seeded incident %s) — NOT sent to any client "
-                    "channel: %s->%s client=%s: %s", event.incident_id,
-                    event.prev.value, event.state.value, event.client_id,
-                    event.message)
+        row = {"t_s": float(event.t_s), "client_id": event.client_id,
+               "incident_id": event.incident_id,
+               "prev": getattr(event.prev, "value", str(event.prev)),
+               "state": getattr(event.state, "value", str(event.state)),
+               "message": event.message}
+        with self._lock:
+            self.sent.append((event, client))
+            self._rows.append(row)
+        if self._label:
+            log.warning("DRILL (%s, incident %s) — NOT sent to any client "
+                        "channel: %s->%s client=%s: %s", self._label,
+                        event.incident_id, row["prev"], row["state"],
+                        event.client_id, event.message)
+        else:
+            log.warning("DRILL (seeded incident %s) — NOT sent to any client "
+                        "channel: %s->%s client=%s: %s", event.incident_id,
+                        row["prev"], row["state"], event.client_id,
+                        event.message)
         return True
+
+    def rows(self) -> "list[dict]":
+        """The drill lines, oldest first (JSON-able copies)."""
+        with self._lock:
+            return [dict(r) for r in self._rows]
+
+    def restore(self, rows) -> int:
+        """Refill the display lines from persisted rows (malformed skipped
+        loudly; ``sent`` is this process's and starts empty)."""
+        good = []
+        for i, r in enumerate(rows or []):
+            try:
+                good.append({"t_s": float(r["t_s"]),
+                             "client_id": str(r["client_id"]),
+                             "incident_id": str(r["incident_id"]),
+                             "prev": str(r["prev"]), "state": str(r["state"]),
+                             "message": str(r.get("message") or "")})
+            except Exception as exc:
+                log.error("drill log: skipping malformed persisted line #%d "
+                          "(%s)", i, exc)
+        with self._lock:
+            self._rows.clear()
+            self._rows.extend(good)
+        return len(good)
+
+
+_DrillLog = DrillLog            # the W1 name (kept for callers and tests)
 
 
 class SeedSafeNotifier:
     """contracts.Notifier wrapper: a notification of a SEEDED incident goes to
     the drill log, never to ``real`` (SES / SMS / whatever the daemon runs);
     every other notification is ``real``'s, unchanged. The ladder, its
-    AlertEvents and the notified ledger are untouched — only the channel."""
+    AlertEvents and the notified ledger are untouched — only the channel.
+    Since TWO WORLDS (SAFETY SEMANTICS 16) the live world never carries a
+    seed; the watch daemon keeps this wrapper on the live notifier as
+    defense in depth."""
 
     def __init__(self, real, drill=None) -> None:
         self._real = real
-        self.drill = drill if drill is not None else _DrillLog()
+        self.drill = drill if drill is not None else DrillLog()
 
     def send(self, event, client) -> bool:
         if is_seeded_id(getattr(event, "incident_id", None)):
             return bool(self.drill.send(event, client))
         return self._real.send(event, client)
+
+
+class DrillOnlyNotifier:
+    """The TEST world's notifier (TWO WORLDS, SAFETY SEMANTICS 16e): it holds
+    NO client channel at all — there is nothing real to send to — so every
+    notification, a seeded fire's or a LIVE incident's as seen from the test
+    world, goes to the drill log and reports delivered (ledgered: a restart
+    re-fires nothing). Structural, not a filter: no code path here can reach
+    SES, SMS or any other client channel."""
+
+    def __init__(self, drill=None) -> None:
+        self.drill = drill if drill is not None else DrillLog(label="TEST MAP")
+
+    def send(self, event, client) -> bool:
+        return bool(self.drill.send(event, client))

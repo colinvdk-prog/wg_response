@@ -39,30 +39,50 @@ The AOI is either a bare "west,south,east,north" bbox or a zones JSON file:
 (multi-zone files watch the UNION bbox; safe_zones feed the dispatcher —
 without any, dispatch fails closed and every job is unserved).
 
-SEEDED INCIDENTS (W1, docs/LIVE_WORLD_PLAN.md; contracts SAFETY SEMANTICS 12):
-the daemon also serves a seeding API — a user lights a fire at a point and
-the watcher treats it exactly like a feed incident (incident set, domain when
-protected clients are in range, alert ladder, dispatch, persistence):
+TWO WORLDS — A LIVE MAP AND A TEST MAP (2026-09-27; contracts SAFETY
+SEMANTICS 16; wgresponse.worlds; founder: "we need a test map and a live map
+so all simulations or drills do not impact real conditions"). The daemon runs
+the LIVE world (real feeds, registry, crews, ladder, plan, notifier, state
+file) and a fully isolated TEST world in one process. The live world accepts
+no seeded fire; the TEST world sees the live incidents and forecasts
+READ-ONLY (the live cycle's own snapshot — never recomputed), adds SEEDED
+incidents (W1, contracts SAFETY SEMANTICS 12: a user lights a fire at a point
+and the same engine path treats it exactly like a feed incident) and runs its
+own ladder, its own virtual crews and its own plan; everything it emits goes
+to the drill log; it persists under <state-dir>/test_world/ (and the S3
+prefix's test_world/). Routes (authed like every write path —
+X-Internal-API-Key unless WGRESP_DEV_OPEN=1):
 
-    POST   /api/seed         {lat, lon, intensity?, wind_dir_deg?, weather?,
-                              note?, created_by?} -> 201 {incident_id:
-                              'seeded:<uuid>', seed}; 400 = bad body / point
-                              outside the AOI; 409 = too many active seeds
-    GET    /api/seed         every seed (active + recently retired) with its
-                              weather mode, last-cycle domain and pair states
-    GET    /api/seed/<id>    one seed (404 unknown)
-    DELETE /api/seed/<id>    retire (?by=name): absent from the next cycle, its
-                              pairs take the absence law like a vanished feed
-                              incident (404 unknown, 409 already retired)
+    GET    /api/test/state         the TEST world's /api/state (+ world, banner,
+                                   drill, seeds, live_crews, drill_log)
+    POST   /api/test/seed          {lat, lon, intensity?, wind_dir_deg?,
+                                   weather?, note?, created_by?} -> 201
+                                   {incident_id: 'seeded:<uuid>', seed, drill};
+                                   400 = bad body / point outside the AOI;
+                                   409 = too many active seeds. Starts a drill
+                                   (clones the live crews + ladder + plan)
+    GET    /api/test/seed[/<id>]   every seed (active + recently retired) with
+                                   its weather mode, last-cycle domain and pair
+                                   states / one seed (404 unknown)
+    DELETE /api/test/seed/<id>     retire (?by=name): absent from the next test
+                                   cycle; its pairs take the absence law (404
+                                   unknown, 409 already retired)
+    POST   /api/test/crews/reset   re-clone the virtual crews from the live
+                                   roster now
+    POST   /api/test/crews/place   {crew_id, lat, lon, status?, name?} stage one
+                                   virtual crew
+    POST   /api/test/reset         wipe the test world back to IDLE
+    GET    /api/world/summary?world=test   the TEST map's read model
+    /api/seed                      GET = a read-only alias of the test list
+                                   (one release); POST / DELETE = 409 (the
+                                   live world refuses — use /api/test/seed)
 
-Authed like every write path (X-Internal-API-Key unless WGRESP_DEV_OPEN=1).
 Weather: live at the fire unless the seed overrides it (intensity = the
 simulator's preset conditions, weather = explicit conditions, wind_dir_deg =
-a fixed direction). A seed/retire persists immediately and wakes the loop so
-the next cycle runs now instead of after the period. Seeded incidents'
-notifications go to the DRILL LOG only (seeded.SeedSafeNotifier) — never a
-client channel, whatever notifier the daemon runs. /api/state lists them with
-source "seeded" (+ a `seeds` key once any seed exists).
+a fixed direction). A seed/retire persists the TEST namespace immediately and
+re-runs the TEST world at once — it never wakes, delays or touches the live
+loop. The live notifier keeps the seeded.SeedSafeNotifier wrapper as defense
+in depth; the live /api/state never lists a seeded fire.
 W6 THIN WORLD VIEWER (docs/LIVE_WORLD_PLAN.md §3 step 1 + "W6 thin viewer
 (2026-09-26)"): the watch daemon also serves
     GET /world               console/world.html — one zoomable national map
@@ -790,7 +810,17 @@ class _WatchDaemon:
 
     def __init__(self, monitor, engine, registry, tracker, store, cfg, aoi,
                  period_s, aoi_desc="", safe_zones=(), clock=time.time,
-                 sleep=time.sleep, startup_notes=()):
+                 sleep=time.sleep, startup_notes=(), test_world=None):
+        # TWO WORLDS (contracts SAFETY SEMANTICS 16a): this daemon IS the
+        # LIVE world — its monitor refuses every seed from here on (drills
+        # run in `test_world`, a wgresponse.worlds.TestWorld, or nowhere).
+        lock_live = getattr(monitor, "lock_live", None)
+        if callable(lock_live):
+            lock_live()
+        # set while a live cycle runs (the test world yields to it, 16g)
+        self._live_busy = threading.Event()
+        self._test_world = test_world
+        self.migration_note = None
         self._monitor = monitor
         self._engine = engine
         self._registry = registry
@@ -818,6 +848,13 @@ class _WatchDaemon:
         self.restored = False
         self._events = []              # accumulated AlertEvents (bounded)
         self._op_log = []              # accumulated OperatorEvents (bounded)
+        if test_world is not None:
+            test_world.attach_live(self)
+
+    @property
+    def test_world(self):
+        """The TEST world (wgresponse.worlds.TestWorld) or None."""
+        return self._test_world
 
     # ------------------------------------------------------------ lifecycle
 
@@ -831,7 +868,23 @@ class _WatchDaemon:
         applied-but-never-sent active alert IS re-fired by the engine on the
         next cycle — Session-3 verifier F4, re-notify-ward). Absent/corrupt
         state is a loud note inside StateStore.load(); the daemon simply
-        starts fresh."""
+        starts fresh.
+
+        TWO WORLDS (SAFETY SEMANTICS 16a/f): the TEST world restores its
+        drill from its own namespace first; then the LIVE file loads, and any
+        drill artifact a pre-two-worlds build persisted into it (seed rows,
+        seeded alert pairs / ledgered drill sends / growth clocks, seeded
+        plan stops) is partitioned OUT (worlds.split_legacy_seeds) before
+        the live engine sees it and handed to the test world — loudly (log +
+        startup note), never run live, and independently of whether the
+        live ladder restore succeeds."""
+        tw = self._test_world
+        if tw is not None:
+            try:
+                tw.restore()
+            except Exception:
+                log.exception("watch: TEST world restore failed; it starts "
+                              "IDLE (the live world is unaffected)")
         try:
             loaded = self._store.load()
         except Exception:
@@ -845,20 +898,37 @@ class _WatchDaemon:
             return False
         if not loaded:
             return False
-        # W1 SEEDED INCIDENTS (SAFETY SEMANTICS 12h): the operator's fires
-        # come back first and independently — a failed alert-engine restore
-        # (below: start fresh, re-alert) must not also put them out.
-        seed_rows = loaded.get("seeded_incidents") or []
-        restore_seeds = getattr(self._monitor, "restore_seeds", None)
-        if seed_rows and callable(restore_seeds):
-            try:
-                n = restore_seeds(seed_rows)
-                log.info("watch: restored %d seeded incident(s) (%d active)",
-                         n, len(self._monitor.seeded.active()))
-            except Exception:
-                log.exception("watch: seeded-incident restore failed; "
-                              "starting with NO seeds (re-seed via "
-                              "POST /api/seed)")
+        from wgresponse import worlds
+        loaded, legacy = worlds.split_legacy_seeds(loaded)
+        try:
+            ok = self._restore_live(loaded)
+        finally:
+            if legacy is not None:
+                self._migrate_legacy(legacy)
+        return ok
+
+    def _migrate_legacy(self, legacy) -> None:
+        """SAFETY SEMANTICS 16a: pre-two-worlds drill artifacts go to the
+        TEST world (a loud note either way; never the live world)."""
+        note = legacy.note()
+        log.warning("watch: %s", note)
+        self.migration_note = note
+        self._startup_notes.append(note)
+        tw = self._test_world
+        if tw is None:
+            log.error("watch: no TEST world is wired — the migrated drill "
+                      "artifacts are DROPPED from the live world (the live "
+                      "file keeps them only until the next live persist)")
+            return
+        try:
+            tw.adopt_legacy(legacy)
+        except Exception:
+            log.exception("watch: the TEST world could not adopt the "
+                          "migrated seeds (the live world never runs them)")
+
+    def _restore_live(self, loaded) -> bool:
+        """The live world's own restore (ladder, ledger, growth clocks,
+        incumbent plan) from a live-only state dict."""
         try:
             self._engine.restore(loaded["alert_records"],
                                  notified_ledger=loaded["notified_ledger"],
@@ -883,26 +953,48 @@ class _WatchDaemon:
         return True
 
     def run_cycle(self):
-        """One monitor cycle at clock() now + persist. Returns the CycleResult."""
+        """One monitor cycle at clock() now + persist. Returns the CycleResult.
+
+        TWO WORLDS (SAFETY SEMANTICS 16g): the live busy flag is up while
+        the cycle and its persist run (the test world yields to it); AFTER
+        the persist the cycle's snapshot is handed to the TEST world —
+        a flag + an event in production, never a wait, and a test-world
+        failure is logged, never raised into this loop."""
         now = float(self._clock())
         if self.started_at_s is None:
             self.started_at_s = now
         t_wall = time.monotonic()
-        res = self._monitor.cycle(now)
-        # CADENCE TELEMETRY (tri-model review 2026-08-31, live-ops finding):
-        # the loop was measured at ~21% of its target cadence (24-min cycles
-        # against a 5-min period, 33-47 min stale) while healthz said
-        # degraded=false — a slow loop and a stalled one were
-        # indistinguishable. state()/healthz now carry the last cycle's wall
-        # duration and a staleness flag.
-        self.last_cycle_duration_s = time.monotonic() - t_wall
-        self.cycles_run += 1
-        self.last_result = res
-        self._events = (self._events + list(res.events))[-self.EVENTS_KEEP:]
-        self._op_log = (self._op_log
-                        + list(res.operator_events))[-self.OP_LOG_KEEP:]
-        self.persist_now()
+        self._live_busy.set()
+        try:
+            res = self._monitor.cycle(now)
+            # CADENCE TELEMETRY (tri-model review 2026-08-31, live-ops
+            # finding): the loop was measured at ~21% of its target cadence
+            # (24-min cycles against a 5-min period, 33-47 min stale) while
+            # healthz said degraded=false — a slow loop and a stalled one
+            # were indistinguishable. state()/healthz now carry the last
+            # cycle's wall duration and a staleness flag.
+            self.last_cycle_duration_s = time.monotonic() - t_wall
+            self.cycles_run += 1
+            self.last_result = res
+            self._events = (self._events
+                            + list(res.events))[-self.EVENTS_KEEP:]
+            self._op_log = (self._op_log
+                            + list(res.operator_events))[-self.OP_LOG_KEEP:]
+            self.persist_now()
+        finally:
+            self._live_busy.clear()
+        self._publish_to_test_world()
         return res
+
+    def _publish_to_test_world(self) -> None:
+        tw = self._test_world
+        if tw is None:
+            return
+        try:
+            tw.on_live_cycle(self.latest_snapshot())
+        except Exception:
+            log.exception("watch: the TEST world failed on this live cycle — "
+                          "the live world is untouched (SAFETY SEMANTICS 16g)")
 
     def run(self, max_cycles: int = 0) -> int:
         """Cycle every period_s until Ctrl-C (or max_cycles > 0 is reached).
@@ -928,8 +1020,9 @@ class _WatchDaemon:
             return ran
 
     def wake(self) -> None:
-        """Cut the current (or next) inter-cycle sleep short (W1: a seed was
-        lit or retired). A no-op for an injected sleep."""
+        """Cut the current (or next) inter-cycle sleep short. A no-op for an
+        injected sleep. Since TWO WORLDS (SAFETY SEMANTICS 16a) no test
+        action calls it: a drill never moves the live cadence."""
         self._wake.set()
 
     def _wakeable_sleep(self, seconds: float) -> None:
@@ -946,14 +1039,16 @@ class _WatchDaemon:
     def persist_now(self, final: bool = False) -> bool:
         """Persist durable state via StateStore; disk failure is a LOUD log +
         False, never fatal (a full disk must not kill the alert loop).
-        Serialized: the seed API (W1) persists from HTTP threads too."""
+        Serialized (the loop and the shutdown path). Since TWO WORLDS
+        (SAFETY SEMANTICS 16f) no test action ever calls it — the test world
+        persists into its own namespace."""
         with self._persist_lock:
             return self._persist_locked(final)
 
     def _persist_locked(self, final: bool = False) -> bool:
-        """persist_now's body, under the persist lock. The seeded store's
-        rows ride along once any seed exists (SEMANTICS 12h) — never before,
-        so a daemon that never seeded writes the pre-W1 file."""
+        """persist_now's body, under the persist lock. The LIVE world never
+        writes seeded_incidents (it holds no seed — SEMANTICS 16a): the file
+        is the pre-W1 shape, byte for byte."""
         try:
             states = self._engine.states()
             ledger_fn = getattr(self._engine, "notified_ledger", None)
@@ -967,17 +1062,12 @@ class _WatchDaemon:
                                    if self.last_result else None),
                 "final": bool(final),
             }
-            extra = {}
-            seeds = getattr(self._monitor, "seeded", None)
-            if seeds is not None and len(seeds):
-                extra["seeded_incidents"] = seeds.rows()
             self._store.save(states,
                              ledger_fn() if callable(ledger_fn) else {},
                              getattr(self._monitor, "incumbent", None),
                              meta,
                              incident_growth=(growth_fn()
-                                              if callable(growth_fn) else None),
-                             **extra)
+                                              if callable(growth_fn) else None))
             return True
         except Exception:
             log.exception("watch: persist FAILED — state not saved this "
@@ -1024,10 +1114,9 @@ class _WatchDaemon:
             "events": list(self._events),
             "operator_log": list(self._op_log),
         }
-        seed_rows = self._seed_rows()
-        if seed_rows is not None:
-            # W1 (SEMANTICS 12): additive, present once any seed exists
-            out["seeds"] = seed_rows
+        # (TWO WORLDS, SAFETY SEMANTICS 16a: the live world holds no seed, so
+        # the W1 `seeds` key never appears here — the TEST world's seeds are
+        # on /api/test/state.)
         res = self.last_result
         if res is None:
             out.update({"degraded": False, "operator_events": [],
@@ -1098,142 +1187,151 @@ class _WatchDaemon:
             row["seed"] = dict((inc.meta or {}).get("seed") or {})
         return row
 
-    # ------------------------------------ W1 seeded incidents (the /api/seed seam)
-    # wgresponse.server routes /api/seed to app.seed_api = this daemon; every
-    # method returns (http_status, json_payload) like SimSessionManager.
+    # ------------------- TWO WORLDS (SAFETY SEMANTICS 16): the route seams
+    # wgresponse.server routes /api/seed to app.seed_api and /api/test/* to
+    # app.test_api — both this daemon; every method returns (http_status,
+    # json_payload) like SimSessionManager.
 
-    def _seed_store(self):
-        return getattr(self._monitor, "seeded", None)
+    _NO_TEST_WORLD = {"error": "no TEST world is wired to this daemon (the "
+                               "test map is served by `wgresponse.cli "
+                               "watch`)"}
+    _ALIAS_NOTE = ("read-only alias of GET /api/test/seed for one release "
+                   "(TWO WORLDS, contracts SAFETY SEMANTICS 16): seeds live "
+                   "in the TEST world; the live world holds none")
 
-    def _seed_row(self, entry) -> dict:
-        """One seed for the API / state: its summary, lifecycle, weather
-        label, whether the last cycle carried it, the domain it built (grid
-        + clients in range) and its pairs' alert states."""
+    def _live_refusal(self):
         from wgresponse import seeded as seeded_mod
-        ign = entry.ignition
-        iid = ign.incident_id
-        row = ign.summary()
-        row.update({
-            "status": "active" if entry.active else "retired",
-            "seq": entry.seq,
-            "retired_at_s": entry.retired_at_s,
-            "retired_reason": entry.retired_reason or None,
-            "retired_by": entry.retired_by or None,
-            "weather_label": seeded_mod.weather_label(ign),
-            "in_last_cycle": False, "domain": None, "pairs": {},
-        })
-        res = self.last_result
-        if res is not None:
-            row["in_last_cycle"] = any(i.incident_id == iid
-                                       for i in res.incidents)
-            ens = (res.ensembles or {}).get(iid)
-            if ens is not None:
-                tm = ((res.timings or {}).get("incidents") or {}).get(iid) or {}
-                sp = ens.spec
-                row["domain"] = {"north_lat": sp.north_lat,
-                                 "west_lon": sp.west_lon, "cell_m": sp.cell_m,
-                                 "nrows": sp.nrows, "ncols": sp.ncols,
-                                 "cells": sp.nrows * sp.ncols,
-                                 "clients": tm.get("clients"),
-                                 "phases_s": {k: tm.get(k) for k in (
-                                     "terrain_s", "weather_s", "spread_s")}}
-        try:
-            states = self._engine.states()
-        except Exception:
-            states = {}
-        pairs: dict = {}
-        for (_cid, pid), rec in states.items():
-            if pid == iid:
-                sv = getattr(rec.state, "value", None) or str(rec.state)
-                pairs[sv] = pairs.get(sv, 0) + 1
-        row["pairs"] = dict(sorted(pairs.items()))
-        return row
-
-    def _seed_rows(self):
-        """Every seed as a row, or None when no seed was ever lit (so the
-        pre-W1 /api/state stays byte-identical)."""
-        store = self._seed_store()
-        if store is None or not len(store):
-            return None
-        return [self._seed_row(e) for e in store.entries()]
+        return 409, {"error": seeded_mod.LIVE_REFUSAL, "world": "live",
+                     "use": seeded_mod.TEST_SEED_ROUTE}
 
     def seed_list(self):
-        """GET /api/seed."""
-        store = self._seed_store()
-        if store is None:
-            return 404, {"error": "this monitor has no seeded-incident store"}
-        rows = self._seed_rows() or []
-        return 200, {"seeds": rows,
-                     "active": sum(1 for r in rows if r["status"] == "active"),
-                     "max_active": store.max_active}
+        """GET /api/seed — the TEST world's list, read-only alias."""
+        tw = self._test_world
+        if tw is None:
+            return 404, dict(self._NO_TEST_WORLD)
+        code, out = tw.seed_list()
+        return code, dict(out, alias_of="/api/test/seed",
+                          deprecated=self._ALIAS_NOTE)
 
     def seed_get(self, incident_id: str):
-        """GET /api/seed/<id>."""
-        store = self._seed_store()
-        entry = store.entry(incident_id) if store is not None else None
-        if entry is None:
-            return 404, {"error": f"unknown seed {incident_id!r}"}
-        return 200, {"seed": self._seed_row(entry)}
+        """GET /api/seed/<id> — alias of GET /api/test/seed/<id>."""
+        tw = self._test_world
+        if tw is None:
+            return 404, dict(self._NO_TEST_WORLD)
+        code, out = tw.seed_get(incident_id)
+        return code, dict(out, alias_of="/api/test/seed/<id>",
+                          deprecated=self._ALIAS_NOTE)
 
     def seed_create(self, payload):
-        """POST /api/seed: validate (seeded.parse_seed_request — 400 on a bad
-        body or a point outside the AOI), light the fire at the daemon clock
-        (409 at the active cap), persist NOW (the seed survives a crash before
-        the next cycle) and wake the loop. 201 {incident_id, seed}."""
-        from wgresponse import seeded as seeded_mod
-        store = self._seed_store()
-        if store is None:
-            return 404, {"error": "this monitor has no seeded-incident store"}
-        try:
-            kw = seeded_mod.parse_seed_request(payload, self._aoi)
-        except ValueError as e:
-            return 400, {"error": str(e)}
-        now = float(self._clock())
-        try:
-            ign = self._monitor.create_seed(
-                kw["lat"], kw["lon"], now, intensity=kw["intensity"],
-                weather=kw["weather"], wind_dir_deg=kw["wind_dir_deg"],
-                created_by=kw["created_by"], note=kw["note"])
-        except seeded_mod.SeedConflict as e:
-            return 409, {"error": str(e)}
-        except ValueError as e:
-            return 400, {"error": str(e)}
-        persisted = self.persist_now()
-        self.wake()
-        log.warning("watch: SEEDED fire %s lit at (%.5f, %.5f) by %s — %s",
-                    ign.incident_id, ign.loc.lat, ign.loc.lon, ign.created_by,
-                    seeded_mod.weather_label(ign))
-        return 201, {"ok": True, "incident_id": ign.incident_id,
-                     "persisted": persisted,
-                     "takes_effect": "next cycle (the loop was woken)",
-                     "seed": self._seed_row(store.entry(ign.incident_id))}
+        """POST /api/seed: the LIVE world refuses every seed (409 + the
+        pointer to /api/test/seed; SAFETY SEMANTICS 16a)."""
+        return self._live_refusal()
 
     def seed_retire(self, incident_id: str, by: str = "api"):
-        """DELETE /api/seed/<id>: retire at the daemon clock (404 unknown,
-        409 already retired), persist NOW, wake the loop."""
-        from wgresponse import seeded as seeded_mod
-        if self._seed_store() is None:
-            return 404, {"error": "this monitor has no seeded-incident store"}
-        now = float(self._clock())
+        """DELETE /api/seed/<id>: refused like POST (the live world holds no
+        seed to retire — /api/test/seed/<id>)."""
+        return self._live_refusal()
+
+    def _tw_call(self, name: str, *args, **kw):
+        tw = self._test_world
+        if tw is None:
+            return 404, dict(self._NO_TEST_WORLD)
+        return getattr(tw, name)(*args, **kw)
+
+    def test_state(self):
+        """GET /api/test/state."""
+        tw = self._test_world
+        if tw is None:
+            return 404, dict(self._NO_TEST_WORLD)
+        return 200, tw.state()
+
+    def test_seed_list(self):
+        return self._tw_call("seed_list")
+
+    def test_seed_get(self, incident_id: str):
+        return self._tw_call("seed_get", incident_id)
+
+    def test_seed_create(self, payload):
+        return self._tw_call("seed_create", payload)
+
+    def test_seed_retire(self, incident_id: str, by: str = "api"):
+        return self._tw_call("seed_retire", incident_id, by=by)
+
+    def test_crews_reset(self, payload=None):
+        return self._tw_call("crews_reset", payload)
+
+    def test_crews_place(self, payload):
+        return self._tw_call("crews_place", payload)
+
+    def test_reset(self, payload=None):
+        return self._tw_call("reset", payload)
+
+    def test_world_summary(self, since=None):
+        """GET /api/world/summary?world=test."""
+        tw = self._test_world
+        if tw is None:
+            return 404, dict(self._NO_TEST_WORLD)
+        return 200, tw.world_summary(since=since)
+
+    # ------------ TWO WORLDS: the read-only LIVE view the test world uses
+    # (worlds.TestWorld.attach_live). Every method READS — never the live
+    # clock, never the live registry, never a write, a wake or a wait.
+
+    def latest_snapshot(self):
+        """The last completed live cycle's WorldSnapshot (or None)."""
+        return getattr(self._monitor, "last_snapshot", None)
+
+    def is_busy(self) -> bool:
+        """True while a live cycle (and its persist) runs."""
+        return self._live_busy.is_set()
+
+    def live_result(self):
+        return self.last_result
+
+    def live_engine_states(self) -> dict:
         try:
-            entry = self._monitor.retire_seed(incident_id, now, by=by or "api")
-        except KeyError:
-            return 404, {"error": f"unknown seed {incident_id!r}"}
-        except seeded_mod.SeedAlreadyRetired as e:
-            return 409, {"error": str(e)}
-        persisted = self.persist_now()
-        self.wake()
-        log.warning("watch: SEEDED fire %s retired by %s", incident_id,
-                    entry.retired_by)
-        return 200, {"ok": True, "incident_id": incident_id,
-                     "retired_at_s": entry.retired_at_s,
-                     "persisted": persisted,
-                     "ladder": ("absent from the next cycle; its client pairs "
-                                "follow the absence law like a vanished feed "
-                                "incident — clear streak toward CLEARED while "
-                                "every feed is healthy, frozen while any is "
-                                "blind (SAFETY SEMANTICS 6/12e)"),
-                     "seed": self._seed_row(entry)}
+            return dict(self._engine.states())
+        except Exception:
+            return {}
+
+    def live_crew_rows(self) -> list:
+        return self._crew_rows()
+
+    def live_meta(self) -> dict:
+        return {"aoi": self._bbox_dict(), "aoi_desc": self._aoi_desc,
+                "poll_period_s": self._period_s,
+                "safe_zones": [{"zone_id": z.zone_id, "lat": z.loc.lat,
+                                "lon": z.loc.lon, "name": z.name}
+                               for z in self._safe_zones]}
+
+    def clone_crews(self, now_s: float) -> list:
+        """The live roster as virtual test crews (SEMANTICS 16c/d): the crew
+        tracker the live DISPATCHER reads (the monitor's; `watch` hands the
+        same CrewTracker to both), else the daemon's."""
+        from wgresponse import worlds
+        tracker = getattr(self._monitor, "_crew_tracker", None)
+        if tracker is None:
+            tracker = self._tracker
+        return worlds.clone_live_crews(tracker, now_s)
+
+    def clone_ladder(self, now_s: float) -> dict:
+        """Deep copies of the live ladder, ledger, growth clocks, incumbent
+        plan and regime postures (SEMANTICS 16c) — the test world calls it
+        while the live loop is idle."""
+        import copy
+        states = self.live_engine_states()
+        ledger_fn = getattr(self._engine, "notified_ledger", None)
+        growth_fn = getattr(self._engine, "incident_growth", None)
+        return {
+            "records": {k: copy.deepcopy(r) for k, r in states.items()},
+            "ledger": dict(ledger_fn()) if callable(ledger_fn) else {},
+            "growth": (copy.deepcopy(growth_fn()) if callable(growth_fn)
+                       else {}),
+            "incumbent": copy.deepcopy(getattr(self._monitor, "incumbent",
+                                               None)),
+            "extreme_prev": dict(getattr(self._monitor, "_extreme_prev",
+                                         None) or {}),
+        }
 
     def _crew_rows(self) -> list:
         if self._tracker is None:
@@ -1528,10 +1626,13 @@ def _cmd_watch(args) -> int:
     startup_notes += _firms_scale_notes(feeds_stack, aoi)
     notifier, notifier_desc = _watch_notifier(args, state_dir)
     # W1 SEEDED INCIDENTS (SAFETY SEMANTICS 12g): a seeded (drill) fire's
-    # notifications go to the drill log, never to a client channel.
+    # notifications go to the drill log, never to a client channel. Since
+    # TWO WORLDS (16) the live world holds no seed at all; the wrapper stays
+    # as defense in depth, and the TEST world's notifier holds no channel.
     from wgresponse.seeded import SeedSafeNotifier
     notifier = SeedSafeNotifier(notifier)
-    notifier_desc += " · seeded fires -> drill log only"
+    notifier_desc += (" · seeded fires -> drill log only · the TEST map's "
+                      "alerts -> drill log only")
     if not safe_zones:
         startup_notes.append(
             "no safe zones configured — dispatch fails closed (every job "
@@ -1574,10 +1675,18 @@ def _cmd_watch(args) -> int:
             "durable state OFF: state lives on local disk only (set "
             "WGRESP_STATE_S3=s3://bucket/prefix to mirror it — App Runner "
             "wipes /tmp on every restart)")
+    # TWO WORLDS (SAFETY SEMANTICS 16): the TEST world — drills and
+    # simulations, isolated from everything above.
+    test_world = _watch_test_world(
+        args, cfg=cfg, aoi=aoi, aoi_desc=aoi_desc, safe_zones=safe_zones,
+        registry=registry, terrain=terrain, clients_by_id=clients_by_id,
+        state_dir=state_dir, s3_uri=s3_uri, period_s=period_s,
+        dispatcher=dispatch_mod)
     daemon = _WatchDaemon(monitor=monitor, engine=engine, registry=registry,
                           tracker=tracker, store=store, cfg=cfg, aoi=aoi,
                           period_s=period_s, aoi_desc=aoi_desc,
-                          safe_zones=safe_zones, startup_notes=startup_notes)
+                          safe_zones=safe_zones, startup_notes=startup_notes,
+                          test_world=test_world)
     restored = daemon.restore()
 
     httpd = server_mod.serve(port=args.port, host=args.host,
@@ -1590,8 +1699,10 @@ def _cmd_watch(args) -> int:
     else:
         auth = "FAIL-CLOSED — set WGRESP_API_KEY (healthz/console only)"
     host, port = httpd.server_address[:2]
-    # W1 SEEDED INCIDENTS: /api/seed routes to this daemon (server.py).
+    # TWO WORLDS: /api/seed (the legacy route: GET alias, POST/DELETE 409)
+    # and /api/test/* route to this daemon (server.py).
     httpd.app.seed_api = daemon
+    httpd.app.test_api = daemon
 
     print("wgresponse watch — live operator daemon")
     print(f"  AOI       : {aoi_desc}")
@@ -1602,34 +1713,76 @@ def _cmd_watch(args) -> int:
     print(f"  period    : {period_s:g} s per cycle")
     print(f"  state     : {store.path} "
           f"({'RESTORED — restart re-fires nothing' if restored else 'fresh'})")
-    print(f"  console   : http://{host}:{port}/console  [auth: {auth}]")
-    print(f"  seeding   : POST/GET http://{host}:{port}/api/seed, DELETE "
-          f"/api/seed/<id> ({len(monitor.seeded.active())} active seed(s); "
-          f"SAFETY SEMANTICS 12)")
+    print(f"  console   : http://{host}:{port}/console  [auth: {auth}]  "
+          f"(LIVE only)")
     # W6 THIN WORLD VIEWER: the national map over this daemon's state; its
     # /api/world/summary provider is attached here (additive — serve() and
     # every other route are untouched).
     httpd.app.world_provider = daemon.world_summary
-    print(f"  world     : http://{host}:{port}/world  (national map; "
-          f"/api/world/summary)")
+    print(f"  world     : http://{host}:{port}/world  (the LIVE map; "
+          f"/api/world/summary) — switch LIVE | TEST in the header")
+    print(f"  test map  : http://{host}:{port}/world?world=test  (drills "
+          f"and simulations; drill {test_world.drill_state}, "
+          f"{len(test_world.monitor.seeded.active())} active seed(s); state "
+          f"{test_world.store.path})")
+    print(f"  seeding   : POST http://{host}:{port}/api/test/seed, GET "
+          f"/api/test/seed[/<id>], DELETE /api/test/seed/<id> — the TEST "
+          f"world only; /api/seed POST/DELETE answer 409 (SAFETY SEMANTICS "
+          f"16)")
     for note in startup_notes:
         print(f"  NOTE      : {note}")
+    if daemon.migration_note:
+        print(f"  NOTE      : {daemon.migration_note}")
     print("  Ctrl-C stops cleanly (final persist).")
 
     server_thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     server_thread.start()
+    test_world.start()
     try:
         daemon.run(max_cycles=args.max_cycles)
     finally:
         # Ctrl-C lands here too (run() catches it and returns): one last
         # persist so the on-disk state matches the final in-memory state.
         daemon.persist_now(final=True)
+        test_world.stop()
+        test_world.persist_now(final=True)
         httpd.shutdown()
         httpd.server_close()
         server_thread.join(timeout=5)
         print(f"watch stopped after {daemon.cycles_run} cycle(s); state "
-              f"persisted to {store.path}")
+              f"persisted to {store.path} (test map: "
+              f"{test_world.store.path})")
     return 0
+
+
+def _watch_test_world(args, cfg, aoi, aoi_desc, safe_zones, registry,
+                      terrain, clients_by_id, state_dir, s3_uri, period_s,
+                      dispatcher):
+    """TWO WORLDS (contracts SAFETY SEMANTICS 16b/f): the TEST world for
+    `watch`. Its OWN weather provider instance; its OWN registry when the
+    live one caches (the Dynamo TTL roster — a test read must never refresh
+    the live cache), else the stateless mock roster shared read-only; a
+    terrain overlay that reads the live tile cache read-only and fetches /
+    caches everything else under <state-dir>/test_world/; its own
+    StateStore there (+ s3://<prefix>/test_world/ when mirrored)."""
+    from wgresponse import worlds
+    from wgresponse.persist import StateStore
+    from wgresponse.weather import NwsWeather
+    test_dir = Path(state_dir) / worlds.TEST_NAMESPACE
+    test_s3 = worlds.child_s3_uri(s3_uri, worlds.TEST_NAMESPACE)
+    store = StateStore(test_dir, s3_uri=test_s3)
+    if getattr(args, "registry", "mock") == "dynamo":
+        test_registry, _desc = _watch_registry(args, aoi)
+    else:
+        test_registry = registry
+    email = os.environ.get(_LFPS_EMAIL_ENV) or _LFPS_EMAIL_DEFAULT
+    test_terrain = worlds.test_terrain_for(terrain, test_dir, email=email,
+                                           s3_uri=test_s3)
+    return worlds.TestWorld(
+        cfg=cfg, aoi=aoi, safe_zones=safe_zones,
+        weather_provider=NwsWeather(cfg=cfg), terrain_provider=test_terrain,
+        registry=test_registry, dispatcher=dispatcher, store=store,
+        clients_by_id=clients_by_id, aoi_desc=aoi_desc, period_s=period_s)
 
 
 # ---------------------------------------------------------------------------

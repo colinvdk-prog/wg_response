@@ -211,6 +211,7 @@ class AlertEngine:
         blind_pairs: Optional[Iterable[_PairKey]] = None,
         feeds_healthy: bool = True,
         incident_meta: Optional[Dict[str, dict]] = None,
+        only_incidents: Optional[Iterable[str]] = None,
     ) -> List[AlertEvent]:
         """Run one evaluation cycle at unix time now_s (seconds).
 
@@ -237,8 +238,19 @@ class AlertEngine:
 
         The 2-argument form (defaults: no blind pairs, healthy feeds, no
         meta) keeps the pre-Sprint-2 behavior for legacy callers.
+
+        ``only_incidents`` (TWO WORLDS, contracts SAFETY SEMANTICS 16b;
+        additive, default None = every tracked pair, byte-identical): when
+        given, only the pairs of these incident ids are evaluated this call;
+        every other tracked pair is skipped ENTIRELY — no transition, clear /
+        de-escalation streaks and blind count untouched, no event (it keeps
+        its own evaluation cadence) — while it still counts for the CLEARED
+        suppression gate. The TEST world's action-triggered re-runs evaluate
+        only its seeded fires, so a live pair on the test map keeps the live
+        world's once-per-live-cycle cadence.
         Returns the AlertEvents emitted this cycle (at most one per pair).
         """
+        only = None if only_incidents is None else set(only_incidents)
         capped_incidents = self._update_incident_meta(incident_meta, now_s)
         # EXTREME SPREAD REGIME (contracts knob block; additive meta key from
         # ThreatMonitor): flagged incidents evaluate ladder stages on the
@@ -258,6 +270,8 @@ class AlertEngine:
                 self._deesc_streak[key] = 0
         events: List[AlertEvent] = []
         for key, rec in self._records.items():
+            if only is not None and key[1] not in only:
+                continue            # not evaluated this call (16b)
             a = latest.get(key)
             if a is None and (key in blind_keys or not feeds_healthy):
                 self._freeze_blind(key, rec, now_s)

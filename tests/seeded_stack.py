@@ -18,6 +18,15 @@ cycle_digest / state_digest / api_digest are the canonical fingerprints the
 byte-identity test pins: they were computed on the pre-W1 code (commit
 09f94b5) for the no-seed scenario in baseline_run(), and the seeded-incident
 build must reproduce them exactly with an empty seed store.
+
+TWO WORLDS (2026-09-27, contracts SAFETY SEMANTICS 16): make_stack now builds
+the watch daemon's two worlds — the LIVE daemon (its monitor is locked: a
+seed offered to it raises seeded.LiveWorldRefused) and a TEST world
+(wgresponse.worlds.TestWorld, sync=True so every test cycle runs inline
+right after the live cycle, at the live cycle's time) with its OWN stub
+weather / terrain / registry instances, its own dispatcher (dispatch module
+unless `test_dispatcher` is given) and its own StateStore namespace
+(<state_dir>/test_world). Seeds go to daemon.test_world.
 """
 from __future__ import annotations
 
@@ -26,6 +35,7 @@ import json
 import math
 import re
 import struct
+from pathlib import Path
 
 from wgresponse import dispatch as dispatch_mod
 from wgresponse import geo
@@ -220,11 +230,35 @@ def crew(now_s=T0, crew_id="G1", loc=LatLon(39.10, -121.05)):
                 home_base=loc)
 
 
+def make_test_world(state_dir, cfg, roster, weather=None, terrain=None,
+                    clock=None, dispatcher=dispatch_mod, sync=True):
+    """A TEST world (SAFETY SEMANTICS 16) over its OWN stub providers and
+    registry instance, persisting under <state_dir>/test_world."""
+    from wgresponse.worlds import TEST_NAMESPACE, TestWorld
+    return TestWorld(
+        cfg=cfg, aoi=AOI, safe_zones=[SAFE_ZONE],
+        weather_provider=weather if weather is not None else StubWeather(),
+        terrain_provider=terrain if terrain is not None else StubTerrain(),
+        registry=StubRegistry(roster), dispatcher=dispatcher,
+        store=StateStore(Path(state_dir) / TEST_NAMESPACE),
+        clients_by_id={c.client_id: c for c in roster},
+        clock=clock or SettableClock(), sync=sync,
+        aoi_desc="seeded test aoi", period_s=PERIOD_S)
+
+
 def make_stack(state_dir, cfg=None, incidents=None, weather=None,
                terrain=None, registry_clients=None, notifier=None,
-               clock=None, dispatcher=dispatch_mod, feed=None):
+               clock=None, dispatcher=dispatch_mod, feed=None,
+               test_world=True, test_weather=None, test_terrain=None,
+               test_dispatcher=dispatch_mod, test_clock=None,
+               tracker=None):
     """(daemon, monitor, feed, engine, notifier, store, weather, terrain) on
-    the REAL monitor / alert engine / dispatch / persist stack."""
+    the REAL monitor / alert engine / dispatch / persist stack — the LIVE
+    world. daemon.test_world is the TEST world (None with test_world=False):
+    its weather / terrain default to FRESH stub instances configured like
+    the live ones (so a test can tell the worlds' provider calls apart),
+    its clock to the live SettableClock (a settable clock never advances on
+    a read, so sharing it is harmless)."""
     cfg = cfg or small_cfg()
     feed = feed if feed is not None else ScriptedFeed(
         incidents if incidents is not None else [feed_incident()])
@@ -235,19 +269,32 @@ def make_stack(state_dir, cfg=None, incidents=None, weather=None,
                          clients_by_id={c.client_id: c for c in roster})
     weather = weather if weather is not None else StubWeather()
     terrain = terrain if terrain is not None else StubTerrain()
+    clock = clock or SettableClock()
     monitor = ThreatMonitor(feeds=[feed], weather_provider=weather,
                             terrain_provider=terrain, registry=registry,
                             alert_engine=engine, cfg=cfg,
                             safe_zones=[SAFE_ZONE],
-                            crew_tracker=StubTracker([crew()]),
+                            crew_tracker=(tracker if tracker is not None
+                                          else StubTracker([crew()])),
                             dispatcher=dispatcher, aoi=AOI)
     store = StateStore(state_dir)
+    tw = None
+    if test_world:
+        if test_weather is None and isinstance(weather, StubWeather):
+            test_weather = StubWeather(wind_mps=weather.wind_mps,
+                                       dir_deg=weather.dir_deg)
+        if test_terrain is None and isinstance(terrain, StubTerrain):
+            test_terrain = StubTerrain(fuel_code=terrain.fuel_code)
+        tw = make_test_world(state_dir, cfg, roster, weather=test_weather,
+                             terrain=test_terrain,
+                             clock=test_clock or clock,
+                             dispatcher=test_dispatcher)
     daemon = _WatchDaemon(monitor=monitor, engine=engine, registry=registry,
-                          tracker=None, store=store, cfg=cfg, aoi=AOI,
+                          tracker=tracker, store=store, cfg=cfg, aoi=AOI,
                           period_s=PERIOD_S, aoi_desc="seeded test aoi",
                           safe_zones=[SAFE_ZONE],
-                          clock=clock or SettableClock(),
-                          sleep=lambda s: None)
+                          clock=clock,
+                          sleep=lambda s: None, test_world=tw)
     return daemon, monitor, feed, engine, notifier, store, weather, terrain
 
 

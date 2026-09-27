@@ -237,6 +237,9 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
        survive restart; restart re-fires nothing already sent (persist law).
    No seeds = byte-identical cycles, persisted state and /api/state (pinned in
    tests/test_seeded_incidents.py against goldens computed before W1).
+   SINCE 16 (TWO WORLDS, 2026-09-27) a seed is lit ONLY in the TEST world
+   (POST /api/test/seed; DELETE /api/test/seed/<id> retires it): (a)-(h) hold
+   there unchanged, and the LIVE world never runs one.
 13. CONTAINED FIRES LEAVE THE MAP; A PERIMETER BURNS FROM WHERE THE FEED LAST
    CONFIRMED IT (founder ruling 2026-09-27, verbatim: "a fire that is
    contained and no longer spreading is removed from the map";
@@ -357,6 +360,74 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    /api/world/summary (pinned in tests/test_offmap_horizon.py against goldens
    computed on commit 6c748c5, before this rule existed, on a world where it
    bites).
+16. TWO WORLDS: A LIVE MAP AND A TEST MAP (founder ruling 2026-09-27,
+   verbatim: "we need a test map and a live map so all simulations or drills
+   do not impact real conditions"; docs/LIVE_WORLD_PLAN.md "Test map and live
+   map (2026-09-27)"; wgresponse.worlds). The watch daemon runs two fully
+   isolated worlds in one process:
+   (a) THE LIVE WORLD is real conditions only: feed incidents, the real client
+       registry, the real crews (beacons), the real alert engine, the real
+       dispatch plan, the real notifier and the live StateStore file + S3
+       object. It accepts NO seeded fire: its ThreatMonitor is locked
+       (ThreatMonitor.lock_live — create_seed / add_seed / restore_seeds raise
+       seeded.LiveWorldRefused and no cycle ever unions a seed), and POST /
+       DELETE /api/seed answer 409 with a pointer to /api/test/seed. Nothing
+       the test world does — seeds, retirements, crew staging, test dispatch,
+       resets, its own persistence — reads the live clock, wakes or delays the
+       live loop, writes a live key or file, or changes one byte of any live
+       CycleResult, /api/state, /api/plan, /healthz, live world summary, live
+       notification or live persisted state (pinned byte-for-byte, with and
+       without heavy drill activity, in tests/test_worlds_isolation.py). Seeds
+       persisted by the pre-two-worlds build are MIGRATED at load, loudly: the
+       seed rows, their alert pairs, ledgered drill sends and growth clocks
+       move to the test namespace and the live incumbent plan loses its seeded
+       stops — never run live.
+   (b) THE TEST WORLD is drills and simulations. It sees the live world's
+       incidents and forecasts READ-ONLY — the live cycle's own WorldSnapshot
+       (ThreatMonitor.last_snapshot), shared by reference, never recomputed and
+       never mutated — adds SEEDED incidents (SEMANTICS 12, computed in the
+       test world only through the same ThreatMonitor path) and runs its OWN
+       alert engine, its OWN crews and its OWN dispatch plan over live ∪
+       seeded forecasts (the live fires' P10 still bounds every test
+       corridor). Its weather provider is its own instance, a caching registry
+       is its own instance, and its terrain reads the live tile cache
+       read-only while fetching / caching everything else in its own
+       namespace. Each live cycle triggers ONE test cycle at the live cycle's
+       own time; a test action (seed, retire, crew staging) re-runs the drill
+       at once at the test clock, but that re-run evaluates only the SEEDED
+       fires' pairs (AlertEngine.evaluate only_incidents) — a live pair's
+       ladder on the TEST map moves only with the live cycles, exactly as on
+       the LIVE map (pinned); the planner re-plans on every run.
+   (c) DRILLS: the test world is IDLE (no cycle, zero cost; the TEST map
+       mirrors the live picture read-only) until a drill starts — the first
+       seed, or a test-crew reset / placement. The drill start CLONES the live
+       world while the live loop is idle: alert records + notified ledger +
+       growth clocks, the incumbent plan, the regime postures and the crew
+       roster at its current positions and statuses (a crew the live
+       dispatcher would not use — stale beacon, UNKNOWN, OFF_DUTY — is cloned
+       ineligible), so a drill answers "what would we do right now"; from then
+       on each world evolves alone. POST /api/test/reset wipes the test world
+       (its namespace included) back to IDLE.
+   (d) TEST CREWS ARE VIRTUAL: they never beacon and never move (W1.4 is not
+       built); POST /api/test/crews/reset re-clones the live roster, POST
+       /api/test/crews/place stages one crew. A test plan never leaves the
+       process (no real crew receives a test dispatch) and no test position
+       ever enters the live CrewTracker.
+   (e) EVERYTHING THE TEST WORLD EMITS IS DRILL-ONLY: its notifier
+       (seeded.DrillOnlyNotifier) holds no client channel at all — every alert
+       it raises, a seeded fire's or a LIVE incident's as seen from the test
+       world, goes to the drill log and is ledgered (restart re-fires nothing).
+   (f) OWN NAMESPACE, RESTART-SAFE: the test world persists to
+       <state-dir>/test_world/ and s3://<prefix>/test_world/ (its state file
+       and its terrain overlay) — never a live key — and a restart restores the
+       drill (seeds, ladder, ledger, plan, virtual crews, drill log) without
+       re-firing anything.
+   (g) THE LIVE WORLD NEVER WAITS: the test world runs on its own thread,
+       after each live cycle (or at once on a test action), yields to a
+       running live cycle before it clones or cycles, and a test-world failure
+       is logged — never raised into the live loop.
+   No test activity = the pre-two-worlds live world, byte for byte (the W1
+   goldens in tests/test_seeded_incidents.py still pin it).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -451,6 +522,9 @@ wgresponse.crews
 wgresponse.alerts
     class AlertEngine   .evaluate(pairs: list[ThreatAssessment], now_s) -> list[AlertEvent]
                         .states() -> dict[tuple[str,str], AlertRecord]
+        # TWO WORLDS (16b): evaluate(..., only_incidents=ids) evaluates just
+        # those incidents' pairs (every other tracked pair untouched); None =
+        # every pair, byte-identical. The TEST world's action re-runs use it.
 
 wgresponse.threat
     class ThreatMonitor .cycle(now_s) -> CycleResult    # full loop: feeds->wx->terrain->spread->etas->alerts
@@ -470,6 +544,10 @@ wgresponse.offmap   (2026-09-27; SAFETY SEMANTICS 15 — the per-fire off-domain
     front_speed_stats(p10) -> (p90_mps | None, max_mps | None, n)
     horizon_for(incident_id, p10, status, cfg) -> OffDomainHorizon
     horizons(incidents, ensembles, now_s, cfg, status=None) -> dict[str, OffDomainHorizon]
+        # TWO WORLDS (SAFETY SEMANTICS 16): .lock_live() makes this the LIVE
+        # world's monitor (seeds refused: seeded.LiveWorldRefused; none ever
+        # unioned); .last_snapshot -> WorldSnapshot | None, the read-only
+        # record of the last completed cycle the TEST world builds on.
 
 wgresponse.seeded   (W1, 2026-09-26; SAFETY SEMANTICS 12)
     class SeededIncidentStore  .create(...) -> SeededIgnition  .add(ign)
@@ -478,6 +556,20 @@ wgresponse.seeded   (W1, 2026-09-26; SAFETY SEMANTICS 12)
     seeded_forecast(ign, live_provider, loc, horizon_h, now_s) -> WeatherForecast
     parse_seed_request(payload, aoi) -> dict   # ValueError = HTTP 400
     class SeedSafeNotifier(real, drill)        # seeded incidents -> the log, never a client
+    class DrillOnlyNotifier(drill)             # SEMANTICS 16e: EVERY send -> the drill log (no channel held)
+    class LiveWorldRefused(SeedConflict)       # SEMANTICS 16a: a seed offered to the live world (HTTP 409)
+
+wgresponse.worlds   (TWO WORLDS, 2026-09-27; SAFETY SEMANTICS 16)
+    class TestWorld  the TEST map: .attach_live(view) .on_live_cycle(snapshot)
+        .run_cycle(trigger) .restore() .adopt_legacy(...) .persist_now()
+        .state() .world_summary(since) .seed_list/get/create/retire
+        .crews_reset(payload) .crews_place(payload) .reset(payload)
+        # every API method -> (http_status, json_payload); sync=True runs
+        # inline (tests), else one worker thread that yields to the live loop
+    class VirtualCrewTracker   # test crews: clone_live / place / rows; CrewTracker seam
+    class TestTerrainOverlay(live, own)   # live tile cache read-only; own namespace writes
+    split_legacy_seeds(loaded) -> (live_loaded, LegacySeeds | None)   # the migration partition
+    child_s3_uri(uri, "test_world") -> uri | None
 
 wgresponse.safety
     corridor_safe(a: LatLon, b: LatLon, depart_s: float, speed_mps: float,
@@ -510,6 +602,12 @@ wgresponse.server
     auth: X-Internal-API-Key (fail closed unless WGRESP_DEV_OPEN=1)
     W1: /api/seed routes (GET/POST/DELETE) to the injected app.seed_api (the
     watch daemon); 404 when no seed API is wired.
+    TWO WORLDS (SAFETY SEMANTICS 16): /api/test/state, /api/test/seed[/<id>]
+    (GET/POST/DELETE), POST /api/test/crews/reset, /api/test/crews/place,
+    /api/test/reset route to the injected app.test_api (404 when unwired);
+    GET /api/world/summary?world=test the test map's read model (default
+    live, unchanged). /api/seed keeps GET as a read-only alias of the TEST
+    list (one release); its POST / DELETE answer 409 (the live world refuses).
 
 wgresponse.persist   (Sprint 2, Council-1 OPS-4)
     class StateStore(dir_path)  .save(alert_records, notified_ledger, incumbent_plan, meta)
@@ -519,6 +617,11 @@ wgresponse.persist   (Sprint 2, Council-1 OPS-4)
     # W1: save(..., seeded_incidents=rows) writes an ADDITIVE key only when
     # given (no seeds = byte-identical file); load()["seeded_incidents"] ([]
     # when absent) feeds ThreatMonitor.restore_seeds (SAFETY SEMANTICS 12h).
+    # TWO WORLDS (16f): save(..., virtual_crews=rows, drill_log=rows) —
+    # ADDITIVE keys only the TEST world writes (in its own namespace:
+    # <state-dir>/test_world/); load() returns them ([] when absent). Since
+    # 13 the LIVE world never writes seeded_incidents; a live file that
+    # carries it (pre-two-worlds build) is migrated to the test world.
 
 wgresponse.roads   (founder UX request 2026-07-10 — crews travel on real roads)
     class RoadGraph — nodes {id: LatLon}, edges (u, v, highway_class, length_m,
@@ -718,6 +821,12 @@ wgresponse.cli
     # SAFETY SEMANTICS 15: --offmap-per-fire arms corridor_offraster_per_fire
     # with corridor_offraster_margin_min = 60 (the founder's hour); /api/state
     # incidents and the world summary rows gain an "offmap" block.
+    # TWO WORLDS (SAFETY SEMANTICS 16): the same body on POST /api/test/seed
+    # (the TEST world); /api/seed POST/DELETE -> 409 (the LIVE world refuses),
+    # GET /api/seed[/<id>] a read-only alias of the test list for one release;
+    # GET /api/test/state, POST /api/test/crews/reset | /api/test/crews/place
+    # {crew_id, lat, lon, status?, name?} | /api/test/reset;
+    # /api/world/summary?world=live|test (default live).
 ============================================================================
 """
 from __future__ import annotations
@@ -917,9 +1026,10 @@ class SeedWeather:
 
 @dataclass(frozen=True)
 class SeededIgnition:
-    """One fire a user lit at a point in the live world (W1 ticket 1.2;
-    SAFETY SEMANTICS 12). The watch daemon's POST /api/seed creates one
-    (wgresponse.seeded mints the id); ThreatMonitor's seeded store holds it
+    """One fire a user lit at a point (W1 ticket 1.2; SAFETY SEMANTICS 12 —
+    since 16, in the TEST world only). The watch daemon's POST
+    /api/test/seed creates one (wgresponse.seeded mints the id); the TEST
+    world's ThreatMonitor's seeded store holds it
     and every cycle materializes it with to_incident(now_s) next to the feed
     results — from then on it is an ordinary incident to the engine.
 
@@ -1419,6 +1529,38 @@ class CycleResult:
     timings: dict = field(default_factory=dict)  # cycle phase wall-times (s): feeds/assess/alerts/dispatch + per-incident terrain/weather/spread (cadence telemetry, review item 6)
     removed_incidents: list = field(default_factory=list)  # list[RemovedIncident]: contained fires removed this cycle (SAFETY SEMANTICS 13; [] unless cfg.drop_contained_incidents)
     offmap: dict = field(default_factory=dict)  # incident_id -> OffDomainHorizon per domain incident (SAFETY SEMANTICS 15; {} unless cfg.corridor_offraster_per_fire)
+
+
+@dataclass(frozen=True)
+class WorldSnapshot:
+    """TWO WORLDS (SAFETY SEMANTICS 16): the READ-ONLY record of one completed
+    LIVE cycle that the TEST world builds on — ThreatMonitor.last_snapshot.
+
+    Everything the live cycle decided before its alert ladder ran, per
+    incident: the post-gate incident set, every ThreatAssessment, the
+    ensembles (the immutable arrival rasters, SHARED by reference — the test
+    world never recomputes a live domain), the in-domain clients, the ETAs,
+    the fire-centroid forecasts, the tiered eroded rasters (when that knob is
+    on), the extreme-regime flags computed this cycle, the registry roster
+    each incident's search returned (SEMANTICS 6 registry completeness), the
+    incidents whose assessment FAILED, the feed health and the cycle's notes
+    and feed-blind operator events. Containers are fresh shallow copies; the
+    objects inside are the live cycle's own and are never mutated by a
+    reader. Times unix seconds."""
+    t_s: float
+    incidents: tuple = ()                 # FireIncident, the live cycle's order
+    assessments: tuple = ()               # ThreatAssessment
+    ensembles: dict = field(default_factory=dict)    # incident_id -> EnsembleArrival
+    clients: dict = field(default_factory=dict)      # client_id -> ClientProperty (in a domain)
+    etas: dict = field(default_factory=dict)         # (client_id, incident_id) -> ThreatEta
+    forecasts: dict = field(default_factory=dict)    # incident_id -> WeatherForecast
+    eroded: dict = field(default_factory=dict)       # incident_id -> Raster (tiered erosion)
+    extreme_flags: dict = field(default_factory=dict)  # incident_id -> bool (computed this cycle)
+    roster_seen: dict = field(default_factory=dict)  # incident_id -> frozenset(client_id)
+    failed_incidents: frozenset = frozenset()
+    feeds_healthy: bool = True
+    notes: tuple = ()
+    feed_events: tuple = ()               # the cycle's 'feed_blind' OperatorEvents
 
 
 # ---------------------------------------------------------------------------

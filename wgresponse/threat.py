@@ -154,6 +154,17 @@ horizon (t_ignite_s + cfg.horizon_h) has passed with no pair in
 NOTICE/WATCH/EXTREME (and a healthy assessment) is auto-retired
 (OperatorEvent kind 'seed_retired'). No seeds = byte-identical cycles.
 
+TWO WORLDS (2026-09-27; contracts SAFETY SEMANTICS 16, wgresponse.worlds):
+the watch daemon's monitor is the LIVE world's and is locked (lock_live():
+every seed is refused with seeded.LiveWorldRefused and no cycle ever unions
+one); seeds run in the TEST world's own monitor (worlds._TestWorldMonitor,
+a subclass driving this same cycle() over the live cycle's snapshot). After
+the planner, every cycle records a WorldSnapshot (last_snapshot): the post-
+gate incident set, assessments, ensembles, in-domain clients, ETAs,
+forecasts, eroded rasters, regime flags, registry rosters, failed incidents,
+feed health, notes and feed-blind events — shallow container copies around
+the cycle's own objects, never read by the live path (byte-neutral).
+
 Units: times unix seconds, distances meters, config durations hours/minutes
 per contracts.
 """
@@ -385,6 +396,12 @@ class ThreatMonitor:
             threat to an in-AOI client).
     """
 
+    #: TWO WORLDS (SAFETY SEMANTICS 16a): False once lock_live() made this
+    #: the LIVE world's monitor — seeds refused, none ever unioned.
+    accepts_seeds = True
+    #: TWO WORLDS (16b): the last completed cycle's WorldSnapshot (or None).
+    _last_snapshot = None
+
     def __init__(self, feeds: list, weather_provider, terrain_provider,
                  registry, alert_engine, cfg: ResponseConfig, safe_zones: list,
                  crew_tracker=None, dispatcher=None, aoi=None) -> None:
@@ -421,12 +438,35 @@ class ThreatMonitor:
         'seeded:<uuid>' id and stores the seed (kw: intensity / weather /
         wind_dir_deg / created_by / note — SeededIncidentStore.create). It
         joins the incident set from the next cycle. Raises ValueError (bad
-        ignition) / seeded.SeedCapacityError (too many active)."""
+        ignition) / seeded.SeedCapacityError (too many active) /
+        seeded.LiveWorldRefused (this is the locked LIVE world — SAFETY
+        SEMANTICS 16a)."""
+        self._refuse_if_live()
         return self._seeded.create(lat, lon, t_ignite_s, **kw)
 
     def add_seed(self, ign) -> "object":
-        """Store a pre-built contracts.SeededIgnition (tests, tooling)."""
+        """Store a pre-built contracts.SeededIgnition (tests, tooling).
+        seeded.LiveWorldRefused on the locked LIVE world."""
+        self._refuse_if_live()
         return self._seeded.add(ign)
+
+    # --------------------------------------------- TWO WORLDS (SEMANTICS 16)
+
+    def lock_live(self) -> None:
+        """Make this the LIVE world's monitor (SAFETY SEMANTICS 16a): every
+        seed is refused from now on (seeded.LiveWorldRefused) and no cycle
+        unions one. Idempotent; the watch daemon calls it on its monitor."""
+        self.accepts_seeds = False
+
+    @property
+    def last_snapshot(self):
+        """The last completed cycle's WorldSnapshot (SAFETY SEMANTICS 16b) —
+        what the TEST world builds on; None before the first cycle."""
+        return self._last_snapshot
+
+    def _refuse_if_live(self) -> None:
+        if not self.accepts_seeds:
+            raise seeded_mod.LiveWorldRefused()
 
     def retire_seed(self, incident_id: str, now_s: float,
                     reason: str = seeded_mod.RETIRED_BY_OPERATOR,
@@ -442,7 +482,10 @@ class ThreatMonitor:
 
     def restore_seeds(self, rows) -> int:
         """Re-seed the store from persisted rows (persist seam); returns the
-        number restored (malformed rows are skipped loudly, never raised)."""
+        number restored (malformed rows are skipped loudly, never raised).
+        seeded.LiveWorldRefused on the locked LIVE world (its persisted
+        seeds are migrated to the TEST world instead — SEMANTICS 16a)."""
+        self._refuse_if_live()
         return self._seeded.restore(rows)
 
     @property
@@ -654,6 +697,28 @@ class ThreatMonitor:
                                     eroded_map=(eroded_map or None),
                                     offmap=(offmap or None))
         timings["dispatch_s"] = time.monotonic() - _t
+        # TWO WORLDS (SAFETY SEMANTICS 16b): the read-only record the TEST
+        # world builds on — shallow container copies around this cycle's own
+        # objects (the rasters are shared, never copied). Nothing on the
+        # live path reads it: the CycleResult below is unchanged, and a
+        # failure here is logged, never raised (cycle() never raises).
+        try:
+            from wgresponse.contracts import WorldSnapshot
+            self._last_snapshot = WorldSnapshot(
+                t_s=now_s, incidents=tuple(active),
+                assessments=tuple(assessments), ensembles=dict(ensembles),
+                clients=dict(clients_seen), etas=dict(etas),
+                forecasts=dict(forecasts), eroded=dict(eroded_map),
+                extreme_flags=dict(extreme_flags),
+                roster_seen={k: frozenset(v) for k, v in roster_seen.items()},
+                failed_incidents=frozenset(failed_incidents),
+                feeds_healthy=bool(feeds_healthy), notes=tuple(notes),
+                feed_events=tuple(ev for ev in operator_events
+                                  if getattr(ev, "kind", None)
+                                  == "feed_blind"))
+        except Exception:
+            log.exception("world snapshot not recorded this cycle (the TEST "
+                          "world keeps the previous one)")
 
         degraded = (not feeds_healthy) or bool(failed_incidents) or any(
             ev.kind in ("degraded", "feed_blind", "provider_error")
@@ -677,7 +742,9 @@ class ThreatMonitor:
         to_incident(now_s) (a fresh point incident) with its weather label in
         meta["seed"]; an id already used by a feed incident (impossible
         across namespaces — defense in depth) is skipped with a note, never
-        merged."""
+        merged. The locked LIVE world (SEMANTICS 16a) unions nothing, ever."""
+        if not self.accepts_seeds:
+            return []
         for e in self._seeded.take_announcements():
             notes.append(
                 f"seeded incident {e.ignition.incident_id} retired by "

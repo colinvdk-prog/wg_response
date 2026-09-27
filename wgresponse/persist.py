@@ -93,6 +93,18 @@ Payload shapes (all times unix seconds, per contracts):
                   that never seeded writes a byte-identical file; load()
                   returns [] when the key is absent and a loud [] when it is
                   not a list (a type-corrupt key never costs the alert state).
+                  Since TWO WORLDS (SAFETY SEMANTICS 16) only the TEST world
+                  writes it; a LIVE file that carries it was written by the
+                  pre-two-worlds build and is migrated to the test world.
+  virtual_crews   [row, ...] — TWO WORLDS (SAFETY SEMANTICS 16d/f): the TEST
+                  world's virtual crew roster (wgresponse.worlds.
+                  VirtualCrewTracker.rows()), stored verbatim.
+  drill_log       [row, ...] — the TEST world's drill-log lines (seeded.
+                  DrillLog.rows()), stored verbatim (display only: the
+                  notified ledger is what re-fires nothing).
+                  Both ADDITIVE like seeded_incidents: written only when the
+                  caller passes them (only the test world, in its own
+                  namespace <state-dir>/test_world/), [] when absent on load.
 
 Stdlib only.
 """
@@ -503,12 +515,17 @@ class StateStore:
              meta: Optional[dict],
              incident_growth: Optional[dict] = None,
              now_s: Optional[float] = None,
-             seeded_incidents: Optional[list] = None) -> str:
+             seeded_incidents: Optional[list] = None,
+             virtual_crews: Optional[list] = None,
+             drill_log: Optional[list] = None) -> str:
         """Atomically persist one cycle's durable state; returns the file path.
 
         ``seeded_incidents`` (W1, SAFETY SEMANTICS 12h): JSON-able seed rows
         (seeded.SeededIncidentStore.rows()); None = the key is not written
-        at all (byte-identical to the pre-W1 file).
+        at all (byte-identical to the pre-W1 file). ``virtual_crews`` /
+        ``drill_log`` (TWO WORLDS, SAFETY SEMANTICS 16f): the TEST world's
+        virtual crews and drill-log lines, same additive rule (the live
+        world never passes them).
 
         Tuple keys are flattened into lists (JSON has no tuple keys). Raises
         OSError/TypeError upward on disk/serialization failure — the caller
@@ -536,6 +553,10 @@ class StateStore:
         }
         if seeded_incidents is not None:
             payload["seeded_incidents"] = [dict(r) for r in seeded_incidents]
+        if virtual_crews is not None:
+            payload["virtual_crews"] = [dict(r) for r in virtual_crews]
+        if drill_log is not None:
+            payload["drill_log"] = [dict(r) for r in drill_log]
         body = json.dumps(payload, sort_keys=True, indent=1)
         self._dir.mkdir(parents=True, exist_ok=True)
         tmp = Path(str(self._path) + ".tmp")
@@ -568,7 +589,9 @@ class StateStore:
                  "incumbent_plan": DispatchPlan | None,
                  "meta": dict,
                  "incident_growth": {iid: {"acreage", "last_growth_s"}},
-                 "seeded_incidents": [row, ...]}   (W1; [] when absent).
+                 "seeded_incidents": [row, ...],   (W1; [] when absent)
+                 "virtual_crews": [row, ...],      (16f; [] when absent)
+                 "drill_log": [row, ...]}          (16f; [] when absent).
         NEVER raises: file absent -> info note; unreadable / non-UTF-8 /
         corrupt JSON / unknown schema / type-corrupt containers -> ERROR
         note; a malformed individual record/ledger entry is skipped with its
@@ -694,6 +717,12 @@ class StateStore:
             # decodes them tolerantly (a malformed row is skipped loudly).
             "seeded_incidents": [r for r in self._list_field(
                 payload, "seeded_incidents") if isinstance(r, dict)],
+            # TWO WORLDS (SAFETY SEMANTICS 16f): the test world's rows,
+            # verbatim; their owners decode tolerantly.
+            "virtual_crews": [r for r in self._list_field(
+                payload, "virtual_crews") if isinstance(r, dict)],
+            "drill_log": [r for r in self._list_field(
+                payload, "drill_log") if isinstance(r, dict)],
         }
 
     # ------------------------------------------------------------ S3 mirror

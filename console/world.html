@@ -28,7 +28,18 @@
      inline dependency-free SVG map shim (window.L below) renders the same
      layers with the SAME web-mercator zoom law (wheel / drag / +/- buttons),
      so the three tiers work with no basemap and no network. ?nomap=1
-     rehearses that mode (the console's switch). -->
+     rehearses that mode (the console's switch).
+     TWO WORLDS (2026-09-27, contracts SAFETY SEMANTICS 16; founder: "we need
+     a test map and a live map so all simulations or drills do not impact real
+     conditions"): a LIVE | TEST switch in the header. LIVE (the default) is
+     real conditions only — /api/state + /api/world/summary, no seeding.
+     TEST (?world=test) is the drill world — /api/test/state +
+     /api/world/summary?world=test: an amber banner across the top, an amber
+     frame, seeded fires in the seeded colour, the "Seed a fire" control (click
+     the map -> intensity -> seed; retire on each seeded fire), the virtual
+     test crews drawn distinctly and the live crews ghosted read-only, the
+     drill log. Nothing on the TEST map reaches a real client, crew or the live
+     state. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -155,6 +166,66 @@
                        background: var(--navy2); color: var(--text);
                        border: 1px solid var(--navy3); border-radius: 4px; cursor: pointer; }
   .fbmap-node { cursor: pointer; }
+  /* --- TWO WORLDS (contracts SAFETY SEMANTICS 16): LIVE | TEST ----------- */
+  :root { --amber: #ffb300; --amberdark: #1a1200; --livegreen: #1f7a3a; }
+  #worldswitch { display: inline-flex; border: 1px solid var(--dim); border-radius: 6px;
+                 overflow: hidden; }
+  #worldswitch button { background: var(--navy3); color: var(--dim); border: 0;
+                        padding: 4px 14px; font-size: 11px; font-weight: 800;
+                        letter-spacing: 2px; cursor: pointer; }
+  #worldswitch button.on[data-world="live"] { background: var(--livegreen); color: #fff; }
+  #worldswitch button.on[data-world="test"] { background: var(--amber); color: var(--amberdark); }
+  #testbanner { display: none; flex: 0 0 auto; z-index: 1600; position: relative;
+                background: var(--amber); color: var(--amberdark); text-align: center;
+                font-size: 14px; font-weight: 800; letter-spacing: 1px; padding: 7px 12px;
+                border-bottom: 2px solid #8a5a00; }
+  body.test-world #testbanner { display: block; }
+  body.test-world #hdr { border-bottom-color: var(--amber); background: #2b2511; }
+  body.test-world #hdr h1 { color: var(--amber); }
+  body.test-world #side { border-left-color: var(--amber); }
+  /* the amber frame: drawn over the map, never catching a click */
+  #testframe { display: none; position: absolute; inset: 0; z-index: 2400;
+               border: 6px solid var(--amber); pointer-events: none; }
+  body.test-world #testframe { display: block; }
+  #drillwrap { display: none; flex: 0 0 auto; max-height: 46%; overflow-y: auto;
+               padding: 0 12px 8px; border-bottom: 2px solid var(--amber); background: #231f10; }
+  body.test-world #drillwrap { display: block; }
+  #drillwrap h2 { color: var(--amber); }
+  #drillstatus { font-size: 11px; color: #f6e2b0; margin-bottom: 6px; }
+  .drow { display: flex; flex-wrap: wrap; gap: 5px; margin: 4px 0 6px; }
+  .dbtn { background: var(--navy3); color: var(--text); border: 1px solid var(--amber);
+          border-radius: 4px; font-size: 11px; font-weight: 600; padding: 3px 8px; cursor: pointer; }
+  .dbtn.go { background: var(--amber); color: var(--amberdark); }
+  .dbtn.warn { border-color: #ff5252; }
+  .dbtn:disabled { opacity: .45; cursor: default; }
+  body.seed-armed #seedbtn { background: var(--amber); color: var(--amberdark); }
+  body.seed-armed #map { cursor: crosshair; }
+  body.seed-armed .fbmap-svg { cursor: crosshair; }
+  #seedform { font-size: 11px; background: #2d2812; border: 1px dashed var(--amber);
+              border-radius: 5px; padding: 6px 8px; margin-bottom: 6px; }
+  #seedform label { display: inline-flex; align-items: center; gap: 4px; margin: 2px 8px 2px 0; }
+  #seedform select, #seedform input { background: var(--navy); color: var(--text);
+              border: 1px solid var(--navy3); border-radius: 3px; font-size: 11px; }
+  #seedform input[type=number] { width: 60px; }
+  #seedpt { color: #f6e2b0; margin-bottom: 4px; }
+  .seedrow { font-size: 11px; padding: 4px 6px; margin-bottom: 3px; border-radius: 4px;
+             background: #2d2812; border-left: 3px solid #2ec4ff;
+             display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+  .seedrow.retired { opacity: .55; border-left-color: #8b93a1; }
+  .seedrow .sub { color: var(--dim); font-size: 10px; }
+  .retire { background: transparent; color: #ffb3b3; border: 1px solid #ff5252; border-radius: 3px;
+            font-size: 10px; padding: 1px 6px; cursor: pointer; }
+  #drilllog { font-size: 10px; color: #f6e2b0; }
+  #drilllog .dl { padding: 2px 0; border-top: 1px dotted #5a4a1a; }
+  /* test crews (virtual) vs live crews (ghosted, read-only) on the TEST map */
+  .test-crew-icon { background: var(--amber); color: var(--amberdark); border-radius: 3px;
+                    font-size: 10px; font-weight: 800; text-align: center; line-height: 16px;
+                    border: 2px dashed var(--amberdark); }
+  .ghost-crew-icon { background: #4a5668; color: #e8eef7; border-radius: 3px; opacity: .72;
+                     font-size: 10px; font-weight: 600; text-align: center; line-height: 16px;
+                     border: 2px dotted #e8eef7; }
+  #legend .testonly { display: none; }
+  body.test-world #legend .testonly { display: flex; }
   /* narrow screens (a phone, a split pane): the list goes under the map */
   @media (max-width: 900px) {
     #app { flex-direction: column; }
@@ -167,9 +238,17 @@
 </head>
 <body>
 <div id="degradedbar">DEGRADED — forecasts may be stale</div>
+<!-- TWO WORLDS: shown ONLY on the TEST map (body.test-world) -->
+<div id="testbanner" role="alert">TEST MAP — drills and simulations. Nothing here affects real conditions, crews or clients.</div>
 <div id="hdr">
-  <div class="title"><h1>WG Response · World</h1>
+  <div class="title"><h1 id="pagetitle">WG Response · World</h1>
     <div class="sub" id="aoiname">AOI —</div></div>
+  <div class="grp" id="worldswitch" role="group" aria-label="which world">
+    <button type="button" data-world="live" class="on"
+            title="LIVE: real conditions only — real fires, clients, crews, alerts">LIVE</button>
+    <button type="button" data-world="test"
+            title="TEST: drills and simulations — nothing here affects real conditions">TEST</button>
+  </div>
   <div class="grp"><span class="lbl">cycle</span><span id="cycleclock">–</span>
     <span id="agechip"></span></div>
   <div class="grp" id="counts">connecting…</div>
@@ -178,13 +257,44 @@
 </div>
 <div id="app">
   <div id="map"><div id="w1chip">local detail arrives with the world merge (W1)</div></div>
+  <div id="testframe"></div>
   <div id="side">
     <div id="sidestatus">connecting…</div>
+    <!-- the drill panel: the TEST map only (CSS + every handler checks WORLD) -->
+    <div id="drillwrap">
+      <h2>Drill — TEST map</h2>
+      <div id="drillstatus">no drill running</div>
+      <div class="drow">
+        <button type="button" id="seedbtn" class="dbtn"
+                title="arm, then click the map where the fire starts">Seed a fire</button>
+        <button type="button" id="crewresetbtn" class="dbtn"
+                title="re-clone the virtual test crews from the live roster now">Reset test crews to live</button>
+        <button type="button" id="testresetbtn" class="dbtn warn"
+                title="wipe the test map: seeds, test ladder, plan, crews, drill log">Reset test map</button>
+      </div>
+      <div id="seedform" hidden>
+        <div id="seedpt">click the map where the fire starts</div>
+        <label>intensity <select id="seedint">
+          <option value="">live weather</option><option value="low">low</option>
+          <option value="moderate">moderate</option><option value="high" selected>high</option>
+          <option value="extreme">extreme</option></select></label>
+        <label>wind from° <input id="seedwind" type="number" min="0" max="359" step="1"
+               placeholder="live"></label>
+        <label>note <input id="seednote" type="text" maxlength="120" placeholder="drill"></label>
+        <div class="drow"><button type="button" id="seedgo" class="dbtn go" disabled>Seed</button>
+          <button type="button" id="seedcancel" class="dbtn">Cancel</button></div>
+      </div>
+      <div id="seedlist"></div>
+      <div id="drilllog"></div>
+    </div>
     <div id="rankwrap"><h2>Incidents threatening clients</h2><div id="ranklist"></div></div>
     <div id="localwrap"><h2>Local detail — clients in view</h2><div id="cardlist"></div></div>
   </div>
 </div>
 <div id="legend">
+  <div class="row testonly"><span class="sdot" style="background:#2ec4ff"></span> seeded fire (drill — TEST map only)</div>
+  <div class="row testonly"><span class="sdot" style="background:#ffb300;border:2px dashed #1a1200;border-radius:3px"></span> test crew (virtual)</div>
+  <div class="row testonly"><span class="sdot" style="background:#4a5668;opacity:.72;border:2px dotted #e8eef7;border-radius:3px"></span> live crew (read-only on the TEST map)</div>
   <div class="row"><span class="ring"></span> built a spread domain (clients in range)</div>
   <div class="row"><span class="sdot" style="background:#8b93a1"></span> none</div>
   <div class="row"><span class="sdot" style="background:#f2b04c"></span> notice (72h)</div>
@@ -324,8 +434,17 @@ if (typeof window.L === "undefined") {
           this._redraw();
         });
         window.addEventListener("mouseup", () => {
-          if (drag && drag.moved) this._fire("moveend");
+          if (drag && drag.moved) { this._suppressClick = true; this._fire("moveend"); }
           drag = null;
+        });
+        // a click that was not a drag reaches map.on("click") with its
+        // latlng — the TEST map's "Seed a fire" works offline too (layer
+        // clicks stop propagation, so a marker click never seeds)
+        this.svg.addEventListener("click", (ev) => {
+          if (this._suppressClick) { this._suppressClick = false; return; }
+          const r = this.svg.getBoundingClientRect();
+          const ll = this._unproject(ev.clientX - r.left, ev.clientY - r.top);
+          this._fire("click", { latlng: { lat: ll[0], lng: ll[1] } });
         });
       }
       _size() {
@@ -354,9 +473,9 @@ if (typeof window.L === "undefined") {
         this._zoom = z;
         this._redraw(); this._fire("zoomend"); this._fire("moveend");
       }
-      _fire(type) {
+      _fire(type, extra) {
         for (const fn of (this._handlers[type] || [])) {
-          try { fn({ type, target: this }); } catch (e) { console.error(e); }
+          try { fn(Object.assign({ type, target: this }, extra || {})); } catch (e) { console.error(e); }
         }
       }
       on(types, fn) {
@@ -449,19 +568,26 @@ if (typeof window.L === "undefined") {
           g.appendChild(this._text(cx, cy + 3.5, label.slice(0, 5), 10, tf));
           return g;
         }
-        // rectangles: crews (orange), labels / notes (navy, dashed for W1)
+        // rectangles: crews (orange), labels / notes (navy, dashed for W1);
+        // TWO WORLDS: test crews amber + dashed, live crews ghosted grey
         const w = Math.max(size[0], label.length * 6 + 10);
         const h = Math.max(14, size[1]);
         const r = document.createElementNS(SVGNS, "rect");
         r.setAttribute("x", cx - w / 2); r.setAttribute("y", cy - h / 2);
         r.setAttribute("width", w); r.setAttribute("height", h); r.setAttribute("rx", 3);
-        const isCrew = cls.indexOf("crew-icon") !== -1;
-        r.setAttribute("fill", isCrew ? "#ff7a1a" : "rgba(14,32,56,.9)");
-        r.setAttribute("stroke", isCrew ? "#0008" : (cls.indexOf("w1-note") !== -1 ? "#ff7a1a" : "#ffffff"));
-        if (cls.indexOf("w1-note") !== -1) r.setAttribute("stroke-dasharray", "4 3");
+        const isGhost = cls.indexOf("ghost-crew-icon") !== -1;
+        const isTestCrew = cls.indexOf("test-crew-icon") !== -1;
+        const isCrew = !isGhost && !isTestCrew && cls.indexOf("crew-icon") !== -1;
+        r.setAttribute("fill", isCrew ? "#ff7a1a" : isTestCrew ? "#ffb300"
+                                : isGhost ? "#4a5668" : "rgba(14,32,56,.9)");
+        r.setAttribute("stroke", isCrew ? "#0008" : isTestCrew ? "#1a1200" : isGhost ? "#e8eef7"
+                                  : (cls.indexOf("w1-note") !== -1 ? "#ff7a1a" : "#ffffff"));
+        if (cls.indexOf("w1-note") !== -1 || isTestCrew) r.setAttribute("stroke-dasharray", "4 3");
+        if (isGhost) { r.setAttribute("stroke-dasharray", "1 2"); g.setAttribute("opacity", "0.72"); }
         g.appendChild(r);
         if (label) g.appendChild(this._text(cx, cy + 3.5, label.slice(0, 60), 9,
-                                            isCrew ? "#0e2038" : "#ffd9b3"));
+                                            isCrew ? "#0e2038" : isTestCrew ? "#1a1200"
+                                            : isGhost ? "#e8eef7" : "#ffd9b3"));
         return g;
       }
       _redrawNow() {
@@ -544,6 +670,12 @@ const FILE_STATE = QS.get("state");        // offline: captured /api/state JSON
 const FILE_SUMMARY = QS.get("summary");    // offline: captured summary JSON
 const OFFLINE_FILES = !!FILE_STATE;
 const POLL_MS = 15000;
+// TWO WORLDS (contracts SAFETY SEMANTICS 16): which map this page shows.
+// LIVE is the default — real conditions only; TEST (?world=test, or the
+// header switch) is the drill world. Every drill control checks WORLD.
+let WORLD = QS.get("world") === "test" ? "test" : "live";
+const TEST_BANNER_TEXT = "TEST MAP — drills and simulations. Nothing here " +
+  "affects real conditions, crews or clients.";
 // TIER LAW (worldview.TIER_NATIONAL_MAX_ZOOM / TIER_REGIONAL_MAX_ZOOM pin
 // the same numbers server side): national <= 6, regional 7..11, local >= 12.
 const TIER_NATIONAL_MAX_ZOOM = 6;
@@ -671,19 +803,46 @@ async function apiGet(path) {
   }
   throw new Error("unauthorized (401)");
 }
+// a write on the TEST map (POST / DELETE): same key handling; the body of an
+// error answer is returned so the page can say why (400 / 409 texts)
+async function apiSend(method, path, body) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const r = await fetch(path, { method, headers: { "X-Internal-API-Key": apiKey(),
+      "Content-Type": "application/json" }, body: body == null ? undefined : JSON.stringify(body) });
+    if (r.status === 401 && attempt === 0) {
+      const k = window.prompt("Wildfire Guardian ops API key (X-Internal-API-Key):") || "";
+      if (!k) throw new Error("unauthorized (401) — no key entered");
+      try { localStorage.setItem("wgresp_key", k); } catch (e) { /* private mode */ }
+      continue;
+    }
+    let out = {};
+    try { out = await r.json(); } catch (e) { /* empty */ }
+    if (!r.ok) throw new Error((out && out.error) || (path.split("?")[0] + " " + r.status));
+    return out;
+  }
+  throw new Error("unauthorized (401)");
+}
 async function fetchAll() {
   if (OFFLINE_FILES) {
     STATE = await (await fetch(FILE_STATE)).json();
     SUMMARY = FILE_SUMMARY ? await (await fetch(FILE_SUMMARY)).json() : summaryFromState(STATE);
     return;
   }
-  STATE = await apiGet("/api/state");
+  const world = WORLD;
+  // LIVE: the console's own /api/state; TEST: the test world's (same keys)
+  const st = await apiGet(world === "test" ? "/api/test/state" : "/api/state");
+  if (world !== WORLD) return;            // switched while loading: drop it
+  STATE = st;
   // the summary is an enrichment: if it fails, every incident still draws
-  // from /api/state (no domains claimed) and the status line says why
+  // from /api/state (no domains claimed) and the status line says why.
+  // The TEST summary carries a `rev` (test cycles can share a cycle time).
   const since = SUMMARY && SUMMARY.t_s != null && !SUMMARY_ERROR
-    ? "?since=" + encodeURIComponent(SUMMARY.t_s) : "";
+    ? "?since=" + encodeURIComponent(SUMMARY.rev != null ? SUMMARY.rev : SUMMARY.t_s) : "";
+  const summaryPath = "/api/world/summary" + (world === "test"
+    ? (since ? since + "&world=test" : "?world=test") : since);
   try {
-    const sm = await apiGet("/api/world/summary" + since);
+    const sm = await apiGet(summaryPath);
+    if (world !== WORLD) return;
     if (!(sm && sm.unchanged)) SUMMARY = sm;
     SUMMARY_ERROR = null;
   } catch (e) {
@@ -782,17 +941,22 @@ function renderHeader() {
     .map(k => k.replace("_s", "") + " " + (ph[k] < 90 ? ph[k].toFixed(1) + " s" : (ph[k] / 60).toFixed(1) + " min"));
   const dur = typeof d.last_cycle_duration_s === "number"
     ? " · last cycle took " + (d.last_cycle_duration_s / 60).toFixed(1) + " min" : "";
+  const test = WORLD === "test";
+  const where = OFFLINE_FILES ? "file" : (test ? "TEST map" : "live");
   $("sidestatus").innerHTML = STATE
-    ? `<span class="${degraded ? "bad" : "ok"}">●</span> ${OFFLINE_FILES ? "file" : "live"} · cycles ` +
+    ? `<span class="${degraded ? "bad" : "ok"}">●</span> ${where} · ${test ? "test " : ""}cycles ` +
       `${d.cycles_run ?? "–"}${dur}${phs.length ? "<br>" + phs.join(" · ") : ""}` +
       ((d.notes || []).length === 1 && d.notes[0] === "no cycle has completed yet"
         ? "<br>waiting for the first cycle…" : "") +
       (SUMMARY_ERROR ? `<br><span class="bad">world summary unavailable (${esc(SUMMARY_ERROR)}) ` +
         `— incidents drawn from /api/state, domains unknown</span>` : "")
     : "connecting…";
+  if (test) renderDrillPanel();
 }
 function renderLegend() {
-  const srcs = ["wfigs", "firis", "calfire", "firms", "seeded"];
+  // SEEDED (a drill fire) exists only on the TEST map
+  const srcs = WORLD === "test" ? ["wfigs", "firis", "calfire", "firms", "seeded"]
+                                : ["wfigs", "firis", "calfire", "firms"];
   $("srclegend").innerHTML = srcs.map(s =>
     `<span><i class="sdot" style="background:${srcColor(s)}"></i>${srcLabel(s)}</span>`).join("");
 }
@@ -820,6 +984,11 @@ function incidentTip(r) {
   const t = SUMMARY && SUMMARY.t_s;
   const lines = [`<b>${esc(r.name || r.incident_id)}</b> · ${esc(srcLabel(r.source))}` +
     (r.sources && r.sources.length > 1 ? ` (${esc(r.sources.join(", "))})` : "")];
+  if (WORLD === "test") {
+    lines.push(r.source === "seeded"
+      ? "<b>DRILL FIRE</b> — TEST map only (retire it from the drill panel)"
+      : "LIVE fire, seen read-only on the TEST map");
+  }
   lines.push([fmtAcres(r.acreage), r.containment_pct != null ? Math.round(r.containment_pct) + "% contained" : null,
               r.age_h != null ? "updated " + r.age_h.toFixed(1) + " h ago" : null].filter(Boolean).join(" · "));
   if (r.domain) {
@@ -865,6 +1034,12 @@ function drawIncidents(tier) {
       weight: 1.5, fillColor: srcColor(r.source), fillOpacity: 0.9 })
       .bindTooltip(incidentTip(r)).addTo(layers.incidents);
     m.on("click", () => { if (national || !r.perimeter) flyToIncident(r); });
+    if (WORLD === "test" && r.source === "seeded") {
+      // a drill fire: the seeded colour + a dashed amber ring (TEST map only)
+      L.circleMarker([r.lat, r.lon], { ...INC_PANE, radius: rad + 7, color: "#ffb300",
+        weight: 2, dashArray: "4 3", fill: false, fillOpacity: 0 })
+        .bindTooltip(incidentTip(r)).addTo(layers.badges);
+    }
     if (r.domain) {
       // DOMAIN BADGE: a white ring + the in-range client count
       L.circleMarker([r.lat, r.lon], { ...INC_PANE, radius: rad + 4, color: "#ffffff",
@@ -953,6 +1128,29 @@ function drawCrewsAndZones(tier) {
         .bindTooltip(`${esc(z.zone_id)} ${esc(z.name || "")} (safe zone)`).addTo(layers.zones);
     }
   }
+  if (WORLD === "test") {
+    // TWO WORLDS: the LIVE crews are read-only ghosts here; the TEST crews
+    // are virtual (a clone of the live roster at the drill start, re-cloned
+    // or staged on this map) and drawn distinctly
+    for (const c of (STATE && STATE.live_crews) || []) {
+      if (c.lat == null || c.lon == null) continue;
+      L.marker([c.lat, c.lon], { icon: L.divIcon({ className: "ghost-crew-icon",
+        html: small ? "" : "live " + esc(c.crew_id), iconSize: small ? [8, 8] : [48, 18] }) })
+        .bindTooltip(`LIVE crew ${esc(c.crew_id)} ${esc(c.name || "")}<br>status: ` +
+          `${esc(c.status || "?")}<br>read-only on the TEST map — a drill never moves ` +
+          `or dispatches a real crew`).addTo(layers.crews);
+    }
+    for (const c of (STATE && STATE.crews) || []) {
+      if (c.lat == null || c.lon == null) continue;
+      L.marker([c.lat, c.lon], { icon: L.divIcon({ className: "test-crew-icon",
+        html: small ? "" : "T·" + esc(c.crew_id), iconSize: small ? [9, 9] : [42, 18] }) })
+        .bindTooltip(`TEST crew ${esc(c.crew_id)} ${esc(c.name || "")} (virtual — ` +
+          `${esc(c.origin || "")})<br>status: ${esc(c.status || "?")}` +
+          (c.cloned_stale ? "<br>cloned with a stale beacon: not dispatchable" : ""))
+        .addTo(layers.crews);
+    }
+    return;
+  }
   for (const c of (STATE && STATE.crews) || []) {
     if (c.lat == null || c.lon == null) continue;
     const tip = `${esc(c.crew_id)} ${esc(c.name || "")}<br>status: ${esc(c.status || "?")}` +
@@ -1040,18 +1238,186 @@ function renderRankList() {
     (r.containment_pct != null ? ` · ${Math.round(r.containment_pct)}% contained` : "") +
     ` · ${esc(srcLabel(r.source))}` +
     (r.offmap && r.offmap.kind !== "no_bound"
-      ? ` · off-domain ${Number(r.offmap.ros_kmh).toFixed(1)} km/h` : "") + `</div></div>`;
+      ? ` · off-domain ${Number(r.offmap.ros_kmh).toFixed(1)} km/h` : "") +
+    (WORLD === "test" ? (r.source === "seeded" ? " · DRILL" : " · live, read-only") : "") +
+    // TEST map only: a seeded (drill) fire carries its retire button
+    (WORLD === "test" && r.source === "seeded"
+      ? ` <button type="button" class="retire" data-retire="${esc(r.incident_id)}">retire</button>` : "") +
+    `</div></div>`;
   $("ranklist").innerHTML =
     (dom.length ? dom.map(item).join("") : `<div class="rksep">no incident has clients in range this cycle</div>`) +
     (rest.length ? `<div class="rksep">no clients in range — by acreage (${rest.length})</div>` +
                    rest.map(item).join("") : "");
 }
 $("ranklist").addEventListener("click", (ev) => {
+  const rb = ev.target.closest("[data-retire]");
+  if (rb) { retireSeed(rb.getAttribute("data-retire")); return; }   // TEST only
   const el = ev.target.closest(".rk");
   if (!el || !SUMMARY) return;
   const r = SUMMARY.incidents.find(x => x.incident_id === el.getAttribute("data-id"));
   if (r) flyToIncident(r);
 });
+
+// ---- TWO WORLDS: the LIVE | TEST switch and the drill controls -------------
+// (contracts SAFETY SEMANTICS 16). The drill panel, the seed control and
+// every write below exist ONLY on the TEST map: the CSS hides them on LIVE
+// and each handler returns unless WORLD === "test".
+let seedArmed = false, seedPoint = null, DRILL_MSG = "";
+const seedLayer = L.layerGroup().addTo(map);     // the pending ignition point
+// a test action re-runs the drill on the daemon's test-world thread: look
+// again shortly after (the regular poll is 15 s)
+function repollSoon() { setTimeout(tick, 2500); setTimeout(tick, 8000); }
+function clearSeedPoint() {
+  seedPoint = null;
+  seedLayer.clearLayers();
+  $("seedgo").disabled = true;
+  $("seedpt").textContent = "click the map where the fire starts";
+}
+function armSeed(on) {
+  seedArmed = !!on && WORLD === "test";
+  document.body.classList.toggle("seed-armed", seedArmed);
+  $("seedform").hidden = !seedArmed;
+  if (!seedArmed) clearSeedPoint();
+}
+function applyWorld() {
+  const test = WORLD === "test";
+  document.body.classList.toggle("test-world", test);
+  for (const b of document.querySelectorAll("#worldswitch button")) {
+    b.classList.toggle("on", b.getAttribute("data-world") === WORLD);
+  }
+  $("pagetitle").textContent = test ? "WG Response · TEST MAP" : "WG Response · World";
+  document.title = test ? "WG Response — TEST MAP" : "WG Response — World";
+  $("testbanner").textContent = TEST_BANNER_TEXT;
+  renderLegend();
+  if (!test) armSeed(false);
+}
+function setWorld(w) {
+  const next = w === "test" ? "test" : "live";
+  if (next === WORLD) return;
+  WORLD = next;
+  STATE = null; SUMMARY = null; SUMMARY_ERROR = null; lastDataSig = null; DRILL_MSG = "";
+  applyWorld();
+  try {                                   // keep the world across a reload
+    const u = new URL(location.href);
+    if (next === "test") u.searchParams.set("world", "test"); else u.searchParams.delete("world");
+    history.replaceState(null, "", u.toString());
+  } catch (e) { /* file mode */ }
+  Object.values(layers).forEach(g => g.clearLayers());
+  tick();
+}
+$("worldswitch").addEventListener("click", (ev) => {
+  const b = ev.target.closest("button[data-world]");
+  if (b) setWorld(b.getAttribute("data-world"));
+});
+$("seedbtn").addEventListener("click", () => {
+  if (WORLD !== "test") return;
+  armSeed(!seedArmed);
+});
+$("seedcancel").addEventListener("click", () => armSeed(false));
+map.on("click", (ev) => {
+  if (WORLD !== "test" || !seedArmed || !ev || !ev.latlng) return;
+  seedPoint = { lat: ev.latlng.lat, lon: ev.latlng.lng };
+  seedLayer.clearLayers();
+  L.circleMarker([seedPoint.lat, seedPoint.lon], { radius: 9, color: "#ffb300",
+    weight: 3, dashArray: "3 3", fillColor: "#2ec4ff", fillOpacity: 0.6 })
+    .bindTooltip("the drill fire starts here").addTo(seedLayer);
+  $("seedpt").textContent = `ignition ${seedPoint.lat.toFixed(5)}, ${seedPoint.lon.toFixed(5)} ` +
+    `— choose the intensity, then Seed`;
+  $("seedgo").disabled = false;
+});
+$("seedgo").addEventListener("click", async () => {
+  if (WORLD !== "test" || !seedPoint) return;
+  const body = { lat: seedPoint.lat, lon: seedPoint.lon, created_by: "world page" };
+  const inten = $("seedint").value;
+  if (inten) body.intensity = inten;
+  const wd = $("seedwind").value;
+  if (wd !== "" && isFinite(parseFloat(wd))) body.wind_dir_deg = parseFloat(wd);
+  const note = $("seednote").value.trim();
+  if (note) body.note = note;
+  try {
+    const out = await apiSend("POST", "/api/test/seed", body);
+    DRILL_MSG = `seeded ${out.incident_id.slice(0, 16)}… — the TEST world re-runs now`;
+    armSeed(false);
+  } catch (e) { DRILL_MSG = "seed refused: " + (e.message || e); }
+  lastDataSig = null;
+  await tick();
+  repollSoon();
+});
+async function retireSeed(iid) {
+  if (WORLD !== "test" || !iid) return;
+  try {
+    await apiSend("DELETE", "/api/test/seed/" + encodeURIComponent(iid) + "?by=world%20page");
+    DRILL_MSG = `retired ${iid.slice(0, 16)}… — its pairs walk the absence law`;
+  } catch (e) { DRILL_MSG = "retire failed: " + (e.message || e); }
+  lastDataSig = null;
+  await tick();
+  repollSoon();
+}
+$("seedlist").addEventListener("click", (ev) => {
+  const rb = ev.target.closest("[data-retire]");
+  if (rb) retireSeed(rb.getAttribute("data-retire"));
+});
+$("crewresetbtn").addEventListener("click", async () => {
+  if (WORLD !== "test") return;
+  try {
+    const out = await apiSend("POST", "/api/test/crews/reset", { by: "world page" });
+    DRILL_MSG = `test crews re-cloned from the live roster (${(out.crews || []).length})`;
+  } catch (e) { DRILL_MSG = "crew reset failed: " + (e.message || e); }
+  lastDataSig = null;
+  await tick();
+  repollSoon();
+});
+$("testresetbtn").addEventListener("click", async () => {
+  if (WORLD !== "test") return;
+  if (!window.confirm("Reset the TEST map? Every seed, the test ladder, the test " +
+                      "plan, the test crews and the drill log are wiped. The LIVE " +
+                      "world is not touched.")) return;
+  try {
+    const out = await apiSend("POST", "/api/test/reset", { by: "world page" });
+    DRILL_MSG = out.queued ? "reset queued behind the running test cycle"
+                           : "the TEST map is idle again";
+  } catch (e) { DRILL_MSG = "reset failed: " + (e.message || e); }
+  lastDataSig = null;
+  await tick();
+  repollSoon();
+});
+function renderDrillPanel() {
+  if (WORLD !== "test") return;
+  const d = STATE || {};
+  const dr = d.drill || {};
+  const seeds = d.seeds || [];
+  const active = seeds.filter(s => s.status === "active");
+  const st = dr.state || "idle";
+  $("drillstatus").innerHTML =
+    (st === "idle"
+      ? "no drill running — the TEST map mirrors the live picture read-only. " +
+        "Seed a fire (or reset test crews) to start a drill: the live crews, " +
+        "ladder and plan are cloned, then evolve on their own."
+      : `drill <b>${esc(st.toUpperCase())}</b> since ${fmtClock(dr.started_at_s)}` +
+        (dr.started_by ? ` by ${esc(dr.started_by)}` : "") +
+        ` · ${active.length} active seed(s) · ${(d.crews || []).length} test crew(s)` +
+        (d.live_cycle_t_s ? ` · built on the live cycle at ${fmtClock(d.live_cycle_t_s)}` : "")) +
+    (d.migrated ? `<br>migrated from the pre-two-worlds live state: ${esc(d.migrated.seeds)} seed(s)` : "") +
+    (DRILL_MSG ? `<br><b>${esc(DRILL_MSG)}</b>` : "");
+  $("seedlist").innerHTML = seeds.slice().reverse().slice(0, 12).map(s =>
+    `<div class="seedrow${s.status === "active" ? "" : " retired"}"><div>` +
+    `<b>${esc((s.note || "") || ("seed " + s.incident_id.slice(7, 15)))}</b>` +
+    `<div class="sub">${esc(s.weather_mode)} · ${s.intensity ? esc(s.intensity) : "live wx"}` +
+    (s.wind_dir_deg != null ? ` · from ${Math.round(s.wind_dir_deg)}°` : "") +
+    (s.domain ? ` · domain ${s.domain.clients} home(s)` : " · no domain") +
+    (s.pairs && Object.keys(s.pairs).length ? " · " + Object.entries(s.pairs)
+      .map(([k, v]) => `${v} ${k.replace(/_/g, " ")}`).join(", ") : "") +
+    ` · ${esc(s.status)}</div></div>` +
+    (s.status === "active"
+      ? `<button type="button" class="retire" data-retire="${esc(s.incident_id)}">retire</button>`
+      : "") + `</div>`).join("");
+  const dl = (d.drill_log || []).slice(-8).reverse();
+  $("drilllog").innerHTML = dl.length
+    ? "<h2>Drill log (never a client)</h2>" + dl.map(l =>
+        `<div class="dl">${fmtClock(l.t_s)} · ${esc(l.client_id)} · ${esc(l.prev)}→` +
+        `${esc(l.state)}</div>`).join("")
+    : "";
+}
 
 function renderMap() {
   Object.values(layers).forEach(g => g.clearLayers());
@@ -1076,8 +1442,11 @@ function renderMap() {
 // that brings nothing new re-renders the header clock only — no flicker
 let lastDataSig = null;
 function dataSig() {
-  return [SUMMARY && SUMMARY.t_s, STATE && STATE.last_cycle_t_s,
-          JSON.stringify((STATE && STATE.crews) || [])].join("|");
+  return [WORLD, SUMMARY && SUMMARY.t_s, SUMMARY && SUMMARY.rev, STATE && STATE.last_cycle_t_s,
+          JSON.stringify((STATE && STATE.crews) || []),
+          JSON.stringify((STATE && STATE.live_crews) || []),
+          JSON.stringify(((STATE && STATE.seeds) || []).map(s => [s.incident_id, s.status])),
+          STATE && STATE.drill && STATE.drill.state].join("|");
 }
 function renderAll() {
   if (!fitted && STATE && STATE.bbox && STATE.bbox.south != null) {
@@ -1115,6 +1484,7 @@ async function tick() {
   }
 }
 renderLegend();
+applyWorld();                             // LIVE unless ?world=test
 tick();
 if (!OFFLINE_FILES) setInterval(tick, POLL_MS);
 </script>

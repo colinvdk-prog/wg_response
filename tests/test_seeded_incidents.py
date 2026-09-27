@@ -11,6 +11,12 @@ feed incident; the horizon auto-retire; the drill-safe notifier; and
 byte-identity with no seeds — pinned against goldens computed on commit
 09f94b5, BEFORE any seeded-incident code existed.
 
+TWO WORLDS (2026-09-27, contracts SAFETY SEMANTICS 16): every seed now lives
+in the TEST world (daemon.test_world, a wgresponse.worlds.TestWorld running
+inline after each live cycle) — the live monitor refuses seeds. The tests
+below seed the test world and read its result / engine / state; wherever a
+seed meets a feed fire, the feed fire is the LIVE world's, seen read-only.
+
 Deterministic; no network; stub stack from tests/seeded_stack.py.
 """
 from __future__ import annotations
@@ -243,16 +249,22 @@ def test_fuse_incidents_never_joins_a_seeded_incident():
 
 
 def test_monitor_keeps_a_seed_apart_from_a_same_named_feed_fire(tmp_path):
+    # TWO WORLDS: the seed is the TEST world's; the twin feed fire is the
+    # LIVE world's, seen read-only on the test map (never merged either way)
     ign = ss.seed()
     twin = ss.feed_incident(iid="irwin-twin", name=ign.display_name(),
                             origin=ign.loc, irwin_id="irwin-twin")
     daemon, monitor, *_ = ss.make_stack(tmp_path / "s", incidents=[twin])
-    monitor.add_seed(ign)
-    res = daemon.run_cycle()
+    tw = daemon.test_world
+    tw.add_seed(ign)
+    live = daemon.run_cycle()
+    res = tw.last_result
+    assert [i.incident_id for i in live.incidents] == ["irwin-twin"]
     assert [i.incident_id for i in res.incidents] == ["irwin-twin", NEAR]
     assert {i.incident_id: i.source for i in res.incidents} == {
         "irwin-twin": IncidentSource.MOCK, NEAR: IncidentSource.SEEDED}
     assert set(res.ensembles) == {"irwin-twin", NEAR}
+    assert res.ensembles["irwin-twin"] is live.ensembles["irwin-twin"]
 
 
 def test_staleness_gate_keeps_a_seeded_fire_until_it_is_retired(tmp_path):
@@ -260,9 +272,13 @@ def test_staleness_gate_keeps_a_seeded_fire_until_it_is_retired(tmp_path):
     zombie = ss.feed_incident(updated_at_s=ss.T0 - 3 * ss.H)   # 3 h old
     daemon, monitor, *_ = ss.make_stack(tmp_path / "s", cfg=cfg,
                                         incidents=[zombie])
-    monitor.add_seed(ss.seed(t_ignite_s=ss.T0 - 3 * ss.H))     # lit 3 h ago
-    res = daemon.run_cycle()
+    tw = daemon.test_world
+    tw.add_seed(ss.seed(t_ignite_s=ss.T0 - 3 * ss.H))           # lit 3 h ago
+    live = daemon.run_cycle()
+    res = tw.last_result
+    assert live.incidents == []                                 # gated live
     assert [i.incident_id for i in res.incidents] == [NEAR]
+    # the live gate's note, seen on the test map (the live set is gated once)
     (gate,) = [n for n in res.notes if "stale incident" in n]
     assert "inc-1" in gate and SEEDED_ID_PREFIX not in gate
     assert NEAR in res.ensembles
@@ -274,32 +290,39 @@ def test_staleness_gate_keeps_a_seeded_fire_until_it_is_retired(tmp_path):
 
 def test_far_seed_is_listed_but_builds_no_domain(tmp_path):
     daemon, monitor, *_ = ss.make_stack(tmp_path / "s", incidents=[])
-    monitor.add_seed(ss.seed(iid=FAR, loc=ss.FAR_SEED_LOC))
-    res = daemon.run_cycle()
+    tw = daemon.test_world
+    tw.add_seed(ss.seed(iid=FAR, loc=ss.FAR_SEED_LOC))
+    daemon.run_cycle()
+    res = tw.last_result
     assert [i.incident_id for i in res.incidents] == [FAR]
     assert res.ensembles == {} and res.assessments == [] and res.plan is None
     (note,) = [n for n in res.notes if FAR in n]
     assert "no protected clients within 60 km" in note
     assert "seeded fire follows the live law" in note
-    state = daemon.state()
+    state = tw.state()
     (row,) = state["incidents"]
     assert row["source"] == "seeded" and row["seed"]["weather_mode"] == "preset"
     assert "preset 'high'" in row["seed"]["weather_label"]
+    assert row["world"] == "test" and row["read_only"] is False
     (srow,) = state["seeds"]
     assert srow["status"] == "active" and srow["in_last_cycle"] is True
     assert srow["domain"] is None and srow["pairs"] == {}
+    assert "seeds" not in daemon.state()                 # never the live state
+    assert daemon.state()["incidents"] == []
 
 
 def test_near_seed_gets_a_domain_the_ladder_and_dispatch(tmp_path):
     disp = ss.RecordingDispatcher()
     daemon, monitor, feed, engine, *_ = ss.make_stack(
-        tmp_path / "s", incidents=[], dispatcher=disp)
-    monitor.add_seed(ss.seed())
-    res = daemon.run_cycle()
+        tmp_path / "s", incidents=[], test_dispatcher=disp)
+    tw = daemon.test_world
+    tw.add_seed(ss.seed())
+    live = daemon.run_cycle()
+    res = tw.last_result
     assert NEAR in res.ensembles
     assert {(a.client_id, a.incident_id) for a in res.assessments} == {
         ("c1", NEAR), ("c2", NEAR)}
-    assert engine.states()[("c1", NEAR)].state is AlertState.EXTREME_24H
+    assert tw.engine.states()[("c1", NEAR)].state is AlertState.EXTREME_24H
     assert any(e.incident_id == NEAR and e.client_id == "c1"
                for e in res.events)
     assert disp.calls and {j.incident_id for j in disp.calls[-1]["jobs"]} \
@@ -307,20 +330,25 @@ def test_near_seed_gets_a_domain_the_ladder_and_dispatch(tmp_path):
     planned = {st.incident_id for cp in res.plan.plans.values()
                for st in cp.stops} | {u.incident_id for u in res.plan.unserved}
     assert NEAR in planned
-    (srow,) = daemon.state()["seeds"]
+    (srow,) = tw.state()["seeds"]
     assert srow["domain"]["cells"] == (res.ensembles[NEAR].spec.nrows
                                        * res.ensembles[NEAR].spec.ncols)
     assert srow["domain"]["clients"] == 2
     assert srow["pairs"]["extreme_24h"] >= 1
+    # the LIVE world saw none of it
+    assert live.ensembles == {} and live.plan is None
+    assert engine.states() == {}
 
 
 def test_a_seed_leaves_the_feed_fire_physics_untouched(tmp_path):
     def feed_view(with_seed):
         daemon, monitor, *_ = ss.make_stack(tmp_path / str(with_seed))
         if with_seed:
-            monitor.add_seed(ss.seed())
+            daemon.test_world.add_seed(ss.seed())
         res = daemon.run_cycle()
         ens = res.ensembles["inc-1"]
+        if with_seed:        # the test map SHARES the live raster, verbatim
+            assert daemon.test_world.last_result.ensembles["inc-1"] is ens
         return ([ss.raster_fingerprint(m) for m in ens.members],
                 [(a.client_id, a.eta) for a in res.assessments
                  if a.incident_id == "inc-1"])
@@ -333,13 +361,19 @@ def test_a_seed_leaves_the_feed_fire_physics_untouched(tmp_path):
 
 def test_preset_override_applies_to_the_seed_only(tmp_path):
     disp = ss.RecordingDispatcher()
+    tw_weather = ss.StubWeather()
     daemon, monitor, feed, engine, notifier, store, weather, terrain = \
-        ss.make_stack(tmp_path / "s", dispatcher=disp)
-    monitor.add_seed(ss.seed(wind_dir_deg=240.0))
-    res = daemon.run_cycle()
-    # the live provider was asked for the FEED fire only: the fully
-    # synthetic seed costs no provider call
+        ss.make_stack(tmp_path / "s", test_dispatcher=disp,
+                      test_weather=tw_weather)
+    tw = daemon.test_world
+    tw.add_seed(ss.seed(wind_dir_deg=240.0))
+    daemon.run_cycle()
+    res = tw.last_result
+    # the live provider was asked for the FEED fire only (by the LIVE
+    # world), and the test world asked nothing: the fully synthetic seed
+    # costs no provider call and the feed fire's forecast is SHARED
     assert [loc for loc, _ in weather.calls] == [ss.ORIGIN]
+    assert tw_weather.calls == []
     fx = disp.calls[-1]["forecasts"]
     feed_wx, seed_wx = fx["inc-1"], fx[NEAR]
     assert feed_wx.source == "stub"
@@ -400,11 +434,17 @@ def test_every_weather_mode_through_the_seam(intensity, weather, wind, mode):
 
 
 def test_live_seed_asks_the_live_provider_at_the_ignition(tmp_path):
+    # "live" weather = the live PROVIDER (NWS in production) — the test
+    # world's OWN instance of it, never the live world's
+    tw_weather = ss.StubWeather()
     daemon, monitor, feed, engine, notifier, store, weather, terrain = \
-        ss.make_stack(tmp_path / "s", incidents=[])
-    monitor.add_seed(ss.seed(intensity=None, wind_dir_deg=None))
-    res = daemon.run_cycle()
-    assert [loc for loc, _ in weather.calls] == [ss.SEED_LOC]
+        ss.make_stack(tmp_path / "s", incidents=[], test_weather=tw_weather)
+    tw = daemon.test_world
+    tw.add_seed(ss.seed(intensity=None, wind_dir_deg=None))
+    daemon.run_cycle()
+    res = tw.last_result
+    assert [loc for loc, _ in tw_weather.calls] == [ss.SEED_LOC]
+    assert weather.calls == []                     # the live world's: untouched
     (note,) = [n for n in res.notes if ": weather live:" in n]
     assert "live conditions" in note and "direction live" in note
 
@@ -412,8 +452,9 @@ def test_live_seed_asks_the_live_provider_at_the_ignition(tmp_path):
 def test_non_burnable_ignition_is_said_out_loud(tmp_path):
     daemon, monitor, *_ = ss.make_stack(tmp_path / "s", incidents=[],
                                         terrain=ss.StubTerrain(fuel_code=91.0))
-    monitor.add_seed(ss.seed())
-    res = daemon.run_cycle()
+    daemon.test_world.add_seed(ss.seed())
+    daemon.run_cycle()
+    res = daemon.test_world.last_result
     assert any("NON-BURNABLE (FBFM40 91)" in n for n in res.notes)
 
 
@@ -429,10 +470,14 @@ def test_seeded_domain_is_deterministic_and_is_the_point_incident_law(
         tmp_path, override):
     views = []
     for k in range(2):
-        daemon, monitor, feed, engine, notifier, store, weather, terrain = \
-            ss.make_stack(tmp_path / f"r{k}", incidents=[])
-        monitor.add_seed(ss.seed(**override))
-        res = daemon.run_cycle()
+        terrain = ss.StubTerrain()                  # the TEST world's own
+        tw_weather = ss.StubWeather()
+        daemon, monitor, feed, engine, notifier, store, weather, _t = \
+            ss.make_stack(tmp_path / f"r{k}", incidents=[],
+                          test_terrain=terrain, test_weather=tw_weather)
+        daemon.test_world.add_seed(ss.seed(**override))
+        daemon.run_cycle()
+        res = daemon.test_world.last_result
         ens = res.ensembles[NEAR]
         views.append((ens.spec, terrain.calls[-1],
                       [ss.raster_fingerprint(m) for m in ens.members],
@@ -440,7 +485,8 @@ def test_seeded_domain_is_deterministic_and_is_the_point_incident_law(
                       ss.raster_fingerprint(ens.p50),
                       ss.raster_fingerprint(ens.p90)))
     assert views[0] == views[1]
-    assert weather.calls == []          # fully synthetic: never the provider
+    assert tw_weather.calls == []       # fully synthetic: never the provider
+    assert weather.calls == [] and _t.calls == []     # nor the live world's
     # ...and it is EXACTLY a feed point-incident: the point, seeded at now
     tile = ss.StubTerrain().tile(*terrain.calls[-1])
     wxf = seeded.seeded_forecast(ss.seed(**override), ss.StubWeather(),
@@ -456,47 +502,59 @@ def test_seeded_domain_is_deterministic_and_is_the_point_incident_law(
 # ---------------------------------------------------------------------------
 
 def test_seeds_persist_and_restart_refires_nothing(tmp_path):
+    # TWO WORLDS: seeds, their ladder and their drill ledger persist in the
+    # TEST namespace (<state>/test_world); the live world never alerts
     state_dir = tmp_path / "state"
     clock = ss.SettableClock(ss.T0)
     notifier = seeded.SeedSafeNotifier(LogNotifier())
     daemon, monitor, feed, engine, _, store, *_ = ss.make_stack(
         state_dir, incidents=[], notifier=notifier, clock=clock)
-    code, body = daemon.seed_create({"lat": ss.SEED_LOC.lat,
-                                     "lon": ss.SEED_LOC.lon,
-                                     "intensity": "high",
-                                     "wind_dir_deg": 225})
+    tw = daemon.test_world
+    code, body = tw.seed_create({"lat": ss.SEED_LOC.lat,
+                                 "lon": ss.SEED_LOC.lon,
+                                 "intensity": "high",
+                                 "wind_dir_deg": 225})
     assert code == 201
     iid = body["incident_id"]
-    # persisted at once — before any cycle ran
-    rows = StateStore(state_dir).load()["seeded_incidents"]
+    # persisted at once — before any cycle ran — in the TEST namespace only
+    test_state_dir = state_dir / "test_world"
+    rows = StateStore(test_state_dir).load()["seeded_incidents"]
     assert [r["incident_id"] for r in rows] == [iid]
+    assert not store.path.exists()                  # no live write at all
     # a second seed, retired before the restart, must stay retired
-    code, body2 = daemon.seed_create({"lat": 39.1, "lon": -121.1})
+    code, body2 = tw.seed_create({"lat": 39.1, "lon": -121.1})
     gone = body2["incident_id"]
-    assert daemon.seed_retire(gone)[0] == 200
+    assert tw.seed_retire(gone)[0] == 200
     for k in range(2):
         clock.t = ss.T0 + 60.0 + k * ss.PERIOD_S
         daemon.run_cycle()
-    assert len(notifier.drill.sent) >= 1           # the seed alerted...
+    assert len(tw.drill_log.sent) >= 1             # the seed alerted...
     assert notifier._real.sent == []               # ...never a client channel
-    assert any(k[1] == iid for k in engine.notified_ledger())   # ledgered
-    states_before = {k: r.state for k, r in engine.states().items()}
-    ledger_before = engine.notified_ledger()
+    assert list(notifier.drill.sent) == []         # (nor the live drill log)
+    assert any(k[1] == iid for k in tw.engine.notified_ledger())   # ledgered
+    assert engine.states() == {}                   # the live ladder: empty
+    assert "seeded_incidents" not in json.loads(store.path.read_text("utf-8"))
+    states_before = {k: r.state for k, r in tw.engine.states().items()}
+    ledger_before = tw.engine.notified_ledger()
 
     # process-equivalent restart: fresh everything, same disk
     clock2 = ss.SettableClock(ss.T0 + 60.0 + 2 * ss.PERIOD_S)
     notifier2 = seeded.SeedSafeNotifier(LogNotifier())
     daemon2, monitor2, _, engine2, *_ = ss.make_stack(
         state_dir, incidents=[], notifier=notifier2, clock=clock2)
+    tw2 = daemon2.test_world
     assert daemon2.restore() is True
-    assert [i.incident_id for i in monitor2.seeded.active()] == [iid]
-    assert monitor2.seeded.entry(gone).retired_at_s is not None
-    res = daemon2.run_cycle()
+    assert tw2.drill_state == "active" and tw2.restored is True
+    assert [i.incident_id for i in tw2.monitor.seeded.active()] == [iid]
+    assert tw2.monitor.seeded.entry(gone).retired_at_s is not None
+    daemon2.run_cycle()
+    res = tw2.last_result
     assert [i.incident_id for i in res.incidents] == [iid]
-    assert list(notifier2.drill.sent) == []        # RESTART RE-FIRES NOTHING
-    assert notifier2._real.sent == []
-    assert {k: r.state for k, r in engine2.states().items()} == states_before
-    assert engine2.notified_ledger() == ledger_before
+    assert list(tw2.drill_log.sent) == []          # RESTART RE-FIRES NOTHING
+    assert notifier2._real.sent == [] and list(notifier2.drill.sent) == []
+    assert {k: r.state for k, r in tw2.engine.states().items()} \
+        == states_before
+    assert tw2.engine.notified_ledger() == ledger_before
 
 
 # ---------------------------------------------------------------------------
@@ -505,33 +563,40 @@ def test_seeds_persist_and_restart_refires_nothing(tmp_path):
 
 def _absence_run(tmp_path, seeded_fire: bool, blind_after: bool = False):
     """A fire due WEST of c1 (upwind of the stub west wind) under the SAME
-    live stub weather — a live-weather seed or a feed point-incident — that
-    goes away at cycle 2 (retired / dropped by the feed). Returns the c1
-    pair's state per cycle and its alert events (cycle, prev, new)."""
+    live stub weather — a live-weather seed (the TEST world) or a feed
+    point-incident (the LIVE world) — that goes away at cycle 2 (retired at
+    the monitor level, like the old test / dropped by the feed). Returns the
+    c1 pair's state per cycle and its alert events (cycle, prev, new) in the
+    fire's own world. A blind LIVE feed blinds the test world too (it sees
+    the live feed health read-only)."""
     clock = ss.SettableClock(ss.T0)
     daemon, monitor, feed, engine, *_ = ss.make_stack(
         tmp_path, incidents=[], clock=clock,
         registry_clients=[ss.clients()[0]])
+    tw = daemon.test_world
     if seeded_fire:
         ign = ss.seed(loc=ss.ORIGIN, intensity=None, wind_dir_deg=None)
-        monitor.add_seed(ign)
+        tw.add_seed(ign)
         iid = ign.incident_id
+        world_engine = tw.engine
     else:
         iid = "inc-9"
         feed.incidents = [ss.feed_incident(iid=iid, origin=ss.ORIGIN)]
+        world_engine = engine
     traj, events = [], []
     for k in range(6):
         clock.t = ss.T0 + k * ss.PERIOD_S
         if k == 2:
             if seeded_fire:
-                monitor.retire_seed(iid, clock.t, by="test")
+                tw.monitor.retire_seed(iid, clock.t, by="test")
             else:
                 feed.incidents = []
             if blind_after:
                 feed.ok = False
-        res = daemon.run_cycle()
+        live = daemon.run_cycle()
+        res = tw.last_result if seeded_fire else live
         assert (iid in [i.incident_id for i in res.incidents]) == (k < 2)
-        traj.append(engine.states()[("c1", iid)].state)
+        traj.append(world_engine.states()[("c1", iid)].state)
         events += [(k, e.prev, e.state) for e in res.events
                    if e.incident_id == iid]
     return traj, events
@@ -558,15 +623,18 @@ def test_operator_retirement_is_noted_once(tmp_path):
     clock = ss.SettableClock(ss.T0)
     daemon, monitor, *_ = ss.make_stack(tmp_path / "s", incidents=[],
                                         clock=clock)
-    monitor.add_seed(ss.seed())
+    tw = daemon.test_world
+    tw.add_seed(ss.seed())
     daemon.run_cycle()
-    monitor.retire_seed(NEAR, ss.T0 + 100.0, by="colin")
+    tw.monitor.retire_seed(NEAR, ss.T0 + 100.0, by="colin")
     clock.t = ss.T0 + 300.0
-    res = daemon.run_cycle()
+    daemon.run_cycle()
+    res = tw.last_result
     (note,) = [n for n in res.notes if "retired by colin" in n]
     assert NEAR in note and "absence law" in note
     clock.t += 300.0
-    assert not [n for n in daemon.run_cycle().notes if "retired by" in n]
+    daemon.run_cycle()
+    assert not [n for n in tw.last_result.notes if "retired by" in n]
 
 
 # ---------------------------------------------------------------------------
@@ -578,43 +646,51 @@ def test_seed_auto_retires_after_its_horizon_when_nothing_is_threatened(
     clock = ss.SettableClock(ss.T0)
     daemon, monitor, *_ = ss.make_stack(tmp_path / "s", incidents=[],
                                         clock=clock)
-    monitor.add_seed(ss.seed(iid=FAR, loc=ss.FAR_SEED_LOC))
+    tw = daemon.test_world
+    tw.add_seed(ss.seed(iid=FAR, loc=ss.FAR_SEED_LOC))
     clock.t = ss.T0 + 23.9 * ss.H
     daemon.run_cycle()
-    assert [i.incident_id for i in monitor.seeded.active()] == [FAR]
+    assert [i.incident_id for i in tw.monitor.seeded.active()] == [FAR]
     clock.t = ss.T0 + 24.0 * ss.H                   # cfg.horizon_h = 24
-    res = daemon.run_cycle()
+    daemon.run_cycle()
+    res = tw.last_result
     assert FAR in [i.incident_id for i in res.incidents]   # carried this cycle
     (ev,) = [o for o in res.operator_events if o.kind == "seed_retired"]
     assert ev.incident_id == FAR and ev.detail == {"reason": "horizon"}
     assert res.degraded is False                    # not a provider failure
     assert any("auto-RETIRED" in n for n in res.notes)
-    entry = monitor.seeded.entry(FAR)
+    entry = tw.monitor.seeded.entry(FAR)
     assert entry.retired_reason == "horizon" and entry.retired_by == "watcher"
     clock.t += ss.PERIOD_S
-    assert daemon.run_cycle().incidents == []
+    daemon.run_cycle()
+    assert tw.last_result.incidents == []
 
 
 def test_threatening_or_blind_seed_is_never_auto_retired(tmp_path):
     clock = ss.SettableClock(ss.T0 + 25 * ss.H)
     daemon, monitor, feed, engine, *_ = ss.make_stack(
         tmp_path / "a", incidents=[], clock=clock)
-    monitor.add_seed(ss.seed())                     # near: threatens c1
-    res = daemon.run_cycle()
-    assert engine.states()[("c1", NEAR)].state is AlertState.EXTREME_24H
+    tw = daemon.test_world
+    tw.add_seed(ss.seed())                          # near: threatens c1
+    daemon.run_cycle()
+    res = tw.last_result
+    assert tw.engine.states()[("c1", NEAR)].state is AlertState.EXTREME_24H
     assert not [o for o in res.operator_events if o.kind == "seed_retired"]
-    assert monitor.seeded.active()
+    assert tw.monitor.seeded.active()
 
     class DeadRegistry:
         def protected_clients(self, bbox=None):
             raise RuntimeError("dynamo throttled")
     daemon2, monitor2, *_ = ss.make_stack(tmp_path / "b", incidents=[],
                                           clock=clock)
-    monitor2._registry = DeadRegistry()             # assessment fails: no evidence
-    monitor2.add_seed(ss.seed(iid=FAR, loc=ss.FAR_SEED_LOC))
-    res2 = daemon2.run_cycle()
+    tw2 = daemon2.test_world
+    tw2.monitor._registry = DeadRegistry()          # assessment fails: no evidence
+    tw2.add_seed(ss.seed(iid=FAR, loc=ss.FAR_SEED_LOC))
+    live2 = daemon2.run_cycle()
+    res2 = tw2.last_result
     assert res2.degraded is True
-    assert monitor2.seeded.active()                 # never retired blind
+    assert live2.degraded is False                  # the live world: healthy
+    assert tw2.monitor.seeded.active()              # never retired blind
 
 
 # ---------------------------------------------------------------------------
