@@ -181,6 +181,36 @@ def _depart_fail(depart_s: float, latest_depart_s: float, cfg: ResponseConfig):
     return None
 
 
+def _offmap_table(offmap) -> dict:
+    """{incident_id: (ros_mps, margin_min)} from plan(offmap=...) (contracts
+    SAFETY SEMANTICS 15): each value a contracts.OffDomainHorizon (.ros_mps /
+    .margin_min) or a (ros_mps, margin_min[, reason]) tuple. An entry whose
+    speed is not a finite number > 0 or whose margin is not a finite number
+    >= 0 is DROPPED — that incident keeps the flat legacy law (the ceiling,
+    never a slower made-up one). None / {} = {} (legacy everywhere)."""
+    out = {}
+    for iid, v in (offmap or {}).items():
+        if v is None:
+            continue
+        if hasattr(v, "ros_mps"):
+            ros, margin = getattr(v, "ros_mps", None), getattr(v, "margin_min", 0.0)
+        else:
+            try:
+                ros, margin = v[0], v[1]
+            except (TypeError, IndexError, KeyError):
+                continue
+        if (isinstance(ros, bool) or not isinstance(ros, (int, float))
+                or not math.isfinite(ros) or ros <= 0.0):
+            continue
+        if margin is None:
+            margin = 0.0
+        if (isinstance(margin, bool) or not isinstance(margin, (int, float))
+                or not math.isfinite(margin) or margin < 0.0):
+            continue
+        out[iid] = (float(ros), float(margin))
+    return out
+
+
 def _job_key(job: DispatchJob):
     return (job.client.client_id, job.incident_id)
 
@@ -378,13 +408,16 @@ class _Ctx:
     verdict cache could never absorb (measured 94% of plan() wall time)."""
 
     def __init__(self, crews, jobmap, rasters, safe_zones, cfg, now_s,
-                 inc_assign, inc_first, road_provider=None):
+                 inc_assign, inc_first, road_provider=None, offmap=None):
         self.crews = crews
         self.crew_ids = [c.crew_id for c in crews]
         self.crew_by_id = {c.crew_id: c for c in crews}
         self.jobmap = jobmap
         self.active_keys = set(jobmap)
         self.rasters = rasters                      # list[(incident_id, eroded Raster)]
+        # SAFETY SEMANTICS 15: incident_id -> (off-domain bound speed m/s,
+        # bounded-sample margin min); {} = the flat legacy law everywhere.
+        self.offmap = _offmap_table(offmap)
         self.safe_zones = safe_zones
         self.cfg = cfg
         self.now_s = now_s
@@ -525,9 +558,17 @@ class _Ctx:
             # width compensated flat-travel-model error; see contracts)
             mm = (self.cfg.route_margin_roads_min if rr is not None else None)
             v = UNREACHED
-            for _iid, ras in self.rasters:
-                t = safety.LegOracle(a, b, spd, ras, self.cfg, path=path,
-                                     margin_min=mm).latest_safe_depart_s
+            for iid, ras in self.rasters:
+                om = self.offmap.get(iid) if self.offmap else None
+                if om is None:
+                    t = safety.LegOracle(a, b, spd, ras, self.cfg, path=path,
+                                         margin_min=mm).latest_safe_depart_s
+                else:
+                    # SAFETY SEMANTICS 15: THIS fire's off-domain horizon
+                    t = safety.LegOracle(
+                        a, b, spd, ras, self.cfg, path=path, margin_min=mm,
+                        offraster_ros_mps=om[0],
+                        offraster_margin_min=om[1]).latest_safe_depart_s
                 if t < v:
                     v = t
             self._tstar[k] = v
@@ -1382,7 +1423,8 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
          incumbent: "DispatchPlan | None" = None,
          forecasts: "dict | None" = None,
          road_provider=None,
-         eroded_rasters: "dict | None" = None) -> DispatchPlan:
+         eroded_rasters: "dict | None" = None,
+         offmap: "dict | None" = None) -> DispatchPlan:
     """Build a DispatchPlan for `crews` over `jobs` at unix time now_s.
 
     ens: incident_id -> EnsembleArrival; each incident's P10 raster is eroded
@@ -1429,6 +1471,16 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
     route's polyline — the planner sees the ground crews actually drive
     (chord-vs-road mismatch measured at ~73% of relocations + the residual
     overrun tail). None (default) = tier-0 chords, byte-identical.
+
+    offmap (contracts SAFETY SEMANTICS 15, the per-fire off-domain horizon;
+    threat passes it only under cfg.corridor_offraster_per_fire): optional
+    {incident_id: contracts.OffDomainHorizon | (ros_mps, margin_min[,
+    reason])}. That incident's fail-closed bound (off-raster / unreached
+    samples) extrapolates at ros_mps instead of corridor_offraster_ros_mps,
+    and each BOUNDED sample must clear max(leg margin, margin_min); its
+    modelled samples keep the leg margin. Incidents missing from the map (or
+    with a malformed entry) keep the flat legacy law; None (default) =
+    byte-identical. The simulator never passes it.
     """
     t0 = time.monotonic()
     _evals = int(getattr(cfg, "solver_budget_evals", 0) or 0)
@@ -1540,7 +1592,7 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
                     frozen_keys.add(key)
 
     ctx = _Ctx(eligible, jobmap, rasters, safe_zones, cfg, now_s, inc_assign,
-               inc_first, road_provider=road_provider)
+               inc_first, road_provider=road_provider, offmap=offmap)
 
     # -- step 2: warm start (repair incumbent; freeze committed stops) --------
     state = _State({cid: [] for cid in ctx.crew_ids}, {cid: 0 for cid in ctx.crew_ids})

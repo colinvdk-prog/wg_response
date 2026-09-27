@@ -769,7 +769,7 @@ function renderHeader() {
     (c && c.excluded_stale ? `<span class="lbl" title="incidents the staleness gate ` +
       `excluded this cycle (updated_at older than 7 days — SAFETY SEMANTICS 9)">` +
       `stale-gated</span><b>${c.excluded_stale}</b>` : "") +
-    removedContainedChip(c, d);
+    removedContainedChip(c, d) + offmapChip(c);
   const tier = tierFor(map.getZoom());
   $("tierchip").textContent = tier + " · z" + map.getZoom();
   $("legendtier").textContent = {
@@ -798,6 +798,24 @@ function renderLegend() {
 }
 
 // ---- tooltips --------------------------------------------------------------
+// SAFETY SEMANTICS 15 (watch --offmap-per-fire): the speed this fire's fail-
+// closed corridor bound extrapolates at beyond its domain, why, and the
+// crossing margin. Present only when the daemon armed the rule.
+function offmapLine(r) {
+  const o = r && r.offmap;
+  if (!o) return "";
+  if (o.kind === "no_bound") return `<b>OFF-DOMAIN</b>: ${esc(o.reason)}`;
+  return `<b>OFF-DOMAIN</b>: ${Number(o.ros_kmh).toFixed(1)} km/h — ${esc(o.reason)} · ` +
+    `${esc(o.margin)}` + (o.status && o.status.length ? `<br><i>behaviour</i>: ${esc(o.status.join("; "))}` : "");
+}
+function offmapChip(c) {
+  if (!c || !c.offmap) return "";
+  const parts = Object.entries(c.offmap).map(([k, n]) => k.replace(/_/g, " ") + " " + n);
+  return `<span class="lbl" title="${esc("domain fires by off-domain horizon: the speed the " +
+    "fail-closed corridor bound extrapolates at beyond each domain (founder rule 2026-09-27 — " +
+    "SAFETY SEMANTICS 15): " + (parts.join(", ") || "none this cycle"))}">off-domain per fire</span>` +
+    `<b>${parts.length ? esc(parts.join(" · ")) : "—"}</b>`;
+}
 function incidentTip(r) {
   const t = SUMMARY && SUMMARY.t_s;
   const lines = [`<b>${esc(r.name || r.incident_id)}</b> · ${esc(srcLabel(r.source))}` +
@@ -815,7 +833,10 @@ function incidentTip(r) {
   if (r.perimeter_rings_total && r.perimeter && r.perimeter_rings_total > r.perimeter.length) {
     lines.push(`perimeter: ${r.perimeter.length} of ${r.perimeter_rings_total} rings drawn (largest first)`);
   }
-  const extra = (r.notes || []).filter(n => n !== r.why_no_domain);
+  const om = offmapLine(r);
+  if (om) lines.push(om);
+  const extra = (r.notes || []).filter(n => n !== r.why_no_domain &&
+    !(r.offmap && String(n).startsWith("off-domain horizon")));
   if (extra.length) lines.push(extra.map(esc).join("<br>"));
   return lines.join("<br>");
 }
@@ -1017,7 +1038,9 @@ function renderRankList() {
     (r.domain ? `<span class="badge">${r.domain.clients} homes · P10 ${fmtH(hoursAfter(r.domain.eta_p10_s, t))}</span>` : "") +
     `<div class="sub">${fmtAcres(r.acreage)}` +
     (r.containment_pct != null ? ` · ${Math.round(r.containment_pct)}% contained` : "") +
-    ` · ${esc(srcLabel(r.source))}</div></div>`;
+    ` · ${esc(srcLabel(r.source))}` +
+    (r.offmap && r.offmap.kind !== "no_bound"
+      ? ` · off-domain ${Number(r.offmap.ros_kmh).toFixed(1)} km/h` : "") + `</div></div>`;
   $("ranklist").innerHTML =
     (dom.length ? dom.map(item).join("") : `<div class="rksep">no incident has clients in range this cycle</div>`) +
     (rest.length ? `<div class="rksep">no clients in range — by acreage (${rest.length})</div>` +

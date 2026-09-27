@@ -269,6 +269,17 @@ def _build_parser() -> argparse.ArgumentParser:
                          "that report instead of being spread forward from "
                          "its own age; a growing fire (record larger) keeps "
                          "the legacy seeding")
+    # SAFETY SEMANTICS 15 (founder rule 2026-09-27): default-OFF knob.
+    pw.add_argument("--offmap-per-fire", action="store_true",
+                    help="cfg.corridor_offraster_per_fire + "
+                         "corridor_offraster_margin_min=60: the fail-closed "
+                         "off-domain bound extrapolates each fire at its own "
+                         "forecast front speed where it crosses its domain "
+                         "edge (P90, floored at 0.28 m/s, capped at 1.7 m/s) "
+                         "when a fresh WFIGS behaviour report says it is not "
+                         "rapid — rapid / unknown fires keep 1.7 m/s — and a "
+                         "bounded sample needs a 60-min crossing margin; "
+                         "inert without --fail-closed")
     pw.add_argument("--dry-notify", action="store_true",
                     help="force log-only notifications (no SES even when "
                          "WGRESP_NOTIFY_SES=1)")
@@ -1052,6 +1063,17 @@ class _WatchDaemon:
             gone = list(getattr(res, "removed_incidents", None) or [])
             out["removed_contained"] = len(gone)
             out["removed_incidents"] = [self._removed_row(r) for r in gone]
+        if getattr(self._cfg, "corridor_offraster_per_fire", False):
+            # SAFETY SEMANTICS 15d: the rule's parameters + each incident's
+            # off-domain horizon (null = no domain this cycle) — additive
+            # keys, present only with the knob armed.
+            from wgresponse import offmap as offmap_mod
+            table = getattr(res, "offmap", None) or {}
+            out["offmap_rule"] = offmap_mod.rule_summary(self._cfg)
+            for row in out["incidents"]:
+                h = table.get(row["incident_id"])
+                row["offmap"] = (offmap_mod.horizon_row(h)
+                                 if h is not None else None)
         return out
 
     @classmethod
@@ -1451,6 +1473,21 @@ def _cmd_watch(args) -> int:
             "is seeded at that report, not spread forward from its own age; "
             "a growing fire (record larger) keeps the legacy seeding "
             "(SAFETY SEMANTICS 13e/f)")
+    if getattr(args, "offmap_per_fire", False):
+        cfg = dataclasses.replace(cfg, corridor_offraster_per_fire=True,
+                                  corridor_offraster_margin_min=60.0)
+        startup_notes_fix.append(
+            "OFF-DOMAIN HORIZON PER FIRE: a fire whose fresh WFIGS behaviour "
+            f"report (<= {cfg.fire_behavior_max_age_h:g} h) says it is not "
+            "rapid extrapolates beyond its domain at its own P90 front speed "
+            f"(floor {cfg.corridor_offraster_ros_floor_mps:g} m/s, ceiling "
+            f"{cfg.corridor_offraster_ros_mps:g} m/s); rapid or unknown fires "
+            f"keep {cfg.corridor_offraster_ros_mps:g} m/s; a bounded corridor "
+            f"sample needs a {cfg.corridor_offraster_margin_min:g}-min "
+            "crossing margin — founder rule 2026-09-27, SAFETY SEMANTICS 15"
+            + ("" if getattr(args, "fail_closed", False) else
+               " [INERT: the rule changes the fail-closed bound, and "
+               "--fail-closed is not armed]"))
     problems = validate_config(cfg)
     if problems:
         # The review found validate_config never ran on this path and

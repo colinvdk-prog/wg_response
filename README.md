@@ -116,6 +116,19 @@ py -3 -m wgresponse.cli watch --aoi data/aoi_conus.json --registry mock-presets 
 #                               age; a growing fire (record larger) keeps the
 #                               legacy seeding. Measured in
 #                               docs/LIVE_WORLD_PLAN.md (2026-09-27 section).
+# 5d. THE OFF-DOMAIN HORIZON IS PER FIRE (SAFETY SEMANTICS 15, founder rule
+#     2026-09-27; default OFF, add to either command above WITH --fail-closed):
+#       --offmap-per-fire       arms corridor_offraster_per_fire and sets
+#                               corridor_offraster_margin_min = 60: a fire
+#                               whose fresh WFIGS behaviour report says it is
+#                               not rapid extrapolates beyond its domain at its
+#                               own P90 front speed (floor 0.28 m/s, ceiling
+#                               1.7 m/s), rapid / unknown fires keep 1.7 m/s,
+#                               and a bounded corridor sample needs a 60-min
+#                               crossing margin. /api/state gains offmap_rule
+#                               + an offmap block per incident; /world shows
+#                               it. Inert without --fail-closed. Measured in
+#                               docs/LIVE_WORLD_PLAN.md (ticket 1.5 section).
 
 # 6. THE INTERACTIVE SIMULATOR (docs/SIMULATOR_DESIGN.md): thirteen real WUI
 #    locations on cached LANDFIRE tiles, click-to-ignite fires, the REAL
@@ -170,6 +183,7 @@ py -3 -m pip install -r requirements.txt   # tifffile + numpy + imagecodecs (+ b
 | `wgresponse.alerts` | Alert ladder state machine with hysteresis (`ALERT_TRANSITIONS` enforced). |
 | `wgresponse.threat` | `ThreatMonitor.cycle()` — the full orchestration loop (feeds ∪ seeded incidents → domains → ladder → dispatch). |
 | `wgresponse.seeded` | W1 seeded incidents (SAFETY SEMANTICS 12): the thread-safe `SeededIncidentStore` (create / retire / list / persistence rows, 12-active cap), `seeded_forecast` (the per-incident weather override through the weather seam), `parse_seed_request` (the `POST /api/seed` body), `SeedSafeNotifier` (a seeded fire's notifications go to the drill log, never a client). |
+| `wgresponse.offmap` | The per-fire off-domain horizon (SAFETY SEMANTICS 15, `corridor_offraster_per_fire`): the feed's behaviour status (`status_for` → known / rapid), the OR-combine seam for other status sources (`merge_status`), the raw-P10 boundary front speed (`front_speed_stats`: P90 + max) and each domain fire's `OffDomainHorizon` (speed, reason, crossing margin) for `dispatch.plan(offmap=...)`. |
 | `wgresponse.safety` | P10 departure deadlines, eroded-grid corridor checks, egress-to-safe-zone verdicts. |
 | `wgresponse.dispatch` | Deadline-TOPTW planner: regret-2 insertion + ILS, commitment/churn stability. |
 | `wgresponse.travel` | Tier-0 travel time (haversine x circuity / class speed x fire-traffic factor). |
@@ -223,7 +237,11 @@ the shipped values.
 | `corridor_sample_m` | 300.0 | Sample spacing along travel legs. |
 | `corridor_fail_closed` | False | CORRIDOR FAIL-CLOSED (tri-model review 2026-08-31, fix-program item 1): the leg oracle used to SKIP samples off the spread raster — "no bound" read as safe (4.0% false-clears over 720 geometries, worst 7.85 h of lost escape margin; egress legs 24–84% unsampled beyond the 2 km domain). True: an off-raster sample is BOUNDED — the fire leaves the domain only through a boundary cell it actually reaches, so arrival at an outside point is ≥ min over reached boundary runs of (run's earliest arrival + distance / `corridor_offraster_ros_mps`), a rigorous never-late lower bound; a leg with no raster at all is unsafe. No reached boundary cell = legacy skip. Default OFF = byte-identical; the simulator arms it, the watch daemon via `--fail-closed`. |
 | `corridor_unreached_bound` | False | The same boundary bound applied to IN-DOMAIN UNREACHED samples — the truncation case (a non-burnable wall at the domain edge manufactured 2,024/2,024 "unreached" cells the law trusted). For the LIVE path, whose spread domain is a small window on a real world; the simulator's tile is its whole world, so the sim leaves this OFF. Default OFF = byte-identical. |
-| `corridor_offraster_ros_mps` | 1.7 | Plausible sustained MAXIMUM head ROS (m/s, ~6 km/h Tubbs-class run — the threat radius's constant) used by the fail-closed corridor bounds above. Larger = more conservative bound. |
+| `corridor_offraster_ros_mps` | 1.7 | Plausible sustained MAXIMUM head ROS (m/s, ~6 km/h Tubbs-class run — the threat radius's constant) used by the fail-closed corridor bounds above. Larger = more conservative bound. Under `corridor_offraster_per_fire` it is the CEILING (rapid and unknown fires use it). |
+| `corridor_offraster_per_fire` | False | THE OFF-DOMAIN HORIZON IS PER FIRE (founder rule 2026-09-27, verbatim: *"the cap at extrapolation should include the rate of fire spread vs. drive time through the region. the pathway only becomes unaccessible when the crossing time between fire and road is less than 1 hour unless the fire has shown rapid rate of spread"*; contracts SAFETY SEMANTICS 15; `wgresponse.offmap`). True = each domain fire's fail-closed bound extrapolates at its own forecast front speed where it crosses its domain edge — the P90 over its raw P10's boundary cells of cell / (arrival − inward neighbour's earlier arrival), clamped to [`corridor_offraster_ros_floor_mps`, `corridor_offraster_ros_mps`] — when a fresh WFIGS behaviour report (`FireBehaviorGeneral` + 1–3) says it is KNOWN and not RAPID (Very Active / Extreme, or Running / Wind Driven Runs / Uphill Runs / Crowning / Long-range Spotting; contradictions resolve toward rapid). Rapid and unknown fires (no report, stale, unrecognized terms, every seeded fire) keep the ceiling. Loosens the law for known-slow fires (measured: the 69 km Willow veto; what it can miss is in docs/LIVE_WORLD_PLAN.md). Inert without `corridor_fail_closed` / `corridor_unreached_bound`. `/api/state` incidents + the world summary gain an `offmap` block. Default OFF = byte-identical; watch `--offmap-per-fire` (also sets the 60-min margin below). |
+| `corridor_offraster_ros_floor_mps` | 0.28 | SEMANTICS 15 floor (m/s, ~1 km/h): a known-slow fire never extrapolates slower than this, whatever its forecast front says. Read only with `corridor_offraster_per_fire`. |
+| `corridor_offraster_margin_min` | 0.0 | SEMANTICS 15 crossing-time margin (minutes): a corridor sample whose arrival came from the extrapolated bound (off-raster or unreached) is unsafe when bound − pass time < max(the leg's own margin, this); samples inside the forecast keep their calibrated margins. 0 = the leg's own margin (legacy); `--offmap-per-fire` sets 60 (the founder's hour). Read only with `corridor_offraster_per_fire`. |
+| `fire_behavior_max_age_h` | 48.0 | SEMANTICS 15: a WFIGS behaviour report older than this (by its record's `ModifiedOnDateTime` — the layer has no per-field time) is STALE, so the fire's behaviour is unknown and the ceiling applies. Read only with `corridor_offraster_per_fire`. |
 | `ember_buffer_min` | 0.0 | Extra buffer on top of P10; default OFF, enable in wind events. |
 
 ### Gel product parameters — **ALL UNVERIFIED, PENDING SUPPLIER DATA**

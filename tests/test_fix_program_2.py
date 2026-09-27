@@ -165,13 +165,17 @@ def test_watch_parser_accepts_the_production_start_command():
     assert args.edge_piecewise is False and args.regime_floor == 0.0
     # ... incl. SAFETY SEMANTICS 13 (2026-09-27): built, owner arms them
     assert args.drop_contained is False and args.confirmed_perimeters is False
+    # ... and SAFETY SEMANTICS 15 (2026-09-27): built, owner arms it
+    assert args.offmap_per_fire is False
     # every optional watch flag is parseable together
     extra = PRODUCTION_WATCH_ARGS + ["--edge-piecewise", "--regime-floor", "0.10",
                                      "--grass-only", "--drop-contained",
-                                     "--confirmed-perimeters"]
+                                     "--confirmed-perimeters",
+                                     "--offmap-per-fire"]
     parsed = _build_parser().parse_args(extra)
     assert parsed.edge_piecewise is True
     assert parsed.drop_contained is True and parsed.confirmed_perimeters is True
+    assert parsed.offmap_per_fire is True
 
 
 # ------------------------------------------------------- solver determinism
