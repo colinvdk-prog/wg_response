@@ -1,0 +1,73 @@
+{
+ "by_host": {
+  "archive-api.open-meteo.com": 16,
+  "lfps.usgs.gov": 212,
+  "services3.arcgis.com": 83
+ },
+ "invocations": {
+  "discover": {
+   "n_requests": 1,
+   "notes": []
+  },
+  "fetch_grasshopper_hagen_littlegiant_sinlahekin_sandcreek_border2_bobcatlakes_timber_plaskett_aspenacres": {
+   "n_requests": 58,
+   "notes": []
+  },
+  "fetch_v2_perims": {
+   "n_requests": 25,
+   "notes": []
+  },
+  "fetch_willow": {
+   "n_requests": 15,
+   "notes": []
+  },
+  "lfps_p1": {
+   "n_requests": 42,
+   "notes": [
+    "LFPS tile fetched for Willow (CO): 184x166 @ 90 m",
+    "LFPS tile fetched for Timber (CA): 228x258 @ 90 m",
+    "LFPS tile fetched for Little Giant (WA): 604x498 @ 109 m",
+    "LFPS tile fetched for Border 2 (WA): 334x200 @ 90 m"
+   ]
+  },
+  "lfps_p2": {
+   "n_requests": 31,
+   "notes": [
+    "LFPS tile fetched for Grasshopper (OR): 294x437 @ 90 m",
+    "LFPS tile fetched for Aspen Acres (CO): 451x383 @ 90 m",
+    "LFPS tile fetched for Bobcat Lakes (MT): 184x220 @ 90 m"
+   ]
+  },
+  "lfps_p3": {
+   "n_requests": 24,
+   "notes": [
+    "LFPS tile fetched for Hagen (OR): 321x396 @ 90 m",
+    "LFPS tile fetched for Sinlahekin (WA): 586x489 @ 90 m",
+    "LFPS tile fetched for Sand Creek (MT): 270x387 @ 90 m",
+    "LFPS tile fetched for Plaskett (CA): 227x258 @ 90 m"
+   ]
+  },
+  "lfps_wide_a": {
+   "n_requests": 69,
+   "notes": [
+    "LFPS tile fetched for Willow (CO): 540x523 @ 90 m",
+    "LFPS tile fetched for Grasshopper (OR): 496x606 @ 118 m",
+    "LFPS tile fetched for Hagen (OR): 520x578 @ 117 m",
+    "LFPS tile fetched for Sand Creek (MT): 503x598 @ 112 m",
+    "LFPS tile fetched for Plaskett (CA): 534x563 @ 98 m",
+    "LFPS tile fetched for Timber (CA): 535x562 @ 98 m"
+   ]
+  },
+  "lfps_wide_b": {
+   "n_requests": 46,
+   "notes": [
+    "LFPS tile fetched for Aspen Acres (CO): 573x525 @ 127 m",
+    "LFPS tile fetched for Sinlahekin (WA): 579x520 @ 147 m",
+    "LFPS tile fetched for Bobcat Lakes (MT): 531x567 @ 92 m",
+    "LFPS tile fetched for Little Giant (WA): 583x516 @ 167 m",
+    "LFPS tile fetched for Border 2 (WA): 610x493 @ 102 m"
+   ]
+  }
+ },
+ "total": 311
+}

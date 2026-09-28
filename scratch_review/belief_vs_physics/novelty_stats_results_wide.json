@@ -1,0 +1,14 @@
+{
+ "h_new_median": 13,
+ "n_learned_steps": 243,
+ "reasons": {
+  "evidence winds had no steady direction (any >= 4 m/s hour)": 43,
+  "none within the horizon": 18,
+  "severity >= 1.5x evidence P90": 15,
+  "wind turns > 60 deg at >= 4 m/s": 167
+ },
+ "same_pattern_share_of_window_mean": 0.4949882651360153,
+ "same_pattern_share_of_window_median": 0.42755344418052255,
+ "share_full_window": 0.3004115226337449,
+ "share_zero": 0.15637860082304528
+}
