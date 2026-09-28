@@ -167,6 +167,17 @@ py -3 -m wgresponse.cli watch --aoi data/aoi_conus.json --registry mock-presets 
 #                               + an offmap block per incident; /world shows
 #                               it. Inert without --fail-closed. Measured in
 #                               docs/LIVE_WORLD_PLAN.md (ticket 1.5 section).
+# 5d'. FEED SANITY (SAFETY SEMANTICS 18, 2026-09-27 audit; default OFF, add
+#     to either command above; the belief side needs --fire-belief):
+#       --feed-sanity           a perimeter or size the feed cannot have meant
+#                               (future / pre-fire own time, a polygon under
+#                               10 % of its record's size, a drop beyond
+#                               noise, an area figure off its geometry) never
+#                               teaches the belief; re-stamped polygons count
+#                               once a day; a collapsed polygon seeds the
+#                               fire's last plausible one (remembered 72 h,
+#                               in-process). Measured in
+#                               docs/review/feed_sanity_2026-09-27.md.
 # 5e. SPREAD READS THE LOCAL WEATHER FORECAST (SAFETY SEMANTICS 17, founder
 #     2026-09-27: "ensure that fire spread includes local weather forecast";
 #     default OFF, add to either command above):
@@ -441,6 +452,21 @@ The per-fire spread-rate belief (founder 2026-09-27: "the rate of fire spread sh
 | `fire_belief_rapid_min_acres` | 100.0 | ... with at least this many acres grown. |
 | `fire_belief_rapid_lookback_h` | 48.0 | Rapid: windows ending within this lookback count (and fires discovered within it are judged on growth since discovery). |
 | `fire_belief_rapid_noise_z` | 1.645 | Rapid is judged on growth BEYOND measurement noise: growth − z × its sd under the belief's own area-error model (one-sided 95 %). 3 % of a 20,000-acre fire is ±600 ac per report, so raw 12-h windows of a fire truly growing ~600 ac/day read 1,400–2,500 ac/day and would flag every big fire rapid. 0 = the raw observed growth. |
+
+### Feed sanity (SAFETY SEMANTICS 18 — `docs/review/feed_sanity_2026-09-27.md`)
+
+The 2026-09-27 audit of the live feed path the belief learns from (`wgresponse.feedsanity`). Measured on the recorded live layers, the deployed watcher's belief file and the WFIGS Daily history of 11 fires: 12 of 918 published edits on 6 fires carried a polygon under 10 % of the record's own size (0–8,183 ac while reporting 10,524–156,699 ac, for minutes to ~2 days; one record does right now: a 29 ac polygon under a 200,292 ac complex); 45 % of the perimeter windows the belief would form are one polygon re-stamped under a newer time (the deployed watcher's first window was one); 23 of 560 live polygons carry an area figure more than 2× off their geometry; reported sizes reset (15,798 → 700 ac) and fused sources disagree (0.01 vs 73 ac). Every knob OFF = byte-identical engine; the watch daemon arms it with `--feed-sanity`.
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `feed_sanity` | False | A perimeter or size the feed cannot have meant never teaches the belief and never shrinks the seed. Belief side (with `fire_belief_track`): no observation from an own time in the future or before the fire (never clamped to now), nor from a polygon under `feed_sanity_collapse_frac` of its own record's reported size; a polygon's area is its geometry's when the feed's figure disagrees; a re-stamped polygon counts once per `fire_belief_static_h` as a static zero-growth observation; a drop beyond noise is HELD until it comes back or persists `fire_belief_static_h` (then the series restarts there — never a negative-growth window); notes say what was skipped. Seed side (every feed incident with a perimeter): an implausible polygon time falls back to the record's; a collapsed polygon, or one dropped below the remembered one beyond noise, is replaced by the fire's last plausible polygon (in-process memory, `feed_sanity_memory_h`) for geometry, domain and seed; with none remembered it is seeded as received; a note per cycle and an `OperatorEvent('feed_sanity')` on first finding. Default OFF = byte-identical; watch `--feed-sanity`. |
+| `feed_sanity_future_h` | 1.0 | An own time (a perimeter's, a reported size's) later than now + this many hours is implausible (a feed clock may run a little ahead; the SEMANTICS 9 clamp covers that). Earlier than the fire's discovery less 24 h (a year before now without a discovery time) is implausible too. |
+| `feed_sanity_area_ratio` | 2.0 | The feed's own area figure (`perimeter_acres`: WFIGS `poly_GISAcres`, FIRIS `area_acres`) stands for a polygon only within this factor of its geometry's area; else the geometry's. Live 2026-09-28: 519 of 560 polygons agree within 5 %; 'Auto-generated for InFORM' polygons keep their first size (Bunker 1 ac on 2,850 ac of rings); the adapter's 200-vertex subsampling alone can move a ring's area ~20 %. |
+| `feed_sanity_collapse_frac` | 0.1 | A polygon whose area is under this fraction of its own record's reported size is not the fire's perimeter. Caught all 12 collapsed edits in the 11-fire history (0–8,183 ac vs 10,524–156,699 ac reported) and none of the genuine early-growth jumps (the polygon is then larger than the record). |
+| `feed_sanity_min_acres` | 100.0 | The collapse check applies only when the record's reported size is at least this (small fires' first sizes are rough). |
+| `feed_sanity_restamp_frac` | 0.001 | A polygon within this fraction of the last observed polygon's area is the same capture re-issued: 216 of the 295 history windows with an unchanged `poly_PolygonDateTime` changed by less than 0.1 %. |
+| `feed_sanity_drop_z` | 3.0 | A size (either series; and the seed vs its memory) this many sd of the difference below the last one is a drop, not a re-measurement, under the belief's own area error (`fire_belief_area_rel_err` / `_abs_err_acres`). History: genuine IncidentSize drops ≤ 6.4 % (≤ 1.6 sd); resets −43 % to −96 % (≥ 12 sd). |
+| `feed_sanity_memory_h` | 72.0 | How long the seed side remembers a fire's last plausible polygon after last seeing it (the longest measured collapse lasted ~48 h). In-process: a restart forgets it. |
 
 ## Feed & data licensing posture
 

@@ -1,0 +1,126 @@
+A. live snapshot rec_20260928T050729Z_c 2026-09-28 05:07 {'wfigs': 291, 'firis': 443, 'calfire': 6} fused 534
+   time wfigs_poly_DateCurrent (read)                {'n': 124, 'future': 0, 'over_a_year_old': 0, 'before_discovery': 0, 'missing': 2}
+   time wfigs_attr_ModifiedOnDateTime_dt (read)      {'n': 126, 'future': 0, 'over_a_year_old': 0, 'before_discovery': 0, 'missing': 0}
+   time wfigs_poly_PolygonDateTime (NOT read)        {'n': 113, 'future': 0, 'over_a_year_old': 0, 'before_discovery': 0, 'missing': 13}
+   time wfigs_points_ModifiedOnDateTime_dt (read)    {'n': 375, 'future': 0, 'over_a_year_old': 0, 'before_discovery': 0, 'missing': 0}
+   time firis_poly_DateCurrent (read)                {'n': 434, 'future': 0, 'over_a_year_old': 0, 'before_discovery': 0, 'missing': 9}
+   time calfire_Updated (read)                       {'n': 6, 'future': 0, 'over_a_year_old': 0, 'before_discovery': 0, 'missing': 0}
+   duplicate IRWIN polygons: 0
+   re-stamp lag h: {'n': 111, 'median': 89.79555555555555, 'p90': 808.0222222222222, 'max': 1384.6933333333334, 'over_72h': 60}
+   area figure vs geometry: {'firis: more than 2x off': 19, 'firis: within 2x': 8, 'firis: within 5 %': 407, 'wfigs: more than 2x off': 4, 'wfigs: within 2x': 10, 'wfigs: within 5 %': 112}
+   guard verdicts:
+      {'incident': '49064176-1c70-4c1a-bd52-4f8774353ce8', 'name': 'Main Trail', 'sources': ['wfigs'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 842.5, 'reported_ac': 841.0}
+      {'incident': '542ae118-1613-43c6-8216-ebf4dde89868', 'name': 'Bunker Fire', 'sources': ['wfigs'], 'stale_gated': False, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 2850.4, 'reported_ac': 2849.0}
+      {'incident': '69f4beb6-3800-4f24-ae46-f2cac8e746db', 'name': 'Star Lake', 'sources': ['wfigs'], 'stale_gated': False, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 16248.9, 'reported_ac': 16412.0}
+      {'incident': '851ddf21-4ead-4835-b54b-b3cf7bd6ac21', 'name': 'HAY CREEK COMPLEX', 'sources': ['wfigs'], 'stale_gated': True, 'time': None, 'collapse': 'its 29.1 ac are under 10% of the 200,292 ac its record reports', 'area_figure_off': False, 'geometry_ac': 29.1, 'reported_ac': 200292.0}
+      {'incident': 'aedd3afb-2fc2-41c4-be3f-fbc20e14b2b2', 'name': 'EGGER', 'sources': ['firis', 'wfigs'], 'stale_gated': False, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 0.1, 'reported_ac': 1.0}
+      {'incident': 'firis:1353', 'name': 'HAPPY', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 2.9, 'reported_ac': None}
+      {'incident': 'firis:1369', 'name': 'WYANDOTTE', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 0.0, 'reported_ac': None}
+      {'incident': 'firis:145', 'name': 'BURLINGTON', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 0.5, 'reported_ac': None}
+      {'incident': 'firis:162', 'name': 'CONKLIN', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 3.8, 'reported_ac': None}
+      {'incident': 'firis:168', 'name': 'SANDY', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 10.8, 'reported_ac': None}
+      {'incident': 'firis:17', 'name': 'SPRINGS', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 4163.7, 'reported_ac': None}
+      {'incident': 'firis:182', 'name': 'DAILY', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 0.2, 'reported_ac': None}
+      {'incident': 'firis:20', 'name': 'LAC/CROWN', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 274.5, 'reported_ac': None}
+      {'incident': 'firis:25', 'name': 'GRANITE', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 0.2, 'reported_ac': None}
+      {'incident': 'firis:29', 'name': 'WIND', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 0.5, 'reported_ac': None}
+      {'incident': 'firis:38', 'name': 'JOHNSON', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 0.0, 'reported_ac': None}
+      {'incident': 'firis:43', 'name': 'ASSIST/RC/MADISON', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 0.0, 'reported_ac': None}
+      {'incident': 'firis:45', 'name': 'SKYLINE', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 0.0, 'reported_ac': None}
+      {'incident': 'firis:48', 'name': 'ASSIST/BDC/82A', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 0.0, 'reported_ac': None}
+      {'incident': 'firis:6', 'name': 'ASSIST/RRU/61A', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 0.0, 'reported_ac': None}
+      {'incident': 'firis:7', 'name': 'NEED FRE CODE', 'sources': ['firis'], 'stale_gated': True, 'time': None, 'collapse': None, 'area_figure_off': True, 'geometry_ac': 0.1, 'reported_ac': None}
+   fused size disagreement >10 %:
+      {'name': 'JUNIPER', 'acres_by_source': {'calfire': 73.0, 'wfigs': 0.01}, 'fused_reported': 0.01}
+      {'name': 'Mineral Fire ', 'acres_by_source': {'calfire': 19.0, 'firis': 2.03}, 'fused_reported': 19.0}
+A. pair rec_20260928T042143Z -> rec_20260928T045508Z_b 0.56 h: {'polygon time unchanged': 126} {}
+A. pair rec_20260928T045508Z_b -> rec_20260928T050729Z_c 0.21 h: {'polygon time unchanged': 126} {}
+B. history (legacy vs guarded):
+   willow       rows   65 legacy {'perimeter: growth or re-measurement': 32, 'perimeter: windows': 47, 'reported: growth or re-measurement': 24, 'reported: windows': 26, 'perimeter: zero growth, full weight': 15, 'reported: zero growth, static (3x error)': 2} | guarded {'perimeter: growth or re-measurement': 34, 'perimeter: windows': 37, 'reported: growth or re-measurement': 24, 'reported: windows': 26, 'perimeter: zero growth, static (3x error)': 3, 'reported: zero growth, static (3x error)': 2} | rapid steps {'legacy': 12, 'guarded': 12} | notes {} | seed {'rows': 65, 'replaced': 0, 'as_received': 0, 'min_ratio': 1.0, 'detail': []}
+   aspenacres   rows   75 legacy {'perimeter: jump (>10x)': 1, 'perimeter: windows': 60, 'reported: growth or re-measurement': 23, 'reported: windows': 30, 'perimeter: growth or re-measurement': 29, 'perimeter: zero growth, full weight': 30, 'reported: zero growth, full weight': 5, 'reported: zero growth, static (3x error)': 2} | guarded {'perimeter: jump (>10x)': 1, 'perimeter: windows': 41, 'reported: growth or re-measurement': 23, 'reported: windows': 30, 'perimeter: growth or re-measurement': 31, 'perimeter: zero growth, static (3x error)': 9, 'reported: zero growth, full weight': 5, 'reported: zero growth, static (3x error)': 2} | rapid steps {'legacy': 22, 'guarded': 22} | notes {} | seed {'rows': 75, 'replaced': 1, 'as_received': 0, 'min_ratio': 0.8280361118671367, 'detail': [{'oid': 56969, 'dc': '2026-07-03 03:13', 'polygon_ac': 55392.0, 'reported_ac': 49291.0, 'remembered_ac': 66895.6, 'remembered_age_h': 0.0, 'why': 'drop'}]}
+   grasshopper  rows  145 legacy {'perimeter: growth or re-measurement': 29, 'perimeter: windows': 93, 'reported: zero growth, static (3x error)': 6, 'reported: windows': 50, 'reported: growth or re-measurement': 24, 'perimeter: zero growth, full weight': 62, 'perimeter: collapse (<10 %)': 1, 'perimeter: jump (>10x)': 1, 'reported: zero growth, full weight': 20} | guarded {'perimeter: growth or re-measurement': 34, 'perimeter: windows': 53, 'reported: zero growth, static (3x error)': 6, 'reported: windows': 50, 'reported: growth or re-measurement': 24, 'perimeter: zero growth, static (3x error)': 19, 'reported: zero growth, full weight': 20} | rapid steps {'legacy': 53, 'guarded': 46} | notes {'collapse': 2} | seed {'rows': 145, 'replaced': 2, 'as_received': 0, 'min_ratio': 0.0004723258525610572, 'detail': [{'oid': 63058, 'dc': '2026-08-19 05:40', 'polygon_ac': 43.2, 'reported_ac': 91555.0, 'remembered_ac': 91556.0, 'remembered_age_h': 2.1, 'why': 'collapse'}, {'oid': 64081, 'dc': '2026-08-26 11:52', 'polygon_ac': 8182.6, 'reported_ac': 93841.0, 'remembered_ac': 93806.2, 'remembered_age_h': 37.6, 'why': 'collapse'}]}
+   hagen        rows  126 legacy {'perimeter: zero growth, full weight': 44, 'perimeter: windows': 92, 'reported: growth or re-measurement': 38, 'reported: windows': 56, 'perimeter: growth or re-measurement': 48, 'reported: zero growth, static (3x error)': 6, 'reported: drop beyond noise': 1, 'reported: jump (>10x)': 2, 'reported: collapse (<10 %)': 1, 'reported: zero growth, full weight': 8} | guarded {'perimeter: growth or re-measurement': 50, 'perimeter: windows': 61, 'reported: growth or re-measurement': 40, 'reported: windows': 54, 'reported: zero growth, static (3x error)': 6, 'perimeter: zero growth, static (3x error)': 11, 'reported: zero growth, full weight': 8} | rapid steps {'legacy': 20, 'guarded': 20} | notes {'held': 2, 'collapse': 2} | seed {'rows': 126, 'replaced': 2, 'as_received': 0, 'min_ratio': 0.0, 'detail': [{'oid': 64620, 'dc': '2026-08-30 01:17', 'polygon_ac': 0.0, 'reported_ac': 60861.0, 'remembered_ac': 60838.1, 'remembered_age_h': 0.6, 'why': 'collapse'}, {'oid': 64721, 'dc': '2026-08-31 01:24', 'polygon_ac': 0.0, 'reported_ac': 60975.0, 'remembered_ac': 60978.9, 'remembered_age_h': 0.4, 'why': 'collapse'}]}
+   littlegiant  rows  137 legacy {'perimeter: jump (>10x)': 2, 'perimeter: windows': 108, 'reported: growth or re-measurement': 44, 'reported: windows': 64, 'perimeter: growth or re-measurement': 58, 'reported: zero growth, static (3x error)': 10, 'perimeter: zero growth, full weight': 48, 'reported: zero growth, full weight': 10} | guarded {'perimeter: jump (>10x)': 2, 'perimeter: windows': 72, 'reported: growth or re-measurement': 44, 'reported: windows': 64, 'perimeter: growth or re-measurement': 60, 'reported: zero growth, static (3x error)': 10, 'reported: zero growth, full weight': 10, 'perimeter: zero growth, static (3x error)': 10} | rapid steps {'legacy': 31, 'guarded': 31} | notes {'collapse': 1} | seed {'rows': 137, 'replaced': 1, 'as_received': 0, 'min_ratio': 0.0, 'detail': [{'oid': 60178, 'dc': '2026-07-30 20:04', 'polygon_ac': 0.0, 'reported_ac': 25407.0, 'remembered_ac': 25208.0, 'remembered_age_h': 2.2, 'why': 'collapse'}]}
+   sinlahekin   rows  119 legacy {'perimeter: growth or re-measurement': 31, 'perimeter: windows': 81, 'reported: growth or re-measurement': 27, 'reported: windows': 45, 'perimeter: zero growth, full weight': 44, 'perimeter: collapse (<10 %)': 3, 'perimeter: jump (>10x)': 3, 'reported: zero growth, full weight': 16, 'reported: zero growth, static (3x error)': 2} | guarded {'perimeter: growth or re-measurement': 37, 'perimeter: windows': 55, 'reported: growth or re-measurement': 27, 'reported: windows': 45, 'perimeter: zero growth, static (3x error)': 18, 'reported: zero growth, full weight': 16, 'reported: zero growth, static (3x error)': 2} | rapid steps {'legacy': 40, 'guarded': 28} | notes {'collapse': 5} | seed {'rows': 119, 'replaced': 5, 'as_received': 0, 'min_ratio': 0.0, 'detail': [{'oid': 62894, 'dc': '2026-08-17 19:36', 'polygon_ac': 2.4, 'reported_ac': 153843.0, 'remembered_ac': 152742.7, 'remembered_age_h': 23.9, 'why': 'collapse'}, {'oid': 63671, 'dc': '2026-08-23 18:03', 'polygon_ac': 2.9, 'reported_ac': 155209.0, 'remembered_ac': 155037.5, 'remembered_age_h': 24.3, 'why': 'collapse'}, {'oid': 64001, 'dc': '2026-08-25 19:09', 'polygon_ac': 0.0, 'reported_ac': 155227.0, 'remembered_ac': 155159.8, 'remembered_age_h': 2.1, 'why': 'collapse'}, {'oid': 64182, 'dc': '2026-08-27 03:05', 'polygon_ac': 0.6, 'reported_ac': 156699.0, 'remembered_ac': 155406.1, 'remembered_age_h': 26.6, 'why': 'collapse'}, {'oid': 64184, 'dc': '2026-08-27 16:57', 'polygon_ac': 0.9, 'reported_ac': 156699.0, 'remembered_ac': 155406.1, 'remembered_age_h': 40.4, 'why': 'collapse'}]}
+   border2      rows   35 legacy {'perimeter: growth or re-measurement': 27, 'perimeter: windows': 32, 'reported: jump (>10x)': 1, 'reported: windows': 25, 'perimeter: zero growth, full weight': 5, 'reported: growth or re-measurement': 17, 'reported: zero growth, static (3x error)': 5, 'reported: drop beyond noise': 1, 'reported: zero growth, full weight': 1} | guarded {'perimeter: growth or re-measurement': 27, 'perimeter: windows': 31, 'reported: jump (>10x)': 1, 'reported: windows': 23, 'perimeter: zero growth, static (3x error)': 4, 'reported: growth or re-measurement': 17, 'reported: zero growth, static (3x error)': 4, 'reported: zero growth, full weight': 1} | rapid steps {'legacy': 10, 'guarded': 10} | notes {'held': 1, 'restart': 1} | seed {'rows': 35, 'replaced': 0, 'as_received': 0, 'min_ratio': 1.0, 'detail': []}
+   sandcreek    rows   47 legacy {'perimeter: growth or re-measurement': 19, 'perimeter: windows': 38, 'reported: growth or re-measurement': 16, 'reported: windows': 27, 'reported: zero growth, full weight': 4, 'perimeter: zero growth, full weight': 17, 'reported: zero growth, static (3x error)': 7, 'perimeter: collapse (<10 %)': 1, 'perimeter: jump (>10x)': 1} | guarded {'perimeter: growth or re-measurement': 21, 'perimeter: windows': 28, 'reported: growth or re-measurement': 16, 'reported: windows': 27, 'reported: zero growth, full weight': 4, 'perimeter: zero growth, static (3x error)': 7, 'reported: zero growth, static (3x error)': 7} | rapid steps {'legacy': 13, 'guarded': 7} | notes {'collapse': 1} | seed {'rows': 47, 'replaced': 1, 'as_received': 0, 'min_ratio': 0.001948625297613087, 'detail': [{'oid': 64852, 'dc': '2026-09-01 10:45', 'polygon_ac': 66.6, 'reported_ac': 34083.0, 'remembered_ac': 34189.3, 'remembered_age_h': 11.7, 'why': 'collapse'}]}
+   bobcatlakes  rows   40 legacy {'perimeter: growth or re-measurement': 27, 'perimeter: windows': 35, 'reported: zero growth, static (3x error)': 4, 'reported: windows': 26, 'reported: growth or re-measurement': 20, 'perimeter: zero growth, full weight': 6, 'perimeter: collapse (<10 %)': 1, 'perimeter: jump (>10x)': 1, 'reported: zero growth, full weight': 2} | guarded {'perimeter: growth or re-measurement': 28, 'perimeter: windows': 32, 'reported: zero growth, static (3x error)': 4, 'reported: windows': 26, 'reported: growth or re-measurement': 20, 'perimeter: zero growth, static (3x error)': 4, 'reported: zero growth, full weight': 2} | rapid steps {'legacy': 10, 'guarded': 9} | notes {'collapse': 1} | seed {'rows': 40, 'replaced': 1, 'as_received': 0, 'min_ratio': 0.0, 'detail': [{'oid': 64519, 'dc': '2026-08-29 11:25', 'polygon_ac': 0.0, 'reported_ac': 10524.0, 'remembered_ac': 10523.9, 'remembered_age_h': 12.3, 'why': 'collapse'}]}
+   timber       rows   62 legacy {'perimeter: growth or re-measurement': 31, 'perimeter: windows': 55, 'reported: growth or re-measurement': 24, 'reported: windows': 41, 'perimeter: zero growth, full weight': 24, 'reported: zero growth, full weight': 9, 'reported: zero growth, static (3x error)': 8} | guarded {'perimeter: growth or re-measurement': 31, 'perimeter: windows': 46, 'reported: growth or re-measurement': 24, 'reported: windows': 41, 'reported: zero growth, full weight': 9, 'perimeter: zero growth, static (3x error)': 15, 'reported: zero growth, static (3x error)': 8} | rapid steps {'legacy': 17, 'guarded': 17} | notes {} | seed {'rows': 62, 'replaced': 0, 'as_received': 0, 'min_ratio': 1.0, 'detail': []}
+   plaskett     rows   67 legacy {'perimeter: jump (>10x)': 1, 'perimeter: windows': 33, 'perimeter: growth or re-measurement': 21, 'reported: jump (>10x)': 1, 'reported: windows': 17, 'reported: growth or re-measurement': 9, 'perimeter: zero growth, full weight': 11, 'reported: zero growth, static (3x error)': 3, 'reported: zero growth, full weight': 4} | guarded {'perimeter: jump (>10x)': 1, 'perimeter: windows': 25, 'perimeter: growth or re-measurement': 23, 'reported: jump (>10x)': 1, 'reported: windows': 17, 'reported: growth or re-measurement': 9, 'reported: zero growth, static (3x error)': 3, 'reported: zero growth, full weight': 4, 'perimeter: zero growth, static (3x error)': 1} | rapid steps {'legacy': 16, 'guarded': 16} | notes {} | seed {'rows': 67, 'replaced': 0, 'as_received': 0, 'min_ratio': 1.0, 'detail': []}
+B totals: {
+ "guard notes: collapse": 12,
+ "guard notes: held": 3,
+ "guard notes: restart": 1,
+ "guarded: perimeter: growth or re-measurement": 376,
+ "guarded: perimeter: jump (>10x)": 4,
+ "guarded: perimeter: windows": 481,
+ "guarded: perimeter: zero growth, static (3x error)": 101,
+ "guarded: rapid steps": 218,
+ "guarded: reported: growth or re-measurement": 268,
+ "guarded: reported: jump (>10x)": 2,
+ "guarded: reported: windows": 403,
+ "guarded: reported: zero growth, full weight": 79,
+ "guarded: reported: zero growth, static (3x error)": 54,
+ "legacy: perimeter: collapse (<10 %)": 6,
+ "legacy: perimeter: growth or re-measurement": 352,
+ "legacy: perimeter: jump (>10x)": 10,
+ "legacy: perimeter: windows": 674,
+ "legacy: perimeter: zero growth, full weight": 306,
+ "legacy: rapid steps": 244,
+ "legacy: reported: collapse (<10 %)": 1,
+ "legacy: reported: drop beyond noise": 2,
+ "legacy: reported: growth or re-measurement": 266,
+ "legacy: reported: jump (>10x)": 4,
+ "legacy: reported: windows": 407,
+ "legacy: reported: zero growth, full weight": 79,
+ "legacy: reported: zero growth, static (3x error)": 55,
+ "seed: as_received": 0,
+ "seed: replaced": 13,
+ "seed: rows": 918
+}
+C. seed replacements:
+   aspenacres   {'oid': 56969, 'dc': '2026-07-03 03:13', 'polygon_ac': 55392.0, 'reported_ac': 49291.0, 'remembered_ac': 66895.6, 'remembered_age_h': 0.0, 'why': 'drop'}
+   grasshopper  {'oid': 63058, 'dc': '2026-08-19 05:40', 'polygon_ac': 43.2, 'reported_ac': 91555.0, 'remembered_ac': 91556.0, 'remembered_age_h': 2.1, 'why': 'collapse'}
+   grasshopper  {'oid': 64081, 'dc': '2026-08-26 11:52', 'polygon_ac': 8182.6, 'reported_ac': 93841.0, 'remembered_ac': 93806.2, 'remembered_age_h': 37.6, 'why': 'collapse'}
+   hagen        {'oid': 64620, 'dc': '2026-08-30 01:17', 'polygon_ac': 0.0, 'reported_ac': 60861.0, 'remembered_ac': 60838.1, 'remembered_age_h': 0.6, 'why': 'collapse'}
+   hagen        {'oid': 64721, 'dc': '2026-08-31 01:24', 'polygon_ac': 0.0, 'reported_ac': 60975.0, 'remembered_ac': 60978.9, 'remembered_age_h': 0.4, 'why': 'collapse'}
+   littlegiant  {'oid': 60178, 'dc': '2026-07-30 20:04', 'polygon_ac': 0.0, 'reported_ac': 25407.0, 'remembered_ac': 25208.0, 'remembered_age_h': 2.2, 'why': 'collapse'}
+   sinlahekin   {'oid': 62894, 'dc': '2026-08-17 19:36', 'polygon_ac': 2.4, 'reported_ac': 153843.0, 'remembered_ac': 152742.7, 'remembered_age_h': 23.9, 'why': 'collapse'}
+   sinlahekin   {'oid': 63671, 'dc': '2026-08-23 18:03', 'polygon_ac': 2.9, 'reported_ac': 155209.0, 'remembered_ac': 155037.5, 'remembered_age_h': 24.3, 'why': 'collapse'}
+   sinlahekin   {'oid': 64001, 'dc': '2026-08-25 19:09', 'polygon_ac': 0.0, 'reported_ac': 155227.0, 'remembered_ac': 155159.8, 'remembered_age_h': 2.1, 'why': 'collapse'}
+   sinlahekin   {'oid': 64182, 'dc': '2026-08-27 03:05', 'polygon_ac': 0.6, 'reported_ac': 156699.0, 'remembered_ac': 155406.1, 'remembered_age_h': 26.6, 'why': 'collapse'}
+   sinlahekin   {'oid': 64184, 'dc': '2026-08-27 16:57', 'polygon_ac': 0.9, 'reported_ac': 156699.0, 'remembered_ac': 155406.1, 'remembered_age_h': 40.4, 'why': 'collapse'}
+   sandcreek    {'oid': 64852, 'dc': '2026-09-01 10:45', 'polygon_ac': 66.6, 'reported_ac': 34083.0, 'remembered_ac': 34189.3, 'remembered_age_h': 11.7, 'why': 'collapse'}
+   bobcatlakes  {'oid': 64519, 'dc': '2026-08-29 11:25', 'polygon_ac': 0.0, 'reported_ac': 10524.0, 'remembered_ac': 10523.9, 'remembered_age_h': 12.3, 'why': 'collapse'}
+B. collapse rows (polygon under 10 % of its own record's size):
+   grasshopper  {'oid': 63058, 'at': '2026-08-19 05:40', 'polygon_ac': 43.2, 'reported_ac': 91555, 'until_plausible_h': 4.9}
+   grasshopper  {'oid': 64081, 'at': '2026-08-28 01:03', 'polygon_ac': 8182.6, 'reported_ac': 93841, 'until_plausible_h': 1.8}
+   hagen        {'oid': 64620, 'at': '2026-08-30 01:30', 'polygon_ac': 0.0, 'reported_ac': 60861, 'until_plausible_h': 1.0}
+   hagen        {'oid': 64721, 'at': '2026-08-31 01:24', 'polygon_ac': 0.0, 'reported_ac': 60975, 'until_plausible_h': 1.1}
+   littlegiant  {'oid': 60178, 'at': '2026-07-30 20:04', 'polygon_ac': 0.0, 'reported_ac': 25407, 'until_plausible_h': 4.0}
+   sinlahekin   {'oid': 62894, 'at': '2026-08-18 01:38', 'polygon_ac': 2.4, 'reported_ac': 153843, 'until_plausible_h': 48.0}
+   sinlahekin   {'oid': 63671, 'at': '2026-08-24 00:32', 'polygon_ac': 2.9, 'reported_ac': 155209, 'until_plausible_h': 23.8}
+   sinlahekin   {'oid': 64001, 'at': '2026-08-25 19:09', 'polygon_ac': 0.0, 'reported_ac': 155227, 'until_plausible_h': 5.4}
+   sinlahekin   {'oid': 64182, 'at': '2026-08-27 03:05', 'polygon_ac': 0.6, 'reported_ac': 156699, 'until_plausible_h': 13.9}
+   sinlahekin   {'oid': 64184, 'at': '2026-08-27 16:57', 'polygon_ac': 0.9, 'reported_ac': 156699, 'until_plausible_h': 0.1}
+   sandcreek    {'oid': 64852, 'at': '2026-09-01 10:45', 'polygon_ac': 66.6, 'reported_ac': 34083, 'until_plausible_h': 12.4}
+   bobcatlakes  {'oid': 64519, 'at': '2026-08-29 11:25', 'polygon_ac': 0.0, 'reported_ac': 10524, 'until_plausible_h': 0.3}
+D. deployed belief file: {
+ "saved_utc": "2026-09-28 04:05",
+ "incidents": 217,
+ "observations": {
+  "perimeter": 89,
+  "reported": 173
+ },
+ "windows": [
+  {
+   "incident": "091081ed-bd23-4610-ae4a-270f95d1711e",
+   "kind": "perimeter",
+   "from_ac": 172891.23,
+   "to_ac": 172891.23,
+   "hours": 8.92,
+   "zero_growth": true,
+   "modeled": false
+  }
+ ]
+}

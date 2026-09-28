@@ -316,6 +316,19 @@ def _build_parser() -> argparse.ArgumentParser:
                          "than physics (cfg.fire_belief_apply_p10 lifts the "
                          "guard: config only, measured unsafe for contained "
                          "fires, docs/FIRE_BELIEF.md)")
+    # SAFETY SEMANTICS 18 (feed sanity, 2026-09-27 audit): default-OFF knob.
+    pw.add_argument("--feed-sanity", action="store_true",
+                    help="cfg.feed_sanity: a perimeter or size the feed "
+                         "cannot have meant never teaches the fire belief "
+                         "and never shrinks the seed — an own time in the "
+                         "future or before the fire, a polygon under 10%% of "
+                         "its record's size, a re-stamped polygon (counted "
+                         "once per day), a drop beyond measurement noise "
+                         "(held until it persists), an area figure off its "
+                         "geometry; the spread seeds the fire's last "
+                         "plausible polygon (in-process memory) instead of a "
+                         "collapsed one (docs/review/feed_sanity_2026-09-27"
+                         ".md)")
     # SAFETY SEMANTICS 17 (founder 2026-09-27): default-OFF knob.
     pw.add_argument("--weather-grid-km", type=float, default=0.0,
                     help="cfg.weather_grid_km: spread reads the LOCAL weather "
@@ -860,6 +873,35 @@ def _fire_belief_notes(args) -> list:
                 "and published (status, world summary, fire_beliefs.json); "
                 "physics, alerts and dispatch unchanged"]
     return []
+
+
+def _feed_sanity_cfg(cfg, args):
+    """cfg with --feed-sanity applied (SAFETY SEMANTICS 18); unchanged
+    without the flag."""
+    if getattr(args, "feed_sanity", False):
+        return dataclasses.replace(cfg, feed_sanity=True)
+    return cfg
+
+
+def _feed_sanity_notes(cfg) -> list:
+    """The startup note for cfg.feed_sanity (SAFETY SEMANTICS 18); [] when
+    off. Says loudly when the belief side has nothing to guard."""
+    if not getattr(cfg, "feed_sanity", False):
+        return []
+    return [
+        "FEED SANITY: a perimeter or size the feed cannot have meant never "
+        "teaches the fire belief and never shrinks the seed — an own time "
+        f"more than {cfg.feed_sanity_future_h:g} h ahead or before the fire, "
+        f"a polygon under {cfg.feed_sanity_collapse_frac:.0%} of its record's "
+        f"size (from {cfg.feed_sanity_min_acres:g} ac), a re-stamped polygon "
+        f"(counted once per {cfg.fire_belief_static_h:g} h), a drop beyond "
+        f"{cfg.feed_sanity_drop_z:g} sd (held until it persists), an area "
+        "figure off its geometry; a collapsed polygon seeds the fire's last "
+        f"plausible one (remembered {cfg.feed_sanity_memory_h:g} h, in-"
+        "process) — SAFETY SEMANTICS 18"
+        + ("" if cfg.fire_belief_track else
+           " [belief side INERT without --fire-belief; the seed side "
+           "applies]")]
 
 
 class _WatchDaemon:
@@ -1707,6 +1749,8 @@ def _cmd_watch(args) -> int:
                "--fail-closed is not armed]"))
     startup_notes_fix += _fire_belief_notes(args)
     cfg = _fire_belief_cfg(cfg, args)       # SEMANTICS 14 (apply => track)
+    cfg = _feed_sanity_cfg(cfg, args)       # SEMANTICS 18
+    startup_notes_fix += _feed_sanity_notes(cfg)
     if getattr(args, "weather_grid_km", 0.0):
         cfg = dataclasses.replace(
             cfg, weather_grid_km=float(args.weather_grid_km))

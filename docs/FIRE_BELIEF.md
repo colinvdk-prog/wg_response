@@ -275,6 +275,20 @@ windows / 240 weather hours / 337 curve hours; windows lighter than 1e-3 leave t
   weather field prices both of its ensembles, the belief's members and the
   physics run behind the P10 guard, per zone and hour. The belief's own
   weather log and new-pattern test still read the centroid forecast.
+- **Feed sanity (SAFETY SEMANTICS 18; `cfg.feed_sanity`, watch
+  `--feed-sanity`; audit and measurement in
+  `docs/review/feed_sanity_2026-09-27.md`).** The live feeds re-issue one
+  polygon under newer times (45 % of the perimeter windows on 11 real fires
+  were zero-growth re-stamps), publish polygons under 10 % of their own
+  record's size, reset reported sizes, and carry area figures off their own
+  geometry. With the knob on, the observers skip what the feed cannot have
+  meant (future or pre-fire own times, collapsed polygons), count a
+  re-stamped polygon once per `fire_belief_static_h` as a static
+  observation, hold a drop beyond noise until it comes back or persists
+  (then the series restarts, never a negative window), and read a polygon's
+  area from its rings when the feed's figure is more than 2× off. The seed
+  side uses the fire's last plausible polygon instead of a collapsed one.
+  Knob off = the observers above, unchanged.
 
 ## 5. Measured results
 

@@ -580,6 +580,76 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    state, /api/state and /api/world/summary (pinned in
    tests/test_weather_field.py against goldens computed on commit b5ce62c,
    before this rule existed, on a world whose forecast varies in space).
+18. A PERIMETER OR SIZE THE FEED CANNOT HAVE MEANT NEVER TEACHES THE BELIEF
+   AND NEVER SHRINKS THE SEED (2026-09-27 audit of the live feed path the
+   SEMANTICS 14 belief learns from; docs/review/feed_sanity_2026-09-27.md;
+   wgresponse.feedsanity; cfg.feed_sanity, default OFF; watch --feed-sanity).
+   Measured on the recorded live layers, the deployed watcher's belief file
+   and the WFIGS Daily history of 11 2026 fires (918 published edits): 12
+   edits on 6 fires published a polygon under 10 % of its own record's size
+   (0-8,183 ac while the record reported 10,524-156,699 ac) for minutes to
+   ~2 days (the live layer right now holds a 29 ac polygon under a 200,292
+   ac complex record); 306 of the 674 perimeter windows the belief would
+   have formed were one polygon re-stamped under a newer time (the deployed
+   watcher's first window was one); 23 of 560 live polygons carry an area
+   figure more than 2x off their own geometry; reported sizes reset (Hagen
+   15,798 -> 700 ac) and fused sources disagree (0.01 vs 73 ac).
+   (a) THE POLYGON'S AREA IS ITS GEOMETRY'S. The feed's own area figure
+       (meta perimeter_acres: WFIGS poly_GISAcres, FIRIS area_acres) stands
+       for a polygon only while it agrees with the area of the rings the
+       engine seeds (fire_belief.rings_area_m2) within a factor of
+       cfg.feed_sanity_area_ratio; otherwise the rings' own area is used.
+   (b) IMPLAUSIBLE TIME. An own time — a perimeter's meta perimeter_at_s
+       (else its record's updated_at_s), a reported size's reported_at_s —
+       later than now + cfg.feed_sanity_future_h, or earlier than its fire's
+       discovery less 24 h (a year before now when discovery is unknown), is
+       not a time the feed can have meant. The belief takes no observation
+       from it (never clamped to now: a clamped future stamp was re-observed
+       as a new zero-growth capture every fire_belief_min_obs_spacing_h).
+       The seed takes the record's own time instead (the F3 fallback for a
+       non-positive stamp; SEMANTICS 9's clamp still applies after it).
+   (c) COLLAPSE. A polygon whose area is under cfg.feed_sanity_collapse_frac
+       of its own record's reported size (meta reported_acres), when that
+       size is at least cfg.feed_sanity_min_acres, is not the fire's
+       perimeter: the belief takes no observation from it. The seed uses the
+       fire's LAST PLAUSIBLE polygon instead — the monitor's in-process
+       memory of the newest polygon that passed these checks, with that
+       polygon's own time and meta, for up to cfg.feed_sanity_memory_h after
+       it was last seen — and so does a polygon that DROPS below the
+       remembered one by more than cfg.feed_sanity_drop_z x the sd of the
+       difference under the belief's own area error (fire_belief_area_rel_err
+       / fire_belief_area_abs_err_acres): within the memory window the seed
+       is never a smaller fire than the feed showed. With nothing remembered
+       (a restart, a first sighting) the polygon is seeded as received. Every
+       cycle it bites is one note; a fire first found implausible is also an
+       OperatorEvent('feed_sanity') (never a degradation).
+   (d) RE-STAMP. A polygon whose area is within cfg.feed_sanity_restamp_frac
+       of the last polygon the belief observed is the same capture re-issued
+       under a newer time, not a new capture: it becomes a zero-growth
+       observation only once cfg.fire_belief_static_h has passed since that
+       observation, with the static 3x error — the reported series' own
+       unchanged-size rule. The seed is unchanged (SEMANTICS 13e/f own the
+       seed time of an old polygon).
+   (e) A DROP IS NEVER NEGATIVE GROWTH. A size (either series) below the
+       series' last observation by more than cfg.feed_sanity_drop_z x the sd
+       of the difference is HELD — no observation — until the series comes
+       back up (a glitch: never observed) or the lower size persists for
+       cfg.fire_belief_static_h (a correction: the series restarts there,
+       with no window across the drop). A held size does not move the young-
+       fire rapid clause.
+   (f) WHAT IT DOES NOT DO: it never touches the feed queries, fusion, the
+       SEMANTICS 9 staleness gate, the SEMANTICS 13 removal, ensembles
+       beyond the seed polygon and its time, P10 or any crew-safety law; the
+       confirmed anchor (13e) sees a substituted polygon's own meta. It
+       cannot fix fusion's identity problems (FIRIS rows carry no IRWIN id,
+       so one fire can be several incidents; a fused size follows its
+       freshest source), and its memory is in-process: a restart during a
+       collapse seeds the collapsed polygon, with the alarm, until the feed
+       restores a plausible one. Seeded (drill) incidents are never checked.
+   Knob OFF = byte-identical cycles, persisted state, /api/state,
+   /api/world/summary and fire_beliefs.json (pinned in
+   tests/test_feed_sanity.py against goldens computed on commit 0bbd430,
+   before this rule existed, on a world where every guard bites).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -752,6 +822,18 @@ wgresponse.fire_belief   (SAFETY SEMANTICS 14, 2026-09-27; docs/FIRE_BELIEF.md)
     # ensemble_arrival(member_hour_scale=callable); both None = byte-identical.
     # ThreatMonitor(..., fire_beliefs=store) injects a store (a TEST world's
     # copy); .fire_beliefs exposes it; cli watch --fire-belief[-apply].
+
+wgresponse.feedsanity   (SAFETY SEMANTICS 18, 2026-09-27; docs/review/feed_sanity_2026-09-27.md)
+    time_problem(t_s, discovered_s, now_s, cfg) -> str | None   # why an own time is implausible
+    feed_area_stands(feed_acres, geom_acres, cfg) -> bool       # the feed's area figure vs the geometry
+    collapse_problem(area_acres, reported_acres, cfg) -> str | None
+    is_drop(new_m2, ref_m2, cfg) -> bool       # beyond feed_sanity_drop_z x sd of the difference
+    is_restamp(new_m2, ref_m2, cfg) -> bool    # within feed_sanity_restamp_frac
+    class PerimeterMemory  .get(incident_id, now_s, cfg) .remember(incident_id, RememberedPerimeter)
+        .prune(now_s, cfg)   # the monitor's in-process last-plausible-polygon memory
+    # consumers: fire_belief.FireBeliefStore.observe (the belief side) and
+    # threat.ThreatMonitor._assess_incident (the seed side), both only with
+    # cfg.feed_sanity; OperatorEvent kind 'feed_sanity'; cli watch --feed-sanity.
 
 wgresponse.safety
     corridor_safe(a: LatLon, b: LatLon, depart_s: float, speed_mps: float,
@@ -2436,6 +2518,25 @@ class ResponseConfig:
     fire_belief_rapid_min_acres: float = 100.0        # ... with at least this many acres grown
     fire_belief_rapid_lookback_h: float = 48.0        # rapid: windows ending within this lookback
     fire_belief_rapid_noise_z: float = 1.645          # rapid: growth counted at its lower bound grown - z*sd (0 = raw)
+    # FEED SANITY (SAFETY SEMANTICS 18; the 2026-09-27 audit of the live feed
+    # path the belief learns from, docs/review/feed_sanity_2026-09-27.md;
+    # wgresponse.feedsanity). True = the belief takes no observation from a
+    # perimeter or size the feed cannot have meant (an own time in the future
+    # or before the fire, a polygon collapsed under its own record's size, a
+    # drop beyond measurement noise until it persists), counts a re-stamped
+    # polygon once per fire_belief_static_h, and reads a polygon's area from
+    # its geometry when the feed's figure disagrees; the seed never uses a
+    # smaller polygon than the fire's last plausible one (in-process memory)
+    # and replaces an implausible polygon time with the record's. False =
+    # legacy, byte-identical; the watch daemon arms it via --feed-sanity.
+    feed_sanity: bool = False
+    feed_sanity_future_h: float = 1.0        # an own time later than now + this is implausible
+    feed_sanity_area_ratio: float = 2.0      # the feed's area figure stands only within this factor of the geometry's
+    feed_sanity_collapse_frac: float = 0.10  # a polygon under this fraction of its record's reported size is not the perimeter ...
+    feed_sanity_min_acres: float = 100.0     # ... when that reported size is at least this
+    feed_sanity_restamp_frac: float = 0.001  # a polygon within this fraction of the last observed one's area is a re-stamp
+    feed_sanity_drop_z: float = 3.0          # a size more than z x sd(difference) below the last one is held
+    feed_sanity_memory_h: float = 72.0       # the seed remembers a fire's last plausible polygon this long
 
 
 # ---------------------------------------------------------------------------
@@ -2740,6 +2841,29 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("fire_belief_rapid_lookback_h must be > 0")
     if not (0.0 <= cfg.fire_belief_rapid_noise_z <= 5.0):
         problems.append("fire_belief_rapid_noise_z must be within [0, 5]")
+
+    # --- feed sanity (SAFETY SEMANTICS 18) ---
+    if not (math.isfinite(cfg.feed_sanity_future_h)
+            and cfg.feed_sanity_future_h >= 0):
+        problems.append("feed_sanity_future_h must be a finite value >= 0")
+    if not (math.isfinite(cfg.feed_sanity_area_ratio)
+            and cfg.feed_sanity_area_ratio > 1.0):
+        problems.append("feed_sanity_area_ratio must be a finite factor > 1 "
+                        "(1 would reject every area figure)")
+    if not (0.0 < cfg.feed_sanity_collapse_frac < 1.0):
+        problems.append("feed_sanity_collapse_frac must be within (0, 1)")
+    if not (math.isfinite(cfg.feed_sanity_min_acres)
+            and cfg.feed_sanity_min_acres >= 0):
+        problems.append("feed_sanity_min_acres must be a finite value >= 0")
+    if not (0.0 <= cfg.feed_sanity_restamp_frac < 0.1):
+        problems.append("feed_sanity_restamp_frac must be within [0, 0.1) "
+                        "(a wider band would call real growth a re-stamp)")
+    if not (math.isfinite(cfg.feed_sanity_drop_z)
+            and cfg.feed_sanity_drop_z > 0):
+        problems.append("feed_sanity_drop_z must be a finite value > 0")
+    if not (math.isfinite(cfg.feed_sanity_memory_h)
+            and cfg.feed_sanity_memory_h > 0):
+        problems.append("feed_sanity_memory_h must be a finite value > 0")
 
     # --- type discipline: bool-typed fields must hold bool, int-typed fields
     # must hold int (and not bool -- bool is an int subclass in Python) ---
