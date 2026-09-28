@@ -569,3 +569,86 @@ Two of the archive requests were oversized, before the date-sanity filter existe
 2020 (Sinlahekin) and one stamped 2002 (Plaskett) stretched their date ranges to 6 and 24 years (45
 MB and 79 MB). Those responses were discarded and re-requested over the right dates. The replay is deterministic:
 the ensemble seeds on (incident id, member), the belief has no RNG, and every input is cached.
+
+---
+
+## Addendum 2026-09-28: the v2 rules on the same 11 fires
+
+Founder, 2026-09-28: *"recalibrate the new-weather rule and fix the rapid blind spot"*. Both are
+built as default-OFF knobs, armed together by `watch --fire-belief-v2`. The rules, knobs,
+calibration and full tables are in `docs/FIRE_BELIEF.md` §7 and
+`scratch_review/belief_vs_physics/v2_tables.md`. Everything below uses the same cached physics,
+the same perfect-forecast weather and the same scoring as the study above.
+
+### In plain words
+
+**The new-weather rule now thinks in days.** It asks whether a forecast day will be harsher than
+anything the fire was seen in, or whether its afternoon wind will blow from a direction none of the
+observed afternoons had. It no longer asks whether this hour's wind differs from the average of
+all observed hours, which the afternoon wind turn tripped nearly every day.
+
+The thresholds, chosen by leaving each fire out in turn, are the old rule's: 1.5× harsher, 60°, at
+4 m/s. The belief now acts over the whole next day in 93 % of forecasts (30 % before). The first
+new-weather hour, which as built came at a median of hour 13, now falls beyond the 96-h horizon in
+most forecasts.
+
+**The rapid rule now uses the measured noise.** Two perimeters of one fire differ by re-mapping of
+about √(area) acres (95th percentile 1.6 √A), not 3 % of the area. At ~80,000 acres that is
+~450 acres, not ~3,400. Little Giant is therefore rapid at the Aug 7 22:33 forecast, and the belief
+leaves it at physics for its 14,780-acre run (P50 caught 60 %, 15 % as built).
+
+A correction to §1 and §4.6 above: Little Giant *was* flagged rapid on Aug 4–6, carried by the
+early-August runs inside the 48-h lookback. It dropped out at the Aug 7 22:33 forecast, where its
+last two windows (+3,225 and +5,249 ac) read zero beyond the area-fraction noise.
+
+**Before and after** (all P10-guarded; late = the P50 caught under half the new ground; brackets =
+of those, days growing ≥ 2 %/day):
+
+| | P50 area error (harness / wide maps) | P50 catch | late days (harness / wide) | false alarm (harness) |
+|---|---|---|---|---|
+| physics | 3.55x / 4.90x | 99 % | 0 / 0 | 253 % |
+| belief as built | 2.98x / 3.55x | 94 % | 7 (3) / 13 (7) | 198 % |
+| **belief v2** | **2.57x / 2.68x** | **95 %** | **9 (3) / 16 (4)** | **153 %** |
+| v2, stalled days | 1.46x / 1.30x (physics 2.97x / 3.99x) | 90 % | 6 (0) / 12 (0) | 45 % (physics 195 %) |
+| what-if: both rules off | 1.34x / 1.24x | 73 % | 24 (17) / 43 (30) | 35 % |
+
+**Crew safety:** P10 is unchanged at 99.8 % for physics, as built and v2. The guard is untouched.
+
+**The named runs:**
+
+| run | as built | v2 | why |
+|---|---|---|---|
+| Grasshopper Aug 4 | 99 % | 100 % | rapid |
+| Little Giant Aug 21 | 98 % | 98 % | rapid |
+| Willow Jul 14 | 77 % | 75 % | new weather at hour 13 |
+| Little Giant Aug 7 | 15 % | 60 % | fixed: rapid |
+| Hagen Aug 9 | 48 % | 100 % | fixed: rapid |
+| Willow Jul 12 | 100 % | 38 % | no longer caught |
+| Timber Aug 21 | 65 % | 19 % | no longer caught |
+
+Willow Jul 12 and Timber Aug 21 are no longer caught because neither day brought new weather or
+followed rapid growth. The old rule caught them only through its afternoon cut. Their P10 held
+100 %, and EXTREME still fires on the P10 rung, so the cost is a later NOTICE/WATCH on those two
+days. Willow's Jul 10 flare-up is missed by both (3 %).
+
+**Where v2 costs accuracy.** Big fires growing 1,000+ ac/day at 1–2 %/day of their size are now
+rapid and left at physics. Rapid flags rose from 80 to 117 of 255 forecasts, and moderate days
+went from 2.92x to 3.10x. The rapid threshold itself (1,000 ac/day, absolute) is a policy knob,
+unchanged here.
+
+**Recommendation.**
+- **Track with v2:** yes (`--fire-belief --fire-belief-v2`).
+- **Apply:** only ever with v2. It is the first version worth applying: it beats the as-built
+  belief on nearly every aggregate and fixes its largest miss. Its residual risk is a later
+  NOTICE/WATCH on un-forecast runs of learned-slow fires: 3 of 120 growing or moderate days
+  here, against 0 for physics, which pays for that with false alarms of 2–5× the fire's area.
+- **First:** a short live shadow period, because live the daily rule judges NWS forecast days,
+  not observed ones.
+
+Willow, the watcher's fire: from Jul 7 on, v2's next-capture P50 was 0.9–1.8× the real area
+every day. The 0.9× was Jul 10, the flare-up it missed. As built it was 0.9–8.9×, and physics
+4.1–9.4×.
+
+![v2 pooled](belief_vs_physics/v2_pooled.png)
+
+![v2 Willow](belief_vs_physics/v2_willow.png)

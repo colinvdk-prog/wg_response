@@ -442,6 +442,18 @@ The per-fire spread-rate belief (founder 2026-09-27: "the rate of fire spread sh
 | `fire_belief_rapid_lookback_h` | 48.0 | Rapid: windows ending within this lookback count (and fires discovered within it are judged on growth since discovery). |
 | `fire_belief_rapid_noise_z` | 1.645 | Rapid is judged on growth BEYOND measurement noise: growth − z × its sd under the belief's own area-error model (one-sided 95 %). 3 % of a 20,000-acre fire is ±600 ac per report, so raw 12-h windows of a fire truly growing ~600 ac/day read 1,400–2,500 ac/day and would flag every big fire rapid. 0 = the raw observed growth. |
 
+**v2 rules (2026-09-28, `docs/FIRE_BELIEF.md` "v2").** Measured on 11 real 2026 fires (`docs/review/belief_vs_physics_2026-09-27.md`). The hourly new-weather test fired on the ordinary afternoon wind turn, and the 3 %-of-area noise hid a big fire's growth from the rapid rule. Every default below is the legacy rule, byte-identical. The watch flag `--fire-belief-v2` (implies `--fire-belief`) arms `fire_belief_novelty=daily`, `fire_belief_rapid_noise=calibrated` and `fire_belief_rapid_persist_windows=2`.
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `fire_belief_novelty` | hourly | New-weather test. `hourly` = the legacy test: forecast hours against the evidence hours' P90 severity and one mean direction. `daily` = forecast DAYS against evidence DAYS in the fire's local solar time. Each day has a peak severity and a driving wind: the speed-weighted mean over its hours at ≥ 0.5 × its peak. The afternoon wind turn is therefore not a new pattern. The prior applies from the first qualifying hour of the first new day. |
+| `fire_belief_novel_day_severity_ratio` | 1.5 | Daily: a forecast day is new if its peak severity exceeds this × the harshest evidence day (the weighted P90 of evidence-day peaks). Chosen by leave-one-fire-out. |
+| `fire_belief_novel_day_shift_deg` | 60.0 | Daily: ... or if its steady driving wind comes more than this from EVERY evidence day's driving wind. This only applies on a day that can drive the fire (peak ≥ 0.5 × the reference). Evidence days that were calm, unsteady or mild give no sector; with no sector at all, any such forecast day is new. |
+| `fire_belief_novel_day_min_wind_mps` | 4.0 | Daily: ... at a driving wind of at least this (m/s). The evidence could not tell 3–5 m/s apart, so this keeps the hourly rule's value. |
+| `fire_belief_rapid_noise` | area_frac | Rapid-rule noise. `area_frac` = legacy: each end's sd is hypot(`fire_belief_area_rel_err` × A, `fire_belief_area_abs_err_acres`). `calibrated` = a PERIMETER window's growth noise is the measured re-mapping noise, hypot(k × √A, √2 × abs err) acres, with A the larger end. Consecutive perimeters share most of their boundary, so the noise follows the edge (~√A), not the area. Reported-acreage windows keep the legacy sd. |
+| `fire_belief_rapid_perim_noise_k` | 1.0 | Calibrated: k in acres per √acre. The measured 95th percentile of pure-noise (negative) perimeter changes is 1.6 √A acres, so z (1.645) × k = 1.645 √A covers it. For comparison, legacy is ~12 √A at 80,000 ac. |
+| `fire_belief_rapid_persist_windows` | 0 | Rapid persistence: N ≥ 2 consecutive perimeter windows, each growing at a rapid rate RAW (no noise discount) and the latest ending inside the lookback, make the fire rapid. Consecutive windows share an end, so noise alone rarely lifts both. 0 = off. 1 is rejected: a single raw window is the rule the noise discount exists to prevent. |
+
 ## Feed & data licensing posture
 
 Read this before pointing any adapter at a live endpoint.

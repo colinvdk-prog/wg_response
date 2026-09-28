@@ -316,6 +316,20 @@ def _build_parser() -> argparse.ArgumentParser:
                          "than physics (cfg.fire_belief_apply_p10 lifts the "
                          "guard: config only, measured unsafe for contained "
                          "fires, docs/FIRE_BELIEF.md)")
+    pw.add_argument("--fire-belief-v2", action="store_true",
+                    help="the fire belief's v2 rules (implies --fire-belief; "
+                         "measured on 11 real 2026 fires, docs/FIRE_BELIEF.md "
+                         "'v2'): cfg.fire_belief_novelty=daily (a new weather "
+                         "pattern is a forecast DAY whose peak severity or "
+                         "driving wind the evidence days never saw -- the "
+                         "afternoon wind turn no longer counts), "
+                         "cfg.fire_belief_rapid_noise=calibrated (a "
+                         "perimeter's growth is judged beyond its measured "
+                         "re-mapping noise, not 3 %% of the fire's area) and "
+                         "cfg.fire_belief_rapid_persist_windows=2 (two "
+                         "consecutive windows at a rapid rate make a fire "
+                         "rapid); with --fire-belief-apply they change when "
+                         "the belief may slow a fire (P10 stays guarded)")
     # SAFETY SEMANTICS 17 (founder 2026-09-27): default-OFF knob.
     pw.add_argument("--weather-grid-km", type=float, default=0.0,
                     help="cfg.weather_grid_km: spread reads the LOCAL weather "
@@ -827,13 +841,21 @@ def _watch_notifier(args, state_dir):
 
 
 def _fire_belief_cfg(cfg, args):
-    """cfg with the --fire-belief / --fire-belief-apply flags applied (SAFETY
-    SEMANTICS 14; apply implies track). No flag = cfg unchanged."""
+    """cfg with the --fire-belief / --fire-belief-apply / --fire-belief-v2
+    flags applied (SAFETY SEMANTICS 14; apply and v2 imply track). No flag =
+    cfg unchanged."""
     if getattr(args, "fire_belief", False) or \
-            getattr(args, "fire_belief_apply", False):
+            getattr(args, "fire_belief_apply", False) or \
+            getattr(args, "fire_belief_v2", False):
         cfg = dataclasses.replace(
             cfg, fire_belief_track=True,
             fire_belief_apply=bool(getattr(args, "fire_belief_apply", False)))
+    if getattr(args, "fire_belief_v2", False):
+        # the v2 rules (2026-09-28; docs/FIRE_BELIEF.md "v2")
+        cfg = dataclasses.replace(
+            cfg, fire_belief_novelty="daily",
+            fire_belief_rapid_noise="calibrated",
+            fire_belief_rapid_persist_windows=2)
     return cfg
 
 
@@ -848,18 +870,28 @@ def _fire_belief_file(cfg, state_dir, s3_uri=None):
 
 
 def _fire_belief_notes(args) -> list:
-    """Startup notes for --fire-belief / --fire-belief-apply (SEMANTICS 14)."""
+    """Startup notes for --fire-belief / --fire-belief-apply /
+    --fire-belief-v2 (SEMANTICS 14)."""
+    notes = []
     if getattr(args, "fire_belief_apply", False):
-        return ["fire belief APPLIED (alert-timing change): each fire's "
-                "learned spread rate drives its footprint, P50 and P90 in "
-                "same-weather-pattern hours; physics returns for new weather, "
-                "surprises and rapid fires; P10 GUARDED = never later than "
-                "physics (docs/FIRE_BELIEF.md)"]
-    if getattr(args, "fire_belief", False):
-        return ["fire belief TRACKING: per-fire spread-rate belief learned "
-                "and published (status, world summary, fire_beliefs.json); "
-                "physics, alerts and dispatch unchanged"]
-    return []
+        notes = ["fire belief APPLIED (alert-timing change): each fire's "
+                 "learned spread rate drives its footprint, P50 and P90 in "
+                 "same-weather-pattern hours; physics returns for new "
+                 "weather, surprises and rapid fires; P10 GUARDED = never "
+                 "later than physics (docs/FIRE_BELIEF.md)"]
+    elif getattr(args, "fire_belief", False) or \
+            getattr(args, "fire_belief_v2", False):
+        notes = ["fire belief TRACKING: per-fire spread-rate belief learned "
+                 "and published (status, world summary, fire_beliefs.json); "
+                 "physics, alerts and dispatch unchanged"]
+    if getattr(args, "fire_belief_v2", False):
+        notes.append(
+            "fire belief v2 RULES: a new weather pattern is a forecast DAY "
+            "whose peak severity or driving wind the evidence days never saw "
+            "(the afternoon wind turn no longer counts); rapid judges a "
+            "perimeter's growth beyond its measured re-mapping noise and "
+            "flags two consecutive rapid windows (docs/FIRE_BELIEF.md 'v2')")
+    return notes
 
 
 class _WatchDaemon:
