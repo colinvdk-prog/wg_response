@@ -369,6 +369,8 @@ the shipped values.
 
 ### Sprint 2 (Council-1 remediations)
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [docs/calibration/stacked_rings_fix_2026-09-27.md](docs/calibration/stacked_rings_fix_2026-09-27.md) §4.3–4.5. **Affected here:** the knob notes at :378, :395–401 and :423 below. Porcupine's 13× under-forecast becomes 0.52×, and no blow-up is left in the regime signature. The measured sd(log) of 0.71 becomes 0.698. The text below is left as written.
+
 | Knob | Default | Meaning |
 |---|---|---|
 | `slack_min` | 15.0 | Planned-slack floor per dispatch stop, on top of deadline feasibility (SAFETY SEMANTICS 7 — absorbs mountain-road travel-model optimism). |

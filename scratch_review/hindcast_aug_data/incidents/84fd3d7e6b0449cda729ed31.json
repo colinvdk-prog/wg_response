@@ -2,10 +2,17 @@
  "irwin": "{84FD3D7E-6B04-49CD-A729-ED3178A49C42}",
  "max_acres": 34189.0,
  "name": "SandCreek-MT",
- "schema": "hindcast-incident/1",
+ "repair": {
+  "from_schema": "hindcast-incident/1",
+  "note": "no capture time had more than one row; geometry unchanged",
+  "repaired_utc": "2026-09-28 04:40"
+ },
+ "schema": "hindcast-incident/2",
+ "snapshot_rule": "first publication (smallest OBJECTID) per capture time; later same-time rows dropped as versions unless spatially disjoint (separate pieces, kept); growth gating on the first publication's acreage",
  "snapshots": [
   {
    "acres": 1003.715049990123,
+   "dropped_oids": [],
    "oids": [
     60682
    ],
@@ -77,6 +84,7 @@
   },
   {
    "acres": 1683.9476884373776,
+   "dropped_oids": [],
    "oids": [
     61043
    ],
@@ -398,6 +406,7 @@
   },
   {
    "acres": 5257.2718087804715,
+   "dropped_oids": [],
    "oids": [
     61273
    ],
@@ -2423,6 +2432,7 @@
   },
   {
    "acres": 6684.259724906927,
+   "dropped_oids": [],
    "oids": [
     61354
    ],
@@ -4096,6 +4106,7 @@
   },
   {
    "acres": 8889.928293176887,
+   "dropped_oids": [],
    "oids": [
     61421
    ],

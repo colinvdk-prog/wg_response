@@ -1,5 +1,7 @@
 # Full calibration review — WG Response engine
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [calibration/stacked_rings_fix_2026-09-27.md](calibration/stacked_rings_fix_2026-09-27.md) §4.2–4.4 and §5. **Affected here:** §1.2–1.7 (the calibration-set and OOS tables, the Porcupine blow-up and the regime signature), :37–38, :354–355 and :907 (the corpus is now 42 windows, 41 of them scored, 206,533 cells, 13 incidents), :312–314 and :957–958. The largest corrections: the OOS pool goes from 48.6 to 85.8 % at blend 0.5 and from 64.8 to 100 % with the floor; Porcupine goes from 22.5 km, 13× under, to 3.7 km at 0.52×, with 0 % late under the floor; and the extreme-regime evidence goes from n = 1 to n = 0. The text below is left as written.
+
 **Founder's question:** what is measured, what is assumed, what is pending, and how
 much should each number be trusted?
 

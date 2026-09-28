@@ -1,5 +1,7 @@
 # Fix Program 2026-09-03 — acting on the tri-model review
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [calibration/stacked_rings_fix_2026-09-27.md](calibration/stacked_rings_fix_2026-09-27.md) §4.1, §5 and §7. **Affected here:** :155–216, the matrix comparison. D071 still leads, but July skill is 1.01–1.11, not ≈ 1.0, and the July blow-ups behind the reasoning that I is held back were one artifact. Also :40–41 and :58–59 (sd(log) 0.71 is re-measured at 0.698). The text below is left as written.
+
 Founder order (2026-09-03): "improve the model with the feedback." The
 feedback is the ranked fix program in `docs/TRI_MODEL_REVIEW_2026-08-31.md`.
 This document is the record of what was built, what was measured, and what

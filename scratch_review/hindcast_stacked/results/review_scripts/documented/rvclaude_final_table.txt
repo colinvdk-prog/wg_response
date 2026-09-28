@@ -1,0 +1,8 @@
+era / config                    prs fires   cells  cover%  late%  early%  head(pub)  head(TRUE)  AREA pool  AREA med  obs km/h max
+Aug-2026 OOS [calibration]       18     7  135081   77.19  22.81    0.00      1.098       0.992      2.33x     2.95x          1.08
+Aug-2026 OOS [as-deployed]       18     7  135081   93.79   6.21    0.00      1.880       1.837      6.06x     8.90x          1.08
+Calib 2025-CA [blend0.5]         14     4   60062   73.52  26.48    0.00      1.772       1.611      2.38x     4.16x          0.82
+Calib 2025-CA [grass_floor]      14     4   60062   91.49   8.51    0.00      2.776       2.749      5.22x     9.64x          0.82
+Calib 2025-CA [realism_pack]     14     4   60062   98.79   1.21    0.00      4.156       4.070      8.61x    19.27x          0.82
+Jul-2026 OOS [grass_floor]        8     4   60249   64.77  35.23    0.00      3.388       3.185      5.91x    12.64x          1.73
+Jul-2026 OOS [realism_pack]       8     4   60249   65.45  34.55    0.00      3.717       3.548      7.08x    15.58x          1.73

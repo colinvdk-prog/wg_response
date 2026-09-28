@@ -1,0 +1,1 @@
+[replay] no cached incidents — run fetch first (or accept the honest-degradation path: anchors only)

@@ -484,6 +484,8 @@ that a belief applied on top of a re-calibrated physics would learn multipliers 
    This study replays rows in OBJECTID (publication) order with the watcher's newer-time rule
    instead.
 
+   > **Status 2026-09-27: fixed** on branch `fix/hindcast-stacked-rings`. The harness now takes the first publication per capture time and keeps a same-time row only when it is a spatially separate piece. The three corpora were repaired and every documented replay was re-run. See [../calibration/stacked_rings_fix_2026-09-27.md](../calibration/stacked_rings_fix_2026-09-27.md).
+
    Stacked rings also make the two area laws disagree. `fire_belief.rings_area_m2` counts each
    equal-area copy (about 2x the GIS area), while the rasterizers cancel them. Live this is harmless
    while the feed supplies `perimeter_acres`, but it is a trap for any ring-area fallback.

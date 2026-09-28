@@ -1,0 +1,79 @@
+{
+ "incidents": [
+  {
+   "file": "0140f0b62f3246519008e5ae.json",
+   "name": "Dillon",
+   "relabelled": true
+  },
+  {
+   "file": "08a6358f830140939988e265.json",
+   "name": "Gifford",
+   "relabelled": true
+  },
+  {
+   "capture_times": "kept from the pre-fix fetch; each snapshot rebuilt from the rows cached under its time",
+   "domain": "pinned to the pre-fix domain (the rebuilt rings alone would give a different bbox)",
+   "fidelity": "re-read rings of all 9 cached OBJECTIDs reproduce the cached file exactly",
+   "file": "1ab682f7cc0f4dce87a4fa4a.json",
+   "fixed_picker_today": {
+    "capture_times": [
+     1751471500.0,
+     1751535528.0,
+     1751559381.0,
+     1751672243.0,
+     1751748790.0
+    ],
+    "same_as_cached": false
+   },
+   "from_schema": "hindcast-incident/1",
+   "name": "Madre",
+   "rebuilt_snapshots": [
+    {
+     "acres_after": 8396.0,
+     "acres_before": 8396.041824679092,
+     "dropped_oids": [
+      37103
+     ],
+     "kept_oids": [
+      37051
+     ],
+     "t_s": 1751471500.0
+    },
+    {
+     "acres_after": 70800.49,
+     "acres_before": 79518.67055221193,
+     "dropped_oids": [
+      37289,
+      37304,
+      37388
+     ],
+     "kept_oids": [
+      37264
+     ],
+     "t_s": 1751672243.0
+    }
+   ],
+   "repaired_utc": "2026-09-28 04:40",
+   "weather_centroid_shift_m": 0.0
+  },
+  {
+   "file": "f193012559934672a05874ad.json",
+   "name": "Butler",
+   "relabelled": true
+  }
+ ],
+ "n_requests": 2,
+ "requests": [
+  {
+   "bytes": 5766,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 98441,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  }
+ ],
+ "schema": "hindcast-repair/1"
+}

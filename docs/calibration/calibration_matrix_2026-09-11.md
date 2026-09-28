@@ -1,5 +1,7 @@
 # Hindcast calibration matrix — 2026-09-11
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [stacked_rings_fix_2026-09-27.md](stacked_rings_fix_2026-09-27.md) §4.1. **Affected here:** every row, including round 2. August moves by at most 3.4 pp (D_gate_me071 98.8 → 98.5 %, N_D071_phi 97.7 → 97.6 %). July moves 14–22 pp for every floored variant (D_gate_me071 83.1 → 99.7 %). Full corrected tables in this format: `calibration_matrix_2026-09-27_corrected.md`. The text below is left as written.
+
 Round 1 (2026-09-03) fix-program items 2/3/5 and round 2 (2026-09-11: the
 regime-conditional floor J/L and the physics knobs M/N/O on the deployed
 configuration; docs/FIX_PROGRAM_2026-09-11.md): which ROS-floor

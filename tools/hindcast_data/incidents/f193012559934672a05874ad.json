@@ -2,10 +2,17 @@
  "irwin": "{F1930125-5993-4672-A058-74AD25F35E3F}",
  "max_acres": 21188.857170635732,
  "name": "Butler",
- "schema": "hindcast-incident/1",
+ "repair": {
+  "from_schema": "hindcast-incident/1",
+  "note": "no capture time had more than one row; geometry unchanged",
+  "repaired_utc": "2026-09-28 04:40"
+ },
+ "schema": "hindcast-incident/2",
+ "snapshot_rule": "first publication (smallest OBJECTID) per capture time; later same-time rows dropped as versions unless spatially disjoint (separate pieces, kept); growth gating on the first publication's acreage",
  "snapshots": [
   {
    "acres": 0.0,
+   "dropped_oids": [],
    "oids": [
     37305
    ],
@@ -97,6 +104,7 @@
   },
   {
    "acres": 339.7179990499244,
+   "dropped_oids": [],
    "oids": [
     37610
    ],
@@ -426,6 +434,7 @@
   },
   {
    "acres": 966.398787487533,
+   "dropped_oids": [],
    "oids": [
     37757
    ],
@@ -1451,6 +1460,7 @@
   },
   {
    "acres": 1356.5149178883946,
+   "dropped_oids": [],
    "oids": [
     37836
    ],
@@ -2100,6 +2110,7 @@
   },
   {
    "acres": 2125.563860488916,
+   "dropped_oids": [],
    "oids": [
     37880
    ],

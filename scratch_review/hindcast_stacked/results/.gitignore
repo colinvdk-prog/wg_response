@@ -1,0 +1,3 @@
+# derivable (build_mirrors.py / run_a2.py); the sandbox holds copies of the LFPS tiles
+mirror/
+a2_sandbox/

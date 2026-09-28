@@ -1,5 +1,7 @@
 # Hindcast scorecard — metric reference
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [stacked_rings_fix_2026-09-27.md](stacked_rings_fix_2026-09-27.md) §4.5. **Affected here:** :33–34. The August headline 93.8 % becomes 93.6 %, the 9.5 h Bug pair's share of late cells 91 % becomes 92 %, and effective incidents 3.24 become 3.07. The metric definitions are unaffected. The text below is left as written.
+
 One page defining every metric `tools/hindcast_lib.py` reports (per-pair on
 `PairMetrics`, pooled in `pool_metrics()`), which polarity of each is
 DANGEROUS for an alerting product, and why three of the original metrics

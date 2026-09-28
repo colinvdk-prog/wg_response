@@ -1,5 +1,7 @@
 # WG Response — Live Data, Live Monitoring, Dispatch-to-Crews Plan
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [calibration/stacked_rings_fix_2026-09-27.md](calibration/stacked_rings_fix_2026-09-27.md) §4.2. **Affected here:** :41: 68.8 % becomes 69.4 %. The text below is left as written.
+
 2026-07-11. Goal: take the verified engine (1,149 tests, 0 violations) from
 simulator to a live operations loop: real fires in → monitored forecasts →
 real crews dispatched, under the same safety laws. Phased so every phase is

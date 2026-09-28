@@ -1,5 +1,7 @@
 # Vail → Aspen Response Program — the corridor served from the Eagle base
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [calibration/stacked_rings_fix_2026-09-27.md](calibration/stacked_rings_fix_2026-09-27.md) §4.3. **Affected here:** :262–264, :860–862 and :906. OOS late miss by fuel goes from TU 8 / TL 16 against GS 64 / GR 52 % to TU 10 / TL 17 against GS 13 / GR 21 %, and Porcupine's 13× becomes 0.52×. The text below is left as written.
+
 **GraphGel Events, PD Mountain Resorts territory: the I-70 Eagle Valley and the
 SH-82 Roaring Fork Valley, Colorado** (`vail_co`, `beaver_creek_co`, `eagle_co`,
 `glenwood_springs_co`, `basalt_carbondale_co`, `aspen_co`).

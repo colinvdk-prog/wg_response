@@ -1,0 +1,5 @@
+wrote C:\Users\colin\wg_response\.claude\worktrees\fix-hindcast-stacked-rings\scratch_review\hindcast_stacked\results\mirror\before\scratch_review\rv2sci_a11.json
+n_raw=15 labels=['default']
+overall coverage=68.82% (41334/60062) n_pairs=14
+published 73.5% (blend 0.5)  delta=-4.68pp
+  label='default'  68.82%  n=14 cells=60062

@@ -1,5 +1,7 @@
 # WG Response — Model Assessment Handoff
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [calibration/stacked_rings_fix_2026-09-27.md](calibration/stacked_rings_fix_2026-09-27.md) §4.2–4.5. **Affected here:** :66, :93–105, :161–163 and :175–176. In the validation table July OOS goes from 48.6 to 85.8 % at blend 0.5 and from 64.8 to 100 % with the floor; the August row goes from 93.8 to 93.6 %; Porcupine goes from 13× under to 0.52×. The text below is left as written.
+
 Audience: an external reviewing agent (AI or human) assessing this fire-spread
 / dispatch model cold. Everything here is reproducible from this repository;
 no prior conversation context is assumed. Written 2026-08-31.

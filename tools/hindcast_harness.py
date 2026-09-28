@@ -15,6 +15,11 @@ Subcommands (run from the repo root: `py -3 tools/hindcast_harness.py ...`):
     anchors    run the offline Tubbs/Camp landmark scenario checks
     report     render docs/calibration/hindcast_first_pass.md from cached
                results (OFFLINE)
+    repair     rebuild pre-fix (hindcast-incident/1) incident files under
+               the snapshot rule at their cached capture times (2 read-only
+               GETs per file that stacked same-time rows; see
+               hindcast_lib's SNAPSHOT RULE). `replay` refuses an
+               unrepaired file that stacks rows.
     all        fetch (unless --offline) -> replay -> anchors -> report
 
 Live network policy (ticket): READ-ONLY GETs to keyless public services only
@@ -43,7 +48,8 @@ _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
-from wgresponse.contracts import LatLon, ResponseConfig  # noqa: E402
+from wgresponse import geo  # noqa: E402
+from wgresponse.contracts import BBox, LatLon, ResponseConfig  # noqa: E402
 from wgresponse.terrain import LfpsTerrain, load_ascii_tile  # noqa: E402
 from tools import hindcast_lib as H  # noqa: E402
 
@@ -52,6 +58,15 @@ DEFAULT_REPORT = os.path.join("docs", "calibration", "hindcast_first_pass.md")
 _USER_AGENT = ResponseConfig().user_agent
 _DOMAIN_PAD_M = 4000.0          # perimeter-union pad: room for over-prediction
 _WX_MARGIN_S = 24 * 3600.0      # weather series margin around the snapshot span
+# Incident-file schemas. /1 files unioned every row sharing a capture time;
+# /2 files follow hindcast_lib's SNAPSHOT RULE (first publication per
+# capture time, separate pieces kept, `dropped_oids` recorded).
+LEGACY_INCIDENT_SCHEMA = "hindcast-incident/1"
+INCIDENT_SCHEMA = "hindcast-incident/2"
+SNAPSHOT_RULE = ("first publication (smallest OBJECTID) per capture time; "
+                 "later same-time rows dropped as versions unless spatially "
+                 "disjoint (separate pieces, kept); growth gating on the "
+                 "first publication's acreage")
 
 # Widened-band variant measured alongside the shipped default (RECOMMENDATION
 # evidence for the perturbation knobs; config-only, engine untouched).
@@ -187,6 +202,19 @@ def cmd_fetch(args) -> int:
     return 0
 
 
+def _snapshot_record(t_s: float, oids: list, geoms: dict, acres_by_oid: dict,
+                     fallback_acres: float):
+    """One capture time -> its incident-file record under hindcast_lib's
+    SNAPSHOT RULE (None when no row under it has geometry)."""
+    rings, kept, dropped, acres = H.assemble_snapshot(oids, geoms,
+                                                      acres_by_oid)
+    if not rings:
+        return None
+    return {"t_s": t_s, "acres": acres or fallback_acres, "oids": kept,
+            "dropped_oids": dropped,
+            "rings": [[[p.lat, p.lon] for p in ring] for ring in rings]}
+
+
 def _fetch_incident(http: CountingHttp, irwin: str, name: str,
                     max_acres: float, inc_path: str) -> None:
     rows = H.parse_series_attrs(_get_json(http, H.series_attrs_url(irwin)))
@@ -197,20 +225,14 @@ def _fetch_incident(http: CountingHttp, irwin: str, name: str,
     all_oids = [oid for _t, oids, _a in picks for oid in oids]
     geoms = H.parse_snapshot_features(
         _get_json(http, H.geometry_query_url(all_oids)))
-    snaps = []
-    for t_s, oids, acres in picks:
-        rings = []
-        for oid in oids:
-            got = geoms.get(oid)
-            if got:
-                rings.extend(got[1])
-        if rings:
-            snaps.append({"t_s": t_s, "acres": acres, "oids": oids,
-                          "rings": [[[p.lat, p.lon] for p in ring]
-                                    for ring in rings]})
+    acres_by_oid = {oid: ac for oid, _t, ac in rows}
+    snaps = [rec for rec in (
+        _snapshot_record(t_s, oids, geoms, acres_by_oid, acres)
+        for t_s, oids, acres in picks) if rec]
     if len(snaps) < 2:
         raise RuntimeError("geometry pull yielded < 2 snapshots with rings")
-    _write_json(inc_path, {"schema": "hindcast-incident/1", "irwin": irwin,
+    _write_json(inc_path, {"schema": INCIDENT_SCHEMA,
+                           "snapshot_rule": SNAPSHOT_RULE, "irwin": irwin,
                            "name": name, "max_acres": max_acres,
                            "snapshots": snaps})
     print(f"[fetch] {name}: {len(snaps)} snapshots "
@@ -225,9 +247,23 @@ def _load_incident(inc_path: str) -> "H.HindcastIncident":
         rings=[[LatLon(v[0], v[1]) for v in ring] for ring in s["rings"]])
         for s in d["snapshots"]]
     snaps.sort(key=lambda s: s.t_s)
+    # A pre-fix file unioned every same-time row into its snapshot; a file
+    # written under the SNAPSHOT RULE lists more than one OBJECTID only for
+    # genuinely separate pieces.
+    stacked = ([s.t_s for s in snaps if len(s.oids) > 1]
+               if d.get("schema") == LEGACY_INCIDENT_SCHEMA else [])
+    if stacked:
+        print(f"[hindcast] WARNING: {d['name']} ({os.path.basename(inc_path)})"
+              f" is a pre-fix {LEGACY_INCIDENT_SCHEMA} file whose "
+              f"{len(stacked)} multi-row snapshot(s) stack same-time rows — "
+              f"run `hindcast_harness.py repair` before scoring it",
+              file=sys.stderr)
+    pin = d.get("domain_bbox")
     return H.HindcastIncident(irwin=d["irwin"], name=d["name"],
                               snapshots=snaps,
-                              max_acres=float(d.get("max_acres") or 0.0))
+                              max_acres=float(d.get("max_acres") or 0.0),
+                              stacked_legacy=stacked,
+                              domain_bbox=tuple(pin) if pin else None)
 
 
 def _incident_centroid(inc: "H.HindcastIncident") -> LatLon:
@@ -258,7 +294,12 @@ def _fetch_weather(http: CountingHttp, args, slug: str, name: str,
 
 
 def _incident_domain(inc: "H.HindcastIncident", cfg: ResponseConfig):
-    bbox = H.rings_bbox([s.rings for s in inc.snapshots], _DOMAIN_PAD_M)
+    if inc.domain_bbox:
+        # pinned by `repair`: the pre-fix domain, which still holds every
+        # rebuilt snapshot with at least the _DOMAIN_PAD_M margin
+        bbox = BBox(*inc.domain_bbox)
+    else:
+        bbox = H.rings_bbox([s.rings for s in inc.snapshots], _DOMAIN_PAD_M)
     return bbox, H.pick_cell_m(bbox, cfg)
 
 
@@ -304,6 +345,178 @@ def _finish_fetch_log(args, http: CountingHttp, notes: list,
         "requests": (prior.get("requests") or []) + http.log,
     }
     _write_json(log_path, entry)
+
+
+# ---------------------------------------------------------------------------
+# repair (network: re-reads the Daily rows behind a pre-fix incident file)
+# ---------------------------------------------------------------------------
+
+class RepairMismatch(RuntimeError):
+    """The re-read rows do not reproduce the cached file (rows changed or
+    went missing since the fetch): the file is left as it is."""
+
+
+def _centroid_of(rings: list) -> LatLon:
+    pts = [p for ring in rings for p in ring]
+    return LatLon(sum(p.lat for p in pts) / len(pts),
+                  sum(p.lon for p in pts) / len(pts))
+
+
+def repair_incident(d: dict, rows: list, geoms: dict,
+                    weather_loc: LatLon = None) -> tuple:
+    """Rebuild one pre-fix (hindcast-incident/1) incident dict under the
+    SNAPSHOT RULE at its CACHED capture times. Pure: `rows` =
+    parse_series_attrs of the incident's attrs series, `geoms` =
+    parse_snapshot_features of its cached OBJECTIDs; `weather_loc` = where
+    its cached weather series was fetched (the pre-fix first-snapshot
+    centroid).
+
+    Each snapshot is rebuilt from the rows cached under its time (the rows
+    the original fetch saw; later same-time revisions are ignored), so the
+    corpus keeps its capture times and pairs and only the geometry and the
+    recorded acreage change. Fidelity is checked first: the re-read rings
+    of each snapshot's cached rows, concatenated in OBJECTID order, must
+    equal the cached rings exactly, else RepairMismatch. When the rebuilt
+    snapshots would move the replay domain (bbox of all rings + pad), the
+    pre-fix domain is pinned so the cached terrain tile keeps serving; it
+    still holds every rebuilt ring with at least the pad.
+
+    Returns (new_dict, summary) — summary lists the rebuilt snapshots."""
+    acres_by_oid = {oid: ac for oid, _t, ac in rows}
+    old_snaps = sorted(d["snapshots"], key=lambda s: s["t_s"])
+    for s in old_snaps:
+        reread = []
+        for oid in sorted(s.get("oids") or []):
+            got = geoms.get(oid)
+            if got:
+                reread.extend([[p.lat, p.lon] for p in ring]
+                              for ring in got[1])
+        if reread != s["rings"]:
+            raise RepairMismatch(
+                f"{d['name']}: re-read rings of OBJECTIDs {s.get('oids')} do "
+                f"not reproduce the cached snapshot at t_s={s['t_s']}")
+    new_snaps, changed = [], []
+    for s in old_snaps:
+        oids = list(s.get("oids") or [])
+        rec = _snapshot_record(s["t_s"], oids, geoms, acres_by_oid,
+                               float(s.get("acres") or 0.0))
+        if rec is None:
+            raise RepairMismatch(f"{d['name']}: no geometry at t_s={s['t_s']}")
+        new_snaps.append(rec)
+        if rec["dropped_oids"]:
+            changed.append({"t_s": s["t_s"], "kept_oids": rec["oids"],
+                            "dropped_oids": rec["dropped_oids"],
+                            "acres_before": s.get("acres"),
+                            "acres_after": rec["acres"]})
+
+    def _rings(snap):
+        return [[LatLon(v[0], v[1]) for v in ring] for ring in snap["rings"]]
+
+    old_bbox = H.rings_bbox([_rings(s) for s in old_snaps], _DOMAIN_PAD_M)
+    new_bbox = H.rings_bbox([_rings(s) for s in new_snaps], _DOMAIN_PAD_M)
+    out = {k: v for k, v in d.items() if k not in ("schema", "snapshots")}
+    out.update({"schema": INCIDENT_SCHEMA, "snapshot_rule": SNAPSHOT_RULE,
+                "snapshots": new_snaps})
+    pinned = new_bbox != old_bbox
+    if pinned:
+        out["domain_bbox"] = [old_bbox.west, old_bbox.south, old_bbox.east,
+                              old_bbox.north]
+    first = _centroid_of(_rings(new_snaps[0]))
+    t_now = [t for t, _o, _a in H.pick_snapshot_times(rows)]
+    summary = {
+        "from_schema": d.get("schema"),
+        "capture_times": "kept from the pre-fix fetch; each snapshot rebuilt "
+                         "from the rows cached under its time",
+        "fidelity": f"re-read rings of all {sum(len(s.get('oids') or []) for s in old_snaps)} "
+                    f"cached OBJECTIDs reproduce the cached file exactly",
+        "rebuilt_snapshots": changed,
+        "domain": ("pinned to the pre-fix domain (the rebuilt rings alone "
+                   "would give a different bbox)" if pinned else "unchanged"),
+        "weather_centroid_shift_m": (round(geo.haversine_m(weather_loc, first), 1)
+                                     if weather_loc else None),
+        "fixed_picker_today": {
+            "capture_times": t_now,
+            "same_as_cached": t_now == [s["t_s"] for s in old_snaps]},
+    }
+    return out, summary
+
+
+def cmd_repair(args) -> int:
+    """Rebuild every pre-fix incident file in --data-dir under the SNAPSHOT
+    RULE (see repair_incident). Files with no multi-row snapshot are only
+    re-labelled (nothing was stacked; no network). The others re-read their
+    rows: 2 read-only GETs each (attrs series + geometry of the cached
+    OBJECTIDs, the same query the fetch used), budget --http-budget. A file
+    whose rows no longer reproduce it is left untouched and reported."""
+    inc_dir = os.path.join(args.data_dir, "incidents")
+    if not os.path.isdir(inc_dir):
+        print(f"[repair] no incidents under {args.data_dir}")
+        return 0
+    http = CountingHttp(args.http_budget)
+    rc = 0
+    log = []
+    for fn in sorted(os.listdir(inc_dir)):
+        if not fn.endswith(".json"):
+            continue
+        path = os.path.join(inc_dir, fn)
+        d = _read_json(path)
+        if d.get("schema") != LEGACY_INCIDENT_SCHEMA:
+            print(f"[repair] {d.get('name')}: already {d.get('schema')}")
+            continue
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+        if not any(len(s.get("oids") or []) > 1 for s in d["snapshots"]):
+            d.update({"schema": INCIDENT_SCHEMA, "snapshot_rule": SNAPSHOT_RULE,
+                      "repair": {"repaired_utc": stamp,
+                                 "from_schema": LEGACY_INCIDENT_SCHEMA,
+                                 "note": "no capture time had more than one "
+                                         "row; geometry unchanged"}})
+            for s in d["snapshots"]:
+                s.setdefault("dropped_oids", [])
+            _write_json(path, d)
+            print(f"[repair] {d['name']}: no same-time rows — relabelled")
+            log.append({"file": fn, "name": d["name"], "relabelled": True})
+            continue
+        try:
+            rows = H.parse_series_attrs(
+                _get_json(http, H.series_attrs_url(d["irwin"])))
+            oids = sorted({o for s in d["snapshots"] for o in s["oids"]})
+            geoms = H.parse_snapshot_features(
+                _get_json(http, H.geometry_query_url(oids)))
+            wx_path = os.path.join(args.data_dir, "weather", fn)
+            wloc = None
+            if os.path.exists(wx_path):
+                wd = _read_json(wx_path)
+                wloc = LatLon(wd["loc"][0], wd["loc"][1])
+            new, summary = repair_incident(d, rows, geoms, wloc)
+        except BudgetExceeded as exc:
+            print(f"[repair] BLOCKED at {d['name']}: {exc}")
+            rc = 1
+            break
+        except Exception as exc:
+            print(f"[repair] {d['name']}: NOT repaired — {exc}")
+            log.append({"file": fn, "name": d["name"], "error": str(exc)})
+            rc = 1
+            continue
+        summary["repaired_utc"] = stamp
+        new["repair"] = summary
+        _write_json(path, new)
+        log.append({"file": fn, "name": d["name"], **summary})
+        for c in summary["rebuilt_snapshots"]:
+            t = datetime.fromtimestamp(c["t_s"], tz=timezone.utc)
+            print(f"[repair] {d['name']} {t:%Y-%m-%d %H:%M}: kept "
+                  f"{c['kept_oids']} ({c['acres_after']:,.0f} ac), dropped "
+                  f"{len(c['dropped_oids'])} same-time row(s) "
+                  f"(pre-fix acres {c['acres_before']:,.0f})")
+        print(f"[repair] {d['name']}: domain {summary['domain']}; weather "
+              f"centroid shift {summary['weather_centroid_shift_m']} m; fixed "
+              f"picker today same as cached: "
+              f"{summary['fixed_picker_today']['same_as_cached']}")
+    _write_json(os.path.join(args.data_dir, "repair_log.json"),
+                {"schema": "hindcast-repair/1", "n_requests": http.n_requests,
+                 "requests": http.log, "incidents": log})
+    print(f"[repair] done: {http.n_requests} HTTP requests "
+          f"(budget {args.http_budget})")
+    return rc
 
 
 # ---------------------------------------------------------------------------
@@ -359,6 +572,11 @@ def cmd_replay(args) -> int:
         return 0
     pairs, pairs_wide, skips = [], [], []
     for slug, inc in incidents:
+        if inc.stacked_legacy:
+            skips.append(f"{inc.name}: pre-fix incident file stacks same-time "
+                         f"rows in {len(inc.stacked_legacy)} snapshot(s) — "
+                         f"NOT replayed (run `repair` first)")
+            continue
         wx_path = os.path.join(args.data_dir, "weather", f"{slug}.json")
         if not os.path.exists(wx_path):
             skips.append(f"{inc.name}: no cached weather")
@@ -505,7 +723,7 @@ def main(argv=None) -> int:
         prog="hindcast_harness",
         description=__doc__.splitlines()[0])
     ap.add_argument("command", choices=("all", "fetch", "replay", "anchors",
-                                        "report", "research"))
+                                        "report", "research", "repair"))
     ap.add_argument("--data-dir", default=DEFAULT_DATA_DIR)
     ap.add_argument("--report", default=DEFAULT_REPORT)
     ap.add_argument("--max-incidents", type=int, default=4)
@@ -564,7 +782,8 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
     return {"all": cmd_all, "fetch": cmd_fetch, "replay": cmd_replay,
             "anchors": cmd_anchors, "report": cmd_report,
-            "research": cmd_research}[args.command](args)
+            "research": cmd_research,
+            "repair": cmd_repair}[args.command](args)
 
 
 if __name__ == "__main__":

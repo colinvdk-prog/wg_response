@@ -1,0 +1,865 @@
+[
+ {
+  "key": "fp.size",
+  "what": "Pinned corpus (Gifford/Dillon/Madre/Butler), default replay: scored pairs / new burnable cells",
+  "generator": "hindcast_harness.py replay (blend 0)",
+  "documented": "14 / 60,062",
+  "before": "14 / 60,062",
+  "after": "15 / 65,078",
+  "cited": "hindcast_first_pass.md:45; SPRINT2_PLAN.md:330,412; calibration_review_2026-07-31.md:98,143; MODEL_ASSESSMENT_HANDOFF.md:93-94 (14 / 60k); contracts.py:2310 (14-window)",
+  "documented_check": "equals before"
+ },
+ {
+  "key": "fp.adequacy",
+  "what": "Pinned, blend 0: p10 adequacy (necessary bound, = coverage possible)",
+  "generator": "hindcast_harness.py replay",
+  "documented": "68.8%",
+  "before": "68.8%",
+  "after": "69.4%",
+  "cited": "hindcast_first_pass.md:46-47,92-93; SPRINT2_PLAN.md:413-414; ENGINE_REVIEW_2026-07-11.md:78; LIVE_OPS_PLAN.md:41; calibration_review:102,312,350; TRI_MODEL_REVIEW:49",
+  "documented_check": "equals before"
+ },
+ {
+  "key": "fp.late",
+  "what": "Pinned, blend 0: late miss",
+  "generator": "hindcast_harness.py replay",
+  "documented": "31.2%",
+  "before": "31.2%",
+  "after": "30.6%",
+  "cited": "hindcast_first_pass.md:48,94; SPRINT2_PLAN.md:414; calibration_review:102",
+  "documented_check": "equals before"
+ },
+ {
+  "key": "fp.p50in",
+  "what": "Pinned, blend 0: p50 inside window",
+  "generator": "hindcast_harness.py replay",
+  "documented": "64.7%",
+  "before": "64.7%",
+  "after": "64.2%",
+  "cited": "hindcast_first_pass.md:48; SPRINT2_PLAN.md:414",
+  "documented_check": "equals before"
+ },
+ {
+  "key": "fp.head",
+  "what": "Pinned, blend 0: median head ratio p50 (published upper-middle rule)",
+  "generator": "hindcast_harness.py replay (07-10 report)",
+  "documented": "1.32x",
+  "before": "1.32x",
+  "after": "1.11x",
+  "cited": "hindcast_first_pass.md:50; calibration_review:102",
+  "documented_check": "equals before"
+ },
+ {
+  "key": "fp.wide",
+  "what": "Pinned, blend 0: p10 adequacy with the widened band (wind 0.50 / dir 45) and its gain",
+  "generator": "hindcast_harness.py replay (pairs_wide)",
+  "documented": "69.8% (+1.0 pp)",
+  "before": "69.8% (+1.0 pp)",
+  "after": "71.2% (+1.8 pp)",
+  "cited": "hindcast_first_pass.md:52,93; calibration_review:312,957; SPRINT2_PLAN.md:416",
+  "documented_check": "equals before"
+ },
+ {
+  "key": "fp.fuel",
+  "what": "Pinned, blend 0: late miss by fuel class (cells / late %)",
+  "generator": "hindcast_harness.py replay",
+  "documented": "GR 8,241/52.6 \u00b7 GS 12,913/46.8 \u00b7 SH 34,337/20.1 \u00b7 TL 237/54.0 \u00b7 TU 4,334/30.0 \u00b7 NB 3,315",
+  "before": "GR 8,241/52.6 \u00b7 GS 12,913/46.8 \u00b7 SH 34,337/20.1 \u00b7 TL 237/54.0 \u00b7 TU 4,334/30.0 \u00b7 NB 3,315",
+  "after": "GR 10,369/44.6 \u00b7 GS 15,571/42.4 \u00b7 SH 34,560/21.0 \u00b7 TL 237/54.0 \u00b7 TU 4,341/30.0 \u00b7 NB 3,705",
+  "cited": "hindcast_first_pass.md:62-69,95; calibration_review:180-189,204; SPRINT2_PLAN.md:420",
+  "documented_check": "equals before"
+ },
+ {
+  "key": "fp.pit",
+  "what": "Pinned, blend 0: PIT histogram (rank 0 = engine late ... top = engine early)",
+  "generator": "hindcast_harness.py replay",
+  "documented": "[28706, 2050, 2145, 707, 1789, 2257, 22408]",
+  "before": "[28706, 2050, 2145, 707, 1789, 2257, 22408]",
+  "after": "[31695, 2728, 2642, 695, 2339, 2287, 22692]",
+  "cited": "hindcast_first_pass.md:51,95 (rank 0: 48 %, top: 37 %)",
+  "documented_check": "equals before"
+ },
+ {
+  "key": "gs.0.0",
+  "what": "Pinned gust sweep, blend 0.0: coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/gust_sweep.py",
+  "documented": "68.8 / 31.2 / 1.32x",
+  "before": "68.8 / 31.2 / 1.32x",
+  "after": "69.4 / 30.6 / 1.11x",
+  "cited": "calibration_review:102"
+ },
+ {
+  "key": "gs.0.25",
+  "what": "Pinned gust sweep, blend 0.25: coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/gust_sweep.py",
+  "documented": "71.7 / 28.3 / 1.62x",
+  "before": "71.7 / 28.3 / 1.62x",
+  "after": "72.9 / 27.1 / 1.34x",
+  "cited": "calibration_review:103"
+ },
+ {
+  "key": "gs.0.5",
+  "what": "Pinned gust sweep, blend 0.5: coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/gust_sweep.py",
+  "documented": "73.5 / 26.5 / 1.77x",
+  "before": "73.5 / 26.5 / 1.77x",
+  "after": "74.7 / 25.3 / 1.45x",
+  "cited": "calibration_review:104; contracts.py:2310 (the blend-0.5 calibration)"
+ },
+ {
+  "key": "gs.0.75",
+  "what": "Pinned gust sweep, blend 0.75: coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/gust_sweep.py",
+  "documented": "74.9 / 25.1 / 1.89x",
+  "before": "74.9 / 25.1 / 1.89x",
+  "after": "75.8 / 24.2 / 1.54x",
+  "cited": "calibration_review:105"
+ },
+ {
+  "key": "gs.1.0",
+  "what": "Pinned gust sweep, blend 1.0: coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/gust_sweep.py",
+  "documented": "76.3 / 23.7 / 2.03x",
+  "before": "76.3 / 23.7 / 2.03x",
+  "after": "77.3 / 22.7 / 1.60x",
+  "cited": "calibration_review:106; hindcast_oos_2026-07-28.md:40 (2.03x)"
+ },
+ {
+  "key": "cr.blend0.5",
+  "what": "Calibration-set realism [blend0.5]: pairs / coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/oos_realism_cal.py",
+  "documented": "14 / 73.5 / 26.5 / 1.77x",
+  "before": "14 / 73.5 / 26.5 / 1.77x",
+  "after": "15 / 74.7 / 25.3 / 1.45x",
+  "cited": "hindcast_oos:108; calibration_review:104,145,269; MODEL_ASSESSMENT_HANDOFF:93; TRI_MODEL_REVIEW:42,49"
+ },
+ {
+  "key": "cr.grass_floor",
+  "what": "Calibration-set realism [grass_floor]: pairs / coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/oos_realism_cal.py",
+  "documented": "14 / 91.5 / 8.5 / 2.78x",
+  "before": "14 / 91.5 / 8.5 / 2.78x",
+  "after": "15 / 92.1 / 7.9 / 2.72x",
+  "cited": "hindcast_oos:109,127; calibration_review:146,157,269; MODEL_ASSESSMENT_HANDOFF:94"
+ },
+ {
+  "key": "cr.realism_pack",
+  "what": "Calibration-set realism [realism_pack]: pairs / coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/oos_realism_cal.py",
+  "documented": "14 / 98.8 / 1.2 / 4.16x",
+  "before": "14 / 98.8 / 1.2 / 4.16x",
+  "after": "15 / 98.9 / 1.1 / 3.98x",
+  "cited": "hindcast_oos:110,131; calibration_review:147,167,171,269"
+ },
+ {
+  "key": "oos.pool",
+  "what": "July OOS strict pool (t0 >= 07-13, growth, weather span), blend 0.5: windows / cells / fires",
+  "generator": "scratch_review/oos_pool.py",
+  "documented": "8 / 60,249 / 4",
+  "before": "8 / 60,249 / 4",
+  "after": "13 / 71,261 / 6",
+  "cited": "hindcast_oos:19; calibration_review:108,143; MODEL_ASSESSMENT_HANDOFF:95; TRI_MODEL_REVIEW:44"
+ },
+ {
+  "key": "oos.b0.0",
+  "what": "July OOS pool, blend 0.0: coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/oos_pool.py",
+  "documented": "43.2 / 56.8 / 0.99x",
+  "before": "43.2 / 56.8 / 0.99x",
+  "after": "72.9 / 27.1 / 0.99x",
+  "cited": "hindcast_oos:31; calibration_review:113"
+ },
+ {
+  "key": "oos.b0.25",
+  "what": "July OOS pool, blend 0.25: coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/oos_pool.py",
+  "documented": "46.1 / 53.9 / 1.10x",
+  "before": "46.1 / 53.9 / 1.10x",
+  "after": "80.7 / 19.3 / 1.10x",
+  "cited": "hindcast_oos:32; calibration_review:114"
+ },
+ {
+  "key": "oos.b0.5",
+  "what": "July OOS pool, blend 0.5: coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/oos_pool.py",
+  "documented": "48.6 / 51.4 / 1.26x",
+  "before": "48.6 / 51.4 / 1.26x",
+  "after": "85.8 / 14.2 / 1.26x",
+  "cited": "hindcast_oos:33; calibration_review:115; MODEL_ASSESSMENT_HANDOFF:95; calibration_review:145"
+ },
+ {
+  "key": "oos.b0.75",
+  "what": "July OOS pool, blend 0.75: coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/oos_pool.py",
+  "documented": "50.4 / 49.6 / 1.40x",
+  "before": "50.4 / 49.6 / 1.40x",
+  "after": "89.0 / 11.0 / 1.40x",
+  "cited": "hindcast_oos:34; calibration_review:116"
+ },
+ {
+  "key": "oos.b1.0",
+  "what": "July OOS pool, blend 1.0: coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/oos_pool.py",
+  "documented": "52.3 / 47.7 / 1.49x",
+  "before": "52.3 / 47.7 / 1.49x",
+  "after": "90.7 / 9.3 / 1.49x",
+  "cited": "hindcast_oos:35; calibration_review:117; calibration_review:122 (+3.7 pp vs 0.5)"
+ },
+ {
+  "key": "oos.normal",
+  "what": "July OOS, normal-regime subset (every pool window except Porcupine), blend 0.5: windows / cells / coverage",
+  "generator": "scratch_review/oos_pool.py (per-pair)",
+  "documented": "7 / 26,361 / 89.1",
+  "before": "7 / 26,361 / 89.1",
+  "after": "12 / 65,918 / 89.1",
+  "cited": "hindcast_oos:44; calibration_review:149; MODEL_ASSESSMENT_HANDOFF:97"
+ },
+ {
+  "key": "oos.porcupine",
+  "what": "Porcupine Ridge 07-17 +12.9 h, blend 0.5: cells / observed head / p50 head / head ratio / observed new area / late",
+  "generator": "replay_b0.5.json via oos_pool.py",
+  "documented": "33,888 cells / 22.5 km / 1.7 km / 0.08x / 73,951 ac / 82.8 % late",
+  "before": "33,888 cells / 22.5 km / 1.7 km / 0.08x / 73,951 ac / 82.8 % late",
+  "after": "5,343 cells / 3.7 km / 1.9 km / 0.52x / 11,139 ac / 54.7 % late",
+  "cited": "hindcast_oos:57-59; calibration_review:214-217; MODEL_ASSESSMENT_HANDOFF:100-101; README.md:400; rancho_santa_fe_plan.md:114,875; vail_aspen_response_program.md:906; contracts.py:2347; FIX_PROGRAM_2026-09-11:114"
+ },
+ {
+  "key": "oos.porcupine_share",
+  "what": "Porcupine's share of the July OOS pool's cells (blend 0.5)",
+  "generator": "scratch_review/oos_pool.py",
+  "documented": "56.2%",
+  "before": "56.2%",
+  "after": "7.5%",
+  "cited": "hindcast_oos:57; calibration_review:151,216"
+ },
+ {
+  "key": "oos.porcupine_wide",
+  "what": "Porcupine late miss under the widened band (wind 0.50 / dir 45), blend 0.5",
+  "generator": "replay_b0.5.json pairs_wide",
+  "documented": "81.7 %",
+  "before": "81.7 %",
+  "after": "52.0 %",
+  "cited": "hindcast_oos:61; calibration_review:216"
+ },
+ {
+  "key": "oos.fuel",
+  "what": "July OOS pool, blend 0.5: late miss by fuel class (cells / late %)",
+  "generator": "per-fuel pooling of replay_b0.5.json",
+  "documented": "GR 16,502/52.2 \u00b7 GS 26,925/64.2 \u00b7 SH 8,740/47.2 \u00b7 TL 3,609/15.7 \u00b7 TU 4,473/8.0",
+  "before": "GR 16,502/52.2 \u00b7 GS 26,925/64.2 \u00b7 SH 8,740/47.2 \u00b7 TL 3,609/15.7 \u00b7 TU 4,473/8.0",
+  "after": "GR 15,387/20.8 \u00b7 GS 26,452/12.6 \u00b7 SH 8,735/10.4 \u00b7 TL 9,293/16.5 \u00b7 TU 11,394/10.0",
+  "cited": "hindcast_oos:66-72; calibration_review:191-199,204; rancho_santa_fe_plan.md:181,872; vail_aspen_response_program.md:263,861"
+ },
+ {
+  "key": "oos.realism.shipped",
+  "what": "July OOS realism [shipped] (oos_realism.py GOOD set): pairs / coverage / late",
+  "generator": "scratch_review/oos_realism.py",
+  "documented": "8 / 48.6 / 51.4",
+  "before": "8 / 48.6 / 51.4",
+  "after": "13 / 85.8 / 14.2",
+  "cited": "hindcast_oos:91,108; calibration_review:145"
+ },
+ {
+  "key": "oos.realism.grass_floor",
+  "what": "July OOS realism [grass_floor] (oos_realism.py GOOD set): pairs / coverage / late",
+  "generator": "scratch_review/oos_realism.py",
+  "documented": "8 / 64.8 / 35.2",
+  "before": "8 / 64.8 / 35.2",
+  "after": "13 / 100.0 / 0.0",
+  "cited": "hindcast_oos:92,127; calibration_review:146,167; MODEL_ASSESSMENT_HANDOFF:96; TRI_MODEL_REVIEW:40 (64.8 %)"
+ },
+ {
+  "key": "oos.realism.realism_pack",
+  "what": "July OOS realism [realism_pack] (oos_realism.py GOOD set): pairs / coverage / late",
+  "generator": "scratch_review/oos_realism.py",
+  "documented": "8 / 65.5 / 34.5",
+  "before": "8 / 65.5 / 34.5",
+  "after": "13 / 100.0 / 0.0",
+  "cited": "hindcast_oos:93; calibration_review:147,167"
+ },
+ {
+  "key": "oos.realism.porcupine",
+  "what": "Porcupine late miss: shipped / + floor / + floor + spotting",
+  "generator": "scratch_review/oos_realism.py",
+  "documented": "82.8% / 62.6% / 61.4%",
+  "before": "82.8% / 62.6% / 61.4%",
+  "after": "54.7% / 0.0% / 0.0%",
+  "cited": "hindcast_oos:59,92-93; calibration_review:215"
+ },
+ {
+  "key": "oos.realism.kaiser",
+  "what": "Kaiser Canyon's worst pool window: coverage at blend 0.5 -> + floor",
+  "generator": "scratch_review/oos_pool.py + oos_realism.py",
+  "documented": "KaiserCanyon-WA 07-19 12:47: 69.1 -> 99.9",
+  "before": "KaiserCanyon-WA 07-19 12:47: 69.1 -> 99.9",
+  "after": "KaiserCanyon-WA 07-19 12:47: 69.1 -> 99.9",
+  "cited": "hindcast_oos:95; calibration_review:151"
+ },
+ {
+  "key": "oos.realism.normal",
+  "what": "July OOS normal-regime subset: coverage + floor (every window except Porcupine)",
+  "generator": "scratch_review/oos_realism.py",
+  "documented": "7 windows / 26,361 cells / 100.0",
+  "before": "7 windows / 26,361 cells / 100.0",
+  "after": "12 windows / 65,918 cells / 100.0",
+  "cited": "hindcast_oos:96; calibration_review:150; MODEL_ASSESSMENT_HANDOFF:97"
+ },
+ {
+  "key": "oos.excluded",
+  "what": "July OOS: windows excluded from the strict pool (blend 0.5) and why",
+  "generator": "scratch_review/oos_pool.py",
+  "documented": "19: Crosswhite-OR 07-16 16:25 +14.3h (no spatial growth (NON-MONOTONE pair: only 78% of the T0 interior is inside T1 )); Crosswhite-OR 07-24 09:04 +43.2h (no spatial growth (NON-MONOTONE pair: only 11% of the T0 interior is inside T1 )); AspenAcres-CO 06-29 15:19 +7.4h (pre-cutoff); AspenAcres-CO 06-29 22:43 +9.9h (pre-cutoff); AspenAcres-CO 06-30 08:40 +32.2h (pre-cutoff); AspenAcres-CO 07-01 16:53 +8.3h (pre-cutoff); Willow-CO 06-28 23:53 +17.5h (pre-cutoff); Willow-CO 06-29 17:22 +61.6h (pre-cutoff); Willow-CO 07-02 06:56 +20.8h (pre-cutoff); Willow-CO 07-03 03:45 +49.2h (pre-cutoff); Stookey-UT 07-11 17:25 +21.7h (pre-cutoff); Stookey-UT 07-12 15:09 +20.2h (pre-cutoff); Cottonwood-UT 06-23 02:15 +32.6h (pre-cutoff); Cottonwood-UT 06-24 10:51 +8.2h (pre-cutoff); Cottonwood-UT 06-24 19:05 +16.2h (pre-cutoff); KaiserCanyon-WA 07-16 20:44 +64.1h (no spatial growth (NON-MONOTONE pair: only 85% of the T0 interior is inside T1 )); Brewer-OR 07-20 04:22 +24.6h (no spatial growth (NON-MONOTONE pair: only 3% of the T0 interior is inside T1 ()); Brewer-OR 07-21 04:57 +45.5h (no spatial growth (NON-MONOTONE pair: only 47% of the T0 interior is inside T1 )); BISCAR 07-21 18:36 +8.7h (no spatial growth (NON-MONOTONE pair: only 0% of the T0 interior is inside T1 ())",
+  "before": "19: Crosswhite-OR 07-16 16:25 +14.3h (no spatial growth (NON-MONOTONE pair: only 78% of the T0 interior is inside T1 )); Crosswhite-OR 07-24 09:04 +43.2h (no spatial growth (NON-MONOTONE pair: only 11% of the T0 interior is inside T1 )); AspenAcres-CO 06-29 15:19 +7.4h (pre-cutoff); AspenAcres-CO 06-29 22:43 +9.9h (pre-cutoff); AspenAcres-CO 06-30 08:40 +32.2h (pre-cutoff); AspenAcres-CO 07-01 16:53 +8.3h (pre-cutoff); Willow-CO 06-28 23:53 +17.5h (pre-cutoff); Willow-CO 06-29 17:22 +61.6h (pre-cutoff); Willow-CO 07-02 06:56 +20.8h (pre-cutoff); Willow-CO 07-03 03:45 +49.2h (pre-cutoff); Stookey-UT 07-11 17:25 +21.7h (pre-cutoff); Stookey-UT 07-12 15:09 +20.2h (pre-cutoff); Cottonwood-UT 06-23 02:15 +32.6h (pre-cutoff); Cottonwood-UT 06-24 10:51 +8.2h (pre-cutoff); Cottonwood-UT 06-24 19:05 +16.2h (pre-cutoff); KaiserCanyon-WA 07-16 20:44 +64.1h (no spatial growth (NON-MONOTONE pair: only 85% of the T0 interior is inside T1 )); Brewer-OR 07-20 04:22 +24.6h (no spatial growth (NON-MONOTONE pair: only 3% of the T0 interior is inside T1 ()); Brewer-OR 07-21 04:57 +45.5h (no spatial growth (NON-MONOTONE pair: only 47% of the T0 interior is inside T1 )); BISCAR 07-21 18:36 +8.7h (no spatial growth (NON-MONOTONE pair: only 0% of the T0 interior is inside T1 ())",
+  "after": "14: Crosswhite-OR 07-16 16:25 +14.3h (no spatial growth (NON-MONOTONE pair: only 83% of the T0 interior is inside T1 )); AspenAcres-CO 06-29 15:19 +7.4h (pre-cutoff); AspenAcres-CO 06-29 22:43 +9.9h (pre-cutoff); AspenAcres-CO 06-30 08:40 +32.2h (pre-cutoff); AspenAcres-CO 07-01 16:53 +8.3h (pre-cutoff); Willow-CO 06-28 23:53 +17.5h (pre-cutoff); Willow-CO 06-29 17:22 +61.6h (pre-cutoff); Willow-CO 07-02 06:56 +20.8h (pre-cutoff); Willow-CO 07-03 03:45 +49.2h (pre-cutoff); Stookey-UT 07-11 17:25 +21.7h (pre-cutoff); Stookey-UT 07-12 15:09 +20.2h (pre-cutoff); Cottonwood-UT 06-23 02:15 +32.6h (pre-cutoff); Cottonwood-UT 06-24 10:51 +8.2h (pre-cutoff); Cottonwood-UT 06-24 19:05 +16.2h (pre-cutoff)",
+  "cited": "hindcast_oos:20-25 (Crosswhite 'no spatial growth', BISCAR 'perimeter did not grow', ELEPHANT dt)"
+ },
+ {
+  "key": "oos.gate",
+  "what": "Incidents with >= 1 scored growth window, pinned + July OOS (the 10-incident evidence gate)",
+  "generator": "harness replays (blend 0.5)",
+  "documented": "11: AspenAcres-CO, Brewer-OR, Butler, Cottonwood-UT, Dillon, Gifford, KaiserCanyon-WA, Madre, PorcupineRidge-OR, Stookey-UT, Willow-CO",
+  "before": "11: AspenAcres-CO, Brewer-OR, Butler, Cottonwood-UT, Dillon, Gifford, KaiserCanyon-WA, Madre, PorcupineRidge-OR, Stookey-UT, Willow-CO",
+  "after": "13: AspenAcres-CO, BISCAR, Brewer-OR, Butler, Cottonwood-UT, Crosswhite-OR, Dillon, Gifford, KaiserCanyon-WA, Madre, PorcupineRidge-OR, Stookey-UT, Willow-CO",
+  "cited": "hindcast_oos:79-82; calibration_review:154"
+ },
+ {
+  "key": "oos.corpus42",
+  "what": "Pinned + July OOS replay windows / new cells / incidents ('42 windows / ~177k cells / 11 incidents')",
+  "generator": "harness replays (pinned blend 0 + OOS blend 0.5)",
+  "documented": "42 replayed (32 scored) / 177,047 new cells / 11 incidents with a scored window",
+  "before": "42 replayed (32 scored) / 177,047 new cells / 11 incidents with a scored window",
+  "after": "42 replayed (41 scored) / 206,533 new cells / 13 incidents with a scored window",
+  "cited": "calibration_review:37-38,354-355,907"
+ },
+ {
+  "key": "sig.windows",
+  "what": "Extreme-regime signature: windows scored under the grass floor (cal + strict OOS)",
+  "generator": "scratch_review/extreme_signature.py",
+  "documented": "22",
+  "before": "22",
+  "after": "28",
+  "cited": "hindcast_oos:143; calibration_review:237,251,254; rancho_santa_fe_plan.md:172,206,975"
+ },
+ {
+  "key": "sig.armed",
+  "what": "Windows the shipped regime condition arms (GR+GS >= 0.60 AND max eff wind >= 4.0 m/s): window (grass %, eff wind, floored late %)",
+  "generator": "scratch_review/extreme_signature.py",
+  "documented": "Madre 07-02 15:51 (68.9, 8.55, 0.0); Madre 07-03 09:38 (68.9, 4.28, 15.4); PorcupineRidge-OR 07-17 04:53 (88.2, 6.01, 62.6)",
+  "before": "Madre 07-02 15:51 (68.9, 8.55, 0.0); Madre 07-03 09:38 (68.9, 4.28, 15.4); PorcupineRidge-OR 07-17 04:53 (88.2, 6.01, 62.6)",
+  "after": "Madre 07-02 15:51 (68.9, 8.55, 0.0); Madre 07-03 09:38 (68.9, 4.28, 15.4); Madre 07-03 16:16 (68.9, 9.14, 0.0); BISCAR 07-21 18:36 (92.7, 7.76, 0.0); PorcupineRidge-OR 07-17 04:53 (88.2, 6.01, 0.0)",
+  "cited": "hindcast_oos:154-157; calibration_review:248-251; README.md:401; contracts.py:2350-2352"
+ },
+ {
+  "key": "sig.over50",
+  "what": "Windows with floored late miss > 50 %",
+  "generator": "scratch_review/extreme_signature.py",
+  "documented": "PorcupineRidge-OR 07-17 04:53 (62.6)",
+  "before": "PorcupineRidge-OR 07-17 04:53 (62.6)",
+  "after": "none",
+  "cited": "calibration_review:251-255 ('exactly one: Porcupine', 'n = 1'); TRI_MODEL_REVIEW:124; FIX_PROGRAM_2026-09-03:214; MODEL_ASSESSMENT_HANDOFF:162; LIVE_WORLD_PLAN:1302; rancho_santa_fe_plan.md:206"
+ },
+ {
+  "key": "sig.under60",
+  "what": "Max floored late miss among windows under 60 % grass-class ('~0 %')",
+  "generator": "scratch_review/extreme_signature.py",
+  "documented": "25.8 % (of 19 windows)",
+  "before": "25.8 % (of 19 windows)",
+  "after": "25.8 % (of 23 windows)",
+  "cited": "hindcast_oos:149-150; calibration_review:245-246; README.md:401; contracts.py:2351"
+ },
+ {
+  "key": "aug.table",
+  "what": "August review-era table (t0 >= 08-01): pairs / cells / fires",
+  "generator": "scratch_review/aug_hindcast_replay.py",
+  "documented": "18 / 135,081 / 7",
+  "before": "18 / 135,081 / 7",
+  "after": "18 / 129,630 / 7",
+  "cited": "MODEL_ASSESSMENT_HANDOFF:98; TRI_MODEL_REVIEW:40 (7 fires); SCORECARD.md:34 (18 / 135k)"
+ },
+ {
+  "key": "aug.calibration",
+  "what": "August review-era [calibration]: coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/aug_hindcast_replay.py",
+  "documented": "77.2 / 22.8 / 1.10x",
+  "before": "77.2 / 22.8 / 1.10x",
+  "after": "74.1 / 25.9 / 0.89x",
+  "cited": "TRI_MODEL_REVIEW:45 (77.2 -> 93.8 = +16.6 pp)"
+ },
+ {
+  "key": "aug.as-deployed",
+  "what": "August review-era [as-deployed]: coverage / late / median head (upper-middle)",
+  "generator": "scratch_review/aug_hindcast_replay.py",
+  "documented": "93.8 / 6.2 / 1.88x",
+  "before": "93.8 / 6.2 / 1.88x",
+  "after": "93.6 / 6.4 / 1.79x",
+  "cited": "MODEL_ASSESSMENT_HANDOFF:98; TRI_MODEL_REVIEW:40,42,45; SCORECARD.md:33"
+ },
+ {
+  "key": "aug.worst",
+  "what": "August review-era worst pair (as-deployed)",
+  "generator": "scratch_review/aug_hindcast_replay.py",
+  "documented": "Bug-CA 10.2 km / 9.5 h at 0.69x (54.8 % late)",
+  "before": "Bug-CA 10.2 km / 9.5 h at 0.69x (54.8 % late)",
+  "after": "Bug-CA 10.2 km / 9.5 h at 0.69x (54.8 % late)",
+  "cited": "MODEL_ASSESSMENT_HANDOFF:102-103"
+ },
+ {
+  "key": "aug.fuel",
+  "what": "August review-era per-fuel late miss (as-deployed), %",
+  "generator": "scratch_review/aug_hindcast_replay.py",
+  "documented": "GR 3.7 / GS 5.3 / SH 13.5 / TL 3.0 / TU 0.2",
+  "before": "GR 3.7 / GS 5.3 / SH 13.5 / TL 3.0 / TU 0.2",
+  "after": "GR 3.7 / GS 5.4 / SH 14.7 / TL 3.0 / TU 0.2",
+  "cited": "MODEL_ASSESSMENT_HANDOFF:104-105"
+ },
+ {
+  "key": "tm.skill",
+  "what": "Null-model area efficiency, Aug as-deployed: area a physics-free isotropic buffer needs to match the engine's p10 coverage / the engine's own p10 area ('1.85x')",
+  "generator": "scratch_review/rv2sci_a2_null.py (run_a2.py)",
+  "documented": "1.85x",
+  "before": "1.85x",
+  "after": "1.88x",
+  "cited": "TRI_MODEL_REVIEW:24-25,40"
+ },
+ {
+  "key": "tm.area_budget",
+  "what": "p10 area budget (engine p10 new cells / new burnable cells), Aug as-deployed",
+  "generator": "scratch_review/rv2sci_a2_null.py eng_area_x",
+  "documented": "5.79x",
+  "before": "5.79x",
+  "after": "5.94x",
+  "cited": "TRI_MODEL_REVIEW:40 (5.8x)"
+ },
+ {
+  "key": "tm.bin612",
+  "what": "Aug as-deployed, dt 6-12 h: pairs / cells / p10 adequacy",
+  "generator": "rvgrok_stats_audit.py window_duration_bins",
+  "documented": "5 / 27,089 / 69.8",
+  "before": "5 / 27,089 / 69.8",
+  "after": "5 / 26,921 / 70.1",
+  "cited": "TRI_MODEL_REVIEW:40 (69.8 %); SCORECARD.md:33 ('one 9.5 h pair')"
+ },
+ {
+  "key": "tm.bug_share",
+  "what": "Bug-CA's share of all late-miss cells, Aug as-deployed",
+  "generator": "rvclaude_aug_deep.py",
+  "documented": "91.1%",
+  "before": "91.1%",
+  "after": "92.4%",
+  "cited": "TRI_MODEL_REVIEW:40 (91 %); SCORECARD.md:33"
+ },
+ {
+  "key": "tm.effn_aug",
+  "what": "Effective incidents (1 / HHI of cell shares by incident), Aug as-deployed",
+  "generator": "rv2stats_derive (HHI by incident)",
+  "documented": "3.24",
+  "before": "3.24",
+  "after": "3.07",
+  "cited": "TRI_MODEL_REVIEW:40,44 (~3; 3.244); SCORECARD.md:34 (3-4)"
+ },
+ {
+  "key": "tm.pit",
+  "what": "PIT extreme-bin mass: Aug as-deployed / Aug calibration / July OOS blend 0.5 (pool)",
+  "generator": "rv2sci_a7_disp.pool_pit",
+  "documented": "79.7% / 82.7% / 88.3%",
+  "before": "79.7% / 82.7% / 88.3%",
+  "after": "77.5% / 81.9% / 83.9%",
+  "cited": "TRI_MODEL_REVIEW:41 (76-95 %; 79.7 / 82.7 / 88.3; July = every scored July pair at blend 0.5)"
+ },
+ {
+  "key": "tm.heads",
+  "what": "Median head ratio, published upper-middle -> true median: Aug as-deployed; pinned blend 0.5 (cal_realism)",
+  "generator": "rvclaude_aug_deep.py / rv2code_r8_r10_followup.py",
+  "documented": "1.88 -> 1.837; 1.77 -> 1.611",
+  "before": "1.88 -> 1.837; 1.77 -> 1.611",
+  "after": "1.79 -> 1.769; 1.45 -> 1.450",
+  "cited": "TRI_MODEL_REVIEW:42 (1.88 -> 1.837; 1.77 -> 1.61)"
+ },
+ {
+  "key": "tm.dispersion",
+  "what": "Aug as-deployed: sd(log head_P50/obs) / under-dispersion factor / obs head inside [P10, P50] / median head_P10/head_P50",
+  "generator": "rvclaude_dispersion.py",
+  "documented": "0.710 / 8.0x / 1/18 / 1.093",
+  "before": "0.710 / 8.0x / 1/18 / 1.093",
+  "after": "0.698 / 7.9x / 1/18 / 1.093",
+  "cited": "TRI_MODEL_REVIEW:43,45 (0.710 / 8x / 1/18 / 1.09), 114-115; README.md:378,423; FIX_PROGRAM_2026-09-03:58-59; FIRE_BELIEF.md:19-20,101,313; contracts.py:2210-2211; LIVE_WORLD_PLAN:1312 (the 0.71 prior)"
+ },
+ {
+  "key": "tm.area_p50",
+  "what": "Pooled area ratio p50 (modeled / observed new area): Aug calibration -> as-deployed",
+  "generator": "rvclaude_final_table.py",
+  "documented": "2.33x -> 6.06x",
+  "before": "2.33x -> 6.06x",
+  "after": "2.37x -> 6.38x",
+  "cited": "TRI_MODEL_REVIEW:45 (2.3x -> 6.1x)"
+ },
+ {
+  "key": "tm.july_equal",
+  "what": "July OOS [+ floor]: windows / incidents / equal-incident coverage / effective incidents",
+  "generator": "rv2stats_derive over oos_realism.json",
+  "documented": "8 / 4 / 84.3 / 2.41",
+  "before": "8 / 4 / 84.3 / 2.41",
+  "after": "13 / 6 / 100.0 / 2.54",
+  "cited": "TRI_MODEL_REVIEW:44 (8 windows = 4 incidents, 84.3 %; 2.414)"
+ },
+ {
+  "key": "fx11.regime",
+  "what": "J_regime_I071: scored pairs the extreme-regime detector arms (August; July)",
+  "generator": "calmatrix2_run.sh -> calmatrix/{aug,oos}_J_regime_I071.json (pair notes)",
+  "documented": "aug 13/27 (armed among scored: 8); oos 2/18 (armed among scored: 1)",
+  "before": "aug 13/27 (armed among scored: 8); oos 2/18 (armed among scored: 1)",
+  "after": "aug 13/34 (armed among scored: 12); oos 2/26 (armed among scored: 2)",
+  "cited": "FIX_PROGRAM_2026-09-11:102,106-108 (Aug 13/27, July 2/18); MODEL_ASSESSMENT_HANDOFF:66"
+ },
+ {
+  "key": "fx11.perpair",
+  "what": "July matrix corpus: every scored pair with > 6 % late under D071 or I071 (cells / late D071 / late I071)",
+  "generator": "calmatrix/oos_{D_gate_me071,I_gategrass05_me071}.json",
+  "documented": "PorcupineRidge-OR 07-17 04:53 +12.9h 33,888 / 53.1 / 62.8; AspenAcres-CO 06-29 15:19 +7.4h 11,003 / 3.8 / 86.9; Cottonwood-UT 06-24 10:51 +8.2h 7,886 / 0.0 / 34.3; Willow-CO 07-02 06:56 +20.8h 1,231 / 0.0 / 62.6",
+  "before": "PorcupineRidge-OR 07-17 04:53 +12.9h 33,888 / 53.1 / 62.8; AspenAcres-CO 06-29 15:19 +7.4h 11,003 / 3.8 / 86.9; Cottonwood-UT 06-24 10:51 +8.2h 7,886 / 0.0 / 34.3; Willow-CO 07-02 06:56 +20.8h 1,231 / 0.0 / 62.6",
+  "after": "AspenAcres-CO 06-29 15:19 +7.4h 11,003 / 3.8 / 86.9; Cottonwood-UT 06-24 10:51 +8.2h 7,886 / 0.0 / 34.3",
+  "cited": "FIX_PROGRAM_2026-09-11:114-121 (Porcupine 33,888 / 53.1 / 62.8; AspenAcres 11,003 / 3.8 / 86.9; Willow 1,231 / 0 / 62.6; Cottonwood 7,886 / 0 / 34.3; others 0 / <= 6)"
+ },
+ {
+  "key": "mx.aug.F_nofloor",
+  "what": "Matrix August F_nofloor: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 78.6 \u00b7 21.4 \u00b7 4.65x \u00b7 1.28 \u00b7 82.4 (53/29) \u00b7 38.3 \u00b7 83.9",
+  "before": "27/145,760/11 \u00b7 78.6 \u00b7 21.4 \u00b7 4.65x \u00b7 1.28 \u00b7 82.4 (53/29) \u00b7 38.3 \u00b7 83.9",
+  "after": "34/190,223/12 \u00b7 75.2 \u00b7 24.8 \u00b7 4.91x \u00b7 1.23 \u00b7 83.5 (55/29) \u00b7 38.5 \u00b7 74.4",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-03:172-174"
+ },
+ {
+  "key": "mx.aug.A_deployed",
+  "what": "Matrix August A_deployed: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 94.2 \u00b7 5.8 \u00b7 19.38x \u00b7 1.07 \u00b7 81.0 (12/69) \u00b7 70.7 \u00b7 96.8",
+  "before": "27/145,760/11 \u00b7 94.2 \u00b7 5.8 \u00b7 19.38x \u00b7 1.07 \u00b7 81.0 (12/69) \u00b7 70.7 \u00b7 96.8",
+  "after": "34/190,223/12 \u00b7 95.0 \u00b7 5.0 \u00b7 18.51x \u00b7 1.05 \u00b7 82.6 (14/68) \u00b7 71.0 \u00b7 94.7",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-03:162,167-172,184,204-209; FIX_PROGRAM_2026-09-11:139-141"
+ },
+ {
+  "key": "mx.aug.B_gate",
+  "what": "Matrix August B_gate: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 94.2 \u00b7 5.8 \u00b7 19.38x \u00b7 1.07 \u00b7 80.9 (12/68) \u00b7 70.7 \u00b7 96.7",
+  "before": "27/145,760/11 \u00b7 94.2 \u00b7 5.8 \u00b7 19.38x \u00b7 1.07 \u00b7 80.9 (12/68) \u00b7 70.7 \u00b7 96.7",
+  "after": "34/190,223/12 \u00b7 95.0 \u00b7 5.0 \u00b7 18.51x \u00b7 1.05 \u00b7 82.5 (14/68) \u00b7 71.0 \u00b7 94.7",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-03:167-169,185"
+ },
+ {
+  "key": "mx.aug.C_gate_grass",
+  "what": "Matrix August C_gate_grass: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 93.6 \u00b7 6.4 \u00b7 10.71x \u00b7 1.08 \u00b7 78.9 (15/64) \u00b7 68.7 \u00b7 93.8",
+  "before": "27/145,760/11 \u00b7 93.6 \u00b7 6.4 \u00b7 10.71x \u00b7 1.08 \u00b7 78.9 (15/64) \u00b7 68.7 \u00b7 93.8",
+  "after": "34/190,223/12 \u00b7 91.6 \u00b7 8.4 \u00b7 11.46x \u00b7 1.06 \u00b7 81.7 (20/62) \u00b7 68.9 \u00b7 86.4",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-03:170-171,186,195-196"
+ },
+ {
+  "key": "mx.aug.D_gate_me035",
+  "what": "Matrix August D_gate_me035: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 96.2 \u00b7 3.8 \u00b7 22.23x \u00b7 1.07 \u00b7 66.9 (10/57) \u00b7 80.5 \u00b7 97.8",
+  "before": "27/145,760/11 \u00b7 96.2 \u00b7 3.8 \u00b7 22.23x \u00b7 1.07 \u00b7 66.9 (10/57) \u00b7 80.5 \u00b7 97.8",
+  "after": "34/190,223/12 \u00b7 96.5 \u00b7 3.5 \u00b7 22.46x \u00b7 1.05 \u00b7 68.0 (10/58) \u00b7 80.8 \u00b7 95.7",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug)"
+ },
+ {
+  "key": "mx.aug.D_gate_me050",
+  "what": "Matrix August D_gate_me050: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 97.2 \u00b7 2.8 \u00b7 22.69x \u00b7 1.07 \u00b7 59.2 (8/51) \u00b7 85.4 \u00b7 98.3",
+  "before": "27/145,760/11 \u00b7 97.2 \u00b7 2.8 \u00b7 22.69x \u00b7 1.07 \u00b7 59.2 (8/51) \u00b7 85.4 \u00b7 98.3",
+  "after": "34/190,223/12 \u00b7 97.3 \u00b7 2.7 \u00b7 23.38x \u00b7 1.05 \u00b7 60.3 (9/51) \u00b7 85.7 \u00b7 96.1",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-03:174-176,191"
+ },
+ {
+  "key": "mx.aug.D_gate_me071",
+  "what": "Matrix August D_gate_me071: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 98.8 \u00b7 1.2 \u00b7 24.70x \u00b7 1.06 \u00b7 50.1 (6/44) \u00b7 93.8 \u00b7 99.2",
+  "before": "27/145,760/11 \u00b7 98.8 \u00b7 1.2 \u00b7 24.70x \u00b7 1.06 \u00b7 50.1 (6/44) \u00b7 93.8 \u00b7 99.2",
+  "after": "34/190,223/12 \u00b7 98.5 \u00b7 1.5 \u00b7 25.80x \u00b7 1.05 \u00b7 50.5 (7/44) \u00b7 94.0 \u00b7 96.9",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-03:174-176,190,200-209; FIX_PROGRAM_2026-09-11:100,134,145"
+ },
+ {
+  "key": "mx.aug.E_gategrass_me050",
+  "what": "Matrix August E_gategrass_me050: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 96.9 \u00b7 3.1 \u00b7 11.89x \u00b7 1.08 \u00b7 56.4 (10/47) \u00b7 84.1 \u00b7 97.3",
+  "before": "27/145,760/11 \u00b7 96.9 \u00b7 3.1 \u00b7 11.89x \u00b7 1.08 \u00b7 56.4 (10/47) \u00b7 84.1 \u00b7 97.3",
+  "after": "34/190,223/12 \u00b7 94.8 \u00b7 5.2 \u00b7 13.35x \u00b7 1.06 \u00b7 58.9 (13/46) \u00b7 84.4 \u00b7 91.0",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-03:187,195-196"
+ },
+ {
+  "key": "mx.aug.E_gategrass_me071",
+  "what": "Matrix August E_gategrass_me071: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 98.7 \u00b7 1.3 \u00b7 15.30x \u00b7 1.07 \u00b7 46.8 (7/40) \u00b7 93.3 \u00b7 98.8",
+  "before": "27/145,760/11 \u00b7 98.7 \u00b7 1.3 \u00b7 15.30x \u00b7 1.07 \u00b7 46.8 (7/40) \u00b7 93.3 \u00b7 98.8",
+  "after": "34/190,223/12 \u00b7 96.9 \u00b7 3.1 \u00b7 15.96x \u00b7 1.06 \u00b7 48.7 (10/38) \u00b7 93.5 \u00b7 93.8",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug)"
+ },
+ {
+  "key": "mx.aug.G_gate_p50",
+  "what": "Matrix August G_gate_p50: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 94.2 \u00b7 5.8 \u00b7 19.38x \u00b7 1.07 \u00b7 80.9 (12/68) \u00b7 70.7 \u00b7 96.7",
+  "before": "27/145,760/11 \u00b7 94.2 \u00b7 5.8 \u00b7 19.38x \u00b7 1.07 \u00b7 80.9 (12/68) \u00b7 70.7 \u00b7 96.7",
+  "after": "34/190,223/12 \u00b7 95.0 \u00b7 5.0 \u00b7 18.51x \u00b7 1.05 \u00b7 82.5 (14/68) \u00b7 71.0 \u00b7 94.7",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug)"
+ },
+ {
+  "key": "mx.aug.H_nofloor_me050",
+  "what": "Matrix August H_nofloor_me050: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 88.1 \u00b7 11.9 \u00b7 6.23x \u00b7 1.25 \u00b7 65.0 (43/22) \u00b7 45.7 \u00b7 90.2",
+  "before": "27/145,760/11 \u00b7 88.1 \u00b7 11.9 \u00b7 6.23x \u00b7 1.25 \u00b7 65.0 (43/22) \u00b7 45.7 \u00b7 90.2",
+  "after": "34/190,223/12 \u00b7 86.2 \u00b7 13.8 \u00b7 6.92x \u00b7 1.21 \u00b7 65.4 (44/21) \u00b7 45.9 \u00b7 82.4",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug)"
+ },
+ {
+  "key": "mx.aug.H_nofloor_me071",
+  "what": "Matrix August H_nofloor_me071: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 90.5 \u00b7 9.5 \u00b7 8.23x \u00b7 1.23 \u00b7 52.6 (34/18) \u00b7 53.1 \u00b7 92.5",
+  "before": "27/145,760/11 \u00b7 90.5 \u00b7 9.5 \u00b7 8.23x \u00b7 1.23 \u00b7 52.6 (34/18) \u00b7 53.1 \u00b7 92.5",
+  "after": "34/190,223/12 \u00b7 89.7 \u00b7 10.3 \u00b7 9.09x \u00b7 1.19 \u00b7 53.0 (35/18) \u00b7 53.3 \u00b7 86.3",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-03:189"
+ },
+ {
+  "key": "mx.aug.I_gategrass05_me050",
+  "what": "Matrix August I_gategrass05_me050: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 91.9 \u00b7 8.1 \u00b7 9.18x \u00b7 1.09 \u00b7 52.5 (21/32) \u00b7 58.8 \u00b7 93.7",
+  "before": "27/145,760/11 \u00b7 91.9 \u00b7 8.1 \u00b7 9.18x \u00b7 1.09 \u00b7 52.5 (21/32) \u00b7 58.8 \u00b7 93.7",
+  "after": "34/190,223/12 \u00b7 90.7 \u00b7 9.3 \u00b7 10.51x \u00b7 1.08 \u00b7 54.6 (24/30) \u00b7 59.1 \u00b7 87.2",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug)"
+ },
+ {
+  "key": "mx.aug.I_gategrass05_me071",
+  "what": "Matrix August I_gategrass05_me071: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 94.1 \u00b7 5.9 \u00b7 10.98x \u00b7 1.09 \u00b7 39.8 (14/26) \u00b7 69.3 \u00b7 95.5",
+  "before": "27/145,760/11 \u00b7 94.1 \u00b7 5.9 \u00b7 10.98x \u00b7 1.09 \u00b7 39.8 (14/26) \u00b7 69.3 \u00b7 95.5",
+  "after": "34/190,223/12 \u00b7 93.2 \u00b7 6.8 \u00b7 12.08x \u00b7 1.07 \u00b7 42.1 (17/25) \u00b7 69.6 \u00b7 90.3",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-03:188,195-196,211-216; FIX_PROGRAM_2026-09-11:101; contracts.py:2336-2338"
+ },
+ {
+  "key": "mx.aug.J_regime_I071",
+  "what": "Matrix August J_regime_I071: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 95.9 \u00b7 4.1 \u00b7 14.19x \u00b7 1.07 \u00b7 47.5 (10/38) \u00b7 79.0 \u00b7 96.7",
+  "before": "27/145,760/11 \u00b7 95.9 \u00b7 4.1 \u00b7 14.19x \u00b7 1.07 \u00b7 47.5 (10/38) \u00b7 79.0 \u00b7 96.7",
+  "after": "34/190,223/12 \u00b7 94.5 \u00b7 5.5 \u00b7 14.37x \u00b7 1.05 \u00b7 49.3 (12/37) \u00b7 79.1 \u00b7 91.4",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-11:102,106-108 (regime pairs Aug 13/27, July 2/18); MODEL_ASSESSMENT_HANDOFF:66"
+ },
+ {
+  "key": "mx.aug.L_regime_I_noband",
+  "what": "Matrix August L_regime_I_noband: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 91.1 \u00b7 8.9 \u00b7 6.96x \u00b7 1.07 \u00b7 79.7 (18/62) \u00b7 60.2 \u00b7 91.4",
+  "before": "27/145,760/11 \u00b7 91.1 \u00b7 8.9 \u00b7 6.96x \u00b7 1.07 \u00b7 79.7 (18/62) \u00b7 60.2 \u00b7 91.4",
+  "after": "34/190,223/12 \u00b7 89.4 \u00b7 10.6 \u00b7 7.57x \u00b7 1.05 \u00b7 82.2 (22/60) \u00b7 60.4 \u00b7 83.9",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-11:103"
+ },
+ {
+  "key": "mx.aug.M_D071_piecewise",
+  "what": "Matrix August M_D071_piecewise: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 98.8 \u00b7 1.2 \u00b7 24.57x \u00b7 1.06 \u00b7 50.1 (6/44) \u00b7 93.5 \u00b7 99.2",
+  "before": "27/145,760/11 \u00b7 98.8 \u00b7 1.2 \u00b7 24.57x \u00b7 1.06 \u00b7 50.1 (6/44) \u00b7 93.5 \u00b7 99.2",
+  "after": "34/190,223/12 \u00b7 98.5 \u00b7 1.5 \u00b7 25.74x \u00b7 1.05 \u00b7 50.7 (7/44) \u00b7 93.7 \u00b7 96.9",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-11:136,147-148"
+ },
+ {
+  "key": "mx.aug.N_D071_phi",
+  "what": "Matrix August N_D071_phi: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 97.7 \u00b7 2.3 \u00b7 23.73x \u00b7 1.06 \u00b7 50.5 (7/43) \u00b7 87.9 \u00b7 98.5",
+  "before": "27/145,760/11 \u00b7 97.7 \u00b7 2.3 \u00b7 23.73x \u00b7 1.06 \u00b7 50.5 (7/43) \u00b7 87.9 \u00b7 98.5",
+  "after": "34/190,223/12 \u00b7 97.6 \u00b7 2.4 \u00b7 25.03x \u00b7 1.05 \u00b7 50.5 (7/43) \u00b7 87.9 \u00b7 96.3",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-11:135,139-141; LIVE_WORLD_PLAN:830-831 (27 / 145,760 / 97.7 / 2.3, August)"
+ },
+ {
+  "key": "mx.aug.O_D071_both",
+  "what": "Matrix August O_D071_both: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "27/145,760/11 \u00b7 97.6 \u00b7 2.4 \u00b7 23.62x \u00b7 1.06 \u00b7 50.3 (7/43) \u00b7 87.7 \u00b7 98.5",
+  "before": "27/145,760/11 \u00b7 97.6 \u00b7 2.4 \u00b7 23.62x \u00b7 1.06 \u00b7 50.3 (7/43) \u00b7 87.7 \u00b7 98.5",
+  "after": "34/190,223/12 \u00b7 97.6 \u00b7 2.4 \u00b7 24.98x \u00b7 1.05 \u00b7 50.6 (8/43) \u00b7 87.8 \u00b7 96.3",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (aug); FIX_PROGRAM_2026-09-11:137"
+ },
+ {
+  "key": "mx.oos.F_nofloor",
+  "what": "Matrix July OOS F_nofloor: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 55.7 \u00b7 44.3 \u00b7 5.38x \u00b7 0.97 \u00b7 88.3 (56/32) \u00b7 48.6 \u00b7 66.2",
+  "before": "18/109,040/7 \u00b7 55.7 \u00b7 44.3 \u00b7 5.38x \u00b7 0.97 \u00b7 88.3 (56/32) \u00b7 48.6 \u00b7 66.2",
+  "after": "26/134,157/9 \u00b7 70.7 \u00b7 29.3 \u00b7 6.79x \u00b7 1.09 \u00b7 83.9 (49/35) \u00b7 52.2 \u00b7 76.7",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-03:172-174"
+ },
+ {
+  "key": "mx.oos.A_deployed",
+  "what": "Matrix July OOS A_deployed: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 76.9 \u00b7 23.1 \u00b7 12.43x \u00b7 1.00 \u00b7 91.9 (32/60) \u00b7 88.1 \u00b7 88.7",
+  "before": "18/109,040/7 \u00b7 76.9 \u00b7 23.1 \u00b7 12.43x \u00b7 1.00 \u00b7 91.9 (32/60) \u00b7 88.1 \u00b7 88.7",
+  "after": "26/134,157/9 \u00b7 97.1 \u00b7 2.9 \u00b7 16.49x \u00b7 1.03 \u00b7 84.4 (9/75) \u00b7 89.7 \u00b7 98.2",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-03:162,167-172,184,204-209; FIX_PROGRAM_2026-09-11:139-141"
+ },
+ {
+  "key": "mx.oos.B_gate",
+  "what": "Matrix July OOS B_gate: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 76.9 \u00b7 23.1 \u00b7 12.21x \u00b7 1.00 \u00b7 91.9 (32/60) \u00b7 88.1 \u00b7 88.7",
+  "before": "18/109,040/7 \u00b7 76.9 \u00b7 23.1 \u00b7 12.21x \u00b7 1.00 \u00b7 91.9 (32/60) \u00b7 88.1 \u00b7 88.7",
+  "after": "26/134,157/9 \u00b7 97.1 \u00b7 2.9 \u00b7 16.49x \u00b7 1.03 \u00b7 84.3 (9/75) \u00b7 89.7 \u00b7 98.2",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-03:167-169,185"
+ },
+ {
+  "key": "mx.oos.C_gate_grass",
+  "what": "Matrix July OOS C_gate_grass: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 68.2 \u00b7 31.8 \u00b7 9.48x \u00b7 0.95 \u00b7 90.9 (41/50) \u00b7 63.4 \u00b7 74.1",
+  "before": "18/109,040/7 \u00b7 68.2 \u00b7 31.8 \u00b7 9.48x \u00b7 0.95 \u00b7 90.9 (41/50) \u00b7 63.4 \u00b7 74.1",
+  "after": "26/134,157/9 \u00b7 84.5 \u00b7 15.5 \u00b7 9.98x \u00b7 1.03 \u00b7 85.7 (28/57) \u00b7 68.4 \u00b7 91.4",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-03:170-171,186,195-196"
+ },
+ {
+  "key": "mx.oos.D_gate_me035",
+  "what": "Matrix July OOS D_gate_me035: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 79.7 \u00b7 20.3 \u00b7 12.83x \u00b7 1.00 \u00b7 85.4 (28/57) \u00b7 95.3 \u00b7 90.4",
+  "before": "18/109,040/7 \u00b7 79.7 \u00b7 20.3 \u00b7 12.83x \u00b7 1.00 \u00b7 85.4 (28/57) \u00b7 95.3 \u00b7 90.4",
+  "after": "26/134,157/9 \u00b7 98.8 \u00b7 1.2 \u00b7 17.54x \u00b7 1.04 \u00b7 75.4 (7/69) \u00b7 95.9 \u00b7 99.3",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos)"
+ },
+ {
+  "key": "mx.oos.D_gate_me050",
+  "what": "Matrix July OOS D_gate_me050: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 81.5 \u00b7 18.5 \u00b7 13.57x \u00b7 1.00 \u00b7 80.2 (26/54) \u00b7 97.6 \u00b7 91.4",
+  "before": "18/109,040/7 \u00b7 81.5 \u00b7 18.5 \u00b7 13.57x \u00b7 1.00 \u00b7 80.2 (26/54) \u00b7 97.6 \u00b7 91.4",
+  "after": "26/134,157/9 \u00b7 99.4 \u00b7 0.6 \u00b7 18.13x \u00b7 1.04 \u00b7 67.3 (5/63) \u00b7 98.0 \u00b7 99.6",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-03:174-176,191"
+ },
+ {
+  "key": "mx.oos.D_gate_me071",
+  "what": "Matrix July OOS D_gate_me071: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 83.1 \u00b7 16.9 \u00b7 14.19x \u00b7 0.99 \u00b7 71.6 (22/50) \u00b7 98.7 \u00b7 92.2",
+  "before": "18/109,040/7 \u00b7 83.1 \u00b7 16.9 \u00b7 14.19x \u00b7 0.99 \u00b7 71.6 (22/50) \u00b7 98.7 \u00b7 92.2",
+  "after": "26/134,157/9 \u00b7 99.7 \u00b7 0.3 \u00b7 19.06x \u00b7 1.04 \u00b7 56.4 (2/55) \u00b7 98.9 \u00b7 99.8",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-03:174-176,190,200-209; FIX_PROGRAM_2026-09-11:100,134,145"
+ },
+ {
+  "key": "mx.oos.E_gategrass_me050",
+  "what": "Matrix July OOS E_gategrass_me050: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 70.7 \u00b7 29.3 \u00b7 11.33x \u00b7 0.94 \u00b7 79.2 (37/43) \u00b7 65.6 \u00b7 75.3",
+  "before": "18/109,040/7 \u00b7 70.7 \u00b7 29.3 \u00b7 11.33x \u00b7 0.94 \u00b7 79.2 (37/43) \u00b7 65.6 \u00b7 75.3",
+  "after": "26/134,157/9 \u00b7 91.2 \u00b7 8.8 \u00b7 13.82x \u00b7 1.01 \u00b7 68.3 (21/48) \u00b7 70.3 \u00b7 94.9",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-03:187,195-196"
+ },
+ {
+  "key": "mx.oos.E_gategrass_me071",
+  "what": "Matrix July OOS E_gategrass_me071: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 73.7 \u00b7 26.3 \u00b7 12.15x \u00b7 0.95 \u00b7 72.0 (35/37) \u00b7 70.9 \u00b7 77.6",
+  "before": "18/109,040/7 \u00b7 73.7 \u00b7 26.3 \u00b7 12.15x \u00b7 0.95 \u00b7 72.0 (35/37) \u00b7 70.9 \u00b7 77.6",
+  "after": "26/134,157/9 \u00b7 92.6 \u00b7 7.4 \u00b7 15.35x \u00b7 1.01 \u00b7 56.9 (16/41) \u00b7 74.8 \u00b7 95.6",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos)"
+ },
+ {
+  "key": "mx.oos.G_gate_p50",
+  "what": "Matrix July OOS G_gate_p50: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 76.9 \u00b7 23.1 \u00b7 12.21x \u00b7 1.00 \u00b7 91.9 (32/60) \u00b7 88.1 \u00b7 88.7",
+  "before": "18/109,040/7 \u00b7 76.9 \u00b7 23.1 \u00b7 12.21x \u00b7 1.00 \u00b7 91.9 (32/60) \u00b7 88.1 \u00b7 88.7",
+  "after": "26/134,157/9 \u00b7 97.1 \u00b7 2.9 \u00b7 16.49x \u00b7 1.03 \u00b7 84.3 (9/75) \u00b7 89.7 \u00b7 98.2",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos)"
+ },
+ {
+  "key": "mx.oos.H_nofloor_me050",
+  "what": "Matrix July OOS H_nofloor_me050: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 60.5 \u00b7 39.5 \u00b7 7.33x \u00b7 0.97 \u00b7 75.0 (50/25) \u00b7 53.6 \u00b7 69.2",
+  "before": "18/109,040/7 \u00b7 60.5 \u00b7 39.5 \u00b7 7.33x \u00b7 0.97 \u00b7 75.0 (50/25) \u00b7 53.6 \u00b7 69.2",
+  "after": "26/134,157/9 \u00b7 80.3 \u00b7 19.7 \u00b7 10.44x \u00b7 1.10 \u00b7 63.5 (38/26) \u00b7 59.2 \u00b7 85.7",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos)"
+ },
+ {
+  "key": "mx.oos.H_nofloor_me071",
+  "what": "Matrix July OOS H_nofloor_me071: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 63.3 \u00b7 36.7 \u00b7 8.30x \u00b7 0.98 \u00b7 66.6 (46/21) \u00b7 57.9 \u00b7 71.4",
+  "before": "18/109,040/7 \u00b7 63.3 \u00b7 36.7 \u00b7 8.30x \u00b7 0.98 \u00b7 66.6 (46/21) \u00b7 57.9 \u00b7 71.4",
+  "after": "26/134,157/9 \u00b7 85.7 \u00b7 14.3 \u00b7 11.65x \u00b7 1.11 \u00b7 51.2 (30/21) \u00b7 63.6 \u00b7 90.2",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-03:189"
+ },
+ {
+  "key": "mx.oos.I_gategrass05_me050",
+  "what": "Matrix July OOS I_gategrass05_me050: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 66.5 \u00b7 33.5 \u00b7 8.80x \u00b7 0.95 \u00b7 74.9 (42/33) \u00b7 59.8 \u00b7 72.8",
+  "before": "18/109,040/7 \u00b7 66.5 \u00b7 33.5 \u00b7 8.80x \u00b7 0.95 \u00b7 74.9 (42/33) \u00b7 59.8 \u00b7 72.8",
+  "after": "26/134,157/9 \u00b7 88.0 \u00b7 12.0 \u00b7 11.77x \u00b7 1.07 \u00b7 61.8 (28/34) \u00b7 65.3 \u00b7 93.1",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos)"
+ },
+ {
+  "key": "mx.oos.I_gategrass05_me071",
+  "what": "Matrix July OOS I_gategrass05_me071: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 68.0 \u00b7 32.0 \u00b7 10.40x \u00b7 0.94 \u00b7 66.5 (39/28) \u00b7 62.4 \u00b7 74.2",
+  "before": "18/109,040/7 \u00b7 68.0 \u00b7 32.0 \u00b7 10.40x \u00b7 0.94 \u00b7 66.5 (39/28) \u00b7 62.4 \u00b7 74.2",
+  "after": "26/134,157/9 \u00b7 90.4 \u00b7 9.6 \u00b7 13.39x \u00b7 1.02 \u00b7 50.0 (22/28) \u00b7 67.6 \u00b7 94.5",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-03:188,195-196,211-216; FIX_PROGRAM_2026-09-11:101; contracts.py:2336-2338"
+ },
+ {
+  "key": "mx.oos.J_regime_I071",
+  "what": "Matrix July OOS J_regime_I071: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 71.1 \u00b7 28.9 \u00b7 10.40x \u00b7 0.93 \u00b7 67.0 (37/30) \u00b7 62.4 \u00b7 75.6",
+  "before": "18/109,040/7 \u00b7 71.1 \u00b7 28.9 \u00b7 10.40x \u00b7 0.93 \u00b7 67.0 (37/30) \u00b7 62.4 \u00b7 75.6",
+  "after": "26/134,157/9 \u00b7 90.4 \u00b7 9.6 \u00b7 14.86x \u00b7 1.02 \u00b7 50.8 (21/30) \u00b7 67.6 \u00b7 94.5",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-11:102,106-108 (regime pairs Aug 13/27, July 2/18); MODEL_ASSESSMENT_HANDOFF:66"
+ },
+ {
+  "key": "mx.oos.L_regime_I_noband",
+  "what": "Matrix July OOS L_regime_I_noband: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 65.7 \u00b7 34.3 \u00b7 6.91x \u00b7 0.93 \u00b7 89.5 (46/44) \u00b7 56.0 \u00b7 72.2",
+  "before": "18/109,040/7 \u00b7 65.7 \u00b7 34.3 \u00b7 6.91x \u00b7 0.93 \u00b7 89.5 (46/44) \u00b7 56.0 \u00b7 72.2",
+  "after": "26/134,157/9 \u00b7 79.9 \u00b7 20.1 \u00b7 8.21x \u00b7 1.06 \u00b7 84.0 (37/47) \u00b7 62.0 \u00b7 88.6",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-11:103"
+ },
+ {
+  "key": "mx.oos.M_D071_piecewise",
+  "what": "Matrix July OOS M_D071_piecewise: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 83.3 \u00b7 16.7 \u00b7 14.17x \u00b7 1.00 \u00b7 71.4 (22/49) \u00b7 98.8 \u00b7 92.2",
+  "before": "18/109,040/7 \u00b7 83.3 \u00b7 16.7 \u00b7 14.17x \u00b7 1.00 \u00b7 71.4 (22/49) \u00b7 98.8 \u00b7 92.2",
+  "after": "26/134,157/9 \u00b7 99.7 \u00b7 0.3 \u00b7 19.04x \u00b7 1.04 \u00b7 56.1 (2/54) \u00b7 98.9 \u00b7 99.8",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-11:136,147-148"
+ },
+ {
+  "key": "mx.oos.N_D071_phi",
+  "what": "Matrix July OOS N_D071_phi: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 82.8 \u00b7 17.2 \u00b7 14.07x \u00b7 1.00 \u00b7 72.3 (23/49) \u00b7 97.1 \u00b7 91.9",
+  "before": "18/109,040/7 \u00b7 82.8 \u00b7 17.2 \u00b7 14.07x \u00b7 1.00 \u00b7 72.3 (23/49) \u00b7 97.1 \u00b7 91.9",
+  "after": "26/134,157/9 \u00b7 99.3 \u00b7 0.7 \u00b7 18.61x \u00b7 1.04 \u00b7 57.0 (3/54) \u00b7 97.5 \u00b7 99.5",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-11:135,139-141; LIVE_WORLD_PLAN:830-831 (27 / 145,760 / 97.7 / 2.3, August)"
+ },
+ {
+  "key": "mx.oos.O_D071_both",
+  "what": "Matrix July OOS O_D071_both: pairs/cells/incidents \u00b7 p10 adequacy \u00b7 late \u00b7 area p10 \u00b7 skill \u00b7 PIT extreme (early/late) \u00b7 6-12 h bin \u00b7 equal-incident",
+  "generator": "calmatrix_run.sh / calmatrix2_run.sh -> calmatrix_report.py",
+  "documented": "18/109,040/7 \u00b7 82.6 \u00b7 17.4 \u00b7 14.07x \u00b7 1.00 \u00b7 72.2 (23/49) \u00b7 96.9 \u00b7 91.8",
+  "before": "18/109,040/7 \u00b7 82.6 \u00b7 17.4 \u00b7 14.07x \u00b7 1.00 \u00b7 72.2 (23/49) \u00b7 96.9 \u00b7 91.8",
+  "after": "26/134,157/9 \u00b7 99.2 \u00b7 0.8 \u00b7 18.64x \u00b7 1.04 \u00b7 56.7 (3/54) \u00b7 97.3 \u00b7 99.5",
+  "cited": "calibration_matrix_2026-09-03.md / -09-11.md (oos); FIX_PROGRAM_2026-09-11:137"
+ }
+]

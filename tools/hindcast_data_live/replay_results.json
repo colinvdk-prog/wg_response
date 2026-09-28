@@ -1,7 +1,21 @@
 {
+ "config": {
+  "edge_weather_piecewise": false,
+  "ensemble_p50_nominal_bound": false,
+  "extreme_regime_enabled": false,
+  "extreme_regime_floor_frac": 0.0,
+  "grass_ros_floor_frac": 0.0,
+  "model_error_sd_log": 0.0,
+  "ros_floor_extinction_gate": false,
+  "ros_floor_grass_only": false,
+  "slope_phi_vector": false,
+  "spotting_enabled": false,
+  "wind_gust_blend": 0.0
+ },
+ "label": "",
  "pairs": [],
  "pairs_wide": [],
- "schema": "hindcast-replay/1",
+ "schema": "hindcast-replay/2",
  "skips": [
   "no cached incidents"
  ]

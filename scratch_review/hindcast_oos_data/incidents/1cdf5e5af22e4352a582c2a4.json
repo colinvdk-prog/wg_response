@@ -2,10 +2,17 @@
  "irwin": "{1CDF5E5A-F22E-4352-A582-C2A47663B93D}",
  "max_acres": 101921.0,
  "name": "AspenAcres-CO",
- "schema": "hindcast-incident/1",
+ "repair": {
+  "from_schema": "hindcast-incident/1",
+  "note": "no capture time had more than one row; geometry unchanged",
+  "repaired_utc": "2026-09-28 04:40"
+ },
+ "schema": "hindcast-incident/2",
+ "snapshot_rule": "first publication (smallest OBJECTID) per capture time; later same-time rows dropped as versions unless spatially disjoint (separate pieces, kept); growth gating on the first publication's acreage",
  "snapshots": [
   {
    "acres": 362.3748806739147,
+   "dropped_oids": [],
    "oids": [
     56618
    ],
@@ -163,6 +170,7 @@
   },
   {
    "acres": 22826.630569111443,
+   "dropped_oids": [],
    "oids": [
     56679
    ],
@@ -530,6 +538,7 @@
   },
   {
    "acres": 28362.5001889501,
+   "dropped_oids": [],
    "oids": [
     56733
    ],
@@ -1525,6 +1534,7 @@
   },
   {
    "acres": 35467.94400501674,
+   "dropped_oids": [],
    "oids": [
     56794
    ],
@@ -2892,6 +2902,7 @@
   },
   {
    "acres": 47952.826656812606,
+   "dropped_oids": [],
    "oids": [
     56820
    ],

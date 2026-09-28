@@ -2,10 +2,17 @@
  "irwin": "{286B7F1D-8945-4A5D-9D81-5235C18AF1FE}",
  "max_acres": 93847.0,
  "name": "Bug-CA",
- "schema": "hindcast-incident/1",
+ "repair": {
+  "from_schema": "hindcast-incident/1",
+  "note": "no capture time had more than one row; geometry unchanged",
+  "repaired_utc": "2026-09-28 04:40"
+ },
+ "schema": "hindcast-incident/2",
+ "snapshot_rule": "first publication (smallest OBJECTID) per capture time; later same-time rows dropped as versions unless spatially disjoint (separate pieces, kept); growth gating on the first publication's acreage",
  "snapshots": [
   {
    "acres": 6528.465548280052,
+   "dropped_oids": [],
    "oids": [
     61575
    ],
@@ -1447,6 +1454,7 @@
   },
   {
    "acres": 11404.499196714023,
+   "dropped_oids": [],
    "oids": [
     61654
    ],
@@ -2564,6 +2572,7 @@
   },
   {
    "acres": 16679.905902631876,
+   "dropped_oids": [],
    "oids": [
     61767
    ],
@@ -4119,6 +4128,7 @@
   },
   {
    "acres": 44303.947389492554,
+   "dropped_oids": [],
    "oids": [
     61840
    ],
@@ -6386,6 +6396,7 @@
   },
   {
    "acres": 57363.13744856091,
+   "dropped_oids": [],
    "oids": [
     61916
    ],

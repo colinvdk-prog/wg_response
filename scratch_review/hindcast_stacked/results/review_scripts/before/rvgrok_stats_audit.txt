@@ -1,0 +1,272 @@
+wrote C:\Users\colin\wg_response\.claude\worktrees\fix-hindcast-stacked-rings\scratch_review\hindcast_stacked\results\mirror\before\scratch_review\rvgrok_stats_audit_out.json
+
+=== AUG as-deployed CELL ===
+  n_pairs                          18
+  n_cells                          135081
+  coverage_possible_pct            93.7889
+  coverage_certain_pct             0.0000
+  late_miss_pct                    6.2111
+  early_miss_pct                   0.0000
+  never_reached_pct                0.0133
+  p90_unreached_pct                0.0015
+  p50_in_window_pct                90.2999
+  p10_not_after_window_pct         93.7889
+  p10_before_window_pct            0.0000
+  median_head_ratio                1.8804
+  mean_head_ratio                  2.8665
+  sum_check {'late_plus_early': 0.06211088161917664, 'late_eq_one_minus_cover': 2.0816681711721685e-17, 'p10_nec_eq_cover': 0.0}
+
+=== AUG as-deployed PAIR ===
+  n_pairs                          18
+  coverage_possible_pct            95.6552
+  late_miss_pct                    4.3448
+  early_miss_pct                   0.0000
+  p90_unreached_pct                0.0203
+  p50_in_window_pct                92.4635
+  p10_before_window_pct            0.0000
+  median_of_pair_coverage_pct      100.0000
+
+=== AUG calibration CELL ===
+  n_pairs                          18
+  n_cells                          135081
+  coverage_possible_pct            77.1885
+  coverage_certain_pct             0.0000
+  late_miss_pct                    22.8115
+  early_miss_pct                   0.0000
+  never_reached_pct                0.2643
+  p90_unreached_pct                8.4497
+  p50_in_window_pct                62.0628
+  p10_not_after_window_pct         77.1885
+  p10_before_window_pct            0.0000
+  median_head_ratio                1.0981
+  mean_head_ratio                  1.2103
+  sum_check {'late_plus_early': 0.22811498286213458, 'late_eq_one_minus_cover': 2.7755575615628914e-17, 'p10_nec_eq_cover': 0.0}
+
+=== JULY b0.5 CELL ===
+  n_pairs                          8
+  n_cells                          60249
+  coverage_possible_pct            48.6398
+  coverage_certain_pct             0.0000
+  late_miss_pct                    51.3602
+  early_miss_pct                   0.0000
+  never_reached_pct                32.0072
+  p90_unreached_pct                3.7245
+  p50_in_window_pct                45.1327
+  p10_not_after_window_pct         48.6398
+  p10_before_window_pct            0.0000
+  median_head_ratio                1.2621
+  mean_head_ratio                  1.8459
+  sum_check {'late_plus_early': 0.5136018855084732, 'late_eq_one_minus_cover': 0.0, 'p10_nec_eq_cover': 0.0}
+
+=== JULY b0.5 PAIR ===
+  n_pairs                          8
+  coverage_possible_pct            83.1140
+  late_miss_pct                    16.8860
+  early_miss_pct                   0.0000
+  p90_unreached_pct                0.8684
+  p50_in_window_pct                80.0933
+  p10_before_window_pct            0.0000
+  median_of_pair_coverage_pct      95.8084
+
+=== JULY floor CELL ===
+  n_pairs                          8
+  n_cells                          60249
+  coverage_possible_pct            64.7695
+  coverage_certain_pct             0.0000
+  late_miss_pct                    35.2305
+  early_miss_pct                   0.0000
+  never_reached_pct                7.0308
+  p90_unreached_pct                9.3595
+  p50_in_window_pct                63.9065
+  p10_not_after_window_pct         64.7695
+  p10_before_window_pct            0.0000
+  median_head_ratio                3.3879
+  mean_head_ratio                  2.9110
+  sum_check {'late_plus_early': 0.3523046025660177, 'late_eq_one_minus_cover': 0.0, 'p10_nec_eq_cover': 0.0}
+
+=== JULY floor PAIR ===
+  n_pairs                          8
+  coverage_possible_pct            92.1538
+  late_miss_pct                    7.8462
+  early_miss_pct                   0.0000
+  p90_unreached_pct                2.0800
+  p50_in_window_pct                91.9318
+  p10_before_window_pct            0.0000
+  median_of_pair_coverage_pct      100.0000
+
+=== JULY floor ex-Porcupine CELL ===
+  n_pairs                          7
+  n_cells                          26361
+  coverage_possible_pct            99.9697
+  coverage_certain_pct             0.0000
+  late_miss_pct                    0.0303
+  early_miss_pct                   0.0000
+  never_reached_pct                0.0038
+  p90_unreached_pct                0.0000
+  p50_in_window_pct                99.9165
+  p10_not_after_window_pct         99.9697
+  p10_before_window_pct            0.0000
+  median_head_ratio                3.3879
+  mean_head_ratio                  3.2605
+  sum_check {'late_plus_early': 0.00030347862372444144, 'late_eq_one_minus_cover': 4.320545657354735e-17, 'p10_nec_eq_cover': 0.0}
+
+=== JULY floor ex-Porcupine PAIR ===
+  n_pairs                          7
+  coverage_possible_pct            99.9776
+  late_miss_pct                    0.0224
+  early_miss_pct                   0.0000
+  p90_unreached_pct                0.0000
+  p50_in_window_pct                99.9371
+  p10_before_window_pct            0.0000
+  median_of_pair_coverage_pct      100.0000
+
+=== CAL b0.5 CELL ===
+  n_pairs                          14
+  n_cells                          60062
+  coverage_possible_pct            73.5190
+  coverage_certain_pct             0.0000
+  late_miss_pct                    26.4810
+  early_miss_pct                   0.0000
+  never_reached_pct                0.0083
+  p90_unreached_pct                0.0133
+  p50_in_window_pct                68.9821
+  p10_not_after_window_pct         73.5190
+  p10_before_window_pct            0.0000
+  median_head_ratio                1.7724
+  mean_head_ratio                  2.1882
+  sum_check {'late_plus_early': 0.2648096966467983, 'late_eq_one_minus_cover': 0.0, 'p10_nec_eq_cover': 0.0}
+
+=== CAL floor CELL ===
+  n_pairs                          14
+  n_cells                          60062
+  coverage_possible_pct            91.4855
+  coverage_certain_pct             0.0000
+  late_miss_pct                    8.5145
+  early_miss_pct                   0.0000
+  never_reached_pct                0.0083
+  p90_unreached_pct                0.0000
+  p50_in_window_pct                87.3730
+  p10_not_after_window_pct         91.4855
+  p10_before_window_pct            0.0000
+  median_head_ratio                2.7757
+  mean_head_ratio                  4.9635
+  sum_check {'late_plus_early': 0.08514534980520129, 'late_eq_one_minus_cover': 1.3877787807814457e-17, 'p10_nec_eq_cover': 0.0}
+
+=== AUG HHI === {'hhi': 0.18653022601548577, 'eff_n': 5.361061428816259, 'largest_share_pct': 36.87565238634597, 'top3_share_pct': 60.02990798113724}
+=== JUL b05 HHI === {'hhi': 0.35156677893157334, 'eff_n': 2.8444098246115384, 'largest_share_pct': 56.24657670666733, 'top3_share_pct': 77.40709389367458}
+=== JUL floor HHI === {'hhi': 0.35156677893157334, 'eff_n': 2.8444098246115384, 'largest_share_pct': 56.24657670666733, 'top3_share_pct': 77.40709389367458}
+
+=== AUG structural === {
+  "label": "aug_as_deployed",
+  "n_cells": 135081,
+  "early_miss": 0,
+  "p10_before_window": 0,
+  "covered_certain": 0,
+  "p90_unreached": 2,
+  "early_miss_pct": 0.0,
+  "p10_before_pct": 0.0,
+  "certain_pct": 0.0,
+  "p90_unreached_pct": 0.0014805931256061178,
+  "late_equals_one_minus_cover": true,
+  "pairs_where_late_plus_cover_ne_n": []
+}
+
+=== JUL structural b05 === {
+  "label": "july_b05",
+  "n_cells": 60249,
+  "early_miss": 0,
+  "p10_before_window": 0,
+  "covered_certain": 0,
+  "p90_unreached": 2244,
+  "early_miss_pct": 0.0,
+  "p10_before_pct": 0.0,
+  "certain_pct": 0.0,
+  "p90_unreached_pct": 3.724543145944331,
+  "late_equals_one_minus_cover": true,
+  "pairs_where_late_plus_cover_ne_n": []
+}
+
+=== AUG fuel late === {
+  "GR": {
+    "n": 41857,
+    "late": 1535,
+    "late_pct": 3.6672480110853622,
+    "cover_pct": 96.33275198891464
+  },
+  "GS": {
+    "n": 58432,
+    "late": 3121,
+    "late_pct": 5.341251369112815,
+    "cover_pct": 94.65874863088719
+  },
+  "SH": {
+    "n": 26955,
+    "late": 3632,
+    "late_pct": 13.474309033574476,
+    "cover_pct": 86.52569096642553
+  },
+  "TL": {
+    "n": 3018,
+    "late": 91,
+    "late_pct": 3.015241882041087,
+    "cover_pct": 96.98475811795892
+  },
+  "TU": {
+    "n": 4819,
+    "late": 11,
+    "late_pct": 0.22826312512969496,
+    "cover_pct": 99.7717368748703
+  }
+}
+
+=== AUG pair table ===
+  Tartar-ID          cells= 49812 share= 36.9% cover=100.0 late=  0.0 ratio=1.18 dt=48.1h p90u=0 certain=0 p10b=0
+  ColemanCreek-OR    cells= 16853 share= 12.5% cover=100.0 late=  0.0 ratio=2.89 dt=24.8h p90u=0 certain=0 p10b=0
+  Tartar-ID          cells= 14424 share= 10.7% cover=100.0 late=  0.0 ratio=1.11 dt=13.6h p90u=0 certain=0 p10b=0
+  Bug-CA             cells= 13594 share= 10.1% cover= 45.2 late= 54.8 ratio=0.69 dt=9.5h p90u=0 certain=0 p10b=0
+  Stallion-NV        cells=  9677 share=  7.2% cover= 94.4 late=  5.6 ratio=1.1 dt=11.5h p90u=0 certain=0 p10b=0
+  Stallion-NV        cells=  9117 share=  6.7% cover=100.0 late=  0.0 ratio=3.81 dt=38.8h p90u=0 certain=0 p10b=0
+  Bug-CA             cells=  6539 share=  4.8% cover= 97.1 late=  2.9 ratio=0.99 dt=13.0h p90u=0 certain=0 p10b=0
+  Bug-CA             cells=  2660 share=  2.0% cover= 99.8 late=  0.2 ratio=1.79 dt=24.5h p90u=0 certain=0 p10b=0
+  Bug-CA             cells=  2456 share=  1.8% cover=100.0 late=  0.0 ratio=1.75 dt=16.6h p90u=0 certain=0 p10b=0
+  SandCreek-MT       cells=  1766 share=  1.3% cover=100.0 late=  0.0 ratio=3.31 dt=33.5h p90u=0 certain=0 p10b=0
+  Stallion-NV        cells=  1606 share=  1.2% cover= 88.9 late= 11.1 ratio=1.08 dt=8.1h p90u=0 certain=0 p10b=0
+  Ptarmigan-WA       cells=  1386 share=  1.0% cover=100.0 late=  0.0 ratio=3.82 dt=24.9h p90u=0 certain=0 p10b=0
+  Ptarmigan-WA       cells=  1348 share=  1.0% cover=100.0 late=  0.0 ratio=5.46 dt=44.5h p90u=0 certain=0 p10b=0
+  SandCreek-MT       cells=  1152 share=  0.9% cover=100.0 late=  0.0 ratio=1.88 dt=10.4h p90u=0 certain=0 p10b=0
+  Tartar-ID          cells=  1060 share=  0.8% cover= 98.2 late=  1.8 ratio=1.63 dt=8.4h p90u=0 certain=0 p10b=0
+  SandCreek-MT       cells=   745 share=  0.6% cover=100.0 late=  0.0 ratio=4.29 dt=15.4h p90u=0 certain=0 p10b=0
+  Border2-WA         cells=   548 share=  0.4% cover= 98.2 late=  1.8 ratio=5.59 dt=71.3h p90u=2 certain=0 p10b=0
+  SandCreek-MT       cells=   338 share=  0.3% cover=100.0 late=  0.0 ratio=9.22 dt=63.8h p90u=0 certain=0 p10b=0
+
+=== JUL floor pair table ===
+  PorcupineRidge-OR  cells= 33888 share= 56.2% cover= 37.4 late= 62.6 ratio=0.46 dt=12.9h
+  KaiserCanyon-WA    cells=  6468 share= 10.7% cover=100.0 late=  0.0 ratio=1.97 dt=35.6h
+  KaiserCanyon-WA    cells=  6281 share= 10.4% cover=100.0 late=  0.0 ratio=2.98 dt=23.9h
+  KaiserCanyon-WA    cells=  4943 share=  8.2% cover= 99.9 late=  0.1 ratio=2.58 dt=11.2h
+  Brewer-OR          cells=  3273 share=  5.4% cover=100.0 late=  0.0 ratio=3.48 dt=23.1h
+  Brewer-OR          cells=  2627 share=  4.4% cover=100.0 late=  0.0 ratio=3.39 dt=48.4h
+  Stookey-UT         cells=  1934 share=  3.2% cover=100.0 late=  0.0 ratio=4.37 dt=23.1h
+  Stookey-UT         cells=   835 share=  1.4% cover=100.0 late=  0.0 ratio=4.06 dt=16.4h
+
+=== selection ===
+ discovered 94 kept 61 dropped 33
+ kept acres {'n': 61, 'min': 1056.3563448023474, 'p50': 8993.233563429923, 'mean': 41646.45027579929, 'max': 355120.7213417288, 'ge_1000': 61, 'ge_10000': 28, 'single_row': 0, 'span0': 0}
+ dropped acres {'n': 33, 'min': 1000.0, 'p50': 5070.307011909555, 'mean': 30782.1254305246, 'max': 575163.4523846689, 'ge_1000': 33, 'ge_10000': 7, 'single_row': 18, 'span0': 28}
+ drop reasons {'n_rows<=1 (no pair)': 18, 'other_or_filter': 5, 'span_h=0': 10}
+
+=== AUG LOO (biggest cover deltas) ===
+  drop Bug-CA             share= 10.1% late= 54.8 rest_cover=99.22 dCover=+5.43
+  drop Tartar-ID          share= 36.9% late=  0.0 rest_cover=90.16 dCover=-3.63
+  drop ColemanCreek-OR    share= 12.5% late=  0.0 rest_cover=92.90 dCover=-0.89
+  drop Tartar-ID          share= 10.7% late=  0.0 rest_cover=93.05 dCover=-0.74
+  drop Stallion-NV        share=  6.7% late=  0.0 rest_cover=93.34 dCover=-0.45
+  drop Bug-CA             share=  4.8% late=  2.9 rest_cover=93.62 dCover=-0.17
+
+=== JUL floor LOO ===
+  drop PorcupineRidge-OR  share= 56.2% late= 62.6 rest_cover=99.97 dCover=+35.20
+  drop KaiserCanyon-WA    share= 10.7% late=  0.0 rest_cover=60.53 dCover=-4.24
+  drop KaiserCanyon-WA    share= 10.4% late=  0.0 rest_cover=60.67 dCover=-4.10
+  drop KaiserCanyon-WA    share=  8.2% late=  0.1 rest_cover=61.63 dCover=-3.14
+  drop Brewer-OR          share=  5.4% late=  0.0 rest_cover=62.75 dCover=-2.02
+  drop Brewer-OR          share=  4.4% late=  0.0 rest_cover=63.16 dCover=-1.61

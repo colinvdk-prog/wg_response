@@ -2,10 +2,17 @@
  "irwin": "{08A6358F-8301-4093-9988-E265C8F6F0A9}",
  "max_acres": 132604.54915253745,
  "name": "Gifford",
- "schema": "hindcast-incident/1",
+ "repair": {
+  "from_schema": "hindcast-incident/1",
+  "note": "no capture time had more than one row; geometry unchanged",
+  "repaired_utc": "2026-09-28 04:40"
+ },
+ "schema": "hindcast-incident/2",
+ "snapshot_rule": "first publication (smallest OBJECTID) per capture time; later same-time rows dropped as versions unless spatially disjoint (separate pieces, kept); growth gating on the first publication's acreage",
  "snapshots": [
   {
    "acres": 819.6106982491301,
+   "dropped_oids": [],
    "oids": [
     43806
    ],
@@ -401,6 +408,7 @@
   },
   {
    "acres": 30519.259323,
+   "dropped_oids": [],
    "oids": [
     43841
    ],
@@ -2044,6 +2052,7 @@
   },
   {
    "acres": 39676.0,
+   "dropped_oids": [],
    "oids": [
     43882
    ],
@@ -3841,6 +3850,7 @@
   },
   {
    "acres": 49760.0,
+   "dropped_oids": [],
    "oids": [
     43922
    ],
@@ -5048,6 +5058,7 @@
   },
   {
    "acres": 66985.60519110419,
+   "dropped_oids": [],
    "oids": [
     43991
    ],

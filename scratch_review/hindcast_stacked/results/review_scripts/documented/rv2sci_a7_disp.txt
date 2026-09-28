@@ -1,0 +1,9 @@
+wrote C:\Users\colin\wg_response\.claude\worktrees\fix-hindcast-stacked-rings\scratch_review\hindcast_stacked\results\mirror\documented\scratch_review\rv2sci_a7.json
+as-deployed n=18
+  head_P10/head_P50 median=1.093  range 0.992-1.324
+  sd(log head-ratio P50/obs)=0.710
+  band half-width=0.089  underdisp=8.0x
+  observed inside [P10,P50]: 1/18
+  PIT [17891, 3386, 5455, 1249, 4262, 13132, 89706]  lo=13.2%  hi=66.4%  both=79.7%
+  realized wind Â±12.5% (cfg 25% * 0.5)
+  synth={'t_cut_h': 3.0, 'n_members': 6, 'head_p10_m': 3818.3766184073565, 'head_p50_m': 2672.8636328851494, 'head_nominal_m': 3818.3766184073565, 'member_heads_m': [3818.3766184073565, 3244.9961479175904, 3818.3766184073565, 3195.9505628216466, 3060.0, 3060.0], 'p10_over_p50': 1.4285714285714286, 'member_head_cv': 0.09702959709801678}
