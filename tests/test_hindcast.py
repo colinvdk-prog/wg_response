@@ -207,16 +207,18 @@ def test_pick_snapshot_times_growth_dt_and_chain_break():
         (2, 2 * h, 5000.0),      # too soon (< 6 h) despite growth
         (3, 8 * h, 1040.0),      # >= 6 h but growth < max(8%, 300 ac)
         (4, 12 * h, 2000.0),     # picked (growth 1000 >= 300)
-        (5, 12 * h, 2500.0),     # same capture time: merged into oid group
-        (6, 20 * h, 2600.0),     # growth 100 < 300 — not picked
+        (5, 12 * h, 2500.0),     # same capture time: a later version, listed
+        (6, 20 * h, 2200.0),     # growth 200 < 300 — not picked
         (7, 200 * h, 9000.0),    # gap > 90 h: chain break, fresh T0
         (8, 210 * h, 12000.0),   # picked (vs fresh T0)
     ]
     picks = H.pick_snapshot_times(rows)
     assert [(t, oids) for t, oids, _ in picks] == [
         (0.0, [1]), (12 * h, [4, 5]), (200 * h, [7]), (210 * h, [8])]
-    # acres of a merged group is the max over its rows
-    assert picks[1][2] == 2500.0
+    # a capture time is gated on its FIRST-published row (SNAPSHOT RULE,
+    # fix of 2026-09-27; was the max over its rows) — see
+    # tests/test_hindcast_snapshot_rule.py
+    assert picks[1][2] == 2000.0
     # max_snapshots cap
     assert len(H.pick_snapshot_times(rows, max_snapshots=2)) == 2
 

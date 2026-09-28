@@ -2,10 +2,17 @@
  "irwin": "{0140F0B6-2F32-4651-9008-E5AE2C38F547}",
  "max_acres": 11973.306977849941,
  "name": "Dillon",
- "schema": "hindcast-incident/1",
+ "repair": {
+  "from_schema": "hindcast-incident/1",
+  "note": "no capture time had more than one row; geometry unchanged",
+  "repaired_utc": "2026-09-28 04:40"
+ },
+ "schema": "hindcast-incident/2",
+ "snapshot_rule": "first publication (smallest OBJECTID) per capture time; later same-time rows dropped as versions unless spatially disjoint (separate pieces, kept); growth gating on the first publication's acreage",
  "snapshots": [
   {
    "acres": 922.5856122078153,
+   "dropped_oids": [],
    "oids": [
     45895
    ],
@@ -421,6 +428,7 @@
   },
   {
    "acres": 3110.422917220897,
+   "dropped_oids": [],
    "oids": [
     46052
    ],
@@ -1124,6 +1132,7 @@
   },
   {
    "acres": 4015.986594557992,
+   "dropped_oids": [],
    "oids": [
     46122
    ],
@@ -1885,6 +1894,7 @@
   },
   {
    "acres": 4921.603330228254,
+   "dropped_oids": [],
    "oids": [
     46208
    ],
@@ -2814,6 +2824,7 @@
   },
   {
    "acres": 5837.51347663138,
+   "dropped_oids": [],
    "oids": [
     46292
    ],

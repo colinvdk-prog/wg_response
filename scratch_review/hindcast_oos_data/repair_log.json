@@ -1,0 +1,556 @@
+{
+ "incidents": [
+  {
+   "capture_times": "kept from the pre-fix fetch; each snapshot rebuilt from the rows cached under its time",
+   "domain": "pinned to the pre-fix domain (the rebuilt rings alone would give a different bbox)",
+   "fidelity": "re-read rings of all 33 cached OBJECTIDs reproduce the cached file exactly",
+   "file": "1b0219ee52984fef9927c266.json",
+   "fixed_picker_today": {
+    "capture_times": [
+     1784219100.0,
+     1784270580.0,
+     1784883840.0,
+     1785039240.0,
+     1785214920.0
+    ],
+    "same_as_cached": false
+   },
+   "from_schema": "hindcast-incident/1",
+   "name": "Crosswhite-OR",
+   "rebuilt_snapshots": [
+    {
+     "acres_after": 4667.34,
+     "acres_before": 6854.38,
+     "dropped_oids": [
+      58182
+     ],
+     "kept_oids": [
+      58164
+     ],
+     "t_s": 1784219100.0
+    },
+    {
+     "acres_after": 13883.198513337713,
+     "acres_before": 134128.0,
+     "dropped_oids": [
+      58194,
+      58207,
+      58216,
+      58369,
+      58416,
+      58529,
+      58537,
+      58669,
+      58687,
+      58692,
+      58773,
+      58820,
+      58848,
+      58961,
+      58990,
+      59001,
+      59026,
+      59055
+     ],
+     "kept_oids": [
+      58193
+     ],
+     "t_s": 1784270580.0
+    },
+    {
+     "acres_after": 175078.92761443736,
+     "acres_before": 175078.92761443736,
+     "dropped_oids": [
+      59157
+     ],
+     "kept_oids": [
+      59109
+     ],
+     "t_s": 1784883840.0
+    },
+    {
+     "acres_after": 191154.8197224791,
+     "acres_before": 268559.49336174846,
+     "dropped_oids": [
+      59410,
+      59496,
+      59501,
+      59522,
+      59690,
+      59697,
+      59718,
+      59720,
+      59737
+     ],
+     "kept_oids": [
+      59366
+     ],
+     "t_s": 1785039240.0
+    }
+   ],
+   "repaired_utc": "2026-09-28 04:40",
+   "weather_centroid_shift_m": 1597.7
+  },
+  {
+   "file": "1cdf5e5af22e4352a582c2a4.json",
+   "name": "AspenAcres-CO",
+   "relabelled": true
+  },
+  {
+   "capture_times": "kept from the pre-fix fetch; each snapshot rebuilt from the rows cached under its time",
+   "domain": "pinned to the pre-fix domain (the rebuilt rings alone would give a different bbox)",
+   "fidelity": "re-read rings of all 12 cached OBJECTIDs reproduce the cached file exactly",
+   "file": "548a8d281a0448ee9011aba0.json",
+   "fixed_picker_today": {
+    "capture_times": [
+     1782690780.0,
+     1782936441.0,
+     1783050300.0,
+     1783227360.0,
+     1783408740.0
+    ],
+    "same_as_cached": false
+   },
+   "from_schema": "hindcast-incident/1",
+   "name": "Willow-CO",
+   "rebuilt_snapshots": [
+    {
+     "acres_after": 1261.8658624838197,
+     "acres_before": 2010.7843826246117,
+     "dropped_oids": [
+      56697,
+      56759,
+      56780
+     ],
+     "kept_oids": [
+      56639
+     ],
+     "t_s": 1782753720.0
+    },
+    {
+     "acres_after": 2206.5464553437473,
+     "acres_before": 2355.0228027991743,
+     "dropped_oids": [
+      56897
+     ],
+     "kept_oids": [
+      56830
+     ],
+     "t_s": 1782975360.0
+    },
+    {
+     "acres_after": 2540.6646895803683,
+     "acres_before": 3090.372704461594,
+     "dropped_oids": [
+      57064,
+      57109
+     ],
+     "kept_oids": [
+      56938
+     ],
+     "t_s": 1783050300.0
+    },
+    {
+     "acres_after": 3956.54116840092,
+     "acres_before": 3986.746774902069,
+     "dropped_oids": [
+      57174
+     ],
+     "kept_oids": [
+      57130
+     ],
+     "t_s": 1783227360.0
+    }
+   ],
+   "repaired_utc": "2026-09-28 04:40",
+   "weather_centroid_shift_m": 0.0
+  },
+  {
+   "capture_times": "kept from the pre-fix fetch; each snapshot rebuilt from the rows cached under its time",
+   "domain": "unchanged",
+   "fidelity": "re-read rings of all 8 cached OBJECTIDs reproduce the cached file exactly",
+   "file": "6ad80de9cd4140d38939a86c.json",
+   "fixed_picker_today": {
+    "capture_times": [
+     1783883468.0,
+     1784075640.0,
+     1784351100.0,
+     1784759820.0
+    ],
+    "same_as_cached": false
+   },
+   "from_schema": "hindcast-incident/1",
+   "name": "ELEPHANT",
+   "rebuilt_snapshots": [
+    {
+     "acres_after": 6442.0,
+     "acres_before": 15526.0,
+     "dropped_oids": [
+      57914,
+      57981,
+      58003,
+      58010
+     ],
+     "kept_oids": [
+      57795
+     ],
+     "t_s": 1783883468.0
+    },
+    {
+     "acres_after": 13681.0,
+     "acres_before": 13695.0,
+     "dropped_oids": [
+      58248
+     ],
+     "kept_oids": [
+      58197
+     ],
+     "t_s": 1784278500.0
+    }
+   ],
+   "repaired_utc": "2026-09-28 04:40",
+   "weather_centroid_shift_m": 2272.1
+  },
+  {
+   "capture_times": "kept from the pre-fix fetch; each snapshot rebuilt from the rows cached under its time",
+   "domain": "pinned to the pre-fix domain (the rebuilt rings alone would give a different bbox)",
+   "fidelity": "re-read rings of all 9 cached OBJECTIDs reproduce the cached file exactly",
+   "file": "a32b1a1faf6449039b758bcb.json",
+   "fixed_picker_today": {
+    "capture_times": [
+     1783790738.0,
+     1783868941.0,
+     1783941780.0,
+     1784000700.0,
+     1784083860.0
+    ],
+    "same_as_cached": true
+   },
+   "from_schema": "hindcast-incident/1",
+   "name": "Stookey-UT",
+   "rebuilt_snapshots": [
+    {
+     "acres_after": 10275.794005651669,
+     "acres_before": 11881.325145132614,
+     "dropped_oids": [
+      58094,
+      58110,
+      58200,
+      58636
+     ],
+     "kept_oids": [
+      58028
+     ],
+     "t_s": 1784083860.0
+    }
+   ],
+   "repaired_utc": "2026-09-28 04:40",
+   "weather_centroid_shift_m": 0.0
+  },
+  {
+   "capture_times": "kept from the pre-fix fetch; each snapshot rebuilt from the rows cached under its time",
+   "domain": "unchanged",
+   "fidelity": "re-read rings of all 11 cached OBJECTIDs reproduce the cached file exactly",
+   "file": "b1b09572cd774b0a8e067128.json",
+   "fixed_picker_today": {
+    "capture_times": [
+     1720153860.0,
+     1782180902.0,
+     1782298299.0,
+     1782327915.0,
+     1782386152.0
+    ],
+    "same_as_cached": true
+   },
+   "from_schema": "hindcast-incident/1",
+   "name": "Cottonwood-UT",
+   "rebuilt_snapshots": [
+    {
+     "acres_after": 1536.1641044025046,
+     "acres_before": 38764.74880459022,
+     "dropped_oids": [
+      56173,
+      56182,
+      56202,
+      56217,
+      56242,
+      56260
+     ],
+     "kept_oids": [
+      56167
+     ],
+     "t_s": 1782180902.0
+    }
+   ],
+   "repaired_utc": "2026-09-28 04:40",
+   "weather_centroid_shift_m": 0.0
+  },
+  {
+   "capture_times": "kept from the pre-fix fetch; each snapshot rebuilt from the rows cached under its time",
+   "domain": "pinned to the pre-fix domain (the rebuilt rings alone would give a different bbox)",
+   "fidelity": "re-read rings of all 13 cached OBJECTIDs reproduce the cached file exactly",
+   "file": "b5597100d6c949f9bc746b8f.json",
+   "fixed_picker_today": {
+    "capture_times": [
+     1784234640.0,
+     1784465259.0,
+     1784505520.0,
+     1784633800.0,
+     1784719896.0
+    ],
+    "same_as_cached": true
+   },
+   "from_schema": "hindcast-incident/1",
+   "name": "KaiserCanyon-WA",
+   "rebuilt_snapshots": [
+    {
+     "acres_after": 2169.762188859342,
+     "acres_before": 46103.168235821664,
+     "dropped_oids": [
+      58253,
+      58265,
+      58347,
+      58358,
+      58378,
+      58384,
+      58390,
+      58395
+     ],
+     "kept_oids": [
+      58176
+     ],
+     "t_s": 1784234640.0
+    }
+   ],
+   "repaired_utc": "2026-09-28 04:40",
+   "weather_centroid_shift_m": 7534.0
+  },
+  {
+   "capture_times": "kept from the pre-fix fetch; each snapshot rebuilt from the rows cached under its time",
+   "domain": "unchanged",
+   "fidelity": "re-read rings of all 6 cached OBJECTIDs reproduce the cached file exactly",
+   "file": "ccefd7d4febd496d855eca0c.json",
+   "fixed_picker_today": {
+    "capture_times": [
+     1784263988.0,
+     1784438160.0,
+     1784521320.0,
+     1784609820.0,
+     1784773560.0
+    ],
+    "same_as_cached": true
+   },
+   "from_schema": "hindcast-incident/1",
+   "name": "Brewer-OR",
+   "rebuilt_snapshots": [
+    {
+     "acres_after": 27931.63735905267,
+     "acres_before": 27931.63735905267,
+     "dropped_oids": [
+      58832
+     ],
+     "kept_oids": [
+      58704
+     ],
+     "t_s": 1784609820.0
+    }
+   ],
+   "repaired_utc": "2026-09-28 04:40",
+   "weather_centroid_shift_m": 0.0
+  },
+  {
+   "capture_times": "kept from the pre-fix fetch; each snapshot rebuilt from the rows cached under its time",
+   "domain": "unchanged",
+   "fidelity": "re-read rings of all 3 cached OBJECTIDs reproduce the cached file exactly",
+   "file": "e3094e358b334a82be4bd2e8.json",
+   "fixed_picker_today": {
+    "capture_times": [
+     1784659010.0,
+     1784690220.0
+    ],
+    "same_as_cached": true
+   },
+   "from_schema": "hindcast-incident/1",
+   "name": "BISCAR",
+   "rebuilt_snapshots": [
+    {
+     "acres_after": 69320.32848727044,
+     "acres_before": 69320.32848727044,
+     "dropped_oids": [
+      59073
+     ],
+     "kept_oids": [
+      58846
+     ],
+     "t_s": 1784690220.0
+    }
+   ],
+   "repaired_utc": "2026-09-28 04:40",
+   "weather_centroid_shift_m": 0.0
+  },
+  {
+   "capture_times": "kept from the pre-fix fetch; each snapshot rebuilt from the rows cached under its time",
+   "domain": "pinned to the pre-fix domain (the rebuilt rings alone would give a different bbox)",
+   "fidelity": "re-read rings of all 33 cached OBJECTIDs reproduce the cached file exactly",
+   "file": "ee6fcf9776374721b1257410.json",
+   "fixed_picker_today": {
+    "capture_times": [
+     1784263980.0,
+     1784310600.0
+    ],
+    "same_as_cached": true
+   },
+   "from_schema": "hindcast-incident/1",
+   "name": "PorcupineRidge-OR",
+   "rebuilt_snapshots": [
+    {
+     "acres_after": 4595.0,
+     "acres_before": 4595.13280427606,
+     "dropped_oids": [
+      58199
+     ],
+     "kept_oids": [
+      58188
+     ],
+     "t_s": 1784263980.0
+    },
+    {
+     "acres_after": 15620.63,
+     "acres_before": 80081.80350493515,
+     "dropped_oids": [
+      58335,
+      58411,
+      58534,
+      58541,
+      58542,
+      58543,
+      58556,
+      58557,
+      58575,
+      58658,
+      58697,
+      58724,
+      58745,
+      58810,
+      58812,
+      58826,
+      58841,
+      58845,
+      58900,
+      58902,
+      58928,
+      58994,
+      59020,
+      59029,
+      59063,
+      59068,
+      59071,
+      59079,
+      59238,
+      59312
+     ],
+     "kept_oids": [
+      58269
+     ],
+     "t_s": 1784310600.0
+    }
+   ],
+   "repaired_utc": "2026-09-28 04:40",
+   "weather_centroid_shift_m": 0.0
+  }
+ ],
+ "n_requests": 18,
+ "requests": [
+  {
+   "bytes": 15360,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 1828059,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 11897,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 141235,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 3266,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 73228,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 2894,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 189575,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 13265,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 115535,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 29988,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 131249,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 4281,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 80907,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 2502,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 34881,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 6872,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  },
+  {
+   "bytes": 1065744,
+   "status": 200,
+   "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Daily_Perimeters_Public/FeatureServer/0/query"
+  }
+ ],
+ "schema": "hindcast-repair/1"
+}

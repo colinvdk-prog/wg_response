@@ -110,6 +110,13 @@ class HindcastIncident:
     name: str
     snapshots: list = field(default_factory=list)   # PerimeterSnapshot, by t_s
     max_acres: float = 0.0
+    # Capture times (t_s) of snapshots a pre-fix (hindcast-incident/1) file
+    # built by unioning same-time rows — see SNAPSHOT RULE. Non-empty means
+    # the file must be rebuilt (`hindcast_harness.py repair`) before replay.
+    stacked_legacy: list = field(default_factory=list)
+    # (west, south, east, north) pinned by `repair` when the rebuilt
+    # snapshots would move the replay domain off the cached terrain tile.
+    domain_bbox: tuple = None
 
 
 @dataclass
@@ -589,6 +596,44 @@ def parse_series_attrs(payload: dict) -> list:
     return rows
 
 
+# SNAPSHOT RULE (fix of 2026-09-27; record and measurements in
+# docs/calibration/stacked_rings_fix_2026-09-27.md)
+# ------------------------------------------------------------------------
+# WFIGS_Daily_Perimeters_Public appends a NEW row every time a source
+# perimeter record changes, so the rows that share one poly_PolygonDateTime
+# are versions of ONE polygon, not pieces of one: re-copies of an unchanged
+# record, in-place edits that were never re-stamped, and re-uploads under a
+# new record id. Measured on the cached corpora: Crosswhite's 2026-07-17 06:43
+# record grew 13,883 -> 134,128 ac over 19 versions in six days, Tartar's
+# 2026-07-25 15:33 record 1,937 -> 97,737 ac over nine; Crosswhite
+# 2026-07-24 09:04 is two records of 175,079 ac each. The pre-fix law unioned
+# every such row into one snapshot, stacking near-duplicate rings that the
+# even-odd rasterizers (engine seed and scoring mask alike) cancel: Madre's
+# 2025-07-02 capture of 8,396 ac rasterized to 0 cells. The rule now:
+#   1. A capture time is represented by its FIRST-PUBLISHED row (smallest
+#      OBJECTID; OBJECTID order is the layer's append order). That version is
+#      the one nearest its own stamp (its poly_DateCurrent trails the stamp
+#      by minutes to hours; later edits trail it by hours to weeks), the one
+#      a live system could have seen at the time, and it never changes as the
+#      layer accumulates edits, so a re-fetch reproduces the corpus. The
+#      latest revision (largest OBJECTID / latest poly_DateCurrent) was
+#      rejected: it dates days of later growth to the original stamp.
+#   2. A later row under the same capture time is kept only as a genuinely
+#      separate piece: its interior and the rows already kept overlap by at
+#      most SAME_TIME_OVERLAP_TOL of either one's area (same_time_overlap_
+#      frac). Overlapping rows are versions and are dropped (`dropped_oids`).
+#      A kept row's own rings (multipolygon parts and holes) stay whole.
+#   3. Growth gating (pick_snapshot_times) uses the first-published row's
+#      acreage, i.e. the polygon rule 1 keeps, never a later revision's.
+# Rows stamped with a time older than an already-published capture (out-of-
+# order publication) are NOT dropped here: on these corpora most are genuine
+# captures published hours late (Gifford 2025-08-01..03); the growth gate and
+# the replay's dt window exclude the bogus-year ones.
+
+SAME_TIME_OVERLAP_TOL = 0.05     # overlap above this => versions, not pieces
+_OVERLAP_GRID_CELLS = 64         # raster resolution of the overlap test
+
+
 def pick_snapshot_times(rows: list, min_dt_h: float = 6.0,
                         max_dt_h: float = 90.0,
                         min_growth_frac: float = 0.08,
@@ -596,8 +641,9 @@ def pick_snapshot_times(rows: list, min_dt_h: float = 6.0,
                         max_snapshots: int = 5) -> list:
     """Greedy snapshot selection from an attrs time series.
 
-    `rows` = [(oid, t_s, acres)] ascending. Rows sharing one capture time form
-    ONE snapshot (multi-row multipolygon uploads). Starting from the earliest
+    `rows` = [(oid, t_s, acres)]. Rows sharing one capture time are versions
+    of one polygon (SNAPSHOT RULE above), so each capture time is gated on
+    its FIRST-PUBLISHED row (smallest OBJECTID). Starting from the earliest
     capture, the next snapshot is the first capture >= min_dt_h later whose
     acreage grew by >= max(min_growth_frac * prev, min_growth_ac) — pairs
     closer than min_dt_h can't be scored against 90 m cells, and no-growth
@@ -605,31 +651,136 @@ def pick_snapshot_times(rows: list, min_dt_h: float = 6.0,
     horizon (cfg.horizon_h = 96 h) and BREAK the chain: the long-gap capture
     starts a fresh T0 (the pair across the gap is never emitted).
 
-    Returns [(t_s, [oids], acres)] — at most max_snapshots entries.
+    Returns [(t_s, [oids], acres)] — at most max_snapshots entries. `oids`
+    lists every row published under that capture time in OBJECTID order
+    (first publication first; assemble_snapshot needs the later rows to
+    recognise a separate piece); `acres` is the first publication's.
     """
     groups: dict = {}
     for oid, t_s, acres in rows:
-        g = groups.setdefault(t_s, [[], 0.0])
-        g[0].append(oid)
-        g[1] = max(g[1], acres)
+        groups.setdefault(t_s, []).append((oid, acres))
     times = sorted(groups)
     if not times:
         return []
-    picked = [(times[0], sorted(groups[times[0]][0]), groups[times[0]][1])]
+
+    def _capture(t):
+        members = sorted(groups[t])
+        return (t, [oid for oid, _ac in members], members[0][1])
+
+    picked = [_capture(times[0])]
     for t in times[1:]:
         if len(picked) >= max_snapshots:
             break
         prev_t, _oids, prev_ac = picked[-1]
         dt_h = (t - prev_t) / 3600.0
-        acres = groups[t][1]
         if dt_h < min_dt_h:
             continue
+        cap = _capture(t)
         if dt_h > max_dt_h:
-            picked.append((t, sorted(groups[t][0]), acres))   # fresh T0
+            picked.append(cap)                           # fresh T0
             continue
-        if acres - prev_ac >= max(min_growth_frac * prev_ac, min_growth_ac):
-            picked.append((t, sorted(groups[t][0]), acres))
+        if cap[2] - prev_ac >= max(min_growth_frac * prev_ac, min_growth_ac):
+            picked.append(cap)
     return picked
+
+
+def _grid_over(rings: list, grid_cells: int) -> GridSpec:
+    """A square-cell grid over the rings' bbox, grid_cells across its longer
+    side (so even a small polygon is resolved). One spare column: the
+    rasterizer's column step follows each row's own latitude, so the
+    southern rows reach slightly less far east than the mid-latitude width."""
+    lats = [p.lat for ring in rings for p in ring]
+    lons = [p.lon for ring in rings for p in ring]
+    mid_lat = 0.5 * (min(lats) + max(lats))
+    h_m = (max(lats) - min(lats)) * geo.M_PER_DEG_LAT
+    w_m = (max(lons) - min(lons)) * geo.m_per_deg_lon(mid_lat)
+    cell_m = max(h_m, w_m, 1.0) / float(grid_cells)
+    return GridSpec(north_lat=max(lats), west_lon=min(lons), cell_m=cell_m,
+                    nrows=max(1, math.ceil(h_m / cell_m)),
+                    ncols=max(1, math.ceil(w_m / cell_m)) + 1)
+
+
+def _rings_near(rings: list, spec: GridSpec) -> list:
+    """The rings whose bbox meets the grid's extent. A ring that does not
+    cannot contain any cell center of the grid, so dropping it leaves every
+    even-odd parity on the grid unchanged."""
+    south = spec.north_lat - spec.nrows * spec.cell_m / geo.M_PER_DEG_LAT
+    east = spec.west_lon + spec.ncols * spec.cell_m / geo.m_per_deg_lon(
+        spec.north_lat if abs(spec.north_lat) > abs(south) else south)
+    out = []
+    for ring in rings:
+        la = [p.lat for p in ring]
+        lo = [p.lon for p in ring]
+        if (max(la) >= south and min(la) <= spec.north_lat
+                and max(lo) >= spec.west_lon and min(lo) <= east):
+            out.append(ring)
+    return out
+
+
+def same_time_overlap_frac(rings_a: list, rings_b: list,
+                           grid_cells: int = _OVERLAP_GRID_CELLS,
+                           stop_above: float = None) -> float:
+    """How far two same-time polygons overlap: max over the two of (share of
+    that polygon's even-odd interior lying inside the other), each share
+    measured on a grid_cells-wide raster over that polygon's own bbox.
+    1.0 for copies, a revision, or one polygon inside the other; ~0 for
+    separate pieces (touching pieces share a boundary sliver only). A
+    polygon too thin to cover any cell center of its own grid counts as
+    fully inside the other, so a degenerate row is never kept as a 'piece'.
+    With `stop_above`, returns as soon as rings_a's share exceeds it (the
+    caller only needs the decision; rings_a is measured first)."""
+    if not rings_a or not rings_b:
+        return 0.0
+    a_lat = [p.lat for r in rings_a for p in r]
+    a_lon = [p.lon for r in rings_a for p in r]
+    b_lat = [p.lat for r in rings_b for p in r]
+    b_lon = [p.lon for r in rings_b for p in r]
+    if (max(a_lat) < min(b_lat) or max(b_lat) < min(a_lat)
+            or max(a_lon) < min(b_lon) or max(b_lon) < min(a_lon)):
+        return 0.0
+    best = 0.0
+    for own, other in ((rings_a, rings_b), (rings_b, rings_a)):
+        spec = _grid_over(own, grid_cells)
+        own_mask = polygon_interior_mask(spec, own)
+        if not own_mask:
+            return 1.0
+        inside = polygon_interior_mask(spec, _rings_near(other, spec))
+        best = max(best, len(own_mask & inside) / len(own_mask))
+        if stop_above is not None and best > stop_above:
+            return best
+    return best
+
+
+def assemble_snapshot(oids: list, geoms: dict, acres_by_oid: dict = None,
+                      overlap_tol: float = SAME_TIME_OVERLAP_TOL) -> tuple:
+    """SNAPSHOT RULE 1-2 for the rows published under ONE capture time.
+
+    `oids`: those rows (any order; OBJECTID order = publication order);
+    `geoms`: parse_snapshot_features output {oid: (t_s, rings)};
+    `acres_by_oid`: {oid: poly_GISAcres} from the attrs series.
+
+    Returns (rings, kept_oids, dropped_oids, acres): the first-published row
+    that has geometry, plus each later row whose overlap with the rows kept
+    so far is <= overlap_tol (a separate piece). Every other row is a version
+    of a kept polygon, or had no geometry, and is listed in dropped_oids.
+    `acres` sums the kept rows' acreage (a missing entry counts 0).
+    """
+    acres_by_oid = acres_by_oid or {}
+    rings, kept, dropped = [], [], []
+    for oid in sorted(oids):
+        got = geoms.get(oid)
+        if not got or not got[1]:
+            dropped.append(oid)
+            continue
+        own = list(got[1])
+        if kept and same_time_overlap_frac(
+                own, rings, stop_above=overlap_tol) > overlap_tol:
+            dropped.append(oid)
+            continue
+        kept.append(oid)
+        rings.extend(own)
+    acres = sum(float(acres_by_oid.get(oid) or 0.0) for oid in kept)
+    return rings, kept, dropped, acres
 
 
 def geometry_query_url(oids: list, offset_deg: float = 0.0003) -> str:
