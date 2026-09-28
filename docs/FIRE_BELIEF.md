@@ -1,5 +1,7 @@
 # Fire belief — each fire's spread rate, learned from the live reports (2026-09-27)
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [calibration/stacked_rings_fix_2026-09-27.md](calibration/stacked_rings_fix_2026-09-27.md) §4.5. **Affected here:** :19–20, :101 and :313. The 0.71 model error is re-measured at 0.698 on the corrected corpus, so the prior is unaffected in practice. The text below is left as written.
+
 Contracts SAFETY SEMANTICS 14 · `wgresponse/fire_belief.py` · knobs `fire_belief_*` ·
 watch flags `--fire-belief` / `--fire-belief-apply` · tests `tests/test_fire_belief.py` ·
 study `scratch_review/fire_belief_study.py`

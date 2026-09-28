@@ -1,0 +1,17 @@
+[replay] Dillon: T0+8.2h pair (168x160 @ 90 m)
+[replay] Dillon: T0+56.9h pair (168x160 @ 90 m)
+[replay] Dillon: T0+22.1h pair (168x160 @ 90 m)
+[replay] Dillon: T0+26.9h pair (168x160 @ 90 m)
+[replay] Gifford: T0+18.0h pair (364x373 @ 90 m)
+[replay] Gifford: T0+9.6h pair (364x373 @ 90 m)
+[replay] Gifford: T0+14.9h pair (364x373 @ 90 m)
+[replay] Gifford: T0+17.0h pair (364x373 @ 90 m)
+[replay] Madre: T0+17.8h pair (348x468 @ 90 m)
+[replay] Madre: T0+6.6h pair (348x468 @ 90 m)
+[replay] Madre: T0+31.4h pair (348x468 @ 90 m)
+[replay] Butler: T0+61.1h pair (152x153 @ 90 m)
+[replay] Butler: T0+26.1h pair (152x153 @ 90 m)
+[replay] Butler: T0+11.1h pair (152x153 @ 90 m)
+[replay] Butler: T0+14.8h pair (152x153 @ 90 m)
+[replay] scored 15 pairs / 65078 cells; skips: 1; wrote tools/hindcast_data\replay_results.json
+[replay] skip: Madre: pair dt 93.2 h outside (0, horizon-6] — skipped

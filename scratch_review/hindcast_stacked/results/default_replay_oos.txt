@@ -1,0 +1,32 @@
+[replay] Crosswhite-OR: T0+14.3h pair (542x555 @ 126 m)
+[replay] Crosswhite-OR: T0+43.2h pair (542x555 @ 126 m)
+[replay] AspenAcres-CO: T0+7.4h pair (294x342 @ 90 m)
+[replay] AspenAcres-CO: T0+9.9h pair (294x342 @ 90 m)
+[replay] AspenAcres-CO: T0+32.2h pair (294x342 @ 90 m)
+[replay] AspenAcres-CO: T0+8.3h pair (294x342 @ 90 m)
+[replay] Willow-CO: T0+17.5h pair (183x149 @ 90 m)
+[replay] Willow-CO: T0+61.6h pair (183x149 @ 90 m)
+[replay] Willow-CO: T0+20.8h pair (183x149 @ 90 m)
+[replay] Willow-CO: T0+49.2h pair (183x149 @ 90 m)
+[replay] Stookey-UT: T0+21.7h pair (225x187 @ 90 m)
+[replay] Stookey-UT: T0+20.2h pair (225x187 @ 90 m)
+[replay] Stookey-UT: T0+16.4h pair (225x187 @ 90 m)
+[replay] Stookey-UT: T0+23.1h pair (225x187 @ 90 m)
+[replay] Cottonwood-UT: T0+32.6h pair (364x420 @ 90 m)
+[replay] Cottonwood-UT: T0+8.2h pair (364x420 @ 90 m)
+[replay] Cottonwood-UT: T0+16.2h pair (364x420 @ 90 m)
+[replay] KaiserCanyon-WA: T0+64.1h pair (327x457 @ 90 m)
+[replay] KaiserCanyon-WA: T0+11.2h pair (327x457 @ 90 m)
+[replay] KaiserCanyon-WA: T0+35.6h pair (327x457 @ 90 m)
+[replay] KaiserCanyon-WA: T0+23.9h pair (327x457 @ 90 m)
+[replay] Brewer-OR: T0+48.4h pair (283x226 @ 90 m)
+[replay] Brewer-OR: T0+23.1h pair (283x226 @ 90 m)
+[replay] Brewer-OR: T0+24.6h pair (283x226 @ 90 m)
+[replay] Brewer-OR: T0+45.5h pair (283x226 @ 90 m)
+[replay] BISCAR: T0+8.7h pair (322x416 @ 90 m)
+[replay] PorcupineRidge-OR: T0+12.9h pair (383x479 @ 90 m)
+[replay] scored 26 pairs / 134157 cells; skips: 4; wrote scratch_review/hindcast_oos_data\replay_results.json
+[replay] skip: Crosswhite-OR: pair dt 170.3 h outside (0, horizon-6] — skipped
+[replay] skip: ELEPHANT: pair dt 109.7 h outside (0, horizon-6] — skipped
+[replay] skip: ELEPHANT: pair dt 133.7 h outside (0, horizon-6] — skipped
+[replay] skip: Cottonwood-UT: pair dt 17229.7 h outside (0, horizon-6] — skipped

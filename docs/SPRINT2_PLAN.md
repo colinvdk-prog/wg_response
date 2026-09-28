@@ -1,5 +1,7 @@
 # WG Response — Sprint 2 Plan: "Trustworthy Under Fire"
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [calibration/stacked_rings_fix_2026-09-27.md](calibration/stacked_rings_fix_2026-09-27.md) §4.2. **Affected here:** :330 and :412–425, the first-pass figures: 14 pairs / 60,062 cells / 68.8 % becomes 15 / 65,078 / 69.4 %, and grass-class late miss 52.6 % becomes 44.6 %. The text below is left as written.
+
 **Date:** 2026-07-09 · **Input:** Council 1 review (4 lanes, measured evidence) ·
 **State at review:** v0.1.0, 453 tests green, flagship sim clean, one live E2E cycle run.
 **Review reports:** `docs/review/{perf_review, model_fidelity_review, dispatch_alerts_review, ops_readiness_review}.md`

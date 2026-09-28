@@ -1,0 +1,2014 @@
+{
+ "config": {
+  "edge_weather_piecewise": false,
+  "ensemble_p50_nominal_bound": false,
+  "extreme_regime_enabled": false,
+  "extreme_regime_floor_frac": 0.0,
+  "grass_ros_floor_frac": 0.1,
+  "model_error_sd_log": 0.5,
+  "ros_floor_extinction_gate": true,
+  "ros_floor_grass_only": true,
+  "slope_phi_vector": false,
+  "spotting_enabled": false,
+  "wind_gust_blend": 0.5
+ },
+ "data_dir": "scratch_review/hindcast_oos_data",
+ "elapsed_s": 170.9,
+ "label": "E_gategrass_me050",
+ "pairs": [
+  {
+   "by_fuel_class": {},
+   "cell_m": 125.852052558956,
+   "covered_certain": 0,
+   "covered_possible": 0,
+   "dt_h": 14.3,
+   "early_miss": 0,
+   "head_m_nominal": 0.0,
+   "head_m_p10": 0.0,
+   "head_m_p50": 0.0,
+   "head_m_p90": 0.0,
+   "incident": "{1B0219EE-5298-4FEF-9927-C2666D9D53FC}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 0.0,
+   "modeled_new_area_ac_p50": 0.0,
+   "n_new": 0,
+   "n_new_burnable": 0,
+   "n_new_nonburnable": 0,
+   "name": "Crosswhite-OR",
+   "never_reached": 0,
+   "notes": [
+    "NON-MONOTONE pair: only 83% of the T0 interior is inside T1 (partial mapping upload?) \u2014 pair UNSCORED"
+   ],
+   "null_new_covered": 0,
+   "obs_head_m": 0.0,
+   "obs_new_area_ac": 0.0,
+   "p10_before_window": 0,
+   "p10_not_after_window": 0,
+   "p50_in_window": 0,
+   "p90_unreached": 0,
+   "pit_hist": [],
+   "t0_s": 1784219100.0,
+   "t1_s": 1784270580.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 373,
+     "poss": 373
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 1692,
+     "poss": 1692
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 95,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 940,
+     "poss": 940
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 1336,
+     "poss": 1336
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 1227,
+     "poss": 1227
+    }
+   },
+   "cell_m": 125.852052558956,
+   "covered_certain": 0,
+   "covered_possible": 5568,
+   "dt_h": 43.166666666666664,
+   "early_miss": 0,
+   "head_m_nominal": 15395.672480598818,
+   "head_m_p10": 19536.68179692542,
+   "head_m_p50": 14716.082364870119,
+   "head_m_p90": 13167.036058017238,
+   "incident": "{1B0219EE-5298-4FEF-9927-C2666D9D53FC}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 480611.43887525884,
+   "modeled_new_area_ac_p50": 329333.78504208155,
+   "n_new": 5663,
+   "n_new_burnable": 5568,
+   "n_new_nonburnable": 95,
+   "name": "Crosswhite-OR",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 5568,
+   "obs_head_m": 4901.771849568223,
+   "obs_new_area_ac": 22164.06275632006,
+   "p10_before_window": 0,
+   "p10_not_after_window": 5568,
+   "p50_in_window": 5127,
+   "p90_unreached": 47,
+   "pit_hist": [
+    615,
+    208,
+    517,
+    150,
+    229,
+    663,
+    3186
+   ],
+   "t0_s": 1784883840.0,
+   "t1_s": 1785039240.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 2205,
+     "n": 2243,
+     "poss": 38
+    },
+    "GS": {
+     "cert": 0,
+     "late": 2729,
+     "n": 3114,
+     "poss": 385
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 225,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 247,
+     "n": 261,
+     "poss": 14
+    },
+    "TL": {
+     "cert": 0,
+     "late": 2109,
+     "n": 2822,
+     "poss": 713
+    },
+    "TU": {
+     "cert": 0,
+     "late": 2096,
+     "n": 2563,
+     "poss": 467
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 1617,
+   "dt_h": 7.4,
+   "early_miss": 0,
+   "head_m_nominal": 1946.9976887505543,
+   "head_m_p10": 4042.993940138916,
+   "head_m_p50": 1654.6298679765212,
+   "head_m_p90": 1170.0,
+   "incident": "{1CDF5E5A-F22E-4352-A582-C2A47663B93D}",
+   "label": "default",
+   "late_miss": 9386,
+   "modeled_new_area_ac_p10": 3236.512154842492,
+   "modeled_new_area_ac_p50": 996.7736877622516,
+   "n_new": 11228,
+   "n_new_burnable": 11003,
+   "n_new_nonburnable": 225,
+   "name": "AspenAcres-CO",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 1336,
+   "obs_head_m": 16349.559627096995,
+   "obs_new_area_ac": 22473.443707217994,
+   "p10_before_window": 0,
+   "p10_not_after_window": 1617,
+   "p50_in_window": 498,
+   "p90_unreached": 0,
+   "pit_hist": [
+    10331,
+    307,
+    78,
+    85,
+    20,
+    48,
+    134
+   ],
+   "t0_s": 1782746340.0,
+   "t1_s": 1782772980.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 961,
+     "poss": 961
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 845,
+     "poss": 845
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 55,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 75,
+     "poss": 75
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 608,
+     "poss": 608
+    },
+    "TU": {
+     "cert": 0,
+     "late": 12,
+     "n": 559,
+     "poss": 547
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 3036,
+   "dt_h": 9.95,
+   "early_miss": 0,
+   "head_m_nominal": 14778.920799571259,
+   "head_m_p10": 14842.36167191731,
+   "head_m_p50": 14810.401750121433,
+   "head_m_p90": 8588.282715421052,
+   "incident": "{1CDF5E5A-F22E-4352-A582-C2A47663B93D}",
+   "label": "default",
+   "late_miss": 12,
+   "modeled_new_area_ac_p10": 86659.26422761937,
+   "modeled_new_area_ac_p50": 59782.40262265649,
+   "n_new": 3103,
+   "n_new_burnable": 3048,
+   "n_new_nonburnable": 55,
+   "name": "AspenAcres-CO",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 3048,
+   "obs_head_m": 2250.0,
+   "obs_new_area_ac": 6210.820789410174,
+   "p10_before_window": 0,
+   "p10_not_after_window": 3036,
+   "p50_in_window": 2948,
+   "p90_unreached": 0,
+   "pit_hist": [
+    84,
+    226,
+    158,
+    215,
+    220,
+    202,
+    1943
+   ],
+   "t0_s": 1782772980.0,
+   "t1_s": 1782808800.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 350,
+     "poss": 350
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 1246,
+     "poss": 1246
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 19,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 138,
+     "poss": 138
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 975,
+     "poss": 975
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 1021,
+     "poss": 1021
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 3730,
+   "dt_h": 32.230555555555554,
+   "early_miss": 0,
+   "head_m_nominal": 15184.416353617282,
+   "head_m_p10": 16902.038338614664,
+   "head_m_p50": 15271.650205527889,
+   "head_m_p90": 14338.27395469901,
+   "incident": "{1CDF5E5A-F22E-4352-A582-C2A47663B93D}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 143123.0909982481,
+   "modeled_new_area_ac_p50": 121144.03102773149,
+   "n_new": 3749,
+   "n_new_burnable": 3730,
+   "n_new_nonburnable": 19,
+   "name": "AspenAcres-CO",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 3730,
+   "obs_head_m": 4320.937398296809,
+   "obs_new_area_ac": 7503.824408475263,
+   "p10_before_window": 0,
+   "p10_not_after_window": 3730,
+   "p50_in_window": 3730,
+   "p90_unreached": 0,
+   "pit_hist": [
+    0,
+    0,
+    1,
+    0,
+    31,
+    161,
+    3537
+   ],
+   "t0_s": 1782808800.0,
+   "t1_s": 1782924830.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 3,
+     "n": 822,
+     "poss": 819
+    },
+    "GS": {
+     "cert": 0,
+     "late": 22,
+     "n": 2127,
+     "poss": 2105
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 160,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 2,
+     "n": 214,
+     "poss": 212
+    },
+    "TL": {
+     "cert": 0,
+     "late": 80,
+     "n": 1860,
+     "poss": 1780
+    },
+    "TU": {
+     "cert": 0,
+     "late": 64,
+     "n": 1263,
+     "poss": 1199
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 6115,
+   "dt_h": 8.259722222222223,
+   "early_miss": 0,
+   "head_m_nominal": 14264.645105995452,
+   "head_m_p10": 14338.27395469901,
+   "head_m_p50": 14264.645105995452,
+   "head_m_p90": 8170.691525201523,
+   "incident": "{1CDF5E5A-F22E-4352-A582-C2A47663B93D}",
+   "label": "default",
+   "late_miss": 171,
+   "modeled_new_area_ac_p10": 86369.03895708617,
+   "modeled_new_area_ac_p50": 64199.831395530564,
+   "n_new": 6446,
+   "n_new_burnable": 6286,
+   "n_new_nonburnable": 160,
+   "name": "AspenAcres-CO",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 6286,
+   "obs_head_m": 3212.382293563455,
+   "obs_new_area_ac": 12902.014440392517,
+   "p10_before_window": 0,
+   "p10_not_after_window": 6115,
+   "p50_in_window": 5477,
+   "p90_unreached": 0,
+   "pit_hist": [
+    794,
+    631,
+    704,
+    291,
+    689,
+    636,
+    2541
+   ],
+   "t0_s": 1782924830.0,
+   "t1_s": 1782954565.0
+  },
+  {
+   "by_fuel_class": {
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 1,
+     "poss": 1
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 6,
+     "poss": 0
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 55,
+     "poss": 55
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 38,
+     "poss": 38
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 94,
+   "dt_h": 17.483333333333334,
+   "early_miss": 0,
+   "head_m_nominal": 2795.800422061632,
+   "head_m_p10": 3108.5848870506975,
+   "head_m_p50": 2346.9128658729537,
+   "head_m_p90": 1026.157882589224,
+   "incident": "{548A8D28-1A04-48EE-9011-ABA023175D43}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 2770.15016839951,
+   "modeled_new_area_ac_p50": 1459.1325670254646,
+   "n_new": 100,
+   "n_new_burnable": 94,
+   "n_new_nonburnable": 6,
+   "name": "Willow-CO",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 94,
+   "obs_head_m": 900.0,
+   "obs_new_area_ac": 200.15535898840392,
+   "p10_before_window": 0,
+   "p10_not_after_window": 94,
+   "p50_in_window": 81,
+   "p90_unreached": 0,
+   "pit_hist": [
+    10,
+    12,
+    5,
+    3,
+    9,
+    19,
+    36
+   ],
+   "t0_s": 1782690780.0,
+   "t1_s": 1782753720.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 2,
+     "poss": 2
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 7,
+     "poss": 7
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 8,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 5,
+     "poss": 5
+    },
+    "TL": {
+     "cert": 0,
+     "late": 1,
+     "n": 217,
+     "poss": 216
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 292,
+     "poss": 292
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 522,
+   "dt_h": 61.56666666666667,
+   "early_miss": 0,
+   "head_m_nominal": 5757.890238620393,
+   "head_m_p10": 9229.718305560576,
+   "head_m_p50": 4152.697918221358,
+   "head_m_p90": 2979.5301643044327,
+   "incident": "{548A8D28-1A04-48EE-9011-ABA023175D43}",
+   "label": "default",
+   "late_miss": 1,
+   "modeled_new_area_ac_p10": 16502.809348593903,
+   "modeled_new_area_ac_p50": 4785.714633412738,
+   "n_new": 531,
+   "n_new_burnable": 523,
+   "n_new_nonburnable": 8,
+   "name": "Willow-CO",
+   "never_reached": 1,
+   "notes": [],
+   "null_new_covered": 523,
+   "obs_head_m": 2213.7072977247917,
+   "obs_new_area_ac": 1062.824956228425,
+   "p10_before_window": 0,
+   "p10_not_after_window": 522,
+   "p50_in_window": 286,
+   "p90_unreached": 279,
+   "pit_hist": [
+    48,
+    251,
+    54,
+    9,
+    21,
+    39,
+    101
+   ],
+   "t0_s": 1782753720.0,
+   "t1_s": 1782975360.0
+  },
+  {
+   "by_fuel_class": {
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 3,
+     "poss": 0
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 67,
+     "poss": 67
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 93,
+     "poss": 93
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 160,
+   "dt_h": 20.816666666666666,
+   "early_miss": 0,
+   "head_m_nominal": 2222.836026341124,
+   "head_m_p10": 2860.244744772727,
+   "head_m_p50": 2139.2755783208486,
+   "head_m_p90": 1337.9461872586655,
+   "incident": "{548A8D28-1A04-48EE-9011-ABA023175D43}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 5432.216442945282,
+   "modeled_new_area_ac_p50": 3190.4764222751587,
+   "n_new": 163,
+   "n_new_burnable": 160,
+   "n_new_nonburnable": 3,
+   "name": "Willow-CO",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 160,
+   "obs_head_m": 636.3961030678928,
+   "obs_new_area_ac": 326.2532351510984,
+   "p10_before_window": 0,
+   "p10_not_after_window": 160,
+   "p50_in_window": 152,
+   "p90_unreached": 0,
+   "pit_hist": [
+    7,
+    23,
+    17,
+    7,
+    4,
+    35,
+    67
+   ],
+   "t0_s": 1782975360.0,
+   "t1_s": 1783050300.0
+  },
+  {
+   "by_fuel_class": {
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 4,
+     "poss": 4
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 3,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 3,
+     "poss": 3
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 319,
+     "poss": 319
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 406,
+     "poss": 406
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 732,
+   "dt_h": 49.18333333333333,
+   "early_miss": 0,
+   "head_m_nominal": 6644.17037710503,
+   "head_m_p10": 8194.449340864827,
+   "head_m_p50": 6682.462121104765,
+   "head_m_p90": 2376.0681808399354,
+   "incident": "{548A8D28-1A04-48EE-9011-ABA023175D43}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 20109.608917564943,
+   "modeled_new_area_ac_p50": 10930.484154356738,
+   "n_new": 735,
+   "n_new_burnable": 732,
+   "n_new_nonburnable": 3,
+   "name": "Willow-CO",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 732,
+   "obs_head_m": 2707.4896121684383,
+   "obs_new_area_ac": 1471.1418885647688,
+   "p10_before_window": 0,
+   "p10_not_after_window": 732,
+   "p50_in_window": 576,
+   "p90_unreached": 185,
+   "pit_hist": [
+    27,
+    201,
+    43,
+    27,
+    25,
+    124,
+    285
+   ],
+   "t0_s": 1783050300.0,
+   "t1_s": 1783227360.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 28,
+     "poss": 28
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 221,
+     "poss": 221
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 7,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 958,
+     "poss": 958
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 6,
+     "poss": 6
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 1213,
+   "dt_h": 21.723055555555554,
+   "early_miss": 0,
+   "head_m_nominal": 12743.822032655666,
+   "head_m_p10": 12843.539231847271,
+   "head_m_p50": 12677.227614900665,
+   "head_m_p90": 8059.90074380572,
+   "incident": "{A32B1A1F-AF64-4903-9B75-8BCB276EB1DE}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 71389.41189039403,
+   "modeled_new_area_ac_p50": 49248.226079096785,
+   "n_new": 1220,
+   "n_new_burnable": 1213,
+   "n_new_nonburnable": 7,
+   "name": "Stookey-UT",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 1213,
+   "obs_head_m": 3528.4132411042788,
+   "obs_new_area_ac": 2441.895379658528,
+   "p10_before_window": 0,
+   "p10_not_after_window": 1213,
+   "p50_in_window": 1213,
+   "p90_unreached": 0,
+   "pit_hist": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1213
+   ],
+   "t0_s": 1783790738.0,
+   "t1_s": 1783868941.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 161,
+     "poss": 161
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 655,
+     "poss": 655
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 1079,
+     "poss": 1079
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 17,
+     "poss": 17
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 1912,
+   "dt_h": 20.233055555555556,
+   "early_miss": 0,
+   "head_m_nominal": 14385.649099015309,
+   "head_m_p10": 14438.199333711942,
+   "head_m_p50": 14385.649099015309,
+   "head_m_p90": 12631.140091060663,
+   "incident": "{A32B1A1F-AF64-4903-9B75-8BCB276EB1DE}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 75846.87173506578,
+   "modeled_new_area_ac_p50": 63335.16024470066,
+   "n_new": 1912,
+   "n_new_burnable": 1912,
+   "n_new_nonburnable": 0,
+   "name": "Stookey-UT",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 1912,
+   "obs_head_m": 6415.302019390824,
+   "obs_new_area_ac": 3826.970463858283,
+   "p10_before_window": 0,
+   "p10_not_after_window": 1912,
+   "p50_in_window": 1912,
+   "p90_unreached": 0,
+   "pit_hist": [
+    0,
+    0,
+    0,
+    0,
+    7,
+    44,
+    1861
+   ],
+   "t0_s": 1783868941.0,
+   "t1_s": 1783941780.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 23,
+     "poss": 23
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 124,
+     "poss": 124
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 3,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 680,
+     "poss": 680
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 8,
+     "poss": 8
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 835,
+   "dt_h": 16.366666666666667,
+   "early_miss": 0,
+   "head_m_nominal": 10102.875828198623,
+   "head_m_p10": 10062.305898749053,
+   "head_m_p50": 10142.884205195285,
+   "head_m_p90": 9983.105729180674,
+   "incident": "{A32B1A1F-AF64-4903-9B75-8BCB276EB1DE}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 69742.13328591947,
+   "modeled_new_area_ac_p50": 48277.47258800303,
+   "n_new": 838,
+   "n_new_burnable": 835,
+   "n_new_nonburnable": 3,
+   "name": "Stookey-UT",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 835,
+   "obs_head_m": 2500.6399181009647,
+   "obs_new_area_ac": 1677.3019083228248,
+   "p10_before_window": 0,
+   "p10_not_after_window": 835,
+   "p50_in_window": 835,
+   "p90_unreached": 0,
+   "pit_hist": [
+    0,
+    6,
+    6,
+    4,
+    10,
+    161,
+    648
+   ],
+   "t0_s": 1783941780.0,
+   "t1_s": 1784000700.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 180,
+     "poss": 180
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 561,
+     "poss": 561
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 460,
+     "poss": 460
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 2,
+     "poss": 2
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 2,
+     "poss": 2
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 1205,
+   "dt_h": 23.1,
+   "early_miss": 0,
+   "head_m_nominal": 10142.884205195285,
+   "head_m_p10": 10142.884205195285,
+   "head_m_p50": 10062.305898749053,
+   "head_m_p90": 9901.636228422049,
+   "incident": "{A32B1A1F-AF64-4903-9B75-8BCB276EB1DE}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 74998.21301295495,
+   "modeled_new_area_ac_p50": 71181.25031704608,
+   "n_new": 1205,
+   "n_new_burnable": 1205,
+   "n_new_nonburnable": 0,
+   "name": "Stookey-UT",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 1205,
+   "obs_head_m": 2294.5587811167534,
+   "obs_new_area_ac": 2411.8720758102672,
+   "p10_before_window": 0,
+   "p10_not_after_window": 1205,
+   "p50_in_window": 1205,
+   "p90_unreached": 0,
+   "pit_hist": [
+    0,
+    0,
+    0,
+    0,
+    33,
+    97,
+    1075
+   ],
+   "t0_s": 1784000700.0,
+   "t1_s": 1784083860.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 3,
+     "n": 898,
+     "poss": 895
+    },
+    "GS": {
+     "cert": 0,
+     "late": 6,
+     "n": 3212,
+     "poss": 3206
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 1048,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 1252,
+     "poss": 1252
+    },
+    "TL": {
+     "cert": 0,
+     "late": 31,
+     "n": 3023,
+     "poss": 2992
+    },
+    "TU": {
+     "cert": 0,
+     "late": 29,
+     "n": 12749,
+     "poss": 12720
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 21065,
+   "dt_h": 32.610277777777775,
+   "early_miss": 0,
+   "head_m_nominal": 13752.047120338122,
+   "head_m_p10": 29834.42307134495,
+   "head_m_p50": 12984.04020326493,
+   "head_m_p90": 10348.043293299463,
+   "incident": "{B1B09572-CD77-4B0A-8E06-71284617A28F}",
+   "label": "default",
+   "late_miss": 69,
+   "modeled_new_area_ac_p10": 158653.14530215837,
+   "modeled_new_area_ac_p50": 45739.50263603007,
+   "n_new": 22182,
+   "n_new_burnable": 21134,
+   "n_new_nonburnable": 1048,
+   "name": "Cottonwood-UT",
+   "never_reached": 3,
+   "notes": [],
+   "null_new_covered": 20878,
+   "obs_head_m": 18090.223879211666,
+   "obs_new_area_ac": 44398.46173080776,
+   "p10_before_window": 0,
+   "p10_not_after_window": 21065,
+   "p50_in_window": 10561,
+   "p90_unreached": 9703,
+   "pit_hist": [
+    9870,
+    3661,
+    1716,
+    187,
+    1935,
+    554,
+    3211
+   ],
+   "t0_s": 1782180902.0,
+   "t1_s": 1782298299.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 126,
+     "n": 929,
+     "poss": 803
+    },
+    "GS": {
+     "cert": 0,
+     "late": 544,
+     "n": 2390,
+     "poss": 1846
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 252,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 278,
+     "n": 1600,
+     "poss": 1322
+    },
+    "TL": {
+     "cert": 0,
+     "late": 296,
+     "n": 950,
+     "poss": 654
+    },
+    "TU": {
+     "cert": 0,
+     "late": 582,
+     "n": 2017,
+     "poss": 1435
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 6060,
+   "dt_h": 8.226666666666667,
+   "early_miss": 0,
+   "head_m_nominal": 13484.991657394528,
+   "head_m_p10": 13472.672340705092,
+   "head_m_p50": 12551.693112883218,
+   "head_m_p90": 8536.252104993151,
+   "incident": "{B1B09572-CD77-4B0A-8E06-71284617A28F}",
+   "label": "default",
+   "late_miss": 1826,
+   "modeled_new_area_ac_p10": 71397.41810475357,
+   "modeled_new_area_ac_p50": 43411.69581099493,
+   "n_new": 8138,
+   "n_new_burnable": 7886,
+   "n_new_nonburnable": 252,
+   "name": "Cottonwood-UT",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 5426,
+   "obs_head_m": 10389.056742553676,
+   "obs_new_area_ac": 16288.643114476312,
+   "p10_before_window": 0,
+   "p10_not_after_window": 6060,
+   "p50_in_window": 4478,
+   "p90_unreached": 0,
+   "pit_hist": [
+    3886,
+    279,
+    554,
+    95,
+    519,
+    228,
+    2325
+   ],
+   "t0_s": 1782298299.0,
+   "t1_s": 1782327915.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 15,
+     "n": 309,
+     "poss": 294
+    },
+    "GS": {
+     "cert": 0,
+     "late": 54,
+     "n": 1277,
+     "poss": 1223
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 127,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 9,
+     "n": 1075,
+     "poss": 1066
+    },
+    "TL": {
+     "cert": 0,
+     "late": 36,
+     "n": 552,
+     "poss": 516
+    },
+    "TU": {
+     "cert": 0,
+     "late": 165,
+     "n": 1962,
+     "poss": 1797
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 4896,
+   "dt_h": 16.176944444444445,
+   "early_miss": 0,
+   "head_m_nominal": 10701.298986571677,
+   "head_m_p10": 12918.997639135941,
+   "head_m_p50": 10706.596097733396,
+   "head_m_p90": 7332.100653973594,
+   "incident": "{B1B09572-CD77-4B0A-8E06-71284617A28F}",
+   "label": "default",
+   "late_miss": 279,
+   "modeled_new_area_ac_p10": 92019.42474132882,
+   "modeled_new_area_ac_p50": 65781.05873153896,
+   "n_new": 5302,
+   "n_new_burnable": 5175,
+   "n_new_nonburnable": 127,
+   "name": "Cottonwood-UT",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 5175,
+   "obs_head_m": 3103.369136922,
+   "obs_new_area_ac": 10612.237133565177,
+   "p10_before_window": 0,
+   "p10_not_after_window": 4896,
+   "p50_in_window": 4373,
+   "p90_unreached": 0,
+   "pit_hist": [
+    661,
+    388,
+    271,
+    230,
+    255,
+    348,
+    3022
+   ],
+   "t0_s": 1782327915.0,
+   "t1_s": 1782386152.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 1,
+     "n": 4611,
+     "poss": 4610
+    },
+    "GS": {
+     "cert": 0,
+     "late": 1,
+     "n": 10849,
+     "poss": 10848
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 784,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 1691,
+     "poss": 1691
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 3706,
+     "poss": 3706
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 3811,
+     "poss": 3811
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 24666,
+   "dt_h": 64.06083333333333,
+   "early_miss": 0,
+   "head_m_nominal": 24913.098964199537,
+   "head_m_p10": 32850.12328743988,
+   "head_m_p50": 24433.7983129926,
+   "head_m_p90": 21911.62705049536,
+   "incident": "{B5597100-D6C9-49F9-BC74-6B8FC4432E92}",
+   "label": "default",
+   "late_miss": 2,
+   "modeled_new_area_ac_p10": 225667.1610450659,
+   "modeled_new_area_ac_p50": 162303.97905010686,
+   "n_new": 25452,
+   "n_new_burnable": 24668,
+   "n_new_nonburnable": 784,
+   "name": "KaiserCanyon-WA",
+   "never_reached": 2,
+   "notes": [],
+   "null_new_covered": 24668,
+   "obs_head_m": 16820.371577346323,
+   "obs_new_area_ac": 50943.54196972857,
+   "p10_before_window": 0,
+   "p10_not_after_window": 24666,
+   "p50_in_window": 24666,
+   "p90_unreached": 3694,
+   "pit_hist": [
+    5,
+    608,
+    1374,
+    1190,
+    1505,
+    5883,
+    14103
+   ],
+   "t0_s": 1784234640.0,
+   "t1_s": 1784465259.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 1090,
+     "poss": 1090
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 2382,
+     "poss": 2382
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 67,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 311,
+     "poss": 311
+    },
+    "TL": {
+     "cert": 0,
+     "late": 7,
+     "n": 809,
+     "poss": 802
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 351,
+     "poss": 351
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 4936,
+   "dt_h": 11.18361111111111,
+   "early_miss": 0,
+   "head_m_nominal": 7663.223864666881,
+   "head_m_p10": 8406.693761521232,
+   "head_m_p50": 7004.983940024416,
+   "head_m_p90": 3793.9030035044384,
+   "incident": "{B5597100-D6C9-49F9-BC74-6B8FC4432E92}",
+   "label": "default",
+   "late_miss": 7,
+   "modeled_new_area_ac_p10": 77444.11149979325,
+   "modeled_new_area_ac_p50": 46790.31827071919,
+   "n_new": 5010,
+   "n_new_burnable": 4943,
+   "n_new_nonburnable": 67,
+   "name": "KaiserCanyon-WA",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 4943,
+   "obs_head_m": 3204.8088866576745,
+   "obs_new_area_ac": 10027.783485319036,
+   "p10_before_window": 0,
+   "p10_not_after_window": 4936,
+   "p50_in_window": 4824,
+   "p90_unreached": 0,
+   "pit_hist": [
+    290,
+    272,
+    721,
+    164,
+    244,
+    548,
+    2704
+   ],
+   "t0_s": 1784465259.0,
+   "t1_s": 1784505520.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 1,
+     "n": 1599,
+     "poss": 1598
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 2155,
+     "poss": 2155
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 261,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 510,
+     "poss": 510
+    },
+    "TL": {
+     "cert": 0,
+     "late": 10,
+     "n": 1494,
+     "poss": 1484
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 710,
+     "poss": 710
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 6457,
+   "dt_h": 35.63333333333333,
+   "early_miss": 0,
+   "head_m_nominal": 11616.97464919331,
+   "head_m_p10": 17148.247723892957,
+   "head_m_p50": 11472.793905583765,
+   "head_m_p90": 8493.4445309309,
+   "incident": "{B5597100-D6C9-49F9-BC74-6B8FC4432E92}",
+   "label": "default",
+   "late_miss": 11,
+   "modeled_new_area_ac_p10": 155780.91590067476,
+   "modeled_new_area_ac_p50": 120979.90363336098,
+   "n_new": 6729,
+   "n_new_burnable": 6468,
+   "n_new_nonburnable": 261,
+   "name": "KaiserCanyon-WA",
+   "never_reached": 1,
+   "notes": [],
+   "null_new_covered": 6468,
+   "obs_head_m": 5916.772769001696,
+   "obs_new_area_ac": 13468.4541063297,
+   "p10_before_window": 0,
+   "p10_not_after_window": 6457,
+   "p50_in_window": 6323,
+   "p90_unreached": 110,
+   "pit_hist": [
+    197,
+    130,
+    217,
+    138,
+    316,
+    622,
+    4848
+   ],
+   "t0_s": 1784505520.0,
+   "t1_s": 1784633800.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 1638,
+     "poss": 1638
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 2797,
+     "poss": 2797
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 121,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 687,
+     "poss": 687
+    },
+    "TL": {
+     "cert": 0,
+     "late": 9,
+     "n": 722,
+     "poss": 713
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 437,
+     "poss": 437
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 6272,
+   "dt_h": 23.915555555555557,
+   "early_miss": 0,
+   "head_m_nominal": 9276.987657639736,
+   "head_m_p10": 11777.627095472162,
+   "head_m_p50": 9322.279764092043,
+   "head_m_p90": 4965.52112068814,
+   "incident": "{B5597100-D6C9-49F9-BC74-6B8FC4432E92}",
+   "label": "default",
+   "late_miss": 9,
+   "modeled_new_area_ac_p10": 140222.83984650613,
+   "modeled_new_area_ac_p50": 102021.18802997937,
+   "n_new": 6402,
+   "n_new_burnable": 6281,
+   "n_new_nonburnable": 121,
+   "name": "KaiserCanyon-WA",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 6281,
+   "obs_head_m": 3340.9280147887052,
+   "obs_new_area_ac": 12813.94608243762,
+   "p10_before_window": 0,
+   "p10_not_after_window": 6272,
+   "p50_in_window": 6250,
+   "p90_unreached": 8,
+   "pit_hist": [
+    31,
+    22,
+    72,
+    87,
+    245,
+    789,
+    5035
+   ],
+   "t0_s": 1784633800.0,
+   "t1_s": 1784719896.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 9,
+     "poss": 9
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 161,
+     "poss": 161
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 1,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 959,
+     "poss": 959
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 316,
+     "poss": 316
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 1182,
+     "poss": 1182
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 2627,
+   "dt_h": 48.38111111111111,
+   "early_miss": 0,
+   "head_m_nominal": 13664.003805620077,
+   "head_m_p10": 15574.16129362991,
+   "head_m_p50": 13625.714660156362,
+   "head_m_p90": 9865.987026141886,
+   "incident": "{CCEFD7D4-FEBD-496D-855E-CA0C9944BF0C}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 114118.5779272385,
+   "modeled_new_area_ac_p50": 92103.48999210395,
+   "n_new": 2628,
+   "n_new_burnable": 2627,
+   "n_new_nonburnable": 1,
+   "name": "Brewer-OR",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 2627,
+   "obs_head_m": 4597.053404083968,
+   "obs_new_area_ac": 5260.082834215255,
+   "p10_before_window": 0,
+   "p10_not_after_window": 2627,
+   "p50_in_window": 2627,
+   "p90_unreached": 26,
+   "pit_hist": [
+    5,
+    469,
+    65,
+    116,
+    420,
+    457,
+    1095
+   ],
+   "t0_s": 1784263988.0,
+   "t1_s": 1784438160.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 44,
+     "poss": 44
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 895,
+     "poss": 895
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 2,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 566,
+     "poss": 566
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 254,
+     "poss": 254
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 1514,
+     "poss": 1514
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 3273,
+   "dt_h": 23.1,
+   "early_miss": 0,
+   "head_m_nominal": 10443.490795706195,
+   "head_m_p10": 14146.041849224115,
+   "head_m_p50": 10649.704221244832,
+   "head_m_p90": 3985.4861685872156,
+   "incident": "{CCEFD7D4-FEBD-496D-855E-CA0C9944BF0C}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 90414.17876224182,
+   "modeled_new_area_ac_p50": 52242.55024956331,
+   "n_new": 3275,
+   "n_new_burnable": 3273,
+   "n_new_nonburnable": 2,
+   "name": "Brewer-OR",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 3273,
+   "obs_head_m": 3463.538652880894,
+   "obs_new_area_ac": 6555.088006870229,
+   "p10_before_window": 0,
+   "p10_not_after_window": 3273,
+   "p50_in_window": 3273,
+   "p90_unreached": 0,
+   "pit_hist": [
+    458,
+    511,
+    92,
+    191,
+    394,
+    329,
+    1298
+   ],
+   "t0_s": 1784438160.0,
+   "t1_s": 1784521320.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 37,
+     "poss": 37
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 297,
+     "poss": 297
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 5,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 479,
+     "poss": 479
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 201,
+     "poss": 201
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 929,
+     "poss": 929
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 1943,
+   "dt_h": 24.583333333333332,
+   "early_miss": 0,
+   "head_m_nominal": 11242.797694524259,
+   "head_m_p10": 11798.584660881997,
+   "head_m_p50": 11242.797694524259,
+   "head_m_p90": 6579.855621516327,
+   "incident": "{CCEFD7D4-FEBD-496D-855E-CA0C9944BF0C}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 80672.6174402762,
+   "modeled_new_area_ac_p50": 66463.5885056894,
+   "n_new": 1948,
+   "n_new_burnable": 1943,
+   "n_new_nonburnable": 5,
+   "name": "Brewer-OR",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 1943,
+   "obs_head_m": 2167.4870241826134,
+   "obs_new_area_ac": 3899.0263930941087,
+   "p10_before_window": 0,
+   "p10_not_after_window": 1943,
+   "p50_in_window": 1917,
+   "p90_unreached": 0,
+   "pit_hist": [
+    116,
+    149,
+    66,
+    38,
+    129,
+    144,
+    1301
+   ],
+   "t0_s": 1784521320.0,
+   "t1_s": 1784609820.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 16,
+     "poss": 16
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 524,
+     "poss": 524
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 3,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 642,
+     "poss": 642
+    },
+    "TL": {
+     "cert": 0,
+     "late": 0,
+     "n": 445,
+     "poss": 445
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 1218,
+     "poss": 1218
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 2845,
+   "dt_h": 45.483333333333334,
+   "early_miss": 0,
+   "head_m_nominal": 10827.340393651619,
+   "head_m_p10": 10827.340393651619,
+   "head_m_p50": 10787.993325915622,
+   "head_m_p90": 9511.51407505661,
+   "incident": "{CCEFD7D4-FEBD-496D-855E-CA0C9944BF0C}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 97111.37707399382,
+   "modeled_new_area_ac_p50": 83785.03327254589,
+   "n_new": 2848,
+   "n_new_burnable": 2845,
+   "n_new_nonburnable": 3,
+   "name": "Brewer-OR",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 2845,
+   "obs_head_m": 2213.7072977247917,
+   "obs_new_area_ac": 5700.424623989744,
+   "p10_before_window": 0,
+   "p10_not_after_window": 2845,
+   "p50_in_window": 2845,
+   "p90_unreached": 0,
+   "pit_hist": [
+    0,
+    58,
+    29,
+    74,
+    159,
+    415,
+    2110
+   ],
+   "t0_s": 1784609820.0,
+   "t1_s": 1784773560.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 2281,
+     "poss": 2281
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 2644,
+     "poss": 2644
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 116,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 332,
+     "poss": 332
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 5,
+     "poss": 5
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 5262,
+   "dt_h": 8.669444444444444,
+   "early_miss": 0,
+   "head_m_nominal": 9459.852007299058,
+   "head_m_p10": 10819.856745816925,
+   "head_m_p50": 9159.241234949543,
+   "head_m_p90": 4860.83326190068,
+   "incident": "{E3094E35-8B33-4A82-BE4B-D2E83652C29F}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 147508.49491368406,
+   "modeled_new_area_ac_p50": 107347.32213266079,
+   "n_new": 5378,
+   "n_new_burnable": 5262,
+   "n_new_nonburnable": 116,
+   "name": "BISCAR",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 5262,
+   "obs_head_m": 5876.9379782332235,
+   "obs_new_area_ac": 10764.355206396363,
+   "p10_before_window": 0,
+   "p10_not_after_window": 5262,
+   "p50_in_window": 5262,
+   "p90_unreached": 0,
+   "pit_hist": [
+    389,
+    194,
+    145,
+    112,
+    221,
+    1026,
+    3175
+   ],
+   "t0_s": 1784659010.0,
+   "t1_s": 1784690220.0
+  },
+  {
+   "by_fuel_class": {
+    "GR": {
+     "cert": 0,
+     "late": 0,
+     "n": 3486,
+     "poss": 3486
+    },
+    "GS": {
+     "cert": 0,
+     "late": 0,
+     "n": 1371,
+     "poss": 1371
+    },
+    "NB": {
+     "cert": 0,
+     "late": 0,
+     "n": 222,
+     "poss": 0
+    },
+    "SH": {
+     "cert": 0,
+     "late": 0,
+     "n": 478,
+     "poss": 478
+    },
+    "TU": {
+     "cert": 0,
+     "late": 0,
+     "n": 8,
+     "poss": 8
+    }
+   },
+   "cell_m": 90.0,
+   "covered_certain": 0,
+   "covered_possible": 5343,
+   "dt_h": 12.95,
+   "early_miss": 0,
+   "head_m_nominal": 10080.0,
+   "head_m_p10": 16571.979362767746,
+   "head_m_p50": 10038.934206378683,
+   "head_m_p90": 5436.625791794024,
+   "incident": "{EE6FCF97-7637-4721-B125-741098779D99}",
+   "label": "default",
+   "late_miss": 0,
+   "modeled_new_area_ac_p10": 92611.8846039345,
+   "modeled_new_area_ac_p50": 48531.669893918304,
+   "n_new": 5565,
+   "n_new_burnable": 5343,
+   "n_new_nonburnable": 222,
+   "name": "PorcupineRidge-OR",
+   "never_reached": 0,
+   "notes": [],
+   "null_new_covered": 5343,
+   "obs_head_m": 3710.795063055895,
+   "obs_new_area_ac": 11138.64572770468,
+   "p10_before_window": 0,
+   "p10_not_after_window": 5343,
+   "p50_in_window": 5343,
+   "p90_unreached": 0,
+   "pit_hist": [
+    0,
+    30,
+    340,
+    171,
+    907,
+    893,
+    3002
+   ],
+   "t0_s": 1784263980.0,
+   "t1_s": 1784310600.0
+  }
+ ],
+ "pairs_wide": [],
+ "root": "fix-hindcast-stacked-rings",
+ "schema": "hindcast-replay/2",
+ "skips": [
+  "Crosswhite-OR: pair dt 170.3 h outside (0, horizon-6] \u2014 skipped",
+  "ELEPHANT: pair dt 109.7 h outside (0, horizon-6] \u2014 skipped",
+  "ELEPHANT: pair dt 133.7 h outside (0, horizon-6] \u2014 skipped",
+  "Cottonwood-UT: pair dt 17229.7 h outside (0, horizon-6] \u2014 skipped"
+ ]
+}

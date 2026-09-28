@@ -1,5 +1,7 @@
 # Fix Program 2 — 2026-09-11: the recommended fixes left open on 2026-09-03
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [calibration/stacked_rings_fix_2026-09-27.md](calibration/stacked_rings_fix_2026-09-27.md) §4.1. **Affected here:** :98–151. That is the round-2 table; the regime-pair counts, where 13/27 and 2/18 become 13/34 and 2/26; and the per-pair July table. Porcupine drops out of that table, and only Aspen Acres 06-29 and Cottonwood 06-24 exceed 6 % late. The text below is left as written.
+
 Founder order: "perform the recommended fixes." The open recommendations
 after `docs/FIX_PROGRAM_2026-09-03.md` were the review's held items
 (edge-weather piecewise integration, φ-vector slope/wind combination, solver

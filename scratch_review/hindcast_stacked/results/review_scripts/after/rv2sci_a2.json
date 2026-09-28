@@ -1,0 +1,305 @@
+{
+ "n_pairs": 18,
+ "tot_new": 129630,
+ "eng_cov": 121362,
+ "eng_cov_pct": 93.62184679472344,
+ "eng_area_cells": 770218.0,
+ "eng_area_x": 5.941664738100748,
+ "null_cov_at_engine_budget_pct": 64.7809574722356,
+ "null_area_x_to_match_engine": 11.16364886902856,
+ "skill_x": 1.8788755948214302,
+ "mask_mismatches": [],
+ "n_mask_match": 18,
+ "null_curve": [
+  {
+   "R_m": 0,
+   "cov_pct": 0.0,
+   "pred_cells": 0,
+   "x_obs": 0.0
+  },
+  {
+   "R_m": 250,
+   "cov_pct": 8.8320604798272,
+   "pred_cells": 28754,
+   "x_obs": 0.22181593766874952
+  },
+  {
+   "R_m": 500,
+   "cov_pct": 15.126128211062253,
+   "pred_cells": 62551,
+   "x_obs": 0.48253490704312274
+  },
+  {
+   "R_m": 750,
+   "cov_pct": 19.534829900486,
+   "pred_cells": 93174,
+   "x_obs": 0.7187688035177042
+  },
+  {
+   "R_m": 1000,
+   "cov_pct": 23.00624855357556,
+   "pred_cells": 120955,
+   "x_obs": 0.9330787626321068
+  },
+  {
+   "R_m": 1500,
+   "cov_pct": 28.99097431150197,
+   "pred_cells": 176125,
+   "x_obs": 1.3586746895008872
+  },
+  {
+   "R_m": 2000,
+   "cov_pct": 34.24747357864692,
+   "pred_cells": 231907,
+   "x_obs": 1.7889917457378692
+  },
+  {
+   "R_m": 2500,
+   "cov_pct": 38.97246007868549,
+   "pred_cells": 287367,
+   "x_obs": 2.216824809071974
+  },
+  {
+   "R_m": 3000,
+   "cov_pct": 43.72058936974466,
+   "pred_cells": 347937,
+   "x_obs": 2.6840777597778294
+  },
+  {
+   "R_m": 4000,
+   "cov_pct": 51.383167476664354,
+   "pred_cells": 473935,
+   "x_obs": 3.6560595541155596
+  },
+  {
+   "R_m": 5000,
+   "cov_pct": 57.28226490781455,
+   "pred_cells": 597426,
+   "x_obs": 4.608701689423745
+  },
+  {
+   "R_m": 6000,
+   "cov_pct": 62.25796497724292,
+   "pred_cells": 708503,
+   "x_obs": 5.465578955488699
+  },
+  {
+   "R_m": 8000,
+   "cov_pct": 69.7045437013037,
+   "pred_cells": 890654,
+   "x_obs": 6.870739797886292
+  },
+  {
+   "R_m": 10000,
+   "cov_pct": 74.3385018899946,
+   "pred_cells": 1030455,
+   "x_obs": 7.949201573709789
+  },
+  {
+   "R_m": 12000,
+   "cov_pct": 77.60163542389878,
+   "pred_cells": 1134411,
+   "x_obs": 8.75114556815552
+  },
+  {
+   "R_m": 15000,
+   "cov_pct": 82.15073671218082,
+   "pred_cells": 1255157,
+   "x_obs": 9.682612049679857
+  },
+  {
+   "R_m": 20000,
+   "cov_pct": 89.56105839697601,
+   "pred_cells": 1404585,
+   "x_obs": 10.835339041888451
+  },
+  {
+   "R_m": 30000,
+   "cov_pct": 99.37668749517859,
+   "pred_cells": 1507457,
+   "x_obs": 11.628920774512073
+  }
+ ],
+ "per_pair": [
+  {
+   "name": "Bug-CA",
+   "dt_h": 16.583333333333332,
+   "n_new": 2456,
+   "published_n_new_burnable": 2456,
+   "n_match": true,
+   "engine_cov": 2456,
+   "engine_area_cells": 20109.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "Bug-CA",
+   "dt_h": 24.54722222222222,
+   "n_new": 2660,
+   "published_n_new_burnable": 2660,
+   "n_match": true,
+   "engine_cov": 2656,
+   "engine_area_cells": 49534.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "Bug-CA",
+   "dt_h": 9.48611111111111,
+   "n_new": 13594,
+   "published_n_new_burnable": 13594,
+   "n_match": true,
+   "engine_cov": 6150,
+   "engine_area_cells": 22971.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "Bug-CA",
+   "dt_h": 12.966666666666667,
+   "n_new": 6539,
+   "published_n_new_burnable": 6539,
+   "n_match": true,
+   "engine_cov": 6347,
+   "engine_area_cells": 46801.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "Ptarmigan-WA",
+   "dt_h": 24.9,
+   "n_new": 1386,
+   "published_n_new_burnable": 1386,
+   "n_match": true,
+   "engine_cov": 1386,
+   "engine_area_cells": 33833.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "Ptarmigan-WA",
+   "dt_h": 44.5,
+   "n_new": 1348,
+   "published_n_new_burnable": 1348,
+   "n_match": true,
+   "engine_cov": 1348,
+   "engine_area_cells": 48175.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "Stallion-NV",
+   "dt_h": 11.530277777777778,
+   "n_new": 9677,
+   "published_n_new_burnable": 9677,
+   "n_match": true,
+   "engine_cov": 9136,
+   "engine_area_cells": 12014.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "Stallion-NV",
+   "dt_h": 8.140277777777778,
+   "n_new": 1438,
+   "published_n_new_burnable": 1438,
+   "n_match": true,
+   "engine_cov": 1381,
+   "engine_area_cells": 13070.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "Stallion-NV",
+   "dt_h": 38.793055555555554,
+   "n_new": 9334,
+   "published_n_new_burnable": 9334,
+   "n_match": true,
+   "engine_cov": 9334,
+   "engine_area_cells": 41122.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "ColemanCreek-OR",
+   "dt_h": 24.783333333333335,
+   "n_new": 11353,
+   "published_n_new_burnable": 11353,
+   "n_match": true,
+   "engine_cov": 11353,
+   "engine_area_cells": 159691.00000000003,
+   "cell_m": 122.03975467413584
+  },
+  {
+   "name": "SandCreek-MT",
+   "dt_h": 63.844722222222224,
+   "n_new": 338,
+   "published_n_new_burnable": 338,
+   "n_match": true,
+   "engine_cov": 338,
+   "engine_area_cells": 40729.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "SandCreek-MT",
+   "dt_h": 33.5,
+   "n_new": 1766,
+   "published_n_new_burnable": 1766,
+   "n_match": true,
+   "engine_cov": 1766,
+   "engine_area_cells": 39779.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "SandCreek-MT",
+   "dt_h": 15.383333333333333,
+   "n_new": 745,
+   "published_n_new_burnable": 745,
+   "n_match": true,
+   "engine_cov": 745,
+   "engine_area_cells": 17470.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "SandCreek-MT",
+   "dt_h": 10.416666666666666,
+   "n_new": 1152,
+   "published_n_new_burnable": 1152,
+   "n_match": true,
+   "engine_cov": 1152,
+   "engine_area_cells": 16056.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "Border2-WA",
+   "dt_h": 71.3175,
+   "n_new": 548,
+   "published_n_new_burnable": 548,
+   "n_match": true,
+   "engine_cov": 538,
+   "engine_area_cells": 31010.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "Tartar-ID",
+   "dt_h": 8.405,
+   "n_new": 1060,
+   "published_n_new_burnable": 1060,
+   "n_match": true,
+   "engine_cov": 1041,
+   "engine_area_cells": 3915.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "Tartar-ID",
+   "dt_h": 48.08555555555556,
+   "n_new": 49812,
+   "published_n_new_burnable": 49812,
+   "n_match": true,
+   "engine_cov": 49812,
+   "engine_area_cells": 125249.0,
+   "cell_m": 90.0
+  },
+  {
+   "name": "Tartar-ID",
+   "dt_h": 13.623333333333333,
+   "n_new": 14424,
+   "published_n_new_burnable": 14424,
+   "n_match": true,
+   "engine_cov": 14423,
+   "engine_area_cells": 48690.0,
+   "cell_m": 90.0
+  }
+ ]
+}

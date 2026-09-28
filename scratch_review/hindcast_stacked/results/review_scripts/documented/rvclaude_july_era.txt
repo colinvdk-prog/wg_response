@@ -1,0 +1,32 @@
+########## oos_pooled.json â€” the GUST-BLEND SWEEP (July OOS) ##########
+   {"n_pairs": 8, "n": 60249, "cover": 43.159222559710535, "p10_nec": 43.159222559710535, "late": 56.840777440289465, "early": 0.0, "p50_in": 40.42390745074607, "head": 0.9874294306360116, "blend": "0.0"}
+   {"n_pairs": 8, "n": 60249, "cover": 46.065494862985275, "p10_nec": 46.065494862985275, "late": 53.934505137014725, "early": 0.0, "p50_in": 42.948430679347375, "head": 1.101301237002329, "blend": "0.25"}
+   {"n_pairs": 8, "n": 60249, "cover": 48.63981144915268, "p10_nec": 48.63981144915268, "late": 51.36018855084732, "early": 0.0, "p50_in": 45.13269929791366, "head": 1.2621459876795713, "blend": "0.5"}
+   {"n_pairs": 8, "n": 60249, "cover": 50.3958571926505, "p10_nec": 50.3958571926505, "late": 49.6041428073495, "early": 0.0, "p50_in": 46.80243655496357, "head": 1.3999123884320583, "blend": "0.75"}
+   {"n_pairs": 8, "n": 60249, "cover": 52.29962323026108, "p10_nec": 52.29962323026108, "late": 47.70037676973892, "early": 0.0, "p50_in": 47.78668525618682, "head": 1.4864921369221795, "blend": "1.0"}
+
+########## oos_realism.json ##########
+  variants: {'grass_floor': 8, 'realism_pack': 8}
+  grass_floor                pairs=8   cells=60249   cov= 64.77% late= 35.23% early=0.00% medhead code=3.388/true=3.185  AREA pooled=  5.91x med-pair=  12.64x
+       incidents=4 {'Stookey-UT': 2, 'KaiserCanyon-WA': 3, 'Brewer-OR': 2, 'PorcupineRidge-OR': 1}
+       late share: PorcupineRidge-OR:100% | KaiserCanyon-WA:0% | Stookey-UT:0% | Brewer-OR:0%
+       PIT %: 40.1 1.2 1.0 0.4 0.9 1.2 55.3  (flat=14.3)  extremes=95.4% vs 28.6%
+  realism_pack               pairs=8   cells=60249   cov= 65.45% late= 34.55% early=0.00% medhead code=3.717/true=3.548  AREA pooled=  7.08x med-pair=  15.58x
+       incidents=4 {'Stookey-UT': 2, 'KaiserCanyon-WA': 3, 'Brewer-OR': 2, 'PorcupineRidge-OR': 1}
+       late share: PorcupineRidge-OR:100% | KaiserCanyon-WA:0% | Stookey-UT:0% | Brewer-OR:0%
+       PIT %: 38.2 1.4 0.9 0.7 0.9 1.4 56.5  (flat=14.3)  extremes=94.7% vs 28.6%
+
+########## cal_realism.json ##########
+  variants: {'blend0.5': 14, 'grass_floor': 14, 'realism_pack': 14}
+  blend0.5                   pairs=14  cells=60062   cov= 73.52% late= 26.48% early=0.00% medhead code=1.772/true=1.611  AREA pooled=  2.38x med-pair=   4.16x
+       incidents=4 {'Dillon': 4, 'Gifford': 4, 'Madre': 2, 'Butler': 4}
+       late share: Madre:54% | Gifford:40% | Dillon:5% | Butler:0%
+       PIT %: 40.5 5.1 5.2 1.2 5.4 4.2 38.4  (flat=14.3)  extremes=78.9% vs 28.6%
+  grass_floor                pairs=14  cells=60062   cov= 91.49% late=  8.51% early=0.00% medhead code=2.776/true=2.749  AREA pooled=  5.22x med-pair=   9.64x
+       incidents=4 {'Dillon': 4, 'Gifford': 4, 'Madre': 2, 'Butler': 4}
+       late share: Gifford:72% | Madre:24% | Dillon:4% | Butler:0%
+       PIT %: 23.8 4.3 5.2 1.4 6.9 5.7 52.8  (flat=14.3)  extremes=76.5% vs 28.6%
+  realism_pack               pairs=14  cells=60062   cov= 98.79% late=  1.21% early=0.00% medhead code=4.156/true=4.070  AREA pooled=  8.61x med-pair=  19.27x
+       incidents=4 {'Dillon': 4, 'Gifford': 4, 'Madre': 2, 'Butler': 4}
+       late share: Madre:69% | Dillon:24% | Gifford:6% | Butler:0%
+       PIT %: 12.9 5.7 5.6 1.0 3.1 6.0 65.7  (flat=14.3)  extremes=78.6% vs 28.6%

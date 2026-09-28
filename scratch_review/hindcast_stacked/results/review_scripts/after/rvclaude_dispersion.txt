@@ -1,0 +1,18 @@
+
+=== calibration (n=18) ===
+  ENSEMBLE internal spread  head_P10/head_P50 : median=1.175  range 1.036-1.603
+     => the band's own optimistic edge sits only +17.5% from its median
+  MODEL error   head_P50/observed              : median=0.769  range 0.380-3.558
+     sd of log(error) = 0.657   sd of log(ens spread) = 0.107
+     ratio of error spread to ensemble spread (in log units, vs the P10 arm):
+       band half-width (P50->P10) = 0.161 log-units;  1 sd of actual error = 0.657 log-units  ->  UNDER-DISPERSED by 4.1x
+  observed head inside the model's own [head_P10, head_P50] interval: 2/18 pairs = 11%
+
+=== as-deployed (n=18) ===
+  ENSEMBLE internal spread  head_P10/head_P50 : median=1.093  range 0.992-1.324
+     => the band's own optimistic edge sits only +9.3% from its median
+  MODEL error   head_P50/observed              : median=1.769  range 0.685-9.224
+     sd of log(error) = 0.698   sd of log(ens spread) = 0.089
+     ratio of error spread to ensemble spread (in log units, vs the P10 arm):
+       band half-width (P50->P10) = 0.089 log-units;  1 sd of actual error = 0.698 log-units  ->  UNDER-DISPERSED by 7.9x
+  observed head inside the model's own [head_P10, head_P50] interval: 1/18 pairs = 6%

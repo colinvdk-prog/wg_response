@@ -1,5 +1,7 @@
 # Out-of-sample hindcast — model vs live fires (2026-07-28)
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [stacked_rings_fix_2026-09-27.md](stacked_rings_fix_2026-09-27.md) §4.3–4.4 and §5. **Affected here:** nearly every number. The OOS pool is 13 windows / 71,261 cells / 6 fires (was 8 / 60,249 / 4). Blend-0.5 coverage is 85.8 % (was 48.6 %), and 100 % with the grass floor (was 64.8 %). The Porcupine Ridge blow-up was an artifact: its T0 cancelled to zero cells and its T1 stacked 31 versions of one record. Corrected, it is 3.7 km / 11,139 ac / 0.52× with 54.7 % late at blend 0.5, 0 % late with the floor, and 7.5 % of the pool. The Crosswhite and BISCAR exclusions were artifacts. The extreme-regime signature now has no window above 50 % floored-late (was n = 1). The text below is left as written.
+
 **Question** (founder): how is the propagation model performing against live
 data — including whether the gust-blend 0.5 chosen on 2026-07-13 holds up on
 fires it has never seen.

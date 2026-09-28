@@ -1,0 +1,26 @@
+scored pairs to reproduce: 18
+  Bug-CA           + 16.6h new=  2456 pub=  2456 match=True engine cov=100.00% area_cells=    20109
+  Bug-CA           + 24.5h new=  2660 pub=  2660 match=True engine cov= 99.85% area_cells=    49534
+  Bug-CA           +  9.5h new= 13594 pub= 13594 match=True engine cov= 45.24% area_cells=    22971
+  Bug-CA           + 13.0h new=  6539 pub=  6539 match=True engine cov= 97.06% area_cells=    46801
+  Ptarmigan-WA     + 24.9h new=  1386 pub=  1386 match=True engine cov=100.00% area_cells=    33833
+  Ptarmigan-WA     + 44.5h new=  1348 pub=  1348 match=True engine cov=100.00% area_cells=    48175
+  Stallion-NV      + 11.5h new=  9677 pub=  9677 match=True engine cov= 94.41% area_cells=    12014
+  Stallion-NV      +  8.1h new=  1438 pub=  1438 match=True engine cov= 96.04% area_cells=    13070
+  Stallion-NV      + 38.8h new=  9334 pub=  9334 match=True engine cov=100.00% area_cells=    41122
+  ColemanCreek-OR  + 24.8h new= 11353 pub= 11353 match=True engine cov=100.00% area_cells=   159691
+  SandCreek-MT     + 63.8h new=   338 pub=   338 match=True engine cov=100.00% area_cells=    40729
+  SandCreek-MT     + 33.5h new=  1766 pub=  1766 match=True engine cov=100.00% area_cells=    39779
+  SandCreek-MT     + 15.4h new=   745 pub=   745 match=True engine cov=100.00% area_cells=    17470
+  SandCreek-MT     + 10.4h new=  1152 pub=  1152 match=True engine cov=100.00% area_cells=    16056
+  Border2-WA       + 71.3h new=   548 pub=   548 match=True engine cov= 98.18% area_cells=    31010
+  Tartar-ID        +  8.4h new=  1060 pub=  1060 match=True engine cov= 98.21% area_cells=     3915
+  Tartar-ID        + 48.1h new= 49812 pub= 49812 match=True engine cov=100.00% area_cells=   125249
+  Tartar-ID        + 13.6h new= 14424 pub= 14424 match=True engine cov= 99.99% area_cells=    48690
+
+================ POOLED ================
+ENGINE coverage=93.62%  area=5.94x
+NULL at engine budget: 64.78%
+NULL area to match engine cov: 11.16x
+skill = 1.88x   mask matches 18/18
+wrote C:\Users\colin\wg_response\.claude\worktrees\fix-hindcast-stacked-rings\scratch_review\hindcast_stacked\results\review_scripts\after\rv2sci_a2.json

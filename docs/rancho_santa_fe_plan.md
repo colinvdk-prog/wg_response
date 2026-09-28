@@ -1,5 +1,7 @@
 # Rancho Santa Fe Response Plan — 100 protected homes
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [calibration/stacked_rings_fix_2026-09-27.md](calibration/stacked_rings_fix_2026-09-27.md) §4.3–4.4. **Affected here:** :114–115, :172–183, :203–207, :872–878 and :975. The Porcupine 13× under-forecast is 0.52×. The 22-window signature is 28 windows with no blow-up. OOS late miss by fuel goes from GS 64.2 / GR 52.2 % to 12.6 / 20.8 %. The text below is left as written.
+
 **GraphGel Events, Covenant / Rancho Santa Fe, CA (`rancho_santa_fe_ca`)**
 Founder deliverable, 2026-08-01. Every number below is traced to a committed
 artifact or to a run reproduced today; nothing is projected, estimated, or

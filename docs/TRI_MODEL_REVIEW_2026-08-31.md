@@ -1,5 +1,7 @@
 # Tri-Model Independent Review — Consolidated Synthesis (2026-08-31)
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [calibration/stacked_rings_fix_2026-09-27.md](calibration/stacked_rings_fix_2026-09-27.md) §4.5. **Affected here:** :24–25, :39–50, :114–115 and :124. The August figures move little: 93.8 → 93.6 %, 1.85 → 1.88×, sd(log) 0.710 → 0.698, effective incidents 3.24 → 3.07. The July ones move a lot: 64.8 → 100 % with the floor, PIT extreme mass 88.3 → 83.9 %, and the n = 1 blow-up is gone. The text below is left as written.
+
 Two-pass review ordered by the founder: three independent primaries at
 highest effort — **Claude/Opus** (science + safety laws), **Luna/OpenAI
 Codex** (code correctness), **Grok/xAI** (statistics + operational realism)

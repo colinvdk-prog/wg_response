@@ -1,0 +1,49 @@
+[replay] LittleGiant-WA: T0+44.9h pair (237x264 @ 90 m)
+[replay] LittleGiant-WA: T0+32.5h pair (237x264 @ 90 m)
+[replay] LittleGiant-WA: T0+14.8h pair (237x264 @ 90 m)
+[replay] LittleGiant-WA: T0+56.9h pair (237x264 @ 90 m)
+[replay] Crosswhite-OR: T0+14.3h pair (563x534 @ 131 m)
+[replay] Crosswhite-OR: T0+43.2h pair (563x534 @ 131 m)
+[replay] Bug-CA: T0+16.6h pair (311x364 @ 90 m)
+[replay] Bug-CA: T0+24.5h pair (311x364 @ 90 m)
+[replay] Bug-CA: T0+9.5h pair (311x364 @ 90 m)
+[replay] Bug-CA: T0+13.0h pair (311x364 @ 90 m)
+[replay] Grasshopper-OR: T0+49.4h pair (211x291 @ 90 m)
+[replay] Grasshopper-OR: T0+23.9h pair (211x291 @ 90 m)
+[replay] Grasshopper-OR: T0+24.2h pair (211x291 @ 90 m)
+[replay] Grasshopper-OR: T0+46.8h pair (211x291 @ 90 m)
+[replay] Ptarmigan-WA: T0+24.9h pair (311x230 @ 90 m)
+[replay] Ptarmigan-WA: T0+44.5h pair (311x230 @ 90 m)
+[replay] Stallion-NV: T0+11.5h pair (271x302 @ 90 m)
+[replay] Stallion-NV: T0+8.1h pair (271x302 @ 90 m)
+[replay] Stallion-NV: T0+38.8h pair (271x302 @ 90 m)
+[replay] BaldMountain-OR: T0+74.4h pair (448x671 @ 320 m)
+[replay] BaldMountain-OR: T0+25.6h pair (448x671 @ 320 m)
+[replay] BaldMountain-OR: T0+26.4h pair (448x671 @ 320 m)
+[replay] Sinlahekin-WA: T0+6.6h pair (294x298 @ 90 m)
+[replay] Sinlahekin-WA: T0+10.3h pair (294x298 @ 90 m)
+[replay] Sinlahekin-WA: T0+14.7h pair (294x298 @ 90 m)
+[replay] ColemanCreek-OR: T0+22.3h pair (438x686 @ 122 m)
+[replay] ColemanCreek-OR: T0+31.7h pair (438x686 @ 122 m)
+[replay] ColemanCreek-OR: T0+72.5h pair (438x686 @ 122 m)
+[replay] ColemanCreek-OR: T0+24.8h pair (438x686 @ 122 m)
+[replay] SandCreek-MT: T0+63.8h pair (198x209 @ 90 m)
+[replay] SandCreek-MT: T0+33.5h pair (198x209 @ 90 m)
+[replay] SandCreek-MT: T0+15.4h pair (198x209 @ 90 m)
+[replay] SandCreek-MT: T0+10.4h pair (198x209 @ 90 m)
+[replay] Border2-WA: T0+71.3h pair (243x171 @ 90 m)
+[replay] Tartar-ID: T0+8.4h pair (517x343 @ 90 m)
+[replay] Tartar-ID: T0+48.1h pair (517x343 @ 90 m)
+[replay] Tartar-ID: T0+13.6h pair (517x343 @ 90 m)
+[replay] scored 34 pairs / 190223 cells; skips: 11; wrote scratch_review/hindcast_aug_data\replay_results.json
+[replay] skip: Crosswhite-OR: pair dt 170.3 h outside (0, horizon-6] — skipped
+[replay] skip: Crosswhite-OR: pair dt 99.4 h outside (0, horizon-6] — skipped
+[replay] skip: Ptarmigan-WA: pair dt 369.6 h outside (0, horizon-6] — skipped
+[replay] skip: Ptarmigan-WA: pair dt 92.6 h outside (0, horizon-6] — skipped
+[replay] skip: Stallion-NV: pair dt 114.0 h outside (0, horizon-6] — skipped
+[replay] skip: BaldMountain-OR: pair dt 91.4 h outside (0, horizon-6] — skipped
+[replay] skip: Sinlahekin-WA: pair dt 52467.2 h outside (0, horizon-6] — skipped
+[replay] skip: Border2-WA: pair dt 308.6 h outside (0, horizon-6] — skipped
+[replay] skip: Border2-WA: pair dt 114.0 h outside (0, horizon-6] — skipped
+[replay] skip: Border2-WA: pair dt 111.6 h outside (0, horizon-6] — skipped
+[replay] skip: Tartar-ID: pair dt 156.5 h outside (0, horizon-6] — skipped

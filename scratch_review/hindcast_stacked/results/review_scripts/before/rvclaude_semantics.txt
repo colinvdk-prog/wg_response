@@ -1,0 +1,28 @@
+=== CHECK 1: is covered_possible identical to p10_not_after_window? ===
+  rows where they differ: 0 / 36
+=== CHECK 2: does covered+late == burnable exactly (i.e. early/P90 never bind)? ===
+  rows violating: 0 / 36
+=== CHECK 3: early_miss anywhere nonzero? covered_certain anywhere nonzero? p10_before_window? ===
+  sum early_miss     = 0
+  sum covered_certain= 0
+  sum p10_before_win = 0
+  sum p90_unreached  = 11416  (P90 never arrives but P10 does)
+  sum never_reached  = 375
+
+=== AREA OVER-PREDICTION (the unreported cost side) ===
+  calibration  pooled obs=     304535 ac   modeled_P50=      709461 ac   POOLED RATIO=  2.33x
+               per-pair area ratio: median=2.95x  mean=4.66x  min=0.30  max=23.73
+               sorted: 0.3 0.6 0.7 0.9 1.4 2.4 2.4 2.8 2.8 3.1 3.2 3.7 4.7 4.8 7.5 7.8 11.1 23.7
+  as-deployed  pooled obs=     304535 ac   modeled_P50=     1845887 ac   POOLED RATIO=  6.06x
+               per-pair area ratio: median=8.90x  mean=19.14x  min=1.23  max=120.50
+               sorted: 1.2 1.6 2.5 3.3 3.6 5.0 6.7 8.1 8.1 9.7 13.9 17.9 22.3 23.4 23.9 35.4 37.4 120.5
+
+=== PIT HISTOGRAM (computed by the harness, never reported) ===
+  calibration  n_members=6  bins(n=135081):
+     counts: [75146, 6973, 5317, 1779, 4045, 5307, 36514]
+     pct   :  55.6   5.2   3.9   1.3   3.0   3.9  27.0   (flat would be 14.3 each)
+     extreme-bin mass (bin0+binN) = 82.7%  (flat expectation 28.6%)  -> ratio 2.89x
+  as-deployed  n_members=6  bins(n=135081):
+     counts: [17891, 3386, 5455, 1249, 4262, 13132, 89706]
+     pct   :  13.2   2.5   4.0   0.9   3.2   9.7  66.4   (flat would be 14.3 each)
+     extreme-bin mass (bin0+binN) = 79.7%  (flat expectation 28.6%)  -> ratio 2.79x

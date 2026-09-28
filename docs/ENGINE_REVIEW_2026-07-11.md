@@ -1,5 +1,7 @@
 # WG Response — Engine & Results Review (2026-07-06 → 2026-07-11)
 
+> **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [calibration/stacked_rings_fix_2026-09-27.md](calibration/stacked_rings_fix_2026-09-27.md) §4.2. **Affected here:** :78–79: hindcast coverage 68.8 % becomes 69.4 %. The text below is left as written.
+
 Founder-requested retrospective. Every number below is measured (harness named);
 nothing is projected. Companion docs written the same day:
 `LIVE_OPS_PLAN.md`, `DISPATCH_OPTIMIZATION.md`, `HOA_40_PLAYBOOK.md`.
