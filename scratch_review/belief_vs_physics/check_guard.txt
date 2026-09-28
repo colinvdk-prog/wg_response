@@ -1,0 +1,22 @@
+[check-guard] willow step 1: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] willow step 1: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] grasshopper step 1: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] grasshopper step 8: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] hagen step 1: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] hagen step 10: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] littlegiant step 1: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] littlegiant step 6: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] sinlahekin step 1: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] sinlahekin step 13: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] sandcreek step 1: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] sandcreek step 1: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] border2 step 2: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] border2 step 2: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] bobcatlakes step 1: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] bobcatlakes step 2: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] timber step 1: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] timber step 4: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] plaskett step 1: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] plaskett: no applied scored step
+[check-guard] aspenacres step 1: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True
+[check-guard] aspenacres step 7: applied_ensemble P10 == belief|physics footprint: True; P50 same: True; P90 same: True

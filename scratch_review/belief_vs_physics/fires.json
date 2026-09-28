@@ -1,0 +1,13 @@
+{
+ "willow": {"irwin": "{548A8D28-1A04-48EE-9011-ABA023175D43}", "name": "Willow (CO)"},
+ "grasshopper": {"irwin": "{6AA4C355-AD18-472F-AAAB-78BAA9DE31B1}", "name": "Grasshopper (OR)"},
+ "hagen": {"irwin": "{D4E53810-46D0-48FB-889B-3E670328DCFB}", "name": "Hagen (OR)"},
+ "littlegiant": {"irwin": "{091081ED-BD23-4610-AE4A-270F95D1711E}", "name": "Little Giant (WA)"},
+ "sinlahekin": {"irwin": "{78D35D3B-F791-4961-AE36-C6D1A4DFF5A0}", "name": "Sinlahekin (WA)"},
+ "sandcreek": {"irwin": "{84FD3D7E-6B04-49CD-A729-ED3178A49C42}", "name": "Sand Creek (MT)"},
+ "border2": {"irwin": "{A60CA689-BD59-4A2D-9BDC-CC551CEAFCA4}", "name": "Border 2 (WA)"},
+ "bobcatlakes": {"irwin": "{801A448C-B5B4-4DCC-BAE2-CEF8FEDBB2A6}", "name": "Bobcat Lakes (MT)"},
+ "timber": {"irwin": "{51374D2C-D96B-40F7-940B-6CB8E0A483A2}", "name": "Timber (CA)"},
+ "plaskett": {"irwin": "{C257FBA6-F90E-431F-9464-067E8FBF79D7}", "name": "Plaskett (CA)"},
+ "aspenacres": {"irwin": "{1CDF5E5A-F22E-4352-A582-C2A47663B93D}", "name": "Aspen Acres (CO)"}
+}

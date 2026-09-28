@@ -1,0 +1,209 @@
+{
+ "aspenacres": {
+  "domain": {
+   "GR": 0.323,
+   "GS": 0.255,
+   "NB_share_of_all": 0.022,
+   "SB": 0.001,
+   "SH": 0.027,
+   "TL": 0.161,
+   "TU": 0.233
+  },
+  "final_burn": {
+   "GR": 0.167,
+   "GS": 0.33,
+   "NB_share_of_all": 0.008,
+   "SB": 0.0,
+   "SH": 0.044,
+   "TL": 0.241,
+   "TU": 0.219
+  }
+ },
+ "bobcatlakes": {
+  "domain": {
+   "GR": 0.025,
+   "GS": 0.147,
+   "NB_share_of_all": 0.041,
+   "SH": 0.008,
+   "TL": 0.266,
+   "TU": 0.555
+  },
+  "final_burn": {
+   "GR": 0.01,
+   "GS": 0.113,
+   "NB_share_of_all": 0.018,
+   "SH": 0.004,
+   "TL": 0.335,
+   "TU": 0.538
+  }
+ },
+ "border2": {
+  "domain": {
+   "GR": 0.04,
+   "GS": 0.025,
+   "NB_share_of_all": 0.074,
+   "SB": 0.0,
+   "SH": 0.001,
+   "TL": 0.509,
+   "TU": 0.425
+  },
+  "final_burn": {
+   "GR": 0.009,
+   "GS": 0.012,
+   "NB_share_of_all": 0.038,
+   "SB": 0.0,
+   "TL": 0.468,
+   "TU": 0.511
+  }
+ },
+ "grasshopper": {
+  "domain": {
+   "GR": 0.227,
+   "GS": 0.129,
+   "NB_share_of_all": 0.061,
+   "SH": 0.013,
+   "TL": 0.24,
+   "TU": 0.391
+  },
+  "final_burn": {
+   "GR": 0.173,
+   "GS": 0.084,
+   "NB_share_of_all": 0.013,
+   "SH": 0.008,
+   "TL": 0.271,
+   "TU": 0.465
+  }
+ },
+ "hagen": {
+  "domain": {
+   "GR": 0.096,
+   "GS": 0.136,
+   "NB_share_of_all": 0.013,
+   "SH": 0.386,
+   "TL": 0.169,
+   "TU": 0.213
+  },
+  "final_burn": {
+   "GR": 0.042,
+   "GS": 0.106,
+   "NB_share_of_all": 0.001,
+   "SH": 0.522,
+   "TL": 0.153,
+   "TU": 0.178
+  }
+ },
+ "littlegiant": {
+  "domain": {
+   "GR": 0.073,
+   "GS": 0.151,
+   "NB_share_of_all": 0.151,
+   "SB": 0.0,
+   "SH": 0.098,
+   "TL": 0.153,
+   "TU": 0.525
+  },
+  "final_burn": {
+   "GR": 0.041,
+   "GS": 0.084,
+   "NB_share_of_all": 0.049,
+   "SB": 0.0,
+   "SH": 0.124,
+   "TL": 0.113,
+   "TU": 0.638
+  }
+ },
+ "plaskett": {
+  "domain": {
+   "GR": 0.146,
+   "GS": 0.186,
+   "NB_share_of_all": 0.225,
+   "SB": 0.0,
+   "SH": 0.334,
+   "TL": 0.22,
+   "TU": 0.113
+  },
+  "final_burn": {
+   "GR": 0.034,
+   "GS": 0.166,
+   "NB_share_of_all": 0.013,
+   "SB": 0.0,
+   "SH": 0.366,
+   "TL": 0.236,
+   "TU": 0.198
+  }
+ },
+ "sandcreek": {
+  "domain": {
+   "GR": 0.068,
+   "GS": 0.217,
+   "NB_share_of_all": 0.032,
+   "SH": 0.003,
+   "TL": 0.249,
+   "TU": 0.462
+  },
+  "final_burn": {
+   "GR": 0.009,
+   "GS": 0.087,
+   "NB_share_of_all": 0.004,
+   "SH": 0.0,
+   "TL": 0.375,
+   "TU": 0.529
+  }
+ },
+ "sinlahekin": {
+  "domain": {
+   "GR": 0.204,
+   "GS": 0.281,
+   "NB_share_of_all": 0.09,
+   "SB": 0.0,
+   "SH": 0.091,
+   "TL": 0.152,
+   "TU": 0.272
+  },
+  "final_burn": {
+   "GR": 0.172,
+   "GS": 0.257,
+   "NB_share_of_all": 0.052,
+   "SH": 0.099,
+   "TL": 0.135,
+   "TU": 0.336
+  }
+ },
+ "timber": {
+  "domain": {
+   "GR": 0.111,
+   "GS": 0.408,
+   "NB_share_of_all": 0.204,
+   "SB": 0.0,
+   "SH": 0.048,
+   "TL": 0.275,
+   "TU": 0.157
+  },
+  "final_burn": {
+   "GR": 0.104,
+   "GS": 0.348,
+   "NB_share_of_all": 0.025,
+   "SH": 0.044,
+   "TL": 0.419,
+   "TU": 0.085
+  }
+ },
+ "willow": {
+  "domain": {
+   "GR": 0.026,
+   "GS": 0.053,
+   "NB_share_of_all": 0.183,
+   "SH": 0.084,
+   "TL": 0.469,
+   "TU": 0.368
+  },
+  "final_burn": {
+   "GR": 0.001,
+   "GS": 0.006,
+   "NB_share_of_all": 0.007,
+   "SH": 0.009,
+   "TL": 0.459,
+   "TU": 0.526
+  }
+ }
+}

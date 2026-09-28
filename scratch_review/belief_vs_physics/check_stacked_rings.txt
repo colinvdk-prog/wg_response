@@ -1,0 +1,2 @@
+Madre      t=1751471500 oids=2 GIS 8,396 ac | 2 stacked rings -> rasterized interior 0 ac
+Madre      t=1751672243 oids=4 GIS 79,519 ac | 4 stacked rings -> rasterized interior 9,259 ac
