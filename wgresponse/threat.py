@@ -202,6 +202,7 @@ import math
 import time
 from typing import Optional
 
+from wgresponse import feedsanity
 from wgresponse import fire_belief as fire_belief_mod
 from wgresponse import fuels, geo, spread
 from wgresponse import seeded as seeded_mod
@@ -462,6 +463,14 @@ class ThreatMonitor:
         if fire_beliefs is None and getattr(cfg, "fire_belief_track", False):
             fire_beliefs = fire_belief_mod.FireBeliefStore()
         self._fire_beliefs = fire_beliefs
+        # FEED SANITY (SAFETY SEMANTICS 18; cfg.feed_sanity only): each
+        # fire's last plausible polygon (in-process), the incidents found
+        # implausible this / last cycle (an OperatorEvent on first finding)
+        # and this cycle's events, drained by cycle().
+        self._perimeter_memory = feedsanity.PerimeterMemory()
+        self._sanity_now: set = set()
+        self._sanity_prev: set = set()
+        self._sanity_events: list = []
 
     @property
     def fire_beliefs(self):
@@ -616,6 +625,10 @@ class ThreatMonitor:
         extreme_flags: dict = {}        # incident_id -> bool (extreme spread regime)
         eroded_map: dict = {}           # incident_id -> tiered eroded raster
         weather_fields: dict = {}       # incident_id -> WeatherField (SEMANTICS 17)
+        if self._cfg.feed_sanity:
+            # SAFETY SEMANTICS 18: this cycle's implausible-perimeter findings
+            self._sanity_now = set()
+            self._sanity_events = []
         for inc in active:
             try:
                 self._assess_incident(inc, now_s, assessments, ensembles,
@@ -641,6 +654,13 @@ class ThreatMonitor:
                     message=(f"assessment failed for incident "
                              f"{inc.incident_id}: {exc}"),
                     incident_id=inc.incident_id, detail={"step": "assess"}))
+        if self._cfg.feed_sanity:
+            # SAFETY SEMANTICS 18c: first findings are operator events (never
+            # a degradation); the memory forgets polygons past its window
+            operator_events.extend(self._sanity_events)
+            self._sanity_events = []
+            self._sanity_prev = self._sanity_now
+            self._perimeter_memory.prune(now_s, self._cfg)
 
         # BLIND pairs (SAFETY SEMANTICS 6): tracked pairs whose incident's
         # assessment failed this cycle, PLUS tracked pairs whose incident is
@@ -820,6 +840,10 @@ class ThreatMonitor:
         for ev in evs:
             msg = f"fire belief {ev['incident_id']}: {ev['message']}"
             notes.append(msg)
+            if ev["kind"] == "sanity":
+                # SAFETY SEMANTICS 18 (cfg.feed_sanity only): what the belief
+                # skipped or held is a note; the seed side raises the alarm
+                continue
             operator_events.append(OperatorEvent(
                 t_s=now_s, kind="fire_belief", message=msg,
                 incident_id=ev["incident_id"], detail={"event": ev["kind"]}))
@@ -1290,7 +1314,17 @@ class ThreatMonitor:
         field (_local_weather_field) and spreads on it; ``weather_fields``
         (when given) records it. The centroid forecast still feeds
         ``forecasts`` and the extreme-regime posture.
+
+        FEED SANITY (cfg.feed_sanity; SAFETY SEMANTICS 18b/c): before any of
+        the above, a feed incident's perimeter passes _sane_seed_incident —
+        an implausible polygon time falls back to the record's, and a
+        polygon collapsed under its record's size (or dropped below the
+        remembered one beyond noise) is replaced by the fire's last plausible
+        polygon for the geometry, the domain and the seed alike.
         """
+        if (self._cfg.feed_sanity and inc.perimeter
+                and inc.source is not IncidentSource.SEEDED):
+            inc = self._sane_seed_incident(inc, now_s, notes)
         ign = inc.ignition_points()
         if inc.perimeter:
             perimeter = [r for r in
@@ -1540,6 +1574,107 @@ class ThreatMonitor:
                      f"then, not {age_h(provenance_s):.1f} h ago "
                      f"(cfg.perimeter_confirmed_anchor; SAFETY SEMANTICS 13e)")
         return anchored
+
+    def _sane_seed_incident(self, inc: FireIncident, now_s: float,
+                            notes: list) -> FireIncident:
+        """The incident whose perimeter this cycle's spread seeds under
+        cfg.feed_sanity (contracts SAFETY SEMANTICS 18b/c; the feed's own
+        record is never modified — a replacement is a dataclasses.replace
+        copy with its own meta).
+
+          18b  the polygon's own time (meta perimeter_at_s, else the
+               record's updated_at_s — the F3 rule) is implausible
+               (feedsanity.time_problem): it becomes the record's own time
+               (now when that is implausible too); the SEMANTICS 9 clamp and
+               the 13e anchor still apply after it.
+          18c  the polygon's geometry covers under feed_sanity_collapse_frac
+               of its record's reported size (feedsanity.collapse_problem),
+               or drops below the remembered polygon beyond noise
+               (feedsanity.is_drop): the fire's LAST PLAUSIBLE polygon — its
+               rings, own time and perimeter_acres — replaces it while the
+               memory holds one (feed_sanity_memory_h); with none the polygon
+               is seeded as received.
+          else the polygon is plausible and becomes the fire's memory.
+
+        Every finding is one note; a fire newly found implausible this cycle
+        also queues an OperatorEvent('feed_sanity') that cycle() emits."""
+        cfg = self._cfg
+        meta = inc.meta or {}
+        iid = inc.incident_id
+        head = f"incident {iid}: "
+        age_h = lambda t: (float(now_s) - t) / 3600.0  # noqa: E731
+        raw_pat = _finite_num(meta.get("perimeter_at_s"))
+        provenance_s = (raw_pat if raw_pat is not None and raw_pat > 0
+                        else float(inc.updated_at_s))
+        new_meta = None
+        findings = []
+        why_t = feedsanity.time_problem(provenance_s, inc.discovered_at_s,
+                                        now_s, cfg)
+        if why_t is not None:
+            rec_t = _finite_num(inc.updated_at_s)
+            if rec_t is None or not rec_t > 0 or feedsanity.time_problem(
+                    rec_t, inc.discovered_at_s, now_s, cfg) is not None:
+                rec_t = float(now_s)
+            new_meta = dict(meta)
+            new_meta["perimeter_at_s"] = rec_t
+            provenance_s = rec_t
+            notes.append(head + f"perimeter time implausible ({why_t}): "
+                         f"seeded at the record's own time "
+                         f"({age_h(rec_t):.1f} h ago) instead (SAFETY "
+                         f"SEMANTICS 18b)")
+            findings.append(f"implausible perimeter time ({why_t})")
+        geom_acres = (fire_belief_mod.rings_area_m2(inc.perimeter)
+                      / feedsanity.ACRE_M2)
+        why_s = feedsanity.collapse_problem(geom_acres,
+                                            meta.get("reported_acres"), cfg)
+        rem = self._perimeter_memory.get(iid, now_s, cfg)
+        if why_s is None and rem is not None and feedsanity.is_drop(
+                geom_acres * feedsanity.ACRE_M2,
+                rem.geom_acres * feedsanity.ACRE_M2, cfg):
+            why_s = (f"its {geom_acres:,.1f} ac dropped below the "
+                     f"{rem.geom_acres:,.1f} ac polygon seen "
+                     f"{age_h(rem.seen_s):.1f} h ago, beyond measurement "
+                     f"noise")
+        out = inc if new_meta is None else dataclasses.replace(
+            inc, meta=new_meta)
+        if why_s is None:
+            self._perimeter_memory.remember(iid, feedsanity.RememberedPerimeter(
+                rings=inc.perimeter, perimeter_at_s=provenance_s,
+                perimeter_acres=_finite_num(meta.get("perimeter_acres")),
+                geom_acres=geom_acres, seen_s=float(now_s)))
+        elif rem is not None:
+            m2 = dict(out.meta or {})
+            m2["perimeter_at_s"] = rem.perimeter_at_s
+            if rem.perimeter_acres is None:
+                m2.pop("perimeter_acres", None)
+            else:
+                m2["perimeter_acres"] = rem.perimeter_acres
+            notes.append(head + f"perimeter implausible ({why_s}): seeded the "
+                         f"fire's last plausible polygon instead "
+                         f"({rem.geom_acres:,.1f} ac, its own time "
+                         f"{age_h(rem.perimeter_at_s):.1f} h ago, last seen "
+                         f"{age_h(rem.seen_s):.1f} h ago; SAFETY SEMANTICS "
+                         f"18c)")
+            findings.append(f"implausible perimeter ({why_s}); seeded its "
+                            f"last plausible polygon")
+            out = dataclasses.replace(out, perimeter=rem.rings, meta=m2)
+        else:
+            notes.append(head + f"perimeter implausible ({why_s}) and no "
+                         f"plausible polygon of this fire is remembered: "
+                         f"seeded as received — its forecast may run LATE "
+                         f"near the real front (SAFETY SEMANTICS 18c)")
+            findings.append(f"implausible perimeter ({why_s}) seeded as "
+                            f"received: no plausible polygon remembered")
+        if findings:
+            self._sanity_now.add(iid)
+            if iid not in self._sanity_prev:
+                self._sanity_events.append(OperatorEvent(
+                    t_s=now_s, kind="feed_sanity",
+                    message=(f"incident {inc.name or iid}: "
+                             + "; ".join(findings)
+                             + " (SAFETY SEMANTICS 18)"),
+                    incident_id=iid, detail={"findings": list(findings)}))
+        return out
 
     def _eligible_crews(self, now_s: float, notes: list) -> list:
         """Crews the dispatcher may route at unix time now_s.

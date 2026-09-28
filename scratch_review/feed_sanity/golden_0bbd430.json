@@ -1,0 +1,155 @@
+{
+ "engine": "C:\\Users\\colin\\wg_response\\wgresponse",
+ "runs": [
+  {
+   "cycles": [
+    "a7f26920e803ad0c7207b3d6f59aac9ccc9c43b7572efa79c40f4f719913e16b",
+    "734c0bb4b56476e3821b40093f8bc1a48b9b5a6c87e09486042a5852420005bf",
+    "10d8781d85e6719d670600a7c3ab2ae881dc07d3045ed54c364bf40e16793cfc",
+    "02c4262e70190ff9171a1377b70d86d08e899a79bafca0f27fc8b967313ec7a8",
+    "2605aa62dec4de3132c544b04d1cd92fbef4860b8f3942677c315869cf0a0d41"
+   ],
+   "api": "319eea760ecd5281f84605a18e8bb66aeef36ac53131679825b92f5912b0e2d9",
+   "state": "f4706db50915a8c27d355b4a57f0a0c463ccef3302c3857db4baf196f4333749",
+   "world": "dc18ce6011079299893a672c7c67f005f2fb76362efd45182f8c62b48681c407",
+   "belief": "1d80de6aab90e5cfe66d3b0f55c438ddd66cb9155a4d7599ffe691cf22fe1052",
+   "ensembles": [
+    [
+     "ancient-1",
+     "collapse-1",
+     "figure-1",
+     "future-1",
+     "reset-1"
+    ],
+    [
+     "ancient-1",
+     "collapse-1",
+     "figure-1",
+     "future-1",
+     "reset-1"
+    ],
+    [
+     "ancient-1",
+     "collapse-1",
+     "figure-1",
+     "future-1",
+     "reset-1"
+    ],
+    [
+     "ancient-1",
+     "collapse-1",
+     "figure-1",
+     "future-1",
+     "reset-1"
+    ],
+    [
+     "ancient-1",
+     "collapse-1",
+     "figure-1",
+     "future-1",
+     "reset-1"
+    ]
+   ],
+   "n_assess": [
+    15,
+    15,
+    15,
+    15,
+    15
+   ],
+   "events": [
+    5,
+    3,
+    0,
+    0,
+    0
+   ],
+   "states": [
+    [
+     "extreme_24h"
+    ],
+    [
+     "impacted"
+    ],
+    [],
+    [],
+    []
+   ]
+  },
+  {
+   "cycles": [
+    "a7f26920e803ad0c7207b3d6f59aac9ccc9c43b7572efa79c40f4f719913e16b",
+    "734c0bb4b56476e3821b40093f8bc1a48b9b5a6c87e09486042a5852420005bf",
+    "10d8781d85e6719d670600a7c3ab2ae881dc07d3045ed54c364bf40e16793cfc",
+    "02c4262e70190ff9171a1377b70d86d08e899a79bafca0f27fc8b967313ec7a8",
+    "2605aa62dec4de3132c544b04d1cd92fbef4860b8f3942677c315869cf0a0d41"
+   ],
+   "api": "319eea760ecd5281f84605a18e8bb66aeef36ac53131679825b92f5912b0e2d9",
+   "state": "f4706db50915a8c27d355b4a57f0a0c463ccef3302c3857db4baf196f4333749",
+   "world": "dc18ce6011079299893a672c7c67f005f2fb76362efd45182f8c62b48681c407",
+   "belief": "1d80de6aab90e5cfe66d3b0f55c438ddd66cb9155a4d7599ffe691cf22fe1052",
+   "ensembles": [
+    [
+     "ancient-1",
+     "collapse-1",
+     "figure-1",
+     "future-1",
+     "reset-1"
+    ],
+    [
+     "ancient-1",
+     "collapse-1",
+     "figure-1",
+     "future-1",
+     "reset-1"
+    ],
+    [
+     "ancient-1",
+     "collapse-1",
+     "figure-1",
+     "future-1",
+     "reset-1"
+    ],
+    [
+     "ancient-1",
+     "collapse-1",
+     "figure-1",
+     "future-1",
+     "reset-1"
+    ],
+    [
+     "ancient-1",
+     "collapse-1",
+     "figure-1",
+     "future-1",
+     "reset-1"
+    ]
+   ],
+   "n_assess": [
+    15,
+    15,
+    15,
+    15,
+    15
+   ],
+   "events": [
+    5,
+    3,
+    0,
+    0,
+    0
+   ],
+   "states": [
+    [
+     "extreme_24h"
+    ],
+    [
+     "impacted"
+    ],
+    [],
+    [],
+    []
+   ]
+  }
+ ]
+}

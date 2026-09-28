@@ -114,6 +114,24 @@ from a second, legacy ensemble — so the belief moves the nominal, P50 (the
 ladder) and P90 but never makes P10 later than today's engine (measured:
 letting it do so is unsafe for contained fires, docs/FIRE_BELIEF.md §5).
 
+FEED SANITY (contracts SAFETY SEMANTICS 18; cfg.feed_sanity, default OFF;
+wgresponse.feedsanity; docs/review/feed_sanity_2026-09-27.md). With the
+knob, observe() runs the sanity-checked twins of the two observers: a
+perimeter or reported size whose own time is in the future (beyond
+cfg.feed_sanity_future_h) or before the fire is not observed (never clamped
+to now); a polygon's feed area figure is used only while it agrees with its
+geometry (cfg.feed_sanity_area_ratio); a polygon under
+cfg.feed_sanity_collapse_frac of its own record's reported size is not
+observed; a polygon within cfg.feed_sanity_restamp_frac of the last observed
+one is a re-stamp that becomes a static zero-growth observation only once
+cfg.fire_belief_static_h has passed; a size below the series' last one by
+more than cfg.feed_sanity_drop_z x the sd of the difference is HELD (no
+observation) until the series comes back up or the lower size persists for
+cfg.fire_belief_static_h — then the series restarts there, with no window
+across the drop. What it skipped or held returns as events of kind
+'sanity' (the monitor's notes). The hold clocks are per process (not
+persisted: a restart holds a drop afresh). Knob off = the legacy observers.
+
 PERSISTENCE + ISOLATION. The store is JSON (to_json/from_json); BeliefFile
 writes <state-dir>/fire_beliefs.json atomically after each cycle and mirrors
 it through persist.S3Mirror as '<prefix>/fire_beliefs.json'; load_into
@@ -141,7 +159,7 @@ from pathlib import Path
 from statistics import NormalDist
 from typing import Optional
 
-from wgresponse import fuels, rothermel
+from wgresponse import feedsanity, fuels, rothermel
 from wgresponse.contracts import (
     FireObservation,
     FireStatus,
@@ -617,6 +635,11 @@ class IncidentBelief:
         self.novel_reason = ""
         self.novel_at_s: Optional[float] = None
         self.pending_nominal: Optional[list] = None
+        # FEED SANITY (SEMANTICS 18e; per process, not persisted): the monitor
+        # time a size drop was first held, per series; and what was last
+        # said per sanity key (one note per new finding, not per cycle)
+        self.hold_since: dict = {}
+        self.sanity_said: dict = {}
 
     _PERSIST = ("first_seen_s", "last_seen_s", "discovered_s", "latest_acres",
                 "perim_last_t", "rep_value", "rep_changed_s", "rep_record_s",
@@ -717,8 +740,15 @@ class FireBeliefStore:
                 disc = _num(inc.discovered_at_s)
                 if disc is not None and 0.0 < disc <= now_s:
                     bel.discovered_s = disc
-                events += self._observe_perimeter(bel, inc, now_s, cfg)
-                events += self._observe_reported(bel, inc, now_s, cfg)
+                if getattr(cfg, "feed_sanity", False):
+                    # SAFETY SEMANTICS 18: the sanity-checked observers
+                    events += self._observe_perimeter_sane(bel, inc, now_s,
+                                                           cfg)
+                    events += self._observe_reported_sane(bel, inc, now_s,
+                                                          cfg)
+                else:
+                    events += self._observe_perimeter(bel, inc, now_s, cfg)
+                    events += self._observe_reported(bel, inc, now_s, cfg)
         return events
 
     def _observe_perimeter(self, bel, inc, now_s, cfg) -> list:
@@ -769,6 +799,184 @@ class FireBeliefStore:
         if bel.rep_record_s is None or t_mod > bel.rep_record_s:
             bel.rep_record_s = t_mod
         static_s = float(cfg.fire_belief_static_h) * H_S
+        series = bel.obs["reported"]
+        last_t = series[-1]["t"] if series else None
+        if bel.rep_changed_s is not None and \
+                t_mod - bel.rep_changed_s >= static_s and \
+                (last_t is None or t_mod - last_t >= static_s):
+            return self._record(bel, "reported", t_mod, acres * ACRE_M2,
+                                now_s, cfg, static=True)
+        return []
+
+    # ------------------------------------------------ feed sanity (SEM 18)
+
+    def _sanity(self, bel, key: str, value, message: str) -> list:
+        """One 'sanity' event per new finding: `key` names the check, `value`
+        what it looked at (a time, an area); the same finding again (the
+        same polygon every cycle) says nothing."""
+        if bel.sanity_said.get(key) == value:
+            return []
+        bel.sanity_said[key] = value
+        return [{"incident_id": bel.incident_id, "kind": "sanity",
+                 "message": f"{message} (SAFETY SEMANTICS 18)"}]
+
+    @staticmethod
+    def _release(bel, kind: str) -> None:
+        """A held drop of `kind` is over (the size came back): forget the
+        hold and its note, so the next drop is held AND said afresh."""
+        bel.hold_since.pop(kind, None)
+        bel.sanity_said.pop(f"{kind}_drop", None)
+
+    def _observe_perimeter_sane(self, bel, inc, now_s, cfg) -> list:
+        """_observe_perimeter under cfg.feed_sanity (SAFETY SEMANTICS 18a-e).
+        Order: the own time (18b: implausible = no observation, the newer-
+        time mark untouched), the newer-time rule, the area figure vs the
+        geometry (18a), collapse under the record's own size (18c: no
+        observation), re-stamp (18d: a static observation once
+        fire_belief_static_h has passed), drop (18e: held), else observed."""
+        if not inc.perimeter:
+            return []
+        meta = inc.meta or {}
+        pat = _num(meta.get("perimeter_at_s"))
+        if pat is None or pat <= 0.0:
+            pat = _num(inc.updated_at_s)
+        if pat is None or pat <= 0.0:
+            return []
+        why = feedsanity.time_problem(pat, inc.discovered_at_s, now_s, cfg)
+        if why is not None:
+            return self._sanity(bel, "perimeter_time", pat,
+                                f"perimeter not observed: {why}")
+        pat = min(pat, now_s)
+        if bel.perim_last_t is not None and pat <= bel.perim_last_t:
+            return []
+        bel.perim_last_t = pat
+        area = rings_area_m2(inc.perimeter)
+        if not area > 0.0:
+            return []
+        events = []
+        feed_acres = _num(meta.get("perimeter_acres"))
+        if feed_acres is not None and feed_acres <= 0.0:
+            feed_acres = None
+        if feed_acres is not None and not feedsanity.feed_area_stands(
+                feed_acres, area / ACRE_M2, cfg):
+            events += self._sanity(
+                bel, "perimeter_area", pat,
+                f"the polygon's area figure {feed_acres:,.1f} ac is more than "
+                f"{float(cfg.feed_sanity_area_ratio):g}x off its geometry "
+                f"({area / ACRE_M2:,.1f} ac): the geometry's area is used")
+            feed_acres = None
+        best = feed_acres * ACRE_M2 if feed_acres is not None else area
+        why = feedsanity.collapse_problem(best / ACRE_M2,
+                                          meta.get("reported_acres"), cfg)
+        if why is not None:
+            return events + self._sanity(bel, "perimeter_collapse", pat,
+                                         f"perimeter not observed: {why}")
+        series = bel.obs["perimeter"]
+        if series:
+            last = series[-1]
+            if feed_acres is not None and last.get("feed_acres"):
+                new_m2 = feed_acres * ACRE_M2
+                ref_m2 = last["feed_acres"] * ACRE_M2
+            else:
+                new_m2, ref_m2 = area, last["a"]
+            if feedsanity.is_restamp(new_m2, ref_m2, cfg):
+                # the same capture re-issued under a newer time (18d)
+                self._release(bel, "perimeter")
+                if pat - last["t"] < float(cfg.fire_belief_static_h) * H_S:
+                    return events
+                return events + self._record(bel, "perimeter", pat, area,
+                                             now_s, cfg, static=True,
+                                             feed_acres=feed_acres)
+            if feedsanity.is_drop(new_m2, ref_m2, cfg):
+                since = bel.hold_since.get("perimeter")
+                if since is None:
+                    bel.hold_since["perimeter"] = now_s
+                    return events + self._sanity(
+                        bel, "perimeter_drop", pat,
+                        f"perimeter held: {new_m2 / ACRE_M2:,.1f} ac is below "
+                        f"the last observed {ref_m2 / ACRE_M2:,.1f} ac beyond "
+                        f"measurement noise; it counts only if it persists "
+                        f"{float(cfg.fire_belief_static_h):g} h")
+                if now_s - since < float(cfg.fire_belief_static_h) * H_S:
+                    return events
+                # the lower size persisted: a correction, not negative growth
+                del bel.hold_since["perimeter"]
+                bel.obs["perimeter"] = []
+                events += self._sanity(
+                    bel, "perimeter_drop", ("restart", pat),
+                    f"perimeter series restarts at {new_m2 / ACRE_M2:,.1f} ac: "
+                    f"the drop from {ref_m2 / ACRE_M2:,.1f} ac persisted "
+                    f"{(now_s - since) / H_S:.1f} h (a correction; no window "
+                    f"across it)")
+                return events + self._record(bel, "perimeter", pat, area,
+                                             now_s, cfg, feed_acres=feed_acres)
+        self._release(bel, "perimeter")
+        return events + self._record(bel, "perimeter", pat, area, now_s, cfg,
+                                     feed_acres=feed_acres)
+
+    def _observe_reported_sane(self, bel, inc, now_s, cfg) -> list:
+        """_observe_reported under cfg.feed_sanity (SAFETY SEMANTICS 18b/e):
+        an implausible report time is not observed; a size that drops below
+        the last one beyond noise is HELD (the young-fire clause keeps the
+        pre-drop size) until it comes back or persists fire_belief_static_h
+        (then the series restarts there); everything else is the legacy
+        observer's rule, including the static unchanged-size rule."""
+        meta = inc.meta or {}
+        acres = _num(meta.get("reported_acres"))
+        if acres is None:
+            acres = _num(inc.acreage)
+        t_rep = _num(meta.get("reported_at_s"))
+        if t_rep is None or t_rep <= 0.0:
+            t_rep = _num(inc.updated_at_s)
+        if acres is None or acres <= 0.0 or t_rep is None or t_rep <= 0.0:
+            return []
+        why = feedsanity.time_problem(t_rep, inc.discovered_at_s, now_s, cfg)
+        if why is not None:
+            return self._sanity(bel, "reported_time", t_rep,
+                                f"reported size not observed: {why}")
+        t_rep = min(t_rep, now_s)
+        upd = _num(inc.updated_at_s)
+        t_mod = max(t_rep, min(upd, now_s) if upd is not None else t_rep)
+        static_s = float(cfg.fire_belief_static_h) * H_S
+        changed = bel.rep_value is None or abs(acres - bel.rep_value) > \
+            1e-9 * max(1.0, acres)
+        if changed and bel.rep_value is not None and feedsanity.is_drop(
+                acres * ACRE_M2, bel.rep_value * ACRE_M2, cfg):
+            since = bel.hold_since.get("reported")
+            if since is None:
+                bel.hold_since["reported"] = now_s
+                return self._sanity(
+                    bel, "reported_drop", acres,
+                    f"reported size held: {acres:,.1f} ac is below the last "
+                    f"{bel.rep_value:,.1f} ac beyond measurement noise; it "
+                    f"counts only if it persists "
+                    f"{float(cfg.fire_belief_static_h):g} h")
+            if now_s - since < static_s:
+                return []
+            # the lower size persisted: a correction, not negative growth
+            del bel.hold_since["reported"]
+            events = self._sanity(
+                bel, "reported_drop", ("restart", acres),
+                f"reported series restarts at {acres:,.1f} ac: the drop from "
+                f"{bel.rep_value:,.1f} ac persisted {(now_s - since) / H_S:.1f}"
+                f" h (a correction; no window across it)")
+            bel.obs["reported"] = []
+            bel.latest_acres = acres
+            bel.rep_value = acres
+            bel.rep_changed_s = t_rep
+            bel.rep_record_s = t_mod
+            return events + self._record(bel, "reported", t_rep,
+                                         acres * ACRE_M2, now_s, cfg)
+        self._release(bel, "reported")
+        bel.latest_acres = acres
+        if changed:
+            bel.rep_value = acres
+            bel.rep_changed_s = t_rep
+            bel.rep_record_s = t_mod
+            return self._record(bel, "reported", t_rep, acres * ACRE_M2,
+                                now_s, cfg)
+        if bel.rep_record_s is None or t_mod > bel.rep_record_s:
+            bel.rep_record_s = t_mod
         series = bel.obs["reported"]
         last_t = series[-1]["t"] if series else None
         if bel.rep_changed_s is not None and \
@@ -1125,6 +1333,12 @@ class FireBeliefStore:
         elif not reset:
             reasons.append("no usable growth evidence yet: physics + model "
                            "error (the prior)")
+        for kind in sorted(bel.hold_since):
+            # SAFETY SEMANTICS 18e (cfg.feed_sanity only: nothing else
+            # ever holds a drop)
+            reasons.append(f"feed sanity: a {kind} size drop has been held "
+                           f"since {_fmt_t(bel.hold_since[kind])} (it "
+                           f"counts only if it persists)")
         novel = None
         if bel.novel_at_s == now_s:
             novel = bel.novel_from_s
