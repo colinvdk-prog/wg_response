@@ -98,6 +98,41 @@ cfg.fire_belief_rapid_min_acres grown; or a YOUNG fire (discovered within
 the lookback) reached that rate since discovery (elapsed floored at
 YOUNG_FIRE_MIN_ELAPSED_S); or a surprise reset is active.
 
+V2 RULES (2026-09-28; docs/FIRE_BELIEF.md "v2"; every knob's default is the
+rule above, byte-identical; watch --fire-belief-v2 arms all three). Measured
+on 11 real 2026 fires (docs/review/belief_vs_physics_2026-09-27.md): the
+hourly new-weather test fired on the ordinary afternoon wind turn (median
+13 h into a forecast), and the area-fraction noise hid a big fire's growth
+(Little Giant, ~80,000 ac, 3,000-5,000 ac/day: not rapid at the forecast
+before its 14,780-ac run).
+  cfg.fire_belief_novelty = 'daily': forecast DAYS are compared with
+  evidence DAYS (the fire's local solar days; longitude of the forecast
+  point). Per day: its PEAK severity and its DRIVING wind (the speed-
+  weighted circular mean over its hours at >= DAY_DRIVE_FRAC x the day's
+  peak). The reference is the harshest evidence day (the weighted P90 of the
+  evidence days' peaks, weights = the windows'). A forecast day is NEW if
+  its peak exceeds cfg.fire_belief_novel_day_severity_ratio x the reference,
+  or if -- on a day that can drive the fire (peak >= DAY_DRIVE_FRAC x the
+  reference) -- its steady driving wind of >= cfg.fire_belief_novel_day_min_
+  wind_mps comes more than cfg.fire_belief_novel_day_shift_deg from EVERY
+  evidence day's driving wind (evidence days that were calm, unsteady or too
+  mild to drive the fire give no sector; with no sector at all any such
+  forecast day is new). The current day's summary includes its logged hours
+  before now. The PRIOR applies from the first qualifying hour of the first
+  new day to the end of the horizon; night and morning winds never define a
+  day's driving wind, so the diurnal turn is not a new pattern.
+  cfg.fire_belief_rapid_noise = 'calibrated': a PERIMETER window's growth is
+  judged beyond a MEASURED re-mapping noise sd = hypot(k x sqrt(A),
+  sqrt(2) x cfg.fire_belief_area_abs_err_acres) acres (A = the larger end in
+  acres, k = cfg.fire_belief_rapid_perim_noise_k): consecutive perimeters
+  share most of their boundary, so the noise scales with the edge (~sqrt A),
+  not with the area. Reported-acreage windows keep the legacy area-fraction
+  noise (no real-fire data to calibrate them).
+  cfg.fire_belief_rapid_persist_windows = N >= 2: N consecutive perimeter
+  windows each growing at a rapid rate RAW (no noise discount), the latest
+  ending inside the lookback, make the fire rapid even inside single-window
+  noise (consecutive windows share an end, so noise alone rarely lifts both).
+
 APPLYING (cfg.fire_belief_apply; with cfg.fire_belief_apply_p10 also the
 P10 safety-law change). before_spread
 returns a spread.ensemble_arrival member_hour_scale callable: in same-pattern
@@ -198,6 +233,12 @@ MIN_WINDOW_WEIGHT = 1e-3           # windows lighter than this leave the posteri
 WEATHER_LOG_MAX = 240              # hourly rows (10 days)
 MAX_CURVE_STEPS = 24 * 14 + 1      # hourly growth-curve points kept per curve
 _FALLBACK_FUEL = 102               # GR2 (spread's no-barrier fallback)
+# v2 daily new-weather test (cfg.fire_belief_novelty == 'daily'): a day's
+# DRIVING hours are those at >= this x its peak severity, and a day whose
+# peak is below this x the evidence reference is too mild to drive the fire
+# (its wind cannot change the pattern)
+DAY_DRIVE_FRAC = 0.5
+DAY_S = 86400.0
 
 _ND = NormalDist()
 
@@ -474,6 +515,78 @@ def _eff_wind(s, cfg) -> float:
     blend = float(getattr(cfg, "wind_gust_blend", 0.0) or 0.0)
     return s.wind_speed_mps + blend * max(0.0, s.wind_gust_mps
                                           - s.wind_speed_mps)
+
+
+def _day_summary(hours: list) -> tuple:
+    """(peak severity, driving wind speed, driving direction, resultant) of
+    one day's hours [(severity, wind, dir)] (v2 daily new-weather test):
+    DRIVING hours = those at >= DAY_DRIVE_FRAC x the day's peak (all hours
+    when the day cannot spread fire at all); the driving wind is their mean
+    speed and speed-weighted circular mean direction (resultant = its
+    steadiness, 0..1)."""
+    peak = max(h[0] for h in hours)
+    drv = ([h for h in hours if h[0] >= DAY_DRIVE_FRAC * peak]
+           if peak > 0.0 else list(hours))
+    spd = sum(h[1] for h in drv) / len(drv)
+    sx = sum(h[1] * math.sin(math.radians(h[2])) for h in drv)
+    sy = sum(h[1] * math.cos(math.radians(h[2])) for h in drv)
+    sw = sum(h[1] for h in drv)
+    res = math.hypot(sx, sy) / sw if sw > 0.0 else 0.0
+    return peak, spd, math.degrees(math.atan2(sx, sy)) % 360.0, res
+
+
+def perimeter_growth_sd_acres(aa_m2: float, ab_m2: float, cfg) -> float:
+    """v2 CALIBRATED perimeter re-mapping noise of one window's growth
+    (cfg.fire_belief_rapid_noise == 'calibrated'), acres: hypot(k x
+    sqrt(A), sqrt(2) x cfg.fire_belief_area_abs_err_acres), A = the larger
+    end in acres, k = cfg.fire_belief_rapid_perim_noise_k. Measured on 11
+    real 2026 fires (scratch_review/belief_vs_physics/v2_noise.py): the
+    noise follows the re-drawn EDGE (~sqrt A), not the area."""
+    a = max(aa_m2, ab_m2, 0.0) / ACRE_M2
+    k = float(cfg.fire_belief_rapid_perim_noise_k)
+    return math.hypot(k * math.sqrt(a),
+                      math.sqrt(2.0) * float(cfg.fire_belief_area_abs_err_acres))
+
+
+def _persistent_growth(windows: list, lb_s: float, n: int, cfg) -> str:
+    """v2 PERSISTENCE trigger (cfg.fire_belief_rapid_persist_windows = n >=
+    2): the reason text when n consecutive PERIMETER windows (each starting
+    where the previous ended) each grew at a rapid rate RAW -- >= cfg.
+    fire_belief_rapid_acres_per_day (24-h equivalent), or >= cfg.fire_belief_
+    rapid_frac_per_day of its start with >= cfg.fire_belief_rapid_min_acres
+    -- and the latest of them ended at or after lb_s; '' otherwise.
+    Consecutive windows share an end, so a re-mapping error that inflates
+    one deflates the next: noise alone rarely lifts both."""
+    per_day_thr = float(cfg.fire_belief_rapid_acres_per_day)
+    frac_thr = float(cfg.fire_belief_rapid_frac_per_day)
+    min_ac = float(cfg.fire_belief_rapid_min_acres)
+    run: list = []
+    best: list = []
+    for w in sorted((w for w in windows if w.get("kind") == "perimeter"),
+                    key=lambda w: w["tb"]):
+        days = (w["tb"] - w["ta"]) / 86400.0
+        grown = (w["ab"] - w["aa"]) / ACRE_M2
+        a0 = w["aa"] / ACRE_M2
+        ok = days > 0.0 and grown > 0.0 and (
+            grown / days >= per_day_thr
+            or (grown >= min_ac and a0 > 0.0
+                and grown / a0 / days >= frac_thr))
+        if not ok:
+            run = []
+            continue
+        if run and abs(run[-1]["tb"] - w["ta"]) < 1e-6:
+            run.append(w)
+        else:
+            run = [w]
+        if len(run) >= n and run[-1]["tb"] >= lb_s:
+            best = run[-n:]
+    if not best:
+        return ""
+    rates = ", ".join(
+        f"{(w['ab'] - w['aa']) / ACRE_M2 / ((w['tb'] - w['ta']) / 86400.0):,.0f}"
+        for w in best)
+    return (f"perimeter growth at a rapid rate in {len(best)} consecutive "
+            f"windows ({rates} ac/24 h, raw)")
 
 
 def _covered_fraction(ta: float, tb: float, spans: list) -> float:
@@ -1116,13 +1229,21 @@ class FireBeliefStore:
         # 3 % of a 20,000-ac fire is +-600 ac per report: raw 12-h windows
         # of a fire truly growing ~600 ac/day read 1,400-2,500 ac/day.
         z = float(getattr(cfg, "fire_belief_rapid_noise_z", 0.0) or 0.0)
+        # v2 (cfg.fire_belief_rapid_noise == 'calibrated'): a PERIMETER
+        # window's noise is the measured re-mapping noise (~sqrt of its
+        # area), not 3 % of the area; reported windows keep the legacy sd
+        calibrated = (getattr(cfg, "fire_belief_rapid_noise", "area_frac")
+                      == "calibrated")
         for w in reversed(bel.windows):
             if w["tb"] < lb:
                 continue
             grown = (w["ab"] - w["aa"]) / ACRE_M2
-            sd_g = math.hypot(_area_sd(w["aa"], cfg, False),
-                              _area_sd(w["ab"], cfg,
-                                       bool(w.get("static")))) / ACRE_M2
+            if calibrated and w["kind"] == "perimeter":
+                sd_g = perimeter_growth_sd_acres(w["aa"], w["ab"], cfg)
+            else:
+                sd_g = math.hypot(_area_sd(w["aa"], cfg, False),
+                                  _area_sd(w["ab"], cfg,
+                                           bool(w.get("static")))) / ACRE_M2
             lo = grown - z * sd_g
             days = (w["tb"] - w["ta"]) / 86400.0
             if not (days > 0.0 and lo > 0.0):
@@ -1140,6 +1261,12 @@ class FireBeliefStore:
                 reasons.append(f"{w['kind']} growth {grown:,.0f} ac = "
                                f"{100.0 * grown / a0:.0f}% in "
                                f"{days * 24.0:.1f} h{beyond}")
+        n_persist = int(getattr(cfg, "fire_belief_rapid_persist_windows", 0)
+                        or 0)
+        if n_persist >= 2:
+            why = _persistent_growth(bel.windows, lb, n_persist, cfg)
+            if why:
+                reasons.append(why)
         if bel.discovered_s is not None and bel.latest_acres and \
                 now_s - bel.discovered_s <= float(
                     cfg.fire_belief_rapid_lookback_h) * H_S:
@@ -1174,6 +1301,8 @@ class FireBeliefStore:
     def _novelty(self, bel, wins, wxf, now_s, cfg) -> tuple:
         """(first NEW-pattern forecast hour, reason); horizon_hours(cfg) + 1
         = none within the horizon; 0 = the prior from the first hour."""
+        if getattr(cfg, "fire_belief_novelty", "hourly") == "daily":
+            return self._novelty_daily(bel, wins, wxf, now_s, cfg)
         H = horizon_hours(cfg)
         fuel = _fuel_model(bel.fuel_code)
         if fuel is None:
@@ -1231,6 +1360,110 @@ class FireBeliefStore:
                     return h, (f"wind turns {d:.0f} deg from the evidence "
                                f"direction ({dir_ev:.0f} deg) at "
                                f"{ws:.1f} m/s")
+        return H + 1, ""
+
+    def _novelty_daily(self, bel, wins, wxf, now_s, cfg) -> tuple:
+        """The v2 DAILY new-weather test (cfg.fire_belief_novelty ==
+        'daily'; module docstring "V2 RULES"): forecast days against
+        evidence days, diurnal-aware. Same contract as _novelty."""
+        H = horizon_hours(cfg)
+        fuel = _fuel_model(bel.fuel_code)
+        if fuel is None:
+            return 0, "no burnable fuel on the domain to rate the weather"
+        if not wins:
+            return 0, "no growth evidence: every hour is new (physics)"
+        loc = getattr(wxf, "loc", None)
+        off_s = float(getattr(loc, "lon", 0.0) or 0.0) / 15.0 * H_S
+
+        def day_of(t: float) -> int:
+            """The fire's local SOLAR day (longitude / 15 h from UTC)."""
+            return int(math.floor((t + off_s) / DAY_S))
+
+        # evidence hours = the hourly rule's set (logged hours overlapping a
+        # window, weight = the heaviest such window), grouped by day
+        ev_days: dict = {}
+        for row in bel.wx_log:
+            wmax = 0.0
+            for w, wt in wins:
+                if row[0] < w["tb"] and row[0] + H_S > w["ta"] and wt > wmax:
+                    wmax = wt
+            if wmax > 0.0:
+                d = ev_days.setdefault(day_of(row[0]), [[], 0.0])
+                d[0].append((severity_mps(fuel, row[1], row[3], row[4], cfg),
+                             row[1], row[2]))
+                d[1] = max(d[1], wmax)
+        if not ev_days:
+            return 0, ("no logged weather inside the evidence windows: every "
+                       "hour is new (physics)")
+        ev = [(*_day_summary(hrs), wt) for hrs, wt in ev_days.values()]
+        # the reference: the harshest evidence day (weighted P90 of peaks)
+        ev_sorted = sorted(ev, key=lambda e: e[0])
+        tot = sum(e[4] for e in ev_sorted)
+        acc = 0.0
+        s_ref = ev_sorted[-1][0]
+        for e in ev_sorted:
+            acc += e[4]
+            if acc >= 0.9 * tot - 1e-12:
+                s_ref = e[0]
+                break
+        ratio = float(cfg.fire_belief_novel_day_severity_ratio)
+        shift = float(cfg.fire_belief_novel_day_shift_deg)
+        wmin = float(cfg.fire_belief_novel_day_min_wind_mps)
+        drive_floor = DAY_DRIVE_FRAC * s_ref
+        # the sectors the evidence days' driving winds came from (days that
+        # were calm, unsteady or too mild to drive the fire give none)
+        sectors = [e[2] for e in ev if e[0] >= drive_floor and e[1] >= wmin
+                   and e[3] >= DIR_MIN_RESULTANT]
+        fc = []
+        for h in range(H + 1):
+            t = now_s + h * H_S
+            try:
+                s = wxf.at(t)
+            except Exception:
+                return h, "forecast unavailable"
+            ws = _eff_wind(s, cfg)
+            fc.append((h, day_of(t),
+                       severity_mps(fuel, ws, s.rh_pct, s.temp_c, cfg), ws,
+                       s.wind_dir_deg % 360.0))
+        today = day_of(now_s)
+        past_today = [(severity_mps(fuel, r[1], r[3], r[4], cfg), r[1], r[2])
+                      for r in bel.wx_log
+                      if day_of(r[0]) == today and r[0] + H_S <= now_s]
+        days: list = []
+        for r in fc:
+            if not days or days[-1] != r[1]:
+                days.append(r[1])
+        for day in days:
+            hrs = [r for r in fc if r[1] == day]
+            summ = [(r[2], r[3], r[4]) for r in hrs]
+            if day == today:
+                summ = past_today + summ
+            peak, spd, dirn, res = _day_summary(summ)
+            thr = ratio * s_ref
+            if peak > thr:
+                first = next((r for r in hrs if r[2] > thr), hrs[0])
+                why = (f"a day of severity {peak / s_ref:.1f}x the harshest "
+                       f"evidence day" if s_ref > 0.0 else
+                       "spreading weather where the evidence weather could "
+                       "not carry fire")
+                return first[0], why
+            if peak < drive_floor or spd < wmin or res < DIR_MIN_RESULTANT:
+                continue       # too mild, too calm or no steady driving wind
+            if sectors:
+                off = min(_angdiff(dirn, sec) for sec in sectors)
+                if off <= shift:
+                    continue
+                why = (f"a day whose driving wind ({spd:.1f} m/s from "
+                       f"{dirn:.0f} deg) is {off:.0f} deg from every evidence "
+                       f"day's")
+            else:
+                why = (f"a day with a driving wind ({spd:.1f} m/s from "
+                       f"{dirn:.0f} deg) where no evidence day had one")
+            drv = [r for r in hrs if r[2] >= DAY_DRIVE_FRAC * peak] or hrs
+            first = next((r for r in drv if r[3] >= wmin and (
+                not sectors or min(_angdiff(r[4], sec) for sec in sectors)
+                > shift)), drv[0])
+            return first[0], why
         return H + 1, ""
 
     # ------------------------------------------------------------ spread

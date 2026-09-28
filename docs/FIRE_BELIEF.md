@@ -3,7 +3,8 @@
 > **Correction note (2026-09-27): stacked perimeter rows.** Hindcast numbers in this document were computed on corpora whose snapshots stacked every WFIGS Daily row sharing a capture time, and the even-odd rasterizer partly cancelled them (Madre 2025-07-02's 8,396-ac capture rasterized to 0 cells). On branch `fix/hindcast-stacked-rings` the corpora were repaired and every documented replay was re-run. Corrected values, and every number here they replace, are in [calibration/stacked_rings_fix_2026-09-27.md](calibration/stacked_rings_fix_2026-09-27.md) §4.5. **Affected here:** :19–20, :101 and :313. The 0.71 model error is re-measured at 0.698 on the corrected corpus, so the prior is unaffected in practice. The text below is left as written.
 
 Contracts SAFETY SEMANTICS 14 · `wgresponse/fire_belief.py` · knobs `fire_belief_*` ·
-watch flags `--fire-belief` / `--fire-belief-apply` · tests `tests/test_fire_belief.py` ·
+watch flags `--fire-belief` / `--fire-belief-apply` / `--fire-belief-v2` (§7) · tests
+`tests/test_fire_belief.py`, `tests/test_fire_belief_v2.py` ·
 study `scratch_review/fire_belief_study.py`
 
 Founder, 2026-09-27 (verbatim): *"ensure that fire spread includes local weather forecast.
@@ -456,3 +457,247 @@ Full suite (`py -3 -m pytest`, serial; pytest-xdist is not installed on this box
   noise are hidden); real fires deviate structurally. The next step is a real-fire hindcast over
   WFIGS history (perimeter and acreage series against the engine's forecasts) to calibrate the
   discrepancy, the noise and the rapid thresholds.
+
+## 7. v2: the new-weather rule by day, and a rapid rule that sees big fires (2026-09-28)
+
+Founder, 2026-09-28: *"recalibrate the new-weather rule and fix the rapid blind spot"*. Both
+findings come from the real-fire study (`docs/review/belief_vs_physics_2026-09-27.md`: 11 fires
+replayed day by day, perfect-forecast weather). Scripts, results and tables are in
+`scratch_review/belief_vs_physics/v2_*.py`, `v2_*.json` and `v2_tables.md`. Code:
+`wgresponse/fire_belief.py` ("V2 RULES"). Tests: `tests/test_fire_belief_v2.py`. Watch flag:
+`--fire-belief-v2`.
+
+### 7.1 In plain words
+
+**What changed.** Two rules decide when the learned rate may *not* be used. v2 recalibrates both.
+Both stay off until armed (`--fire-belief-v2`); off, the engine is byte-identical to today.
+
+- **New weather, judged by day.** The rule as built compared every forecast hour with the average
+  of the observed hours. The observed hours mix afternoon winds with night winds. In the mountains
+  those blow from opposite directions, so nearly every afternoon looked like "new weather". On the
+  11 fires the belief was cut back to physics at a median of 13 hours into its forecast. It covered
+  the whole next day in only 30 % of forecasts.
+
+  v2 compares whole days in the fire's local time. Each day is described by its worst fire
+  weather and its driving wind, the wind blowing during its hottest, driest, windiest hours. A
+  forecast day is new weather if it is 1.5 times harsher than the harshest day the fire was seen
+  in, or if its driving wind comes from a direction more than 60 degrees away from every observed
+  day's driving wind, at 4 m/s or more. These are the old rule's own thresholds, now applied to
+  days; the tuning below chose them.
+
+  Now 40 of 243 forecasts see new weather within four days, 17 of them within the next day. The
+  belief acts over the whole next day in 93 % of forecasts.
+- **Rapid, judged against the real measurement noise.** The rapid rule ignores growth that could
+  be measurement error, and it modelled that error as 3 % of the fire's area per report. For a
+  big fire that is thousands of acres: at ~80,000 acres, Little Giant's 3,000–5,000 acres a day
+  read as noise. It was not flagged rapid at the forecast before its 14,780-acre run, so the
+  belief slowed it into the run.
+
+  Measured on the 11 fires, two perimeters of one fire differ by re-mapping of about √(area)
+  acres at most (95th percentile of pure-noise changes: 1.6 × √area). That is ~450 acres on an
+  80,000-acre fire, not 3,400. v2 uses the measured noise. It also flags a fire rapid when two
+  consecutive perimeters both grew at a rapid rate (a backstop). Little Giant is then rapid at
+  the Aug 7 forecast, the belief leaves it at physics, and the P50 holds 60 % of the run (15 %
+  before).
+
+**What it does, on 11 real fires** (harness maps; every arm keeps the P10 guard):
+
+| | P50 area error (median) | P50 caught the new ground | days the P50 caught under half of it (on growing days) | false-alarm area (median, % of the fire) |
+|---|---|---|---|---|
+| physics | 3.55x | 99 % | 0 (0) | 253 % |
+| belief as built | 2.98x | 94 % | 7 (3) | 198 % |
+| **belief v2** | **2.57x** | **95 %** | **9 (3)** | **153 %** |
+| stalled days only: physics / as built / v2 | 2.97x / 2.45x / **1.46x** | 99 / 93 / 90 % | 0 / 4 / 6 (all tiny growth) | 195 / 143 / **45 %** |
+
+On maps 20 km wider (closer to a live domain) the all-phase error is 4.90x for physics, 3.55x as
+built and **2.68x** with v2. Late days on growing ground are 0, 7 and **4**.
+
+**Crew safety (P10)** is unchanged: 99.8 % of the newly burned ground inside P10 for physics, as
+built and v2. The guard (`applied_ensemble`) is untouched.
+
+**What v2 no longer catches.** Two moderate runs were caught by the old rule only because it
+handed back to physics every afternoon:
+- Willow on Jul 12: +385 ac, 7.6 %/day. The P50 caught 38 % (as built 100 %).
+- Timber on Aug 21: +1,994 ac, 28.7 %/day. The P50 caught 19 % (as built 65 %).
+
+Neither day brought new weather, and neither fire had grown rapidly just before. Their P10 held
+100 %. EXTREME alerts still fire on the P10 rung, so what these misses cost is later NOTICE/WATCH
+alerts on those two days.
+
+**What v2 catches that the old rules missed.** On the harness maps:
+- Little Giant's Aug 7 run: 15 % → 60 % (= physics).
+- Hagen on Aug 9: 48 % → 100 %.
+
+On the wide maps it also catches Hagen on Aug 6, Little Giant on Aug 27 and Willow on Jul 6.
+
+Willow's Jul 10 flare-up after a slow week is missed by both: 3 % caught, P10 100 %.
+
+**The price of the rapid fix.** Big fires growing 1,000+ acres a day are now flagged rapid even at
+1–2 % of their size a day, so the belief leaves them at physics. Rapid flags rose from 80 to 117 of
+255 forecasts. Moderate-day accuracy fell a little: 2.92x → 3.10x harness, 3.03x → 3.56x wide.
+Grasshopper, Hagen and Little Giant got slightly worse per fire. Every other fire got better,
+Willow most (5.6x → 1.55x).
+
+**Recommendation.**
+- **Tracking with v2:** yes. It changes no forecast and gives better rapid flags and new-pattern
+  times. Rapid flags feed the road rule (SEMANTICS 15) when `--offmap-per-fire` is armed; v2
+  flags more fires rapid, which is the conservative direction there.
+- **Apply:** never with the as-built rules. With v2, it is the first version worth applying. It
+  beats the belief as built on nearly every aggregate and fixes its biggest miss. What remains is
+  a late NOTICE/WATCH on un-forecast runs of learned-slow fires: 3 of 120 growing or moderate days
+  here, against 0 for physics. Physics pays for that with a false-alarm area of two to five times
+  the fire.
+- **Before apply goes live:** a short live shadow period with `--fire-belief --fire-belief-v2`.
+  The daily rule has only been tested on observed weather, and live it will judge NWS forecast
+  days. That is the founder's call.
+
+### 7.2 The rules as built (`fire_belief.py` "V2 RULES")
+
+- **Daily new-weather test** (`fire_belief_novelty = "daily"`, `FireBeliefStore._novelty_daily`).
+  - *Days.* Days are local solar days, with the offset from the forecast point's longitude.
+  - *Evidence days.* The logged hours that overlap an evidence window, grouped by day. Each
+    weighs as its heaviest window.
+  - *Day summary.* Each day's peak severity is the engine's own Rothermel head ROS for the
+    dominant fuel. Its DRIVING hours are those at ≥ `DAY_DRIVE_FRAC` (0.5) × that peak. The
+    driving wind is their mean speed, speed-weighted circular mean direction and resultant
+    (`_day_summary`).
+  - *Reference.* The weighted P90 of the evidence days' peaks.
+  - *Sectors.* The evidence days that could drive the fire (peak ≥ 0.5 × reference), with a
+    meaningful (≥ min wind) and steady (resultant ≥ 0.3) driving wind, each give a sector.
+  - *New day.* A forecast day is new if its peak > ratio × reference. It is also new if the day
+    can drive the fire and its steady, meaningful driving wind is > shift° from every sector, or
+    there are no sectors at all.
+  - *Current day.* The current day's summary includes its logged hours before now.
+  - *Where the prior starts.* From the first qualifying hour of the first new day to the end of
+    the horizon: an hour over the severity threshold, or a driving hour with a new-sector wind.
+    If the day's driving hours are already past, from hour 0.
+  - *Unchanged.* No evidence, no logged weather and no fuel give the hourly rule's answers.
+- **Calibrated rapid noise** (`fire_belief_rapid_noise = "calibrated"`). For PERIMETER windows,
+  sd(growth) = hypot(k√A, √2 × `fire_belief_area_abs_err_acres`) acres, with A the larger end and
+  k = `fire_belief_rapid_perim_noise_k` (`perimeter_growth_sd_acres`). Reported windows keep the
+  legacy sd, since no real-fire data calibrates them. The z (1.645), the thresholds and the young
+  fire rule are unchanged.
+- **Persistence** (`fire_belief_rapid_persist_windows = N ≥ 2`, `_persistent_growth`). N
+  consecutive perimeter windows (each starting where the previous ended), each growing RAW at ≥
+  `fire_belief_rapid_acres_per_day` or at ≥ `fire_belief_rapid_frac_per_day` with ≥
+  `fire_belief_rapid_min_acres`, with the latest ending inside the lookback, make the fire rapid.
+- **Byte identity.** Defaults are `hourly` / `area_frac` / 0: the legacy code path, untouched.
+  - The a8bebec goldens (`test_all_knobs_off_reproduce_the_a8bebec_goldens`) pass unchanged.
+  - With the v2 knobs SET and tracking off, the cycles, `/api/state`, state bytes and world
+    summary equal the goldens.
+  - With tracking on plus v2, every cycle decision and the state file equal the goldens.
+  - Apply plus v2 on the pinned rapid fire reproduces the golden cycles.
+
+  All four are in `tests/test_fire_belief_v2.py`. The P10 guard (`applied_ensemble`) and the
+  observation code are untouched.
+- **Test suite** (serial, `py -3 -m pytest`, 2026-09-28): **2262 passed, 12 skipped, 0 failed**.
+  That includes the 27 new tests in `tests/test_fire_belief_v2.py`; `tests/test_fire_belief.py`
+  and `tests/test_docs.py` are unchanged and pass.
+
+| Knob | Default | v2 (`--fire-belief-v2`) |
+|---|---|---|
+| `fire_belief_novelty` | hourly | daily |
+| `fire_belief_novel_day_severity_ratio` | 1.5 | (as default) |
+| `fire_belief_novel_day_shift_deg` | 60.0 | (as default) |
+| `fire_belief_novel_day_min_wind_mps` | 4.0 | (as default) |
+| `fire_belief_rapid_noise` | area_frac | calibrated |
+| `fire_belief_rapid_perim_noise_k` | 1.0 | (as default) |
+| `fire_belief_rapid_persist_windows` | 0 | 2 |
+
+### 7.3 Calibration
+
+**Perimeter noise** (`v2_noise.py` → `v2_noise.json`).
+- *Data.* Every capture the live belief would have observed on the 11 fires (watcher-order
+  replay, ≥ 3 h apart): 347 consecutive pairs.
+- *Pure noise.* A fire does not shrink, so the 27 negative changes are pure noise. They measure
+  |ΔA|/√A = 0.24 (68th percentile) and 1.62 (95th).
+- *Stalled tails.* On 101 pairs within 2 % of the final size, |ΔA|/√A is 0.26 (68th) and 1.11
+  (95th). It is flat across a 25× range of fire size (0.21–0.28 in the 5k–20k, 20k–60k and
+  > 60k bins). The same changes as a fraction of the area vary 7× (0.4 % → 0.06 %). The noise
+  follows the edge, not the area.
+- *The chosen k.* k = 1.0 gives z × k = 1.645 √A, covering the 95th percentile of pure noise.
+  The legacy model equals 12 √A at 80,000 acres and 17 √A at 160,000.
+
+**The daily thresholds** (`v2_eval.py grid` / `lofo` → `v2_grid.json`, `v2_lofo.json`).
+- *Grid.* 48 threshold sets: ratio {1.25, 1.5, 2}, shift {45, 60, 90, 120}°, min wind {3, 4, 5,
+  6} m/s, each with the v2 rapid rule, replayed on all 11 fires. Every belief-applied forecast
+  was scored (cached per step, first new hour and rapid flag).
+- *Leave-one-fire-out.* For each fire, the set was chosen on the other 10: the lowest median P50
+  area error with no more late-P50 days on growing ground (≥ 2 %/day) than the belief as built
+  on the same fires. It was then scored on the held-out fire.
+  - Shift 60° was among the best sets in 9 of 11 folds (120° in 2).
+  - Ratio 1.5 in 10 (2.0 in 11; they tie).
+  - Min wind 3, 4 and 5 m/s tied in all 11 folds, so the data cannot tell them apart and the
+    hourly rule's 4 m/s is kept.
+- *Held-out result* (each fire scored under the set chosen without it):
+
+  | phase | P50 area error, physics → v2 | P50 catch | late on growing ground | false alarm |
+  |---|---|---|---|---|
+  | growing | 5.56x → 5.32x | 97 % | 2 | 454 → 431 % |
+  | moderate | 4.14x → 3.10x | 97 % | 2 | 311 → 209 % |
+  | stalled | 2.97x → 1.46x | 90 % | 0 | 195 → 45 % |
+  | all | 3.55x → 2.57x | 95 % | 4 | 253 → 153 % |
+- *Sensitivity.* Over all 48 sets: area error 2.54–2.63x, late-P50 days 9–10 (3–4 on growing
+  ground), false alarm 152–159 %. The thresholds barely matter. On these fires a genuinely new
+  weather day was rare, and the daily view is what matters.
+
+### 7.4 Results
+
+Full tables: `scratch_review/belief_vs_physics/v2_tables.md` (from `v2_final.json`,
+`v2_final_wide.json`). Figures: `docs/review/belief_vs_physics/v2_pooled.png` and `v2_willow.png`.
+
+**Rapid flags** (`v2_rapid.py` → `v2_rapid.json`). The flag is taken at each daily forecast time
+and judged against the next day's observed phase.
+
+| rapid rule | growing days flagged | moderate | stalled days flagged | … of them grew ≥ 1,000 ac/day |
+|---|---|---|---|---|
+| legacy | 52/72 (72 %) | 25/55 (45 %) | 9/149 (6 %) | 1/10 |
+| v2 (calibrated + persistence) | 55/72 (76 %) | 39/55 (71 %) | 29/149 (19 %) | 10/10 |
+
+- *The stalled-day flags.* Every v2 flag on a stalled day follows real growth of ≥ 1,000 ac/day in
+  the 48-h lookback, or a big fire creeping at ≥ 1,000 ac/day. No contained fire's re-mapping noise
+  was flagged, so what the noise discount cured stays cured: on 166,000 acres ±400 acres is never
+  rapid.
+- *Against the recent window.* v2 flags 98 % of forecasts whose last day's growth really met the
+  rapid thresholds (legacy 72 %). It flags 11 % of the others, through the 48-h lookback (legacy
+  6 %).
+- *Every perimeter observed.* On the live-like series (every capture ≥ 3 h apart) the rates are
+  81 / 71 / 22 %.
+- *Little Giant.* The legacy rule was rapid on Aug 4–6 (from the early-August runs) but NOT at the
+  Aug 7 22:33 forecast. There, the last two windows (+3,225 and +5,249 ac) read zero beyond the
+  area-fraction noise. v2 is rapid there.
+- *Persistence.* It changed no flag on these fires; the calibrated noise already sees every such
+  run. It is kept as a backstop for when the noise model is wrong, where it adds flags.
+
+**Named cases** (P50 catch of the newly burned ground):
+
+| case | physics | as built | v2 |
+|---|---|---|---|
+| Willow Jul 12 (+385 ac) | 100 % | 100 % (new weather, hour 10) | 38 % (slowed all day) |
+| Willow Jul 14 (+350 ac) | 100 % | 77 % (new weather, hour 9) | 75 % (new weather, hour 13) |
+| Grasshopper Aug 4 (+4,780 ac) | 100 % | 99 % (new weather, hour 9) | 100 % (rapid) |
+| Little Giant Aug 21 (+1,839 ac in 10 h) | 98 % | 98 % (new weather, hour 0) | 98 % (rapid) |
+| Timber Aug 21 (+1,994 ac) | 99 % | 65 % (new weather, hour 5) | 19 % (slowed all day) |
+| Little Giant Aug 7 (+14,780 ac) | 60 % | 15 % | 60 % (rapid) |
+| Hagen Aug 9 (+3,111 ac) | 100 % | 48 % | 100 % (rapid) |
+| Willow Jul 10 (+852 ac) | 100 % | 3 % | 3 % |
+
+Where v2 misses (Willow Jul 12, Timber Aug 21), no day-level signal existed. Timber's Aug 21-22
+peaks were 1.0× the harshest evidence day. Its driving wind (301°) was 33° from the evidence days'
+sectors (209–268°), so no shift above 33° would call it new, and the hourly rule's catch was its
+generic afternoon cut.
+
+### 7.5 Limits (v2)
+
+- **Perfect-forecast weather.** The daily rule was judged on observed days. Live, it judges NWS
+  forecast days, and a mis-forecast wind shift is invisible to it until the next perimeter or
+  surprise.
+- **The rapid threshold is absolute (1,000 ac/day).** With the noise now measured, big fires
+  creeping at 1–2 %/day count as rapid and keep physics. Whether 1,000 ac/day on a 150,000-acre
+  fire is "rapid" is a policy choice for `fire_belief_rapid_acres_per_day`, not a noise question.
+- **The likelihood's area noise** (3 %, `_complete`, observation code) is left alone: it would
+  change the learning, and it sits in the code another session is hardening. The same
+  measurement suggests it is also over-stated for perimeters, which is why big stalled fires
+  learn slowly.
+- **11 fires, mostly timber; one hindcast weather point per fire; whole-fire multiplier.** All
+  the first study's limits apply.

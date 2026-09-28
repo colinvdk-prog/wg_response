@@ -365,6 +365,27 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
        take the LARGER of prior and posterior at each quantile;
      * no usable evidence (state 'prior'), a SEEDED (drill) incident (never
        observed, never learned), or any belief failure (fail-safe: legacy).
+   (c) THE v2 RULES (2026-09-28; docs/FIRE_BELIEF.md "v2"; default = the
+       rules above, byte-identical; watch --fire-belief-v2 arms all three).
+       Measured on 11 real 2026 fires, where the hourly new-pattern test
+       fired on the ordinary afternoon wind turn (median 13 h into a
+       forecast) and the 3 %-of-area noise hid big fires' growth:
+       cfg.fire_belief_novelty = 'daily' compares forecast DAYS with
+       evidence DAYS (local solar days; per day the peak severity and the
+       driving wind over its hours at >= half its peak): a day is NEW if its
+       peak exceeds cfg.fire_belief_novel_day_severity_ratio x the harshest
+       evidence day, or its steady driving wind of >= cfg.fire_belief_novel_
+       day_min_wind_mps comes more than cfg.fire_belief_novel_day_shift_deg
+       from every evidence day's; the prior applies from that day's first
+       qualifying hour to the end of the horizon.
+       cfg.fire_belief_rapid_noise = 'calibrated' judges a PERIMETER
+       window's growth beyond the measured re-mapping noise, sd = hypot(k x
+       sqrt(A acres), sqrt(2) x cfg.fire_belief_area_abs_err_acres), k =
+       cfg.fire_belief_rapid_perim_noise_k (reported windows keep the legacy
+       sd); cfg.fire_belief_rapid_persist_windows = N >= 2 makes N
+       consecutive perimeter windows at a rapid rate (raw) rapid. The rapid
+       rule then flags more fires (the belief may only speed them up): the
+       conservative direction. The P10 guard is untouched by every v2 knob.
    FireStatus is the interface the off-map road-crossing rule consumes.
    DRILLS NEVER CHANGE REAL CONDITIONS: a TEST world gets a deep copy
    (FireBeliefStore.copy(): persistent=False, never saved) through
@@ -821,7 +842,8 @@ wgresponse.fire_belief   (SAFETY SEMANTICS 14, 2026-09-27; docs/FIRE_BELIEF.md)
     # spread seams it drives: compute_arrival(hour_ros_scale=[...]) and
     # ensemble_arrival(member_hour_scale=callable); both None = byte-identical.
     # ThreatMonitor(..., fire_beliefs=store) injects a store (a TEST world's
-    # copy); .fire_beliefs exposes it; cli watch --fire-belief[-apply].
+    # copy); .fire_beliefs exposes it; cli watch --fire-belief[-apply] and
+    # --fire-belief-v2 (the v2 rules, SEMANTICS 14 (c)).
 
 wgresponse.feedsanity   (SAFETY SEMANTICS 18, 2026-09-27; docs/review/feed_sanity_2026-09-27.md)
     time_problem(t_s, discovered_s, now_s, cfg) -> str | None   # why an own time is implausible
@@ -2518,6 +2540,30 @@ class ResponseConfig:
     fire_belief_rapid_min_acres: float = 100.0        # ... with at least this many acres grown
     fire_belief_rapid_lookback_h: float = 48.0        # rapid: windows ending within this lookback
     fire_belief_rapid_noise_z: float = 1.645          # rapid: growth counted at its lower bound grown - z*sd (0 = raw)
+    # FIRE BELIEF v2 (2026-09-28; SAFETY SEMANTICS 14 "v2"; docs/FIRE_BELIEF.md
+    # "v2"; watch --fire-belief-v2 arms the three rules; every default below
+    # is the legacy rule, byte-identical). Measured on 11 real 2026 fires
+    # (docs/review/belief_vs_physics_2026-09-27.md): the hourly new-weather
+    # test fired on the ordinary afternoon wind turn, and the 3 %-of-area
+    # noise hid a big fire's growth from the rapid rule.
+    # New-weather test: 'hourly' = legacy (forecast hours against the
+    # evidence hours' P90 severity and ONE mean direction); 'daily' = forecast
+    # DAYS against evidence DAYS (peak severity + driving wind; diurnal-aware).
+    # The daily thresholds were chosen by leave-one-fire-out on the 11 fires
+    # (docs/FIRE_BELIEF.md "v2"): the hourly rule's own values, per day.
+    fire_belief_novelty: str = "hourly"
+    fire_belief_novel_day_severity_ratio: float = 1.5  # daily: a day's peak severity > this x the harshest evidence day
+    fire_belief_novel_day_shift_deg: float = 60.0      # daily: a driving wind more than this from EVERY evidence day's ...
+    fire_belief_novel_day_min_wind_mps: float = 4.0    # ... at a driving wind of at least this (m/s)
+    # Rapid noise: 'area_frac' = legacy (each end's sd = hypot(area_rel_err
+    # x A, area_abs_err)); 'calibrated' = a PERIMETER window's growth noise
+    # is the measured re-mapping noise hypot(k x sqrt(A acres), sqrt(2) x
+    # area_abs_err) acres (reported-acreage windows keep the legacy sd).
+    fire_belief_rapid_noise: str = "area_frac"
+    fire_belief_rapid_perim_noise_k: float = 1.0      # calibrated: k (acres per sqrt(acre)); measured, see docs
+    # Rapid persistence: N >= 2 consecutive perimeter windows each growing at
+    # a rapid rate RAW make the fire rapid (0 = off, legacy).
+    fire_belief_rapid_persist_windows: int = 0
     # FEED SANITY (SAFETY SEMANTICS 18; the 2026-09-27 audit of the live feed
     # path the belief learns from, docs/review/feed_sanity_2026-09-27.md;
     # wgresponse.feedsanity). True = the belief takes no observation from a
@@ -2841,6 +2887,30 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("fire_belief_rapid_lookback_h must be > 0")
     if not (0.0 <= cfg.fire_belief_rapid_noise_z <= 5.0):
         problems.append("fire_belief_rapid_noise_z must be within [0, 5]")
+    # --- fire belief v2 (2026-09-28) ---
+    if cfg.fire_belief_novelty not in ("hourly", "daily"):
+        problems.append("fire_belief_novelty must be 'hourly' or 'daily'")
+    if not cfg.fire_belief_novel_day_severity_ratio >= 1.0:
+        problems.append("fire_belief_novel_day_severity_ratio must be >= 1 (a "
+                        "ratio below 1 calls the evidence days themselves new)")
+    if not (0.0 <= cfg.fire_belief_novel_day_shift_deg <= 180.0):
+        problems.append("fire_belief_novel_day_shift_deg must be within "
+                        "[0, 180]")
+    if cfg.fire_belief_novel_day_min_wind_mps < 0:
+        problems.append("fire_belief_novel_day_min_wind_mps must be >= 0")
+    if cfg.fire_belief_rapid_noise not in ("area_frac", "calibrated"):
+        problems.append("fire_belief_rapid_noise must be 'area_frac' or "
+                        "'calibrated'")
+    if not (0.0 < cfg.fire_belief_rapid_perim_noise_k <= 100.0):
+        problems.append("fire_belief_rapid_perim_noise_k must be within "
+                        "(0, 100]")
+    if isinstance(cfg.fire_belief_rapid_persist_windows, int) and not \
+            isinstance(cfg.fire_belief_rapid_persist_windows, bool) and (
+                cfg.fire_belief_rapid_persist_windows < 0
+                or cfg.fire_belief_rapid_persist_windows == 1):
+        problems.append("fire_belief_rapid_persist_windows must be 0 (off) "
+                        "or >= 2 (one raw window is the rule the noise "
+                        "discount exists to prevent)")
 
     # --- feed sanity (SAFETY SEMANTICS 18) ---
     if not (math.isfinite(cfg.feed_sanity_future_h)

@@ -1,0 +1,30 @@
+{
+ "as built": {
+  "first_new_hour_median": 13,
+  "n_learned_forecasts": 243,
+  "new_within_horizon": 225,
+  "new_within_next_capture": 170,
+  "triggers": {
+   "evidence winds had no steady direction (hourly)": 43,
+   "harsher weather (severity)": 15,
+   "none within the 96 h horizon": 18,
+   "wind turns > 60 deg at >= 4 m/s (hourly)": 167
+  },
+  "whole_window_share": 0.3004115226337449,
+  "window_share_median": 0.42755344418052255
+ },
+ "v2": {
+  "first_new_hour_median": 97,
+  "n_learned_forecasts": 243,
+  "new_within_horizon": 40,
+  "new_within_next_capture": 17,
+  "triggers": {
+   "a day's driving wind from a new sector (daily)": 25,
+   "a driving wind where no evidence day had one (daily)": 2,
+   "harsher weather (severity)": 13,
+   "none within the 96 h horizon": 203
+  },
+  "whole_window_share": 0.9300411522633745,
+  "window_share_median": 1.0
+ }
+}
