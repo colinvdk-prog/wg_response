@@ -540,6 +540,8 @@ holds end to end.
 | 5.2 | Enrollment tooling (`tools/onboard.py`) on any location via W2/W3 | grades homes anywhere, not on preset tiles |
 | 5.3 | The ember-threat radius decision (developed cells get no arrival without it; the live default is 0) taken for the world | the Rancho Santa Fe finding |
 
+**2026-10-03:** the review and pathway for putting real clients and crew locations on the national map, per-incident / per-client / per-crew views and training demos is `docs/CLIENTS_AND_CREWS_PLAN.md` (phases A-F: access and privacy first, then real clients, real crews, individual maps, training with real data, scale). It supersedes the order of W4 and W5 above where they differ.
+
 ### W6 — The viewer
 
 | # | Ticket | Notes |
