@@ -487,6 +487,14 @@ def test_real_session_where_crews_leave_replays_from_its_command_log():
                                   # the legacy presets this probe was derived
                                   # under (city weather: 2026-10-09)
                                   "sim_weather_profile": "generic",
+                                  # the crew-safety law this probe was derived
+                                  # under (SAFETY SEMANTICS 20, 2026-10-09:
+                                  # judged egresses + cell-exact corridors
+                                  # send these crews to other refuges, so the
+                                  # situation under test — crews leaving by
+                                  # road — would not form)
+                                  "corridor_cell_exact": False,
+                                  "crew_egress_judged": False,
                                   "dispatch_late_shift": True,
                                   "dispatch_plan_on_roads": True,
                                   "dispatch_hold_h": 24.0, "deploy_min": 15.0,

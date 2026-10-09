@@ -8,6 +8,7 @@ destination and the GridSpec index math are mutually consistent.
 from __future__ import annotations
 
 import math
+from array import array
 from typing import Optional
 
 from wgresponse.contracts import BBox, GridSpec, LatLon, Raster
@@ -169,6 +170,104 @@ def raster_sample(r: Raster, p: LatLon) -> Optional[float]:
     if rc is None:
         return None
     return r.get(rc[0], rc[1])
+
+
+def _boundary_params(a: float, b: float) -> list:
+    """Parameters s in (0, 1) where the linear coordinate a + s (b - a)
+    crosses an integer (a cell boundary in grid units), ascending."""
+    if a == b:
+        return []
+    lo, hi = (a, b) if a < b else (b, a)
+    out = []
+    k = math.floor(lo) + 1
+    while k < hi:
+        out.append((k - a) / (b - a))
+        k += 1
+    if a > b:
+        out.reverse()
+    return out
+
+
+#: path_cell_runs memo: (GridSpec, tuple(path)) -> runs. Bounded (cleared
+#: whole on overflow: simple, deterministic); the geometry of a path on a
+#: grid never changes, so every caller shares one table.
+_CELL_RUNS_MEMO: dict = {}
+_CELL_RUNS_MEMO_MAX = 20_000
+
+
+def path_cell_runs(spec: GridSpec, path) -> tuple:
+    """Every grid cell a polyline passes through, in driving order (corridor
+    CELL-EXACT law, contracts corridor_cell_exact / SAFETY SEMANTICS 20).
+
+    `path` is an ordered sequence of LatLon followed LINEARLY in lat/lon
+    between consecutive points — exactly how the simulator's crews move
+    (sim._interp) — and its along-path distance is the haversine length of
+    each span, spread linearly within the span. Returns (exits, idxs), two
+    parallel arrays with one entry per maximal stretch of the path inside
+    ONE cell of `spec` (a stretch that only clips a cell's corner is a
+    stretch of its own): exits[k] the cumulative distance (m) at which the
+    path LEAVES the stretch — the latest moment a vehicle on the path is in
+    that cell — and idxs[k] its flat index row * ncols + col. Stretches off
+    the grid are omitted.
+
+    Row boundaries are linear in latitude (exact); column boundaries follow
+    each row's latitude (m_per_deg_lon), so every span is walked in sub-
+    spans of at most one cell, within which the column coordinate is
+    linear to well under a millimetre. Each stretch's cell is the cell of
+    its midpoint (latlon_to_rc — the formula raster_sample uses), so a
+    point the vehicle occupies always maps to a cell of some stretch.
+    Deterministic; memoised per (spec, path)."""
+    key = (spec, tuple(path))
+    hit = _CELL_RUNS_MEMO.get(key)
+    if hit is not None:
+        return hit
+    cell = spec.cell_m
+    north, west, nc = spec.north_lat, spec.west_lon, spec.ncols
+    runs = []
+    cur = None                      # flat index of the open run (or -1 off-grid)
+    cum = 0.0
+    for j in range(1, len(path)):
+        p0, p1 = path[j - 1], path[j]
+        d = haversine_m(p0, p1)
+        if d <= 0.0:
+            continue
+        n = max(1, int(math.ceil(d / cell)))
+        dsub = d / n
+        for k in range(n):
+            f0, f1 = k / n, (k + 1) / n
+            la0 = p0.lat + (p1.lat - p0.lat) * f0
+            lo0 = p0.lon + (p1.lon - p0.lon) * f0
+            la1 = p0.lat + (p1.lat - p0.lat) * f1
+            lo1 = p0.lon + (p1.lon - p0.lon) * f1
+            y0 = (north - la0) * M_PER_DEG_LAT / cell
+            y1 = (north - la1) * M_PER_DEG_LAT / cell
+            x0 = (lo0 - west) * m_per_deg_lon(la0) / cell
+            x1 = (lo1 - west) * m_per_deg_lon(la1) / cell
+            ss = sorted(set(_boundary_params(y0, y1) + _boundary_params(x0, x1)))
+            ss.append(1.0)
+            base = cum + k * dsub
+            sa = 0.0
+            for sb in ss:
+                if sb <= sa:
+                    continue
+                sm = 0.5 * (sa + sb)
+                rc = latlon_to_rc(spec, LatLon(la0 + (la1 - la0) * sm,
+                                               lo0 + (lo1 - lo0) * sm))
+                idx = -1 if rc is None else rc[0] * nc + rc[1]
+                exit_m = base + sb * dsub
+                if idx == cur and runs:
+                    runs[-1] = (exit_m, idx)
+                else:
+                    runs.append((exit_m, idx))
+                    cur = idx
+                sa = sb
+        cum += d
+    out = (array("d", [e for e, i in runs if i >= 0]),
+           array("q", [i for _e, i in runs if i >= 0]))
+    if len(_CELL_RUNS_MEMO) >= _CELL_RUNS_MEMO_MAX:
+        _CELL_RUNS_MEMO.clear()
+    _CELL_RUNS_MEMO[key] = out
+    return out
 
 
 def erode_min(r: Raster, radius_m: float, shape: str = "chebyshev") -> Raster:

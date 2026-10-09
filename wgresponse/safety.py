@@ -35,6 +35,9 @@ Safety rules implemented here (contracts SAFETY SEMANTICS 2-4):
   its own speed and a bounded-sample margin of max(leg margin, that);
   dispatch passes them per incident only under cfg.corridor_offraster_per_fire
   (wgresponse.offmap builds them). Omitted = the flat legacy law.
+  CELL-EXACT CORRIDOR (contracts corridor_cell_exact, SAFETY SEMANTICS 20a):
+  every raster cell a leg passes through is also a sample, judged at the
+  moment the crew leaves it (LegOracle; geo.path_cell_runs). Off = legacy.
 
 geo.py is built concurrently by a sibling cluster: geo.haversine_m /
 geo.sample_polyline / geo.erode_min are resolved lazily with stdlib fallbacks
@@ -409,6 +412,50 @@ def _bound_arrival_s(p: LatLon, runs: list, ros_mps: float,
 # Corridor checks (contracts SAFETY SEMANTICS 3)
 # ---------------------------------------------------------------------------
 
+def _with_cell_samples(samples: list, sample_margin, eroded_p10: Raster,
+                       walk: list, speed_mps: float, margin_s: float):
+    """CELL-EXACT corridor samples (contracts corridor_cell_exact, SAFETY
+    SEMANTICS 20a): `samples` (the legacy (i, point, arrival, dt) list, in
+    path order) merged with one sample per raster cell the leg `walk`
+    passes through — (-1, ("cell", row, col), eroded arrival, exit
+    distance / speed) for every cell with a FINITE arrival (off-raster and
+    unreached stretches keep their legacy, possibly bounded, samples).
+    Both lists are in path order; the merge keeps it (legacy first on ties).
+    sample_margin (SEMANTICS 15 per-sample margins, or None) gains the leg
+    margin for every cell sample (a cell sample is a modelled sample).
+    Returns (samples, sample_margin)."""
+    g = _geo()
+    exits, idxs = g.path_cell_runs(eroded_p10.spec, walk)
+    if not idxs:
+        return samples, sample_margin
+    data = eroded_p10.data
+    nc = eroded_p10.spec.ncols
+    cells = []
+    for e, ix in zip(exits, idxs):
+        v = data[ix]
+        if math.isinf(v):
+            continue
+        cells.append((-1, ("cell", ix // nc, ix % nc), v, e / speed_mps))
+    if not cells:
+        return samples, sample_margin
+    merged = []
+    margins = [] if sample_margin is not None else None
+    i = j = 0
+    n_leg, n_cell = len(samples), len(cells)
+    while i < n_leg or j < n_cell:
+        if j >= n_cell or (i < n_leg and samples[i][3] <= cells[j][3]):
+            merged.append(samples[i])
+            if margins is not None:
+                margins.append(sample_margin[i])
+            i += 1
+        else:
+            merged.append(cells[j])
+            if margins is not None:
+                margins.append(margin_s)
+            j += 1
+    return merged, margins
+
+
 class LegOracle:
     """Precomputed corridor verdicts for ONE leg a->b at speed_mps against ONE
     eroded P10 raster (Sprint 2 B1 — Council-1 perf review D1,
@@ -460,6 +507,21 @@ class LegOracle:
     the legacy law, byte-identical — and so is (corridor_offraster_ros_mps,
     0): the per-sample margins only exist when some margin differs
     (sample_margin_s, None otherwise, parallel to samples).
+
+    CELL-EXACT (contracts corridor_cell_exact, SAFETY SEMANTICS 20a): the
+    samples every corridor_sample_m can step over a cell the leg passes
+    through — a 300 m spacing on a 90 m grid reads one cell in three, and a
+    leg that clips a cell's corner between two samples is never judged
+    there (measured: a chord passing 467 m from a cell burning since the
+    ignition, inside its 550 m eroded band, judged 9 h clear). With the
+    knob on, EVERY raster cell the leg passes through (geo.path_cell_runs:
+    the leg followed linearly in lat/lon, as the simulator's crews drive
+    it) with a finite eroded arrival is ALSO a sample, judged at the
+    latest moment the crew is in it (the distance at which the leg leaves
+    the cell). The legacy samples all stay (the law never gets weaker);
+    off-raster and unreached stretches keep their legacy (bounded)
+    samples. Cell samples carry index -1 and ("cell", row, col) in place of
+    the point (verdict reasons name the cell). Off = byte-identical.
     """
 
     __slots__ = ("n_pts", "samples", "margin_s", "latest_safe_depart_s",
@@ -546,6 +608,13 @@ class LegOracle:
                 if sample_margin is not None:
                     sample_margin.append(bound_margin_s if bounded
                                          else self.margin_s)
+            if getattr(cfg, "corridor_cell_exact", False):
+                # SAFETY SEMANTICS 20a: every cell the leg passes through
+                walk = (path if path is not None and len(path) >= 2
+                        else [a, b])
+                samples, sample_margin = _with_cell_samples(
+                    samples, sample_margin, eroded_p10, walk, speed_mps,
+                    self.margin_s)
         self.n_pts = n_pts
         self.samples = samples
         self.sample_margin_s = sample_margin
@@ -584,10 +653,22 @@ class LegOracle:
                 worst_h = m_h
             if safe and (v - t_pass) < margin_s:
                 safe = False
-                reason = (f"corridor unsafe at sample {i + 1}/{self.n_pts} "
-                          f"({p.lat:.5f},{p.lon:.5f}): eroded p10 arrival {v:.0f}s < "
-                          f"pass {t_pass:.0f}s + margin {margin_s:.0f}s")
+                if i < 0:                # SEMANTICS 20a cell sample
+                    reason = (f"corridor unsafe at {self._cell_name(p)}: "
+                              f"eroded p10 arrival {v:.0f}s < pass "
+                              f"{t_pass:.0f}s + margin {margin_s:.0f}s")
+                else:
+                    reason = (f"corridor unsafe at sample {i + 1}/{self.n_pts} "
+                              f"({p.lat:.5f},{p.lon:.5f}): eroded p10 arrival {v:.0f}s < "
+                              f"pass {t_pass:.0f}s + margin {margin_s:.0f}s")
         return CorridorVerdict(safe, reason, worst_h)
+
+    @staticmethod
+    def _cell_name(cell) -> str:
+        """Verdict-reason name of a SEMANTICS 20a cell sample (the sample's
+        point slot holds ("cell", row, col))."""
+        _tag, r, c = cell
+        return f"cell ({r},{c}) the leg passes through (cell-exact)"
 
     def _verdict_per_sample(self, depart_s: float) -> CorridorVerdict:
         """verdict() under the SEMANTICS 15 crossing-time margin: the same
@@ -605,8 +686,10 @@ class LegOracle:
                 safe = False
                 what = ("eroded p10 arrival" if ms == self.margin_s else
                         "off-domain bound (SAFETY SEMANTICS 15)")
-                reason = (f"corridor unsafe at sample {i + 1}/{self.n_pts} "
-                          f"({p.lat:.5f},{p.lon:.5f}): {what} {v:.0f}s < "
+                where = (self._cell_name(p) if i < 0 else
+                         f"sample {i + 1}/{self.n_pts} "
+                         f"({p.lat:.5f},{p.lon:.5f})")
+                reason = (f"corridor unsafe at {where}: {what} {v:.0f}s < "
                           f"pass {t_pass:.0f}s + margin {ms:.0f}s")
         return CorridorVerdict(safe, reason, worst_h)
 
