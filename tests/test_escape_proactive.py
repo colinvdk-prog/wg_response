@@ -117,8 +117,12 @@ def test_picker_falls_back_to_clean_at_arrival_route():
     """No fully-lawful route (worst < 0 through the pessimistic band) but a
     not-burned route to a forever zone with lawful destination -> taken.
     This is exactly the paradise t13-27 regime: the z2 crossing was P10-
-    exposed but pre-nominal for 15 ticks after the last fully-lawful tick."""
-    s = _session()
+    exposed but pre-nominal for 15 ticks after the last fully-lawful tick.
+    Pinned with crew_egress_judged OFF: under SAFETY SEMANTICS 20b (the
+    simulator default since 2026-10-09) a voluntary decamp never rides
+    exposed transit — tests/test_crew_egress_judged.py::test_a_voluntary_
+    decamp_never_rides_exposed_transit."""
+    s = _session(crew_egress_judged=False)
     cs = _crew(s)
     now = s._now_s
     z1, z2, z3 = _zones(s)
@@ -145,8 +149,10 @@ def test_picker_fallback_rejects_nominal_crossing():
     network) now rides it to a durable road node and returns that instead
     of None. The zone fallback's strict crossing reject itself is kept under
     the knob — tests/test_sim_old_black.py::test_proactive_zone_fallback_
-    keeps_the_strict_crossing_reject."""
-    s = _session(old_black_refuge=False)
+    keeps_the_strict_crossing_reject. Pinned with crew_egress_judged OFF
+    too: under SAFETY SEMANTICS 20b the fallback is not offered at all, and
+    this test is about the fallback's own reject."""
+    s = _session(old_black_refuge=False, crew_egress_judged=False)
     cs = _crew(s)
     now = s._now_s
     z1, z2, z3 = _zones(s)

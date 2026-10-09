@@ -287,8 +287,13 @@ def test_road_escape_into_the_black_behind_the_front(tmp_path):
     east branch runs through UNBURNED band (exposure), the west branch
     through black the front left 5 h ago. Armed, the west is a zero-exposure
     road to a lawful, unbounded-horizon refuge on the black; knob off, the
-    same road is exposure (and the refuge a spot already inside the band)."""
-    s, g = _net_session(tmp_path)
+    same road is exposure (and the refuge a spot already inside the band).
+    The ~53 s bound is the legacy ~275 m sampling's: SAFETY SEMANTICS 20a's
+    cell-exact samples (simulator default since 2026-10-09) count the time to
+    leave the band's 500 m CELLS instead — pinned off here; the cell-exact
+    twin is tests/test_crew_egress_judged.py::
+    test_road_escape_into_the_black_cell_exact."""
+    s, g = _net_session(tmp_path, corridor_cell_exact=False)
     now = s._now_s
     west = [(_pt(270, km), 450.0, now - 5 * 3600.0) for km in (1.5, 3.0, 4.5, 6.0)]
     _fire(s, paint_nom=list(west),
@@ -311,7 +316,8 @@ def test_road_escape_into_the_black_behind_the_front(tmp_path):
     # knob off: the black is band like any other — the west road costs its
     # length in exposure and every node on it is unlawful, so the strict
     # search never picks the black
-    s0, g0 = _net_session(tmp_path, old_black_refuge=False)
+    s0, g0 = _net_session(tmp_path, old_black_refuge=False,
+                          corridor_cell_exact=False)
     _fire(s0, paint_nom=list(west),
           paint_p10=list(west) + [(_pt(90, 1.5), 500.0, now + 60.0),
                                   (_pt(90, 3.0), 500.0, now + 60.0),
@@ -333,10 +339,12 @@ def test_proactive_zone_fallback_keeps_the_strict_crossing_reject():
     basalt_carbondale_co crews (standard probe, t36) ride 16 km over old
     black AND the unburned band to z1 — 3 imminent-while-egressing rows
     where the strict rule decamped them 2.1 km by road with none. Old black
-    and hot black are both rejected here."""
+    and hot black are both rejected here. Pinned with crew_egress_judged OFF:
+    under SAFETY SEMANTICS 20b (the simulator default since 2026-10-09) the
+    fallback is never offered, and this test is about its own reject."""
     for elsewhere_age, want in ((4 * 3600.0, None), (60.0, None)):
         s = simui.SimSession("boulder_co", 2, 1, seed="pro-test",
-                             cfg_overrides={})
+                             cfg_overrides={"crew_egress_judged": False})
         cs = _crew(s)
         now = s._now_s
         z1, z2, z3 = _zones(s)
@@ -433,9 +441,12 @@ def test_armed_proactive_road_decamp_rides_old_black_not_the_band():
 
 def test_knob_off_route_metrics_equal_the_legacy_body_over_old_black(tmp_path):
     """Knob OFF over painted old black: _route_metrics equals the verbatim
-    pre-change body (tests/test_sim_escape_roads.py::_legacy_route_metrics)."""
+    pre-change body (tests/test_sim_escape_roads.py::_legacy_route_metrics),
+    which samples every ~275 m — SAFETY SEMANTICS 20a's cell-exact samples
+    are pinned off so the identity compares like with like."""
     from tests.test_sim_escape_roads import _legacy_route_metrics
-    s, g = _net_session(tmp_path, old_black_refuge=False)
+    s, g = _net_session(tmp_path, old_black_refuge=False,
+                        corridor_cell_exact=False)
     now = s._now_s
     west = [(_pt(270, km), 450.0, now - 5 * 3600.0) for km in (1.5, 3.0, 4.5)]
     _fire(s, paint_nom=west, paint_p10=west)

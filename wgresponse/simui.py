@@ -2051,11 +2051,17 @@ class _SimCrew(_CrewSim):
     pending_withdrawals into the loud state()['withdrawn'] channel."""
 
     def __init__(self, crew, speed_mps: float, route_fn=None, latest_fn=None,
-                 road_guard: bool = False):
+                 road_guard: bool = False, egress_judge=None):
         super().__init__(crew, speed_mps)
         self._route_fn = route_fn        # (a, b) -> RoadRoute | None
         self._latest_fn = latest_fn      # (stop dict) -> live latest-depart s
         self._road_guard = bool(road_guard)
+        # EVERY EGRESS IS JUDGED (contracts crew_egress_judged, SAFETY
+        # SEMANTICS 20b): (crew, t_s) -> None, called the moment this crew
+        # turns onto an egress leg from a stop (a withdrawal, or leaving its
+        # last stop); it may re-point egress_loc / egress_zone_id before the
+        # leg is resolved. None = legacy (the adopted zone, unjudged).
+        self._egress_judge = egress_judge
         self._leg = None                 # active leg (see _begin_leg)
         self._egress_plan = None         # CURRENT stop's escape route
         self.pending_withdrawals = []    # road-guard aborts, session-drained
@@ -2210,12 +2216,22 @@ class _SimCrew(_CrewSim):
         if self.egress_loc is not None:
             self._mode = "egress"
             self.status = CrewStatus.EGRESSING
+            self._judge_egress_start(t_now_s)
             self._begin_leg("egress", self.egress_loc)
         else:
             self._mode = "idle"
             self.status = CrewStatus.AVAILABLE
             self._leg = None
         return True
+
+    def _judge_egress_start(self, t_s: float) -> None:
+        """EVERY EGRESS IS JUDGED (contracts crew_egress_judged, SAFETY
+        SEMANTICS 20b): hand the leg this crew is about to start — from its
+        position at t_s to its adopted egress target — to the session's
+        judge, which may re-point the target (the SEM-10d routed choice)
+        when that leg is not lawful. No judge or no target = legacy."""
+        if self._egress_judge is not None and self.egress_loc is not None:
+            self._egress_judge(self, t_s)
 
     def drain_withdrawals(self) -> list:
         out = self.pending_withdrawals
@@ -2246,7 +2262,7 @@ class _SimCrew(_CrewSim):
                 self._leg = None
         return dropped
 
-    def abort_deploy(self):
+    def abort_deploy(self, t_s: Optional[float] = None):
         """SAFETY WITHDRAWAL: abandon the IN-PROGRESS gel deploy right now.
 
         The current stop is dropped UNFINISHED — no ServicedStop is ever
@@ -2255,7 +2271,12 @@ class _SimCrew(_CrewSim):
         if no egress zone was adopted; adoption always sets one). The egress
         leg resolves through the roads seam like every other leg (a
         withdrawal follows the ROAD egress). Returns the dropped client ids
-        (aborted stop first), [] when the crew was not mid-deploy."""
+        (aborted stop first), [] when the crew was not mid-deploy.
+
+        t_s (EVERY EGRESS IS JUDGED, contracts crew_egress_judged): the
+        moment of the withdrawal — the egress leg is then judged from here
+        before it starts (_judge_egress_start). None (a zone_overrun abort,
+        whose flee the sweep picks right after) = no judgement here."""
         if self._mode != "deploy" or not self.itinerary:
             return []
         dropped = [s["client_id"] for s in self.itinerary]
@@ -2264,6 +2285,8 @@ class _SimCrew(_CrewSim):
         if self.egress_loc is not None:
             self._mode = "egress"
             self.status = CrewStatus.EGRESSING
+            if t_s is not None:
+                self._judge_egress_start(t_s)
             self._begin_leg("egress", self.egress_loc)
         else:
             self._mode = "idle"
@@ -2364,6 +2387,11 @@ class _SimCrew(_CrewSim):
                         gel_fresh_frac=stop["gel_fresh_frac"]))
                     self._mode = "idle"
                     self._refresh_egress_plan()
+                    if not self.itinerary:
+                        # EVERY EGRESS IS JUDGED (contracts crew_egress_
+                        # judged): leaving its last stop — or one whose
+                        # queue was revoked — the crew egresses from HERE
+                        self._judge_egress_start(t)
                 else:
                     t = t_end_s
             elif self._mode == "egress":
@@ -2769,6 +2797,22 @@ class SimSession:
             cfg.sim_weather_profile = SIM_WEATHER_PROFILE
         self._city_wx = (CITY_WEATHER.get(location_key)
                          if cfg.sim_weather_profile == "city" else None)
+        # NO CREW DRIVES A LEG THE LAW HAS NOT JUDGED (2026-10-09; contracts
+        # SAFETY SEMANTICS 20; docs/SIMULATOR_DESIGN.md "No crew drives an
+        # unjudged leg"): the corridor law and the SEM-10 route judgement
+        # sample EVERY cell a leg passes through (corridor_cell_exact), and
+        # every egress a crew starts from a stop — or keeps driving — is
+        # judged as a leg from where the crew is, and a voluntary decamp
+        # never rides exposed transit (crew_egress_judged). Measured on the
+        # 13 one-click scenarios x 4 intensities x city / generic weather x
+        # both floor class sets (208 runs, 6 h): crew-overrun ticks 10 -> 0,
+        # departure violations 0 -> 0, homes served 5,792 -> 5,827. Explicit
+        # override wins; the ResponseConfig defaults stay OFF (live path
+        # byte-identical).
+        if "corridor_cell_exact" not in overrides:
+            cfg.corridor_cell_exact = True
+        if "crew_egress_judged" not in overrides:
+            cfg.crew_egress_judged = True
 
         # --- roads (contracts wgresponse.roads seam; loaded ONCE per
         # configure). LAZY import: the sibling module lands independently —
@@ -2973,7 +3017,8 @@ class SimSession:
             cs = _SimCrew(
                 crew, speed, route_fn=self._leg_route,
                 latest_fn=self._stop_latest_depart_s,
-                road_guard=(self._road_graph is not None))
+                road_guard=(self._road_graph is not None),
+                egress_judge=self._judge_egress_start)
             # STAGING seam: park the crew at its custom start (position +
             # beacon only; home_base/egress anchor stay the safe zone above).
             start = zone.loc
@@ -3012,7 +3057,8 @@ class SimSession:
                 cs = _SimCrew(
                     crew, speed, route_fn=self._leg_route,
                     latest_fn=self._stop_latest_depart_s,
-                    road_guard=(self._road_graph is not None))
+                    road_guard=(self._road_graph is not None),
+                    egress_judge=self._judge_egress_start)
                 cs.status = CrewStatus.INBOUND      # base ctor defaults AVAILABLE
                 cs.pos = self._edge_entry_point(tile_bbox, region, i, n_reg)
                 self._crew_sims[crew.crew_id] = cs
@@ -3083,6 +3129,12 @@ class SimSession:
         self._n_relocations = 0
         self._crew_overruns = []
         self._no_safe_zone = False
+        # SAFETY SEMANTICS 20b (contracts crew_egress_judged): egress legs
+        # re-pointed because their leg was not lawful (at the start, or in
+        # flight) — internal count, said in the notes; and the step the
+        # running tick advances by (the judgement's destination lead).
+        self._n_egress_rejudged = 0
+        self._step_lead_s = None
         # SEM-10d: one-shot alarm latch for the area-escape note (crews leaving
         # the operating area because no catalog zone is safely reachable).
         self._area_escape_alarmed = False
@@ -3873,7 +3925,9 @@ class SimSession:
         projected = cs._deploy_end_s
         if math.isinf(latest) or projected <= latest:
             return False
-        for dropped in cs.abort_deploy():
+        # EVERY EGRESS IS JUDGED (contracts crew_egress_judged): the egress
+        # this withdrawal starts is judged from the stop, now
+        for dropped in cs.abort_deploy(t_s=self._now_s):
             self._assigned.discard(dropped)
             self._superseded.discard(dropped)
         self._stop_rule.pop(client_id, None)
@@ -4110,7 +4164,8 @@ class SimSession:
                         pts.append(q)
         if len(pts) < 2:
             pts = [a, b]
-        return self._points_with_times(pts, speed_mps)
+        # (every field cell on the way too, under corridor_cell_exact)
+        return self._sem10_points(pts, speed_mps)
 
     @staticmethod
     def _points_with_times(pts, speed_mps: float):
@@ -4320,13 +4375,31 @@ class SimSession:
 
     def _esc_span_samples(self, verts) -> tuple:
         """Escape samples along an ordered, de-duplicated vertex list: one
-        (d_sub_m, LatLon, tile flat index or -1, cold-black window s) per
-        sub-step, the start vertex excluded, the end vertex included —
+        (d_sub_m, LatLon, tile flat index or -1, cold-black window s, cell)
+        per sub-step, the start vertex excluded, the end vertex included —
         exactly the subdivision _points_with_times applies to the same
-        vertices, so pass times and exposure add up to the same floats."""
+        vertices, so pass times and exposure add up to the same floats.
+        `cell` is -1 for these legacy samples.
+
+        CELL-EXACT (contracts corridor_cell_exact, SAFETY SEMANTICS 20a):
+        each span is _cell_span_walk's instead — the same sub-steps plus one
+        sample per field cell the span passes through (cell = its flat
+        index in the field grid), the samples _sem10_points takes over the
+        same vertices, so the two still add up to the same floats. Knob off:
+        the legacy samples, byte-identical."""
         spec = self._tile.spec
         step = _ESCAPE_SAMPLE_M
         out = []
+        cspec = self._cell_spec()
+        if cspec is not None:
+            for i in range(1, len(verts)):
+                for dsub, q, cix in self._cell_span_walk(verts[i - 1],
+                                                         verts[i], cspec):
+                    rc = geo.latlon_to_rc(spec, q)
+                    idx = -1 if rc is None else rc[0] * spec.ncols + rc[1]
+                    out.append((dsub, q, idx, self._cold_black_pass_s(q),
+                                cix))
+            return tuple(out)
         for i in range(1, len(verts)):
             p0, p1 = verts[i - 1], verts[i]
             d = geo.haversine_m(p0, p1)
@@ -4339,7 +4412,8 @@ class SimSession:
                            p0.lon + (p1.lon - p0.lon) * f)
                 rc = geo.latlon_to_rc(spec, q)
                 idx = -1 if rc is None else rc[0] * spec.ncols + rc[1]
-                out.append((d / n_sub, q, idx, self._cold_black_pass_s(q)))
+                out.append((d / n_sub, q, idx, self._cold_black_pass_s(q),
+                            -1))
         return tuple(out)
 
     def _esc_edge_samples(self, ei: int, fwd: bool) -> tuple:
@@ -4347,7 +4421,7 @@ class SimSession:
         the vertices roads._assemble emits for it (end node, OSM geometry in
         driving order, far node; consecutive duplicates dropped). Cached per
         session — graph geometry and tile are static."""
-        key = (ei, fwd)
+        key = (ei, fwd, self._cell_spec())     # (the cell grid, 20a)
         hit = self._esc_edge_cache.get(key)
         if hit is None:
             g = self._road_graph
@@ -4517,14 +4591,24 @@ class SimSession:
         # ON-MAP TIE-BREAK (contracts escape_prefer_on_map)
         prefer_on_map = self._esc_prefer_on_map()
 
-        def drive(samples, t, e):
+        def drive(samples, t, e, skip=-1):
             """(t, e, p10 at the last sample) after driving `samples` from
             cumulative time t / exposure e; None when a sample is burned at
-            its pass time (the edge is impassable)."""
+            its pass time (the edge is impassable). skip (SAFETY SEMANTICS
+            20a): the crew's own starting cell while the walk has not left
+            it — its cell samples are driven through unjudged (the SEM-10
+            carve-out, exactly as _sem10_points leaves them out); -1 = none.
+            Returns (t, e, p10, skip) with the skip state after `samples`."""
             p10 = INF
-            for dsub, q, idx, cb in samples:
-                t_prev = t
+            t_last = t
+            for dsub, q, idx, cb, cix in samples:
                 t += dsub / spd
+                if skip >= 0 and cix >= 0:
+                    if cix == skip:
+                        continue
+                    skip = -1
+                t_prev = t_last
+                t_last = t
                 pass_t = now + t
                 if fields is None:
                     nom, p10 = crew_exposure(q)
@@ -4549,19 +4633,28 @@ class SimSession:
                     if lawful_only:
                         return None
                     e += max(0.0, t - t_prev)
-            return t, e, p10
+            return t, e, p10, skip
 
         def qz(e):
             return 0 if e <= 0.0 else math.ceil(e / ESCAPE_NET_EXPOSURE_Q_S)
 
         p_s0 = g.nodes[s0]
+        # SAFETY SEMANTICS 20a: the crew's own cell (in the cell-exact grid)
+        cspec = self._cell_spec()
+        rc_start = (None if cspec is None
+                    else geo.latlon_to_rc(cspec, pos))
+        start_cell = (-1 if rc_start is None
+                      else rc_start[0] * cspec.ncols + rc_start[1])
         spur = (self._esc_span_samples([pos, p_s0]) if pos != p_s0 else ())
-        r = drive(spur, 0.0, 0.0)
+        r = drive(spur, 0.0, 0.0, start_cell)
         if r is None:
             return None
-        t0, e0, p10_0 = r
+        t0, e0, p10_0, skip0 = r
         lab = {s0: (qz(e0), t0, e0)}
         p10_at = {s0: p10_0}
+        # SAFETY SEMANTICS 20a: a node reached without the walk ever
+        # leaving the crew's own cell carries that cell on (else none)
+        skip_at = {s0: skip0} if skip0 >= 0 else {}
         parent = {s0: None}
         heap = [(qz(e0), t0, e0, s0)]
         done = set()
@@ -4600,16 +4693,21 @@ class SimSession:
             for v, ei in g.neighbors(u):
                 if v in done:
                     continue
-                r = drive(self._esc_edge_samples(ei, g.edges[ei].u == u), t, e)
+                r = drive(self._esc_edge_samples(ei, g.edges[ei].u == u), t,
+                          e, skip_at.get(u, -1))
                 if r is None:
                     continue                            # burned: impassable
-                t2, e2, p10v = r
+                t2, e2, p10v, sk2 = r
                 nl = (qz(e2), t2, e2)
                 old = lab.get(v)
                 if old is None or nl < old:
                     lab[v] = nl
                     parent[v] = (u, ei)
                     p10_at[v] = p10v
+                    if sk2 >= 0:
+                        skip_at[v] = sk2
+                    else:
+                        skip_at.pop(v, None)
                     heapq.heappush(heap, (nl[0], t2, e2, v))
         if best is None:
             return None
@@ -4674,9 +4772,248 @@ class SimSession:
             if len(pts) < 2:
                 pts = [cs.pos, cs.egress_loc]
             return self._metrics_of_points(
-                self._points_with_times(pts, cs.speed), now, lead_s)
+                self._sem10_points(pts, cs.speed), now, lead_s)
         return self._route_metrics(cs.pos, cs.egress_loc, now, cs.speed,
                                    lead_s)
+
+    # -- NO CREW DRIVES A LEG THE LAW HAS NOT JUDGED (2026-10-09; contracts
+    # -- SAFETY SEMANTICS 20: corridor_cell_exact / crew_egress_judged) ------
+
+    def _cell_spec(self):
+        """The grid the SEMANTICS 20a cell-exact SEM-10 samples walk: the
+        fires' common arrival-field grid (the grid _crew_exposure samples —
+        the tile's own unless the domain was coarsened), or None when
+        contracts corridor_cell_exact is off, no fire has a field yet, or
+        the fires' fields disagree on their grid (then the legacy samples
+        alone judge — never seen in the simulator, whose fires share one
+        tile and one config)."""
+        if not getattr(self._cfg, "corridor_cell_exact", False):
+            return None
+        spec = None
+        for fid in self._fire_order:
+            f = self._fires[fid]
+            if f.ens is None:
+                continue
+            sp = f.ens.members[0].spec
+            if spec is None:
+                spec = sp
+            elif sp != spec:
+                return None
+        return spec
+
+    @staticmethod
+    def _cell_span_walk(p0, p1, spec) -> list:
+        """SAFETY SEMANTICS 20a: the samples of ONE span p0 -> p1 under the
+        cell-exact law, [(d_sub_m, LatLon, cell)]: the legacy sub-steps of
+        _points_with_times (every <= _ESCAPE_SAMPLE_M, p0 excluded, p1
+        included; cell -1) plus one sample per `spec` cell the span passes
+        through (geo.path_cell_runs: the cell's centre, placed where the
+        span LEAVES the cell; cell = its flat index), merged in distance
+        order with p1 last, as distance increments. Shared by _sem10_points
+        and the road-network escape search (_esc_span_samples), so the two
+        add up to the same floats. [] for a zero-length span."""
+        d = geo.haversine_m(p0, p1)
+        if d <= 0.0:
+            return []
+        n_sub = max(1, int(d // _ESCAPE_SAMPLE_M))
+        legacy = []
+        for k in range(1, n_sub + 1):
+            f = k / n_sub
+            legacy.append((d if k == n_sub else d * f,
+                           LatLon(p0.lat + (p1.lat - p0.lat) * f,
+                                  p0.lon + (p1.lon - p0.lon) * f), -1))
+        exits, idxs = geo.path_cell_runs(spec, (p0, p1))
+        nc = spec.ncols
+        merged = []
+        j = 0
+        n_cells = len(idxs)
+        for c_m, q, cix in legacy[:-1]:
+            while j < n_cells and exits[j] < c_m:
+                ix = idxs[j]
+                merged.append((exits[j], geo.rc_to_latlon(spec, ix // nc,
+                                                           ix % nc), ix))
+                j += 1
+            merged.append((c_m, q, cix))
+        while j < n_cells:
+            ix = idxs[j]
+            merged.append((min(exits[j], d),
+                           geo.rc_to_latlon(spec, ix // nc, ix % nc), ix))
+            j += 1
+        merged.append(legacy[-1])
+        out = []
+        prev = 0.0
+        for c_m, q, cix in merged:
+            out.append((max(0.0, c_m - prev), q, cix))
+            if c_m > prev:
+                prev = c_m
+        return out
+
+    def _sem10_points(self, pts, speed_mps: float):
+        """The SEM-10 route-judgement samples along an ordered point list,
+        [(LatLon, pass offset s)]: _points_with_times verbatim — or, under
+        contracts corridor_cell_exact (SAFETY SEMANTICS 20a), every span's
+        _cell_span_walk: the same sub-steps plus one sample per field cell
+        the path passes through, at the moment the crew LEAVES the cell
+        (pass time = cumulative distance / speed, accumulated exactly as
+        the road-network escape search accumulates it). The crew's own
+        starting cell is not sampled while the path has not left it (the
+        SEM-10 carve-out: a crew standing in the burn must be able to drive
+        out — the start point keeps its own dt = 0 sample), and the
+        destination point stays the LAST sample (its margin is the
+        destination margin). Knob off = _points_with_times, byte-identical."""
+        spec = self._cell_spec()
+        if spec is None or len(pts) < 2:
+            return self._points_with_times(pts, speed_mps)
+        v = max(speed_mps, 0.1)
+        out = [(pts[0], 0.0)]
+        t = 0.0
+        rc0 = geo.latlon_to_rc(spec, pts[0])
+        skip = -1 if rc0 is None else rc0[0] * spec.ncols + rc0[1]
+        for i in range(1, len(pts)):
+            for dsub, q, cix in self._cell_span_walk(pts[i - 1], pts[i], spec):
+                t += dsub / v
+                if skip >= 0 and cix >= 0:
+                    if cix == skip:
+                        continue
+                    skip = -1
+                out.append((q, t))
+        return out
+
+    def _judge_lead_s(self) -> float:
+        """The destination lead of the SEMANTICS 20b judgement: the step the
+        running tick advances by (the sweep's own lead — a crew that
+        arrives is next audited at most one step later); outside a tick
+        (a slider's re-check) the step a tick would take."""
+        lead = getattr(self, "_step_lead_s", None)
+        if lead is None:
+            total = self._cfg.replan_period_s * self._speed
+            n_sub = max(1, int(math.ceil(total / SIM_MAX_SUBSTEP_S - 1e-9)))
+            lead = total / n_sub
+        return lead
+
+    def _leg_path(self, cs, target):
+        """(points, speed) of the leg crew cs drives from its position to
+        `target`: the remainder of its ACTIVE egress leg when it already
+        drives there (its own polyline and speed), else exactly the leg
+        _SimCrew._begin_leg would resolve now — the roads seam (a pinned
+        SEM-10d escape path included) at the route's implied speed, or the
+        straight tier-0 leg at the crew's speed."""
+        leg = cs._leg
+        if (leg is not None and leg.get("kind") == "egress"
+                and leg.get("target") == target):
+            raw, spd = leg["pts"], leg["speed"]
+        else:
+            rr = self._leg_route(cs.pos, target)
+            if rr is None:
+                raw, spd = [target], cs.speed
+            else:
+                raw = list(rr.polyline) + [target]
+                spd = cs.speed
+                if (rr.time_s and rr.time_s > 0.0 and rr.dist_m
+                        and rr.dist_m > 0.0):
+                    spd = rr.dist_m / rr.time_s
+        pts = [cs.pos]
+        for p in raw:
+            if (pts[-1].lat, pts[-1].lon) != (p.lat, p.lon):
+                pts.append(p)
+        if len(pts) < 2:
+            pts = [cs.pos, target]
+        return pts, max(spd, 0.1)
+
+    def _leg_lawful(self, cs, target, t_s: float, dest_lead_s: float) -> bool:
+        """SAFETY SEMANTICS 20b: True iff the leg crew cs drives from its
+        position to `target`, starting at t_s (_leg_path: the road it will
+        actually drive, at the speed it drives it), is LAWFUL for the 10c
+        audit: no sample the nominal front is crossing (inside its cold-
+        black window) at its pass time, every sample's eroded P10 at least
+        the egress buffer beyond its pass time — the audit's imminent line
+        exactly — and the destination's at least dest_lead_s more (a crew
+        that arrives is next audited up to one step later). Every field
+        cell on the way is a sample under corridor_cell_exact."""
+        pts, spd = self._leg_path(cs, target)
+        b, _e, worst, _t, dm = self._metrics_of_points(
+            self._sem10_points(pts, spd), t_s, 0.0)
+        return (not b) and worst >= 0.0 and dm >= dest_lead_s
+
+    def _judge_egress_start(self, cs, t_s: float) -> None:
+        """EVERY EGRESS IS JUDGED (contracts crew_egress_judged, SAFETY
+        SEMANTICS 20b; the _SimCrew egress_judge hook): called the moment
+        crew cs turns onto an egress leg from a stop — a safety withdrawal
+        (the road-egress guard inside advance(), eta drift, a policy
+        change) or leaving its last stop. Its adopted target is the plan's
+        ROUTE-level zone, the last stop's: dispatch judges each stop's own
+        nearest lawful zone at its planned departure but emits only the
+        last one, so a withdrawal at an earlier stop drove a road from here
+        that no law had judged (measured: every Malibu one-click overrun).
+        The target stays when its leg from here, now, is lawful
+        (_leg_lawful, one step of destination lead); else the crew takes
+        the SEM-10d routed choice (_best_escape: a lawful zone, else the
+        road-network escape, else the least exposure) — loud note. Knob
+        off: a no-op (byte-identical)."""
+        if not getattr(self._cfg, "crew_egress_judged", False):
+            return
+        target = cs.egress_loc
+        if target is None or cs.pos == target:
+            return
+        lead_s = self._judge_lead_s()
+        if self._leg_lawful(cs, target, t_s, lead_s):
+            return
+        nloc, nid = self._best_escape(cs.pos, t_s, cs.speed, lead_s)
+        kind = self._escape_kind_last
+        if cs.pos == nloc or (nloc == target and nid == cs.egress_zone_id):
+            return              # nothing better: the audit reports the rest
+        cid = cs.crew.crew_id
+        old_id = cs.egress_zone_id or "its zone"
+        cs.egress_loc = nloc
+        cs.egress_zone_id = nid
+        cs._leg = None
+        if nid == "escape" and kind == "network":
+            self._net_escape[cid] = nloc
+        else:
+            self._net_escape.pop(cid, None)
+        self._n_egress_rejudged += 1
+        self._notes.append(
+            f"crew {cid} egress re-routed (SEMANTICS 20b): the road from "
+            f"here to {old_id} is not lawful as it leaves (it runs inside "
+            f"the pessimistic front's band, or the zone is threatened before "
+            f"the next check) — heading to {nid} instead")
+
+    def _rejudge_egress(self, cid, cs, now: float, lead_s: float) -> None:
+        """SAFETY SEMANTICS 20b in the sweep (contracts crew_egress_judged):
+        an EGRESSING crew whose own cell is safe keeps its target only
+        while the leg it drives there is lawful (_leg_lawful: every sample
+        on the audit's side of the imminent line at its pass time, the
+        destination one step beyond it). The legacy 10b rule looked at the
+        adopted zone's own cell alone, at zero lead — measured: an Aspen
+        crew drove on to a zone the pessimistic front reached 20 minutes
+        after it arrived, inside the egress buffer at the next audit. An
+        unlawful leg is replaced by the SEM-10d routed choice (_best_escape)
+        when that one's leg is lawful; between two unlawful legs the escape
+        hysteresis decides (_escape_switch_ok)."""
+        target = cs.egress_loc
+        if target is None or cs.pos == target:
+            return
+        if self._leg_lawful(cs, target, now, lead_s):
+            return
+        nloc, nid = self._best_escape(cs.pos, now, cs.speed, lead_s)
+        kind = self._escape_kind_last
+        if cs.pos == nloc or (nloc == target and nid == cs.egress_zone_id):
+            return
+        if not (self._leg_lawful(cs, nloc, now, lead_s)
+                or self._escape_switch_ok(cs, now, lead_s, nloc, nid)):
+            return
+        old_id = cs.egress_zone_id or "its zone"
+        cs.retarget_egress(nloc, nid)
+        if nid == "escape" and kind == "network":
+            self._net_escape[cid] = nloc
+        else:
+            self._net_escape.pop(cid, None)
+        self._n_egress_rejudged += 1
+        self._notes.append(
+            f"crew {cid} egress re-routed (SEMANTICS 20b): the road it is "
+            f"driving to {old_id} is no longer lawful (it runs inside the "
+            f"pessimistic front's band, or the zone is threatened before the "
+            f"next check) — heading to {nid} instead")
 
     def _best_escape(self, pos, now, speed_mps: float, lead_s: float):
         """(target_loc, target_id) for a crew that must move (SEM-10d) — the
@@ -4822,6 +5159,14 @@ class SimSession:
         if getattr(self._cfg, "escape_proactive_lawful_only", False):
             # contracts SEM-10e LAWFUL-ONLY: a voluntary move never rides
             # audit-counted (pessimistic-exposed) transit
+            return None
+        if getattr(self._cfg, "crew_egress_judged", False):
+            # SAFETY SEMANTICS 20b (contracts crew_egress_judged): nor does
+            # it under the judged-leg law, on any tile — measured: an Eagle
+            # one-click decamp (extreme, city weather, all-fuel floor) rode
+            # 915 s of exposed transit to zone z2 and was audited inside the
+            # band at the next step (the "standard graph never offers such
+            # routes" premise of the extended-only arming does not hold)
             return None
         lawful = []
         for z, zp10 in durable:
@@ -5027,7 +5372,13 @@ class SimSession:
         old black is neither burned nor imminent here (_exposure_at), so the
         sweep never moves it off — no relocation, no proactive decamp. A crew
         that LEFT THE MAP (contracts left_map_out) is out of the simulation
-        and skipped like an INBOUND one."""
+        and skipped like an INBOUND one.
+
+        EVERY LEG A CREW STARTS IS JUDGED (contracts crew_egress_judged,
+        SAFETY SEMANTICS 20b): an EGRESSING crew whose cell is safe has the
+        LEG it drives re-judged (_rejudge_egress) instead of its zone's own
+        cell at zero lead, and a voluntary SEM-10e decamp never rides exposed
+        transit (_proactive_exposed_zone)."""
         now = self._now_s
         # relocation TARGETS use one tick of lead too, so a fleeing crew is sent
         # to a zone that will still be safe when it arrives (not one about to be
@@ -5043,6 +5394,8 @@ class SimSession:
         self._no_safe_zone = fail_closed
         buffer_s = self._cfg.egress_buffer_min * 60.0
         pro_s = getattr(self._cfg, "escape_proactive_lead_min", 0.0) * 60.0
+        # SAFETY SEMANTICS 20b: egresses in flight are re-judged as legs
+        judged = bool(getattr(self._cfg, "crew_egress_judged", False))
         if self._escape_pins:
             # SEM-10d ROAD-NETWORK ESCAPE: keep only the searched paths to
             # nodes some crew still heads for (a begun leg holds its own copy)
@@ -5070,7 +5423,13 @@ class SimSession:
             # currently-safe zone — its deploy is untouched; only the escape
             # moves. A crew whose own cell is unsafe is handled by the relocate
             # path below instead.
-            if (not (burned or imminent) and cs.egress_zone_id
+            if judged and not (burned or imminent) and cs._mode == "egress":
+                # SAFETY SEMANTICS 20b (contracts crew_egress_judged): an
+                # egress in flight keeps its target only while the LEG it
+                # drives there is lawful — the road, not just the zone's
+                # own cell at zero lead (the legacy rule below)
+                self._rejudge_egress(cid, cs, now, lead_s)
+            elif (not (burned or imminent) and cs.egress_zone_id
                     and cs.egress_zone_id != "escape"
                     and cs._mode in ("deploy", "egress")):
                 z = self._zone_by_id.get(cs.egress_zone_id)
@@ -5537,6 +5896,8 @@ class SimSession:
         state(); emit=False returns None."""
         cfg = self._cfg
         now = self._now_s
+        # SAFETY SEMANTICS 20b: the step is the egress judgement's lead
+        self._step_lead_s = step
 
         # 0. REINFORCEMENT ARRIVAL (SEMANTICS 9): an INBOUND crew whose
         # mobilization clock has elapsed (now >= available_at_s) ARRIVES —

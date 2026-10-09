@@ -162,8 +162,12 @@ def test_knob_default_off_and_simulator_arms_it(tmp_path):
 def test_knob_off_never_searches_and_matches_legacy(tmp_path, monkeypatch):
     """Knob OFF: the road search / choice never run, no path is pinned, and
     _best_escape + _route_metrics return exactly what the legacy code (the
-    verbatim pre-change bodies, reproduced here) returns."""
-    s, g = _session(tmp_path, escape_road_network=False)
+    verbatim pre-change bodies, reproduced here) returns. The legacy bodies
+    sample every ~275 m: SAFETY SEMANTICS 20a's cell-exact samples (armed by
+    the simulator since 2026-10-09) are pinned off so the identity compares
+    like with like (the cell-exact law: tests/test_crew_egress_judged.py)."""
+    s, g = _session(tmp_path, escape_road_network=False,
+                    corridor_cell_exact=False)
     now = s._now_s
     _fire(s, paint_p10=[(_pt(90, 1.5), 400.0, now + 60.0)])
 

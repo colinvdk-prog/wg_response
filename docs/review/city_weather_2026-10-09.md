@@ -87,6 +87,10 @@ below).
    scenarios stay at zero. With today's speed rule (before the grass-only
    change lands) the one is Aspen instead of Malibu. It needs a fix in the
    crew-safety code before the city weather is shown to a client.
+   **Fixed the same day** (`docs/SIMULATOR_DESIGN.md` "No crew drives an
+   unjudged leg (2026-10-09)", contracts SAFETY SEMANTICS 20): the weak spots
+   were in how the crew-safety code judged the roads crews drive, not in the
+   weather.
 2. **More wind burns less on these maps.** Measured on the Eagle, Rancho Santa
    Fe and Park City maps: with the same humidity, the burned area after 6 hours
    falls as the wind rises from 10 to about 30 mph (Eagle: 1,889 acres at
@@ -375,8 +379,9 @@ ignition cell (burning since T+0), inside the 550 m grass erosion band, so the
 10c audit reports it. The crew-safety code reads only the arrival fields, never
 the weather, and the fields are consistent where checked (P10 before the
 nominal arrival). These three tests pin the legacy presets they were derived
-under; `test_known_gap_young_fire_egress_overrun_under_city_weather` records the
-gap as a strict xfail that will fail once the gap is fixed. The crew-safety
+under; `test_known_gap_young_fire_egress_overrun_under_city_weather` recorded the
+gap as a strict xfail (fixed 2026-10-09: now
+`test_young_fire_leg_no_overrun_under_city_weather`, below). The crew-safety
 scenario of `test_simui.py` (controlled tile, 2 crews, 40 ticks) stays clean
 under city weather at every intensity in Boulder, Paradise, Park City and
 Malibu.
@@ -395,6 +400,20 @@ break it. Two options: fix the egress gap (a crew should not be routed to, or
 out past, a point inside the eroded band), or keep city weather off until
 then. The default is one constant: `simui.SIM_WEATHER_PROFILE` (`"generic"`
 restores the old presets for every location).
+
+**Update 2026-10-09: fixed.** The egress gap is closed in the crew-safety code
+(contracts SAFETY SEMANTICS 20; `docs/SIMULATOR_DESIGN.md` "No crew drives an
+unjudged leg (2026-10-09)"). Root causes, all in how the code judged the roads
+crews drive: a crew withdrawn at an early home drove to the safe zone planned
+for the END of its route on a road nobody had checked from that home (Malibu);
+a crew driving to a zone kept going when the zone would be threatened before
+the next check (Aspen, and Glenwood in the wider sweep); a voluntary move rode
+road the law had judged exposed (Eagle); and the corridor check sampled every
+300 m, stepping over the corner of the ignition cell's band (the triage test).
+The sweep of all thirteen one-click scenarios at every intensity, both weather
+tables and both speed floors (208 runs, 6 h) is at 0 overrun ticks and 0
+departure violations. The strict xfail is now a passing test
+(`tests/test_city_weather.py::test_young_fire_leg_no_overrun_under_city_weather`).
 
 ## Engine notes
 

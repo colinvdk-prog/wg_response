@@ -1120,5 +1120,189 @@ before/after of the thirteen one-click scenarios, sources).
 - **Known limits / findings** (review doc): airports, not slopes (nights recover more than
   on thermal-belt slopes); one shape per class; the event starts with the fire (06:13-07:13
   local in the one-click scenarios); a crew-safety gap the new fire behaviour exposes
-  (Malibu one-click: one overrun tick; reproduced with the old presets at high / moderate);
+  (Malibu one-click: one overrun tick; reproduced with the old presets at high / moderate —
+  fixed the same day: "No crew drives an unjudged leg (2026-10-09)" below);
   burned area falls as wind rises on the real tiles (a spread-review item).
+
+## No crew drives an unjudged leg (2026-10-09)
+
+The founder's standing law: crews must never be caught by fire (contracts SAFETY SEMANTICS 10,
+*"crews G1/G2 caught in fire"*). City weather (above) surfaced SEM-10c crew-overrun rows the
+law did not prevent (`docs/review/city_weather_2026-10-09.md` "Safety: one gap"). This is the
+root cause and the fix: contracts **SAFETY SEMANTICS 20**, two default-OFF knobs
+(`corridor_cell_exact`, `crew_egress_judged`; README config table), both armed in the
+simulator's sim-defaults block (explicit `cfg_overrides` win; the live engine is unchanged).
+Code: `geo.path_cell_runs`, `safety.LegOracle` (cell samples), `simui` `_sem10_points` /
+`_cell_span_walk` / `_leg_lawful` / `_judge_egress_start` / `_rejudge_egress`. Tests:
+`tests/test_crew_egress_judged.py` and
+`tests/test_city_weather.py::test_young_fire_leg_no_overrun_under_city_weather` (the strict
+xfail, now passing). Sweep: `scratch_review/crew_egress_gap_sweep.py`, its records
+`crew_egress_gap_sweep_before.jsonl` (commit 8973cd9) and `crew_egress_gap_sweep_after.jsonl`.
+
+**For the founder.** A crew could end up inside the danger band in four ways, all in how the
+code checked the roads crews drive — none in the new weather. When a crew had to pull out of
+a home early for safety, it headed for the safe zone planned for the *end* of its route — in
+Malibu that is across the fire — and nobody had checked that road from where the crew
+actually was. A crew driving to a safe zone kept going even when the danger band would reach
+the zone soon after it got there. An early, voluntary move could take a road the system had
+itself marked as exposed. And the road check looked at points 300 m apart, so a road that
+clipped a danger spot between two points looked clear. The city weather changed which homes
+became jobs and which roads crews drove, and that exposed these gaps (the old weather caught
+Malibu crews the same way). Now every road a crew drives is checked square by square on the
+map for the moment the crew will be on it; every time a crew starts to drive out — after a
+pull-out or after its last home — the road from where it actually is gets checked first, and
+if it is not safe the crew goes to a safe zone it can reach safely; while it drives, its road
+and its destination are checked again every step; and an early move never takes an exposed
+road. Across all thirteen demo scenarios at every intensity, both weather tables and both
+fire-speed rules (208 runs of 6 hours): crews caught in the danger band 10 → 0;
+homes protected 5,792 → 5,827.
+
+**Measured before the fix.** The sweep: the 13 one-click scenarios (`server.SCENARIOS`, page
+physics: spotting on, grass floor 0.10, plan on roads, 24 h hold) × low / moderate / high /
+extreme (a non-preset intensity re-lit at the preset's own point and wind) × city / generic
+weather × the grass-only floor (the simulator default) and the old all-fuel floor, 6 h each:
+208 runs, **10 crew-overrun rows in 9 runs, every one "imminent" while egressing; 0 departure
+violations**. Every row traced (`scratch_review/crew_egress_gap_trace.py`):
+
+| Run | First row | Mechanism |
+|---|---|---|
+| Malibu extreme, city, grass-only | T+0.75 h sim-g1 | W |
+| Malibu high, city, grass-only | T+1.25 h sim-g1 | W |
+| Malibu high, city, all-fuel | T+1.75 h sim-g1 | W |
+| Malibu high, generic, grass-only (2 rows) | T+1.00 h sim-g1, T+1.75 h sim-g3 | W, W |
+| Malibu moderate, generic, grass-only | T+2.25 h sim-g3 | W |
+| Aspen high, city, all-fuel | T+3.50 h sim-g3 | Z |
+| Glenwood Springs extreme, generic, all-fuel | T+0.75 h sim-g1 | Z |
+| Glenwood Springs extreme, city, all-fuel | T+1.50 h sim-g1 | Z |
+| Eagle extreme, city, all-fuel | T+4.00 h sim-g3 | V |
+| synthetic triage scatter (`tests/test_simui.py`), city moderate | T+1.00 h sim-g1 | S |
+
+- **W — the withdrawal egress.** Dispatch (SEMANTICS 4) judges an egress from *every* stop to
+  that stop's own nearest lawful zone at its planned departure, and emits *one* zone per crew
+  plan: the last stop's (`dispatch.plan`: `egz` = the last stop's `egress_zone_id`). The
+  road-egress guard withdraws a crew at an early stop (projected departure + egress time past
+  the live latest-depart) and the simulator turned it onto that zone, on a road from THIS stop
+  no law had judged. Malibu city extreme: sim-g1, eleven stops, last-stop zone z3 (US-101 / Las
+  Virgenes, in the hills north of the fire), withdrawn at its second home on the coast at
+  T+0.52 h; the road to z3 runs east along the coast, across the downwind side of a fire the
+  Santa Ana pushes toward the sea; audited at T+0.75 h at a point the pessimistic band had
+  reached at T+0.37 h (5.1 km from the ignition). The 10a sweep could not catch it: it judges the
+  crew's own cell (one step of lead) at step ends, and a crew drives 10–15 km in a step.
+- **Z — the zone after arrival.** Dispatch's egress law clears a zone at the arrival instant
+  (eroded P10 ≥ arrival + 30 min); the crew then waits there up to a step for the next audit.
+  The 10b sweep re-checked an egressing (or deploying) crew's zone by its own cell at **zero**
+  lead, while relocation targets get one step. Aspen: zone z1's eroded P10 was T+3.83 h; at the
+  T+3.25 h sweep 3.83 > 3.25 + 0.5, "safe"; the crew finished its last home, arrived, and the
+  T+3.5 h audit found 3.83 < 4.0.
+- **V — the voluntary decamp.** SEM-10e's exposed-transit fallback (a durable zone over road
+  the law judges exposed but not yet burned) — skipped only on extended tiles, whose graph was
+  thought to be the only one offering such routes — rode 915 s of exposed transit (worst margin
+  −110 min) toward Eagle's z2 and was audited 1.1 km short of it.
+- **S — the sampling gap.** The corridor law samples every 300 m, SEM-10 every ~275 m: on a
+  90 m grid one cell in three. On the triage scatter's 500 m grid the ignition cell's eroded
+  band (burning since T+0) is the cell and its four neighbours; the crew's chord between two
+  homes clipped the corner of the west neighbour between samples reading T+17 h and T+10 h —
+  the plan judged it 9 h clear — and the T+1.0 h audit found the crew in that cell, 467 m from
+  the ignition cell.
+
+**What "imminent" meant.** The 10c audit flags a crew whose cell's eroded P10 is earlier than
+now + the 30-min egress buffer: the pessimistic (P10) front, widened by the erosion radius
+(550 m grass, 200 m shrub, 150 m timber), is within half an hour of the crew. In every row
+above the actual (nominal) fire had not reached the crew; the law counts the margin, and the
+law is the founder's.
+
+**Does the corridor law see the ignition cell's own arrival?** Yes: the eroded field carries it
+(T+0 in that cell and in every cell within the erosion radius). What it missed was a cell its
+samples stepped over. **Do forecast changes between cycles open a window?** No: a city
+forecast's daily cycle is solved into each fire's arrival field once — the field is re-solved
+only on a world change or the horizon rebase (verified: one field object across the 6-tick
+triage run and the Malibu run, under a forecast that changes every hour). The cycle decides
+which homes become jobs and when (the cool morning holds the young fire small while the
+afternoon forecast brings homes into the notice window), so the plan sends crews down
+different roads; the gaps were there under the old weather too (Malibu high / moderate).
+
+**The fix.**
+- **(a) `corridor_cell_exact`.** Every raster cell a leg passes through (`geo.path_cell_runs`:
+  the leg followed linearly in lat/lon, as crews drive it) is also a sample, judged at the
+  latest moment the crew is in it (where the leg leaves the cell) — in `safety.LegOracle`
+  (dispatch's ingress and egress law) and in the SEM-10 judgement (`_route_metrics` and the
+  road-network escape search share one per-span walk, so their numbers stay equal). The legacy
+  samples stay; the crew's own starting cell keeps its carve-out while the walk has not left it.
+- **(b) `crew_egress_judged`.** (i) When a crew turns onto an egress leg from a stop (a
+  withdrawal, or leaving its last stop) that leg — the road it will drive, at the speed it
+  drives it — must be lawful from where it is: nothing burned at its pass time, every sample's
+  eroded P10 at least the buffer beyond its pass time, the zone clear one step beyond arrival;
+  else the SEM-10d routed choice replaces it (note: "egress re-routed (SEMANTICS 20b)"). (ii)
+  The sweep re-judges every egress in flight the same way; a lawful alternative always wins,
+  between unlawful ones the escape hysteresis decides. (iii) A voluntary decamp never rides
+  exposed transit, on any tile.
+
+**After the fix** (same sweep; per run: homes served before → after, `[ovt b → a]` where a run
+had overrun ticks; 0 departure violations in every run before and after):
+
+| Scenario | Intensity | city / grass-only floor | city / all-fuel floor | generic / grass-only floor | generic / all-fuel floor |
+|---|---|---|---|---|---|
+| aspen_southwesterly | low | 0 → 0 | 36 → 36 | 0 → 0 | 36 → 36 |
+| aspen_southwesterly | moderate | 0 → 0 | 36 → 36 | 25 → 25 | 23 → 27 |
+| aspen_southwesterly | high | 11 → 11 | 33 → 33 [ovt 1 → 0] | 21 → 21 | 13 → 13 |
+| aspen_southwesterly | extreme | 25 → 25 | 28 → 26 | 22 → 22 | 13 → 13 |
+| basalt_carbondale_southwesterly | low | 31 → 31 | 36 → 36 | 32 → 32 | 36 → 36 |
+| basalt_carbondale_southwesterly | moderate | 32 → 32 | 37 → 37 | 25 → 25 | 29 → 29 |
+| basalt_carbondale_southwesterly | high | 30 → 30 | 28 → 28 | 13 → 13 | 13 → 13 |
+| basalt_carbondale_southwesterly | extreme | 30 → 30 | 36 → 36 | 11 → 11 | 7 → 7 |
+| beaver_creek_westerly | low | 15 → 15 | 37 → 37 | 24 → 24 | 38 → 37 |
+| beaver_creek_westerly | moderate | 23 → 23 | 35 → 35 | 29 → 29 | 27 → 28 |
+| beaver_creek_westerly | high | 26 → 26 | 26 → 24 | 21 → 21 | 19 → 20 |
+| beaver_creek_westerly | extreme | 29 → 29 | 20 → 22 | 26 → 26 | 16 → 16 |
+| boulder_chinook | low | 27 → 27 | 27 → 27 | 26 → 26 | 26 → 26 |
+| boulder_chinook | moderate | 25 → 25 | 26 → 26 | 26 → 26 | 26 → 26 |
+| boulder_chinook | high | 26 → 26 | 25 → 25 | 18 → 18 | 22 → 22 |
+| boulder_chinook | extreme | 26 → 26 | 27 → 27 | 25 → 25 | 26 → 26 |
+| eagle_gypsum_westerly | low | 30 → 30 | 30 → 30 | 24 → 24 | 24 → 24 |
+| eagle_gypsum_westerly | moderate | 28 → 28 | 29 → 29 | 23 → 23 | 26 → 26 |
+| eagle_gypsum_westerly | high | 23 → 23 | 26 → 26 | 20 → 20 | 27 → 27 |
+| eagle_gypsum_westerly | extreme | 24 → 24 | 24 → 24 [ovt 1 → 0] | 21 → 21 | 17 → 17 |
+| eagle_vail_corridor_westerly | low | 1 → 1 | 22 → 22 | 8 → 8 | 23 → 23 |
+| eagle_vail_corridor_westerly | moderate | 7 → 7 | 21 → 21 | 9 → 9 | 21 → 21 |
+| eagle_vail_corridor_westerly | high | 1 → 1 | 19 → 19 | 8 → 8 | 16 → 16 |
+| eagle_vail_corridor_westerly | extreme | 8 → 8 | 17 → 17 | 12 → 12 | 14 → 14 |
+| glenwood_springs_westerly | low | 26 → 26 | 39 → 39 | 32 → 32 | 39 → 39 |
+| glenwood_springs_westerly | moderate | 33 → 33 | 34 → 34 | 23 → 23 | 22 → 22 |
+| glenwood_springs_westerly | high | 32 → 32 | 21 → 21 | 11 → 11 | 14 → 13 |
+| glenwood_springs_westerly | extreme | 23 → 23 | 20 → 16 [ovt 1 → 0] | 9 → 7 | 5 → 6 [ovt 1 → 0] |
+| malibu_santa_ana | low | 0 → 0 | 0 → 0 | 30 → 28 | 32 → 32 |
+| malibu_santa_ana | moderate | 31 → 34 | 35 → 35 | 21 → 23 [ovt 1 → 0] | 22 → 22 |
+| malibu_santa_ana | high | 14 → 21 [ovt 1 → 0] | 15 → 20 [ovt 1 → 0] | 3 → 9 [ovt 2 → 0] | 9 → 9 |
+| malibu_santa_ana | extreme | 10 → 17 [ovt 1 → 0] | 14 → 14 | 6 → 6 | 6 → 6 |
+| paradise_ne_wind | low | 29 → 29 | 29 → 29 | 31 → 31 | 35 → 35 |
+| paradise_ne_wind | moderate | 14 → 14 | 26 → 26 | 29 → 29 | 27 → 27 |
+| paradise_ne_wind | high | 30 → 30 | 23 → 23 | 24 → 24 | 14 → 14 |
+| paradise_ne_wind | extreme | 28 → 28 | 23 → 23 | 18 → 18 | 9 → 9 |
+| park_city_windstorm | low | 34 → 34 | 36 → 36 | 36 → 36 | 33 → 33 |
+| park_city_windstorm | moderate | 33 → 33 | 35 → 35 | 32 → 34 | 30 → 30 |
+| park_city_windstorm | high | 32 → 32 | 22 → 28 | 14 → 14 | 20 → 20 |
+| park_city_windstorm | extreme | 32 → 32 | 30 → 31 | 17 → 17 | 11 → 11 |
+| rancho_santa_fe_santa_ana | low | 99 → 99 | 100 → 100 | 98 → 98 | 100 → 100 |
+| rancho_santa_fe_santa_ana | moderate | 99 → 99 | 99 → 99 | 95 → 94 | 94 → 94 |
+| rancho_santa_fe_santa_ana | high | 95 → 95 | 97 → 97 | 90 → 91 | 90 → 90 |
+| rancho_santa_fe_santa_ana | extreme | 96 → 95 | 98 → 98 | 83 → 83 | 79 → 81 |
+| santa_rosa_diablo | low | 25 → 25 | 27 → 27 | 25 → 25 | 26 → 26 |
+| santa_rosa_diablo | moderate | 24 → 24 | 27 → 27 | 24 → 24 | 22 → 22 |
+| santa_rosa_diablo | high | 24 → 24 | 22 → 22 | 13 → 13 | 15 → 15 |
+| santa_rosa_diablo | extreme | 23 → 23 | 16 → 16 | 13 → 13 | 9 → 9 |
+| vail_westerly | low | 0 → 0 | 40 → 40 | 0 → 0 | 39 → 39 |
+| vail_westerly | moderate | 8 → 8 | 39 → 39 | 13 → 13 | 28 → 28 |
+| vail_westerly | high | 11 → 11 | 29 → 29 | 12 → 12 | 21 → 21 |
+| vail_westerly | extreme | 13 → 13 | 32 → 32 | 12 → 12 | 15 → 15 |
+
+**Cost.** Homes served over the 208 runs 5,792 → 5,827 (+35; 16 runs up, 9 down, 183 unchanged; largest drops glenwood_springs_westerly extreme city all 20 → 16, aspen_southwesterly extreme city all 28 → 26, beaver_creek_westerly high city all 26 → 24; largest gains malibu_santa_ana extreme city grass 10 → 17, malibu_santa_ana high city grass 14 → 21, park_city_windstorm high city all 22 → 28). Safety withdrawals 26 → 25, relocations 129 → 113, crews that left the map 8 → 14 (Paradise ×5, Vail ×1: with no exposed-transit decamp on offer, the lawful SEM-10e road decamp found its durable refuge on a road point past the tile edge — out of the simulation by the founder's ruling; homes served in those four runs unchanged within the 6 h). Wall time of the sweep 9,268 s → 10,009 s (+8 %, 4-5 parallel workers, the machine also running other work — indicative only).
+
+**Limits.** The laws read the forecast fields: a crew is safe from the audit only as far as the
+eroded P10 is pessimistic. An in-flight *ingress* leg is judged when it is planned (now
+cell-exact) and again only when its crew is re-planned; a world change mid-leg (wind dial, a
+new ignition) is caught by the per-cell sweep, one step of lead at a time. An emergency
+relocation (10a: the crew's own cell already threatened) still takes the least-exposure leg
+when no lawful one exists, and a genuinely cornered crew is still reported. Dispatch still
+emits one zone per crew plan and the road-egress guard still times the egress to it
+(conservative: it may withdraw earlier than a nearer zone would need). The census and
+60-scenario benches were not re-run.

@@ -551,16 +551,23 @@ def test_crew_safety_holds_under_city_weather(tmp_path, key, intensity):
     assert st["scoreboard"]["served"] >= 1, "vacuous: nothing serviced"
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "KNOWN CREW-SAFETY GAP exposed by city weather (docs/review/"
-    "city_weather_2026-10-09.md, 'Safety: one gap'): under the daily cycle "
-    "the young fire is small and slow in the morning while the forecast's "
-    "afternoon makes homes jobs; the single crew's egress passes ~470 m from "
-    "the burning ignition cell, inside the 550 m eroded-P10 band, and the "
-    "SEM-10c audit reports it (constant weather at either end of the cycle: "
-    "no overrun). The crew-safety code reads only the arrival fields. When "
-    "the gap is fixed this XPASSes: drop the xfail."))
-def test_known_gap_young_fire_egress_overrun_under_city_weather(tmp_path):
+def test_young_fire_leg_no_overrun_under_city_weather(tmp_path):
+    """The crew-safety gap city weather exposed — once a STRICT XFAIL
+    (test_known_gap_young_fire_egress_overrun_under_city_weather; docs/
+    review/city_weather_2026-10-09.md "Safety: one gap"), fixed by SAFETY
+    SEMANTICS 20 (2026-10-09; docs/SIMULATOR_DESIGN.md "No crew drives an
+    unjudged leg"). Under the daily cycle the young fire is small in the
+    cool morning while the afternoon forecast turns homes into jobs; the
+    single crew's straight leg from one home to the next clipped the corner
+    of the cell west of the ignition cell — 467 m from it, inside its 550 m
+    eroded band (eroded P10 = the ignition time) — between two 300 m
+    corridor samples that read 17 h and 10 h, so the plan judged the leg 9 h
+    clear and the 10c audit found the crew inside the band at T+1.0 h. The
+    cell-exact corridor (contracts corridor_cell_exact, armed by the
+    simulator) samples every cell a leg passes through: the plan never
+    schedules that leg. The weather only chose the plan; the arrival fields
+    the corridor law reads were the same all along. The knob-off arm proves
+    the law is what closes it (tests/test_crew_egress_judged.py)."""
     from tests.test_simui import (_nudge_to_burnable, _triage_scatter_dir,
                                   _upwind_ignition)
     d = _triage_scatter_dir(tmp_path, seed="C")
@@ -568,11 +575,13 @@ def test_known_gap_young_fire_egress_overrun_under_city_weather(tmp_path):
         "ensemble_n": 3, "grid_cell_m": 500.0, "horizon_h": 120.0},
         tile_dir=d, roads_module=None)
     assert s._city_wx is not None
+    assert s._cfg.corridor_cell_exact and s._cfg.crew_egress_judged
     ign = _nudge_to_burnable(s, _upwind_ignition("boulder_co", 5_000.0))
     s.ignite(ign.lat, ign.lon, intensity="moderate")
     for _ in range(6):
         st = s.tick()
         assert st["scoreboard"]["violations"] == 0, st["crew_overruns"]
+    assert st["scoreboard"]["served"] >= 1, "vacuous: nothing serviced"
 
 
 # ---------------------------------------------------------------------------

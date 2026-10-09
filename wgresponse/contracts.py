@@ -729,6 +729,89 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    before this rule existed, on worlds where it bites: a high-wind corridor,
    a mixed-fuel tile with a perimeter, a re-anchor with embers aloft, an
    ensemble and the committed Park City tile under both floor class sets).
+20. NO CREW DRIVES A LEG THE LAW HAS NOT JUDGED (2026-10-09; the crew-
+   overrun gap the simulator's city weather exposed — docs/review/
+   city_weather_2026-10-09.md "Safety: one gap"; docs/SIMULATOR_DESIGN.md
+   "No crew drives an unjudged leg"; scratch_review/crew_egress_gap_
+   sweep.py). The 10c audit judges a crew's EXACT position at every step;
+   the laws that steer crews judged less than that, so a crew could be sent
+   into the eroded-P10 band down a leg no law had judged lawful. Measured
+   before the rule on the 13 one-click scenarios x 4 intensities x city /
+   generic weather x both ROS-floor class sets (208 runs, 6 h each): 10
+   crew-overrun rows in 9 runs, every one "imminent" while egressing, 0
+   departure violations. The weather only changed WHICH legs got driven:
+   the arrival fields the laws read do not change between cycles (a city
+   forecast's daily cycle is solved into the field once; re-anchors happen
+   only on a world change). Four mechanisms, none in the weather:
+     W  a WITHDRAWAL egress (6 rows, all Malibu): the road-egress guard
+        aborts a deploy at an early stop and the crew drives to its route's
+        adopted zone — the LAST stop's — on a road from THIS stop no law
+        had judged (east through the band, toward a zone across the fire);
+     Z  a ZONE imminent at the first audit after arrival (3 rows: Aspen,
+        Glenwood x2): dispatch's egress law clears the zone at the arrival
+        instant only, and the 10b sweep re-checked an egress in flight by
+        the zone's own cell at ZERO lead — the front reached it inside the
+        buffer before the next audit;
+     V  a VOLUNTARY decamp over exposed transit (1 row: Eagle): the SEM-10e
+        exposed-transit fallback rode 915 s of pessimistic-exposed road to
+        a lawful zone (the extended-only escape_proactive_lawful_only
+        assumed the standard graph never offers such routes);
+     S  a SAMPLING gap (the synthetic triage scatter): see (a).
+   (a) CELL-EXACT CORRIDOR (cfg.corridor_cell_exact). SEMANTICS 3 samples a
+       leg every corridor_sample_m (300 m), and the SEM-10 route judgement
+       every ~275 m — on a 90 m grid one cell in three. A leg that clips a
+       cell between two samples is never judged there; measured on the
+       synthetic triage scatter (500 m cells): a chord passing 467 m from
+       the ignition cell, inside its 550 m eroded band (eroded P10 = the
+       ignition time), read 9 h clear at its samples, and the crew was
+       audited inside the band. With the knob on, every raster cell a leg
+       passes through (geo.path_cell_runs: the leg followed linearly in lat/
+       lon, as the simulator's crews drive it) with a finite arrival is
+       ALSO a sample, judged at the latest moment the crew is in it — the
+       distance at which the leg leaves the cell. safety.LegOracle (the
+       dispatch ingress / egress law; the live engine's too if armed) and
+       the simulator's SEM-10 judgement (_route_metrics, the road-network
+       escape search — both on one per-span sample walk, so their numbers
+       stay equal — and every relocation / escape / decamp choice) read it;
+       the crew's own starting cell keeps its SEM-10 carve-out while the
+       walk has not left it (a crew standing in the burn must be able to
+       drive out). The legacy samples all stay (never weaker); off-raster
+       and unreached stretches keep their legacy (fail-closed: bounded)
+       samples.
+   (b) EVERY LEG A CREW STARTS IS JUDGED (cfg.crew_egress_judged; read only
+       by the simulator — the live engine moves no crew). (i) The moment a
+       crew turns onto an egress leg from a stop — a safety withdrawal (the
+       road-egress guard, eta drift, a policy change) or leaving its last
+       stop — that leg (the road it will drive, at the speed it drives it,
+       from where it is at that moment) must be LAWFUL: nothing burned at
+       its pass time, every sample's eroded P10 at least egress_buffer_min
+       beyond its pass time (the 10c imminent line), and the destination's
+       at least one step (the sweep's lead) beyond its arrival; else the
+       SEM-10d routed choice (a lawful zone, else the road-network escape,
+       else the least exposure) replaces the target, with a loud note
+       (dispatch still judges each stop's own nearest lawful zone, SEMANTICS
+       4, and still emits one zone per crew plan: W). (ii) The sweep re-
+       judges every egress in flight the same way each step (legacy: the
+       zone's own cell, zero lead: Z); a LAWFUL alternative always replaces
+       an unlawful leg, and between two unlawful legs the escape hysteresis
+       decides. Deploying crews keep the legacy 10b zone check (their egress
+       is judged when it starts). (iii) A VOLUNTARY SEM-10e decamp never
+       rides exposed transit, on any tile (the exposed-transit zone fallback
+       is not offered — exactly escape_proactive_lawful_only, which the
+       simulator arms for extended sessions: V); the lawful zone and lawful
+       road-node decamps are unchanged, and with no lawful exit the imminent
+       law still owns the emergency.
+   WHAT IT CANNOT DO: the laws read the forecast fields; a crew is safe
+   from the 10c audit only as far as the eroded P10 is pessimistic. An
+   in-flight INGRESS leg is judged when it is planned (cell-exact) and re-
+   judged only when its crew is re-planned; a world change mid-leg (wind
+   dial, a new ignition) is caught by the per-cell sweep, one step of lead
+   at a time. An EMERGENCY relocation (10a: the crew's own cell already
+   threatened) still takes the least-exposure leg when no lawful one exists,
+   and a crew genuinely cornered is still reported by the audit. Both knobs
+   OFF = byte-identical (pinned in tests/test_crew_egress_judged.py against
+   goldens computed on commit 8973cd9, before this rule existed, on worlds
+   where it bites); the SIMULATOR arms both (explicit override wins).
 21. THE FIRE MAY RUN IN ANY DIRECTION, NOT ONLY THE GRID'S (grid-orientation
    review 2026-10-09; docs/review/grid_orientation_2026-10-09.md;
    scratch_review/grid_orientation_probe.py; cfg.spread_any_angle, default
@@ -808,6 +891,9 @@ wgresponse.geo
     sample_polyline(a: LatLon, b: LatLon, step_m: float) -> list[LatLon]
     bbox_around(points: list[LatLon], pad_m: float) -> BBox
     erode_min(r: Raster, radius_m: float) -> Raster        # morphological min filter
+    # SAFETY SEMANTICS 20a (2026-10-09, supplemental): path_cell_runs(spec,
+    # path) -> (exit distances m, flat cell indices) — every grid cell a
+    # polyline passes through, in driving order (the cell-exact corridor law)
 
 wgresponse.fuels
     FUEL_TABLE: dict[int, FuelModel]         # FBFM40 codes -> params (pinned, provenance-commented)
@@ -2296,6 +2382,9 @@ class ResponseConfig:
     # simulator arms it for EXTENDED fire-zone sessions, whose extended road
     # graph opens exposed-transit routes the standard graph never offered
     # (the pinned Camp-Fire-scale run: one tick-23 imminent row -> 0).
+    # Since 2026-10-09 crew_egress_judged (SAFETY SEMANTICS 20b-iii) applies
+    # the same rule on EVERY tile: the standard Eagle graph offered one (an
+    # extreme city-weather decamp rode 915 s of exposed transit).
     escape_proactive_lawful_only: bool = False
     # TRANSIT-HAZARD STAGE 1 (founder "perform stage 1" 2026-07-30;
     # docs/transit_hazard_determination.md): per-fuel-class cold-black
@@ -2343,6 +2432,40 @@ class ResponseConfig:
     # ranks before every off-map one. Read only with left_map_out. False =
     # the legacy order, byte-identical. The SIMULATOR arms it.
     escape_prefer_on_map: bool = False
+    # NO CREW DRIVES A LEG THE LAW HAS NOT JUDGED (2026-10-09, the crew-
+    # overrun gap the simulator's city weather exposed; SAFETY SEMANTICS 20;
+    # docs/SIMULATOR_DESIGN.md "No crew drives an unjudged leg"). Two knobs.
+    # CELL-EXACT CORRIDOR (20a): the corridor law samples a leg every
+    # corridor_sample_m (300 m) — on a 90 m grid one cell in three, and a
+    # leg that clips a cell between two samples is never judged there
+    # (measured: a chord 467 m from a cell burning since the ignition,
+    # inside its 550 m eroded band, read 9 h clear). When True every raster
+    # cell a leg passes through is ALSO a sample, judged at the latest
+    # moment the crew is in it — in safety.LegOracle (dispatch's ingress /
+    # egress law; the live engine's too if armed) and in the simulator's
+    # SEM-10 route judgement (relocation / escape / decamp choices, the
+    # road-network escape search). The legacy samples all stay. False =
+    # byte-identical. The SIMULATOR arms it; the live watcher does not (the
+    # founder decides).
+    corridor_cell_exact: bool = False
+    # EVERY LEG A CREW STARTS IS JUDGED (20b, read only by the simulator —
+    # the live engine moves no crew). Measured before the rule (one-click
+    # sweep, 208 runs): 6 overrun rows from a crew withdrawn at an early
+    # stop driving to its route's adopted zone — the LAST stop's, whose road
+    # from THIS stop no law had judged (dispatch validates each stop's own
+    # nearest lawful zone and emits only the last one) — 3 from an egress
+    # whose zone the pessimistic front reached inside the buffer before the
+    # next audit (the 10b sweep checked the zone's own cell at zero lead),
+    # 1 from a voluntary SEM-10e decamp over exposed transit. When True: the
+    # moment a crew turns onto an egress leg from a stop (a withdrawal, or
+    # leaving its last stop) that leg is judged from where the crew is
+    # (every sample's eroded P10 >= pass + egress buffer, nothing burned,
+    # the zone clear one step beyond arrival) and the SEM-10d routed choice
+    # replaces it when it fails; the sweep re-judges every egress in flight
+    # the same way; a voluntary decamp never rides exposed transit (the
+    # escape_proactive_lawful_only rule, on every tile). False = byte-
+    # identical. The SIMULATOR arms it.
+    crew_egress_judged: bool = False
     # --- gel product parameters (UNVERIFIED — pending supplier data) ---
     gel_window_h: float = 72.0         # operational window after application (outer weathering/wash-off horizon still UNVERIFIED)
     gel_full_strength_h: float = 72.0  # == gel_window_h: GraphGel is Class A at 1/8" DRY — flat effectiveness, no decay ramp (product data 2026-07-11)
