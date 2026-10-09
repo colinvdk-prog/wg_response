@@ -315,6 +315,10 @@ def _real_session(key, intensity, bearing, dist_m=None, ignition=None,
     s = SimSession(key, 8, 1, seed=seed,
                    cfg_overrides={"spotting_enabled": True,
                                   "grass_ros_floor_frac": 0.10,
+                                  # PHYSICS PIN (2026-10-09): this scenario was built under the simulator's
+                                  # timber-floored ROS (before the grass-only default); pin that physics so
+                                  # the situation under test still forms. The law under test is speed-blind.
+                                  "ros_floor_grass_only": False,
                                   **({} if p50_bound is None else
                                      {"ensemble_p50_nominal_bound": p50_bound})},
                    roads_module=None)

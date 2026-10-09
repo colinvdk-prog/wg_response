@@ -2350,6 +2350,17 @@ class SimSession:
             cfg.left_map_out = True
         if "escape_prefer_on_map" not in overrides:
             cfg.escape_prefer_on_map = True
+        # ROS-FLOOR CLASS SET IN THE SIMULATOR (founder 2026-10-09: "limit the
+        # speed rule to grass in the simulator"). The page's "Realistic grass
+        # speed" floor (grass_ros_floor_frac) stays on grass (GR) and grass-
+        # shrub (GS) only; timber understory and litter (TU/TL) spread on the
+        # Rothermel physics alone. Measured: the Park City one-click fire at
+        # 1 h 45 fell from 3,054 to 36 acres (docs/review/park_city_speed_
+        # 2026-10-09.md); on 11 real fires the area over-prediction fell from
+        # 3.5x to 2.3x (docs/review/belief_vs_physics_2026-09-27.md). Explicit
+        # override wins; the live engine's default is unchanged.
+        if "ros_floor_grass_only" not in overrides:
+            cfg.ros_floor_grass_only = True
 
         # --- roads (contracts wgresponse.roads seam; loaded ONCE per
         # configure). LAZY import: the sibling module lands independently —

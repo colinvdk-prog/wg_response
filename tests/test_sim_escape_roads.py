@@ -475,6 +475,10 @@ def test_real_tile_escape_drives_roads_to_a_node():
     s = SimSession(key, 40, 6, seed="roads-probe", n_crews_1h=1, n_crews_3h=1,
                    cfg_overrides={"spotting_enabled": True,
                                   "grass_ros_floor_frac": 0.10,
+                                  # PHYSICS PIN (2026-10-09): this scenario was built under the simulator's
+                                  # timber-floored ROS (before the grass-only default); pin that physics so
+                                  # the situation under test still forms. The law under test is speed-blind.
+                                  "ros_floor_grass_only": False,
                                   "dispatch_late_shift": True,
                                   "dispatch_plan_on_roads": True,
                                   "dispatch_hold_h": 24.0, "deploy_min": 15.0,
