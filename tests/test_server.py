@@ -297,7 +297,11 @@ CONSOLE_DIR = Path(__file__).resolve().parent.parent / "console"
 SIMULATOR_HTML = CONSOLE_DIR / "simulator.html"
 
 # Config-only speedups shared by the API tests (same as tests/test_simui.py).
-SIM_FAST = {"ensemble_n": 3, "grid_cell_m": 500.0, "horizon_h": 24.0}
+# sim_weather_profile "generic": the simulator API tests were derived under
+# the legacy constant intensity presets and pin them (the simulator default
+# is now each community's own weather, 2026-10-09; tests/test_city_weather.py)
+SIM_FAST = {"ensemble_n": 3, "grid_cell_m": 500.0, "horizon_h": 24.0,
+            "sim_weather_profile": "generic"}
 
 SIM_KEY = "boulder_co"
 # Ignition 8 km upwind of center: the hazard wind then drives the fire back

@@ -51,7 +51,11 @@ from wgresponse.simui import (
 )
 from wgresponse.terrain import SyntheticTerrain, save_ascii_tile
 
-FAST = {"ensemble_n": 3, "grid_cell_m": 500.0, "horizon_h": 24.0}
+# sim_weather_profile "generic": derived under the legacy constant intensity
+# presets and pinned to them (the simulator default is now each community's
+# own weather, 2026-10-09; tests/test_city_weather.py)
+FAST = {"ensemble_n": 3, "grid_cell_m": 500.0, "horizon_h": 24.0,
+        "sim_weather_profile": "generic"}
 KEY = "boulder_co"
 CENTER = LOCATIONS[KEY].center
 WIND = LOCATIONS[KEY].hazard_wind_dir_deg          # 270: FROM the west

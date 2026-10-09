@@ -41,9 +41,18 @@ from wgresponse.simui import (
 )
 from wgresponse.terrain import SyntheticTerrain, save_ascii_tile
 
+#: SIMULATOR CITY WEATHER (2026-10-09, contracts sim_weather_profile): the
+#: simulator now defaults to each community's own weather (daily cycle +
+#: finite wind event). The scripted scenarios in this file were derived under
+#: the legacy generic presets (one constant table) and PIN them — the same
+#: fire behaviour and the same safety assertions, never re-pinned numbers.
+#: City weather has its own coverage in tests/test_city_weather.py.
+LEGACY_WX = {"sim_weather_profile": "generic"}
+
 # Fast-engine overrides shared by the scripted-session tests: small ensemble,
 # coarse grid, short horizon — config only, never forked physics.
-FAST = {"ensemble_n": 3, "grid_cell_m": 500.0, "horizon_h": 24.0}
+FAST = {"ensemble_n": 3, "grid_cell_m": 500.0, "horizon_h": 24.0,
+        **LEGACY_WX}
 
 
 def _controlled_tile_dir(tmp_path, key, size_km=20.0, cell_m=500.0,
@@ -1411,7 +1420,8 @@ def test_fire_zone_extended_real_tile_integration(key):
                     f"— cannot compare fire-zone extents for {key}")
 
     s = SimSession(key, 12, 2, seed="fz-live",
-                   cfg_overrides={"ensemble_n": 2}, fire_zone="extended")
+                   cfg_overrides={"ensemble_n": 2, **LEGACY_WX},
+                   fire_zone="extended")
     st = s.state()
     assert st["fire_zone"] == "extended"
     assert st["terrain"]["synthetic"] is False
@@ -1493,7 +1503,7 @@ def test_subcell_fire_grows_bands_advance_and_burned_appears(tmp_path):
     d = _controlled_tile_dir(tmp_path, key, size_km=20.0, cell_m=1000.0)
     s = SimSession(key, 4, 1, seed="frozen-fire",
                    cfg_overrides={"ensemble_n": 3, "grid_cell_m": 1000.0,
-                                  "horizon_h": 48.0},
+                                  "horizon_h": 48.0, **LEGACY_WX},
                    tile_dir=d, roads_module=None)
     ign = _burnable_point(s)
     s.ignite(ign.lat, ign.lon, intensity="low")
@@ -1811,7 +1821,7 @@ def test_homes_mode_triage_reason_surfaces(tmp_path):
     d = _triage_scatter_dir(tmp_path, seed="C")
     s = SimSession("boulder_co", 50, 1, seed="C",
                    cfg_overrides={"ensemble_n": 3, "grid_cell_m": 500.0,
-                                  "horizon_h": 120.0},
+                                  "horizon_h": 120.0, **LEGACY_WX},
                    tile_dir=d, roads_module=None)
     assert s._cfg.dispatch_objective == "homes", "test must run the real default"
     ign = _nudge_to_burnable(s, _upwind_ignition("boulder_co", 5_000.0))
@@ -2077,7 +2087,7 @@ def test_client_outcome_precedence_pure():
 #: homes that is still BEYOND the notice horizon — the 'monitoring' band. extreme_h
 #: stays < notice_h (validate_config). config-only, never forked physics.
 MON_CFG = {"ensemble_n": 3, "grid_cell_m": 500.0, "horizon_h": 48.0,
-           "notice_h": 3.0, "extreme_h": 1.0}
+           "notice_h": 3.0, "extreme_h": 1.0, **LEGACY_WX}
 
 
 def test_outcome_monitoring_not_mislabeled_not_threatened(tmp_path):
@@ -2195,7 +2205,7 @@ def test_outcome_triaged_matches_reason(tmp_path):
     d = _triage_scatter_dir(tmp_path, seed="C")
     s = SimSession("boulder_co", 50, 1, seed="C",
                    cfg_overrides={"ensemble_n": 3, "grid_cell_m": 500.0,
-                                  "horizon_h": 120.0},
+                                  "horizon_h": 120.0, **LEGACY_WX},
                    tile_dir=d, roads_module=None)
     ign = _nudge_to_burnable(s, _upwind_ignition("boulder_co", 5_000.0))
     s.ignite(ign.lat, ign.lon, intensity="moderate")
@@ -2302,7 +2312,8 @@ def test_ember_wiring_replays_byte_identically(tmp_path):
 #: physics-ON reaches homes within the horizon that OFF's slower surface fire
 #: does not, and pulls the earliest arrival (embers) forward — a real on/off
 #: delta over a short run. config-only, never forked physics.
-PHYS_CFG = {"ensemble_n": 3, "grid_cell_m": 500.0, "horizon_h": 12.0}
+PHYS_CFG = {"ensemble_n": 3, "grid_cell_m": 500.0, "horizon_h": 12.0,
+            **LEGACY_WX}
 
 
 def _first_fire_burned_cells(session):
@@ -2816,7 +2827,8 @@ def test_crew_safety_paradise_founder_repro_when_tile_present():
         pytest.skip("LOUD SKIP: no data/tiles/paradise_ca_ext.wgt — the founder "
                     "Paradise repro is not exercised this run "
                     "(py -3 tools/fetch_sim_tiles.py --extended)")
-    s = SimSession("paradise_ca", 64, 5, seed="caught-1", fire_zone="extended")
+    s = SimSession("paradise_ca", 64, 5, seed="caught-1", fire_zone="extended",
+                   cfg_overrides=dict(LEGACY_WX))
     s.ignite(39.83, -121.52, intensity="extreme")
     idle_in_burn_ticks = 0
     hidden_ticks = 0

@@ -480,6 +480,14 @@ The 2026-09-27 audit of the live feed path the belief learns from (`wgresponse.f
 | `feed_sanity_drop_z` | 3.0 | A size (either series; and the seed vs its memory) this many sd of the difference below the last one is a drop, not a re-measurement, under the belief's own area error (`fire_belief_area_rel_err` / `_abs_err_acres`). History: genuine IncidentSize drops ≤ 6.4 % (≤ 1.6 sd); resets −43 % to −96 % (≥ 12 sd). |
 | `feed_sanity_memory_h` | 72.0 | How long the seed side remembers a fire's last plausible polygon after last seeing it (the longest measured collapse lasted ~48 h). In-process: a restart forgets it. |
 
+### Simulator city weather (2026-10-09)
+
+Founder, 2026-10-09: *"change the weather conditions for each city specific."* The interactive simulator builds its own synthetic weather; until now one table served every location (extreme = 40 mph, 6 % RH, 39 °C held for days). `docs/review/city_weather_2026-10-09.md` has the method, stations, sources and the before/after of the thirteen one-click scenarios; `tools/city_weather_climatology.py` reproduces the numbers. Read only by `wgresponse.simui`; the live engine never reads it.
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `sim_weather_profile` | generic | `generic` = the legacy intensity table (`simui.INTENSITY_WEATHER`), the same at every location and constant for the whole run — byte-identical. `city` = each community's own conditions per intensity (`simui.CITY_WEATHER`: airport-station fire-season climatology 2005–2024 ranked by the Fosberg index, checked against historic fire days, temperature and RH moved to the homes' elevation) with a daily cycle on local time (afternoon wind and low RH, overnight recovery) and, for high / extreme, a finite wind event from the ignition that holds, eases and returns to the community's moderate daily cycle. A location without a profile keeps the generic table. The SIMULATOR arms `city` (explicit override wins); seeded drills (`wgresponse.seeded`) keep the generic table. |
+
 ## Feed & data licensing posture
 
 Read this before pointing any adapter at a live endpoint.

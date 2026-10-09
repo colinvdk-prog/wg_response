@@ -54,8 +54,13 @@ from wgresponse.terrain import SyntheticTerrain, save_ascii_tile
 # (buffer 10 / slack 0) — the adoption-time rule the live tightening raises
 # to 120 (a from-scratch stop is never near the wire on honest fields; the
 # tight gap is created mid-deploy by _inject_spot_fire, module docstring).
+# sim_weather_profile "generic": these withdrawal-SAFETY demos were derived
+# under the legacy constant intensity presets (victim ids, arm ticks, p10
+# gaps, deficits) and PIN them — the simulator's default is now each
+# community's own weather (2026-10-09, tests/test_city_weather.py).
 FAST_TIGHT = {"ensemble_n": 3, "grid_cell_m": 500.0, "horizon_h": 24.0,
-              "slack_min": 0.0, "egress_buffer_min": 10.0}
+              "slack_min": 0.0, "egress_buffer_min": 10.0,
+              "sim_weather_profile": "generic"}
 KEY = "boulder_co"
 
 

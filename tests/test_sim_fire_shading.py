@@ -41,9 +41,13 @@ KEY = "boulder_co"
 CELL_M = 200.0
 SIM_HTML = Path(__file__).resolve().parent.parent / "console" / "simulator.html"
 
-# the page's session physics (server /api/sim/new defaults) on a small grid
+# the page's session physics (server /api/sim/new defaults) on a small grid;
+# sim_weather_profile "generic": derived under the legacy constant intensity
+# presets and pinned to them (the simulator default is now each community's
+# own weather, 2026-10-09; tests/test_city_weather.py)
 PAGE_FIRE = {"spotting_enabled": True, "grass_ros_floor_frac": 0.10,
-             "grid_cell_m": CELL_M, "horizon_h": 48.0}
+             "grid_cell_m": CELL_M, "horizon_h": 48.0,
+             "sim_weather_profile": "generic"}
 
 
 def _tile_dir(tmp_path, size_km=16.0):
@@ -315,6 +319,7 @@ def _real_session(key, intensity, bearing, dist_m=None, ignition=None,
     s = SimSession(key, 8, 1, seed=seed,
                    cfg_overrides={"spotting_enabled": True,
                                   "grass_ros_floor_frac": 0.10,
+                                  "sim_weather_profile": "generic",
                                   **({} if p50_bound is None else
                                      {"ensemble_p50_nominal_bound": p50_bound})},
                    roads_module=None)
