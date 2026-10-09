@@ -2436,6 +2436,11 @@ class _SimFire:
     # (SimSession._field_wx_spans) — the same hour buckets the field priced.
     # Never read under the generic profile (one sample per field, as ever).
     _wx_field: object = None
+    # ANY-ANGLE SPREAD (cfg.spread_any_angle, SAFETY SEMANTICS 21): the
+    # CURRENT nominal field's anchors ({cell index: anchor index}, spread's
+    # anchor_log), so a re-anchor resumes every kept cell's straight run
+    # (kept_anchor). Stays None with the knob off (no keyword is passed).
+    _anchors: object = None
 
 
 class CrewPlacementError(ValueError):
@@ -5622,6 +5627,14 @@ class SimSession:
                             and (now - f.anchor_t0_s) > horizon_rebase_s)
             if f.ens is None or f.wx_epoch != self._wx_epoch or stale_anchor:
                 log = []                 # the nominal field's thrown embers
+                # ANY-ANGLE SPREAD (SAFETY SEMANTICS 21): the nominal field's
+                # anchors ride with the burn so a re-anchor resumes each kept
+                # cell's straight run; knob off => no keyword (legacy calls)
+                aa_kw = {}
+                alog = None
+                if getattr(cfg, "spread_any_angle", False):
+                    alog = {}
+                    aa_kw["anchor_log"] = alog
                 if f.ens is None:
                     # first field: point seed at the TRUE ignition time
                     # (rings is None here — no field, no ring)
@@ -5629,7 +5642,7 @@ class SimSession:
                     f.ens = spread.ensemble_arrival(
                         self._tile, inc.ignition_points(), self._wx, anchor,
                         cfg, incident_id=fid, perimeter=None,
-                        perimeter_at_s=None, ember_log=log)
+                        perimeter_at_s=None, ember_log=log, **aa_kw)
                     aloft = ()
                 else:
                     anchor = now
@@ -5646,11 +5659,15 @@ class SimSession:
                     # ones still aloft land via embers_aloft; kept_wx prices
                     # each front edge's progress so far at the weather it
                     # was made under
+                    if alog is not None and f._anchors:
+                        aa_kw["kept_anchor"] = f._anchors
                     f.ens = spread.ensemble_arrival(
                         self._tile, [], self._wx, anchor, cfg,
                         incident_id=fid, seed_spotting=False, kept=kept,
                         kept_wx=list(f._wx_hist), embers_aloft=aloft,
-                        ember_log=log)
+                        ember_log=log, **aa_kw)
+                if alog is not None:
+                    f._anchors = alog
                 f._ember_log = array("d", [x for e in log for x in e])
                 f._aloft = tuple(aloft)
                 f._wx_hist = f._wx_hist + ((anchor, self._wx.at(anchor)),)

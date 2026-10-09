@@ -124,6 +124,30 @@ ember ignites cfg.spot_ignition_delay_min later. compute_arrival(spot_trace=
 [...]) records every ember thrown (the calibration probe's seam,
 scratch_review/ember_spotting_probe.py).
 
+ANY-ANGLE SPREAD (contracts SAFETY SEMANTICS 21, 2026-10-09; cfg.spread_
+any_angle, default OFF => BYTE-IDENTICAL, every branch guarded;
+docs/review/grid_orientation_2026-10-09.md). The 16-neighbour lattice can
+only move along 16 directions, so on a uniform tile it reaches exactly the
+16-sided polygon inscribed in each cell's ellipse with its corners on those
+directions (measured to within 1 % of area). At high wind the length-to-
+breadth ratio climbs to its cap of 8 and the ellipse is a needle a few
+degrees wide: with the wind between two lattice directions the head ran at
+22-28 % of its own rate and the fire covered 16 % of its own ellipse (GR2,
+40 mph, 6 h: 3,022 ac vs 18,789), and even on a grid axis the width was
+missed (33 %) — area FELL as the wind rose. Armed, each burning cell also
+offers its neighbours the straight run from its ANCHOR (the cell where that
+run started), traced cell by cell, every crossed cell at its own ellipse
+(_segment_arrival) — Theta*-style any-angle paths over the engine's own
+per-cell physics. Uniform tiles: the cells of the analytic ellipse at every
+wind angle (IoU 0.98-1.00; head within 3 %, area within 4 %). Real tiles:
+closer to the per-cell continuum (the same tile solved k x k finer), never
+a candidate faster than a real path; the lattice edges themselves are
+unchanged (source-only, gates).
+Deterministic, label-setting (a run never lands before the cell offering it
+burned), memo-exact (memo = WGRESP_NO_ROS_MEMO=1 reference with the knob
+on), and RE-ANCHOR HISTORY stays continuous through kept_anchor /
+anchor_log (a no-op re-anchor is the continuous run cell for cell).
+
 Stdlib only; deterministic (ensemble perturbations via contracts.seeded_rng).
 """
 from __future__ import annotations
@@ -435,6 +459,36 @@ def _build_offsets() -> tuple:
 _OFFSETS = _build_offsets()
 
 
+# ANY-ANGLE SPREAD (cfg.spread_any_angle): the farthest (cells, Euclidean) a
+# straight run may reach from its anchor; a cell farther than this from its
+# anchor offers lattice edges only, so the run restarts there. It bounds the
+# cost of tracing one line (_segment_arrival is linear in its length) on the
+# longest runs — a uniform tile's whole fire is one run. Measured on uniform
+# tiles (docs/review/grid_orientation_2026-10-09.md): 256 keeps area within
+# 0.2 % of the analytic ellipse at every wind angle (64: up to -16 %); on the
+# real tiles no run reached it. Squared, to compare with integer offsets. Not
+# a config knob.
+_ANY_ANGLE_MAX_CELLS = 256.0
+_ANY_ANGLE_MAX_CELLS_SQ = _ANY_ANGLE_MAX_CELLS * _ANY_ANGLE_MAX_CELLS
+
+
+def _anchor_gauge(p: tuple) -> tuple:
+    """(k, ekx, eky) of the elliptical travel-time gauge of packed params
+    p = (head_ros, lb, bearing, ...): crossing a straight stretch of length
+    s in unit direction (ux east, uy north) takes s * (k - ekx ux - eky uy)
+    seconds, i.e. from a rear focus to the offset (dx east, dy north) metres
+        F = |d| * k - ekx * dx - eky * dy
+          = (|d| - e d.h) / (head (1 - e))
+    — directional_ros_mps' polar law R(theta) = head (1-e) / (1 - e cos
+    theta) written in focus-directrix form (e = sqrt(lb^2-1)/lb, h the unit
+    max-spread bearing). head must be > 0."""
+    lb = max(1.0, p[1])
+    e = math.sqrt(lb * lb - 1.0) / lb
+    k = 1.0 / (p[0] * (1.0 - e))
+    b = math.radians(p[2])
+    return k, e * k * math.sin(b), e * k * math.cos(b)
+
+
 def _perimeter_interior_cells(spec, rings: list) -> list:
     """Sorted row-major indices of cells whose CENTER lies inside the
     perimeter polygon (Sprint 2 ticket A5, Council-1 model F4).
@@ -503,8 +557,39 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     kept_wx: list = None,
                     hour_ros_scale: list = None,
                     weather_field=None,
-                    spot_trace: list = None) -> Raster:
+                    spot_trace: list = None,
+                    kept_anchor: dict = None,
+                    anchor_log: dict = None) -> Raster:
     """Fire arrival-time raster (absolute unix SECONDS per cell; UNREACHED=inf).
+
+    ANY-ANGLE SPREAD (cfg.spread_any_angle, contracts SAFETY SEMANTICS 21;
+    default OFF => byte-identical, every branch guarded): besides the 16
+    lattice edges, a burning cell offers each neighbour its ANCHOR's straight
+    run — the cell where the run that labelled it started (a seed, or the
+    last cell where a lattice edge won). The run's arrival is traced cell by
+    cell along the straight line (_segment_arrival: each crossed cell at its
+    own ellipse and at the weather of the moment the fire enters it; blocked
+    by a non-burnable cell); a neighbour labelled by it inherits the anchor,
+    one labelled by a lattice edge anchors at the cell it came from. So in
+    uniform conditions every cell gets the analytic elliptical arrival from
+    its source, whatever the wind's angle to the grid (the 16 lattice
+    directions alone reach only the polygon inscribed in the ellipse:
+    docs/review/grid_orientation_2026-10-09.md), and on real terrain the
+    fire may take any straight line the lattice could not. Every candidate
+    is the travel time of a real path, never before the cell offering it
+    burned; under constant weather (and without the SEMANTICS 19 size law,
+    whose ember reach depends on the fire's size at ignition) no arrival is
+    later than the legacy solve's — every legacy path is still offered at
+    the same cost. Runs restart past _ANY_ANGLE_MAX_CELLS.
+      kept_anchor   {kept cell index: its anchor} (RE-ANCHOR HISTORY): each
+                    kept cell's run resumes from its anchor in the solve it
+                    burned in — with it a no-op re-anchor is the continuous
+                    run cell for cell; without it the kept cells anchor
+                    themselves (an anchor that is not a kept cell is
+                    ignored).
+      anchor_log    a dict receiving {cell index: anchor index} for every
+                    labelled cell (kept cells included) — the next
+                    re-anchor's kept_anchor. Both inert with the knob off.
 
     EMBERS FLY AS FAR AS THE FIRE THAT THROWS THEM (cfg.spot_fire_size,
     contracts SAFETY SEMANTICS 19; default OFF => byte-identical, every
@@ -752,6 +837,14 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
 
     best = [UNREACHED] * n
     heap = []
+    # ANY-ANGLE SPREAD (cfg.spread_any_angle; module docstring): anc[i] is
+    # the cell where the straight run that labelled i starts (every cell its
+    # own anchor until a relaxation labels it — so every seed anchors
+    # itself). None => the legacy solve.
+    any_angle = bool(getattr(cfg, "spread_any_angle", False))
+    anc = None
+    if any_angle:
+        anc = list(range(n))
     final = None                 # bytearray flags for already-burned cells (A5)
     if perimeter:
         burn_t = t0_s if perimeter_at_s is None else float(perimeter_at_s)
@@ -822,6 +915,13 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                         not final[nr * ncols + nc]:
                     heapq.heappush(heap, (best[idx], idx))
                     break
+        if any_angle and kept_anchor:
+            # ANY-ANGLE SPREAD + RE-ANCHOR HISTORY: each kept cell resumes the
+            # straight run it was part of (its anchor in the solve it burned
+            # in) — an anchor that is not itself kept history is ignored
+            for idx, a in kept_anchor.items():
+                if idx in kept and a in kept:
+                    anc[idx] = a
     for p in ignition:
         rc = geo.latlon_to_rc(spec, p)
         if rc is None:
@@ -1267,6 +1367,110 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             return None
         return s_l + rem / r_l
 
+    def _kept_span(t: float) -> int:
+        """Index of the RE-ANCHOR HISTORY weather span in effect at t."""
+        j = bisect.bisect_right(kept_wx_t, t) - 1
+        return j if j > 0 else 0
+
+    # ANY-ANGLE: {hour key: {cell: travel-time gauge, or None when the cell
+    # cannot carry fire then}} — a pure function of (cell, hour key)
+    slow_hour = {}
+    # ANY-ANGLE: per cell, the last anchor whose run was traced to it and
+    # that run's arrival (UNREACHED = blocked / cannot win) — a cell is
+    # usually offered the same anchor's run by several neighbours in turn
+    seg_a = seg_t = None
+    if any_angle:
+        seg_a = [-1] * n
+        seg_t = [UNREACHED] * n
+
+    def _segment_arrival(a: int, qr: int, qc: int, t_a: float,
+                         limit: float):
+        """ANY-ANGLE SPREAD: arrival (unix s) at the cell (qr, qc) cells
+        (rows south, cols east) from anchor cell a, the fire leaving a's
+        centre at t_a and running in a STRAIGHT line to that cell's centre;
+        None when the line crosses a cell that cannot carry fire then, or
+        once the run has passed `limit` (the cell's current label or the
+        horizon: labels only ever fall, so such a run can never win and the
+        caller may keep that None for the cell).
+
+        Every cell the line crosses prices its own stretch at its OWN
+        ellipse — the elliptical travel time of directional_ros_mps in focus-
+        directrix form, (1 - e cos theta) / (head (1 - e)) seconds per metre
+        (_anchor_gauge), floored like the edges at 1 / _ROS_FLOOR_MPS — under
+        the weather of the moment the fire ENTERS it (the per-cell form of
+        the frozen-departure law; a kept cell entered before t0_s under
+        kept_wx prices with its history span). So the result is the exact
+        travel time of a real path through the engine's own per-cell physics:
+        never earlier than the fire could get there, only earlier than the
+        16-direction lattice can.
+
+        The line is traced cell by cell (Amanatides-Woo). A non-burnable cell
+        on it, or one whose head rate is 0 when the fire gets there, ends it
+        (None). Where the line runs exactly through a cell corner it touches
+        the two side cells at one point only: it passes when either is
+        burnable — the diagonal gate rule of the lattice edges."""
+        ar0, ac0 = divmod(a, ncols)
+        span = math.hypot(qr, qc)
+        ux = qc / span                 # unit direction, east
+        uy = -qr / span                # unit direction, north
+        sr = 1 if qr > 0 else -1
+        sc = 1 if qc > 0 else -1
+        dtr = 1.0 / (qr if qr > 0 else -qr) if qr else math.inf
+        dtc = 1.0 / (qc if qc > 0 else -qc) if qc else math.inf
+        tr = 0.5 * dtr                 # segment fraction at the next row line
+        tc = 0.5 * dtc                 # ... and at the next column line
+        rr, cc = ar0, ac0
+        f0 = 0.0
+        t = t_a
+        len_m = span * cell_m
+        floor_w = 1.0 / _ROS_FLOOR_MPS
+        while True:
+            f1 = tr if tr < tc else tc
+            if f1 > 1.0:
+                f1 = 1.0
+            ci = rr * ncols + cc
+            if fuel_of[ci] is None:
+                return None
+            if kept_wx_t is not None and t < t0_s:
+                hk = ("kept_wx", _kept_span(t))
+            else:
+                hk = int((t - t0_s) // 3600.0)
+            cache = slow_hour.get(hk)
+            if cache is None:
+                cache = slow_hour[hk] = {}
+            g = cache.get(ci, _BED_MISS)
+            if g is _BED_MISS:
+                p = cell_params(ci, hk)
+                g = _anchor_gauge(p) if p[0] > 0.0 else None
+                cache[ci] = g
+            if g is None:
+                return None               # cannot carry fire then
+            w = g[0] - g[1] * ux - g[2] * uy
+            if w > floor_w:
+                w = floor_w
+            t += (f1 - f0) * len_m * w
+            if t > limit:
+                return None
+            if f1 >= 1.0:
+                return t
+            if tr < tc - 1e-12:
+                rr += sr
+                f0 = tr
+                tr += dtr
+            elif tc < tr - 1e-12:
+                cc += sc
+                f0 = tc
+                tc += dtc
+            else:                        # exactly through a cell corner
+                if (fuel_of[(rr + sr) * ncols + cc] is None
+                        and fuel_of[rr * ncols + cc + sc] is None):
+                    return None
+                rr += sr
+                cc += sc
+                f0 = tr
+                tr += dtr
+                tc += dtc
+
     # SAFETY SEMANTICS 19 FIRE SIZE (cfg.spot_fire_size): a union-find over
     # burned cells (8-neighbour connectivity). uf[i] = -1 while cell i is
     # unburned, else its parent; uf_cells[root] = the fire's cell count.
@@ -1333,6 +1537,15 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         hour = int((t_u - t0_s) // 3600.0)
         params = cell_params(idx, hour)
         head, lb, brg, spot = params
+        aa = -1             # ANY-ANGLE SPREAD: this cell's live anchor, if any
+        if any_angle:
+            a = anc[idx]
+            if a != idx:
+                a_r, a_c = divmod(a, ncols)
+                if (r - a_r) * (r - a_r) + (c - a_c) * (c - a_c) \
+                        <= _ANY_ANGLE_MAX_CELLS_SQ:
+                    aa = a
+                    t_a0 = best[a]
         for dr, dc, dist_cells, ebrg, gates in _OFFSETS:
             nr = r + dr
             nc = c + dc
@@ -1343,6 +1556,7 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                 continue
             if final is not None and final[nidx]:
                 continue         # interior cells are final; never relaxed
+            lattice = True
             if gates:
                 passable = False
                 for gr, gc in gates:
@@ -1353,35 +1567,81 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                         passable = True
                         break
                 if not passable:
-                    continue
-            ros = rothermel.directional_ros_mps(head, lb, ebrg - brg)
-            if kept_wx_t is not None and t_u < t0_s:
-                # RE-ANCHOR HISTORY: a kept front cell's edge, its progress
-                # before t0_s priced at the weather it burned under.
-                t_v = _kept_edge_arrival(idx, t_u, dist_cells * cell_m, ebrg)
-                if t_v is None:
-                    continue
-            elif ros <= 0.0:
-                # Fuel that cannot carry fire (dead moisture at/above the
-                # moisture of extinction => Rothermel 0) never relaxes a
-                # neighbour. The 1e-4 m/s divisor floor below is a
-                # traversal-time guard for tiny positive rates, not a
-                # spread rate: at 30 m cells it put an "out" cell 83 h away,
-                # inside the 96 h horizon (tri-model review, code finding).
-                continue
-            elif piecewise:
-                # EDGE-WEATHER PIECEWISE INTEGRATION (cfg.edge_weather_
-                # piecewise): continue the traversal at each later hour's
-                # rate for the distance still unburned, instead of freezing
-                # this departure hour's rate for the whole run. Bit-identical
-                # to the line below whenever no crossed hour differs.
-                t_v = _piecewise_edge_arrival(idx, t_u, hour,
-                                              dist_cells * cell_m, ebrg, ros,
-                                              params)
-                if t_v is None:
-                    continue          # never completes inside the horizon
+                    if aa < 0:
+                        continue
+                    lattice = False      # ANY-ANGLE: the run may still pass
+            if not lattice:
+                t_v = UNREACHED
             else:
-                t_v = t_u + (dist_cells * cell_m) / max(ros, _ROS_FLOOR_MPS)
+                ros = rothermel.directional_ros_mps(head, lb, ebrg - brg)
+                if kept_wx_t is not None and t_u < t0_s:
+                    # RE-ANCHOR HISTORY: a kept front cell's edge, its
+                    # progress before t0_s priced at the weather it burned
+                    # under.
+                    t_v = _kept_edge_arrival(idx, t_u, dist_cells * cell_m,
+                                             ebrg)
+                    if t_v is None:
+                        if aa < 0:
+                            continue
+                        t_v = UNREACHED
+                elif ros <= 0.0:
+                    # Fuel that cannot carry fire (dead moisture at/above the
+                    # moisture of extinction => Rothermel 0) never relaxes a
+                    # neighbour. The 1e-4 m/s divisor floor below is a
+                    # traversal-time guard for tiny positive rates, not a
+                    # spread rate: at 30 m cells it put an "out" cell 83 h
+                    # away, inside the 96 h horizon (tri-model review, code
+                    # finding).
+                    if aa < 0:
+                        continue
+                    t_v = UNREACHED
+                elif piecewise:
+                    # EDGE-WEATHER PIECEWISE INTEGRATION (cfg.edge_weather_
+                    # piecewise): continue the traversal at each later hour's
+                    # rate for the distance still unburned, instead of
+                    # freezing this departure hour's rate for the whole run.
+                    # Bit-identical to the line below whenever no crossed
+                    # hour differs.
+                    t_v = _piecewise_edge_arrival(idx, t_u, hour,
+                                                  dist_cells * cell_m, ebrg,
+                                                  ros, params)
+                    if t_v is None:
+                        if aa < 0:
+                            continue  # never completes inside the horizon
+                        t_v = UNREACHED
+                else:
+                    t_v = t_u + (dist_cells * cell_m) / max(ros,
+                                                            _ROS_FLOOR_MPS)
+            via = idx
+            if aa >= 0:
+                qr = nr - a_r                  # neighbour - anchor (cells)
+                qc = nc - a_c
+                if dr * qr + dc * qc > 0:
+                    # ANY-ANGLE SPREAD: this edge leads away from the
+                    # anchor, so the neighbour may also burn when the
+                    # anchor's STRAIGHT run reaches it (_segment_arrival:
+                    # traced cell by cell, each at its own ellipse; None
+                    # when blocked). The anchor's time is final and the run
+                    # a pure function of it, so a cell keeps the last run
+                    # traced to it, and the label-setting order is kept by
+                    # never letting it land before this cell burned.
+                    if seg_a[nidx] == aa:
+                        t_any = seg_t[nidx]
+                    else:
+                        lim = best[nidx]
+                        if lim > horizon_end_s:
+                            lim = horizon_end_s
+                        t_any = _segment_arrival(aa, qr, qc, t_a0, lim)
+                        if t_any is None:
+                            t_any = UNREACHED
+                        seg_a[nidx] = aa
+                        seg_t[nidx] = t_any
+                    if t_any != UNREACHED:
+                        if t_any < t_u:
+                            t_any = t_u
+                        if t_any <= t_v:     # a tie keeps the longer run
+                            t_v = t_any
+                            via = aa
             if resume and t_v < t_floor:
                 # RE-ANCHOR HISTORY: a kept front cell's edge priced from its
                 # true time may "finish" before t0_s (new weather applied to
@@ -1390,6 +1650,8 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                 t_v = t_floor
             if t_v < best[nidx] and t_v <= horizon_end_s:
                 best[nidx] = t_v
+                if any_angle:
+                    anc[nidx] = via
                 heapq.heappush(heap, (t_v, nidx))
         if spot is not None and not (quiet is not None and quiet[idx]):
             if size_law:
@@ -1439,12 +1701,20 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                             and t_v <= horizon_end_s \
                             and not (final is not None and final[nidx]):
                         best[nidx] = t_v
+                        if any_angle:
+                            anc[nidx] = nidx     # a spot fire is a new fire
                         heapq.heappush(heap, (t_v, nidx))
             if spot_trace is not None:
                 spot_trace.append((idx, t_u, mean_m, u20, d_drawn, reach,
                                    fire_cells if size_law else 0, land_rec,
                                    t_rec))
 
+    if any_angle and anchor_log is not None:
+        # ANY-ANGLE SPREAD + RE-ANCHOR HISTORY: every labelled cell's anchor,
+        # for the next re-anchor's kept_anchor (kept cells included)
+        for i in range(n):
+            if best[i] != UNREACHED:
+                anchor_log[i] = anc[i]
     return Raster(spec, best)
 
 
@@ -1554,7 +1824,9 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                      ember_log: list = None,
                      kept_wx: list = None,
                      member_hour_scale=None,
-                     weather_field=None) -> EnsembleArrival:
+                     weather_field=None,
+                     kept_anchor: dict = None,
+                     anchor_log: dict = None) -> EnsembleArrival:
     """Ensemble v2 (Sprint 2 ticket A4, Council-1 model F2+F6): nominal member
     (k=0, unperturbed) + (cfg.ensemble_n - 1) perturbed members, plus per-cell
     p10/p50/p90 quantile rasters (unix seconds; p10 = EARLIEST/pessimistic).
@@ -1627,6 +1899,13 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     byte-identical) is forwarded to EVERY member: each prices its edges per
     (zone, hour) under its own perturbation, identical in every zone.
 
+    kept_anchor / anchor_log (ANY-ANGLE SPREAD, cfg.spread_any_angle, SAFETY
+    SEMANTICS 21; default None = byte-identical, and inert with the knob
+    off): kept_anchor goes to EVERY member with `kept` (each kept cell's
+    straight run resumes from the nominal truth's anchor, under the member's
+    own weather), anchor_log to the NOMINAL member only (like ember_log —
+    the truth's anchors are what a later re-anchor carries).
+
     NOTE: ensemble_n counts TOTAL members (nominal + n-1 perturbed), so
     ensemble_n=1 is nominal-only, matching the v1 convention the suite pins;
     contracts' config comment reads it as perturbed-count — the discrepancy
@@ -1647,6 +1926,14 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         hs0 = member_hour_scale(0, 0.5, 1.0)
         if hs0 is not None:
             hs_kw = {"hour_ros_scale": hs0}
+    # ANY-ANGLE SPREAD (SEMANTICS 21): absent => no member call gains a
+    # keyword (the legacy calls, byte-identical)
+    aa_kw = {}
+    if kept_anchor is not None:
+        aa_kw["kept_anchor"] = kept_anchor
+    nom_kw = dict(aa_kw)
+    if anchor_log is not None:
+        nom_kw["anchor_log"] = anchor_log
     members = [compute_arrival(tile, pts, wx, t0_s, cfg,
                                perimeter=perimeter,
                                perimeter_at_s=perimeter_at_s,
@@ -1654,7 +1941,8 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                                seed_spotting=seed_spotting, kept=kept,
                                embers_aloft=embers_aloft,
                                ember_log=ember_log, kept_wx=kept_wx,
-                               weather_field=weather_field, **hs_kw)]
+                               weather_field=weather_field, **hs_kw,
+                               **nom_kw)]
     draws = _stratified_member_draws(incident_id, n_members - 1)
     dir_lead = min(1.0, (cfg.horizon_h * 0.5) / _DIR_RAMP_SATURATION_H)
     sd_log = float(getattr(cfg, "model_error_sd_log", 0.0) or 0.0)
@@ -1689,7 +1977,8 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                                        seed_spotting=seed_spotting,
                                        kept=kept, embers_aloft=embers_aloft,
                                        kept_wx=kept_wx,
-                                       weather_field=weather_field, **hs_kw))
+                                       weather_field=weather_field, **hs_kw,
+                                       **aa_kw))
 
     ncells = tile.spec.nrows * tile.spec.ncols
     if len(members) == 1:

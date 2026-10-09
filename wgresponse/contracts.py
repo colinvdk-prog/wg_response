@@ -729,6 +729,72 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    before this rule existed, on worlds where it bites: a high-wind corridor,
    a mixed-fuel tile with a perimeter, a re-anchor with embers aloft, an
    ensemble and the committed Park City tile under both floor class sets).
+21. THE FIRE MAY RUN IN ANY DIRECTION, NOT ONLY THE GRID'S (grid-orientation
+   review 2026-10-09; docs/review/grid_orientation_2026-10-09.md;
+   scratch_review/grid_orientation_probe.py; cfg.spread_any_angle, default
+   OFF). The spread is a minimum-travel-time search over a 16-neighbour
+   lattice: from each cell the fire may only step along 16 directions, so on
+   a uniform tile it reaches exactly the 16-sided polygon inscribed in its
+   own fire ellipse with corners on those directions (measured to within
+   1 % of area). At high wind the length-to-breadth ratio climbs to its cap
+   of 8 and the ellipse is a needle a few degrees wide: with the wind
+   between two lattice directions the head ran at 22-28 % of its own rate,
+   on a lattice axis the width was missed, and the burned area FELL as the
+   wind rose (GR2, 6 h: 2,493 ac at 20 mph, 2,160 at 25; between directions
+   2,110 -> 1,302; the engine's own ellipse 4,707 -> 5,772). Late at the
+   head is the anti-safe polarity for every P10 deadline. With the knob on:
+   (a) ANCHORS. Every labelled cell remembers the cell its straight run
+       started from (a seed, a spot fire's landing cell, or the cell whose
+       lattice edge labelled it). A burning cell offers each neighbour the
+       edge it always did AND, when the edge leads away from its anchor,
+       the anchor's straight run to that neighbour; the earlier wins and
+       the neighbour inherits the winner's anchor (a tie keeps the longer
+       run). Theta*-style any-angle paths over the existing lattice.
+   (b) EVERY RUN IS A REAL PATH. A run's arrival is traced cell by cell
+       along the straight line (spread._segment_arrival): each crossed cell
+       prices its stretch at its OWN ellipse (directional ROS of its own
+       head rate, length-to-breadth ratio and bearing; the edges' 1e-4 m/s
+       floor), under the weather of the moment the fire enters it (a cell
+       entered before a re-anchor's t0 under that kept_wx history span). A non-
+       burnable cell, or one that cannot carry fire then, ends the run;
+       through a cell corner it passes when either side cell is burnable
+       (the diagonal gate rule). So no run reaches a cell earlier than a
+       real path through the engine's own physics can; only earlier than
+       the 16 directions could. The lattice edges are unchanged (source-
+       only rate, gate rule): every legacy path is still offered at its
+       legacy cost, so under constant weather no cell burns later than
+       without the knob (without the SEMANTICS 19 size law). Runs restart
+       past spread._ANY_ANGLE_MAX_CELLS (256 cells).
+   (c) LAWS KEPT. Label-setting (a run never lands before the cell offering
+       it burned), deterministic (no draw), the ROS memo exact (memo =
+       WGRESP_NO_ROS_MEMO=1 reference with the knob on, weather zones and
+       piecewise edges included). RE-ANCHOR HISTORY stays continuous:
+       compute_arrival / ensemble_arrival(anchor_log={}) record each
+       labelled cell's anchor and kept_anchor resumes each kept cell's run,
+       so a no-op re-anchor is the continuous run cell for cell and a wind
+       shift the continuous piecewise run; the simulator threads them
+       (_SimFire._anchors).
+   (d) MEASURED. Uniform tiles (GR2, GS2, SH5, TU5; 0-40 mph; the wind swept
+       through a full lattice gap): the cells the engine's own ellipse covers
+       (IoU 0.98-1.00; head within 3 %, area within 4 % at every angle, 1.6 %
+       at L/B 8), area grows with wind; the downwind P10 that was hours late
+       (30 mph: 4.3 h for 1.0 h at 3 km) is the ellipse's own time. Real
+       tiles (the per-cell continuum reference: the same tile solved 5x5
+       finer): the inversion on the committed tiles is mostly the elliptical
+       physics itself (narrow fires against non-burnable ground; the
+       reference loses area from 10 to 30 mph too); the knob removes 30-77 %
+       of the legacy lateness at 20-40 mph; at low wind on a timber mosaic it
+       can over-burn (the unchanged source-only lattice edges into slow cells,
+       now reached sooner). Cost 2-3.4x per solve, 3x peak memory on a
+       300k-cell domain. Numbers in the review.
+   (e) WHAT IT DOES NOT DO. It does not change the ellipse (lb cap 8 kept:
+       without it the analytic area itself falls with wind), the lattice
+       edges' source-only rate or gate rule, spotting, or any crew law; a
+       fire forced through a one-cell gap at a corner still bends at cell
+       centres (the continuum slips past corners the lattice cannot).
+   Knob OFF = byte-identical arrival rasters (pinned in
+   tests/test_spread_any_angle.py against tests/test_spread.py's legacy
+   fingerprints, with the new arguments passed).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -786,6 +852,12 @@ wgresponse.spread
         # recorded, byte-identical) receives one tuple per ember thrown
         # (cell, thrown s, Sardoy mean m, u20, drawn m, reach m, fire cells,
         # landing cell or -1, landing s) — the calibration probe's seam.
+        # SAFETY SEMANTICS 21 (2026-10-09): cfg.spread_any_angle adds each
+        # burning cell's anchored straight run (traced cell by cell);
+        # optional kept_anchor ({kept cell: anchor}) / anchor_log (a dict
+        # receiving {cell: anchor}) — also on ensemble_arrival (anchor_log
+        # nominal only); default None = byte-identical, inert with the
+        # knob off.
     spot_reach_m(intensity_kwm, u20_mps, fire_ha, cfg) -> float
         # SEMANTICS 19 reach (m): Albini's surface-fire maximum spotting
         # distance x (fire_ha / cfg.spot_fire_size_ref_ha) ** cfg.spot_fire_size_exp
@@ -2355,6 +2427,22 @@ class ResponseConfig:
     # effective_wind_from_bed's wind_slope_angle seam). Default OFF =
     # byte-identical; hindcast A/B decides the live flip.
     slope_phi_vector: bool = False
+    # ANY-ANGLE SPREAD (grid-orientation review 2026-10-09, the wind-area
+    # inversion probe; SAFETY SEMANTICS 21; docs/review/grid_orientation_
+    # 2026-10-09.md). Legacy: the 16-neighbour lattice moves along 16
+    # directions only, so on a uniform tile the fire is the 16-sided polygon
+    # inscribed in its own ellipse — at the length-to-breadth cap of 8 the
+    # head ran at 22-28 % of its rate whenever the wind lay between two
+    # lattice directions and the area was 16-45 % of the ellipse, FALLING as
+    # the wind rose (GR2 6 h: 2,110 ac at 20 mph, 1,302 at 25). When ON,
+    # every burning cell also offers its neighbours the straight run from
+    # its anchor, traced cell by cell at each crossed cell's own ellipse
+    # (spread._segment_arrival): uniform tiles get the analytic ellipse at
+    # any wind angle; real tiles move toward the per-cell continuum. Lattice
+    # edges unchanged; never later than legacy under constant weather.
+    # Default OFF = byte-identical; the simulator A/B and the hindcast decide
+    # the flips (watch --any-angle arms it live).
+    spread_any_angle: bool = False
     # LOCAL WEATHER ACROSS THE DOMAIN (founder 2026-09-27: "ensure that fire
     # spread includes local weather forecast"; SAFETY SEMANTICS 17;
     # wgresponse.wxfield). Legacy: ONE forecast at the fire centroid prices
