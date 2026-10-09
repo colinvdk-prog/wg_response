@@ -111,6 +111,19 @@ weather still share entries and the memo stays exact (memo = reference,
 zones on). Spotting reads the source cell's params, so an ember flies on its
 source zone's wind. kept_wx history spans stay domain-wide.
 
+EMBERS FLY AS FAR AS THE FIRE THAT THROWS THEM (contracts SAFETY SEMANTICS
+19, 2026-10-09; cfg.spot_fire_size, default OFF => BYTE-IDENTICAL, every
+branch guarded; goldens in tests/test_spot_fire_size.py): with spotting on,
+each burning cell's single ember (the SEMANTICS 11 draw, same seed) flies at
+most spot_reach_m — Albini's surface-fire maximum spotting distance for the
+cell's Byram intensity and 20-ft wind (_albini_surface_max_spot_m, carried
+in the memoised spot tuple) scaled by the size of the connected burned area
+the cell joins when it ignites (an 8-neighbour union-find maintained in
+settle order inside compute_arrival) — and a longer draw burns out; a landed
+ember ignites cfg.spot_ignition_delay_min later. compute_arrival(spot_trace=
+[...]) records every ember thrown (the calibration probe's seam,
+scratch_review/ember_spotting_probe.py).
+
 Stdlib only; deterministic (ensemble perturbations via contracts.seeded_rng).
 """
 from __future__ import annotations
@@ -210,6 +223,83 @@ _SPOT_WS_EXP = 0.7
 # 0.5-2 km downwind AHEAD of the front and ignites there. One draw per cell (the
 # long tail, not many spots, makes the jumps). Default OFF => byte-identical.
 _SPOT_VAR_COEF = 250.0
+
+# EMBERS FLY AS FAR AS THE FIRE THAT THROWS THEM (contracts SAFETY SEMANTICS
+# 19, cfg.spot_fire_size, default OFF; founder 2026-10-09 "begin the
+# calibration of the ember distance and size of fire calibration";
+# docs/review/ember_spotting_calibration_2026-10-09.md). The legacy law above
+# throws every burning cell's ember from the full Sardoy lognormal from the
+# first minute of a fire's life, and a cell an ember ignites throws its own
+# ember the moment it burns: measured on the Park City one-click scenario, a
+# fire of 18 burned cells leap-frogged 3.2 km in ~7 minutes through a 6-hop
+# spot-from-spot chain. Armed, three limits apply at the teleport-edge site
+# (the per-cell draw and its seed are unchanged):
+#   FIRE SIZE  a burning cell's fire is the connected burned area (8-neighbour
+#              union-find over cells already burned when it ignites; kept /
+#              perimeter cells count) it joins — a spot fire is a new, small
+#              fire until it joins another;
+#   REACH      the ember flies at most _albini_surface_max_spot_m(I, u20) x
+#              (fire ha / cfg.spot_fire_size_ref_ha) ** cfg.spot_fire_size_exp;
+#              a longer draw burns out in flight (no spot);
+#   DELAY      a spot fire starts cfg.spot_ignition_delay_min after its ember
+#              lands (smoulder -> flaming spread).
+# Unit constants of the Albini / BehavePlus surface-fire spotting model:
+_KWM_PER_BTU_FT_S = 3.46141     # 1 BTU/ft/s of Byram intensity in kW/m
+_MPH_PER_MPS = 2.2369362920544  # m/s -> mi/h
+_M_PER_MI = 1609.344
+_NEIGH8 = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0),
+           (1, 1))
+
+
+def _albini_surface_max_spot_m(intensity_kwm: float, u20_mps: float) -> float:
+    """Maximum potential spotting distance (m) from a wind-driven SURFACE fire
+    of Byram intensity `intensity_kwm` in a 20-ft wind `u20_mps`, over flat
+    ground with OPEN downwind cover — Albini (1983, USDA FS Res. Pap.
+    INT-309) as implemented in BehavePlus (Morris 1987, INT-RN-374 eq. 3, and
+    firelab/behave spot.cpp, surface-fire branch), U in mi/h, I in BTU/ft/s:
+        E  = 322 I (0.474 U)^-1.01              lofting energy, BTU/ft
+        z  = 1.055 sqrt(E)                      firebrand height, ft
+        Hc = 2.2 z^0.337 - 4                    critical cover height, ft
+        D  = 0.000718 U sqrt(Hc) (0.362 + sqrt(z/Hc)/2 ln(z/Hc))
+             + 0.000278 U z^0.643               flat distance + drift, mi
+    With no canopy layer on the tile the downwind cover is open, so the
+    critical height Hc governs — the largest (most generous) surface-fire
+    maximum. Examples at a 20-ft wind of 15.5 m/s (the 40 mph 10-m
+    "extreme" preset): ~0.37 km at 100 kW/m, ~0.76 km at 1 MW/m, ~1.6 km at
+    10 MW/m, ~2.8 km at 60 MW/m. 0.0 when nothing is lofted (I or U <= 0, or
+    z below the ~5.9 ft the critical-height fit needs). Pure: the same inputs
+    give the same float (memo-exact; computed once per ROS-memo key)."""
+    if intensity_kwm <= 0.0 or u20_mps <= 0.0:
+        return 0.0
+    u_mph = u20_mps * _MPH_PER_MPS
+    energy = (322.0 * (0.474 * u_mph) ** -1.01
+              * (intensity_kwm / _KWM_PER_BTU_FT_S))
+    z_ft = 1.055 * math.sqrt(energy)
+    hc_ft = 2.2 * z_ft ** 0.337 - 4.0
+    if hc_ft <= 0.0 or z_ft <= hc_ft:
+        return 0.0
+    ratio = z_ft / hc_ft
+    flat_mi = (0.000718 * u_mph * math.sqrt(hc_ft)
+               * (0.362 + 0.5 * math.sqrt(ratio) * math.log(ratio)))
+    drift_mi = 0.000278 * u_mph * z_ft ** 0.643
+    return (flat_mi + drift_mi) * _M_PER_MI
+
+
+def spot_reach_m(intensity_kwm: float, u20_mps: float, fire_ha: float,
+                 cfg) -> float:
+    """SAFETY SEMANTICS 19 REACH (m): the farthest an ember thrown by a cell
+    of Byram intensity `intensity_kwm` in a 20-ft wind `u20_mps`, burning in a
+    fire of `fire_ha` hectares, can fly before it burns out —
+    _albini_surface_max_spot_m(I, u20) x (fire_ha / cfg.spot_fire_size_ref_ha)
+    ** cfg.spot_fire_size_exp. Below the reference size it shrinks (a small
+    fire's plume lofts brands lower; Storey et al. 2020: source-fire area is
+    the strongest predictor of maximum spotting distance), above it grows (a
+    large fire's plume carries them beyond the surface-fire maximum). The same
+    float operations as the teleport-edge site (exposed for the calibration
+    probe and the tests)."""
+    return (_albini_surface_max_spot_m(intensity_kwm, u20_mps)
+            * (fire_ha / float(cfg.spot_fire_size_ref_ha))
+            ** float(cfg.spot_fire_size_exp))
 
 # FUEL-CLASS HEAD-ROS REALISM FLOOR (SIMULATOR only;
 # docs/review/fire_speed_review.md — the validated grass prototype, EXTENDED
@@ -412,8 +502,34 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     ember_log: list = None,
                     kept_wx: list = None,
                     hour_ros_scale: list = None,
-                    weather_field=None) -> Raster:
+                    weather_field=None,
+                    spot_trace: list = None) -> Raster:
     """Fire arrival-time raster (absolute unix SECONDS per cell; UNREACHED=inf).
+
+    EMBERS FLY AS FAR AS THE FIRE THAT THROWS THEM (cfg.spot_fire_size,
+    contracts SAFETY SEMANTICS 19; default OFF => byte-identical, every
+    branch guarded): with spotting enabled and the knob armed, each burning
+    cell's ember (the unchanged SEMANTICS 11 draw, same seed) flies at most
+    spot_reach_m(I, u20, fire ha, cfg) — Albini's surface-fire maximum for
+    the cell's intensity and 20-ft wind, scaled by the size of the connected
+    burned area the cell joins when it ignites (8-neighbour union-find over
+    the cells already burned; kept and perimeter cells count; a spot fire is
+    a new, small fire until it joins another) — and a longer draw burns out
+    in flight; a landed ember starts its spot fire
+    cfg.spot_ignition_delay_min later. Label-setting stays exact: a cell's
+    fire size is a function of the labels settled before it (all final), and
+    every ember edge still lands after it is thrown.
+
+    spot_trace (diagnostics; default None => nothing recorded, byte-
+    identical): a list receiving one tuple per burning cell that owns an
+    ember (spotting on, not quiet), in settle order:
+        (cell index, thrown unix s, Sardoy mean m, u20 m/s, drawn distance m,
+         reach m (inf when SEMANTICS 19 is off), fire cells (0 when off),
+         landing cell index (-1: burnt out, sub-cell or off-grid), landing
+         unix s (inf when no landing; ignition time, delay included))
+    The landing cell may be non-burnable or already burning — the ember is
+    recorded as thrown, not as an ignition (an ember ignites its landing
+    cell when that cell's final arrival equals the landing time).
 
     hour_ros_scale (PER-HOUR ROS MULTIPLIER SEAM, contracts SAFETY SEMANTICS
     14 — the fire-belief apply path; default None => byte-identical, the
@@ -739,6 +855,9 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     slope_d = tile.slope_deg.data
     aspect_d = tile.aspect_deg.data
     spotting = bool(cfg.spotting_enabled)
+    # SAFETY SEMANTICS 19 (cfg.spot_fire_size; module constants block): False
+    # keeps every spotting operation below exactly the legacy one.
+    size_law = spotting and bool(getattr(cfg, "spot_fire_size", False))
     floor_gate = bool(getattr(cfg, "ros_floor_extinction_gate", False))
     # The two tri-model-review physics knobs (module docstring). getattr keeps
     # the engine runnable against a ResponseConfig predating them; False is the
@@ -836,6 +955,11 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             u20 = wind10 / 1.15
             mean_m = _SPOT_A * intensity ** _SPOT_FLIN_EXP * u20 ** _SPOT_WS_EXP
             spot = (mean_m, (wdir + 180.0) % 360.0, u20)
+            if size_law:
+                # SEMANTICS 19: Albini's surface-fire maximum for THIS
+                # intensity and wind rides as a 4th element (a pure function
+                # of the memo key, so the memo stays exact).
+                spot = spot + (_albini_surface_max_spot_m(intensity, u20),)
         return (head_ros, lb, brg, spot)
 
     # B3 ROS memo (module docstring; replaces the (cell_idx, hour) cache that
@@ -1143,12 +1267,68 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             return None
         return s_l + rem / r_l
 
+    # SAFETY SEMANTICS 19 FIRE SIZE (cfg.spot_fire_size): a union-find over
+    # burned cells (8-neighbour connectivity). uf[i] = -1 while cell i is
+    # unburned, else its parent; uf_cells[root] = the fire's cell count.
+    # Dijkstra settles cells in arrival order, so when a cell is popped every
+    # cell burned before it is already in the structure (ties settle by
+    # (time, index), deterministically) — its fire's size is then a function
+    # of final labels only. Final cells (perimeter interior, kept history)
+    # burned at or before t0_s and join first, in row-major order.
+    uf = uf_cells = None
+    if size_law:
+        size_ref_ha = float(cfg.spot_fire_size_ref_ha)
+        size_exp = float(cfg.spot_fire_size_exp)
+        spot_delay_s = float(cfg.spot_ignition_delay_min) * 60.0
+        cell_ha = cell_m * cell_m / 10_000.0
+        uf = [-1] * n
+        uf_cells = [0] * n
+
+        def _uf_root(i: int) -> int:
+            while uf[i] != i:
+                uf[i] = uf[uf[i]]          # path halving
+                i = uf[i]
+            return i
+
+        def _uf_burn(i: int) -> int:
+            """Cell i ignites: join it to every burned 8-neighbour; the cell
+            count of its fire afterwards (idempotent for a burned cell)."""
+            if uf[i] >= 0:
+                return uf_cells[_uf_root(i)]
+            uf[i] = i
+            uf_cells[i] = 1
+            root = i
+            r0, c0 = divmod(i, ncols)
+            for dr, dc in _NEIGH8:
+                rr = r0 + dr
+                cc = c0 + dc
+                if 0 <= rr < nrows and 0 <= cc < ncols:
+                    j = rr * ncols + cc
+                    if uf[j] >= 0:
+                        rj = _uf_root(j)
+                        if rj != root:
+                            # union by size, ties to the lower index
+                            if (uf_cells[rj] > uf_cells[root]
+                                    or (uf_cells[rj] == uf_cells[root]
+                                        and rj < root)):
+                                root, rj = rj, root
+                            uf[rj] = root
+                            uf_cells[root] += uf_cells[rj]
+            return uf_cells[root]
+
+        if final is not None:
+            for i in range(n):
+                if final[i]:
+                    _uf_burn(i)
+
     while heap:
         t_u, idx = heapq.heappop(heap)
         if t_u > best[idx]:
             continue
         if fuel_of[idx] is None:
             continue          # seeded non-burnable cell: recorded, no spread
+        if size_law:
+            fire_cells = _uf_burn(idx)   # SEMANTICS 19: the fire it joins
         r, c = divmod(idx, ncols)
         hour = int((t_u - t0_s) // 3600.0)
         params = cell_params(idx, hour)
@@ -1212,12 +1392,28 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                 best[nidx] = t_v
                 heapq.heappush(heap, (t_v, nidx))
         if spot is not None and not (quiet is not None and quiet[idx]):
-            mean_m, sbrg, u20 = spot
+            if size_law:
+                mean_m, sbrg, u20, d_alb = spot
+            else:
+                mean_m, sbrg, u20 = spot
             # SEMANTICS 11: draw ONE lognormal landing distance for THIS burning
             # cell (seeded on the source cell => cells sharing a ROS-memo key
             # still draw independently; the heavy tail lands brands ahead of the
             # front). Draws below one cell are self-cell no-ops.
             dist_m = _spot_distance(mean_m, incident_id, member_k, idx)
+            if size_law or spot_trace is not None:
+                d_drawn = dist_m
+                reach = math.inf
+                land_rec = -1
+                t_rec = math.inf
+                if size_law:
+                    # SEMANTICS 19 REACH (= spot_reach_m): Albini's surface-
+                    # fire maximum scaled by the size of the fire this cell
+                    # joined; a longer draw burns out in flight (no spot).
+                    reach = d_alb * ((fire_cells * cell_ha) / size_ref_ha) \
+                        ** size_exp
+                    if dist_m > reach:
+                        dist_m = 0.0
             if dist_m >= cell_m:
                 land = geo.latlon_to_rc(
                     spec, geo.destination(geo.rc_to_latlon(spec, r, c), sbrg,
@@ -1225,8 +1421,13 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                 if land is not None:
                     nidx = land[0] * ncols + land[1]
                     t_v = t_u + dist_m / max(u20, 0.1)   # ember flight ~ 20-ft wind
+                    if size_law:
+                        t_v = t_v + spot_delay_s   # SEMANTICS 19 DELAY
                     if resume and t_v < t_floor:
                         t_v = t_floor
+                    if spot_trace is not None:
+                        land_rec = nidx
+                        t_rec = t_v
                     if ember_log is not None and fuel_of[nidx] is not None \
                             and t_v <= horizon_end_s \
                             and not (final is not None and final[nidx]):
@@ -1239,6 +1440,10 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                             and not (final is not None and final[nidx]):
                         best[nidx] = t_v
                         heapq.heappush(heap, (t_v, nidx))
+            if spot_trace is not None:
+                spot_trace.append((idx, t_u, mean_m, u20, d_drawn, reach,
+                                   fire_cells if size_law else 0, land_rec,
+                                   t_rec))
 
     return Raster(spec, best)
 
