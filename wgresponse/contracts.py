@@ -671,6 +671,64 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    /api/world/summary and fire_beliefs.json (pinned in
    tests/test_feed_sanity.py against goldens computed on commit 0bbd430,
    before this rule existed, on a world where every guard bites).
+19. EMBERS FLY AS FAR AS THE FIRE THAT THROWS THEM (founder 2026-10-09,
+   verbatim: "begin the calibration of the ember distance and size of fire
+   calibration"; docs/review/ember_spotting_calibration_2026-10-09.md;
+   scratch_review/ember_spotting_probe.py; cfg.spot_fire_size, default OFF,
+   NOT armed by the simulator — the founder decides). SEMANTICS 11 made
+   spotting functional by sampling the ember-distance distribution, but every
+   burning cell throws from the FULL Sardoy lognormal from the first minute
+   of a fire's life, and a cell an ember ignites throws its own ember the
+   moment it burns. Measured on the one-click scenarios under the "extreme"
+   preset: in the first minute of their lives, at about 2 ha, Boulder and
+   Paradise threw embers that lit spot fires 1.0-1.6 km away, and Park City
+   leap-frogged 3.2 km in ~7 minutes through a 6-hop spot-from-spot chain
+   (12 of its 18 burned cells spot-ignited). Real fires do not: the source fire's active area is the
+   strongest predictor of its maximum spotting distance and of its number of
+   long-distance spot fires (Storey et al. 2020), and a spot fire needs
+   minutes to ignite and grow (Alexander & Cruz 2014: 5-10 min). With the
+   knob on (and spotting_enabled):
+   (a) FIRE SIZE. A burning cell's fire is the connected burned area (8-
+       neighbour) it joins when it ignites: every cell already burned then,
+       kept history and perimeter-interior cells included. A spot fire is a
+       new, small fire until it touches another.
+   (b) REACH. The cell's ember — SEMANTICS 11's single draw with its seed,
+       bearing and flight time unchanged — flies at most spread.spot_reach_m
+       = Albini's (1983) maximum spotting distance from a wind-driven surface
+       fire of the cell's Byram intensity in its 20-ft wind (the BehavePlus
+       equations, flat ground, open downwind cover) x (fire ha /
+       cfg.spot_fire_size_ref_ha) ** cfg.spot_fire_size_exp. A longer draw
+       burns out in flight: no spot. So a small fire launches fewer and
+       shorter embers and a fire larger than the reference reaches beyond
+       the surface-fire maximum (its plume lofts brands higher).
+   (c) DELAY. A spot fire starts cfg.spot_ignition_delay_min after its ember
+       lands; the advancing front may overrun it first.
+   (d) LAWS KEPT. No new random draw (the per-cell draw is the legacy one;
+       seeding never wall-clock); the ROS memo stays exact (Albini's maximum
+       is a function of the memo key, the size is applied at the teleport-
+       edge site — memo = WGRESP_NO_ROS_MEMO=1 reference with the rule on);
+       label-setting holds (a cell's fire size is a function of labels
+       already final, ties settled by (time, index); every ember still lands
+       after it is thrown); RE-ANCHOR HISTORY stays continuous (kept cells
+       join their fires first, embers aloft carry their delayed landing — a
+       no-op re-anchor is the continuous run cell for cell). P10 ordering is
+       unchanged in kind: every member runs the same law on its own draws.
+   (e) WHAT IT CANNOT DO. The engine has no torching or crown-fire model: a
+       torching tree's 0.5-1.4 km spot from a young timber fire (Albini 1979)
+       and the plume-driven 5-16 km spot fires of the largest fires (Camp
+       2018, Dixie 2021) are not represented; an ember landing on any
+       burnable cell still ignites it (no ignition probability); the size is
+       the total connected burned area, a proxy for the ACTIVE area Storey
+       measured (a fire that has gone quiet keeps its size); fire size cannot
+       move a slow fuel: where the floor no longer lifts timber, a timber-
+       litter ignition crawls whatever its embers do — measured on the seven
+       timber-start one-click scenarios (Park City and six Colorado towns:
+       6-395 acres in 6 h, about what they burn with spotting off).
+   Knob OFF = byte-identical arrival rasters (pinned in
+   tests/test_spot_fire_size.py against goldens computed on commit 05cf1d6,
+   before this rule existed, on worlds where it bites: a high-wind corridor,
+   a mixed-fuel tile with a perimeter, a re-anchor with embers aloft, an
+   ensemble and the committed Park City tile under both floor class sets).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -722,6 +780,15 @@ wgresponse.spread
         # contracts.WeatherField: one forecast per zone + the per-cell zone
         # index; also on ensemble_arrival; default None = byte-identical)
         # prices each edge with its source cell's zone forecast.
+        # SAFETY SEMANTICS 19 (2026-10-09): cfg.spot_fire_size limits each
+        # ember to spot_reach_m(intensity, u20, fire ha, cfg) and delays its
+        # spot fire; optional spot_trace (a list; default None = nothing
+        # recorded, byte-identical) receives one tuple per ember thrown
+        # (cell, thrown s, Sardoy mean m, u20, drawn m, reach m, fire cells,
+        # landing cell or -1, landing s) — the calibration probe's seam.
+    spot_reach_m(intensity_kwm, u20_mps, fire_ha, cfg) -> float
+        # SEMANTICS 19 reach (m): Albini's surface-fire maximum spotting
+        # distance x (fire_ha / cfg.spot_fire_size_ref_ha) ** cfg.spot_fire_size_exp
     ensemble_arrival(tile, ignition, wx, t0_s, cfg, incident_id: str = '') -> EnsembleArrival
         # Sprint 2 (Council-1 model F2+F6): members perturb wind SPEED, dead-fuel
         # MOISTURE, and wind DIRECTION (lead-scaled, up to cfg.dir_perturb_deg at max
@@ -2235,6 +2302,34 @@ class ResponseConfig:
     wind_perturb_frac: float = 0.25    # +/- scale at max lead; grows with lead time
     moisture_perturb_frac: float = 0.20
     spotting_enabled: bool = False     # Sardoy lognormal, default OFF
+    # EMBERS FLY AS FAR AS THE FIRE THAT THROWS THEM (founder 2026-10-09:
+    # "begin the calibration of the ember distance and size of fire
+    # calibration"; SAFETY SEMANTICS 19; docs/review/ember_spotting_
+    # calibration_2026-10-09.md). Measured: the legacy spotting (above) lets a
+    # fire of a few acres leap-frog kilometres in minutes — every burning cell
+    # throws from the full Sardoy lognormal from the first minute, and a spot-
+    # ignited cell throws again the moment it burns (Park City one-click: a
+    # 6-hop spot-from-spot chain covered 3.2 km in ~7 min). When True (with
+    # spotting_enabled) an ember flies at most Albini's surface-fire maximum
+    # spotting distance for its cell's intensity and 20-ft wind, scaled by
+    # (size of the connected fire the cell joined / spot_fire_size_ref_ha) **
+    # spot_fire_size_exp — a spot fire is a new, small fire until it joins
+    # another; a longer draw burns out in flight — and a spot fire starts
+    # spot_ignition_delay_min after its ember lands. False = the legacy
+    # spotting, byte-identical. NOT armed by the simulator (founder decision);
+    # the three parameters below are read only when it is on and default to
+    # the calibration's recommended values.
+    spot_fire_size: bool = False
+    # ... the fire size (ha) at which an ember's reach equals Albini's
+    # surface-fire maximum (smaller fires reach less, larger more).
+    spot_fire_size_ref_ha: float = 300.0
+    # ... the size exponent: reach ~ fire area ** exp (Storey et al. 2020,
+    # source-fire area vs maximum spotting distance: ~4 km at ~1000 ha, ~8 km
+    # at ~5000 ha => 0.43).
+    spot_fire_size_exp: float = 0.43
+    # ... minutes from an ember landing to its spot fire spreading (Alexander
+    # & Cruz 2014: up to 5-10 min; ELMFIRE cell ignition delay 100 s).
+    spot_ignition_delay_min: float = 5.0
     grid_cell_m: float = 90.0
     grid_max_cells: int = 300_000      # coarsen above this
     live_herb_frac: float = 0.30       # cured fire-season default
@@ -2745,6 +2840,17 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("dir_perturb_deg must be within [0, 180] degrees")
     if not (0.0 <= cfg.model_error_sd_log <= 3.0):
         problems.append("model_error_sd_log must be within [0, 3]")
+    # --- ember reach by fire size (SAFETY SEMANTICS 19) ---
+    if not (math.isfinite(cfg.spot_fire_size_ref_ha)
+            and 0.0 < cfg.spot_fire_size_ref_ha <= 1_000_000.0):
+        problems.append("spot_fire_size_ref_ha must be a finite size within "
+                        "(0, 1e6] ha")
+    if not (0.0 < cfg.spot_fire_size_exp <= 2.0):
+        problems.append("spot_fire_size_exp must be within (0, 2] (0 would "
+                        "make the reach independent of fire size)")
+    if not (0.0 <= cfg.spot_ignition_delay_min <= 120.0):
+        problems.append("spot_ignition_delay_min must be within [0, 120] "
+                        "minutes")
     # --- local weather across the domain (SAFETY SEMANTICS 17) ---
     if not (cfg.weather_grid_km == 0.0
             or (math.isfinite(cfg.weather_grid_km)

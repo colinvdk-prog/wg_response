@@ -1,0 +1,1052 @@
+[
+ {
+  "scenario": "park_city_windstorm",
+  "variant": "as_deployed",
+  "intensity": "extreme",
+  "acres_1h": 801,
+  "head_km_1h": 10.06,
+  "acres_3h": 6779,
+  "head_km_3h": 19.61,
+  "acres_6h": 13030,
+  "head_km_6h": 19.68,
+  "first_spot_over_1km": {
+   "age_min": 9.7,
+   "fire_acres": 10
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "variant": "legacy",
+  "intensity": "extreme",
+  "acres_1h": 6,
+  "head_km_1h": 0.26,
+  "acres_3h": 843,
+  "head_km_3h": 15.98,
+  "acres_6h": 7124,
+  "head_km_6h": 19.68,
+  "first_spot_over_1km": {
+   "age_min": 107.6,
+   "fire_acres": 56
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "variant": "spotting_off",
+  "intensity": "extreme",
+  "acres_1h": 4,
+  "head_km_1h": 0.14,
+  "acres_3h": 16,
+  "head_km_3h": 0.51,
+  "acres_6h": 50,
+  "head_km_6h": 0.82,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "variant": "law_r300_d5",
+  "intensity": "extreme",
+  "acres_1h": 4,
+  "head_km_1h": 0.14,
+  "acres_3h": 16,
+  "head_km_3h": 0.51,
+  "acres_6h": 50,
+  "head_km_6h": 0.82,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "variant": "dep_spotting_off",
+  "intensity": "extreme",
+  "acres_1h": 62,
+  "head_km_1h": 1.41,
+  "acres_3h": 1443,
+  "head_km_3h": 5.55,
+  "acres_6h": 3677,
+  "head_km_6h": 8.18,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "variant": "dep_law_r300_d5",
+  "intensity": "extreme",
+  "acres_1h": 64,
+  "head_km_1h": 1.41,
+  "acres_3h": 2410,
+  "head_km_3h": 9.93,
+  "acres_6h": 11029,
+  "head_km_6h": 19.55,
+  "first_spot_over_1km": {
+   "age_min": 85.9,
+   "fire_acres": 228
+  }
+ },
+ {
+  "scenario": "boulder_chinook",
+  "variant": "as_deployed",
+  "intensity": "extreme",
+  "acres_1h": 462,
+  "head_km_1h": 5.57,
+  "acres_3h": 1279,
+  "head_km_3h": 6.84,
+  "acres_6h": 3140,
+  "head_km_6h": 15.47,
+  "first_spot_over_1km": {
+   "age_min": 0.8,
+   "fire_acres": 6
+  }
+ },
+ {
+  "scenario": "boulder_chinook",
+  "variant": "legacy",
+  "intensity": "extreme",
+  "acres_1h": 456,
+  "head_km_1h": 5.57,
+  "acres_3h": 1267,
+  "head_km_3h": 6.84,
+  "acres_6h": 3108,
+  "head_km_6h": 15.47,
+  "first_spot_over_1km": {
+   "age_min": 0.8,
+   "fire_acres": 6
+  }
+ },
+ {
+  "scenario": "boulder_chinook",
+  "variant": "spotting_off",
+  "intensity": "extreme",
+  "acres_1h": 26,
+  "head_km_1h": 0.49,
+  "acres_3h": 460,
+  "head_km_3h": 4.94,
+  "acres_6h": 1719,
+  "head_km_6h": 6.43,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "boulder_chinook",
+  "variant": "law_r300_d5",
+  "intensity": "extreme",
+  "acres_1h": 34,
+  "head_km_1h": 1.0,
+  "acres_3h": 725,
+  "head_km_3h": 5.03,
+  "acres_6h": 2012,
+  "head_km_6h": 7.37,
+  "first_spot_over_1km": {
+   "age_min": 159.5,
+   "fire_acres": 540
+  }
+ },
+ {
+  "scenario": "boulder_chinook",
+  "variant": "dep_spotting_off",
+  "intensity": "extreme",
+  "acres_1h": 78,
+  "head_km_1h": 2.69,
+  "acres_3h": 815,
+  "head_km_3h": 5.03,
+  "acres_6h": 1994,
+  "head_km_6h": 6.61,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "boulder_chinook",
+  "variant": "dep_law_r300_d5",
+  "intensity": "extreme",
+  "acres_1h": 86,
+  "head_km_1h": 2.69,
+  "acres_3h": 1025,
+  "head_km_3h": 5.04,
+  "acres_6h": 2270,
+  "head_km_6h": 8.36,
+  "first_spot_over_1km": {
+   "age_min": 92.8,
+   "fire_acres": 312
+  }
+ },
+ {
+  "scenario": "rancho_santa_fe_santa_ana",
+  "variant": "as_deployed",
+  "intensity": "extreme",
+  "acres_1h": 200,
+  "head_km_1h": 3.9,
+  "acres_3h": 675,
+  "head_km_3h": 7.97,
+  "acres_6h": 1903,
+  "head_km_6h": 12.6,
+  "first_spot_over_1km": {
+   "age_min": 54.9,
+   "fire_acres": 184
+  }
+ },
+ {
+  "scenario": "rancho_santa_fe_santa_ana",
+  "variant": "legacy",
+  "intensity": "extreme",
+  "acres_1h": 200,
+  "head_km_1h": 3.9,
+  "acres_3h": 630,
+  "head_km_3h": 7.81,
+  "acres_6h": 1461,
+  "head_km_6h": 9.94,
+  "first_spot_over_1km": {
+   "age_min": 54.9,
+   "fire_acres": 184
+  }
+ },
+ {
+  "scenario": "rancho_santa_fe_santa_ana",
+  "variant": "spotting_off",
+  "intensity": "extreme",
+  "acres_1h": 122,
+  "head_km_1h": 2.09,
+  "acres_3h": 400,
+  "head_km_3h": 3.02,
+  "acres_6h": 735,
+  "head_km_6h": 3.46,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "rancho_santa_fe_santa_ana",
+  "variant": "law_r300_d5",
+  "intensity": "extreme",
+  "acres_1h": 150,
+  "head_km_1h": 2.23,
+  "acres_3h": 448,
+  "head_km_3h": 3.75,
+  "acres_6h": 1009,
+  "head_km_6h": 5.55,
+  "first_spot_over_1km": {
+   "age_min": 131.3,
+   "fire_acres": 324
+  }
+ },
+ {
+  "scenario": "rancho_santa_fe_santa_ana",
+  "variant": "dep_spotting_off",
+  "intensity": "extreme",
+  "acres_1h": 122,
+  "head_km_1h": 2.09,
+  "acres_3h": 404,
+  "head_km_3h": 3.02,
+  "acres_6h": 753,
+  "head_km_6h": 3.94,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "rancho_santa_fe_santa_ana",
+  "variant": "dep_law_r300_d5",
+  "intensity": "extreme",
+  "acres_1h": 150,
+  "head_km_1h": 2.23,
+  "acres_3h": 456,
+  "head_km_3h": 3.75,
+  "acres_6h": 1017,
+  "head_km_6h": 5.55,
+  "first_spot_over_1km": {
+   "age_min": 131.3,
+   "fire_acres": 324
+  }
+ },
+ {
+  "scenario": "malibu_santa_ana",
+  "variant": "as_deployed",
+  "intensity": "extreme",
+  "acres_1h": 2310,
+  "head_km_1h": 11.45,
+  "acres_3h": 4854,
+  "head_km_3h": 12.56,
+  "acres_6h": 7632,
+  "head_km_6h": 16.08,
+  "first_spot_over_1km": {
+   "age_min": 3.4,
+   "fire_acres": 22
+  }
+ },
+ {
+  "scenario": "malibu_santa_ana",
+  "variant": "legacy",
+  "intensity": "extreme",
+  "acres_1h": 2248,
+  "head_km_1h": 11.45,
+  "acres_3h": 4750,
+  "head_km_3h": 12.56,
+  "acres_6h": 7444,
+  "head_km_6h": 16.08,
+  "first_spot_over_1km": {
+   "age_min": 3.4,
+   "fire_acres": 22
+  }
+ },
+ {
+  "scenario": "malibu_santa_ana",
+  "variant": "spotting_off",
+  "intensity": "extreme",
+  "acres_1h": 430,
+  "head_km_1h": 3.74,
+  "acres_3h": 1583,
+  "head_km_3h": 6.37,
+  "acres_6h": 4153,
+  "head_km_6h": 10.73,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "malibu_santa_ana",
+  "variant": "law_r300_d5",
+  "intensity": "extreme",
+  "acres_1h": 749,
+  "head_km_1h": 7.46,
+  "acres_3h": 3695,
+  "head_km_3h": 11.45,
+  "acres_6h": 6645,
+  "head_km_6h": 13.69,
+  "first_spot_over_1km": {
+   "age_min": 20.9,
+   "fire_acres": 122
+  }
+ },
+ {
+  "scenario": "malibu_santa_ana",
+  "variant": "dep_spotting_off",
+  "intensity": "extreme",
+  "acres_1h": 490,
+  "head_km_1h": 3.92,
+  "acres_3h": 1859,
+  "head_km_3h": 6.5,
+  "acres_6h": 4558,
+  "head_km_6h": 10.73,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "malibu_santa_ana",
+  "variant": "dep_law_r300_d5",
+  "intensity": "extreme",
+  "acres_1h": 827,
+  "head_km_1h": 7.46,
+  "acres_3h": 3887,
+  "head_km_3h": 11.45,
+  "acres_6h": 6873,
+  "head_km_6h": 13.69,
+  "first_spot_over_1km": {
+   "age_min": 20.9,
+   "fire_acres": 122
+  }
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "variant": "as_deployed",
+  "intensity": "extreme",
+  "acres_1h": 566,
+  "head_km_1h": 6.36,
+  "acres_3h": 1407,
+  "head_km_3h": 7.77,
+  "acres_6h": 4848,
+  "head_km_6h": 19.67,
+  "first_spot_over_1km": {
+   "age_min": 12.3,
+   "fire_acres": 50
+  }
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "variant": "legacy",
+  "intensity": "extreme",
+  "acres_1h": 336,
+  "head_km_1h": 6.17,
+  "acres_3h": 999,
+  "head_km_3h": 7.58,
+  "acres_6h": 1839,
+  "head_km_6h": 8.23,
+  "first_spot_over_1km": {
+   "age_min": 20.4,
+   "fire_acres": 60
+  }
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "variant": "spotting_off",
+  "intensity": "extreme",
+  "acres_1h": 64,
+  "head_km_1h": 1.08,
+  "acres_3h": 362,
+  "head_km_3h": 3.24,
+  "acres_6h": 941,
+  "head_km_6h": 5.22,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "variant": "law_r300_d5",
+  "intensity": "extreme",
+  "acres_1h": 82,
+  "head_km_1h": 1.72,
+  "acres_3h": 733,
+  "head_km_3h": 5.54,
+  "acres_6h": 1571,
+  "head_km_6h": 6.0,
+  "first_spot_over_1km": {
+   "age_min": 98.1,
+   "fire_acres": 252
+  }
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "variant": "dep_spotting_off",
+  "intensity": "extreme",
+  "acres_1h": 138,
+  "head_km_1h": 1.97,
+  "acres_3h": 915,
+  "head_km_3h": 4.77,
+  "acres_6h": 1795,
+  "head_km_6h": 5.98,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "variant": "dep_law_r300_d5",
+  "intensity": "extreme",
+  "acres_1h": 186,
+  "head_km_1h": 2.48,
+  "acres_3h": 1175,
+  "head_km_3h": 6.36,
+  "acres_6h": 2282,
+  "head_km_6h": 8.3,
+  "first_spot_over_1km": {
+   "age_min": 59.2,
+   "fire_acres": 182
+  }
+ },
+ {
+  "scenario": "santa_rosa_diablo",
+  "variant": "as_deployed",
+  "intensity": "extreme",
+  "acres_1h": 749,
+  "head_km_1h": 10.18,
+  "acres_3h": 2508,
+  "head_km_3h": 12.2,
+  "acres_6h": 4594,
+  "head_km_6h": 12.7,
+  "first_spot_over_1km": {
+   "age_min": 16.4,
+   "fire_acres": 86
+  }
+ },
+ {
+  "scenario": "santa_rosa_diablo",
+  "variant": "legacy",
+  "intensity": "extreme",
+  "acres_1h": 272,
+  "head_km_1h": 5.41,
+  "acres_3h": 1405,
+  "head_km_3h": 10.38,
+  "acres_6h": 3457,
+  "head_km_6h": 12.56,
+  "first_spot_over_1km": {
+   "age_min": 30.4,
+   "fire_acres": 76
+  }
+ },
+ {
+  "scenario": "santa_rosa_diablo",
+  "variant": "spotting_off",
+  "intensity": "extreme",
+  "acres_1h": 26,
+  "head_km_1h": 0.53,
+  "acres_3h": 96,
+  "head_km_3h": 1.47,
+  "acres_6h": 562,
+  "head_km_6h": 3.95,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "santa_rosa_diablo",
+  "variant": "law_r300_d5",
+  "intensity": "extreme",
+  "acres_1h": 26,
+  "head_km_1h": 0.53,
+  "acres_3h": 156,
+  "head_km_3h": 1.72,
+  "acres_6h": 885,
+  "head_km_6h": 5.47,
+  "first_spot_over_1km": {
+   "age_min": 279.2,
+   "fire_acres": 655
+  }
+ },
+ {
+  "scenario": "santa_rosa_diablo",
+  "variant": "dep_spotting_off",
+  "intensity": "extreme",
+  "acres_1h": 90,
+  "head_km_1h": 1.65,
+  "acres_3h": 673,
+  "head_km_3h": 4.33,
+  "acres_6h": 1721,
+  "head_km_6h": 8.22,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "santa_rosa_diablo",
+  "variant": "dep_law_r300_d5",
+  "intensity": "extreme",
+  "acres_1h": 98,
+  "head_km_1h": 1.71,
+  "acres_3h": 943,
+  "head_km_3h": 7.13,
+  "acres_6h": 3839,
+  "head_km_6h": 12.07,
+  "first_spot_over_1km": {
+   "age_min": 143.3,
+   "fire_acres": 642
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "variant": "as_deployed",
+  "intensity": "high",
+  "acres_1h": 144,
+  "head_km_1h": 4.41,
+  "acres_3h": 1911,
+  "head_km_3h": 13.88,
+  "acres_6h": 7065,
+  "head_km_6h": 16.1,
+  "first_spot_over_1km": {
+   "age_min": 35.2,
+   "fire_acres": 50
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "variant": "legacy",
+  "intensity": "high",
+  "acres_1h": 2,
+  "head_km_1h": 0.04,
+  "acres_3h": 34,
+  "head_km_3h": 2.41,
+  "acres_6h": 184,
+  "head_km_6h": 5.71,
+  "first_spot_over_1km": {
+   "age_min": 191.7,
+   "fire_acres": 42
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "variant": "spotting_off",
+  "intensity": "high",
+  "acres_1h": 2,
+  "head_km_1h": 0.04,
+  "acres_3h": 8,
+  "head_km_3h": 0.42,
+  "acres_6h": 32,
+  "head_km_6h": 1.22,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "vail_westerly",
+  "variant": "law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 2,
+  "head_km_1h": 0.04,
+  "acres_3h": 8,
+  "head_km_3h": 0.42,
+  "acres_6h": 32,
+  "head_km_6h": 1.22,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "vail_westerly",
+  "variant": "dep_spotting_off",
+  "intensity": "high",
+  "acres_1h": 28,
+  "head_km_1h": 1.02,
+  "acres_3h": 228,
+  "head_km_3h": 2.99,
+  "acres_6h": 490,
+  "head_km_6h": 3.92,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "vail_westerly",
+  "variant": "dep_law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 28,
+  "head_km_1h": 1.02,
+  "acres_3h": 270,
+  "head_km_3h": 3.2,
+  "acres_6h": 586,
+  "head_km_6h": 4.41,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "beaver_creek_westerly",
+  "variant": "as_deployed",
+  "intensity": "high",
+  "acres_1h": 268,
+  "head_km_1h": 5.46,
+  "acres_3h": 1807,
+  "head_km_3h": 9.08,
+  "acres_6h": 4898,
+  "head_km_6h": 17.22,
+  "first_spot_over_1km": {
+   "age_min": 65.8,
+   "fire_acres": 340
+  }
+ },
+ {
+  "scenario": "beaver_creek_westerly",
+  "variant": "legacy",
+  "intensity": "high",
+  "acres_1h": 2,
+  "head_km_1h": 0.04,
+  "acres_3h": 14,
+  "head_km_3h": 0.98,
+  "acres_6h": 150,
+  "head_km_6h": 4.21,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "beaver_creek_westerly",
+  "variant": "spotting_off",
+  "intensity": "high",
+  "acres_1h": 2,
+  "head_km_1h": 0.04,
+  "acres_3h": 6,
+  "head_km_3h": 0.42,
+  "acres_6h": 12,
+  "head_km_6h": 0.82,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "beaver_creek_westerly",
+  "variant": "law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 2,
+  "head_km_1h": 0.04,
+  "acres_3h": 6,
+  "head_km_3h": 0.42,
+  "acres_6h": 12,
+  "head_km_6h": 0.82,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "beaver_creek_westerly",
+  "variant": "dep_spotting_off",
+  "intensity": "high",
+  "acres_1h": 70,
+  "head_km_1h": 1.83,
+  "acres_3h": 683,
+  "head_km_3h": 5.33,
+  "acres_6h": 2382,
+  "head_km_6h": 8.63,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "beaver_creek_westerly",
+  "variant": "dep_law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 70,
+  "head_km_1h": 1.83,
+  "acres_3h": 829,
+  "head_km_3h": 5.57,
+  "acres_6h": 2776,
+  "head_km_6h": 8.79,
+  "first_spot_over_1km": {
+   "age_min": 292.1,
+   "fire_acres": 2192
+  }
+ },
+ {
+  "scenario": "eagle_gypsum_westerly",
+  "variant": "as_deployed",
+  "intensity": "high",
+  "acres_1h": 12,
+  "head_km_1h": 0.29,
+  "acres_3h": 120,
+  "head_km_3h": 3.93,
+  "acres_6h": 683,
+  "head_km_6h": 4.48,
+  "first_spot_over_1km": {
+   "age_min": 105.2,
+   "fire_acres": 18
+  }
+ },
+ {
+  "scenario": "eagle_gypsum_westerly",
+  "variant": "legacy",
+  "intensity": "high",
+  "acres_1h": 12,
+  "head_km_1h": 0.29,
+  "acres_3h": 120,
+  "head_km_3h": 3.93,
+  "acres_6h": 683,
+  "head_km_6h": 4.48,
+  "first_spot_over_1km": {
+   "age_min": 105.2,
+   "fire_acres": 18
+  }
+ },
+ {
+  "scenario": "eagle_gypsum_westerly",
+  "variant": "spotting_off",
+  "intensity": "high",
+  "acres_1h": 12,
+  "head_km_1h": 0.29,
+  "acres_3h": 40,
+  "head_km_3h": 0.79,
+  "acres_6h": 172,
+  "head_km_6h": 3.23,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "eagle_gypsum_westerly",
+  "variant": "law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 12,
+  "head_km_1h": 0.29,
+  "acres_3h": 40,
+  "head_km_3h": 0.79,
+  "acres_6h": 172,
+  "head_km_6h": 3.23,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "eagle_gypsum_westerly",
+  "variant": "dep_spotting_off",
+  "intensity": "high",
+  "acres_1h": 12,
+  "head_km_1h": 0.29,
+  "acres_3h": 40,
+  "head_km_3h": 0.79,
+  "acres_6h": 172,
+  "head_km_6h": 3.23,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "eagle_gypsum_westerly",
+  "variant": "dep_law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 12,
+  "head_km_1h": 0.29,
+  "acres_3h": 40,
+  "head_km_3h": 0.79,
+  "acres_6h": 172,
+  "head_km_6h": 3.23,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "variant": "as_deployed",
+  "intensity": "high",
+  "acres_1h": 642,
+  "head_km_1h": 7.46,
+  "acres_3h": 4552,
+  "head_km_3h": 16.51,
+  "acres_6h": 13168,
+  "head_km_6h": 18.31,
+  "first_spot_over_1km": {
+   "age_min": 10.5,
+   "fire_acres": 58
+  }
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "variant": "legacy",
+  "intensity": "high",
+  "acres_1h": 382,
+  "head_km_1h": 5.28,
+  "acres_3h": 805,
+  "head_km_3h": 7.46,
+  "acres_6h": 1841,
+  "head_km_6h": 15.05,
+  "first_spot_over_1km": {
+   "age_min": 10.5,
+   "fire_acres": 44
+  }
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "variant": "spotting_off",
+  "intensity": "high",
+  "acres_1h": 8,
+  "head_km_1h": 0.3,
+  "acres_3h": 12,
+  "head_km_3h": 0.68,
+  "acres_6h": 228,
+  "head_km_6h": 2.99,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "variant": "law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 8,
+  "head_km_1h": 0.3,
+  "acres_3h": 12,
+  "head_km_3h": 0.68,
+  "acres_6h": 298,
+  "head_km_6h": 3.69,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "variant": "dep_spotting_off",
+  "intensity": "high",
+  "acres_1h": 56,
+  "head_km_1h": 1.87,
+  "acres_3h": 721,
+  "head_km_3h": 4.85,
+  "acres_6h": 1731,
+  "head_km_6h": 5.29,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "variant": "dep_law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 58,
+  "head_km_1h": 1.87,
+  "acres_3h": 889,
+  "head_km_3h": 5.05,
+  "acres_6h": 1839,
+  "head_km_6h": 5.55,
+  "first_spot_over_1km": {
+   "age_min": 225.1,
+   "fire_acres": 1127
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "variant": "as_deployed",
+  "intensity": "high",
+  "acres_1h": 380,
+  "head_km_1h": 7.27,
+  "acres_3h": 1565,
+  "head_km_3h": 9.44,
+  "acres_6h": 6815,
+  "head_km_6h": 18.68,
+  "first_spot_over_1km": {
+   "age_min": 34.9,
+   "fire_acres": 152
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "variant": "legacy",
+  "intensity": "high",
+  "acres_1h": 130,
+  "head_km_1h": 3.26,
+  "acres_3h": 741,
+  "head_km_3h": 7.92,
+  "acres_6h": 3789,
+  "head_km_6h": 18.68,
+  "first_spot_over_1km": {
+   "age_min": 47.5,
+   "fire_acres": 102
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "variant": "spotting_off",
+  "intensity": "high",
+  "acres_1h": 4,
+  "head_km_1h": 0.08,
+  "acres_3h": 72,
+  "head_km_3h": 1.73,
+  "acres_6h": 310,
+  "head_km_6h": 3.02,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "variant": "law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 4,
+  "head_km_1h": 0.08,
+  "acres_3h": 72,
+  "head_km_3h": 1.73,
+  "acres_6h": 394,
+  "head_km_6h": 4.29,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "variant": "dep_spotting_off",
+  "intensity": "high",
+  "acres_1h": 96,
+  "head_km_1h": 2.05,
+  "acres_3h": 749,
+  "head_km_3h": 5.17,
+  "acres_6h": 2232,
+  "head_km_6h": 7.34,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "variant": "dep_law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 96,
+  "head_km_1h": 2.05,
+  "acres_3h": 995,
+  "head_km_3h": 6.64,
+  "acres_6h": 2496,
+  "head_km_6h": 9.07,
+  "first_spot_over_1km": {
+   "age_min": 203.8,
+   "fire_acres": 1253
+  }
+ },
+ {
+  "scenario": "aspen_southwesterly",
+  "variant": "as_deployed",
+  "intensity": "high",
+  "acres_1h": 536,
+  "head_km_1h": 6.57,
+  "acres_3h": 4584,
+  "head_km_3h": 18.68,
+  "acres_6h": 10274,
+  "head_km_6h": 18.68,
+  "first_spot_over_1km": {
+   "age_min": 24.1,
+   "fire_acres": 90
+  }
+ },
+ {
+  "scenario": "aspen_southwesterly",
+  "variant": "legacy",
+  "intensity": "high",
+  "acres_1h": 4,
+  "head_km_1h": 0.08,
+  "acres_3h": 8,
+  "head_km_3h": 0.21,
+  "acres_6h": 40,
+  "head_km_6h": 2.56,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "aspen_southwesterly",
+  "variant": "spotting_off",
+  "intensity": "high",
+  "acres_1h": 2,
+  "head_km_1h": 0.05,
+  "acres_3h": 4,
+  "head_km_3h": 0.06,
+  "acres_6h": 6,
+  "head_km_6h": 0.15,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "aspen_southwesterly",
+  "variant": "law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 2,
+  "head_km_1h": 0.05,
+  "acres_3h": 4,
+  "head_km_3h": 0.06,
+  "acres_6h": 6,
+  "head_km_6h": 0.15,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "aspen_southwesterly",
+  "variant": "dep_spotting_off",
+  "intensity": "high",
+  "acres_1h": 88,
+  "head_km_1h": 1.68,
+  "acres_3h": 857,
+  "head_km_3h": 5.62,
+  "acres_6h": 2442,
+  "head_km_6h": 6.97,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "aspen_southwesterly",
+  "variant": "dep_law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 102,
+  "head_km_1h": 1.74,
+  "acres_3h": 1133,
+  "head_km_3h": 6.32,
+  "acres_6h": 2814,
+  "head_km_6h": 9.31,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "eagle_vail_corridor_westerly",
+  "variant": "as_deployed",
+  "intensity": "high",
+  "acres_1h": 267,
+  "head_km_1h": 3.69,
+  "acres_3h": 1166,
+  "head_km_3h": 9.36,
+  "acres_6h": 3796,
+  "head_km_6h": 12.8,
+  "first_spot_over_1km": {
+   "age_min": 0.5,
+   "fire_acres": 20
+  }
+ },
+ {
+  "scenario": "eagle_vail_corridor_westerly",
+  "variant": "legacy",
+  "intensity": "high",
+  "acres_1h": 158,
+  "head_km_1h": 2.69,
+  "acres_3h": 227,
+  "head_km_3h": 2.86,
+  "acres_6h": 593,
+  "head_km_6h": 4.25,
+  "first_spot_over_1km": {
+   "age_min": 0.5,
+   "fire_acres": 20
+  }
+ },
+ {
+  "scenario": "eagle_vail_corridor_westerly",
+  "variant": "spotting_off",
+  "intensity": "high",
+  "acres_1h": 30,
+  "head_km_1h": 0.97,
+  "acres_3h": 138,
+  "head_km_3h": 2.14,
+  "acres_6h": 366,
+  "head_km_6h": 2.86,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "eagle_vail_corridor_westerly",
+  "variant": "law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 30,
+  "head_km_1h": 0.97,
+  "acres_3h": 138,
+  "head_km_3h": 2.14,
+  "acres_6h": 395,
+  "head_km_6h": 2.86,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "eagle_vail_corridor_westerly",
+  "variant": "dep_spotting_off",
+  "intensity": "high",
+  "acres_1h": 89,
+  "head_km_1h": 1.86,
+  "acres_3h": 534,
+  "head_km_3h": 4.73,
+  "acres_6h": 1967,
+  "head_km_6h": 8.13,
+  "first_spot_over_1km": null
+ },
+ {
+  "scenario": "eagle_vail_corridor_westerly",
+  "variant": "dep_law_r300_d5",
+  "intensity": "high",
+  "acres_1h": 89,
+  "head_km_1h": 1.86,
+  "acres_3h": 583,
+  "head_km_3h": 4.75,
+  "acres_6h": 2817,
+  "head_km_6h": 9.49,
+  "first_spot_over_1km": null
+ }
+]
