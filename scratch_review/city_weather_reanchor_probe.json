@@ -1,0 +1,236 @@
+[
+ {
+  "key": "park_city_windstorm",
+  "profile": "generic",
+  "switch_s": 1790008100.0,
+  "rows": [
+   {
+    "lead_h": 0.5,
+    "cells_ref": 298,
+    "cells_reanchored": 298,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 1.0,
+    "cells_ref": 738,
+    "cells_reanchored": 738,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 3.0,
+    "cells_ref": 2809,
+    "cells_reanchored": 2809,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 6.0,
+    "cells_ref": 5354,
+    "cells_reanchored": 5354,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   }
+  ]
+ },
+ {
+  "key": "park_city_windstorm",
+  "profile": "city",
+  "switch_s": 1790008100.0,
+  "rows": [
+   {
+    "lead_h": 0.5,
+    "cells_ref": 6,
+    "cells_reanchored": 6,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 1.0,
+    "cells_ref": 9,
+    "cells_reanchored": 9,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 3.0,
+    "cells_ref": 265,
+    "cells_reanchored": 265,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 6.0,
+    "cells_ref": 1738,
+    "cells_reanchored": 1747,
+    "area_ratio": 1.0052,
+    "iou": 0.9275,
+    "mean_shift_min": -2.07
+   }
+  ]
+ },
+ {
+  "key": "malibu_santa_ana",
+  "profile": "generic",
+  "switch_s": 1790008100.0,
+  "rows": [
+   {
+    "lead_h": 0.5,
+    "cells_ref": 2229,
+    "cells_reanchored": 2229,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 1.0,
+    "cells_ref": 2496,
+    "cells_reanchored": 2496,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 3.0,
+    "cells_ref": 3385,
+    "cells_reanchored": 3385,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 6.0,
+    "cells_ref": 4427,
+    "cells_reanchored": 4427,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   }
+  ]
+ },
+ {
+  "key": "malibu_santa_ana",
+  "profile": "city",
+  "switch_s": 1790008100.0,
+  "rows": [
+   {
+    "lead_h": 0.5,
+    "cells_ref": 1642,
+    "cells_reanchored": 1642,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 1.0,
+    "cells_ref": 1834,
+    "cells_reanchored": 1834,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 3.0,
+    "cells_ref": 2461,
+    "cells_reanchored": 2461,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 6.0,
+    "cells_ref": 3608,
+    "cells_reanchored": 3608,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   }
+  ]
+ },
+ {
+  "key": "eagle_gypsum_westerly",
+  "profile": "generic",
+  "switch_s": 1790008100.0,
+  "rows": [
+   {
+    "lead_h": 0.5,
+    "cells_ref": 41,
+    "cells_reanchored": 41,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 1.0,
+    "cells_ref": 96,
+    "cells_reanchored": 96,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 3.0,
+    "cells_ref": 311,
+    "cells_reanchored": 311,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 6.0,
+    "cells_ref": 429,
+    "cells_reanchored": 429,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   }
+  ]
+ },
+ {
+  "key": "eagle_gypsum_westerly",
+  "profile": "city",
+  "switch_s": 1790008100.0,
+  "rows": [
+   {
+    "lead_h": 0.5,
+    "cells_ref": 170,
+    "cells_reanchored": 170,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 1.0,
+    "cells_ref": 255,
+    "cells_reanchored": 255,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 3.0,
+    "cells_ref": 440,
+    "cells_reanchored": 440,
+    "area_ratio": 1.0,
+    "iou": 1.0,
+    "mean_shift_min": 0.0
+   },
+   {
+    "lead_h": 6.0,
+    "cells_ref": 747,
+    "cells_reanchored": 741,
+    "area_ratio": 0.992,
+    "iou": 0.992,
+    "mean_shift_min": 1.14
+   }
+  ]
+ }
+]

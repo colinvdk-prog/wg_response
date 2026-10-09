@@ -484,6 +484,9 @@ def test_real_session_where_crews_leave_replays_from_its_command_log():
                                   # timber-floored ROS (before the grass-only default); pin that physics so
                                   # the situation under test still forms. The law under test is speed-blind.
                                   "ros_floor_grass_only": False,
+                                  # the legacy presets this probe was derived
+                                  # under (city weather: 2026-10-09)
+                                  "sim_weather_profile": "generic",
                                   "dispatch_late_shift": True,
                                   "dispatch_plan_on_roads": True,
                                   "dispatch_hold_h": 24.0, "deploy_min": 15.0,

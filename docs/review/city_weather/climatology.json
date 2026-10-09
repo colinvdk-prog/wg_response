@@ -1,0 +1,3612 @@
+{
+ "generated_by": "tools/city_weather_climatology.py",
+ "source": "Iowa Environmental Mesonet ASOS/AWOS archive (routine + special METARs)",
+ "years": [
+  2005,
+  2024
+ ],
+ "classes": {
+  "low": [
+   40.0,
+   60.0
+  ],
+  "moderate": [
+   75.0,
+   90.0
+  ],
+  "high": [
+   93.0,
+   98.0
+  ],
+  "extreme": [
+   99.0,
+   100.0
+  ]
+ },
+ "near_peak": 0.7,
+ "half_peak": 0.5,
+ "lapse_c_per_km": {
+  "day": [
+   7.1,
+   2.8
+  ],
+  "night": [
+   2.3,
+   2.9
+  ]
+ },
+ "communities": {
+  "malibu_ca": {
+   "key": "malibu_ca",
+   "short": "Malibu",
+   "stations": [
+    "CMA"
+   ],
+   "station_name": "Camarillo (AWOS)",
+   "station_elev_m": 23.0,
+   "home_elev_m": 246.0,
+   "dz_m": 223,
+   "utc_off_h": -8,
+   "season": "Sep-Dec",
+   "why": "Camarillo sits where the Santa Ana flow leaves the Santa Clara / Conejo gaps west of the Santa Monica Mountains; Santa Monica (coast) and Van Nuys (valley) are the cross-checks",
+   "station_stats": {
+    "n_days": 2050,
+    "first_day": "2005-09-01",
+    "last_day": "2024-12-30",
+    "gust_factor_windy": 1.4,
+    "low": {
+     "pct": [
+      40.0,
+      60.0
+     ],
+     "score_range": [
+      15.4,
+      18.5
+     ],
+     "n": 410,
+     "score": 16.8,
+     "wind_mph": 9.4,
+     "gust_mph": 13.2,
+     "gust_reported_frac": 0.13,
+     "rh": 54.0,
+     "temp_c": 22.9,
+     "peak_hour_lst": 13.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.0,
+     "night_rh": 84.9,
+     "night_temp_c": 12.8,
+     "months": {
+      "9": 174,
+      "10": 124,
+      "11": 56,
+      "12": 56
+     }
+    },
+    "moderate": {
+     "pct": [
+      75.0,
+      90.0
+     ],
+     "score_range": [
+      24.1,
+      49.9
+     ],
+     "n": 308,
+     "score": 33.4,
+     "wind_mph": 15.0,
+     "gust_mph": 26.5,
+     "gust_reported_frac": 0.56,
+     "rh": 25.9,
+     "temp_c": 21.1,
+     "peak_hour_lst": 13.0,
+     "hold_h": 4.5,
+     "hold_h_iqr": [
+      3.75,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 3.9,
+     "night_rh": 73.2,
+     "night_temp_c": 10.6,
+     "months": {
+      "9": 23,
+      "10": 73,
+      "11": 109,
+      "12": 103
+     }
+    },
+    "high": {
+     "pct": [
+      93.0,
+      98.0
+     ],
+     "score_range": [
+      57.3,
+      82.0
+     ],
+     "n": 103,
+     "score": 69.1,
+     "wind_mph": 22.7,
+     "gust_mph": 33.4,
+     "gust_reported_frac": 1.0,
+     "rh": 9.7,
+     "temp_c": 24.6,
+     "peak_hour_lst": 11,
+     "hold_h": 8,
+     "hold_h_iqr": [
+      6.0,
+      12.5
+     ],
+     "ease_h": 2,
+     "night_wind_mph": 12.4,
+     "night_rh": 40.5,
+     "night_temp_c": 12.2,
+     "months": {
+      "9": 2,
+      "10": 31,
+      "11": 40,
+      "12": 30
+     }
+    },
+    "extreme": {
+     "pct": [
+      99.0,
+      100.0
+     ],
+     "score_range": [
+      91.4,
+      116.7
+     ],
+     "n": 21,
+     "score": 97.1,
+     "wind_mph": 29.4,
+     "gust_mph": 42.1,
+     "gust_reported_frac": 1.0,
+     "rh": 8.2,
+     "temp_c": 20.4,
+     "peak_hour_lst": 10,
+     "hold_h": 10,
+     "hold_h_iqr": [
+      8,
+      13
+     ],
+     "ease_h": 4,
+     "night_wind_mph": 21.6,
+     "night_rh": 13.4,
+     "night_temp_c": 14.4,
+     "months": {
+      "10": 6,
+      "11": 9,
+      "12": 6
+     }
+    },
+    "record_day": {
+     "date": "2011-11-02",
+     "score": 116.7,
+     "wind_mph": 33.5,
+     "gust_mph": 45.1,
+     "max_wind_mph": 39.1,
+     "rh": 5.2,
+     "min_rh": 4.5,
+     "temp_c": 23.8,
+     "hold_h": 13,
+     "peak_hour_lst": 10
+    },
+    "p99_9_score": 106.9
+   },
+   "days": {
+    "low": {
+     "wind_mph": 9.4,
+     "gust_mph": 13.2,
+     "rh_pct": 57.1,
+     "temp_c": 21.3,
+     "night_wind_mph": 2.0,
+     "night_rh_pct": 84.1,
+     "night_temp_c": 12.3,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 13.0
+    },
+    "moderate": {
+     "wind_mph": 15.0,
+     "gust_mph": 26.5,
+     "rh_pct": 27.3,
+     "temp_c": 19.5,
+     "night_wind_mph": 3.9,
+     "night_rh_pct": 72.4,
+     "night_temp_c": 10.1,
+     "hold_h": 4.5,
+     "ease_h": 1.0,
+     "peak_hour_lst": 13.0
+    },
+    "high": {
+     "wind_mph": 22.7,
+     "gust_mph": 33.4,
+     "rh_pct": 10.2,
+     "temp_c": 23.0,
+     "night_wind_mph": 12.4,
+     "night_rh_pct": 40.0,
+     "night_temp_c": 11.7,
+     "hold_h": 8,
+     "ease_h": 2,
+     "peak_hour_lst": 11
+    },
+    "extreme": {
+     "wind_mph": 29.4,
+     "gust_mph": 42.1,
+     "rh_pct": 8.6,
+     "temp_c": 18.8,
+     "night_wind_mph": 21.6,
+     "night_rh_pct": 13.1,
+     "night_temp_c": 13.9,
+     "hold_h": 10,
+     "ease_h": 4,
+     "peak_hour_lst": 10
+    }
+   },
+   "peak_hour_lst": 13.0,
+   "cross_checks": {
+    "SMO": {
+     "low": {
+      "wind_mph": 8.2,
+      "gust_mph": 12.6,
+      "rh": 59.7,
+      "temp_c": 21.4,
+      "hold_h": 6,
+      "ease_h": 1,
+      "n": 479
+     },
+     "moderate": {
+      "wind_mph": 8.4,
+      "gust_mph": 12.9,
+      "rh": 37.4,
+      "temp_c": 22.4,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 360
+     },
+     "high": {
+      "wind_mph": 10.4,
+      "gust_mph": 22.0,
+      "rh": 26.2,
+      "temp_c": 20.7,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 120
+     },
+     "extreme": {
+      "wind_mph": 13.3,
+      "gust_mph": 24.9,
+      "rh": 14.3,
+      "temp_c": 18.6,
+      "hold_h": 6.0,
+      "ease_h": 1.5,
+      "n": 24
+     },
+     "record_day": {
+      "date": "2018-10-15",
+      "score": 51.9,
+      "wind_mph": 14.2,
+      "gust_mph": 25.1,
+      "max_wind_mph": 19.6,
+      "rh": 4.0,
+      "min_rh": 3.4,
+      "temp_c": 27.8,
+      "hold_h": 6,
+      "peak_hour_lst": 12
+     }
+    },
+    "VNY": {
+     "low": {
+      "wind_mph": 8.6,
+      "gust_mph": 12.3,
+      "rh": 31.1,
+      "temp_c": 27.2,
+      "hold_h": 4.0,
+      "ease_h": 1.0,
+      "n": 478
+     },
+     "moderate": {
+      "wind_mph": 12.9,
+      "gust_mph": 23.5,
+      "rh": 17.8,
+      "temp_c": 23.1,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 358
+     },
+     "high": {
+      "wind_mph": 18.6,
+      "gust_mph": 27.7,
+      "rh": 12.2,
+      "temp_c": 20.2,
+      "hold_h": 9.0,
+      "ease_h": 2.0,
+      "n": 120
+     },
+     "extreme": {
+      "wind_mph": 21.9,
+      "gust_mph": 32.5,
+      "rh": 6.4,
+      "temp_c": 20.9,
+      "hold_h": 10.0,
+      "ease_h": 3.5,
+      "n": 24
+     },
+     "record_day": {
+      "date": "2021-11-25",
+      "score": 114.0,
+      "wind_mph": 33.1,
+      "gust_mph": 45.3,
+      "max_wind_mph": 40.3,
+      "rh": 6.6,
+      "min_rh": 6.1,
+      "temp_c": 17.8,
+      "hold_h": 5,
+      "peak_hour_lst": 6
+     }
+    }
+   }
+  },
+  "paradise_ca": {
+   "key": "paradise_ca",
+   "short": "Paradise",
+   "stations": [
+    "CIC"
+   ],
+   "station_name": "Chico Muni",
+   "station_elev_m": 73.0,
+   "home_elev_m": 572.0,
+   "dz_m": 499,
+   "utc_off_h": -8,
+   "season": "Jun-Nov",
+   "why": "Chico Municipal, 22 km W on the valley floor below the Paradise ridge (Oroville cross-check)",
+   "station_stats": {
+    "n_days": 2346,
+    "first_day": "2011-06-23",
+    "last_day": "2024-11-30",
+    "gust_factor_windy": 1.33,
+    "low": {
+     "pct": [
+      40.0,
+      60.0
+     ],
+     "score_range": [
+      23.1,
+      28.6
+     ],
+     "n": 470,
+     "score": 26.0,
+     "wind_mph": 10.4,
+     "gust_mph": 13.8,
+     "gust_reported_frac": 0.2,
+     "rh": 26.5,
+     "temp_c": 31.8,
+     "peak_hour_lst": 16.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.1,
+     "night_rh": 62.2,
+     "night_temp_c": 18.0,
+     "months": {
+      "6": 77,
+      "7": 111,
+      "8": 132,
+      "9": 70,
+      "10": 50,
+      "11": 30
+     }
+    },
+    "moderate": {
+     "pct": [
+      75.0,
+      90.0
+     ],
+     "score_range": [
+      34.1,
+      44.3
+     ],
+     "n": 352,
+     "score": 37.9,
+     "wind_mph": 14.6,
+     "gust_mph": 19.5,
+     "gust_reported_frac": 0.46,
+     "rh": 23.6,
+     "temp_c": 30.7,
+     "peak_hour_lst": 15.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 2.0,
+     "night_wind_mph": 2.7,
+     "night_rh": 58.6,
+     "night_temp_c": 18.0,
+     "months": {
+      "6": 87,
+      "7": 86,
+      "8": 43,
+      "9": 60,
+      "10": 47,
+      "11": 29
+     }
+    },
+    "high": {
+     "pct": [
+      93.0,
+      98.0
+     ],
+     "score_range": [
+      47.9,
+      61.1
+     ],
+     "n": 118,
+     "score": 52.7,
+     "wind_mph": 18.9,
+     "gust_mph": 27.0,
+     "gust_reported_frac": 0.74,
+     "rh": 17.3,
+     "temp_c": 28.8,
+     "peak_hour_lst": 14.0,
+     "hold_h": 6.0,
+     "hold_h_iqr": [
+      5.0,
+      7.0
+     ],
+     "ease_h": 2.0,
+     "night_wind_mph": 3.6,
+     "night_rh": 49.4,
+     "night_temp_c": 17.0,
+     "months": {
+      "6": 41,
+      "7": 15,
+      "8": 6,
+      "9": 19,
+      "10": 26,
+      "11": 11
+     }
+    },
+    "extreme": {
+     "pct": [
+      99.0,
+      100.0
+     ],
+     "score_range": [
+      66.8,
+      101.8
+     ],
+     "n": 24,
+     "score": 71.0,
+     "wind_mph": 24.4,
+     "gust_mph": 33.1,
+     "gust_reported_frac": 0.88,
+     "rh": 15.3,
+     "temp_c": 27.1,
+     "peak_hour_lst": 14.0,
+     "hold_h": 7.0,
+     "hold_h_iqr": [
+      4.75,
+      9.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 10.2,
+     "night_rh": 43.2,
+     "night_temp_c": 14.0,
+     "months": {
+      "6": 8,
+      "7": 1,
+      "8": 1,
+      "9": 1,
+      "10": 10,
+      "11": 3
+     }
+    },
+    "record_day": {
+     "date": "2017-10-01",
+     "score": 101.8,
+     "wind_mph": 37.0,
+     "gust_mph": 51.1,
+     "max_wind_mph": 49.2,
+     "rh": 20.1,
+     "min_rh": 17.9,
+     "temp_c": 23.5,
+     "hold_h": 4,
+     "peak_hour_lst": 12
+    },
+    "p99_9_score": 93.3
+   },
+   "days": {
+    "low": {
+     "wind_mph": 10.4,
+     "gust_mph": 13.8,
+     "rh_pct": 29.6,
+     "temp_c": 28.3,
+     "night_wind_mph": 2.1,
+     "night_rh_pct": 60.7,
+     "night_temp_c": 16.9,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 16.0
+    },
+    "moderate": {
+     "wind_mph": 14.6,
+     "gust_mph": 19.5,
+     "rh_pct": 26.3,
+     "temp_c": 27.2,
+     "night_wind_mph": 2.7,
+     "night_rh_pct": 57.1,
+     "night_temp_c": 16.9,
+     "hold_h": 5.0,
+     "ease_h": 2.0,
+     "peak_hour_lst": 15.0
+    },
+    "high": {
+     "wind_mph": 18.9,
+     "gust_mph": 27.0,
+     "rh_pct": 19.3,
+     "temp_c": 25.3,
+     "night_wind_mph": 3.6,
+     "night_rh_pct": 48.1,
+     "night_temp_c": 15.9,
+     "hold_h": 6.0,
+     "ease_h": 2.0,
+     "peak_hour_lst": 14.0
+    },
+    "extreme": {
+     "wind_mph": 24.4,
+     "gust_mph": 33.1,
+     "rh_pct": 17.0,
+     "temp_c": 23.6,
+     "night_wind_mph": 10.2,
+     "night_rh_pct": 41.9,
+     "night_temp_c": 12.9,
+     "hold_h": 7.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    }
+   },
+   "peak_hour_lst": 15.0,
+   "cross_checks": {
+    "OVE": {
+     "low": {
+      "wind_mph": 7.8,
+      "gust_mph": 11.2,
+      "rh": 31.5,
+      "temp_c": 28.9,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 720
+     },
+     "moderate": {
+      "wind_mph": 11.7,
+      "gust_mph": 20.7,
+      "rh": 28.4,
+      "temp_c": 30.4,
+      "hold_h": 6.0,
+      "ease_h": 2.0,
+      "n": 540
+     },
+     "high": {
+      "wind_mph": 14.7,
+      "gust_mph": 23.6,
+      "rh": 24.4,
+      "temp_c": 28.9,
+      "hold_h": 7.0,
+      "ease_h": 2.0,
+      "n": 180
+     },
+     "extreme": {
+      "wind_mph": 18.5,
+      "gust_mph": 28.9,
+      "rh": 22.0,
+      "temp_c": 27.0,
+      "hold_h": 7.0,
+      "ease_h": 2.0,
+      "n": 36
+     },
+     "record_day": {
+      "date": "2020-10-25",
+      "score": 67.1,
+      "wind_mph": 19.3,
+      "gust_mph": 29.9,
+      "max_wind_mph": 24.2,
+      "rh": 7.6,
+      "min_rh": 5.7,
+      "temp_c": 21.0,
+      "hold_h": 4,
+      "peak_hour_lst": 17
+     }
+    }
+   }
+  },
+  "santa_rosa_ca": {
+   "key": "santa_rosa_ca",
+   "short": "Santa Rosa",
+   "stations": [
+    "STS"
+   ],
+   "station_name": "Santa Rosa (Sonoma Co.)",
+   "station_elev_m": 31.0,
+   "home_elev_m": 138.0,
+   "dz_m": 107,
+   "utc_off_h": -8,
+   "season": "Jun-Nov",
+   "why": "Sonoma County Airport, 14 km W of the Mark West / Fountaingrove interface",
+   "station_stats": {
+    "n_days": 3630,
+    "first_day": "2005-06-01",
+    "last_day": "2024-11-30",
+    "gust_factor_windy": 1.44,
+    "low": {
+     "pct": [
+      40.0,
+      60.0
+     ],
+     "score_range": [
+      18.8,
+      21.9
+     ],
+     "n": 726,
+     "score": 20.4,
+     "wind_mph": 10.4,
+     "gust_mph": 14.9,
+     "gust_reported_frac": 0.18,
+     "rh": 46.2,
+     "temp_c": 24.3,
+     "peak_hour_lst": 15.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 1.4,
+     "night_rh": 96.1,
+     "night_temp_c": 11.1,
+     "months": {
+      "6": 120,
+      "7": 167,
+      "8": 179,
+      "9": 145,
+      "10": 89,
+      "11": 26
+     }
+    },
+    "moderate": {
+     "pct": [
+      75.0,
+      90.0
+     ],
+     "score_range": [
+      24.4,
+      28.2
+     ],
+     "n": 545,
+     "score": 25.8,
+     "wind_mph": 11.5,
+     "gust_mph": 16.5,
+     "gust_reported_frac": 0.23,
+     "rh": 35.0,
+     "temp_c": 28.1,
+     "peak_hour_lst": 15,
+     "hold_h": 5,
+     "hold_h_iqr": [
+      4,
+      6
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 0.7,
+     "night_rh": 92.9,
+     "night_temp_c": 10.6,
+     "months": {
+      "6": 136,
+      "7": 170,
+      "8": 116,
+      "9": 77,
+      "10": 33,
+      "11": 13
+     }
+    },
+    "high": {
+     "pct": [
+      93.0,
+      98.0
+     ],
+     "score_range": [
+      29.9,
+      39.2
+     ],
+     "n": 182,
+     "score": 32.8,
+     "wind_mph": 13.4,
+     "gust_mph": 21.9,
+     "gust_reported_frac": 0.76,
+     "rh": 27.5,
+     "temp_c": 27.4,
+     "peak_hour_lst": 15.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      7.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 1.6,
+     "night_rh": 88.9,
+     "night_temp_c": 10.0,
+     "months": {
+      "6": 73,
+      "7": 23,
+      "8": 21,
+      "9": 24,
+      "10": 26,
+      "11": 15
+     }
+    },
+    "extreme": {
+     "pct": [
+      99.0,
+      100.0
+     ],
+     "score_range": [
+      44.5,
+      70.4
+     ],
+     "n": 37,
+     "score": 49.2,
+     "wind_mph": 18.7,
+     "gust_mph": 27.8,
+     "gust_reported_frac": 0.97,
+     "rh": 17.7,
+     "temp_c": 21.7,
+     "peak_hour_lst": 15,
+     "hold_h": 5,
+     "hold_h_iqr": [
+      4,
+      8
+     ],
+     "ease_h": 2,
+     "night_wind_mph": 3.5,
+     "night_rh": 86.1,
+     "night_temp_c": 10.0,
+     "months": {
+      "6": 11,
+      "7": 1,
+      "9": 4,
+      "10": 12,
+      "11": 9
+     }
+    },
+    "record_day": {
+     "date": "2013-11-21",
+     "score": 70.4,
+     "wind_mph": 26.2,
+     "gust_mph": 39.4,
+     "max_wind_mph": 29.9,
+     "rh": 17.6,
+     "min_rh": 16.1,
+     "temp_c": 14.7,
+     "hold_h": 4,
+     "peak_hour_lst": 19
+    },
+    "p99_9_score": 66.0
+   },
+   "days": {
+    "low": {
+     "wind_mph": 10.4,
+     "gust_mph": 14.9,
+     "rh_pct": 47.4,
+     "temp_c": 23.5,
+     "night_wind_mph": 1.4,
+     "night_rh_pct": 95.7,
+     "night_temp_c": 10.9,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 15.0
+    },
+    "moderate": {
+     "wind_mph": 11.5,
+     "gust_mph": 16.5,
+     "rh_pct": 35.9,
+     "temp_c": 27.3,
+     "night_wind_mph": 0.7,
+     "night_rh_pct": 92.5,
+     "night_temp_c": 10.4,
+     "hold_h": 5,
+     "ease_h": 1,
+     "peak_hour_lst": 15
+    },
+    "high": {
+     "wind_mph": 13.4,
+     "gust_mph": 21.9,
+     "rh_pct": 28.2,
+     "temp_c": 26.6,
+     "night_wind_mph": 1.6,
+     "night_rh_pct": 88.5,
+     "night_temp_c": 9.8,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 15.0
+    },
+    "extreme": {
+     "wind_mph": 26.0,
+     "gust_mph": 61.1,
+     "rh_pct": 7.0,
+     "temp_c": 32.8,
+     "night_wind_mph": 3.5,
+     "night_rh_pct": 85.7,
+     "night_temp_c": 9.8,
+     "hold_h": 4,
+     "ease_h": 12,
+     "peak_hour_lst": 15,
+     "override": "Tubbs Fire night, Santa Rosa RAWS 2017-10-09 11:00 UTC: wind 11.6 m/s, gust 27.3 m/s, RH 7 %, 32.8 C, FFWI 78 (Nauslar et al. 2018, Fire 1(1):18, Table 3); hold and easing as measured at Sonoma County Airport that day (anchors)"
+    }
+   },
+   "peak_hour_lst": 15.0,
+   "cross_checks": {}
+  },
+  "rancho_santa_fe_ca": {
+   "key": "rancho_santa_fe_ca",
+   "short": "Rancho Santa Fe",
+   "stations": [
+    "CRQ"
+   ],
+   "station_name": "Carlsbad / Palomar",
+   "station_elev_m": 100.0,
+   "home_elev_m": 62.0,
+   "dz_m": -38,
+   "utc_off_h": -8,
+   "season": "Sep-Dec",
+   "why": "Carlsbad / Palomar, 14 km NW on the same coastal mesa; Ramona (inland, upwind in a Santa Ana) is the cross-check",
+   "station_stats": {
+    "n_days": 2351,
+    "first_day": "2005-09-01",
+    "last_day": "2024-12-30",
+    "gust_factor_windy": 1.47,
+    "low": {
+     "pct": [
+      40.0,
+      60.0
+     ],
+     "score_range": [
+      11.5,
+      13.5
+     ],
+     "n": 471,
+     "score": 12.5,
+     "wind_mph": 7.7,
+     "gust_mph": 11.3,
+     "gust_reported_frac": 0.08,
+     "rh": 61.0,
+     "temp_c": 21.0,
+     "peak_hour_lst": 13,
+     "hold_h": 5,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 1.8,
+     "night_rh": 83.8,
+     "night_temp_c": 15.0,
+     "months": {
+      "9": 159,
+      "10": 119,
+      "11": 90,
+      "12": 103
+     }
+    },
+    "moderate": {
+     "pct": [
+      75.0,
+      90.0
+     ],
+     "score_range": [
+      15.3,
+      18.7
+     ],
+     "n": 353,
+     "score": 16.5,
+     "wind_mph": 8.5,
+     "gust_mph": 12.5,
+     "gust_reported_frac": 0.25,
+     "rh": 45.4,
+     "temp_c": 20.8,
+     "peak_hour_lst": 13,
+     "hold_h": 5,
+     "hold_h_iqr": [
+      4,
+      6
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 2.5,
+     "night_rh": 72.7,
+     "night_temp_c": 14.4,
+     "months": {
+      "9": 87,
+      "10": 95,
+      "11": 95,
+      "12": 76
+     }
+    },
+    "high": {
+     "pct": [
+      93.0,
+      98.0
+     ],
+     "score_range": [
+      19.8,
+      24.3
+     ],
+     "n": 118,
+     "score": 21.2,
+     "wind_mph": 8.8,
+     "gust_mph": 12.9,
+     "gust_reported_frac": 0.36,
+     "rh": 24.8,
+     "temp_c": 21.9,
+     "peak_hour_lst": 13.0,
+     "hold_h": 4.0,
+     "hold_h_iqr": [
+      3.0,
+      5.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 3.2,
+     "night_rh": 55.2,
+     "night_temp_c": 13.3,
+     "months": {
+      "9": 15,
+      "10": 39,
+      "11": 39,
+      "12": 25
+     }
+    },
+    "extreme": {
+     "pct": [
+      99.0,
+      100.0
+     ],
+     "score_range": [
+      29.4,
+      58.3
+     ],
+     "n": 24,
+     "score": 43.4,
+     "wind_mph": 13.7,
+     "gust_mph": 22.4,
+     "gust_reported_frac": 0.92,
+     "rh": 8.1,
+     "temp_c": 24.4,
+     "peak_hour_lst": 12.5,
+     "hold_h": 6.0,
+     "hold_h_iqr": [
+      4.0,
+      7.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.9,
+     "night_rh": 50.7,
+     "night_temp_c": 12.6,
+     "months": {
+      "9": 1,
+      "10": 9,
+      "11": 8,
+      "12": 6
+     }
+    },
+    "record_day": {
+     "date": "2020-12-03",
+     "score": 58.3,
+     "wind_mph": 17.6,
+     "gust_mph": 29.8,
+     "max_wind_mph": 23.0,
+     "rh": 6.9,
+     "min_rh": 4.8,
+     "temp_c": 20.6,
+     "hold_h": 9,
+     "peak_hour_lst": 11
+    },
+    "p99_9_score": 54.0
+   },
+   "days": {
+    "low": {
+     "wind_mph": 7.7,
+     "gust_mph": 11.3,
+     "rh_pct": 60.4,
+     "temp_c": 21.3,
+     "night_wind_mph": 1.8,
+     "night_rh_pct": 83.9,
+     "night_temp_c": 15.1,
+     "hold_h": 5,
+     "ease_h": 1,
+     "peak_hour_lst": 13
+    },
+    "moderate": {
+     "wind_mph": 8.5,
+     "gust_mph": 12.5,
+     "rh_pct": 45.0,
+     "temp_c": 21.1,
+     "night_wind_mph": 2.5,
+     "night_rh_pct": 72.8,
+     "night_temp_c": 14.5,
+     "hold_h": 5,
+     "ease_h": 1,
+     "peak_hour_lst": 13
+    },
+    "high": {
+     "wind_mph": 8.8,
+     "gust_mph": 12.9,
+     "rh_pct": 24.6,
+     "temp_c": 22.2,
+     "night_wind_mph": 3.2,
+     "night_rh_pct": 55.3,
+     "night_temp_c": 13.4,
+     "hold_h": 4.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 13.0
+    },
+    "extreme": {
+     "wind_mph": 13.7,
+     "gust_mph": 22.4,
+     "rh_pct": 8.0,
+     "temp_c": 24.7,
+     "night_wind_mph": 2.9,
+     "night_rh_pct": 50.8,
+     "night_temp_c": 12.7,
+     "hold_h": 6.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 12.5
+    }
+   },
+   "peak_hour_lst": 13.0,
+   "cross_checks": {
+    "RNM": {
+     "low": {
+      "wind_mph": 10.0,
+      "gust_mph": 14.0,
+      "rh": 37.5,
+      "temp_c": 25.1,
+      "hold_h": 5,
+      "ease_h": 1,
+      "n": 473
+     },
+     "moderate": {
+      "wind_mph": 11.7,
+      "gust_mph": 16.4,
+      "rh": 19.0,
+      "temp_c": 30.0,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 354
+     },
+     "high": {
+      "wind_mph": 15.2,
+      "gust_mph": 23.5,
+      "rh": 10.3,
+      "temp_c": 25.3,
+      "hold_h": 6.0,
+      "ease_h": 1.0,
+      "n": 118
+     },
+     "extreme": {
+      "wind_mph": 20.1,
+      "gust_mph": 29.6,
+      "rh": 7.2,
+      "temp_c": 21.8,
+      "hold_h": 8.5,
+      "ease_h": 2.5,
+      "n": 24
+     },
+     "record_day": {
+      "date": "2007-10-21",
+      "score": 95.3,
+      "wind_mph": 26.8,
+      "gust_mph": 40.9,
+      "max_wind_mph": 34.5,
+      "rh": 7.2,
+      "min_rh": 5.8,
+      "temp_c": 21.6,
+      "hold_h": 18,
+      "peak_hour_lst": 23
+     }
+    }
+   }
+  },
+  "boulder_co": {
+   "key": "boulder_co",
+   "short": "Boulder",
+   "stations": [
+    "BDU"
+   ],
+   "station_name": "Boulder Muni",
+   "station_elev_m": 1612.0,
+   "home_elev_m": 1637.0,
+   "dz_m": 25,
+   "utc_off_h": -7,
+   "season": "all year",
+   "why": "Boulder Municipal, 11 km NNW, under the foothills' downslope winds (Broomfield, 6 km SE on its mesa, stayed near 15 mph through the Marshall Fire); the grass fire season is year-round (Marshall burned in December)",
+   "station_stats": {
+    "n_days": 5157,
+    "first_day": "2010-06-15",
+    "last_day": "2024-12-31",
+    "gust_factor_windy": 1.45,
+    "low": {
+     "pct": [
+      40.0,
+      60.0
+     ],
+     "score_range": [
+      15.0,
+      20.8
+     ],
+     "n": 1031,
+     "score": 17.6,
+     "wind_mph": 7.3,
+     "gust_mph": 10.6,
+     "gust_reported_frac": 0.42,
+     "rh": 26.9,
+     "temp_c": 21.5,
+     "peak_hour_lst": 15,
+     "hold_h": 4,
+     "hold_h_iqr": [
+      3.0,
+      6.0
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 2.3,
+     "night_rh": 66.5,
+     "night_temp_c": 10.0,
+     "months": {
+      "1": 46,
+      "2": 33,
+      "3": 84,
+      "4": 81,
+      "5": 99,
+      "6": 118,
+      "7": 126,
+      "8": 148,
+      "9": 117,
+      "10": 76,
+      "11": 51,
+      "12": 52
+     }
+    },
+    "moderate": {
+     "pct": [
+      75.0,
+      90.0
+     ],
+     "score_range": [
+      28.3,
+      44.3
+     ],
+     "n": 774,
+     "score": 34.8,
+     "wind_mph": 13.8,
+     "gust_mph": 23.8,
+     "gust_reported_frac": 0.99,
+     "rh": 21.9,
+     "temp_c": 17.3,
+     "peak_hour_lst": 15.0,
+     "hold_h": 4.0,
+     "hold_h_iqr": [
+      3.0,
+      5.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 3.5,
+     "night_rh": 58.9,
+     "night_temp_c": 6.0,
+     "months": {
+      "1": 60,
+      "2": 76,
+      "3": 80,
+      "4": 70,
+      "5": 41,
+      "6": 70,
+      "7": 60,
+      "8": 63,
+      "9": 47,
+      "10": 66,
+      "11": 70,
+      "12": 71
+     }
+    },
+    "high": {
+     "pct": [
+      93.0,
+      98.0
+     ],
+     "score_range": [
+      48.6,
+      62.9
+     ],
+     "n": 257,
+     "score": 53.9,
+     "wind_mph": 20.7,
+     "gust_mph": 31.1,
+     "gust_reported_frac": 1.0,
+     "rh": 19.4,
+     "temp_c": 14.2,
+     "peak_hour_lst": 14,
+     "hold_h": 5,
+     "hold_h_iqr": [
+      3,
+      6
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 4.8,
+     "night_rh": 55.1,
+     "night_temp_c": 3.0,
+     "months": {
+      "1": 25,
+      "2": 27,
+      "3": 44,
+      "4": 42,
+      "5": 11,
+      "6": 16,
+      "7": 6,
+      "8": 7,
+      "9": 10,
+      "10": 24,
+      "11": 26,
+      "12": 19
+     }
+    },
+    "extreme": {
+     "pct": [
+      99.0,
+      100.0
+     ],
+     "score_range": [
+      73.0,
+      121.1
+     ],
+     "n": 52,
+     "score": 79.0,
+     "wind_mph": 31.9,
+     "gust_mph": 48.1,
+     "gust_reported_frac": 1.0,
+     "rh": 21.8,
+     "temp_c": 12.4,
+     "peak_hour_lst": 13.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 7.2,
+     "night_rh": 44.4,
+     "night_temp_c": 5.5,
+     "months": {
+      "1": 8,
+      "2": 13,
+      "3": 7,
+      "4": 8,
+      "5": 2,
+      "10": 3,
+      "11": 2,
+      "12": 9
+     }
+    },
+    "record_day": {
+     "date": "2012-02-22",
+     "score": 121.1,
+     "wind_mph": 43.9,
+     "gust_mph": 63.9,
+     "max_wind_mph": 55.2,
+     "rh": 24.5,
+     "min_rh": 24.2,
+     "temp_c": 13.0,
+     "hold_h": 6,
+     "peak_hour_lst": 17
+    },
+    "p99_9_score": 92.4
+   },
+   "days": {
+    "low": {
+     "wind_mph": 7.3,
+     "gust_mph": 10.6,
+     "rh_pct": 27.1,
+     "temp_c": 21.3,
+     "night_wind_mph": 2.3,
+     "night_rh_pct": 66.4,
+     "night_temp_c": 9.9,
+     "hold_h": 4,
+     "ease_h": 1,
+     "peak_hour_lst": 15
+    },
+    "moderate": {
+     "wind_mph": 13.8,
+     "gust_mph": 23.8,
+     "rh_pct": 22.0,
+     "temp_c": 17.1,
+     "night_wind_mph": 3.5,
+     "night_rh_pct": 58.8,
+     "night_temp_c": 5.9,
+     "hold_h": 4.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 15.0
+    },
+    "high": {
+     "wind_mph": 20.7,
+     "gust_mph": 31.1,
+     "rh_pct": 19.5,
+     "temp_c": 14.0,
+     "night_wind_mph": 4.8,
+     "night_rh_pct": 55.0,
+     "night_temp_c": 2.9,
+     "hold_h": 5,
+     "ease_h": 1,
+     "peak_hour_lst": 14
+    },
+    "extreme": {
+     "wind_mph": 31.9,
+     "gust_mph": 48.1,
+     "rh_pct": 21.9,
+     "temp_c": 12.2,
+     "night_wind_mph": 7.2,
+     "night_rh_pct": 44.3,
+     "night_temp_c": 5.4,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 13.0
+    }
+   },
+   "peak_hour_lst": 15.0,
+   "cross_checks": {
+    "BJC": {
+     "low": {
+      "wind_mph": 11.1,
+      "gust_mph": 21.3,
+      "rh": 28.4,
+      "temp_c": 21.3,
+      "hold_h": 4,
+      "ease_h": 1,
+      "n": 1043
+     },
+     "moderate": {
+      "wind_mph": 18.9,
+      "gust_mph": 28.8,
+      "rh": 21.3,
+      "temp_c": 16.3,
+      "hold_h": 4,
+      "ease_h": 1,
+      "n": 783
+     },
+     "high": {
+      "wind_mph": 26.7,
+      "gust_mph": 37.4,
+      "rh": 19.6,
+      "temp_c": 12.8,
+      "hold_h": 5,
+      "ease_h": 1,
+      "n": 261
+     },
+     "extreme": {
+      "wind_mph": 37.4,
+      "gust_mph": 50.1,
+      "rh": 20.4,
+      "temp_c": 11.0,
+      "hold_h": 6,
+      "ease_h": 1,
+      "n": 53
+     },
+     "record_day": {
+      "date": "2018-04-17",
+      "score": 142.6,
+      "wind_mph": 57.0,
+      "gust_mph": 72.5,
+      "max_wind_mph": 69.0,
+      "rh": 24.6,
+      "min_rh": 23.4,
+      "temp_c": 11.0,
+      "hold_h": 4,
+      "peak_hour_lst": 14
+     }
+    }
+   }
+  },
+  "park_city_ut": {
+   "key": "park_city_ut",
+   "short": "Park City",
+   "stations": [
+    "36U",
+    "HCR"
+   ],
+   "station_name": "Heber (old id)",
+   "station_elev_m": 1718.0,
+   "home_elev_m": 2042.0,
+   "dz_m": 324,
+   "utc_off_h": -7,
+   "season": "Jun-Oct",
+   "why": "Heber Valley, 28 km SSE - the nearest mountain-valley airport (Park City has none); Salt Lake City, below Parleys Canyon, is the cross-check",
+   "station_stats": {
+    "n_days": 2101,
+    "first_day": "2010-06-01",
+    "last_day": "2024-10-31",
+    "gust_factor_windy": 1.38,
+    "low": {
+     "pct": [
+      40.0,
+      60.0
+     ],
+     "score_range": [
+      23.4,
+      29.9
+     ],
+     "n": 421,
+     "score": 26.2,
+     "wind_mph": 10.4,
+     "gust_mph": 18.4,
+     "gust_reported_frac": 0.66,
+     "rh": 18.4,
+     "temp_c": 26.7,
+     "peak_hour_lst": 15,
+     "hold_h": 3,
+     "hold_h_iqr": [
+      3,
+      4
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 0.7,
+     "night_rh": 83.4,
+     "night_temp_c": 6.0,
+     "months": {
+      "6": 87,
+      "7": 79,
+      "8": 90,
+      "9": 83,
+      "10": 82
+     }
+    },
+    "moderate": {
+     "pct": [
+      75.0,
+      90.0
+     ],
+     "score_range": [
+      35.6,
+      44.0
+     ],
+     "n": 316,
+     "score": 39.2,
+     "wind_mph": 14.1,
+     "gust_mph": 21.3,
+     "gust_reported_frac": 0.97,
+     "rh": 14.8,
+     "temp_c": 28.3,
+     "peak_hour_lst": 14.0,
+     "hold_h": 4.0,
+     "hold_h_iqr": [
+      3.0,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 0.7,
+     "night_rh": 80.6,
+     "night_temp_c": 7.0,
+     "months": {
+      "6": 82,
+      "7": 71,
+      "8": 65,
+      "9": 56,
+      "10": 42
+     }
+    },
+    "high": {
+     "pct": [
+      93.0,
+      98.0
+     ],
+     "score_range": [
+      46.9,
+      55.3
+     ],
+     "n": 106,
+     "score": 50.2,
+     "wind_mph": 17.8,
+     "gust_mph": 26.2,
+     "gust_reported_frac": 1.0,
+     "rh": 14.9,
+     "temp_c": 27.3,
+     "peak_hour_lst": 14.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      7.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 0.9,
+     "night_rh": 75.2,
+     "night_temp_c": 7.0,
+     "months": {
+      "6": 38,
+      "7": 7,
+      "8": 18,
+      "9": 27,
+      "10": 16
+     }
+    },
+    "extreme": {
+     "pct": [
+      99.0,
+      100.0
+     ],
+     "score_range": [
+      60.8,
+      68.3
+     ],
+     "n": 22,
+     "score": 64.3,
+     "wind_mph": 21.3,
+     "gust_mph": 31.0,
+     "gust_reported_frac": 1.0,
+     "rh": 11.6,
+     "temp_c": 27.7,
+     "peak_hour_lst": 14.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 0.9,
+     "night_rh": 67.8,
+     "night_temp_c": 11.0,
+     "months": {
+      "6": 10,
+      "7": 4,
+      "8": 3,
+      "9": 5
+     }
+    },
+    "record_day": {
+     "date": "2015-06-21",
+     "score": 68.3,
+     "wind_mph": 23.4,
+     "gust_mph": 31.1,
+     "max_wind_mph": 26.5,
+     "rh": 8.6,
+     "min_rh": 7.9,
+     "temp_c": 34.0,
+     "hold_h": 3,
+     "peak_hour_lst": 14
+    },
+    "p99_9_score": 67.8
+   },
+   "days": {
+    "low": {
+     "wind_mph": 10.4,
+     "gust_mph": 18.4,
+     "rh_pct": 19.8,
+     "temp_c": 24.4,
+     "night_wind_mph": 0.7,
+     "night_rh_pct": 82.2,
+     "night_temp_c": 5.3,
+     "hold_h": 3,
+     "ease_h": 1,
+     "peak_hour_lst": 15
+    },
+    "moderate": {
+     "wind_mph": 14.1,
+     "gust_mph": 21.3,
+     "rh_pct": 15.8,
+     "temp_c": 26.0,
+     "night_wind_mph": 0.7,
+     "night_rh_pct": 79.4,
+     "night_temp_c": 6.3,
+     "hold_h": 4.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    },
+    "high": {
+     "wind_mph": 17.8,
+     "gust_mph": 26.2,
+     "rh_pct": 16.0,
+     "temp_c": 25.0,
+     "night_wind_mph": 0.9,
+     "night_rh_pct": 74.0,
+     "night_temp_c": 6.3,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    },
+    "extreme": {
+     "wind_mph": 21.3,
+     "gust_mph": 31.0,
+     "rh_pct": 12.4,
+     "temp_c": 25.4,
+     "night_wind_mph": 0.9,
+     "night_rh_pct": 66.7,
+     "night_temp_c": 10.3,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    }
+   },
+   "peak_hour_lst": 14.0,
+   "cross_checks": {
+    "SLC": {
+     "low": {
+      "wind_mph": 10.7,
+      "gust_mph": 19.6,
+      "rh": 20.1,
+      "temp_c": 28.9,
+      "hold_h": 5,
+      "ease_h": 1,
+      "n": 611
+     },
+     "moderate": {
+      "wind_mph": 16.1,
+      "gust_mph": 25.9,
+      "rh": 21.0,
+      "temp_c": 29.6,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 458
+     },
+     "high": {
+      "wind_mph": 20.4,
+      "gust_mph": 29.6,
+      "rh": 15.9,
+      "temp_c": 30.4,
+      "hold_h": 7.0,
+      "ease_h": 2.0,
+      "n": 152
+     },
+     "extreme": {
+      "wind_mph": 24.8,
+      "gust_mph": 35.8,
+      "rh": 10.3,
+      "temp_c": 32.0,
+      "hold_h": 7,
+      "ease_h": 2,
+      "n": 31
+     },
+     "record_day": {
+      "date": "2016-06-15",
+      "score": 95.9,
+      "wind_mph": 29.3,
+      "gust_mph": 41.0,
+      "max_wind_mph": 34.5,
+      "rh": 7.7,
+      "min_rh": 6.9,
+      "temp_c": 32.6,
+      "hold_h": 6,
+      "peak_hour_lst": 17
+     }
+    }
+   }
+  },
+  "vail_co": {
+   "key": "vail_co",
+   "short": "Vail",
+   "stations": [
+    "EGE"
+   ],
+   "station_name": "Eagle County Regional",
+   "station_elev_m": 1993.0,
+   "home_elev_m": 2496.0,
+   "dz_m": 503,
+   "utc_off_h": -7,
+   "season": "Jun-Sep",
+   "why": "Eagle County Regional, the Eagle Valley's airport, moved up to Vail's homes; Aspen (same elevation band) cross-checks",
+   "station_stats": {
+    "n_days": 2211,
+    "first_day": "2005-06-01",
+    "last_day": "2024-09-30",
+    "gust_factor_windy": 1.39,
+    "low": {
+     "pct": [
+      40.0,
+      60.0
+     ],
+     "score_range": [
+      29.7,
+      37.0
+     ],
+     "n": 443,
+     "score": 33.3,
+     "wind_mph": 12.9,
+     "gust_mph": 21.9,
+     "gust_reported_frac": 0.92,
+     "rh": 22.0,
+     "temp_c": 27.0,
+     "peak_hour_lst": 16,
+     "hold_h": 4,
+     "hold_h_iqr": [
+      3.0,
+      5.0
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 2.1,
+     "night_rh": 71.5,
+     "night_temp_c": 9.0,
+     "months": {
+      "6": 73,
+      "7": 140,
+      "8": 126,
+      "9": 104
+     }
+    },
+    "moderate": {
+     "pct": [
+      75.0,
+      90.0
+     ],
+     "score_range": [
+      44.2,
+      54.2
+     ],
+     "n": 332,
+     "score": 48.4,
+     "wind_mph": 17.8,
+     "gust_mph": 26.5,
+     "gust_reported_frac": 1.0,
+     "rh": 15.9,
+     "temp_c": 27.6,
+     "peak_hour_lst": 14.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.3,
+     "night_rh": 65.6,
+     "night_temp_c": 8.0,
+     "months": {
+      "6": 128,
+      "7": 66,
+      "8": 63,
+      "9": 75
+     }
+    },
+    "high": {
+     "pct": [
+      93.0,
+      98.0
+     ],
+     "score_range": [
+      57.8,
+      68.5
+     ],
+     "n": 110,
+     "score": 61.9,
+     "wind_mph": 21.9,
+     "gust_mph": 31.1,
+     "gust_reported_frac": 0.99,
+     "rh": 13.5,
+     "temp_c": 27.4,
+     "peak_hour_lst": 14.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      7.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.1,
+     "night_rh": 59.3,
+     "night_temp_c": 7.5,
+     "months": {
+      "6": 56,
+      "7": 14,
+      "8": 13,
+      "9": 27
+     }
+    },
+    "extreme": {
+     "pct": [
+      99.0,
+      100.0
+     ],
+     "score_range": [
+      74.4,
+      91.1
+     ],
+     "n": 23,
+     "score": 77.4,
+     "wind_mph": 26.0,
+     "gust_mph": 37.0,
+     "gust_reported_frac": 1.0,
+     "rh": 10.8,
+     "temp_c": 27.2,
+     "peak_hour_lst": 14,
+     "hold_h": 7,
+     "hold_h_iqr": [
+      5.0,
+      8.5
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 2.8,
+     "night_rh": 50.1,
+     "night_temp_c": 8.9,
+     "months": {
+      "6": 21,
+      "9": 2
+     }
+    },
+    "record_day": {
+     "date": "2013-09-25",
+     "score": 91.1,
+     "wind_mph": 32.2,
+     "gust_mph": 44.7,
+     "max_wind_mph": 42.6,
+     "rh": 13.9,
+     "min_rh": 12.9,
+     "temp_c": 23.6,
+     "hold_h": 5,
+     "peak_hour_lst": 15
+    },
+    "p99_9_score": 86.2
+   },
+   "days": {
+    "low": {
+     "wind_mph": 12.9,
+     "gust_mph": 21.9,
+     "rh_pct": 24.6,
+     "temp_c": 23.4,
+     "night_wind_mph": 2.1,
+     "night_rh_pct": 69.8,
+     "night_temp_c": 7.8,
+     "hold_h": 4,
+     "ease_h": 1,
+     "peak_hour_lst": 16
+    },
+    "moderate": {
+     "wind_mph": 17.8,
+     "gust_mph": 26.5,
+     "rh_pct": 17.7,
+     "temp_c": 24.0,
+     "night_wind_mph": 2.3,
+     "night_rh_pct": 63.9,
+     "night_temp_c": 6.8,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    },
+    "high": {
+     "wind_mph": 21.9,
+     "gust_mph": 31.1,
+     "rh_pct": 15.0,
+     "temp_c": 23.8,
+     "night_wind_mph": 2.1,
+     "night_rh_pct": 57.7,
+     "night_temp_c": 6.3,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    },
+    "extreme": {
+     "wind_mph": 26.0,
+     "gust_mph": 37.0,
+     "rh_pct": 12.0,
+     "temp_c": 23.6,
+     "night_wind_mph": 2.8,
+     "night_rh_pct": 48.7,
+     "night_temp_c": 7.7,
+     "hold_h": 7,
+     "ease_h": 1,
+     "peak_hour_lst": 14
+    }
+   },
+   "peak_hour_lst": 14.0,
+   "cross_checks": {
+    "ASE": {
+     "low": {
+      "wind_mph": 9.9,
+      "gust_mph": 19.9,
+      "rh": 22.6,
+      "temp_c": 23.5,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 484
+     },
+     "moderate": {
+      "wind_mph": 12.0,
+      "gust_mph": 22.2,
+      "rh": 17.5,
+      "temp_c": 24.3,
+      "hold_h": 4,
+      "ease_h": 1,
+      "n": 363
+     },
+     "high": {
+      "wind_mph": 13.8,
+      "gust_mph": 25.3,
+      "rh": 15.4,
+      "temp_c": 24.9,
+      "hold_h": 5,
+      "ease_h": 1,
+      "n": 121
+     },
+     "extreme": {
+      "wind_mph": 18.0,
+      "gust_mph": 29.9,
+      "rh": 13.2,
+      "temp_c": 22.4,
+      "hold_h": 5,
+      "ease_h": 1,
+      "n": 25
+     },
+     "record_day": {
+      "date": "2019-09-29",
+      "score": 65.1,
+      "wind_mph": 21.2,
+      "gust_mph": 32.7,
+      "max_wind_mph": 27.6,
+      "rh": 13.4,
+      "min_rh": 11.8,
+      "temp_c": 22.2,
+      "hold_h": 5,
+      "peak_hour_lst": 14
+     }
+    }
+   }
+  },
+  "beaver_creek_co": {
+   "key": "beaver_creek_co",
+   "short": "Beaver Creek",
+   "stations": [
+    "EGE"
+   ],
+   "station_name": "Eagle County Regional",
+   "station_elev_m": 1993.0,
+   "home_elev_m": 2312.0,
+   "dz_m": 319,
+   "utc_off_h": -7,
+   "season": "Jun-Sep",
+   "why": "Eagle County Regional, 33 km W down the same valley",
+   "station_stats": {
+    "n_days": 2211,
+    "first_day": "2005-06-01",
+    "last_day": "2024-09-30",
+    "gust_factor_windy": 1.39,
+    "low": {
+     "pct": [
+      40.0,
+      60.0
+     ],
+     "score_range": [
+      29.7,
+      37.0
+     ],
+     "n": 443,
+     "score": 33.3,
+     "wind_mph": 12.9,
+     "gust_mph": 21.9,
+     "gust_reported_frac": 0.92,
+     "rh": 22.0,
+     "temp_c": 27.0,
+     "peak_hour_lst": 16,
+     "hold_h": 4,
+     "hold_h_iqr": [
+      3.0,
+      5.0
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 2.1,
+     "night_rh": 71.5,
+     "night_temp_c": 9.0,
+     "months": {
+      "6": 73,
+      "7": 140,
+      "8": 126,
+      "9": 104
+     }
+    },
+    "moderate": {
+     "pct": [
+      75.0,
+      90.0
+     ],
+     "score_range": [
+      44.2,
+      54.2
+     ],
+     "n": 332,
+     "score": 48.4,
+     "wind_mph": 17.8,
+     "gust_mph": 26.5,
+     "gust_reported_frac": 1.0,
+     "rh": 15.9,
+     "temp_c": 27.6,
+     "peak_hour_lst": 14.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.3,
+     "night_rh": 65.6,
+     "night_temp_c": 8.0,
+     "months": {
+      "6": 128,
+      "7": 66,
+      "8": 63,
+      "9": 75
+     }
+    },
+    "high": {
+     "pct": [
+      93.0,
+      98.0
+     ],
+     "score_range": [
+      57.8,
+      68.5
+     ],
+     "n": 110,
+     "score": 61.9,
+     "wind_mph": 21.9,
+     "gust_mph": 31.1,
+     "gust_reported_frac": 0.99,
+     "rh": 13.5,
+     "temp_c": 27.4,
+     "peak_hour_lst": 14.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      7.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.1,
+     "night_rh": 59.3,
+     "night_temp_c": 7.5,
+     "months": {
+      "6": 56,
+      "7": 14,
+      "8": 13,
+      "9": 27
+     }
+    },
+    "extreme": {
+     "pct": [
+      99.0,
+      100.0
+     ],
+     "score_range": [
+      74.4,
+      91.1
+     ],
+     "n": 23,
+     "score": 77.4,
+     "wind_mph": 26.0,
+     "gust_mph": 37.0,
+     "gust_reported_frac": 1.0,
+     "rh": 10.8,
+     "temp_c": 27.2,
+     "peak_hour_lst": 14,
+     "hold_h": 7,
+     "hold_h_iqr": [
+      5.0,
+      8.5
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 2.8,
+     "night_rh": 50.1,
+     "night_temp_c": 8.9,
+     "months": {
+      "6": 21,
+      "9": 2
+     }
+    },
+    "record_day": {
+     "date": "2013-09-25",
+     "score": 91.1,
+     "wind_mph": 32.2,
+     "gust_mph": 44.7,
+     "max_wind_mph": 42.6,
+     "rh": 13.9,
+     "min_rh": 12.9,
+     "temp_c": 23.6,
+     "hold_h": 5,
+     "peak_hour_lst": 15
+    },
+    "p99_9_score": 86.2
+   },
+   "days": {
+    "low": {
+     "wind_mph": 12.9,
+     "gust_mph": 21.9,
+     "rh_pct": 23.6,
+     "temp_c": 24.7,
+     "night_wind_mph": 2.1,
+     "night_rh_pct": 70.4,
+     "night_temp_c": 8.3,
+     "hold_h": 4,
+     "ease_h": 1,
+     "peak_hour_lst": 16
+    },
+    "moderate": {
+     "wind_mph": 17.8,
+     "gust_mph": 26.5,
+     "rh_pct": 17.0,
+     "temp_c": 25.3,
+     "night_wind_mph": 2.3,
+     "night_rh_pct": 64.5,
+     "night_temp_c": 7.3,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    },
+    "high": {
+     "wind_mph": 21.9,
+     "gust_mph": 31.1,
+     "rh_pct": 14.4,
+     "temp_c": 25.1,
+     "night_wind_mph": 2.1,
+     "night_rh_pct": 58.3,
+     "night_temp_c": 6.8,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    },
+    "extreme": {
+     "wind_mph": 26.0,
+     "gust_mph": 37.0,
+     "rh_pct": 11.5,
+     "temp_c": 24.9,
+     "night_wind_mph": 2.8,
+     "night_rh_pct": 49.2,
+     "night_temp_c": 8.2,
+     "hold_h": 7,
+     "ease_h": 1,
+     "peak_hour_lst": 14
+    }
+   },
+   "peak_hour_lst": 14.0,
+   "cross_checks": {
+    "ASE": {
+     "low": {
+      "wind_mph": 9.9,
+      "gust_mph": 19.9,
+      "rh": 22.6,
+      "temp_c": 23.5,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 484
+     },
+     "moderate": {
+      "wind_mph": 12.0,
+      "gust_mph": 22.2,
+      "rh": 17.5,
+      "temp_c": 24.3,
+      "hold_h": 4,
+      "ease_h": 1,
+      "n": 363
+     },
+     "high": {
+      "wind_mph": 13.8,
+      "gust_mph": 25.3,
+      "rh": 15.4,
+      "temp_c": 24.9,
+      "hold_h": 5,
+      "ease_h": 1,
+      "n": 121
+     },
+     "extreme": {
+      "wind_mph": 18.0,
+      "gust_mph": 29.9,
+      "rh": 13.2,
+      "temp_c": 22.4,
+      "hold_h": 5,
+      "ease_h": 1,
+      "n": 25
+     },
+     "record_day": {
+      "date": "2019-09-29",
+      "score": 65.1,
+      "wind_mph": 21.2,
+      "gust_mph": 32.7,
+      "max_wind_mph": 27.6,
+      "rh": 13.4,
+      "min_rh": 11.8,
+      "temp_c": 22.2,
+      "hold_h": 5,
+      "peak_hour_lst": 14
+     }
+    }
+   }
+  },
+  "eagle_co": {
+   "key": "eagle_co",
+   "short": "Eagle",
+   "stations": [
+    "EGE"
+   ],
+   "station_name": "Eagle County Regional",
+   "station_elev_m": 1993.0,
+   "home_elev_m": 2010.0,
+   "dz_m": 17,
+   "utc_off_h": -7,
+   "season": "Jun-Sep",
+   "why": "Eagle County Regional, in the community",
+   "station_stats": {
+    "n_days": 2211,
+    "first_day": "2005-06-01",
+    "last_day": "2024-09-30",
+    "gust_factor_windy": 1.39,
+    "low": {
+     "pct": [
+      40.0,
+      60.0
+     ],
+     "score_range": [
+      29.7,
+      37.0
+     ],
+     "n": 443,
+     "score": 33.3,
+     "wind_mph": 12.9,
+     "gust_mph": 21.9,
+     "gust_reported_frac": 0.92,
+     "rh": 22.0,
+     "temp_c": 27.0,
+     "peak_hour_lst": 16,
+     "hold_h": 4,
+     "hold_h_iqr": [
+      3.0,
+      5.0
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 2.1,
+     "night_rh": 71.5,
+     "night_temp_c": 9.0,
+     "months": {
+      "6": 73,
+      "7": 140,
+      "8": 126,
+      "9": 104
+     }
+    },
+    "moderate": {
+     "pct": [
+      75.0,
+      90.0
+     ],
+     "score_range": [
+      44.2,
+      54.2
+     ],
+     "n": 332,
+     "score": 48.4,
+     "wind_mph": 17.8,
+     "gust_mph": 26.5,
+     "gust_reported_frac": 1.0,
+     "rh": 15.9,
+     "temp_c": 27.6,
+     "peak_hour_lst": 14.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.3,
+     "night_rh": 65.6,
+     "night_temp_c": 8.0,
+     "months": {
+      "6": 128,
+      "7": 66,
+      "8": 63,
+      "9": 75
+     }
+    },
+    "high": {
+     "pct": [
+      93.0,
+      98.0
+     ],
+     "score_range": [
+      57.8,
+      68.5
+     ],
+     "n": 110,
+     "score": 61.9,
+     "wind_mph": 21.9,
+     "gust_mph": 31.1,
+     "gust_reported_frac": 0.99,
+     "rh": 13.5,
+     "temp_c": 27.4,
+     "peak_hour_lst": 14.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      7.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.1,
+     "night_rh": 59.3,
+     "night_temp_c": 7.5,
+     "months": {
+      "6": 56,
+      "7": 14,
+      "8": 13,
+      "9": 27
+     }
+    },
+    "extreme": {
+     "pct": [
+      99.0,
+      100.0
+     ],
+     "score_range": [
+      74.4,
+      91.1
+     ],
+     "n": 23,
+     "score": 77.4,
+     "wind_mph": 26.0,
+     "gust_mph": 37.0,
+     "gust_reported_frac": 1.0,
+     "rh": 10.8,
+     "temp_c": 27.2,
+     "peak_hour_lst": 14,
+     "hold_h": 7,
+     "hold_h_iqr": [
+      5.0,
+      8.5
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 2.8,
+     "night_rh": 50.1,
+     "night_temp_c": 8.9,
+     "months": {
+      "6": 21,
+      "9": 2
+     }
+    },
+    "record_day": {
+     "date": "2013-09-25",
+     "score": 91.1,
+     "wind_mph": 32.2,
+     "gust_mph": 44.7,
+     "max_wind_mph": 42.6,
+     "rh": 13.9,
+     "min_rh": 12.9,
+     "temp_c": 23.6,
+     "hold_h": 5,
+     "peak_hour_lst": 15
+    },
+    "p99_9_score": 86.2
+   },
+   "days": {
+    "low": {
+     "wind_mph": 12.9,
+     "gust_mph": 21.9,
+     "rh_pct": 22.1,
+     "temp_c": 26.9,
+     "night_wind_mph": 2.1,
+     "night_rh_pct": 71.4,
+     "night_temp_c": 9.0,
+     "hold_h": 4,
+     "ease_h": 1,
+     "peak_hour_lst": 16
+    },
+    "moderate": {
+     "wind_mph": 17.8,
+     "gust_mph": 26.5,
+     "rh_pct": 16.0,
+     "temp_c": 27.5,
+     "night_wind_mph": 2.3,
+     "night_rh_pct": 65.5,
+     "night_temp_c": 8.0,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    },
+    "high": {
+     "wind_mph": 21.9,
+     "gust_mph": 31.1,
+     "rh_pct": 13.5,
+     "temp_c": 27.3,
+     "night_wind_mph": 2.1,
+     "night_rh_pct": 59.2,
+     "night_temp_c": 7.5,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    },
+    "extreme": {
+     "wind_mph": 26.0,
+     "gust_mph": 37.0,
+     "rh_pct": 10.8,
+     "temp_c": 27.1,
+     "night_wind_mph": 2.8,
+     "night_rh_pct": 50.1,
+     "night_temp_c": 8.9,
+     "hold_h": 7,
+     "ease_h": 1,
+     "peak_hour_lst": 14
+    }
+   },
+   "peak_hour_lst": 14.0,
+   "cross_checks": {
+    "RIL": {
+     "low": {
+      "wind_mph": 12.3,
+      "gust_mph": 23.0,
+      "rh": 19.6,
+      "temp_c": 29.1,
+      "hold_h": 4.0,
+      "ease_h": 1.0,
+      "n": 478
+     },
+     "moderate": {
+      "wind_mph": 16.7,
+      "gust_mph": 26.8,
+      "rh": 13.1,
+      "temp_c": 30.4,
+      "hold_h": 4,
+      "ease_h": 1,
+      "n": 359
+     },
+     "high": {
+      "wind_mph": 19.6,
+      "gust_mph": 30.6,
+      "rh": 10.8,
+      "temp_c": 30.4,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 120
+     },
+     "extreme": {
+      "wind_mph": 23.3,
+      "gust_mph": 36.2,
+      "rh": 8.0,
+      "temp_c": 29.8,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 24
+     },
+     "record_day": {
+      "date": "2017-06-12",
+      "score": 116.1,
+      "wind_mph": 34.8,
+      "gust_mph": 46.6,
+      "max_wind_mph": 40.3,
+      "rh": 7.0,
+      "min_rh": 5.0,
+      "temp_c": 25.4,
+      "hold_h": 4,
+      "peak_hour_lst": 18
+     }
+    }
+   }
+  },
+  "glenwood_springs_co": {
+   "key": "glenwood_springs_co",
+   "short": "Glenwood Springs",
+   "stations": [
+    "RIL"
+   ],
+   "station_name": "Rifle / Garfield County",
+   "station_elev_m": 1691.0,
+   "home_elev_m": 1814.0,
+   "dz_m": 123,
+   "utc_off_h": -7,
+   "season": "Jun-Sep",
+   "why": "Rifle / Garfield County, 34 km W down the Colorado River at nearly the town's elevation (Glenwood has no weather station in the archive); Eagle cross-checks",
+   "station_stats": {
+    "n_days": 2394,
+    "first_day": "2005-06-01",
+    "last_day": "2024-09-30",
+    "gust_factor_windy": 1.47,
+    "low": {
+     "pct": [
+      40.0,
+      60.0
+     ],
+     "score_range": [
+      29.4,
+      36.5
+     ],
+     "n": 478,
+     "score": 32.9,
+     "wind_mph": 12.3,
+     "gust_mph": 23.0,
+     "gust_reported_frac": 0.83,
+     "rh": 19.6,
+     "temp_c": 29.1,
+     "peak_hour_lst": 16.0,
+     "hold_h": 4.0,
+     "hold_h_iqr": [
+      3.0,
+      5.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.3,
+     "night_rh": 64.1,
+     "night_temp_c": 12.2,
+     "months": {
+      "6": 108,
+      "7": 139,
+      "8": 119,
+      "9": 112
+     }
+    },
+    "moderate": {
+     "pct": [
+      75.0,
+      90.0
+     ],
+     "score_range": [
+      43.6,
+      53.5
+     ],
+     "n": 359,
+     "score": 47.9,
+     "wind_mph": 16.7,
+     "gust_mph": 26.8,
+     "gust_reported_frac": 0.98,
+     "rh": 13.1,
+     "temp_c": 30.4,
+     "peak_hour_lst": 15,
+     "hold_h": 4,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 2.3,
+     "night_rh": 55.5,
+     "night_temp_c": 11.7,
+     "months": {
+      "6": 125,
+      "7": 82,
+      "8": 82,
+      "9": 70
+     }
+    },
+    "high": {
+     "pct": [
+      93.0,
+      98.0
+     ],
+     "score_range": [
+      56.4,
+      65.5
+     ],
+     "n": 120,
+     "score": 59.9,
+     "wind_mph": 19.6,
+     "gust_mph": 30.6,
+     "gust_reported_frac": 1.0,
+     "rh": 10.8,
+     "temp_c": 30.4,
+     "peak_hour_lst": 15.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.3,
+     "night_rh": 49.9,
+     "night_temp_c": 11.1,
+     "months": {
+      "6": 58,
+      "7": 16,
+      "8": 18,
+      "9": 28
+     }
+    },
+    "extreme": {
+     "pct": [
+      99.0,
+      100.0
+     ],
+     "score_range": [
+      70.1,
+      116.1
+     ],
+     "n": 24,
+     "score": 73.1,
+     "wind_mph": 23.3,
+     "gust_mph": 36.2,
+     "gust_reported_frac": 1.0,
+     "rh": 8.0,
+     "temp_c": 29.8,
+     "peak_hour_lst": 15.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      7.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.5,
+     "night_rh": 43.6,
+     "night_temp_c": 11.1,
+     "months": {
+      "6": 16,
+      "7": 4,
+      "8": 1,
+      "9": 3
+     }
+    },
+    "record_day": {
+     "date": "2017-06-12",
+     "score": 116.1,
+     "wind_mph": 34.8,
+     "gust_mph": 46.6,
+     "max_wind_mph": 40.3,
+     "rh": 7.0,
+     "min_rh": 5.0,
+     "temp_c": 25.4,
+     "hold_h": 4,
+     "peak_hour_lst": 18
+    },
+    "p99_9_score": 81.4
+   },
+   "days": {
+    "low": {
+     "wind_mph": 12.3,
+     "gust_mph": 23.0,
+     "rh_pct": 20.1,
+     "temp_c": 28.2,
+     "night_wind_mph": 2.3,
+     "night_rh_pct": 63.7,
+     "night_temp_c": 11.9,
+     "hold_h": 4.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 16.0
+    },
+    "moderate": {
+     "wind_mph": 16.7,
+     "gust_mph": 26.8,
+     "rh_pct": 13.4,
+     "temp_c": 29.5,
+     "night_wind_mph": 2.3,
+     "night_rh_pct": 55.1,
+     "night_temp_c": 11.4,
+     "hold_h": 4,
+     "ease_h": 1,
+     "peak_hour_lst": 15
+    },
+    "high": {
+     "wind_mph": 19.6,
+     "gust_mph": 30.6,
+     "rh_pct": 11.1,
+     "temp_c": 29.5,
+     "night_wind_mph": 2.3,
+     "night_rh_pct": 49.6,
+     "night_temp_c": 10.8,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 15.0
+    },
+    "extreme": {
+     "wind_mph": 23.3,
+     "gust_mph": 36.2,
+     "rh_pct": 8.2,
+     "temp_c": 28.9,
+     "night_wind_mph": 2.5,
+     "night_rh_pct": 43.3,
+     "night_temp_c": 10.8,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 15.0
+    }
+   },
+   "peak_hour_lst": 15.0,
+   "cross_checks": {
+    "EGE": {
+     "low": {
+      "wind_mph": 12.9,
+      "gust_mph": 21.9,
+      "rh": 22.0,
+      "temp_c": 27.0,
+      "hold_h": 4,
+      "ease_h": 1,
+      "n": 443
+     },
+     "moderate": {
+      "wind_mph": 17.8,
+      "gust_mph": 26.5,
+      "rh": 15.9,
+      "temp_c": 27.6,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 332
+     },
+     "high": {
+      "wind_mph": 21.9,
+      "gust_mph": 31.1,
+      "rh": 13.5,
+      "temp_c": 27.4,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 110
+     },
+     "extreme": {
+      "wind_mph": 26.0,
+      "gust_mph": 37.0,
+      "rh": 10.8,
+      "temp_c": 27.2,
+      "hold_h": 7,
+      "ease_h": 1,
+      "n": 23
+     },
+     "record_day": {
+      "date": "2013-09-25",
+      "score": 91.1,
+      "wind_mph": 32.2,
+      "gust_mph": 44.7,
+      "max_wind_mph": 42.6,
+      "rh": 13.9,
+      "min_rh": 12.9,
+      "temp_c": 23.6,
+      "hold_h": 5,
+      "peak_hour_lst": 15
+     }
+    }
+   }
+  },
+  "basalt_carbondale_co": {
+   "key": "basalt_carbondale_co",
+   "short": "Basalt",
+   "stations": [
+    "ASE"
+   ],
+   "station_name": "Aspen / Sardy Field",
+   "station_elev_m": 2382.0,
+   "home_elev_m": 1998.0,
+   "dz_m": -384,
+   "utc_off_h": -7,
+   "season": "Jun-Sep",
+   "why": "Aspen / Sardy Field, 28 km up the same Roaring Fork Valley, moved down 380 m to the homes",
+   "station_stats": {
+    "n_days": 2418,
+    "first_day": "2005-06-01",
+    "last_day": "2024-09-30",
+    "gust_factor_windy": 1.5,
+    "low": {
+     "pct": [
+      40.0,
+      60.0
+     ],
+     "score_range": [
+      23.7,
+      27.8
+     ],
+     "n": 484,
+     "score": 25.7,
+     "wind_mph": 9.9,
+     "gust_mph": 19.9,
+     "gust_reported_frac": 0.93,
+     "rh": 22.6,
+     "temp_c": 23.5,
+     "peak_hour_lst": 14.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      3.0,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 5.5,
+     "night_rh": 68.3,
+     "night_temp_c": 8.3,
+     "months": {
+      "6": 106,
+      "7": 137,
+      "8": 135,
+      "9": 106
+     }
+    },
+    "moderate": {
+     "pct": [
+      75.0,
+      90.0
+     ],
+     "score_range": [
+      30.9,
+      36.0
+     ],
+     "n": 363,
+     "score": 33.0,
+     "wind_mph": 12.0,
+     "gust_mph": 22.2,
+     "gust_reported_frac": 0.99,
+     "rh": 17.5,
+     "temp_c": 24.3,
+     "peak_hour_lst": 14,
+     "hold_h": 4,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 5.8,
+     "night_rh": 61.6,
+     "night_temp_c": 7.8,
+     "months": {
+      "6": 127,
+      "7": 84,
+      "8": 73,
+      "9": 79
+     }
+    },
+    "high": {
+     "pct": [
+      93.0,
+      98.0
+     ],
+     "score_range": [
+      37.7,
+      42.9
+     ],
+     "n": 121,
+     "score": 40.0,
+     "wind_mph": 13.8,
+     "gust_mph": 25.3,
+     "gust_reported_frac": 0.99,
+     "rh": 15.4,
+     "temp_c": 24.9,
+     "peak_hour_lst": 14,
+     "hold_h": 5,
+     "hold_h_iqr": [
+      3,
+      6
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 6.4,
+     "night_rh": 56.1,
+     "night_temp_c": 8.3,
+     "months": {
+      "6": 53,
+      "7": 23,
+      "8": 23,
+      "9": 22
+     }
+    },
+    "extreme": {
+     "pct": [
+      99.0,
+      100.0
+     ],
+     "score_range": [
+      45.7,
+      65.1
+     ],
+     "n": 25,
+     "score": 50.5,
+     "wind_mph": 18.0,
+     "gust_mph": 29.9,
+     "gust_reported_frac": 1.0,
+     "rh": 13.2,
+     "temp_c": 22.4,
+     "peak_hour_lst": 13,
+     "hold_h": 5,
+     "hold_h_iqr": [
+      3,
+      6
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 6.4,
+     "night_rh": 46.4,
+     "night_temp_c": 7.2,
+     "months": {
+      "6": 16,
+      "7": 1,
+      "8": 1,
+      "9": 7
+     }
+    },
+    "record_day": {
+     "date": "2019-09-29",
+     "score": 65.1,
+     "wind_mph": 21.2,
+     "gust_mph": 32.7,
+     "max_wind_mph": 27.6,
+     "rh": 13.4,
+     "min_rh": 11.8,
+     "temp_c": 22.2,
+     "hold_h": 5,
+     "peak_hour_lst": 14
+    },
+    "p99_9_score": 59.6
+   },
+   "days": {
+    "low": {
+     "wind_mph": 9.9,
+     "gust_mph": 19.9,
+     "rh_pct": 20.7,
+     "temp_c": 26.2,
+     "night_wind_mph": 5.5,
+     "night_rh_pct": 69.6,
+     "night_temp_c": 9.2,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    },
+    "moderate": {
+     "wind_mph": 12.0,
+     "gust_mph": 22.2,
+     "rh_pct": 16.1,
+     "temp_c": 27.0,
+     "night_wind_mph": 5.8,
+     "night_rh_pct": 62.8,
+     "night_temp_c": 8.7,
+     "hold_h": 4,
+     "ease_h": 1,
+     "peak_hour_lst": 14
+    },
+    "high": {
+     "wind_mph": 13.8,
+     "gust_mph": 25.3,
+     "rh_pct": 14.2,
+     "temp_c": 27.6,
+     "night_wind_mph": 6.4,
+     "night_rh_pct": 57.3,
+     "night_temp_c": 9.2,
+     "hold_h": 5,
+     "ease_h": 1,
+     "peak_hour_lst": 14
+    },
+    "extreme": {
+     "wind_mph": 18.0,
+     "gust_mph": 29.9,
+     "rh_pct": 12.2,
+     "temp_c": 25.1,
+     "night_wind_mph": 6.4,
+     "night_rh_pct": 47.5,
+     "night_temp_c": 8.1,
+     "hold_h": 5,
+     "ease_h": 1,
+     "peak_hour_lst": 13
+    }
+   },
+   "peak_hour_lst": 14.0,
+   "cross_checks": {
+    "EGE": {
+     "low": {
+      "wind_mph": 12.9,
+      "gust_mph": 21.9,
+      "rh": 22.0,
+      "temp_c": 27.0,
+      "hold_h": 4,
+      "ease_h": 1,
+      "n": 443
+     },
+     "moderate": {
+      "wind_mph": 17.8,
+      "gust_mph": 26.5,
+      "rh": 15.9,
+      "temp_c": 27.6,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 332
+     },
+     "high": {
+      "wind_mph": 21.9,
+      "gust_mph": 31.1,
+      "rh": 13.5,
+      "temp_c": 27.4,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 110
+     },
+     "extreme": {
+      "wind_mph": 26.0,
+      "gust_mph": 37.0,
+      "rh": 10.8,
+      "temp_c": 27.2,
+      "hold_h": 7,
+      "ease_h": 1,
+      "n": 23
+     },
+     "record_day": {
+      "date": "2013-09-25",
+      "score": 91.1,
+      "wind_mph": 32.2,
+      "gust_mph": 44.7,
+      "max_wind_mph": 42.6,
+      "rh": 13.9,
+      "min_rh": 12.9,
+      "temp_c": 23.6,
+      "hold_h": 5,
+      "peak_hour_lst": 15
+     }
+    },
+    "RIL": {
+     "low": {
+      "wind_mph": 12.3,
+      "gust_mph": 23.0,
+      "rh": 19.6,
+      "temp_c": 29.1,
+      "hold_h": 4.0,
+      "ease_h": 1.0,
+      "n": 478
+     },
+     "moderate": {
+      "wind_mph": 16.7,
+      "gust_mph": 26.8,
+      "rh": 13.1,
+      "temp_c": 30.4,
+      "hold_h": 4,
+      "ease_h": 1,
+      "n": 359
+     },
+     "high": {
+      "wind_mph": 19.6,
+      "gust_mph": 30.6,
+      "rh": 10.8,
+      "temp_c": 30.4,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 120
+     },
+     "extreme": {
+      "wind_mph": 23.3,
+      "gust_mph": 36.2,
+      "rh": 8.0,
+      "temp_c": 29.8,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 24
+     },
+     "record_day": {
+      "date": "2017-06-12",
+      "score": 116.1,
+      "wind_mph": 34.8,
+      "gust_mph": 46.6,
+      "max_wind_mph": 40.3,
+      "rh": 7.0,
+      "min_rh": 5.0,
+      "temp_c": 25.4,
+      "hold_h": 4,
+      "peak_hour_lst": 18
+     }
+    }
+   }
+  },
+  "aspen_co": {
+   "key": "aspen_co",
+   "short": "Aspen",
+   "stations": [
+    "ASE"
+   ],
+   "station_name": "Aspen / Sardy Field",
+   "station_elev_m": 2382.0,
+   "home_elev_m": 2428.0,
+   "dz_m": 46,
+   "utc_off_h": -7,
+   "season": "Jun-Sep",
+   "why": "Aspen / Sardy Field, in the community",
+   "station_stats": {
+    "n_days": 2418,
+    "first_day": "2005-06-01",
+    "last_day": "2024-09-30",
+    "gust_factor_windy": 1.5,
+    "low": {
+     "pct": [
+      40.0,
+      60.0
+     ],
+     "score_range": [
+      23.7,
+      27.8
+     ],
+     "n": 484,
+     "score": 25.7,
+     "wind_mph": 9.9,
+     "gust_mph": 19.9,
+     "gust_reported_frac": 0.93,
+     "rh": 22.6,
+     "temp_c": 23.5,
+     "peak_hour_lst": 14.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      3.0,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 5.5,
+     "night_rh": 68.3,
+     "night_temp_c": 8.3,
+     "months": {
+      "6": 106,
+      "7": 137,
+      "8": 135,
+      "9": 106
+     }
+    },
+    "moderate": {
+     "pct": [
+      75.0,
+      90.0
+     ],
+     "score_range": [
+      30.9,
+      36.0
+     ],
+     "n": 363,
+     "score": 33.0,
+     "wind_mph": 12.0,
+     "gust_mph": 22.2,
+     "gust_reported_frac": 0.99,
+     "rh": 17.5,
+     "temp_c": 24.3,
+     "peak_hour_lst": 14,
+     "hold_h": 4,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 5.8,
+     "night_rh": 61.6,
+     "night_temp_c": 7.8,
+     "months": {
+      "6": 127,
+      "7": 84,
+      "8": 73,
+      "9": 79
+     }
+    },
+    "high": {
+     "pct": [
+      93.0,
+      98.0
+     ],
+     "score_range": [
+      37.7,
+      42.9
+     ],
+     "n": 121,
+     "score": 40.0,
+     "wind_mph": 13.8,
+     "gust_mph": 25.3,
+     "gust_reported_frac": 0.99,
+     "rh": 15.4,
+     "temp_c": 24.9,
+     "peak_hour_lst": 14,
+     "hold_h": 5,
+     "hold_h_iqr": [
+      3,
+      6
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 6.4,
+     "night_rh": 56.1,
+     "night_temp_c": 8.3,
+     "months": {
+      "6": 53,
+      "7": 23,
+      "8": 23,
+      "9": 22
+     }
+    },
+    "extreme": {
+     "pct": [
+      99.0,
+      100.0
+     ],
+     "score_range": [
+      45.7,
+      65.1
+     ],
+     "n": 25,
+     "score": 50.5,
+     "wind_mph": 18.0,
+     "gust_mph": 29.9,
+     "gust_reported_frac": 1.0,
+     "rh": 13.2,
+     "temp_c": 22.4,
+     "peak_hour_lst": 13,
+     "hold_h": 5,
+     "hold_h_iqr": [
+      3,
+      6
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 6.4,
+     "night_rh": 46.4,
+     "night_temp_c": 7.2,
+     "months": {
+      "6": 16,
+      "7": 1,
+      "8": 1,
+      "9": 7
+     }
+    },
+    "record_day": {
+     "date": "2019-09-29",
+     "score": 65.1,
+     "wind_mph": 21.2,
+     "gust_mph": 32.7,
+     "max_wind_mph": 27.6,
+     "rh": 13.4,
+     "min_rh": 11.8,
+     "temp_c": 22.2,
+     "hold_h": 5,
+     "peak_hour_lst": 14
+    },
+    "p99_9_score": 59.6
+   },
+   "days": {
+    "low": {
+     "wind_mph": 9.9,
+     "gust_mph": 19.9,
+     "rh_pct": 22.8,
+     "temp_c": 23.2,
+     "night_wind_mph": 5.5,
+     "night_rh_pct": 68.1,
+     "night_temp_c": 8.2,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    },
+    "moderate": {
+     "wind_mph": 12.0,
+     "gust_mph": 22.2,
+     "rh_pct": 17.7,
+     "temp_c": 24.0,
+     "night_wind_mph": 5.8,
+     "night_rh_pct": 61.5,
+     "night_temp_c": 7.7,
+     "hold_h": 4,
+     "ease_h": 1,
+     "peak_hour_lst": 14
+    },
+    "high": {
+     "wind_mph": 13.8,
+     "gust_mph": 25.3,
+     "rh_pct": 15.6,
+     "temp_c": 24.6,
+     "night_wind_mph": 6.4,
+     "night_rh_pct": 56.0,
+     "night_temp_c": 8.2,
+     "hold_h": 5,
+     "ease_h": 1,
+     "peak_hour_lst": 14
+    },
+    "extreme": {
+     "wind_mph": 18.0,
+     "gust_mph": 29.9,
+     "rh_pct": 13.3,
+     "temp_c": 22.1,
+     "night_wind_mph": 6.4,
+     "night_rh_pct": 46.3,
+     "night_temp_c": 7.1,
+     "hold_h": 5,
+     "ease_h": 1,
+     "peak_hour_lst": 13
+    }
+   },
+   "peak_hour_lst": 14.0,
+   "cross_checks": {
+    "EGE": {
+     "low": {
+      "wind_mph": 12.9,
+      "gust_mph": 21.9,
+      "rh": 22.0,
+      "temp_c": 27.0,
+      "hold_h": 4,
+      "ease_h": 1,
+      "n": 443
+     },
+     "moderate": {
+      "wind_mph": 17.8,
+      "gust_mph": 26.5,
+      "rh": 15.9,
+      "temp_c": 27.6,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 332
+     },
+     "high": {
+      "wind_mph": 21.9,
+      "gust_mph": 31.1,
+      "rh": 13.5,
+      "temp_c": 27.4,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 110
+     },
+     "extreme": {
+      "wind_mph": 26.0,
+      "gust_mph": 37.0,
+      "rh": 10.8,
+      "temp_c": 27.2,
+      "hold_h": 7,
+      "ease_h": 1,
+      "n": 23
+     },
+     "record_day": {
+      "date": "2013-09-25",
+      "score": 91.1,
+      "wind_mph": 32.2,
+      "gust_mph": 44.7,
+      "max_wind_mph": 42.6,
+      "rh": 13.9,
+      "min_rh": 12.9,
+      "temp_c": 23.6,
+      "hold_h": 5,
+      "peak_hour_lst": 15
+     }
+    }
+   }
+  },
+  "eagle_vail_co": {
+   "key": "eagle_vail_co",
+   "short": "Eagle-Vail corridor",
+   "stations": [
+    "EGE"
+   ],
+   "station_name": "Eagle County Regional",
+   "station_elev_m": 1993.0,
+   "home_elev_m": 2256.0,
+   "dz_m": 263,
+   "utc_off_h": -7,
+   "season": "Jun-Sep",
+   "why": "Eagle County Regional, at the corridor's west end, moved up to the corridor homes' median elevation",
+   "station_stats": {
+    "n_days": 2211,
+    "first_day": "2005-06-01",
+    "last_day": "2024-09-30",
+    "gust_factor_windy": 1.39,
+    "low": {
+     "pct": [
+      40.0,
+      60.0
+     ],
+     "score_range": [
+      29.7,
+      37.0
+     ],
+     "n": 443,
+     "score": 33.3,
+     "wind_mph": 12.9,
+     "gust_mph": 21.9,
+     "gust_reported_frac": 0.92,
+     "rh": 22.0,
+     "temp_c": 27.0,
+     "peak_hour_lst": 16,
+     "hold_h": 4,
+     "hold_h_iqr": [
+      3.0,
+      5.0
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 2.1,
+     "night_rh": 71.5,
+     "night_temp_c": 9.0,
+     "months": {
+      "6": 73,
+      "7": 140,
+      "8": 126,
+      "9": 104
+     }
+    },
+    "moderate": {
+     "pct": [
+      75.0,
+      90.0
+     ],
+     "score_range": [
+      44.2,
+      54.2
+     ],
+     "n": 332,
+     "score": 48.4,
+     "wind_mph": 17.8,
+     "gust_mph": 26.5,
+     "gust_reported_frac": 1.0,
+     "rh": 15.9,
+     "temp_c": 27.6,
+     "peak_hour_lst": 14.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      6.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.3,
+     "night_rh": 65.6,
+     "night_temp_c": 8.0,
+     "months": {
+      "6": 128,
+      "7": 66,
+      "8": 63,
+      "9": 75
+     }
+    },
+    "high": {
+     "pct": [
+      93.0,
+      98.0
+     ],
+     "score_range": [
+      57.8,
+      68.5
+     ],
+     "n": 110,
+     "score": 61.9,
+     "wind_mph": 21.9,
+     "gust_mph": 31.1,
+     "gust_reported_frac": 0.99,
+     "rh": 13.5,
+     "temp_c": 27.4,
+     "peak_hour_lst": 14.0,
+     "hold_h": 5.0,
+     "hold_h_iqr": [
+      4.0,
+      7.0
+     ],
+     "ease_h": 1.0,
+     "night_wind_mph": 2.1,
+     "night_rh": 59.3,
+     "night_temp_c": 7.5,
+     "months": {
+      "6": 56,
+      "7": 14,
+      "8": 13,
+      "9": 27
+     }
+    },
+    "extreme": {
+     "pct": [
+      99.0,
+      100.0
+     ],
+     "score_range": [
+      74.4,
+      91.1
+     ],
+     "n": 23,
+     "score": 77.4,
+     "wind_mph": 26.0,
+     "gust_mph": 37.0,
+     "gust_reported_frac": 1.0,
+     "rh": 10.8,
+     "temp_c": 27.2,
+     "peak_hour_lst": 14,
+     "hold_h": 7,
+     "hold_h_iqr": [
+      5.0,
+      8.5
+     ],
+     "ease_h": 1,
+     "night_wind_mph": 2.8,
+     "night_rh": 50.1,
+     "night_temp_c": 8.9,
+     "months": {
+      "6": 21,
+      "9": 2
+     }
+    },
+    "record_day": {
+     "date": "2013-09-25",
+     "score": 91.1,
+     "wind_mph": 32.2,
+     "gust_mph": 44.7,
+     "max_wind_mph": 42.6,
+     "rh": 13.9,
+     "min_rh": 12.9,
+     "temp_c": 23.6,
+     "hold_h": 5,
+     "peak_hour_lst": 15
+    },
+    "p99_9_score": 86.2
+   },
+   "days": {
+    "low": {
+     "wind_mph": 12.9,
+     "gust_mph": 21.9,
+     "rh_pct": 23.3,
+     "temp_c": 25.1,
+     "night_wind_mph": 2.1,
+     "night_rh_pct": 70.6,
+     "night_temp_c": 8.4,
+     "hold_h": 4,
+     "ease_h": 1,
+     "peak_hour_lst": 16
+    },
+    "moderate": {
+     "wind_mph": 17.8,
+     "gust_mph": 26.5,
+     "rh_pct": 16.8,
+     "temp_c": 25.7,
+     "night_wind_mph": 2.3,
+     "night_rh_pct": 64.7,
+     "night_temp_c": 7.4,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    },
+    "high": {
+     "wind_mph": 21.9,
+     "gust_mph": 31.1,
+     "rh_pct": 14.3,
+     "temp_c": 25.5,
+     "night_wind_mph": 2.1,
+     "night_rh_pct": 58.5,
+     "night_temp_c": 6.9,
+     "hold_h": 5.0,
+     "ease_h": 1.0,
+     "peak_hour_lst": 14.0
+    },
+    "extreme": {
+     "wind_mph": 26.0,
+     "gust_mph": 37.0,
+     "rh_pct": 11.4,
+     "temp_c": 25.3,
+     "night_wind_mph": 2.8,
+     "night_rh_pct": 49.4,
+     "night_temp_c": 8.3,
+     "hold_h": 7,
+     "ease_h": 1,
+     "peak_hour_lst": 14
+    }
+   },
+   "peak_hour_lst": 14.0,
+   "cross_checks": {
+    "ASE": {
+     "low": {
+      "wind_mph": 9.9,
+      "gust_mph": 19.9,
+      "rh": 22.6,
+      "temp_c": 23.5,
+      "hold_h": 5.0,
+      "ease_h": 1.0,
+      "n": 484
+     },
+     "moderate": {
+      "wind_mph": 12.0,
+      "gust_mph": 22.2,
+      "rh": 17.5,
+      "temp_c": 24.3,
+      "hold_h": 4,
+      "ease_h": 1,
+      "n": 363
+     },
+     "high": {
+      "wind_mph": 13.8,
+      "gust_mph": 25.3,
+      "rh": 15.4,
+      "temp_c": 24.9,
+      "hold_h": 5,
+      "ease_h": 1,
+      "n": 121
+     },
+     "extreme": {
+      "wind_mph": 18.0,
+      "gust_mph": 29.9,
+      "rh": 13.2,
+      "temp_c": 22.4,
+      "hold_h": 5,
+      "ease_h": 1,
+      "n": 25
+     },
+     "record_day": {
+      "date": "2019-09-29",
+      "score": 65.1,
+      "wind_mph": 21.2,
+      "gust_mph": 32.7,
+      "max_wind_mph": 27.6,
+      "rh": 13.4,
+      "min_rh": 11.8,
+      "temp_c": 22.2,
+      "hold_h": 5,
+      "peak_hour_lst": 14
+     }
+    }
+   }
+  }
+ }
+}

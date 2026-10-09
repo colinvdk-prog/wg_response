@@ -12,6 +12,12 @@ docs/SIMULATOR_DESIGN.md is the spec of record):
                                  (the Eagle->Vail corridor: 6), optional
                                  per-location tile geometry / road-proximity
                                  placement — see SimLocation)
+    CITY_WEATHER                 what low / moderate / high / extreme mean at
+                                 each community (station climatology + fire
+                                 days; daily cycle + finite wind event) — the
+                                 simulator default, contracts
+                                 sim_weather_profile (2026-10-09; generic
+                                 INTENSITY_WEATHER one cfg key away)
     load_tile(key, ...)          cached ascii tile if present, else a
                                  SyntheticTerrain fallback CLEARLY flagged
                                  (banner 'SYNTHETIC TERRAIN — rehearsal grade')
@@ -347,6 +353,157 @@ INTENSITY_WEATHER = {
     "high":     {"wind_mph": 28.0, "rh_pct": 12.0, "temp_c": 35.0},
     "extreme":  {"wind_mph": 40.0, "rh_pct": 6.0,  "temp_c": 39.0},
 }
+
+#: SIMULATOR CITY WEATHER (founder 2026-10-09, verbatim: "change the weather
+#: conditions for each city specific"; contracts sim_weather_profile;
+#: docs/review/city_weather_2026-10-09.md). The simulator's default weather
+#: profile: "city" = each community's own conditions (CITY_WEATHER below) with
+#: a daily cycle and a finite wind event; "generic" = INTENSITY_WEATHER above,
+#: held constant (the legacy law, byte-identical). An explicit
+#: cfg_overrides['sim_weather_profile'] always wins.
+SIM_WEATHER_PROFILE = "city"
+
+#: The intensity whose daily cycle a high / extreme wind event eases back to
+#: (a dry fire-season day at that community — the event is over, the season
+#: is not).
+CITY_EVENT_BACKGROUND = "moderate"
+
+#: Hours the CITY WEATHER forecast reaches past the latest field horizon it
+#: was built for (SimSession._city_wx_forecast; extended on demand).
+CITY_WX_PAD_H = 48.0
+
+
+@dataclass(frozen=True)
+class CityDay:
+    """What one intensity means at one community (simulator CITY WEATHER).
+
+    Afternoon values are the peak of the day: sustained wind, gust, RH and
+    temperature as they occurred together over the day's peak period (the
+    median over the station's days in this class —
+    tools/city_weather_climatology.py, CITY_WEATHER below). Night values are
+    the pre-dawn trough of the same days (overnight recovery). For high /
+    extreme, event_h > 0:
+    from the ignition the afternoon values HOLD for event_h hours, then ease
+    linearly over ease_h hours back to the community's moderate daily cycle
+    (CITY_EVENT_BACKGROUND); low / moderate are the daily cycle alone (their
+    night values ARE the cycle's trough). mph, percent, Celsius, hours."""
+    wind_mph: float
+    gust_mph: float
+    rh_pct: float
+    temp_c: float
+    night_wind_mph: float
+    night_rh_pct: float
+    night_temp_c: float
+    event_h: float = 0.0
+    ease_h: float = 0.0
+
+
+@dataclass(frozen=True)
+class CityWeather:
+    """One simulator community's weather profile (CITY_WEATHER).
+
+    station   the airport station(s) the numbers come from, with distance
+    elev_m    median ground elevation of the homes the simulator places on
+              the committed tile (the numbers are moved there from the
+              station's elevation — temperature by the measured lapse, RH at
+              the mixed layer's dew-point lapse; wind as measured)
+    utc_offset_h  local STANDARD time (the daily cycle's clock; no DST)
+    peak_hour local standard hour of the afternoon peak (median worst hour)
+    season    the fire-season months the station days were drawn from
+    anchor    the historic fire day(s) the high / extreme rows were checked
+              against (sources in the review doc)"""
+    key: str
+    short: str
+    station: str
+    elev_m: float
+    utc_offset_h: float
+    peak_hour: float
+    season: str
+    days: dict
+    anchor: str = ""
+
+
+def _mph_round(v: float) -> int:
+    return int(math.floor(v + 0.5))
+
+
+def weather_label(location_key: str, intensity: str,
+                  profile: Optional["CityWeather"] = None) -> str:
+    """One line saying what `intensity` means for this location (the page's
+    intensity legend), in the founder's form ("Park City · extreme: 30 mph
+    gusting 45, 9 % RH, 31 C afternoon; eases after 10 h" was his example):
+      high / extreme  "<town> · extreme: 21 mph gusting 31, 12 % RH, 25 C
+                      from ignition; eases after 5 h to a moderate day"
+      low / moderate  "<town> · moderate: afternoons 14 mph gusting 21,
+                      16 % RH, 26 C; nights 1 mph, 79 % RH, 6 C"
+    profile None = the generic table ("held constant day and night")."""
+    if profile is None:
+        spec = INTENSITY_WEATHER[intensity]
+        w = spec["wind_mph"]
+        name = (LOCATIONS[location_key].name.split(",")[0]
+                if location_key in LOCATIONS else location_key)
+        return (f"{name} · {intensity} (generic): {_mph_round(w)} mph "
+                f"gusting {_mph_round(w * GUST_FACTOR)}, "
+                f"{spec['rh_pct']:g} % RH, {spec['temp_c']:g} C, held "
+                f"constant day and night")
+    d = profile.days[intensity]
+    cond = (f"{_mph_round(d.wind_mph)} mph gusting {_mph_round(d.gust_mph)}, "
+            f"{_mph_round(d.rh_pct)} % RH, {_mph_round(d.temp_c)} C")
+    if d.event_h > 0.0:
+        return (f"{profile.short} · {intensity}: {cond} from ignition; "
+                f"eases after {d.event_h:g} h to a "
+                f"{CITY_EVENT_BACKGROUND} day")
+    return (f"{profile.short} · {intensity}: afternoons {cond}; nights "
+            f"{_mph_round(d.night_wind_mph)} mph, "
+            f"{_mph_round(d.night_rh_pct)} % RH, "
+            f"{_mph_round(d.night_temp_c)} C")
+
+
+def _city_cycle(profile: "CityWeather", day: "CityDay"):
+    """The weather.DailyCycle of one CityDay (afternoon peak at the
+    profile's peak_hour, pre-dawn trough at 06:00 local standard time)."""
+    from wgresponse.weather import DailyCycle
+    return DailyCycle(
+        utc_offset_h=profile.utc_offset_h,
+        wind_day_mps=day.wind_mph * MPH_TO_MPS,
+        wind_night_mps=day.night_wind_mph * MPH_TO_MPS,
+        rh_day_pct=day.rh_pct, rh_night_pct=day.night_rh_pct,
+        temp_day_c=day.temp_c, temp_night_c=day.night_temp_c,
+        gust_factor=day.gust_mph / max(day.wind_mph, 1e-6),
+        peak_hour=profile.peak_hour, trough_hour=6.0)
+
+
+def city_mock_weather(profile: "CityWeather", intensity: str,
+                      dir_deg: float, t0_s: float,
+                      event_start_s: Optional[float], seed: object):
+    """The simulator's CITY WEATHER script for one intensity (a MockWeather
+    with a daily cycle, plus the finite wind event for high / extreme):
+
+      low / moderate  that intensity's daily cycle, every day of the run;
+      high / extreme  the community's moderate daily cycle with a WindEvent
+                      from event_start_s (the ignition that chose the
+                      intensity): the afternoon values held event_h hours,
+                      eased back over ease_h hours.
+
+    Direction is the wind dial's (dir_deg) in every hour. Deterministic: a
+    pure function of its arguments (no jitter, never the wall clock)."""
+    from wgresponse.weather import MockWeather, WindEvent
+    day = profile.days[intensity]
+    event = None
+    if day.event_h > 0.0:
+        cycle = _city_cycle(profile, profile.days[CITY_EVENT_BACKGROUND])
+        start = t0_s if event_start_s is None else float(event_start_s)
+        event = WindEvent(start_s=start, peak_h=day.event_h,
+                          ease_h=day.ease_h,
+                          wind_mps=day.wind_mph * MPH_TO_MPS,
+                          rh_pct=day.rh_pct, temp_c=day.temp_c,
+                          gust_factor=day.gust_mph / max(day.wind_mph, 1e-6))
+    else:
+        cycle = _city_cycle(profile, day)
+    return MockWeather(seed=seed, base_wind_mps=day.wind_mph * MPH_TO_MPS,
+                       dir_deg=dir_deg, rh_pct=day.rh_pct,
+                       temp_c=day.temp_c, gust_factor=cycle.gust_factor,
+                       t0_s=t0_s, diurnal=cycle, event=event)
 
 #: Fixed simulation epoch (unix s). Deterministic law: never wall-clock.
 T0_S = 1_790_000_000.0
@@ -1107,6 +1264,229 @@ LOCATIONS = {
         ),
         tile_half_m=30_000.0, tile_cell_m=200.0, extended_zone=False,
         place_near_road_m=300.0),
+}
+
+
+# ---------------------------------------------------------------------------
+# CITY WEATHER: what each intensity means at each community (2026-10-09)
+# ---------------------------------------------------------------------------
+#: SIMULATOR CITY WEATHER (contracts sim_weather_profile; the method, the
+#: stations and every source: docs/review/city_weather_2026-10-09.md; the
+#: numbers: tools/city_weather_climatology.py -> docs/review/city_weather/
+#: climatology.json, transcribed here rounded — tests/test_city_weather.py
+#: holds the two together). Per community and intensity, the median over the
+#: station's fire-season days in that class (ranked by the day's highest
+#: smoothed Fosberg fire-weather index — low = the 40th-60th percentile day,
+#: moderate 75th-90th, high 93rd-98th, extreme the top 1 %) of: the mean
+#: conditions over the day's PEAK PERIOD (the hours the index stays >= 70 %
+#: of its peak), the pre-dawn trough, and for high / extreme the peak
+#: period's length (the event hold) and the hours the index then takes to
+#: fall to half the peak (the easing). Temperature and RH are moved from the
+#: station to the homes' elevation; wind is the station's 10-m two-minute
+#: sustained wind. Santa Rosa's extreme row is the Tubbs Fire night measured
+#: on the slopes (the record envelope; its airport sits outside the
+#: downslope wind).
+CITY_WEATHER: dict = {
+    "malibu_ca": CityWeather(
+        key="malibu_ca", short="Malibu",
+        station=("KCMA Camarillo (AWOS), 23 m, 39 km WNW; cross-checks KSMO,"
+                 " KVNY"),
+        elev_m=246.0, utc_offset_h=-8.0, peak_hour=13.0, season="Sep-Dec",
+        days={
+            "low": CityDay(9.4, 13.2, 57.1, 21.3, 2.0, 84.1, 12.3),
+            "moderate": CityDay(15.0, 26.5, 27.3, 19.5, 3.9, 72.4, 10.1),
+            "high": CityDay(22.7, 33.4, 10.2, 23.0, 12.4, 40.0, 11.7,
+                event_h=8.0, ease_h=2.0),
+            "extreme": CityDay(29.4, 42.1, 8.6, 18.8, 21.6, 13.1, 13.9,
+                event_h=10.0, ease_h=4.0),
+        },
+        anchor=("Woolsey Fire, 2018-11-09 at Camarillo: 27 mph gusting 40, 3"
+                " % RH, 26 C, 7 h near peak (99.6th percentile day)")),
+    "paradise_ca": CityWeather(
+        key="paradise_ca", short="Paradise",
+        station=("KCIC Chico Municipal, 73 m, 22 km W on the valley floor; "
+                 "cross-check KOVE"),
+        elev_m=572.0, utc_offset_h=-8.0, peak_hour=15.0, season="Jun-Nov",
+        days={
+            "low": CityDay(10.4, 13.8, 29.6, 28.3, 2.1, 60.7, 16.9),
+            "moderate": CityDay(14.6, 19.5, 26.3, 27.2, 2.7, 57.1, 16.9),
+            "high": CityDay(18.9, 27.0, 19.3, 25.3, 3.6, 48.1, 15.9,
+                event_h=6.0, ease_h=2.0),
+            "extreme": CityDay(24.4, 33.1, 17.0, 23.6, 10.2, 41.9, 12.9,
+                event_h=7.0, ease_h=1.0),
+        },
+        anchor=("Camp Fire, 2018-11-08: Jarbo Gap RAWS 25-30 mph gusting "
+                "45-50, RH 23 % falling to 10 %; Chico that day 22 mph, 7 % "
+                "RH (98.9th percentile)")),
+    "santa_rosa_ca": CityWeather(
+        key="santa_rosa_ca", short="Santa Rosa",
+        station="KSTS Sonoma County Airport, 31 m, 14 km W",
+        elev_m=138.0, utc_offset_h=-8.0, peak_hour=15.0, season="Jun-Nov",
+        days={
+            "low": CityDay(10.4, 14.9, 47.4, 23.5, 1.4, 95.7, 10.9),
+            "moderate": CityDay(11.5, 16.5, 35.9, 27.3, 0.7, 92.5, 10.4),
+            "high": CityDay(13.4, 21.9, 28.2, 26.6, 1.6, 88.5, 9.8,
+                event_h=5.0, ease_h=1.0),
+            "extreme": CityDay(26.0, 61.1, 7.0, 32.8, 3.5, 85.7, 9.8,
+                event_h=4.0, ease_h=12.0),
+        },
+        anchor=("extreme IS the Tubbs Fire night: Santa Rosa RAWS 2017-10-09"
+                " 04:00 PDT, 26 mph gusting 61, 7 % RH, 33 C (the airport's "
+                "top 1 %: 19 mph, 18 % RH)")),
+    "rancho_santa_fe_ca": CityWeather(
+        key="rancho_santa_fe_ca", short="Rancho Santa Fe",
+        station=("KCRQ Carlsbad / Palomar, 100 m, 14 km NNW; cross-check "
+                 "KRNM Ramona"),
+        elev_m=62.0, utc_offset_h=-8.0, peak_hour=13.0, season="Sep-Dec",
+        days={
+            "low": CityDay(7.7, 11.3, 60.4, 21.3, 1.8, 83.9, 15.1),
+            "moderate": CityDay(8.5, 12.5, 45.0, 21.1, 2.5, 72.8, 14.5),
+            "high": CityDay(8.8, 12.9, 24.6, 22.2, 3.2, 55.3, 13.4,
+                event_h=4.0, ease_h=1.0),
+            "extreme": CityDay(13.7, 22.4, 8.0, 24.7, 2.9, 50.8, 12.7,
+                event_h=6.0, ease_h=1.0),
+        },
+        anchor=("Witch Creek Fire, 2007-10-22 at Carlsbad: 14 mph gusting "
+                "25, 4 % RH, 29 C (99.9th percentile day); Ramona, inland: "
+                "27 mph gusting 41, 7 % RH")),
+    "boulder_co": CityWeather(
+        key="boulder_co", short="Boulder",
+        station=("KBDU Boulder Municipal (AWOS), 1,612 m, 11 km NNW, "
+                 "2010-2024; cross-check KBJC"),
+        elev_m=1637.0, utc_offset_h=-7.0, peak_hour=15.0, season="all year",
+        days={
+            "low": CityDay(7.3, 10.6, 27.1, 21.3, 2.3, 66.4, 9.9),
+            "moderate": CityDay(13.8, 23.8, 22.0, 17.1, 3.5, 58.8, 5.9),
+            "high": CityDay(20.7, 31.1, 19.5, 14.0, 4.8, 55.0, 2.9,
+                event_h=5.0, ease_h=1.0),
+            "extreme": CityDay(31.9, 48.1, 21.9, 12.2, 7.2, 44.3, 5.4,
+                event_h=5.0, ease_h=1.0),
+        },
+        anchor=("Marshall Fire, 2021-12-30 at Boulder Municipal: 40 mph "
+                "gusting 66, 22 % RH, 7 C (the record day)")),
+    "park_city_ut": CityWeather(
+        key="park_city_ut", short="Park City",
+        station=("Heber Valley (K36U to 2017, KHCR after), 1,718 m, 28 km "
+                 "SSE, 2010-2024; cross-check KSLC"),
+        elev_m=2042.0, utc_offset_h=-7.0, peak_hour=14.0, season="Jun-Oct",
+        days={
+            "low": CityDay(10.4, 18.4, 19.8, 24.4, 0.7, 82.2, 5.3),
+            "moderate": CityDay(14.1, 21.3, 15.8, 26.0, 0.7, 79.4, 6.3),
+            "high": CityDay(17.8, 26.2, 16.0, 25.0, 0.9, 74.0, 6.3,
+                event_h=5.0, ease_h=1.0),
+            "extreme": CityDay(21.3, 31.0, 12.4, 25.4, 0.9, 66.7, 10.3,
+                event_h=5.0, ease_h=1.0),
+        },
+        anchor=("Parleys Canyon Fire, 2021-08-15 at Heber: 12 mph, 14 % RH, "
+                "32 C (63rd percentile, a hot light-wind day); extreme = "
+                "Heber's top 1 %")),
+    "vail_co": CityWeather(
+        key="vail_co", short="Vail",
+        station=("KEGE Eagle County Regional, 1,993 m, 48 km W; cross-check "
+                 "KASE"),
+        elev_m=2496.0, utc_offset_h=-7.0, peak_hour=14.0, season="Jun-Sep",
+        days={
+            "low": CityDay(12.9, 21.9, 24.6, 23.4, 2.1, 69.8, 7.8),
+            "moderate": CityDay(17.8, 26.5, 17.7, 24.0, 2.3, 63.9, 6.8),
+            "high": CityDay(21.9, 31.1, 15.0, 23.8, 2.1, 57.7, 6.3,
+                event_h=5.0, ease_h=1.0),
+            "extreme": CityDay(26.0, 37.0, 12.0, 23.6, 2.8, 48.7, 7.7,
+                event_h=7.0, ease_h=1.0),
+        },
+        anchor=("Sylvan Fire, 2021-06-20 at Eagle: 21 mph gusting 30, 13 % "
+                "RH, 31 C (96.8th percentile day)")),
+    "beaver_creek_co": CityWeather(
+        key="beaver_creek_co", short="Beaver Creek",
+        station=("KEGE Eagle County Regional, 1,993 m, 31 km W; cross-check "
+                 "KASE"),
+        elev_m=2312.0, utc_offset_h=-7.0, peak_hour=14.0, season="Jun-Sep",
+        days={
+            "low": CityDay(12.9, 21.9, 23.6, 24.7, 2.1, 70.4, 8.3),
+            "moderate": CityDay(17.8, 26.5, 17.0, 25.3, 2.3, 64.5, 7.3),
+            "high": CityDay(21.9, 31.1, 14.4, 25.1, 2.1, 58.3, 6.8,
+                event_h=5.0, ease_h=1.0),
+            "extreme": CityDay(26.0, 37.0, 11.5, 24.9, 2.8, 49.2, 8.2,
+                event_h=7.0, ease_h=1.0),
+        },
+        anchor=("Sylvan Fire, 2021-06-20 at Eagle: 21 mph gusting 30, 13 % "
+                "RH, 31 C (96.8th percentile day)")),
+    "eagle_co": CityWeather(
+        key="eagle_co", short="Eagle",
+        station=("KEGE Eagle County Regional, 1,993 m, 3 km WSW; cross-check"
+                 " KRIL"),
+        elev_m=2010.0, utc_offset_h=-7.0, peak_hour=14.0, season="Jun-Sep",
+        days={
+            "low": CityDay(12.9, 21.9, 22.1, 26.9, 2.1, 71.4, 9.0),
+            "moderate": CityDay(17.8, 26.5, 16.0, 27.5, 2.3, 65.5, 8.0),
+            "high": CityDay(21.9, 31.1, 13.5, 27.3, 2.1, 59.2, 7.5,
+                event_h=5.0, ease_h=1.0),
+            "extreme": CityDay(26.0, 37.0, 10.8, 27.1, 2.8, 50.1, 8.9,
+                event_h=7.0, ease_h=1.0),
+        },
+        anchor=("Sylvan Fire, 2021-06-20 at Eagle: 21 mph gusting 30, 13 % "
+                "RH, 31 C (96.8th percentile day)")),
+    "glenwood_springs_co": CityWeather(
+        key="glenwood_springs_co", short="Glenwood Springs",
+        station=("KRIL Rifle / Garfield County, 1,691 m, 35 km W; cross-"
+                 "check KEGE"),
+        elev_m=1814.0, utc_offset_h=-7.0, peak_hour=15.0, season="Jun-Sep",
+        days={
+            "low": CityDay(12.3, 23.0, 20.1, 28.2, 2.3, 63.7, 11.9),
+            "moderate": CityDay(16.7, 26.8, 13.4, 29.5, 2.3, 55.1, 11.4),
+            "high": CityDay(19.6, 30.6, 11.1, 29.5, 2.3, 49.6, 10.8,
+                event_h=5.0, ease_h=1.0),
+            "extreme": CityDay(23.3, 36.2, 8.2, 28.9, 2.5, 43.3, 10.8,
+                event_h=5.0, ease_h=1.0),
+        },
+        anchor=("Grizzly Creek Fire, 2020-08-11 at Rifle: 23 mph gusting 34,"
+                " 7 % RH, 34 C (98.9th percentile day)")),
+    "basalt_carbondale_co": CityWeather(
+        key="basalt_carbondale_co", short="Basalt",
+        station=("KASE Aspen / Sardy Field, 2,382 m, 29 km SE up the Roaring"
+                 " Fork; cross-checks KEGE, KRIL"),
+        elev_m=1998.0, utc_offset_h=-7.0, peak_hour=14.0, season="Jun-Sep",
+        days={
+            "low": CityDay(9.9, 19.9, 20.7, 26.2, 5.5, 69.6, 9.2),
+            "moderate": CityDay(12.0, 22.2, 16.1, 27.0, 5.8, 62.8, 8.7),
+            "high": CityDay(13.8, 25.3, 14.2, 27.6, 6.4, 57.3, 9.2,
+                event_h=5.0, ease_h=1.0),
+            "extreme": CityDay(18.0, 29.9, 12.2, 25.1, 6.4, 47.5, 8.1,
+                event_h=5.0, ease_h=1.0),
+        },
+        anchor=("Lake Christine Fire, 2018-07-03 at Aspen: 17 mph (33 mph "
+                "peak hour) gusting 33, 18 % RH, 25 C (98.7th percentile "
+                "day)")),
+    "aspen_co": CityWeather(
+        key="aspen_co", short="Aspen",
+        station=("KASE Aspen / Sardy Field, 2,382 m, in the community; "
+                 "cross-check KEGE"),
+        elev_m=2428.0, utc_offset_h=-7.0, peak_hour=14.0, season="Jun-Sep",
+        days={
+            "low": CityDay(9.9, 19.9, 22.8, 23.2, 5.5, 68.1, 8.2),
+            "moderate": CityDay(12.0, 22.2, 17.7, 24.0, 5.8, 61.5, 7.7),
+            "high": CityDay(13.8, 25.3, 15.6, 24.6, 6.4, 56.0, 8.2,
+                event_h=5.0, ease_h=1.0),
+            "extreme": CityDay(18.0, 29.9, 13.3, 22.1, 6.4, 46.3, 7.1,
+                event_h=5.0, ease_h=1.0),
+        },
+        anchor=("Lake Christine Fire, 2018-07-03 at Aspen: 17 mph (33 mph "
+                "peak hour) gusting 33, 18 % RH, 25 C (98.7th percentile "
+                "day)")),
+    "eagle_vail_co": CityWeather(
+        key="eagle_vail_co", short="Eagle-Vail corridor",
+        station=("KEGE Eagle County Regional, 1,993 m, 26 km W (the "
+                 "corridor's west end); cross-check KASE"),
+        elev_m=2256.0, utc_offset_h=-7.0, peak_hour=14.0, season="Jun-Sep",
+        days={
+            "low": CityDay(12.9, 21.9, 23.3, 25.1, 2.1, 70.6, 8.4),
+            "moderate": CityDay(17.8, 26.5, 16.8, 25.7, 2.3, 64.7, 7.4),
+            "high": CityDay(21.9, 31.1, 14.3, 25.5, 2.1, 58.5, 6.9,
+                event_h=5.0, ease_h=1.0),
+            "extreme": CityDay(26.0, 37.0, 11.4, 25.3, 2.8, 49.4, 8.3,
+                event_h=7.0, ease_h=1.0),
+        },
+        anchor=("Sylvan Fire, 2021-06-20 at Eagle: 21 mph gusting 30, 13 % "
+                "RH, 31 C (96.8th percentile day)")),
 }
 
 
@@ -2049,6 +2429,13 @@ class _SimFire:
     _ember_log: object = None
     _aloft: tuple = ()
     _wx_hist: tuple = ()
+    # CITY WEATHER (contracts sim_weather_profile): the forecast the CURRENT
+    # field was solved under. Under a varying forecast one sample per field
+    # no longer describes the weather the fire burned in, so a re-anchor
+    # replaces the closing field's entry in _wx_hist by its HOURLY spans
+    # (SimSession._field_wx_spans) — the same hour buckets the field priced.
+    # Never read under the generic profile (one sample per field, as ever).
+    _wx_field: object = None
 
 
 class CrewPlacementError(ValueError):
@@ -2361,6 +2748,22 @@ class SimSession:
         # override wins; the live engine's default is unchanged.
         if "ros_floor_grass_only" not in overrides:
             cfg.ros_floor_grass_only = True
+        # SIMULATOR CITY WEATHER (founder 2026-10-09 "change the weather
+        # conditions for each city specific"; contracts sim_weather_profile):
+        # the simulator's intensities mean THIS community's conditions — a
+        # daily cycle on local time and, at high / extreme, a finite wind
+        # event from the ignition — instead of one generic table held
+        # constant for days. A location without a profile keeps the generic
+        # table. Explicit override wins. The edge law stays the engine's
+        # frozen departure hour: measured on three one-click scenarios under
+        # city weather, edge_weather_piecewise moved the burned area by at
+        # most 5.3 % over 48 h but cost 7-12x the first field's solve
+        # (19-42 s instead of 3-4 s; docs/review/city_weather_2026-10-09.md)
+        # — a caller may still arm it.
+        if "sim_weather_profile" not in overrides:
+            cfg.sim_weather_profile = SIM_WEATHER_PROFILE
+        self._city_wx = (CITY_WEATHER.get(location_key)
+                         if cfg.sim_weather_profile == "city" else None)
 
         # --- roads (contracts wgresponse.roads seam; loaded ONCE per
         # configure). LAZY import: the sibling module lands independently —
@@ -2646,6 +3049,9 @@ class SimSession:
         self._intensity = None
         self._wx = None
         self._wx_epoch = 0            # bumped by _rebuild_weather (world changes)
+        # CITY WEATHER: unix s the current high / extreme wind event began
+        # (the ignition that started it — ignite()); None before any.
+        self._wx_event_start_s = None
         self._serviced = []
         self._assigned = set()
         self._jobbed = {}
@@ -2780,7 +3186,12 @@ class SimSession:
         incident id sim-f<k>. Weather is DOMAIN-SHARED (design): the newest
         ignite's intensity (+ optional wind override, default = the location's
         canonical hazard wind) rebuilds the one MockWeather script every fire
-        forecasts under. The point must land on the loaded tile (fail loud)."""
+        forecasts under. The point must land on the loaded tile (fail loud).
+        CITY WEATHER (contracts sim_weather_profile, the simulator default):
+        the intensity means this community's conditions (CITY_WEATHER) on its
+        daily cycle; a high / extreme ignition starts a finite wind event
+        here unless one at the same intensity is still blowing, which it
+        joins (_city_event_on_ignite)."""
         if intensity not in INTENSITY_WEATHER:
             raise ValueError(f"intensity must be one of "
                              f"{sorted(INTENSITY_WEATHER)}, got {intensity!r}")
@@ -2800,6 +3211,8 @@ class SimSession:
                 f"urban/agriculture/water/barren fuel")
         if wind_dir_deg is not None:
             self._wind_dir_deg = float(wind_dir_deg) % 360.0
+        if self._city_wx is not None:
+            self._city_event_on_ignite(intensity)
         self._intensity = intensity
         # REGIONAL / MUTUAL-AID CREWS (SEMANTICS 9): the FIRST ignition is what
         # summons out-of-region aid — mobilize reinforcements exactly once, off
@@ -3100,14 +3513,126 @@ class SimSession:
             "placed": [dict(self._placed[cid]) for cid in _idsort(self._placed)],
         }
 
+    def _city_event_on_ignite(self, intensity: str) -> None:
+        """CITY WEATHER event clock (ignite(), before the weather rebuild):
+        a high / extreme ignition lights DURING a wind event. A new event
+        begins at this ignition unless one at the same intensity is still
+        blowing (holding or easing) — then the new fire joins it (the domain
+        weather is shared; nothing changes for the fires already burning).
+        A change of intensity always starts the new intensity's event here;
+        low / moderate have no event (the daily cycle alone)."""
+        day = self._city_wx.days[intensity]
+        if day.event_h <= 0.0:
+            return
+        start = self._wx_event_start_s
+        if (start is not None and intensity == self._intensity
+                and self._now_s < start + (day.event_h
+                                           + day.ease_h) * 3600.0):
+            return
+        self._wx_event_start_s = self._now_s
+
+    def _weather_state(self) -> dict:
+        """state()['weather'] (SIMULATOR CITY WEATHER; display and audit —
+        the engine never reads it):
+          profile    'city' | 'generic' — the weather this session runs
+          community / station / elev_m / season / anchor
+                     the city profile's provenance (None under generic)
+          presets    {intensity: one line, what it means HERE} — the page's
+                     intensity legend (weather_label)
+          intensity  the domain intensity (None before any ignition)
+          label      presets[intensity] (None before any ignition)
+          event      the current high / extreme wind event {start_s,
+                     hold_h, ease_h, hold_until_s, ends_s}, else None
+          now        {wind_mph, gust_mph, rh_pct, temp_c} at sim-now
+                     (the forecast hour nearest it; None before any
+                     ignition) + local_hour (local standard time, city)"""
+        prof = self._city_wx
+        presets = {k: weather_label(self._loc.key, k, prof)
+                   for k in INTENSITY_WEATHER}
+        out = {
+            "profile": "city" if prof is not None else "generic",
+            "community": prof.short if prof is not None else None,
+            "station": prof.station if prof is not None else None,
+            "elev_m": prof.elev_m if prof is not None else None,
+            "season": prof.season if prof is not None else None,
+            "anchor": prof.anchor if prof is not None else None,
+            "presets": presets,
+            "intensity": self._intensity,
+            "label": (presets.get(self._intensity)
+                      if self._intensity is not None else None),
+            "event": None,
+            "now": None,
+        }
+        if prof is not None and self._intensity is not None:
+            day = prof.days[self._intensity]
+            start = self._wx_event_start_s
+            if day.event_h > 0.0 and start is not None:
+                out["event"] = {
+                    "start_s": start, "hold_h": day.event_h,
+                    "ease_h": day.ease_h,
+                    "hold_until_s": start + day.event_h * 3600.0,
+                    "ends_s": start + (day.event_h + day.ease_h) * 3600.0}
+        if self._wx is not None:
+            s = self._wx.at(self._now_s)
+            now = {"wind_mph": round(s.wind_speed_mps / MPH_TO_MPS, 1),
+                   "gust_mph": round(s.wind_gust_mps / MPH_TO_MPS, 1),
+                   "rh_pct": round(s.rh_pct, 1),
+                   "temp_c": round(s.temp_c, 1)}
+            if prof is not None:
+                now["local_hour"] = round(
+                    ((self._now_s / 3600.0 + prof.utc_offset_h) % 24.0), 2)
+            out["now"] = now
+        return out
+
+    def _city_wx_forecast(self, until_s: float):
+        """The CITY WEATHER forecast from the sim epoch through at least
+        until_s (+ CITY_WX_PAD_H): a pure function of absolute time, so a
+        longer build agrees hour for hour with a shorter one."""
+        span_h = max(self._cfg.horizon_h,
+                     (until_s - self._t0_s) / 3600.0) + CITY_WX_PAD_H
+        mock = city_mock_weather(
+            self._city_wx, self._intensity, dir_deg=self._wind_dir_deg,
+            t0_s=self._t0_s, event_start_s=self._wx_event_start_s,
+            seed=f"simui|{self._seed}|wx")
+        return mock.forecast(self._loc.center, math.ceil(span_h))
+
+    def _ensure_city_wx_covers(self, until_s: float) -> None:
+        """Extend the CITY WEATHER forecast when a field's horizon would run
+        past its last hour. The overlap is identical, so this is NOT a world
+        change: no epoch bump, no re-anchor."""
+        if self._wx.samples[-1].t_s < until_s:
+            self._wx = self._city_wx_forecast(until_s)
+
+    def _field_wx_spans(self, f: "_SimFire", until_s: float) -> tuple:
+        """CITY WEATHER re-anchor history of the field being closed: one
+        (span start, WeatherSample) per hour bucket the field priced
+        (spread's hour h of a field anchored at A is [A + h h, A + (h+1) h)
+        at wx.at(A + h h)), from its anchor up to until_s. Under constant
+        weather every span is the same sample and spread merges them back
+        into one run (bit-identical); under the daily cycle each kept front
+        edge's progress is priced hour by hour as the field priced it."""
+        a = f.anchor_t0_s
+        wx = f._wx_field
+        n = max(1, int(math.ceil((until_s - a) / 3600.0)))
+        return tuple((a + h * 3600.0, wx.at(a + h * 3600.0))
+                     for h in range(n) if a + h * 3600.0 < until_s
+                     or h == 0)
+
     def _rebuild_weather(self) -> None:
-        spec = INTENSITY_WEATHER[self._intensity]
-        mock = MockWeather(seed=f"simui|{self._seed}|wx",
-                           base_wind_mps=spec["wind_mph"] * MPH_TO_MPS,
-                           dir_deg=self._wind_dir_deg,
-                           rh_pct=spec["rh_pct"], temp_c=spec["temp_c"],
-                           gust_factor=GUST_FACTOR, t0_s=self._t0_s)
-        self._wx = mock.forecast(self._loc.center, self._cfg.horizon_h)
+        if self._city_wx is not None:
+            # CITY WEATHER (contracts sim_weather_profile): the community's
+            # daily cycle + the finite wind event (city_mock_weather), long
+            # enough for a field anchored now
+            self._wx = self._city_wx_forecast(
+                self._now_s + self._cfg.horizon_h * 3600.0)
+        else:
+            spec = INTENSITY_WEATHER[self._intensity]
+            mock = MockWeather(seed=f"simui|{self._seed}|wx",
+                               base_wind_mps=spec["wind_mph"] * MPH_TO_MPS,
+                               dir_deg=self._wind_dir_deg,
+                               rh_pct=spec["rh_pct"], temp_c=spec["temp_c"],
+                               gust_factor=GUST_FACTOR, t0_s=self._t0_s)
+            self._wx = mock.forecast(self._loc.center, self._cfg.horizon_h)
         # World-change epoch: every fire's persisted arrival field re-anchors
         # on its next tick (see _SimFire docstring). Ticks themselves never
         # bump this.
@@ -5080,6 +5605,11 @@ class SimSession:
         # continuous run with that shift.
         incidents = []
         horizon_rebase_s = 0.8 * cfg.horizon_h * 3600.0
+        if self._city_wx is not None and self._wx is not None:
+            # CITY WEATHER: the daily cycle must reach every field's horizon
+            # (a forecast clamped at its last hour would freeze the cycle at
+            # one instant of a day for the rest of a long session)
+            self._ensure_city_wx_covers(now + cfg.horizon_h * 3600.0)
         for fid in self._fire_order:
             f = self._fires[fid]
             rings = self._perimeter_rings(f, now)
@@ -5104,6 +5634,12 @@ class SimSession:
                 else:
                     anchor = now
                     kept, aloft = self._reanchor_history(f, now)
+                    if self._city_wx is not None and f._wx_field is not None:
+                        # CITY WEATHER: the closing field burned under a
+                        # varying forecast — its history entry becomes its
+                        # hourly spans (_SimFire._wx_field)
+                        f._wx_hist = (f._wx_hist[:-1]
+                                      + self._field_wx_spans(f, anchor))
                     # the kept cells are QUIET: each threw its one ember in
                     # the field it burned in (re-throwing them fired an ember
                     # shower from the whole burn at every wind change); the
@@ -5118,6 +5654,8 @@ class SimSession:
                 f._ember_log = array("d", [x for e in log for x in e])
                 f._aloft = tuple(aloft)
                 f._wx_hist = f._wx_hist + ((anchor, self._wx.at(anchor)),)
+                if self._city_wx is not None:
+                    f._wx_field = self._wx
                 f.wx_epoch = self._wx_epoch
                 f.anchor_t0_s = anchor
             incidents.append(inc)
@@ -6616,6 +7154,10 @@ class SimSession:
             "paused": self._paused,
             "wind_dir_deg": self._wind_dir_deg,
             "intensity": self._intensity,
+            # SIMULATOR CITY WEATHER (2026-10-09; additive): what each
+            # intensity means at this community, the event clock and the
+            # conditions at sim-now (see _weather_state)
+            "weather": self._weather_state(),
             "roads_on": self._road_graph is not None,
             # PHYSICS TOGGLES (contracts SAFETY SEMANTICS 11 ember spotting +
             # cfg.grass_ros_floor_frac grass head-ROS floor): echo the two

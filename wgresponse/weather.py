@@ -5,6 +5,8 @@
     OpenMeteoWeather  keyless fallback (LICENSING: free tier is NON-COMMERCIAL —
                       see class docstring)
     MockWeather       deterministic synthetic hourly series with scripted shifts
+                      (+ optional DailyCycle / WindEvent time shape: the
+                      simulator's CITY WEATHER, 2026-10-09)
 
 Units at the seam (contracts law): wind m/s (10-m sustained + gust), direction
 compass degrees the wind blows FROM (0 = N, CW), RH percent 0-100, temperature
@@ -43,6 +45,7 @@ import re
 import threading
 import time
 import urllib.request
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Callable, Optional
 
@@ -459,6 +462,101 @@ class OpenMeteoWeather:
         return WeatherForecast(loc=loc, samples=samples, source="open-meteo")
 
 
+@dataclass(frozen=True)
+class DailyCycle:
+    """A repeating 24-hour weather cycle for MockWeather(diurnal=...)
+    (simulator CITY WEATHER, founder 2026-10-09: "change the weather
+    conditions for each city specific"; docs/review/city_weather_2026-10-09.md).
+
+    The cycle runs on LOCAL STANDARD TIME = UTC + utc_offset_h (no daylight
+    saving — the sim clock is UTC unix seconds, so the cycle is a pure
+    function of absolute time, never of the wall clock). Every variable
+    follows ONE smooth curve between its pre-dawn value at trough_hour and
+    its afternoon value at peak_hour: a half cosine up over the
+    (peak_hour - trough_hour) hours of the morning, a half cosine down over
+    the rest of the day. So the afternoon brings the day's strongest wind,
+    lowest RH and highest temperature and the night the overnight recovery
+    (light wind, humid, cool). Units: m/s, percent, Celsius; gust_factor =
+    gust / sustained."""
+    utc_offset_h: float
+    wind_day_mps: float          # afternoon sustained wind (at peak_hour)
+    wind_night_mps: float        # pre-dawn sustained wind (at trough_hour)
+    rh_day_pct: float            # afternoon minimum RH
+    rh_night_pct: float          # pre-dawn maximum RH (overnight recovery)
+    temp_day_c: float            # afternoon maximum temperature
+    temp_night_c: float          # pre-dawn minimum temperature
+    gust_factor: float = 1.4
+    peak_hour: float = 15.0      # local standard hour of the afternoon peak
+    trough_hour: float = 6.0     # local standard hour of the pre-dawn trough
+
+    def __post_init__(self):
+        if not 0.0 <= self.trough_hour < self.peak_hour < 24.0:
+            raise ValueError("DailyCycle needs 0 <= trough_hour < "
+                             "peak_hour < 24 (local standard hours)")
+
+    def local_hour(self, t_s: float) -> float:
+        """Local standard hour of day in [0, 24) at unix second t_s."""
+        return ((t_s / 3600.0 + self.utc_offset_h) % 24.0 + 24.0) % 24.0
+
+    def phase(self, t_s: float) -> float:
+        """0.0 at the pre-dawn trough, 1.0 at the afternoon peak."""
+        h = self.local_hour(t_s)
+        up = self.peak_hour - self.trough_hour
+        if self.trough_hour <= h <= self.peak_hour:
+            return 0.5 - 0.5 * math.cos(math.pi * (h - self.trough_hour) / up)
+        down = 24.0 - up
+        d = (h - self.peak_hour) % 24.0
+        return 0.5 + 0.5 * math.cos(math.pi * d / down)
+
+    def at(self, t_s: float) -> "tuple[float, float, float]":
+        """(sustained wind m/s, RH %, temperature C) at unix second t_s."""
+        p = self.phase(t_s)
+        return (self.wind_night_mps + (self.wind_day_mps
+                                       - self.wind_night_mps) * p,
+                self.rh_night_pct + (self.rh_day_pct
+                                     - self.rh_night_pct) * p,
+                self.temp_night_c + (self.temp_day_c
+                                     - self.temp_night_c) * p)
+
+
+@dataclass(frozen=True)
+class WindEvent:
+    """A FINITE wind event for MockWeather(event=...) (simulator CITY
+    WEATHER; see DailyCycle). From start_s (unix s — the simulator: the
+    ignition that chose the intensity) the conditions HOLD at
+    (wind_mps, rh_pct, temp_c, gust_factor) for peak_h hours, then ease
+    LINEARLY back to the underlying weather (the daily cycle, or the
+    constant base) over ease_h hours; before start_s and after the easing
+    the underlying weather alone. Deterministic, a pure function of time."""
+    start_s: float
+    peak_h: float
+    ease_h: float
+    wind_mps: float
+    rh_pct: float
+    temp_c: float
+    gust_factor: float = 1.4
+
+    def __post_init__(self):
+        if not (self.peak_h >= 0.0 and self.ease_h >= 0.0):
+            raise ValueError("WindEvent peak_h and ease_h must be >= 0")
+
+    def weight(self, t_s: float) -> float:
+        """1.0 while the event holds, falling linearly to 0.0 over the
+        easing, 0.0 before the start and after the easing."""
+        dt_h = (t_s - self.start_s) / 3600.0
+        if dt_h < 0.0:
+            return 0.0
+        if dt_h < self.peak_h:
+            return 1.0
+        if self.ease_h > 0.0 and dt_h < self.peak_h + self.ease_h:
+            return 1.0 - (dt_h - self.peak_h) / self.ease_h
+        return 0.0
+
+    def end_s(self) -> float:
+        """Unix second the easing is complete (the event is over)."""
+        return self.start_s + (self.peak_h + self.ease_h) * 3600.0
+
+
 class MockWeather:
     """Deterministic synthetic weather (contracts.seeded_rng; no wall-clock).
 
@@ -468,13 +566,30 @@ class MockWeather:
     Optional jitter_frac (default 0 = exact) adds seeded per-hour wobble.
     Same (seed, loc, args) always yields the identical series, and the first N
     hours are identical regardless of horizon_h. Units: m/s, deg FROM, %, C,
-    unix seconds; samples start at t0_s, hourly."""
+    unix seconds; samples start at t0_s, hourly.
+
+    TIME SHAPE (simulator CITY WEATHER, 2026-10-09; both default None =>
+    exactly the legacy constant series above, byte for byte):
+      diurnal  a DailyCycle — the base wind / RH / temperature (and gust
+               factor) follow the community's daily cycle on local standard
+               time instead of holding constant;
+      event    a WindEvent — a finite wind event laid over the base (the
+               daily cycle, or the constant base without one): held, then
+               eased back (WindEvent.weight blends every variable,
+               gust factor included).
+    With a daily cycle the shifts steer the DIRECTION only (their wind / RH
+    entries are ignored: the cycle and the event own speed and humidity).
+    Every hour's value is a pure function of its absolute time, so a series
+    built from any t0_s agrees hour for hour with one built from another,
+    and the seeded jitter draws stay two per hour as before."""
 
     def __init__(self, seed: object, base_wind_mps: float = 6.0,
                  dir_deg: float = 45.0, rh_pct: float = 25.0,
                  temp_c: float = 30.0, gust_factor: float = 1.4,
                  shifts: Optional[list] = None, jitter_frac: float = 0.0,
-                 t0_s: float = 1_780_000_000.0, red_flag: bool = False):
+                 t0_s: float = 1_780_000_000.0, red_flag: bool = False,
+                 diurnal: Optional[DailyCycle] = None,
+                 event: Optional[WindEvent] = None):
         self._seed = seed
         self._base = (base_wind_mps, dir_deg, rh_pct, temp_c)
         self._gust_factor = gust_factor
@@ -482,9 +597,13 @@ class MockWeather:
         self._jitter_frac = jitter_frac
         self._t0_s = t0_s
         self._red_flag = red_flag
+        self._diurnal = diurnal
+        self._event = event
 
     def forecast(self, loc: LatLon, horizon_h: float) -> WeatherForecast:
         """Deterministic hourly series at loc covering [t0_s, t0_s + horizon_h]."""
+        if self._diurnal is not None or self._event is not None:
+            return self._forecast_shaped(loc, horizon_h)
         rng = seeded_rng(self._seed, "mockwx", round(loc.lat, 4), round(loc.lon, 4))
         wind, wdir, rh, temp = self._base
         n = max(1, int(horizon_h) + 1)
@@ -501,6 +620,50 @@ class MockWeather:
                 t_s=self._t0_s + h * 3600.0,
                 wind_speed_mps=w,
                 wind_gust_mps=w * self._gust_factor,
+                wind_dir_deg=float(wdir) % 360.0,
+                rh_pct=min(100.0, max(1.0, rh + jr)),
+                temp_c=float(temp),
+            ))
+        return WeatherForecast(loc=loc, samples=samples, source="mock")
+
+    def _forecast_shaped(self, loc: LatLon, horizon_h: float) -> WeatherForecast:
+        """The TIME SHAPE path (class docstring): base = the daily cycle (or
+        the constant base), the event blended over it, then the same seeded
+        jitter law as the legacy path."""
+        rng = seeded_rng(self._seed, "mockwx", round(loc.lat, 4), round(loc.lon, 4))
+        cyc = self._diurnal
+        ev = self._event
+        wind0, wdir, rh0, temp0 = self._base
+        n = max(1, int(horizon_h) + 1)
+        samples = []
+        si = 0
+        for h in range(n):
+            t_s = self._t0_s + h * 3600.0
+            while si < len(self._shifts) and self._shifts[si][0] <= h:
+                if cyc is None:
+                    _, wind0, wdir, rh0 = self._shifts[si]
+                else:
+                    wdir = self._shifts[si][2]
+                si += 1
+            if cyc is not None:
+                wind, rh, temp = cyc.at(t_s)
+                gf = cyc.gust_factor
+            else:
+                wind, rh, temp, gf = wind0, rh0, temp0, self._gust_factor
+            if ev is not None:
+                k = ev.weight(t_s)
+                if k > 0.0:
+                    wind += (ev.wind_mps - wind) * k
+                    rh += (ev.rh_pct - rh) * k
+                    temp += (ev.temp_c - temp) * k
+                    gf += (ev.gust_factor - gf) * k
+            jw = 1.0 + rng.uniform(-self._jitter_frac, self._jitter_frac)
+            jr = rng.uniform(-self._jitter_frac, self._jitter_frac) * 10.0
+            w = max(0.0, wind * jw)
+            samples.append(WeatherSample(
+                t_s=t_s,
+                wind_speed_mps=w,
+                wind_gust_mps=w * max(1.0, gf),
                 wind_dir_deg=float(wdir) % 360.0,
                 rh_pct=min(100.0, max(1.0, rh + jr)),
                 temp_c=float(temp),

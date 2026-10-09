@@ -2678,6 +2678,22 @@ class ResponseConfig:
     feed_sanity_restamp_frac: float = 0.001  # a polygon within this fraction of the last observed one's area is a re-stamp
     feed_sanity_drop_z: float = 3.0          # a size more than z x sd(difference) below the last one is held
     feed_sanity_memory_h: float = 72.0       # the seed remembers a fire's last plausible polygon this long
+    # SIMULATOR CITY WEATHER (founder 2026-10-09, verbatim: "change the
+    # weather conditions for each city specific"; docs/review/
+    # city_weather_2026-10-09.md). Read ONLY by wgresponse.simui (the
+    # interactive simulator builds its own synthetic weather; the live
+    # engine takes its weather from NWS / Open-Meteo and never reads this).
+    # "generic" = the legacy intensity table (simui.INTENSITY_WEATHER: one
+    # sustained wind / RH / temperature per intensity, the same at every
+    # location, held constant for the whole run) — byte-identical. "city" =
+    # each simulator community's own conditions per intensity
+    # (simui.CITY_WEATHER: station climatology + historic fire days, adjusted
+    # to the homes' elevation) with a daily cycle on local time and, for
+    # high / extreme, a FINITE wind event from the ignition that eases back
+    # to the community's moderate daily cycle; a location without a profile
+    # keeps the generic table. The SIMULATOR arms "city" (explicit override
+    # wins). Seeded drills (wgresponse.seeded) keep the generic table.
+    sim_weather_profile: str = "generic"
 
 
 # ---------------------------------------------------------------------------
@@ -3040,6 +3056,8 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
     if not (math.isfinite(cfg.feed_sanity_memory_h)
             and cfg.feed_sanity_memory_h > 0):
         problems.append("feed_sanity_memory_h must be a finite value > 0")
+    if cfg.sim_weather_profile not in ("generic", "city"):
+        problems.append("sim_weather_profile must be 'generic' or 'city'")
 
     # --- type discipline: bool-typed fields must hold bool, int-typed fields
     # must hold int (and not bool -- bool is an int subclass in Python) ---

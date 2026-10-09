@@ -134,6 +134,19 @@
   .leaflet-marker-icon.crew-icon, .leaflet-marker-icon.fire-origin { position: absolute; }
   #physrow { gap: 12px; }
   #physrow label { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
+  /* CITY WEATHER (founder 2026-10-09 "change the weather conditions for each
+     city specific"): what each intensity means for THIS community — one row
+     per intensity (the armed / burning one lit), the station it comes from,
+     and the conditions at sim-now with the wind event's clock. */
+  #wxlegend { margin: 6px 0 2px; font-size: 11px; line-height: 1.35; }
+  #wxlegend .wxhead { color: var(--dim); margin-bottom: 2px; }
+  #wxlegend .wxrow { padding: 1px 4px; border-radius: 4px; color: var(--dim); }
+  #wxlegend .wxrow b { color: var(--text); display: inline-block; min-width: 58px; }
+  #wxlegend .wxrow.armed { background: #3a2410; color: var(--text);
+                           outline: 1px solid var(--orange); }
+  #wxlegend .wxrow.burning { color: var(--text); }
+  #wxnow { margin-top: 3px; color: var(--text); }
+  #wxnow .ev { color: var(--amber); }
   button { background: var(--navy); color: var(--text); border: 1px solid var(--orange);
            border-radius: 4px; padding: 4px 10px; cursor: pointer; font: inherit;
            font-size: 12px; }
@@ -557,6 +570,11 @@
         <button id="int-high" class="small">High</button>
         <button id="int-extreme" class="small">Extreme</button>
       </div>
+      <!-- CITY WEATHER (founder 2026-10-09; state.weather): each intensity
+           means THIS community's conditions — station climatology + historic
+           fire days (docs/review/city_weather_2026-10-09.md). High / extreme
+           start a wind event at the ignition that eases to a moderate day. -->
+      <div id="wxlegend"></div>
       <div class="row">
         <span id="windarrow">&#8595;</span>
         <span>wind FROM <span class="val" id="windval">50</span>&deg;</span>
@@ -1279,6 +1297,53 @@ function updateClock(st) {
     $("sc_sub").innerHTML = `since ignition · tick ${st.tick} · ${perTxt}${wall}`;
   }
 }
+// CITY WEATHER legend (founder 2026-10-09 "change the weather conditions for
+// each city specific"): state.weather.presets holds one line per intensity —
+// what it means at THIS community ("Park City · extreme: 21 mph gusting 31,
+// 12 % RH, 25 C from ignition; eases after 5 h to a moderate day"). The armed
+// intensity's row is lit; once a fire burns, the line below says the
+// conditions at sim-now and where the wind event's clock stands. A state
+// without the block (an older server) leaves the legend empty.
+const WX_ORDER = ["low", "moderate", "high", "extreme"];
+function wxEsc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;",
+                                            ">": "&gt;", '"': "&quot;"}[c]));
+}
+function renderWeather(st) {
+  const box = $("wxlegend"); if (!box) return;
+  const w = st && st.weather;
+  if (!w || !w.presets) { box.innerHTML = ""; return; }
+  const strip = s => String(s).replace(/^[^:]*:\s*/, "");   // drop "Town · k: "
+  const head = w.profile === "city"
+    ? `${wxEsc(w.community || "")} weather · ${wxEsc(w.station || "")} · fire season ${wxEsc(w.season || "")}`
+    : "generic weather (the same everywhere, held constant)";
+  let html = `<div class="wxhead" title="${wxEsc(w.anchor || "")}">${head}</div>`;
+  for (const k of WX_ORDER) {
+    if (!(k in w.presets)) continue;
+    const cls = ["wxrow"];
+    if (armed === k) cls.push("armed");
+    if (w.intensity === k) cls.push("burning");
+    html += `<div class="${cls.join(" ")}" data-k="${k}"><b>${k[0].toUpperCase() + k.slice(1)}</b> ${wxEsc(strip(w.presets[k]))}</div>`;
+  }
+  if (w.now && w.intensity) {
+    const n = w.now;
+    let ev = "";
+    if (w.event && st.sim_now_s != null) {
+      const holdLeft = (w.event.hold_until_s - st.sim_now_s) / 3600;
+      const endLeft = (w.event.ends_s - st.sim_now_s) / 3600;
+      if (holdLeft > 0) ev = ` · <span class="ev">wind event holds ${holdLeft.toFixed(1)} h more</span>`;
+      else if (endLeft > 0) ev = ` · <span class="ev">wind event easing, over in ${endLeft.toFixed(1)} h</span>`;
+      else ev = " · wind event over — a moderate day";
+    }
+    const lh = (n.local_hour != null) ? ` at ${String(Math.floor(n.local_hour)).padStart(2, "0")}:${String(Math.floor((n.local_hour % 1) * 60)).padStart(2, "0")} local` : "";
+    html += `<div id="wxnow">now${lh}: ${Math.round(n.wind_mph)} mph gusting ${Math.round(n.gust_mph)}, ${Math.round(n.rh_pct)} % RH, ${Math.round(n.temp_c)} C${ev}</div>`;
+  }
+  box.innerHTML = html;
+  for (const k of WX_ORDER) {
+    const b = $("int-" + k);
+    if (b && w.presets[k]) b.title = w.presets[k];
+  }
+}
 function relH(t_s, now_s) {
   if (t_s == null || now_s == null) return null;
   return (t_s - now_s) / 3600.0;
@@ -1763,6 +1828,7 @@ for (const k of ["low", "moderate", "high", "extreme"]) {
       $("int-" + j).classList.toggle("active", armed === j);
     $("map").classList.toggle("crosshair", !!armed);
     $("ignitehint").style.display = armed ? "block" : "none";
+    if (lastState) renderWeather(lastState);   // light the armed row now
   });
 }
 map.on("click", e => {
@@ -2432,6 +2498,7 @@ function render(st) {
     `${running ? "RUNNING ×" + Math.round(st.speed_x) : "PAUSED"} · ` +
     `fires ${(st.fires || []).length}`);
   updateClock(st);      // heads-up fire-age timer (top-right of the map)
+  renderWeather(st);    // CITY WEATHER: what each intensity means here + now
 
   // scoreboard — "violations" stays the loudest element on the page
   $("sb_served").textContent = sb.served ?? 0;

@@ -423,9 +423,14 @@ def seeded_forecast(ign: SeededIgnition, live_provider, loc: LatLon,
     live (no override)  -> live_provider.forecast(loc, horizon_h), untouched
                            (the same call every feed incident gets).
     conditions + dir    -> fully synthetic, anchored at now_s: a preset runs
-                           the simulator's exact MockWeather script
-                           (simui._rebuild_weather's construction); explicit
-                           weather the same constant sample every hour.
+                           the simulator's exact GENERIC MockWeather script
+                           (simui._rebuild_weather's construction under
+                           sim_weather_profile "generic"; a seed keeps the
+                           generic table even inside a simulator community —
+                           its forecast is rebuilt from the watcher's cycle
+                           clock, and live weather is the TEST map's realistic
+                           option); explicit weather the same constant
+                           sample every hour.
     one part overridden -> the live forecast with the conditions (sustained,
                            gust, RH, temperature) or the direction replaced in
                            every hourly sample; the live sample times stay.
