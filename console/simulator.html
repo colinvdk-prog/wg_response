@@ -447,6 +447,31 @@
         title="TEST — a sandbox: this simulator never touches the watcher's live map or its test map">TEST</span></h1>
     <div class="sub">real engine · real terrain · watch the safety math work</div>
 
+    <!-- ONE-CLICK SCENARIOS FOR EVERY COMMUNITY (founder 2026-10-09: "add
+         one-click links for all thirteen communities"): each option opens
+         /simulator?scenario=KEY, which builds the community, lights its
+         preset fire upwind in its canonical hazard wind and runs. Keys are
+         server.SCENARIOS (tests/test_server.py pins page == server). -->
+    <div class="ctl">
+      <label class="h" for="scenarioPick">One-click scenario (builds, lights the fire, runs)</label>
+      <select id="scenarioPick">
+        <option value="">Choose a community…</option>
+        <option value="malibu_santa_ana">Malibu / Santa Monica Mtns, CA · Santa Ana · extreme</option>
+        <option value="paradise_ne_wind">Paradise / Magalia, CA · NE wind · extreme</option>
+        <option value="santa_rosa_diablo">Santa Rosa NE / Mark West, CA · Diablo · extreme</option>
+        <option value="rancho_santa_fe_santa_ana">Rancho Santa Fe / Covenant, CA · Santa Ana · extreme</option>
+        <option value="boulder_chinook">Boulder / Superior, CO · chinook · extreme</option>
+        <option value="park_city_windstorm">Park City / Summit Park, UT · SW windstorm · extreme</option>
+        <option value="vail_westerly">Vail / East Vail / Minturn, CO · WSW · high</option>
+        <option value="beaver_creek_westerly">Beaver Creek / Avon / Edwards, CO · WSW · high</option>
+        <option value="eagle_gypsum_westerly">Eagle / Gypsum, CO · WSW · high</option>
+        <option value="glenwood_springs_westerly">Glenwood Springs, CO · WSW · high</option>
+        <option value="basalt_carbondale_southwesterly">Basalt / El Jebel / Carbondale, CO · SW · high</option>
+        <option value="aspen_southwesterly">Aspen / Snowmass Village, CO · SW · high</option>
+        <option value="eagle_vail_corridor_westerly">Eagle → Vail corridor, CO · WSW · high</option>
+      </select>
+    </div>
+
     <div class="ctl">
       <label class="h" for="loc">Location (real WUI terrain)</label>
       <select id="loc">
@@ -1435,6 +1460,16 @@ function exitScrub() {              // ● LIVE: snap to now, re-enable, resume 
 
 const SCENARIO = new URLSearchParams(window.location.search).get("scenario");
 let scenarioUsed = false;
+// ONE-CLICK SCENARIO PICKER (2026-10-09): show the scenario in the URL and
+// navigate to a community's link when one is chosen
+(function () {
+  const pick = document.getElementById("scenarioPick");
+  if (!pick) return;
+  if (SCENARIO) pick.value = SCENARIO;
+  pick.addEventListener("change", () => {
+    if (pick.value) window.location.search = "?scenario=" + encodeURIComponent(pick.value);
+  });
+})();
 
 async function newSession() {
   if (mutationBlocked()) return;

@@ -190,6 +190,72 @@ SCENARIOS = {
         "crews_1h": 2, "intensity": "extreme", "ign_bearing": 60.0,
         "ign_dist_m": 7000.0,
     },
+    # ALL THIRTEEN COMMUNITIES (founder 2026-10-09: "add one-click links for
+    # all thirteen communities"). Each fire starts upwind of the community in
+    # its canonical hazard wind (the page's SIM_LOCATIONS table) and runs at
+    # it. California wind-event towns use "extreme" (their historic fires
+    # were Santa Ana / Diablo / NE-wind events); the Colorado mountain towns
+    # use "high". Same law as above: fixed seed per key, identical demo every
+    # run; explicit payload keys still win.
+    # Malibu, CA — Woolsey-style NE Santa Ana down the Santa Monica Mountains.
+    "malibu_santa_ana": {
+        "location": "malibu_ca", "clients": 40, "crews": 2, "crews_1h": 1,
+        "intensity": "extreme", "ign_bearing": 50.0, "ign_dist_m": 7000.0,
+    },
+    # Paradise / Magalia, CA — Camp-style NE wind out of the Feather River
+    # canyon onto the ridge.
+    "paradise_ne_wind": {
+        "location": "paradise_ca", "clients": 40, "crews": 2, "crews_1h": 1,
+        "intensity": "extreme", "ign_bearing": 45.0, "ign_dist_m": 7000.0,
+    },
+    # Santa Rosa NE / Mark West, CA — Tubbs-style NE Diablo wind into the
+    # Fountaingrove / Mark West interface.
+    "santa_rosa_diablo": {
+        "location": "santa_rosa_ca", "clients": 40, "crews": 2, "crews_1h": 1,
+        "intensity": "extreme", "ign_bearing": 45.0, "ign_dist_m": 7000.0,
+    },
+    # Vail / East Vail / Minturn, CO — WSW wind along the Eagle Valley.
+    "vail_westerly": {
+        "location": "vail_co", "clients": 40, "crews": 2, "crews_1h": 1,
+        "intensity": "high", "ign_bearing": 240.0, "ign_dist_m": 6000.0,
+    },
+    # Beaver Creek / Avon / Edwards, CO — WSW wind along the Eagle Valley.
+    "beaver_creek_westerly": {
+        "location": "beaver_creek_co", "clients": 40, "crews": 2,
+        "crews_1h": 1, "intensity": "high", "ign_bearing": 240.0,
+        "ign_dist_m": 6000.0,
+    },
+    # Eagle / Gypsum, CO — WSW wind through the sage and grass of the lower
+    # Eagle Valley (the corridor base).
+    "eagle_gypsum_westerly": {
+        "location": "eagle_co", "clients": 40, "crews": 2, "crews_1h": 1,
+        "intensity": "high", "ign_bearing": 240.0, "ign_dist_m": 7000.0,
+    },
+    # Glenwood Springs, CO — South Canyon-style WSW wind into the town.
+    "glenwood_springs_westerly": {
+        "location": "glenwood_springs_co", "clients": 40, "crews": 2,
+        "crews_1h": 1, "intensity": "high", "ign_bearing": 240.0,
+        "ign_dist_m": 6000.0,
+    },
+    # Basalt / El Jebel / Carbondale, CO — Lake Christine-style SW wind up
+    # the Roaring Fork Valley.
+    "basalt_carbondale_southwesterly": {
+        "location": "basalt_carbondale_co", "clients": 40, "crews": 2,
+        "crews_1h": 1, "intensity": "high", "ign_bearing": 225.0,
+        "ign_dist_m": 6000.0,
+    },
+    # Aspen / Snowmass Village, CO — SW wind up the Roaring Fork Valley.
+    "aspen_southwesterly": {
+        "location": "aspen_co", "clients": 40, "crews": 2, "crews_1h": 1,
+        "intensity": "high", "ign_bearing": 225.0, "ign_dist_m": 6000.0,
+    },
+    # Eagle -> Vail corridor, CO — the whole valley on one tile; a WSW fire
+    # 8 km out, as in tests/test_sim_fire_shading.py's corridor frame.
+    "eagle_vail_corridor_westerly": {
+        "location": "eagle_vail_co", "clients": 40, "crews": 2,
+        "crews_1h": 1, "intensity": "high", "ign_bearing": 240.0,
+        "ign_dist_m": 8000.0,
+    },
 }
 
 

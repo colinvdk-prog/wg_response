@@ -1,0 +1,1184 @@
+[
+ {
+  "variant": "as_deployed",
+  "intensity": "extreme",
+  "ignition": [
+   40.67547,
+   -111.60869
+  ],
+  "weather": {
+   "wind_mps": 17.88,
+   "gust_mps": 23.25,
+   "dir_from_deg": 225.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "cell_m": 90.0,
+  "rows": [
+   {
+    "t_h": 0.25,
+    "area_km2": 0.138,
+    "area_acres": 34,
+    "head_km": 3.82,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 0.5,
+    "area_km2": 1.012,
+    "area_acres": 250,
+    "head_km": 8.27,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 0.75,
+    "area_km2": 2.203,
+    "area_acres": 544,
+    "head_km": 10.06,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.0,
+    "area_km2": 3.24,
+    "area_acres": 801,
+    "head_km": 10.06,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.25,
+    "area_km2": 4.666,
+    "area_acres": 1153,
+    "head_km": 12.03,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.5,
+    "area_km2": 7.873,
+    "area_acres": 1946,
+    "head_km": 19.29,
+    "homes_reached": 1
+   },
+   {
+    "t_h": 1.75,
+    "area_km2": 12.361,
+    "area_acres": 3054,
+    "head_km": 19.55,
+    "homes_reached": 1
+   },
+   {
+    "t_h": 2.0,
+    "area_km2": 17.059,
+    "area_acres": 4215,
+    "head_km": 19.55,
+    "homes_reached": 2
+   },
+   {
+    "t_h": 2.25,
+    "area_km2": 20.574,
+    "area_acres": 5084,
+    "head_km": 19.55,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 2.5,
+    "area_km2": 23.036,
+    "area_acres": 5692,
+    "head_km": 19.61,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 2.75,
+    "area_km2": 25.28,
+    "area_acres": 6247,
+    "head_km": 19.61,
+    "homes_reached": 4
+   },
+   {
+    "t_h": 3.0,
+    "area_km2": 27.435,
+    "area_acres": 6779,
+    "head_km": 19.61,
+    "homes_reached": 4
+   },
+   {
+    "t_h": 3.25,
+    "area_km2": 30.197,
+    "area_acres": 7462,
+    "head_km": 19.61,
+    "homes_reached": 4
+   },
+   {
+    "t_h": 3.5,
+    "area_km2": 33.048,
+    "area_acres": 8166,
+    "head_km": 19.61,
+    "homes_reached": 5
+   },
+   {
+    "t_h": 3.75,
+    "area_km2": 35.826,
+    "area_acres": 8853,
+    "head_km": 19.68,
+    "homes_reached": 5
+   },
+   {
+    "t_h": 4.0,
+    "area_km2": 38.281,
+    "area_acres": 9459,
+    "head_km": 19.68,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 4.25,
+    "area_km2": 40.152,
+    "area_acres": 9922,
+    "head_km": 19.68,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 4.5,
+    "area_km2": 42.063,
+    "area_acres": 10394,
+    "head_km": 19.68,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 4.75,
+    "area_km2": 43.781,
+    "area_acres": 10818,
+    "head_km": 19.68,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 5.0,
+    "area_km2": 45.684,
+    "area_acres": 11289,
+    "head_km": 19.68,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 5.25,
+    "area_km2": 47.312,
+    "area_acres": 11691,
+    "head_km": 19.68,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 5.5,
+    "area_km2": 49.127,
+    "area_acres": 12139,
+    "head_km": 19.68,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 5.75,
+    "area_km2": 51.038,
+    "area_acres": 12612,
+    "head_km": 19.68,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 6.0,
+    "area_km2": 52.731,
+    "area_acres": 13030,
+    "head_km": 19.68,
+    "homes_reached": 6
+   }
+  ],
+  "head_kmh_per_tick": [
+   15.28,
+   17.8,
+   7.16,
+   0.0,
+   7.88,
+   29.04,
+   1.04,
+   0.0,
+   0.0,
+   0.24,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.28,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "first_home_h": 1.5,
+  "fuel_share_burned": {
+   "1.75": {
+    "grass (GR)": 0.131,
+    "grass-shrub (GS)": 0.447,
+    "shrub (SH)": 0.197,
+    "timber litter (TL)": 0.054,
+    "timber understory (TU)": 0.171
+   },
+   "3.0": {
+    "grass (GR)": 0.117,
+    "grass-shrub (GS)": 0.458,
+    "shrub (SH)": 0.244,
+    "timber litter (TL)": 0.048,
+    "timber understory (TU)": 0.133
+   },
+   "6.0": {
+    "grass (GR)": 0.125,
+    "grass-shrub (GS)": 0.451,
+    "shrub (SH)": 0.279,
+    "timber litter (TL)": 0.045,
+    "timber understory (TU)": 0.1
+   }
+  },
+  "wall_s": 4.9
+ },
+ {
+  "variant": "floor_grass_only",
+  "intensity": "extreme",
+  "ignition": [
+   40.67547,
+   -111.60869
+  ],
+  "weather": {
+   "wind_mps": 17.88,
+   "gust_mps": 23.25,
+   "dir_from_deg": 225.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "cell_m": 90.0,
+  "rows": [
+   {
+    "t_h": 0.25,
+    "area_km2": 0.016,
+    "area_acres": 4,
+    "head_km": 0.14,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 0.5,
+    "area_km2": 0.016,
+    "area_acres": 4,
+    "head_km": 0.14,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 0.75,
+    "area_km2": 0.016,
+    "area_acres": 4,
+    "head_km": 0.14,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.0,
+    "area_km2": 0.024,
+    "area_acres": 6,
+    "head_km": 0.26,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.25,
+    "area_km2": 0.032,
+    "area_acres": 8,
+    "head_km": 0.64,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.5,
+    "area_km2": 0.032,
+    "area_acres": 8,
+    "head_km": 0.64,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.75,
+    "area_km2": 0.146,
+    "area_acres": 36,
+    "head_km": 3.82,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 2.0,
+    "area_km2": 0.583,
+    "area_acres": 144,
+    "head_km": 8.27,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 2.25,
+    "area_km2": 1.053,
+    "area_acres": 260,
+    "head_km": 8.97,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 2.5,
+    "area_km2": 1.701,
+    "area_acres": 420,
+    "head_km": 10.06,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 2.75,
+    "area_km2": 2.414,
+    "area_acres": 596,
+    "head_km": 10.06,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 3.0,
+    "area_km2": 3.41,
+    "area_acres": 843,
+    "head_km": 15.98,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 3.25,
+    "area_km2": 5.978,
+    "area_acres": 1477,
+    "head_km": 19.55,
+    "homes_reached": 1
+   },
+   {
+    "t_h": 3.5,
+    "area_km2": 9.971,
+    "area_acres": 2464,
+    "head_km": 19.55,
+    "homes_reached": 2
+   },
+   {
+    "t_h": 3.75,
+    "area_km2": 12.571,
+    "area_acres": 3106,
+    "head_km": 19.55,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 4.0,
+    "area_km2": 14.11,
+    "area_acres": 3487,
+    "head_km": 19.61,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 4.25,
+    "area_km2": 15.86,
+    "area_acres": 3919,
+    "head_km": 19.61,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 4.5,
+    "area_km2": 17.399,
+    "area_acres": 4299,
+    "head_km": 19.61,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 4.75,
+    "area_km2": 19.319,
+    "area_acres": 4774,
+    "head_km": 19.61,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 5.0,
+    "area_km2": 20.922,
+    "area_acres": 5170,
+    "head_km": 19.61,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 5.25,
+    "area_km2": 22.753,
+    "area_acres": 5622,
+    "head_km": 19.68,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 5.5,
+    "area_km2": 24.875,
+    "area_acres": 6147,
+    "head_km": 19.68,
+    "homes_reached": 4
+   },
+   {
+    "t_h": 5.75,
+    "area_km2": 26.698,
+    "area_acres": 6597,
+    "head_km": 19.68,
+    "homes_reached": 4
+   },
+   {
+    "t_h": 6.0,
+    "area_km2": 28.828,
+    "area_acres": 7124,
+    "head_km": 19.68,
+    "homes_reached": 5
+   }
+  ],
+  "head_kmh_per_tick": [
+   0.56,
+   0.0,
+   0.0,
+   0.48,
+   1.52,
+   0.0,
+   12.72,
+   17.8,
+   2.8,
+   4.36,
+   0.0,
+   23.68,
+   14.28,
+   0.0,
+   0.0,
+   0.24,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.28,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "first_home_h": 3.25,
+  "fuel_share_burned": {
+   "1.75": {
+    "grass (GR)": 0.111,
+    "grass-shrub (GS)": 0.111,
+    "timber litter (TL)": 0.278,
+    "timber understory (TU)": 0.5
+   },
+   "3.0": {
+    "grass (GR)": 0.169,
+    "grass-shrub (GS)": 0.361,
+    "shrub (SH)": 0.157,
+    "timber litter (TL)": 0.067,
+    "timber understory (TU)": 0.247
+   },
+   "6.0": {
+    "grass (GR)": 0.113,
+    "grass-shrub (GS)": 0.482,
+    "shrub (SH)": 0.258,
+    "timber litter (TL)": 0.041,
+    "timber understory (TU)": 0.106
+   }
+  },
+  "wall_s": 5.1
+ },
+ {
+  "variant": "floor_off",
+  "intensity": "extreme",
+  "ignition": [
+   40.67547,
+   -111.60869
+  ],
+  "weather": {
+   "wind_mps": 17.88,
+   "gust_mps": 23.25,
+   "dir_from_deg": 225.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "cell_m": 90.0,
+  "rows": [
+   {
+    "t_h": 0.25,
+    "area_km2": 0.016,
+    "area_acres": 4,
+    "head_km": 0.14,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 0.5,
+    "area_km2": 0.016,
+    "area_acres": 4,
+    "head_km": 0.14,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 0.75,
+    "area_km2": 0.016,
+    "area_acres": 4,
+    "head_km": 0.14,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.0,
+    "area_km2": 0.024,
+    "area_acres": 6,
+    "head_km": 0.26,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.25,
+    "area_km2": 0.032,
+    "area_acres": 8,
+    "head_km": 0.64,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.5,
+    "area_km2": 0.032,
+    "area_acres": 8,
+    "head_km": 0.64,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.75,
+    "area_km2": 0.073,
+    "area_acres": 18,
+    "head_km": 1.46,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 2.0,
+    "area_km2": 0.437,
+    "area_acres": 108,
+    "head_km": 6.75,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 2.25,
+    "area_km2": 0.842,
+    "area_acres": 208,
+    "head_km": 8.27,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 2.5,
+    "area_km2": 1.345,
+    "area_acres": 332,
+    "head_km": 10.06,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 2.75,
+    "area_km2": 1.936,
+    "area_acres": 478,
+    "head_km": 10.06,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 3.0,
+    "area_km2": 2.503,
+    "area_acres": 618,
+    "head_km": 10.38,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 3.25,
+    "area_km2": 3.613,
+    "area_acres": 893,
+    "head_km": 18.78,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 3.5,
+    "area_km2": 5.937,
+    "area_acres": 1467,
+    "head_km": 19.55,
+    "homes_reached": 1
+   },
+   {
+    "t_h": 3.75,
+    "area_km2": 9.59,
+    "area_acres": 2370,
+    "head_km": 19.55,
+    "homes_reached": 1
+   },
+   {
+    "t_h": 4.0,
+    "area_km2": 11.802,
+    "area_acres": 2916,
+    "head_km": 19.55,
+    "homes_reached": 2
+   },
+   {
+    "t_h": 4.25,
+    "area_km2": 13.414,
+    "area_acres": 3315,
+    "head_km": 19.61,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 4.5,
+    "area_km2": 14.815,
+    "area_acres": 3661,
+    "head_km": 19.61,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 4.75,
+    "area_km2": 16.386,
+    "area_acres": 4049,
+    "head_km": 19.61,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 5.0,
+    "area_km2": 18.055,
+    "area_acres": 4461,
+    "head_km": 19.61,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 5.25,
+    "area_km2": 19.861,
+    "area_acres": 4908,
+    "head_km": 19.61,
+    "homes_reached": 3
+   },
+   {
+    "t_h": 5.5,
+    "area_km2": 21.287,
+    "area_acres": 5260,
+    "head_km": 19.61,
+    "homes_reached": 4
+   },
+   {
+    "t_h": 5.75,
+    "area_km2": 22.785,
+    "area_acres": 5630,
+    "head_km": 19.68,
+    "homes_reached": 4
+   },
+   {
+    "t_h": 6.0,
+    "area_km2": 24.3,
+    "area_acres": 6005,
+    "head_km": 19.68,
+    "homes_reached": 4
+   }
+  ],
+  "head_kmh_per_tick": [
+   0.56,
+   0.0,
+   0.0,
+   0.48,
+   1.52,
+   0.0,
+   3.28,
+   21.16,
+   6.08,
+   7.16,
+   0.0,
+   1.28,
+   33.6,
+   3.08,
+   0.0,
+   0.0,
+   0.24,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.28,
+   0.0
+  ],
+  "first_home_h": 3.5,
+  "fuel_share_burned": {
+   "1.75": {
+    "grass-shrub (GS)": 0.111,
+    "timber litter (TL)": 0.556,
+    "timber understory (TU)": 0.333
+   },
+   "3.0": {
+    "grass (GR)": 0.139,
+    "grass-shrub (GS)": 0.327,
+    "shrub (SH)": 0.191,
+    "timber litter (TL)": 0.078,
+    "timber understory (TU)": 0.265
+   },
+   "6.0": {
+    "grass (GR)": 0.116,
+    "grass-shrub (GS)": 0.504,
+    "shrub (SH)": 0.241,
+    "timber litter (TL)": 0.042,
+    "timber understory (TU)": 0.097
+   }
+  },
+  "wall_s": 4.3
+ },
+ {
+  "variant": "spotting_off",
+  "intensity": "extreme",
+  "ignition": [
+   40.67547,
+   -111.60869
+  ],
+  "weather": {
+   "wind_mps": 17.88,
+   "gust_mps": 23.25,
+   "dir_from_deg": 225.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "cell_m": 90.0,
+  "rows": [
+   {
+    "t_h": 0.25,
+    "area_km2": 0.032,
+    "area_acres": 8,
+    "head_km": 0.38,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 0.5,
+    "area_km2": 0.065,
+    "area_acres": 16,
+    "head_km": 0.64,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 0.75,
+    "area_km2": 0.138,
+    "area_acres": 34,
+    "head_km": 0.89,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.0,
+    "area_km2": 0.251,
+    "area_acres": 62,
+    "head_km": 1.41,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.25,
+    "area_km2": 0.502,
+    "area_acres": 124,
+    "head_km": 2.17,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.5,
+    "area_km2": 0.834,
+    "area_acres": 206,
+    "head_km": 2.61,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.75,
+    "area_km2": 1.223,
+    "area_acres": 302,
+    "head_km": 3.43,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 2.0,
+    "area_km2": 1.766,
+    "area_acres": 436,
+    "head_km": 4.13,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 2.25,
+    "area_km2": 2.616,
+    "area_acres": 647,
+    "head_km": 4.84,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 2.5,
+    "area_km2": 3.677,
+    "area_acres": 909,
+    "head_km": 5.22,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 2.75,
+    "area_km2": 4.747,
+    "area_acres": 1173,
+    "head_km": 5.22,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 3.0,
+    "area_km2": 5.84,
+    "area_acres": 1443,
+    "head_km": 5.55,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 3.25,
+    "area_km2": 7.136,
+    "area_acres": 1763,
+    "head_km": 6.56,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 3.5,
+    "area_km2": 8.424,
+    "area_acres": 2082,
+    "head_km": 7.44,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 3.75,
+    "area_km2": 9.177,
+    "area_acres": 2268,
+    "head_km": 7.71,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 4.0,
+    "area_km2": 9.882,
+    "area_acres": 2442,
+    "head_km": 7.84,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 4.25,
+    "area_km2": 10.643,
+    "area_acres": 2630,
+    "head_km": 7.88,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 4.5,
+    "area_km2": 11.494,
+    "area_acres": 2840,
+    "head_km": 7.95,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 4.75,
+    "area_km2": 12.239,
+    "area_acres": 3024,
+    "head_km": 8.05,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 5.0,
+    "area_km2": 12.83,
+    "area_acres": 3170,
+    "head_km": 8.05,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 5.25,
+    "area_km2": 13.3,
+    "area_acres": 3287,
+    "head_km": 8.05,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 5.5,
+    "area_km2": 13.819,
+    "area_acres": 3415,
+    "head_km": 8.1,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 5.75,
+    "area_km2": 14.418,
+    "area_acres": 3563,
+    "head_km": 8.18,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 6.0,
+    "area_km2": 14.88,
+    "area_acres": 3677,
+    "head_km": 8.18,
+    "homes_reached": 0
+   }
+  ],
+  "head_kmh_per_tick": [
+   1.52,
+   1.04,
+   1.0,
+   2.08,
+   3.04,
+   1.76,
+   3.28,
+   2.8,
+   2.84,
+   1.52,
+   0.0,
+   1.32,
+   4.04,
+   3.52,
+   1.08,
+   0.52,
+   0.16,
+   0.28,
+   0.4,
+   0.0,
+   0.0,
+   0.2,
+   0.32,
+   0.0
+  ],
+  "first_home_h": null,
+  "fuel_share_burned": {
+   "1.75": {
+    "grass (GR)": 0.079,
+    "grass-shrub (GS)": 0.205,
+    "shrub (SH)": 0.033,
+    "timber litter (TL)": 0.192,
+    "timber understory (TU)": 0.49
+   },
+   "3.0": {
+    "grass (GR)": 0.112,
+    "grass-shrub (GS)": 0.175,
+    "shrub (SH)": 0.184,
+    "timber litter (TL)": 0.086,
+    "timber understory (TU)": 0.442
+   },
+   "6.0": {
+    "grass (GR)": 0.097,
+    "grass-shrub (GS)": 0.246,
+    "shrub (SH)": 0.272,
+    "timber litter (TL)": 0.083,
+    "timber understory (TU)": 0.302
+   }
+  },
+  "wall_s": 4.9
+ },
+ {
+  "variant": "high",
+  "intensity": "high",
+  "ignition": [
+   40.67547,
+   -111.60869
+  ],
+  "weather": {
+   "wind_mps": 12.52,
+   "gust_mps": 16.27,
+   "dir_from_deg": 225.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "cell_m": 90.0,
+  "rows": [
+   {
+    "t_h": 0.25,
+    "area_km2": 0.041,
+    "area_acres": 10,
+    "head_km": 0.64,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 0.5,
+    "area_km2": 0.308,
+    "area_acres": 76,
+    "head_km": 5.79,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 0.75,
+    "area_km2": 1.531,
+    "area_acres": 378,
+    "head_km": 8.72,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.0,
+    "area_km2": 2.665,
+    "area_acres": 659,
+    "head_km": 8.72,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.25,
+    "area_km2": 4.317,
+    "area_acres": 1067,
+    "head_km": 10.06,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.5,
+    "area_km2": 6.156,
+    "area_acres": 1521,
+    "head_km": 11.41,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 1.75,
+    "area_km2": 9.104,
+    "area_acres": 2250,
+    "head_km": 19.05,
+    "homes_reached": 0
+   },
+   {
+    "t_h": 2.0,
+    "area_km2": 11.923,
+    "area_acres": 2946,
+    "head_km": 19.23,
+    "homes_reached": 1
+   },
+   {
+    "t_h": 2.25,
+    "area_km2": 15.884,
+    "area_acres": 3925,
+    "head_km": 19.23,
+    "homes_reached": 1
+   },
+   {
+    "t_h": 2.5,
+    "area_km2": 19.642,
+    "area_acres": 4854,
+    "head_km": 19.55,
+    "homes_reached": 1
+   },
+   {
+    "t_h": 2.75,
+    "area_km2": 25.232,
+    "area_acres": 6235,
+    "head_km": 19.55,
+    "homes_reached": 4
+   },
+   {
+    "t_h": 3.0,
+    "area_km2": 28.374,
+    "area_acres": 7011,
+    "head_km": 19.55,
+    "homes_reached": 4
+   },
+   {
+    "t_h": 3.25,
+    "area_km2": 31.023,
+    "area_acres": 7666,
+    "head_km": 19.55,
+    "homes_reached": 4
+   },
+   {
+    "t_h": 3.5,
+    "area_km2": 33.882,
+    "area_acres": 8372,
+    "head_km": 19.55,
+    "homes_reached": 4
+   },
+   {
+    "t_h": 3.75,
+    "area_km2": 37.527,
+    "area_acres": 9273,
+    "head_km": 19.55,
+    "homes_reached": 5
+   },
+   {
+    "t_h": 4.0,
+    "area_km2": 40.459,
+    "area_acres": 9998,
+    "head_km": 19.61,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 4.25,
+    "area_km2": 43.133,
+    "area_acres": 10658,
+    "head_km": 19.61,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 4.5,
+    "area_km2": 44.898,
+    "area_acres": 11095,
+    "head_km": 19.61,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 4.75,
+    "area_km2": 46.68,
+    "area_acres": 11535,
+    "head_km": 19.61,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 5.0,
+    "area_km2": 48.252,
+    "area_acres": 11923,
+    "head_km": 19.61,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 5.25,
+    "area_km2": 50.017,
+    "area_acres": 12360,
+    "head_km": 19.61,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 5.5,
+    "area_km2": 51.654,
+    "area_acres": 12764,
+    "head_km": 19.61,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 5.75,
+    "area_km2": 53.241,
+    "area_acres": 13156,
+    "head_km": 19.61,
+    "homes_reached": 6
+   },
+   {
+    "t_h": 6.0,
+    "area_km2": 54.651,
+    "area_acres": 13504,
+    "head_km": 19.68,
+    "homes_reached": 6
+   }
+  ],
+  "head_kmh_per_tick": [
+   2.56,
+   20.6,
+   11.72,
+   0.0,
+   5.36,
+   5.4,
+   30.56,
+   0.72,
+   0.0,
+   1.28,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.24,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.28
+  ],
+  "first_home_h": 2.0,
+  "fuel_share_burned": {
+   "1.75": {
+    "grass (GR)": 0.147,
+    "grass-shrub (GS)": 0.341,
+    "shrub (SH)": 0.19,
+    "timber litter (TL)": 0.057,
+    "timber understory (TU)": 0.265
+   },
+   "3.0": {
+    "grass (GR)": 0.118,
+    "grass-shrub (GS)": 0.43,
+    "shrub (SH)": 0.253,
+    "timber litter (TL)": 0.046,
+    "timber understory (TU)": 0.153
+   },
+   "6.0": {
+    "grass (GR)": 0.126,
+    "grass-shrub (GS)": 0.44,
+    "shrub (SH)": 0.277,
+    "timber litter (TL)": 0.047,
+    "timber understory (TU)": 0.11
+   }
+  },
+  "wall_s": 6.3
+ }
+]

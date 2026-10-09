@@ -1303,6 +1303,44 @@ def test_scenario_presets_build_and_ignite(sim_ctx):
     assert status == 400
 
 
+def test_every_community_has_a_one_click_scenario():
+    """ALL THIRTEEN COMMUNITIES (founder 2026-10-09: "add one-click links for
+    all thirteen communities"): exactly one scenario per simulator location,
+    valid intensities and ignition geometry, and the simulator page's picker
+    lists exactly the server's keys (no drift between page and server)."""
+    import os as _os
+    import re as _re
+    from wgresponse import simui as _simui
+    locs = [v["location"] for v in server.SCENARIOS.values()]
+    assert sorted(locs) == sorted(_simui.LOCATIONS)
+    for key, v in server.SCENARIOS.items():
+        assert v["intensity"] in _simui.INTENSITY_WEATHER, key
+        assert 0.0 <= v["ign_bearing"] < 360.0 and v["ign_dist_m"] > 0, key
+    page = _os.path.join(_os.path.dirname(_os.path.dirname(
+        _os.path.abspath(server.__file__))), "console", "simulator.html")
+    with open(page, encoding="utf-8") as fh:
+        html = fh.read()
+    m = _re.search(r'<select id="scenarioPick">(.*?)</select>', html, _re.S)
+    assert m, "the simulator page lost its scenario picker"
+    keys = _re.findall(r'<option value="([a-z0-9_]+)"', m.group(1))
+    assert sorted(keys) == sorted(server.SCENARIOS)
+
+
+def test_every_scenario_builds_and_ignites(sim_ctx):
+    """Every one-click scenario builds its community and is born with its
+    preset fire lit (the same invariant as the original three)."""
+    import json as _json
+    for key, v in sorted(server.SCENARIOS.items()):
+        status, raw = sim_ctx.request("POST", "/api/sim/new",
+                                      body={"scenario": key}, key=KEY)
+        assert status == 200, (key, raw)
+        st = _json.loads(raw)["state"]
+        assert st["location"] == v["location"], key
+        assert len(st["clients"]) == v["clients"], key
+        assert len(st["fires"]) == 1, f"{key}: preset fire must be lit"
+        assert len(st["crews"]) == v["crews"] + v.get("crews_1h", 0), key
+
+
 # -- ROADS LEGIBILITY (roads inspection 2026-09-25) ---------------------------
 
 _MAP_VIEW_KEYS = {"moved_path", "jumped", "trail", "route_why", "egress_why",
