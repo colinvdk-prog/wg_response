@@ -260,6 +260,12 @@ def _build_parser() -> argparse.ArgumentParser:
                     help="cfg.slope_phi_vector: phi-factor vector slope/wind "
                          "combination (corrects the opposed-slope bias, "
                          "cost-free; fix program 2026-09-11)")
+    pw.add_argument("--any-angle", action="store_true",
+                    help="cfg.spread_any_angle: any-angle spread (SAFETY "
+                         "SEMANTICS 21) — the head no longer runs late when "
+                         "the wind lies between the 16 grid directions; "
+                         "2-3.4x spread cost (docs/review/grid_orientation_"
+                         "2026-10-09.md)")
     pw.add_argument("--solver-evals", type=int, default=0,
                     help="cfg.solver_budget_evals: deterministic dispatch "
                          "budget as a consult COUNT (0 = wall clock); the "
@@ -1723,6 +1729,11 @@ def _cmd_watch(args) -> int:
             "phi-vector slope/wind combination ACTIVE: max-spread magnitude, "
             "bearing and effective wind from the Rothermel phi-factor vector "
             "sum (corrects the opposed-slope slow bias)")
+    if getattr(args, "any_angle", False):
+        cfg = dataclasses.replace(cfg, spread_any_angle=True)
+        startup_notes_fix.append(
+            "ANY-ANGLE spread ACTIVE (SAFETY SEMANTICS 21): straight runs at "
+            "any angle besides the 16 grid edges (2-3.4x spread cost)")
     if getattr(args, "solver_evals", 0):
         cfg = dataclasses.replace(cfg, solver_budget_evals=int(args.solver_evals))
         startup_notes_fix.append(
