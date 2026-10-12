@@ -1,0 +1,3245 @@
+[
+ {
+  "scenario": "aspen_southwesterly",
+  "variant": "crown",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 13.8,
+   "rh_pct": 15.600000000000001,
+   "temp_c": 24.6
+  },
+  "nominal_solve_s": 1.26,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 26,
+    "surface": 2,
+    "passive": 2,
+    "active": 86
+   },
+   "3h": {
+    "surface_no_crown_fuel": 444,
+    "surface": 118,
+    "passive": 2,
+    "active": 699
+   },
+   "6h": {
+    "surface_no_crown_fuel": 1369,
+    "surface": 344,
+    "passive": 8,
+    "active": 1225
+   },
+   "ignition_cell": {
+    "fuel": 144,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 202,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1279,
+   "max_chain_depth": 4,
+   "first_spot_over_0.5km": {
+    "age_min": 60.9,
+    "fire_ha": 49.4
+   },
+   "first_spot_over_1km": {
+    "age_min": 124.3,
+    "fire_ha": 291.6
+   },
+   "first_spot_over_2km": null
+  },
+  "demo": {
+   "nominal_matches_trace_solve": true,
+   "marks": {
+    "0.25": {
+     "acres": 4,
+     "head_km": 0.26
+    },
+    "0.5": {
+     "acres": 16,
+     "head_km": 0.6
+    },
+    "1.0": {
+     "acres": 116,
+     "head_km": 1.46
+    },
+    "1.5": {
+     "acres": 430,
+     "head_km": 2.74
+    },
+    "2.0": {
+     "acres": 691,
+     "head_km": 3.28
+    },
+    "3.0": {
+     "acres": 1263,
+     "head_km": 3.88
+    },
+    "4.0": {
+     "acres": 1980,
+     "head_km": 4.7
+    },
+    "6.0": {
+     "acres": 2946,
+     "head_km": 5.05
+    }
+   },
+   "max_head_gain_km_per_h": 2.27,
+   "head_reaches_h": {
+    "2km": 1.13,
+    "5km": 5.87,
+    "10km": 9.24
+   },
+   "first_home_reached_h": 5.93,
+   "audit": {
+    "departure_violations_final": 0,
+    "crew_overrun_rows_sum": 0,
+    "crew_overrun_rows_max_tick": 0,
+    "served": 38,
+    "withdrawn": 0,
+    "relocations": 0,
+    "crews_left_map": 0,
+    "outcomes": {
+     "saved": 37,
+     "protected_then_impacted": 1,
+     "abandoned_unsavable": 0,
+     "triaged": 0,
+     "in_progress": 1,
+     "pending": 1,
+     "monitoring": 0,
+     "not_threatened": 0
+    }
+   },
+   "ticks": [
+    {
+     "t_h": 0.25,
+     "sim_area_acres": 4,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.5,
+     "sim_area_acres": 16,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.75,
+     "sim_area_acres": 36,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.0,
+     "sim_area_acres": 116,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.25,
+     "sim_area_acres": 272,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.5,
+     "sim_area_acres": 430,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.75,
+     "sim_area_acres": 546,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.0,
+     "sim_area_acres": 691,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.25,
+     "sim_area_acres": 785,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.5,
+     "sim_area_acres": 897,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.75,
+     "sim_area_acres": 1069,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.0,
+     "sim_area_acres": 1263,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.25,
+     "sim_area_acres": 1447,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.5,
+     "sim_area_acres": 1611,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.75,
+     "sim_area_acres": 1787,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.0,
+     "sim_area_acres": 1980,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.25,
+     "sim_area_acres": 2140,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.5,
+     "sim_area_acres": 2278,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.75,
+     "sim_area_acres": 2404,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.0,
+     "sim_area_acres": 2524,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.25,
+     "sim_area_acres": 2640,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.5,
+     "sim_area_acres": 2740,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.75,
+     "sim_area_acres": 2834,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 6.0,
+     "sim_area_acres": 2946,
+     "violations": 0,
+     "crew_overruns": 0
+    }
+   ]
+  },
+  "wall_s": 142.1
+ },
+ {
+  "scenario": "aspen_southwesterly",
+  "variant": "crown_d10",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 13.8,
+   "rh_pct": 15.600000000000001,
+   "temp_c": 24.6
+  },
+  "nominal_solve_s": 1.29,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 26,
+    "surface": 2,
+    "passive": 2,
+    "active": 82
+   },
+   "3h": {
+    "surface_no_crown_fuel": 416,
+    "surface": 110,
+    "passive": 2,
+    "active": 685
+   },
+   "6h": {
+    "surface_no_crown_fuel": 1305,
+    "surface": 342,
+    "passive": 6,
+    "active": 1221
+   },
+   "ignition_cell": {
+    "fuel": 144,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 146,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1279,
+   "max_chain_depth": 4,
+   "first_spot_over_0.5km": {
+    "age_min": 69.0,
+    "fire_ha": 72.1
+   },
+   "first_spot_over_1km": {
+    "age_min": 139.3,
+    "fire_ha": 315.1
+   },
+   "first_spot_over_2km": null
+  },
+  "demo": {
+   "nominal_matches_trace_solve": true,
+   "marks": {
+    "0.25": {
+     "acres": 4,
+     "head_km": 0.26
+    },
+    "0.5": {
+     "acres": 16,
+     "head_km": 0.6
+    },
+    "1.0": {
+     "acres": 112,
+     "head_km": 1.39
+    },
+    "1.5": {
+     "acres": 416,
+     "head_km": 2.35
+    },
+    "2.0": {
+     "acres": 645,
+     "head_km": 3.28
+    },
+    "3.0": {
+     "acres": 1213,
+     "head_km": 3.68
+    },
+    "4.0": {
+     "acres": 1925,
+     "head_km": 4.55
+    },
+    "6.0": {
+     "acres": 2874,
+     "head_km": 5.0
+    }
+   },
+   "max_head_gain_km_per_h": 1.98,
+   "head_reaches_h": {
+    "2km": 1.27,
+    "5km": 6.14,
+    "10km": 9.68
+   },
+   "first_home_reached_h": 6.19,
+   "audit": {
+    "departure_violations_final": 0,
+    "crew_overrun_rows_sum": 0,
+    "crew_overrun_rows_max_tick": 0,
+    "served": 38,
+    "withdrawn": 0,
+    "relocations": 0,
+    "crews_left_map": 0,
+    "outcomes": {
+     "saved": 38,
+     "protected_then_impacted": 0,
+     "abandoned_unsavable": 0,
+     "triaged": 0,
+     "in_progress": 1,
+     "pending": 1,
+     "monitoring": 0,
+     "not_threatened": 0
+    }
+   },
+   "ticks": [
+    {
+     "t_h": 0.25,
+     "sim_area_acres": 4,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.5,
+     "sim_area_acres": 16,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.75,
+     "sim_area_acres": 36,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.0,
+     "sim_area_acres": 112,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.25,
+     "sim_area_acres": 236,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.5,
+     "sim_area_acres": 416,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.75,
+     "sim_area_acres": 514,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.0,
+     "sim_area_acres": 644,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.25,
+     "sim_area_acres": 747,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.5,
+     "sim_area_acres": 873,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.75,
+     "sim_area_acres": 1023,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.0,
+     "sim_area_acres": 1213,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.25,
+     "sim_area_acres": 1379,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.5,
+     "sim_area_acres": 1573,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.75,
+     "sim_area_acres": 1749,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.0,
+     "sim_area_acres": 1925,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.25,
+     "sim_area_acres": 2110,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.5,
+     "sim_area_acres": 2248,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.75,
+     "sim_area_acres": 2374,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.0,
+     "sim_area_acres": 2484,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.25,
+     "sim_area_acres": 2592,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.5,
+     "sim_area_acres": 2710,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.75,
+     "sim_area_acres": 2802,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 6.0,
+     "sim_area_acres": 2874,
+     "violations": 0,
+     "crew_overruns": 0
+    }
+   ]
+  },
+  "wall_s": 136.0
+ },
+ {
+  "scenario": "aspen_southwesterly",
+  "variant": "opt1",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 13.8,
+   "rh_pct": 15.600000000000001,
+   "temp_c": 24.6
+  },
+  "nominal_solve_s": 1.26,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 74,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 1061,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 4173,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 144,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 204,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 604,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 200.8,
+    "fire_ha": 550.0
+   },
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "demo": {
+   "nominal_matches_trace_solve": true,
+   "marks": {
+    "0.25": {
+     "acres": 4,
+     "head_km": 0.26
+    },
+    "0.5": {
+     "acres": 16,
+     "head_km": 0.6
+    },
+    "1.0": {
+     "acres": 74,
+     "head_km": 1.05
+    },
+    "1.5": {
+     "acres": 208,
+     "head_km": 1.56
+    },
+    "2.0": {
+     "acres": 432,
+     "head_km": 2.23
+    },
+    "3.0": {
+     "acres": 1061,
+     "head_km": 3.38
+    },
+    "4.0": {
+     "acres": 2010,
+     "head_km": 4.68
+    },
+    "6.0": {
+     "acres": 4173,
+     "head_km": 7.27
+    }
+   },
+   "max_head_gain_km_per_h": 1.56,
+   "head_reaches_h": {
+    "2km": 1.83,
+    "5km": 4.25,
+    "10km": 8.07
+   },
+   "first_home_reached_h": 5.66,
+   "audit": {
+    "departure_violations_final": 0,
+    "crew_overrun_rows_sum": 0,
+    "crew_overrun_rows_max_tick": 0,
+    "served": 37,
+    "withdrawn": 0,
+    "relocations": 0,
+    "crews_left_map": 0,
+    "outcomes": {
+     "saved": 35,
+     "protected_then_impacted": 2,
+     "abandoned_unsavable": 0,
+     "triaged": 0,
+     "in_progress": 2,
+     "pending": 1,
+     "monitoring": 0,
+     "not_threatened": 0
+    }
+   },
+   "ticks": [
+    {
+     "t_h": 0.25,
+     "sim_area_acres": 4,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.5,
+     "sim_area_acres": 16,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.75,
+     "sim_area_acres": 30,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.0,
+     "sim_area_acres": 74,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.25,
+     "sim_area_acres": 132,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.5,
+     "sim_area_acres": 208,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.75,
+     "sim_area_acres": 312,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.0,
+     "sim_area_acres": 432,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.25,
+     "sim_area_acres": 556,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.5,
+     "sim_area_acres": 713,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.75,
+     "sim_area_acres": 875,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.0,
+     "sim_area_acres": 1061,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.25,
+     "sim_area_acres": 1265,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.5,
+     "sim_area_acres": 1493,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.75,
+     "sim_area_acres": 1739,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.0,
+     "sim_area_acres": 2010,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.25,
+     "sim_area_acres": 2282,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.5,
+     "sim_area_acres": 2564,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.75,
+     "sim_area_acres": 2850,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.0,
+     "sim_area_acres": 3120,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.25,
+     "sim_area_acres": 3385,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.5,
+     "sim_area_acres": 3635,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.75,
+     "sim_area_acres": 3895,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 6.0,
+     "sim_area_acres": 4173,
+     "violations": 0,
+     "crew_overruns": 0
+    }
+   ]
+  },
+  "wall_s": 115.5
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "variant": "crown",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 13.8,
+   "rh_pct": 14.200000000000003,
+   "temp_c": 27.6
+  },
+  "nominal_solve_s": 1.37,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 124,
+    "surface": 36,
+    "passive": 4,
+    "active": 36
+   },
+   "3h": {
+    "surface_no_crown_fuel": 1191,
+    "surface": 803,
+    "passive": 166,
+    "active": 667
+   },
+   "6h": {
+    "surface_no_crown_fuel": 4069,
+    "surface": 2006,
+    "passive": 466,
+    "active": 1583
+   },
+   "ignition_cell": {
+    "fuel": 123,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 529,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1580,
+   "max_chain_depth": 4,
+   "first_spot_over_0.5km": {
+    "age_min": 49.6,
+    "fire_ha": 51.0
+   },
+   "first_spot_over_1km": {
+    "age_min": 115.6,
+    "fire_ha": 516.0
+   },
+   "first_spot_over_2km": null
+  },
+  "demo": {
+   "nominal_matches_trace_solve": true,
+   "marks": {
+    "0.25": {
+     "acres": 12,
+     "head_km": 0.42
+    },
+    "0.5": {
+     "acres": 40,
+     "head_km": 0.8
+    },
+    "1.0": {
+     "acres": 200,
+     "head_km": 2.26
+    },
+    "1.5": {
+     "acres": 673,
+     "head_km": 3.98
+    },
+    "2.0": {
+     "acres": 1369,
+     "head_km": 5.25
+    },
+    "3.0": {
+     "acres": 2826,
+     "head_km": 6.6
+    },
+    "4.0": {
+     "acres": 4269,
+     "head_km": 7.1
+    },
+    "6.0": {
+     "acres": 8124,
+     "head_km": 10.86
+    }
+   },
+   "max_head_gain_km_per_h": 3.5,
+   "head_reaches_h": {
+    "2km": 0.94,
+    "5km": 1.88,
+    "10km": 5.61
+   },
+   "first_home_reached_h": 3.72,
+   "audit": {
+    "departure_violations_final": 0,
+    "crew_overrun_rows_sum": 0,
+    "crew_overrun_rows_max_tick": 0,
+    "served": 34,
+    "withdrawn": 0,
+    "relocations": 1,
+    "crews_left_map": 0,
+    "outcomes": {
+     "saved": 26,
+     "protected_then_impacted": 8,
+     "abandoned_unsavable": 3,
+     "triaged": 0,
+     "in_progress": 1,
+     "pending": 2,
+     "monitoring": 0,
+     "not_threatened": 0
+    }
+   },
+   "ticks": [
+    {
+     "t_h": 0.25,
+     "sim_area_acres": 12,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.5,
+     "sim_area_acres": 40,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.75,
+     "sim_area_acres": 102,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.0,
+     "sim_area_acres": 200,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.25,
+     "sim_area_acres": 394,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.5,
+     "sim_area_acres": 673,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.75,
+     "sim_area_acres": 1039,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.0,
+     "sim_area_acres": 1369,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.25,
+     "sim_area_acres": 1739,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.5,
+     "sim_area_acres": 2124,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.75,
+     "sim_area_acres": 2436,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.0,
+     "sim_area_acres": 2826,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.25,
+     "sim_area_acres": 3180,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.5,
+     "sim_area_acres": 3553,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.75,
+     "sim_area_acres": 3903,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.0,
+     "sim_area_acres": 4269,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.25,
+     "sim_area_acres": 4542,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.5,
+     "sim_area_acres": 4946,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.75,
+     "sim_area_acres": 5398,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.0,
+     "sim_area_acres": 5855,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.25,
+     "sim_area_acres": 6317,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.5,
+     "sim_area_acres": 6823,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.75,
+     "sim_area_acres": 7458,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 6.0,
+     "sim_area_acres": 8124,
+     "violations": 0,
+     "crew_overruns": 0
+    }
+   ]
+  },
+  "wall_s": 65.9
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "variant": "crown_d10",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 13.8,
+   "rh_pct": 14.200000000000003,
+   "temp_c": 27.6
+  },
+  "nominal_solve_s": 1.27,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 124,
+    "surface": 36,
+    "passive": 4,
+    "active": 26
+   },
+   "3h": {
+    "surface_no_crown_fuel": 1119,
+    "surface": 699,
+    "passive": 150,
+    "active": 634
+   },
+   "6h": {
+    "surface_no_crown_fuel": 3565,
+    "surface": 1839,
+    "passive": 418,
+    "active": 1461
+   },
+   "ignition_cell": {
+    "fuel": 123,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 306,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1775,
+   "max_chain_depth": 4,
+   "first_spot_over_0.5km": {
+    "age_min": 49.6,
+    "fire_ha": 51.0
+   },
+   "first_spot_over_1km": {
+    "age_min": 137.2,
+    "fire_ha": 644.0
+   },
+   "first_spot_over_2km": null
+  },
+  "demo": {
+   "nominal_matches_trace_solve": true,
+   "marks": {
+    "0.25": {
+     "acres": 12,
+     "head_km": 0.42
+    },
+    "0.5": {
+     "acres": 40,
+     "head_km": 0.8
+    },
+    "1.0": {
+     "acres": 190,
+     "head_km": 1.95
+    },
+    "1.5": {
+     "acres": 590,
+     "head_km": 3.28
+    },
+    "2.0": {
+     "acres": 1253,
+     "head_km": 4.43
+    },
+    "3.0": {
+     "acres": 2602,
+     "head_km": 6.59
+    },
+    "4.0": {
+     "acres": 4007,
+     "head_km": 6.86
+    },
+    "6.0": {
+     "acres": 7284,
+     "head_km": 9.59
+    }
+   },
+   "max_head_gain_km_per_h": 2.67,
+   "head_reaches_h": {
+    "2km": 1.01,
+    "5km": 2.24,
+    "10km": 6.29
+   },
+   "first_home_reached_h": 4.16,
+   "audit": {
+    "departure_violations_final": 0,
+    "crew_overrun_rows_sum": 0,
+    "crew_overrun_rows_max_tick": 0,
+    "served": 36,
+    "withdrawn": 0,
+    "relocations": 0,
+    "crews_left_map": 0,
+    "outcomes": {
+     "saved": 31,
+     "protected_then_impacted": 5,
+     "abandoned_unsavable": 3,
+     "triaged": 0,
+     "in_progress": 0,
+     "pending": 0,
+     "monitoring": 0,
+     "not_threatened": 1
+    }
+   },
+   "ticks": [
+    {
+     "t_h": 0.25,
+     "sim_area_acres": 12,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.5,
+     "sim_area_acres": 40,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.75,
+     "sim_area_acres": 102,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.0,
+     "sim_area_acres": 190,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.25,
+     "sim_area_acres": 364,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.5,
+     "sim_area_acres": 590,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.75,
+     "sim_area_acres": 939,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.0,
+     "sim_area_acres": 1253,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.25,
+     "sim_area_acres": 1549,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.5,
+     "sim_area_acres": 1879,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.75,
+     "sim_area_acres": 2210,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.0,
+     "sim_area_acres": 2602,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.25,
+     "sim_area_acres": 2978,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.5,
+     "sim_area_acres": 3303,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.75,
+     "sim_area_acres": 3665,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.0,
+     "sim_area_acres": 4007,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.25,
+     "sim_area_acres": 4325,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.5,
+     "sim_area_acres": 4628,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.75,
+     "sim_area_acres": 4962,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.0,
+     "sim_area_acres": 5402,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.25,
+     "sim_area_acres": 5931,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.5,
+     "sim_area_acres": 6323,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.75,
+     "sim_area_acres": 6765,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 6.0,
+     "sim_area_acres": 7284,
+     "violations": 0,
+     "crew_overruns": 0
+    }
+   ]
+  },
+  "wall_s": 78.3
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "variant": "opt1",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 13.8,
+   "rh_pct": 14.200000000000003,
+   "temp_c": 27.6
+  },
+  "nominal_solve_s": 0.91,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 170,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 1021,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 3955,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 123,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 231,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 798,
+   "max_chain_depth": 4,
+   "first_spot_over_0.5km": {
+    "age_min": 191.2,
+    "fire_ha": 465.8
+   },
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "demo": {
+   "nominal_matches_trace_solve": true,
+   "marks": {
+    "0.25": {
+     "acres": 12,
+     "head_km": 0.42
+    },
+    "0.5": {
+     "acres": 40,
+     "head_km": 0.8
+    },
+    "1.0": {
+     "acres": 170,
+     "head_km": 1.56
+    },
+    "1.5": {
+     "acres": 308,
+     "head_km": 2.02
+    },
+    "2.0": {
+     "acres": 500,
+     "head_km": 2.65
+    },
+    "3.0": {
+     "acres": 1021,
+     "head_km": 4.05
+    },
+    "4.0": {
+     "acres": 1903,
+     "head_km": 5.64
+    },
+    "6.0": {
+     "acres": 3955,
+     "head_km": 7.19
+    }
+   },
+   "max_head_gain_km_per_h": 1.78,
+   "head_reaches_h": {
+    "2km": 1.44,
+    "5km": 3.61,
+    "10km": 8.41
+   },
+   "first_home_reached_h": 5.61,
+   "audit": {
+    "departure_violations_final": 0,
+    "crew_overrun_rows_sum": 0,
+    "crew_overrun_rows_max_tick": 0,
+    "served": 37,
+    "withdrawn": 0,
+    "relocations": 0,
+    "crews_left_map": 0,
+    "outcomes": {
+     "saved": 36,
+     "protected_then_impacted": 1,
+     "abandoned_unsavable": 2,
+     "triaged": 0,
+     "in_progress": 0,
+     "pending": 1,
+     "monitoring": 0,
+     "not_threatened": 0
+    }
+   },
+   "ticks": [
+    {
+     "t_h": 0.25,
+     "sim_area_acres": 12,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.5,
+     "sim_area_acres": 40,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.75,
+     "sim_area_acres": 104,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.0,
+     "sim_area_acres": 170,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.25,
+     "sim_area_acres": 232,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.5,
+     "sim_area_acres": 308,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.75,
+     "sim_area_acres": 398,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.0,
+     "sim_area_acres": 500,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.25,
+     "sim_area_acres": 604,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.5,
+     "sim_area_acres": 741,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.75,
+     "sim_area_acres": 867,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.0,
+     "sim_area_acres": 1021,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.25,
+     "sim_area_acres": 1195,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.5,
+     "sim_area_acres": 1389,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.75,
+     "sim_area_acres": 1627,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.0,
+     "sim_area_acres": 1903,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.25,
+     "sim_area_acres": 2180,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.5,
+     "sim_area_acres": 2464,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.75,
+     "sim_area_acres": 2734,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.0,
+     "sim_area_acres": 3024,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.25,
+     "sim_area_acres": 3265,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.5,
+     "sim_area_acres": 3491,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.75,
+     "sim_area_acres": 3701,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 6.0,
+     "sim_area_acres": 3955,
+     "violations": 0,
+     "crew_overruns": 0
+    }
+   ]
+  },
+  "wall_s": 123.2
+ },
+ {
+  "scenario": "beaver_creek_westerly",
+  "variant": "crown",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 21.9,
+   "rh_pct": 14.399999999999999,
+   "temp_c": 25.1
+  },
+  "nominal_solve_s": 1.38,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 168,
+    "surface": 0,
+    "passive": 2,
+    "active": 74
+   },
+   "3h": {
+    "surface_no_crown_fuel": 1127,
+    "surface": 44,
+    "passive": 4,
+    "active": 456
+   },
+   "6h": {
+    "surface_no_crown_fuel": 3018,
+    "surface": 156,
+    "passive": 14,
+    "active": 1207
+   },
+   "ignition_cell": {
+    "fuel": 144,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 348,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1787,
+   "max_chain_depth": 4,
+   "first_spot_over_0.5km": {
+    "age_min": 29.8,
+    "fire_ha": 24.3
+   },
+   "first_spot_over_1km": {
+    "age_min": 68.1,
+    "fire_ha": 136.1
+   },
+   "first_spot_over_2km": null
+  },
+  "demo": {
+   "nominal_matches_trace_solve": true,
+   "marks": {
+    "0.25": {
+     "acres": 6,
+     "head_km": 0.41
+    },
+    "0.5": {
+     "acres": 60,
+     "head_km": 1.46
+    },
+    "1.0": {
+     "acres": 244,
+     "head_km": 2.64
+    },
+    "1.5": {
+     "acres": 554,
+     "head_km": 3.38
+    },
+    "2.0": {
+     "acres": 819,
+     "head_km": 3.64
+    },
+    "3.0": {
+     "acres": 1631,
+     "head_km": 6.11
+    },
+    "4.0": {
+     "acres": 2498,
+     "head_km": 7.71
+    },
+    "6.0": {
+     "acres": 4395,
+     "head_km": 10.86
+    }
+   },
+   "max_head_gain_km_per_h": 2.97,
+   "head_reaches_h": {
+    "2km": 0.83,
+    "5km": 2.58,
+    "10km": 5.19
+   },
+   "first_home_reached_h": 3.1,
+   "audit": {
+    "departure_violations_final": 0,
+    "crew_overrun_rows_sum": 0,
+    "crew_overrun_rows_max_tick": 0,
+    "served": 35,
+    "withdrawn": 0,
+    "relocations": 3,
+    "crews_left_map": 0,
+    "outcomes": {
+     "saved": 31,
+     "protected_then_impacted": 4,
+     "abandoned_unsavable": 3,
+     "triaged": 0,
+     "in_progress": 1,
+     "pending": 0,
+     "monitoring": 0,
+     "not_threatened": 1
+    }
+   },
+   "ticks": [
+    {
+     "t_h": 0.25,
+     "sim_area_acres": 6,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.5,
+     "sim_area_acres": 60,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.75,
+     "sim_area_acres": 138,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.0,
+     "sim_area_acres": 244,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.25,
+     "sim_area_acres": 406,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.5,
+     "sim_area_acres": 554,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.75,
+     "sim_area_acres": 725,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.0,
+     "sim_area_acres": 819,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.25,
+     "sim_area_acres": 921,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.5,
+     "sim_area_acres": 1091,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.75,
+     "sim_area_acres": 1351,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.0,
+     "sim_area_acres": 1631,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.25,
+     "sim_area_acres": 1863,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.5,
+     "sim_area_acres": 2152,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.75,
+     "sim_area_acres": 2360,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.0,
+     "sim_area_acres": 2498,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.25,
+     "sim_area_acres": 2628,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.5,
+     "sim_area_acres": 2782,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.75,
+     "sim_area_acres": 2972,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.0,
+     "sim_area_acres": 3222,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.25,
+     "sim_area_acres": 3495,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.5,
+     "sim_area_acres": 3781,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.75,
+     "sim_area_acres": 4107,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 6.0,
+     "sim_area_acres": 4395,
+     "violations": 0,
+     "crew_overruns": 0
+    }
+   ]
+  },
+  "wall_s": 47.6
+ },
+ {
+  "scenario": "beaver_creek_westerly",
+  "variant": "crown_d10",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 21.9,
+   "rh_pct": 14.399999999999999,
+   "temp_c": 25.1
+  },
+  "nominal_solve_s": 1.53,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 146,
+    "surface": 0,
+    "passive": 2,
+    "active": 66
+   },
+   "3h": {
+    "surface_no_crown_fuel": 977,
+    "surface": 6,
+    "passive": 4,
+    "active": 350
+   },
+   "6h": {
+    "surface_no_crown_fuel": 2526,
+    "surface": 136,
+    "passive": 12,
+    "active": 1019
+   },
+   "ignition_cell": {
+    "fuel": 144,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 212,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1787,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 29.8,
+    "fire_ha": 22.7
+   },
+   "first_spot_over_1km": {
+    "age_min": 69.2,
+    "fire_ha": 120.7
+   },
+   "first_spot_over_2km": null
+  },
+  "demo": {
+   "nominal_matches_trace_solve": true,
+   "marks": {
+    "0.25": {
+     "acres": 6,
+     "head_km": 0.41
+    },
+    "0.5": {
+     "acres": 56,
+     "head_km": 1.34
+    },
+    "1.0": {
+     "acres": 214,
+     "head_km": 2.29
+    },
+    "1.5": {
+     "acres": 508,
+     "head_km": 3.38
+    },
+    "2.0": {
+     "acres": 777,
+     "head_km": 3.38
+    },
+    "3.0": {
+     "acres": 1337,
+     "head_km": 4.48
+    },
+    "4.0": {
+     "acres": 2262,
+     "head_km": 6.58
+    },
+    "6.0": {
+     "acres": 3693,
+     "head_km": 9.89
+    }
+   },
+   "max_head_gain_km_per_h": 2.28,
+   "head_reaches_h": {
+    "2km": 0.85,
+    "5km": 3.19,
+    "10km": 6.1
+   },
+   "first_home_reached_h": 3.42,
+   "audit": {
+    "departure_violations_final": 0,
+    "crew_overrun_rows_sum": 0,
+    "crew_overrun_rows_max_tick": 0,
+    "served": 35,
+    "withdrawn": 0,
+    "relocations": 1,
+    "crews_left_map": 0,
+    "outcomes": {
+     "saved": 33,
+     "protected_then_impacted": 2,
+     "abandoned_unsavable": 4,
+     "triaged": 0,
+     "in_progress": 0,
+     "pending": 0,
+     "monitoring": 0,
+     "not_threatened": 1
+    }
+   },
+   "ticks": [
+    {
+     "t_h": 0.25,
+     "sim_area_acres": 6,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.5,
+     "sim_area_acres": 56,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.75,
+     "sim_area_acres": 130,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.0,
+     "sim_area_acres": 214,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.25,
+     "sim_area_acres": 354,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.5,
+     "sim_area_acres": 508,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.75,
+     "sim_area_acres": 657,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.0,
+     "sim_area_acres": 777,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.25,
+     "sim_area_acres": 855,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.5,
+     "sim_area_acres": 969,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.75,
+     "sim_area_acres": 1145,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.0,
+     "sim_area_acres": 1337,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.25,
+     "sim_area_acres": 1603,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.5,
+     "sim_area_acres": 1851,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.75,
+     "sim_area_acres": 2066,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.0,
+     "sim_area_acres": 2262,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.25,
+     "sim_area_acres": 2480,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.5,
+     "sim_area_acres": 2608,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.75,
+     "sim_area_acres": 2738,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.0,
+     "sim_area_acres": 2880,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.25,
+     "sim_area_acres": 3056,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.5,
+     "sim_area_acres": 3226,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.75,
+     "sim_area_acres": 3429,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 6.0,
+     "sim_area_acres": 3693,
+     "violations": 0,
+     "crew_overruns": 0
+    }
+   ]
+  },
+  "wall_s": 64.0
+ },
+ {
+  "scenario": "beaver_creek_westerly",
+  "variant": "opt1",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 21.9,
+   "rh_pct": 14.399999999999999,
+   "temp_c": 25.1
+  },
+  "nominal_solve_s": 1.41,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 42,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 618,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 2566,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 144,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 217,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 971,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 162.8,
+    "fire_ha": 192.8
+   },
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "demo": {
+   "nominal_matches_trace_solve": true,
+   "marks": {
+    "0.25": {
+     "acres": 6,
+     "head_km": 0.41
+    },
+    "0.5": {
+     "acres": 14,
+     "head_km": 0.61
+    },
+    "1.0": {
+     "acres": 42,
+     "head_km": 1.02
+    },
+    "1.5": {
+     "acres": 94,
+     "head_km": 1.74
+    },
+    "2.0": {
+     "acres": 202,
+     "head_km": 2.47
+    },
+    "3.0": {
+     "acres": 618,
+     "head_km": 4.2
+    },
+    "4.0": {
+     "acres": 1251,
+     "head_km": 5.21
+    },
+    "6.0": {
+     "acres": 2566,
+     "head_km": 7.39
+    }
+   },
+   "max_head_gain_km_per_h": 1.85,
+   "head_reaches_h": {
+    "2km": 1.71,
+    "5km": 3.39,
+    "10km": 9.91
+   },
+   "first_home_reached_h": 5.25,
+   "audit": {
+    "departure_violations_final": 0,
+    "crew_overrun_rows_sum": 0,
+    "crew_overrun_rows_max_tick": 0,
+    "served": 36,
+    "withdrawn": 0,
+    "relocations": 0,
+    "crews_left_map": 0,
+    "outcomes": {
+     "saved": 35,
+     "protected_then_impacted": 1,
+     "abandoned_unsavable": 1,
+     "triaged": 0,
+     "in_progress": 1,
+     "pending": 1,
+     "monitoring": 0,
+     "not_threatened": 1
+    }
+   },
+   "ticks": [
+    {
+     "t_h": 0.25,
+     "sim_area_acres": 6,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.5,
+     "sim_area_acres": 14,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.75,
+     "sim_area_acres": 30,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.0,
+     "sim_area_acres": 42,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.25,
+     "sim_area_acres": 72,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.5,
+     "sim_area_acres": 94,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.75,
+     "sim_area_acres": 140,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.0,
+     "sim_area_acres": 202,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.25,
+     "sim_area_acres": 274,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.5,
+     "sim_area_acres": 378,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.75,
+     "sim_area_acres": 492,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.0,
+     "sim_area_acres": 618,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.25,
+     "sim_area_acres": 795,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.5,
+     "sim_area_acres": 953,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.75,
+     "sim_area_acres": 1109,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.0,
+     "sim_area_acres": 1251,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.25,
+     "sim_area_acres": 1429,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.5,
+     "sim_area_acres": 1601,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.75,
+     "sim_area_acres": 1773,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.0,
+     "sim_area_acres": 1968,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.25,
+     "sim_area_acres": 2142,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.5,
+     "sim_area_acres": 2296,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.75,
+     "sim_area_acres": 2446,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 6.0,
+     "sim_area_acres": 2566,
+     "violations": 0,
+     "crew_overruns": 0
+    }
+   ]
+  },
+  "wall_s": 100.2
+ },
+ {
+  "scenario": "boulder_chinook",
+  "variant": "crown",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 31.9,
+   "rh_pct": 21.9,
+   "temp_c": 12.2
+  },
+  "nominal_solve_s": 0.49,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 22,
+    "surface": 0,
+    "passive": 0,
+    "active": 4
+   },
+   "3h": {
+    "surface_no_crown_fuel": 518,
+    "surface": 0,
+    "passive": 2,
+    "active": 24
+   },
+   "6h": {
+    "surface_no_crown_fuel": 1633,
+    "surface": 8,
+    "passive": 10,
+    "active": 68
+   },
+   "ignition_cell": {
+    "fuel": 102,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 72,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1324,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 57.6,
+    "fire_ha": 10.5
+   },
+   "first_spot_over_1km": {
+    "age_min": 168.5,
+    "fire_ha": 167.7
+   },
+   "first_spot_over_2km": null
+  },
+  "demo": {
+   "nominal_matches_trace_solve": true,
+   "marks": {
+    "0.25": {
+     "acres": 6,
+     "head_km": 0.17
+    },
+    "0.5": {
+     "acres": 6,
+     "head_km": 0.17
+    },
+    "1.0": {
+     "acres": 26,
+     "head_km": 0.54
+    },
+    "1.5": {
+     "acres": 42,
+     "head_km": 1.07
+    },
+    "2.0": {
+     "acres": 116,
+     "head_km": 2.6
+    },
+    "3.0": {
+     "acres": 544,
+     "head_km": 5.03
+    },
+    "4.0": {
+     "acres": 969,
+     "head_km": 5.59
+    },
+    "6.0": {
+     "acres": 1719,
+     "head_km": 6.61
+    }
+   },
+   "max_head_gain_km_per_h": 3.69,
+   "head_reaches_h": {
+    "2km": 1.87,
+    "5km": 2.77,
+    "10km": 18.5
+   },
+   "first_home_reached_h": 10.06,
+   "audit": {
+    "departure_violations_final": 0,
+    "crew_overrun_rows_sum": 0,
+    "crew_overrun_rows_max_tick": 0,
+    "served": 24,
+    "withdrawn": 0,
+    "relocations": 0,
+    "crews_left_map": 0,
+    "outcomes": {
+     "saved": 24,
+     "protected_then_impacted": 0,
+     "abandoned_unsavable": 1,
+     "triaged": 0,
+     "in_progress": 0,
+     "pending": 0,
+     "monitoring": 1,
+     "not_threatened": 14
+    }
+   },
+   "ticks": [
+    {
+     "t_h": 0.25,
+     "sim_area_acres": 6,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.5,
+     "sim_area_acres": 6,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.75,
+     "sim_area_acres": 14,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.0,
+     "sim_area_acres": 26,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.25,
+     "sim_area_acres": 42,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.5,
+     "sim_area_acres": 42,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.75,
+     "sim_area_acres": 76,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.0,
+     "sim_area_acres": 116,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.25,
+     "sim_area_acres": 198,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.5,
+     "sim_area_acres": 298,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.75,
+     "sim_area_acres": 384,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.0,
+     "sim_area_acres": 544,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.25,
+     "sim_area_acres": 681,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.5,
+     "sim_area_acres": 779,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.75,
+     "sim_area_acres": 841,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.0,
+     "sim_area_acres": 969,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.25,
+     "sim_area_acres": 1027,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.5,
+     "sim_area_acres": 1129,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.75,
+     "sim_area_acres": 1215,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.0,
+     "sim_area_acres": 1341,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.25,
+     "sim_area_acres": 1445,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.5,
+     "sim_area_acres": 1535,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.75,
+     "sim_area_acres": 1631,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 6.0,
+     "sim_area_acres": 1719,
+     "violations": 0,
+     "crew_overruns": 0
+    }
+   ]
+  },
+  "wall_s": 38.5
+ },
+ {
+  "scenario": "boulder_chinook",
+  "variant": "crown_d10",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 31.9,
+   "rh_pct": 21.9,
+   "temp_c": 12.2
+  },
+  "nominal_solve_s": 0.49,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 22,
+    "surface": 0,
+    "passive": 0,
+    "active": 4
+   },
+   "3h": {
+    "surface_no_crown_fuel": 472,
+    "surface": 0,
+    "passive": 2,
+    "active": 24
+   },
+   "6h": {
+    "surface_no_crown_fuel": 1621,
+    "surface": 8,
+    "passive": 10,
+    "active": 62
+   },
+   "ignition_cell": {
+    "fuel": 102,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 48,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1340,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 57.6,
+    "fire_ha": 10.5
+   },
+   "first_spot_over_1km": {
+    "age_min": 168.9,
+    "fire_ha": 158.0
+   },
+   "first_spot_over_2km": null
+  },
+  "demo": {
+   "nominal_matches_trace_solve": true,
+   "marks": {
+    "0.25": {
+     "acres": 6,
+     "head_km": 0.17
+    },
+    "0.5": {
+     "acres": 6,
+     "head_km": 0.17
+    },
+    "1.0": {
+     "acres": 26,
+     "head_km": 0.54
+    },
+    "1.5": {
+     "acres": 42,
+     "head_km": 1.07
+    },
+    "2.0": {
+     "acres": 116,
+     "head_km": 2.6
+    },
+    "3.0": {
+     "acres": 498,
+     "head_km": 5.03
+    },
+    "4.0": {
+     "acres": 949,
+     "head_km": 5.23
+    },
+    "6.0": {
+     "acres": 1701,
+     "head_km": 6.61
+    }
+   },
+   "max_head_gain_km_per_h": 3.33,
+   "head_reaches_h": {
+    "2km": 1.87,
+    "5km": 2.85,
+    "10km": 18.58
+   },
+   "first_home_reached_h": 10.06,
+   "audit": {
+    "departure_violations_final": 0,
+    "crew_overrun_rows_sum": 0,
+    "crew_overrun_rows_max_tick": 0,
+    "served": 22,
+    "withdrawn": 0,
+    "relocations": 0,
+    "crews_left_map": 0,
+    "outcomes": {
+     "saved": 22,
+     "protected_then_impacted": 0,
+     "abandoned_unsavable": 2,
+     "triaged": 0,
+     "in_progress": 0,
+     "pending": 0,
+     "monitoring": 2,
+     "not_threatened": 14
+    }
+   },
+   "ticks": [
+    {
+     "t_h": 0.25,
+     "sim_area_acres": 6,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.5,
+     "sim_area_acres": 6,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.75,
+     "sim_area_acres": 14,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.0,
+     "sim_area_acres": 26,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.25,
+     "sim_area_acres": 42,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.5,
+     "sim_area_acres": 42,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.75,
+     "sim_area_acres": 76,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.0,
+     "sim_area_acres": 116,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.25,
+     "sim_area_acres": 190,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.5,
+     "sim_area_acres": 278,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.75,
+     "sim_area_acres": 360,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.0,
+     "sim_area_acres": 498,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.25,
+     "sim_area_acres": 665,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.5,
+     "sim_area_acres": 767,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.75,
+     "sim_area_acres": 833,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.0,
+     "sim_area_acres": 949,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.25,
+     "sim_area_acres": 1017,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.5,
+     "sim_area_acres": 1107,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.75,
+     "sim_area_acres": 1193,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.0,
+     "sim_area_acres": 1289,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.25,
+     "sim_area_acres": 1405,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.5,
+     "sim_area_acres": 1519,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.75,
+     "sim_area_acres": 1597,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 6.0,
+     "sim_area_acres": 1701,
+     "violations": 0,
+     "crew_overruns": 0
+    }
+   ]
+  },
+  "wall_s": 36.0
+ },
+ {
+  "scenario": "boulder_chinook",
+  "variant": "opt1",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 31.9,
+   "rh_pct": 21.9,
+   "temp_c": 12.2
+  },
+  "nominal_solve_s": 0.64,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 56,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 679,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 1653,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 102,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 55,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1270,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 132.4,
+    "fire_ha": 162.0
+   },
+   "first_spot_over_1km": {
+    "age_min": 146.6,
+    "fire_ha": 204.9
+   },
+   "first_spot_over_2km": null
+  },
+  "demo": {
+   "nominal_matches_trace_solve": true,
+   "marks": {
+    "0.25": {
+     "acres": 10,
+     "head_km": 0.35
+    },
+    "0.5": {
+     "acres": 10,
+     "head_km": 0.35
+    },
+    "1.0": {
+     "acres": 56,
+     "head_km": 1.79
+    },
+    "1.5": {
+     "acres": 156,
+     "head_km": 3.77
+    },
+    "2.0": {
+     "acres": 316,
+     "head_km": 4.94
+    },
+    "3.0": {
+     "acres": 679,
+     "head_km": 5.03
+    },
+    "4.0": {
+     "acres": 967,
+     "head_km": 6.04
+    },
+    "6.0": {
+     "acres": 1653,
+     "head_km": 6.61
+    }
+   },
+   "max_head_gain_km_per_h": 4.23,
+   "head_reaches_h": {
+    "2km": 1.07,
+    "5km": 2.37,
+    "10km": 19.12
+   },
+   "first_home_reached_h": 10.07,
+   "audit": {
+    "departure_violations_final": 0,
+    "crew_overrun_rows_sum": 0,
+    "crew_overrun_rows_max_tick": 0,
+    "served": 23,
+    "withdrawn": 0,
+    "relocations": 0,
+    "crews_left_map": 0,
+    "outcomes": {
+     "saved": 23,
+     "protected_then_impacted": 0,
+     "abandoned_unsavable": 1,
+     "triaged": 0,
+     "in_progress": 0,
+     "pending": 0,
+     "monitoring": 2,
+     "not_threatened": 14
+    }
+   },
+   "ticks": [
+    {
+     "t_h": 0.25,
+     "sim_area_acres": 10,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.5,
+     "sim_area_acres": 10,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 0.75,
+     "sim_area_acres": 28,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.0,
+     "sim_area_acres": 56,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.25,
+     "sim_area_acres": 80,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.5,
+     "sim_area_acres": 156,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 1.75,
+     "sim_area_acres": 220,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.0,
+     "sim_area_acres": 316,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.25,
+     "sim_area_acres": 420,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.5,
+     "sim_area_acres": 530,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 2.75,
+     "sim_area_acres": 614,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.0,
+     "sim_area_acres": 679,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.25,
+     "sim_area_acres": 759,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.5,
+     "sim_area_acres": 811,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 3.75,
+     "sim_area_acres": 907,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.0,
+     "sim_area_acres": 967,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.25,
+     "sim_area_acres": 1039,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.5,
+     "sim_area_acres": 1133,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 4.75,
+     "sim_area_acres": 1221,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.0,
+     "sim_area_acres": 1315,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.25,
+     "sim_area_acres": 1389,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.5,
+     "sim_area_acres": 1495,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 5.75,
+     "sim_area_acres": 1569,
+     "violations": 0,
+     "crew_overruns": 0
+    },
+    {
+     "t_h": 6.0,
+     "sim_area_acres": 1653,
+     "violations": 0,
+     "crew_overruns": 0
+    }
+   ]
+  },
+  "wall_s": 42.7
+ }
+]

@@ -801,6 +801,55 @@ under aspen that reaches the conifer — stands in for it):
 | Paradise one-click, nominal field | 0.79 s | 1.12 s |
 | Little Giant hindcast domain, one member (300,792 cells) | 1.33 s | 3.10 s (it also burns far more) |
 
+### 3.8 Addendum: the one-click scenarios on the fine-fuel starts (option 2)
+
+Measured after the merge onto main, where founder option 2 had moved the seven
+timber-start fires onto the nearest grass or brush patch
+(`docs/review/timber_start_resite_2026-10-12.md`). Section 3.4 above used the old
+timber starts. Same script and path (`scratch_review/crown_fire_scenarios.py`, the
+server's own session, city weather, calibrated embers, 6 h, the crew-safety audit), three
+settings: **option 1** (the timber floor; live as simulator image `world11`), **crown 5**
+(grass-only floor + crown fire, the calibrated 5-min spot delay) and **crown 10** (the
+same with the 10-min delay recommended in section 4). The start label is the ignition
+cell's fuel and canopy; percentages are the fastest hour's head gain as a share of the
+city weather's mean 10-m wind over 0-6 h (`crown_fire_city_wind.json`). Raw rows:
+`scratch_review/crown_fire_finestart_{1,2,3}.json`; table:
+`scratch_review/crown_fire_finestart_table.py`.
+
+| Scenario (start) | Acres 1 h / 3 h / 6 h: option 1 (live) | crown, 5-min delay | crown, 10-min delay | Fastest hour, km/h (% of wind): option 1 / crown 5 / crown 10 | First home (h): option 1 / crown 5 / crown 10 | Crew audit (viol / overrun rows) |
+|---|---|---|---|---|---|---|
+| aspen_southwesterly (SH4, no canopy) | 74 / 1,061 / 4,173 | 116 / 1,263 / 2,946 | 112 / 1,213 / 2,874 | 1.6 (7 %) / 2.3 (10 %) / 2.0 (9 %) | 5.7 / 5.9 / 6.2 | 0 / 0 · 0 / 0 · 0 / 0 |
+| basalt_carbondale_southwesterly (GS3, no canopy) | 170 / 1,021 / 3,955 | 200 / 2,826 / 8,124 | 190 / 2,602 / 7,284 | 1.8 (8 %) / 3.5 (16 %) / 2.7 (12 %) | 5.6 / 3.7 / 4.2 | 0 / 0 · 0 / 0 · 0 / 0 |
+| beaver_creek_westerly (SH4, no canopy) | 42 / 618 / 2,566 | 244 / 1,631 / 4,395 | 214 / 1,337 / 3,693 | 1.9 (5 %) / 3.0 (9 %) / 2.3 (7 %) | 5.2 / 3.1 / 3.4 | 0 / 0 · 0 / 0 · 0 / 0 |
+| boulder_chinook (GR2, no canopy) | 56 / 679 / 1,653 | 26 / 544 / 1,719 | 26 / 498 / 1,701 | 4.2 (9 %) / 3.7 (8 %) / 3.3 (7 %) | 10.1 / 10.1 / 10.1 | 0 / 0 · 0 / 0 · 0 / 0 |
+| eagle_gypsum_westerly (GR2, no canopy) | 16 / 86 / 819 | 16 / 86 / 1,231 | 16 / 86 / 1,183 | 2.3 (7 %) / 2.5 (7 %) / 2.5 (7 %) | 0.3 / 0.3 / 0.3 | 0 / 0 · 0 / 0 · 0 / 0 |
+| eagle_vail_corridor_westerly (SH4, no canopy) | 59 / 573 / 2,698 | 49 / 109 / 277 | 49 / 109 / 277 | 2.7 (8 %) / 1.2 (3 %) / 1.2 (3 %) | 8.3 / 14.2 / 14.4 | 0 / 0 · 0 / 0 · 0 / 0 |
+| glenwood_springs_westerly (SH4, no canopy) | 58 / 905 / 2,032 | 48 / 482 / 9,910 | 42 / 430 / 5,338 | 1.8 (6 %) / 5.5 (18 %) / 4.4 (14 %) | 2.9 / 3.3 / 3.4 | 0 / 0 · 0 / 0 · 0 / 0 |
+| malibu_santa_ana (SH5, no canopy) | 488 / 2,592 / 5,536 | 667 / 4,499 / 7,834 | 524 / 3,943 / 7,496 | 5.2 (11 %) / 6.9 (15 %) / 5.7 (12 %) | 2.9 / 2.3 / 2.5 | 0 / 0 · 0 / 0 · 0 / 0 |
+| paradise_ne_wind (SH4 under conifer (CBH 0.3 m, CBD 0.05)) | 68 / 761 / 1,942 | 424 / 1,829 / 5,068 | 386 / 1,769 / 4,662 | 2.2 (6 %) / 4.0 (10 %) / 3.3 (8 %) | 3.3 / 1.6 / 1.8 | 0 / 0 · 0 / 0 · 0 / 0 |
+| park_city_windstorm (GS1 under aspen / oak (LANDFIRE hardwood code)) | 192 / 2,904 / 6,945 | 110 / 3,447 / 11,061 | 108 / 3,066 / 8,847 | 3.4 (10 %) / 4.7 (14 %) / 3.8 (12 %) | 3.1 / 2.5 / 2.8 | 0 / 0 · 0 / 0 · 0 / 0 |
+| rancho_santa_fe_santa_ana (GS2, no canopy) | 144 / 973 / 2,066 | 144 / 1,001 / 2,144 | 142 / 963 / 2,140 | 1.6 (7 %) / 1.6 (7 %) / 1.5 (7 %) | 3.2 / 2.4 / 2.5 | 0 / 0 · 0 / 0 · 0 / 0 |
+| santa_rosa_diablo (GS1 under conifer (CBH 8.4 m, CBD 0.03)) | 70 / 789 / 3,925 | 32 / 520 / 2,936 | 32 / 426 / 2,084 | 2.9 (7 %) / 4.4 (11 %) / 2.7 (7 %) | 3.2 / 3.7 / 4.0 | 0 / 0 · 0 / 0 · 0 / 0 |
+| vail_westerly (SH4, no canopy) | 86 / 546 / 1,171 | 22 / 114 / 1,497 | 22 / 112 / 1,427 | 1.6 (5 %) / 2.7 (8 %) / 2.2 (7 %) | 7.4 / 7.8 / 8.6 | 0 / 0 · 0 / 0 · 0 / 0 |
+
+* **The moved starts change who crowns.** Aspen and Beaver Creek, which crawled from
+  their old timber-litter / aspen-understory starts (2 and 84 acres at 6 h, section 3.4),
+  now start in shrub and run into conifer: 2,874 and 3,693 acres with crown 10, of
+  which about 1,000-1,200 acres each burned as active crown fire.
+* **The Eagle → Vail corridor still crawls**: 277 acres at 6 h under either crown
+  setting, against 2,698 under option 1. No acre on its path crowns:
+  LANDFIRE maps the stands between its start and the valley as aspen / hardwood, which
+  never crown. That is what the canopy data say, not a defect; the demo is dull.
+* **Speed against the 10 %-of-wind benchmark.** Crown 10: fastest hours 7-14 % of the
+  wind in twelve of thirteen (the corridor 3 %). Crown 5: 7-18 % (Glenwood Springs 18 %,
+  Basalt 16 %). Option 1: 5-11 %.
+* **Size.** Crown 10 against option 1 at 6 h: larger at Glenwood Springs (2,032 → 5,338),
+  Paradise (1,942 → 4,662), Basalt (3,955 → 7,284), Beaver Creek (2,566 → 3,693), Park City
+  (6,945 → 8,847), Malibu (5,536 → 7,496), Eagle / Gypsum (819 → 1,183), Vail (1,171 →
+  1,427); smaller at Santa Rosa (3,925 → 2,084), Aspen (4,173 → 2,874) and the corridor;
+  Boulder and Rancho Santa Fe unchanged.
+* **Crew safety.** All 39 runs: 0 departure violations, 0 crew-overrun rows.
+
 ## 4. Recommendation
 
 1. **Simulator: arm crown fire with the grass-only floor and the calibrated
