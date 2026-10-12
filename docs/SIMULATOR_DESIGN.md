@@ -1344,5 +1344,13 @@ hour.
   burned 2–346 acres in 6 h and the new ones burn 248–2,912. Review of record:
   `docs/review/timber_start_resite_2026-10-12.md`; tests:
   `tests/test_scenario_fine_fuel_start.py`.
+- **Crew safety under options 1 + 2.** The sweep of the live configuration (13 one-click
+  scenarios × 4 intensities, city weather, timber rule, calibrated embers, new starts, 6 h;
+  `scratch_review/crew_egress_gap_sweep.py --profiles city --floors all`): 52 runs, 0
+  departure violations, 0 crew-overrun ticks, 0 crews off the map. Homes served 1,715 →
+  1,809 against the same 52 combinations of the 2026-10-09 sweep (legacy embers, old
+  starts); burned area 220,229 → 115,100 acres. Raw rows:
+  `scratch_review/crew_egress_gap_sweep_option12.jsonl`. Deployed as simulator image
+  `world11`.
 - **Option 3** (the crown-fire model) is a separate build. When it is validated, the
   timber rule can go back to grass only.
