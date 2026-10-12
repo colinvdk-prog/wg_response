@@ -1,0 +1,706 @@
+[
+ {
+  "scenario": "park_city_windstorm",
+  "row": "default",
+  "acres": {
+   "1.0": 50,
+   "3.0": 735,
+   "6.0": 6821
+  },
+  "fastest_kmh": 5.39,
+  "crown_6h": {
+   "surface_no_crown_fuel": 5290,
+   "surface": 250,
+   "passive": 10,
+   "active": 1271
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "row": "fmc85",
+  "acres": {
+   "1.0": 50,
+   "3.0": 743,
+   "6.0": 6823
+  },
+  "fastest_kmh": 5.39,
+  "crown_6h": {
+   "surface_no_crown_fuel": 5292,
+   "surface": 234,
+   "passive": 10,
+   "active": 1287
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "row": "fmc120",
+  "acres": {
+   "1.0": 50,
+   "3.0": 735,
+   "6.0": 6787
+  },
+  "fastest_kmh": 5.39,
+  "crown_6h": {
+   "surface_no_crown_fuel": 5264,
+   "surface": 256,
+   "passive": 10,
+   "active": 1257
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "row": "seasonal",
+  "acres": {
+   "1.0": 50,
+   "3.0": 735,
+   "6.0": 6787
+  },
+  "fastest_kmh": 5.39,
+  "crown_6h": {
+   "surface_no_crown_fuel": 5264,
+   "surface": 256,
+   "passive": 10,
+   "active": 1257
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "row": "no_shade",
+  "acres": {
+   "1.0": 66,
+   "3.0": 2386,
+   "6.0": 9635
+  },
+  "fastest_kmh": 5.46,
+  "crown_6h": {
+   "surface_no_crown_fuel": 7468,
+   "surface": 360,
+   "passive": 16,
+   "active": 1791
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "row": "hardwood",
+  "acres": {
+   "1.0": 50,
+   "3.0": 765,
+   "6.0": 7418
+  },
+  "fastest_kmh": 5.4,
+  "crown_6h": {
+   "surface_no_crown_fuel": 3479,
+   "surface": 1667,
+   "passive": 965,
+   "active": 1307
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "row": "any_angle",
+  "acres": {
+   "1.0": 50,
+   "3.0": 783,
+   "6.0": 7180
+  },
+  "fastest_kmh": 5.22,
+  "crown_6h": {
+   "surface_no_crown_fuel": 5624,
+   "surface": 252,
+   "passive": 10,
+   "active": 1293
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "row": "spotting_off",
+  "acres": {
+   "1.0": 48,
+   "3.0": 422,
+   "6.0": 4812
+  },
+  "fastest_kmh": 2.74,
+  "crown_6h": {
+   "surface_no_crown_fuel": 3395,
+   "surface": 208,
+   "passive": 8,
+   "active": 1201
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "row": "delay10",
+  "acres": {
+   "1.0": 50,
+   "3.0": 536,
+   "6.0": 6119
+  },
+  "fastest_kmh": 3.92,
+  "crown_6h": {
+   "surface_no_crown_fuel": 4624,
+   "surface": 236,
+   "passive": 10,
+   "active": 1249
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "row": "delay20",
+  "acres": {
+   "1.0": 50,
+   "3.0": 430,
+   "6.0": 5594
+  },
+  "fastest_kmh": 3.21,
+  "crown_6h": {
+   "surface_no_crown_fuel": 4127,
+   "surface": 226,
+   "passive": 10,
+   "active": 1231
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "row": "delay30",
+  "acres": {
+   "1.0": 50,
+   "3.0": 422,
+   "6.0": 5340
+  },
+  "fastest_kmh": 3.19,
+  "crown_6h": {
+   "surface_no_crown_fuel": 3887,
+   "surface": 222,
+   "passive": 10,
+   "active": 1221
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "row": "default",
+  "acres": {
+   "1.0": 330,
+   "3.0": 1013,
+   "6.0": 1789
+  },
+  "fastest_kmh": 2.92,
+  "crown_6h": {
+   "surface_no_crown_fuel": 859,
+   "surface": 212,
+   "passive": 0,
+   "active": 719
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "row": "fmc85",
+  "acres": {
+   "1.0": 356,
+   "3.0": 1067,
+   "6.0": 2230
+  },
+  "fastest_kmh": 3.65,
+  "crown_6h": {
+   "surface_no_crown_fuel": 1083,
+   "surface": 218,
+   "passive": 2,
+   "active": 927
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "row": "fmc120",
+  "acres": {
+   "1.0": 2,
+   "3.0": 358,
+   "6.0": 1101
+  },
+  "fastest_kmh": 2.66,
+  "crown_6h": {
+   "surface_no_crown_fuel": 482,
+   "surface": 190,
+   "passive": 0,
+   "active": 428
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "row": "seasonal",
+  "acres": {
+   "1.0": 2,
+   "3.0": 358,
+   "6.0": 1101
+  },
+  "fastest_kmh": 2.66,
+  "crown_6h": {
+   "surface_no_crown_fuel": 482,
+   "surface": 190,
+   "passive": 0,
+   "active": 428
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "row": "no_shade",
+  "acres": {
+   "1.0": 550,
+   "3.0": 1247,
+   "6.0": 4281
+  },
+  "fastest_kmh": 5.81,
+  "crown_6h": {
+   "surface_no_crown_fuel": 1659,
+   "surface": 538,
+   "passive": 2,
+   "active": 2082
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "row": "hardwood",
+  "acres": {
+   "1.0": 330,
+   "3.0": 1025,
+   "6.0": 2092
+  },
+  "fastest_kmh": 2.92,
+  "crown_6h": {
+   "surface_no_crown_fuel": 224,
+   "surface": 1039,
+   "passive": 6,
+   "active": 823
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "row": "any_angle",
+  "acres": {
+   "1.0": 338,
+   "3.0": 1019,
+   "6.0": 1825
+  },
+  "fastest_kmh": 3.09,
+  "crown_6h": {
+   "surface_no_crown_fuel": 875,
+   "surface": 218,
+   "passive": 0,
+   "active": 733
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "row": "spotting_off",
+  "acres": {
+   "1.0": 252,
+   "3.0": 829,
+   "6.0": 1271
+  },
+  "fastest_kmh": 1.79,
+  "crown_6h": {
+   "surface_no_crown_fuel": 578,
+   "surface": 112,
+   "passive": 0,
+   "active": 580
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "row": "delay10",
+  "acres": {
+   "1.0": 284,
+   "3.0": 1021,
+   "6.0": 1857
+  },
+  "fastest_kmh": 3.19,
+  "crown_6h": {
+   "surface_no_crown_fuel": 893,
+   "surface": 236,
+   "passive": 0,
+   "active": 729
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "row": "delay20",
+  "acres": {
+   "1.0": 262,
+   "3.0": 991,
+   "6.0": 1677
+  },
+  "fastest_kmh": 2.3,
+  "crown_6h": {
+   "surface_no_crown_fuel": 779,
+   "surface": 220,
+   "passive": 0,
+   "active": 679
+  }
+ },
+ {
+  "scenario": "vail_westerly",
+  "row": "delay30",
+  "acres": {
+   "1.0": 256,
+   "3.0": 971,
+   "6.0": 1619
+  },
+  "fastest_kmh": 2.06,
+  "crown_6h": {
+   "surface_no_crown_fuel": 745,
+   "surface": 214,
+   "passive": 0,
+   "active": 661
+  }
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "row": "default",
+  "acres": {
+   "1.0": 118,
+   "3.0": 1409,
+   "6.0": 14199
+  },
+  "fastest_kmh": 6.27,
+  "crown_6h": {
+   "surface_no_crown_fuel": 7394,
+   "surface": 647,
+   "passive": 22,
+   "active": 6137
+  }
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "row": "fmc85",
+  "acres": {
+   "1.0": 118,
+   "3.0": 1415,
+   "6.0": 14583
+  },
+  "fastest_kmh": 6.0,
+  "crown_6h": {
+   "surface_no_crown_fuel": 7646,
+   "surface": 528,
+   "passive": 22,
+   "active": 6387
+  }
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "row": "fmc120",
+  "acres": {
+   "1.0": 118,
+   "3.0": 1381,
+   "6.0": 12802
+  },
+  "fastest_kmh": 5.91,
+  "crown_6h": {
+   "surface_no_crown_fuel": 6643,
+   "surface": 695,
+   "passive": 12,
+   "active": 5452
+  }
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "row": "seasonal",
+  "acres": {
+   "1.0": 118,
+   "3.0": 1381,
+   "6.0": 12802
+  },
+  "fastest_kmh": 5.91,
+  "crown_6h": {
+   "surface_no_crown_fuel": 6643,
+   "surface": 695,
+   "passive": 12,
+   "active": 5452
+  }
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "row": "no_shade",
+  "acres": {
+   "1.0": 192,
+   "3.0": 1889,
+   "6.0": 18278
+  },
+  "fastest_kmh": 5.65,
+  "crown_6h": {
+   "surface_no_crown_fuel": 9954,
+   "surface": 805,
+   "passive": 26,
+   "active": 7494
+  }
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "row": "hardwood",
+  "acres": {
+   "1.0": 118,
+   "3.0": 1409,
+   "6.0": 14203
+  },
+  "fastest_kmh": 6.27,
+  "crown_6h": {
+   "surface_no_crown_fuel": 5794,
+   "surface": 2242,
+   "passive": 30,
+   "active": 6137
+  }
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "row": "any_angle",
+  "acres": {
+   "1.0": 122,
+   "3.0": 1501,
+   "6.0": 15860
+  },
+  "fastest_kmh": 5.71,
+  "crown_6h": {
+   "surface_no_crown_fuel": 8302,
+   "surface": 721,
+   "passive": 26,
+   "active": 6811
+  }
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "row": "spotting_off",
+  "acres": {
+   "1.0": 92,
+   "3.0": 823,
+   "6.0": 3375
+  },
+  "fastest_kmh": 1.57,
+  "crown_6h": {
+   "surface_no_crown_fuel": 2652,
+   "surface": 84,
+   "passive": 6,
+   "active": 632
+  }
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "row": "delay10",
+  "acres": {
+   "1.0": 102,
+   "3.0": 1103,
+   "6.0": 8445
+  },
+  "fastest_kmh": 4.76,
+  "crown_6h": {
+   "surface_no_crown_fuel": 4461,
+   "surface": 282,
+   "passive": 8,
+   "active": 3693
+  }
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "row": "delay20",
+  "acres": {
+   "1.0": 96,
+   "3.0": 901,
+   "6.0": 5782
+  },
+  "fastest_kmh": 3.38,
+  "crown_6h": {
+   "surface_no_crown_fuel": 3543,
+   "surface": 154,
+   "passive": 6,
+   "active": 2080
+  }
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "row": "delay30",
+  "acres": {
+   "1.0": 94,
+   "3.0": 865,
+   "6.0": 4924
+  },
+  "fastest_kmh": 2.99,
+  "crown_6h": {
+   "surface_no_crown_fuel": 3275,
+   "surface": 120,
+   "passive": 6,
+   "active": 1523
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "row": "default",
+  "acres": {
+   "1.0": 2,
+   "3.0": 759,
+   "6.0": 5576
+  },
+  "fastest_kmh": 3.18,
+  "crown_6h": {
+   "surface_no_crown_fuel": 2594,
+   "surface": 1489,
+   "passive": 326,
+   "active": 1167
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "row": "fmc85",
+  "acres": {
+   "1.0": 2,
+   "3.0": 1185,
+   "6.0": 7860
+  },
+  "fastest_kmh": 3.5,
+  "crown_6h": {
+   "surface_no_crown_fuel": 3783,
+   "surface": 1107,
+   "passive": 514,
+   "active": 2456
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "row": "fmc120",
+  "acres": {
+   "1.0": 2,
+   "3.0": 4,
+   "6.0": 486
+  },
+  "fastest_kmh": 1.53,
+  "crown_6h": {
+   "surface_no_crown_fuel": 310,
+   "surface": 142,
+   "passive": 16,
+   "active": 18
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "row": "seasonal",
+  "acres": {
+   "1.0": 2,
+   "3.0": 4,
+   "6.0": 486
+  },
+  "fastest_kmh": 1.53,
+  "crown_6h": {
+   "surface_no_crown_fuel": 310,
+   "surface": 142,
+   "passive": 16,
+   "active": 18
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "row": "no_shade",
+  "acres": {
+   "1.0": 2,
+   "3.0": 759,
+   "6.0": 5598
+  },
+  "fastest_kmh": 3.18,
+  "crown_6h": {
+   "surface_no_crown_fuel": 2600,
+   "surface": 1497,
+   "passive": 326,
+   "active": 1175
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "row": "hardwood",
+  "acres": {
+   "1.0": 2,
+   "3.0": 759,
+   "6.0": 5576
+  },
+  "fastest_kmh": 3.18,
+  "crown_6h": {
+   "surface_no_crown_fuel": 2344,
+   "surface": 1739,
+   "passive": 326,
+   "active": 1167
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "row": "any_angle",
+  "acres": {
+   "1.0": 2,
+   "3.0": 1581,
+   "6.0": 6593
+  },
+  "fastest_kmh": 4.36,
+  "crown_6h": {
+   "surface_no_crown_fuel": 3180,
+   "surface": 1699,
+   "passive": 376,
+   "active": 1337
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "row": "spotting_off",
+  "acres": {
+   "1.0": 2,
+   "3.0": 663,
+   "6.0": 4784
+  },
+  "fastest_kmh": 2.48,
+  "crown_6h": {
+   "surface_no_crown_fuel": 2170,
+   "surface": 1275,
+   "passive": 292,
+   "active": 1047
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "row": "delay10",
+  "acres": {
+   "1.0": 2,
+   "3.0": 681,
+   "6.0": 5254
+  },
+  "fastest_kmh": 2.93,
+  "crown_6h": {
+   "surface_no_crown_fuel": 2420,
+   "surface": 1401,
+   "passive": 320,
+   "active": 1113
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "row": "delay20",
+  "acres": {
+   "1.0": 2,
+   "3.0": 663,
+   "6.0": 4966
+  },
+  "fastest_kmh": 2.48,
+  "crown_6h": {
+   "surface_no_crown_fuel": 2270,
+   "surface": 1319,
+   "passive": 306,
+   "active": 1071
+  }
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "row": "delay30",
+  "acres": {
+   "1.0": 2,
+   "3.0": 663,
+   "6.0": 4864
+  },
+  "fastest_kmh": 2.48,
+  "crown_6h": {
+   "surface_no_crown_fuel": 2214,
+   "surface": 1301,
+   "passive": 300,
+   "active": 1049
+  }
+ }
+]

@@ -1,0 +1,1522 @@
+{
+  "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+  "note": "canopy layers attached to the committed simulator tiles (contracts SAFETY SEMANTICS 22); terrain bands verified byte-identical; read only with cfg.crown_fire",
+  "tiles": {
+    "aspen_co": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -106.974342,
+        39.129152,
+        -106.765658,
+        39.290848
+      ],
+      "cell_m": 90.0,
+      "checked_utc": "2026-10-12T17:57:50Z",
+      "fetched_utc": "2026-10-12T16:56:09Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Aspen / Snowmass Village, CO",
+      "requests": {
+        "bytes": 410456,
+        "status-poll": 37,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.06,
+            0.16
+          ],
+          "cbh_m": [
+            0.3,
+            0.7,
+            10.0
+          ],
+          "cc_pct": [
+            25.0,
+            55.0,
+            65.0
+          ],
+          "ch_m": [
+            7.0,
+            15.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 63.74,
+        "canopy_pct_by_fuel_class": {
+          "GR": 0.0,
+          "GS": 46.0,
+          "NB": 0.0,
+          "SH": 0.4,
+          "TL": 81.5,
+          "TU": 99.6
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 63.74,
+        "raw_max": {
+          "cbd_kgm3": 0.38,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "aspen_co_ext": {
+      "bbox_half_m": 24000.0,
+      "bbox_wsen": [
+        -107.148246,
+        38.994405,
+        -106.591754,
+        39.425595
+      ],
+      "cell_m": 240.0,
+      "checked_utc": "2026-10-12T17:57:58Z",
+      "fetch_seconds": 367.8,
+      "fetched_utc": "2026-10-12T16:56:31Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Aspen / Snowmass Village, CO",
+      "requests": {
+        "bytes": 2331124,
+        "status-poll": 36,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.11,
+            0.16
+          ],
+          "cbh_m": [
+            0.3,
+            0.6,
+            10.0
+          ],
+          "cc_pct": [
+            25.0,
+            55.0,
+            65.0
+          ],
+          "ch_m": [
+            7.0,
+            15.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 62.27,
+        "canopy_pct_by_fuel_class": {
+          "GR": 0.3,
+          "GS": 58.6,
+          "NB": 0.0,
+          "SB": 100.0,
+          "SH": 0.2,
+          "TL": 64.9,
+          "TU": 99.8
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 62.27,
+        "raw_max": {
+          "cbd_kgm3": 0.38,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "basalt_carbondale_co": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -107.229618,
+        39.314152,
+        -107.020382,
+        39.475848
+      ],
+      "cell_m": 90.0,
+      "checked_utc": "2026-10-12T17:57:50Z",
+      "fetch_seconds": 418.0,
+      "fetched_utc": "2026-10-12T16:02:14Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Basalt / El Jebel / Carbondale, CO",
+      "requests": {
+        "bytes": 298130,
+        "status-poll": 41,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.12,
+            0.27
+          ],
+          "cbh_m": [
+            0.3,
+            0.3,
+            10.0
+          ],
+          "cc_pct": [
+            15.0,
+            35.0,
+            45.0
+          ],
+          "ch_m": [
+            7.0,
+            11.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 40.75,
+        "canopy_pct_by_fuel_class": {
+          "GR": 0.9,
+          "GS": 36.7,
+          "NB": 0.0,
+          "SB": 100.0,
+          "SH": 0.3,
+          "TL": 97.5,
+          "TU": 99.2
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 40.75,
+        "raw_max": {
+          "cbd_kgm3": 0.38,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "basalt_carbondale_co_ext": {
+      "bbox_half_m": 24000.0,
+      "bbox_wsen": [
+        -107.403983,
+        39.179405,
+        -106.846017,
+        39.610595
+      ],
+      "cell_m": 240.0,
+      "checked_utc": "2026-10-12T17:57:58Z",
+      "fetch_seconds": 359.3,
+      "fetched_utc": "2026-10-12T16:56:31Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Basalt / El Jebel / Carbondale, CO",
+      "requests": {
+        "bytes": 2233354,
+        "status-poll": 35,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.08,
+            0.18
+          ],
+          "cbh_m": [
+            0.3,
+            0.6,
+            10.0
+          ],
+          "cc_pct": [
+            25.0,
+            45.0,
+            65.0
+          ],
+          "ch_m": [
+            7.0,
+            15.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 58.45,
+        "canopy_pct_by_fuel_class": {
+          "GR": 0.4,
+          "GS": 44.1,
+          "NB": 0.0,
+          "SB": 100.0,
+          "SH": 1.0,
+          "TL": 83.8,
+          "TU": 96.5
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 58.45,
+        "raw_max": {
+          "cbd_kgm3": 0.38,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "beaver_creek_co": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -106.664965,
+        39.544152,
+        -106.455035,
+        39.705848
+      ],
+      "cell_m": 90.0,
+      "checked_utc": "2026-10-12T17:57:50Z",
+      "fetch_seconds": 397.5,
+      "fetched_utc": "2026-10-12T16:02:14Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Beaver Creek / Avon / Edwards, CO",
+      "requests": {
+        "bytes": 430251,
+        "status-poll": 39,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.06,
+            0.16
+          ],
+          "cbh_m": [
+            0.3,
+            0.8,
+            10.0
+          ],
+          "cc_pct": [
+            25.0,
+            55.0,
+            65.0
+          ],
+          "ch_m": [
+            11.0,
+            15.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 72.89,
+        "canopy_pct_by_fuel_class": {
+          "GR": 2.8,
+          "GS": 54.8,
+          "NB": 0.0,
+          "SH": 0.7,
+          "TL": 88.0,
+          "TU": 99.9
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 72.89,
+        "raw_max": {
+          "cbd_kgm3": 0.35,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "beaver_creek_co_ext": {
+      "bbox_half_m": 24000.0,
+      "bbox_wsen": [
+        -106.839908,
+        39.409405,
+        -106.280092,
+        39.840595
+      ],
+      "cell_m": 240.0,
+      "checked_utc": "2026-10-12T17:57:58Z",
+      "fetch_seconds": 454.7,
+      "fetched_utc": "2026-10-12T16:56:31Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Beaver Creek / Avon / Edwards, CO",
+      "requests": {
+        "bytes": 2475527,
+        "status-poll": 44,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.09,
+            0.16
+          ],
+          "cbh_m": [
+            0.3,
+            0.7,
+            10.0
+          ],
+          "cc_pct": [
+            25.0,
+            55.0,
+            65.0
+          ],
+          "ch_m": [
+            7.0,
+            15.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 67.98,
+        "canopy_pct_by_fuel_class": {
+          "GR": 3.0,
+          "GS": 57.7,
+          "NB": 0.0,
+          "SH": 0.3,
+          "TL": 81.2,
+          "TU": 99.6
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 67.98,
+        "raw_max": {
+          "cbd_kgm3": 0.27,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "boulder_co": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -105.26547,
+        39.874152,
+        -105.05453,
+        40.035848
+      ],
+      "cell_m": 90.0,
+      "checked_utc": "2026-10-12T17:57:50Z",
+      "fetch_seconds": 416.0,
+      "fetched_utc": "2026-10-12T16:02:14Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Boulder / Superior, CO",
+      "requests": {
+        "bytes": 149578,
+        "status-poll": 41,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.04,
+            0.06
+          ],
+          "cbh_m": [
+            0.6,
+            2.0,
+            10.0
+          ],
+          "cc_pct": [
+            25.0,
+            35.0,
+            45.0
+          ],
+          "ch_m": [
+            11.0,
+            19.0,
+            39.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 7.4,
+        "canopy_pct_by_fuel_class": {
+          "GR": 0.9,
+          "GS": 12.8,
+          "NB": 1.1,
+          "SH": 38.9,
+          "TL": 86.9,
+          "TU": 88.9
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 7.84,
+        "raw_max": {
+          "cbd_kgm3": 0.17,
+          "cbh_m": 10.0,
+          "cc_pct": 65.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "boulder_co_ext": {
+      "bbox_half_m": 24000.0,
+      "bbox_wsen": [
+        -105.441254,
+        39.739405,
+        -104.878746,
+        40.170595
+      ],
+      "cell_m": 240.0,
+      "checked_utc": "2026-10-12T17:57:58Z",
+      "fetch_seconds": 490.7,
+      "fetched_utc": "2026-10-12T16:56:31Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Boulder / Superior, CO",
+      "requests": {
+        "bytes": 1189650,
+        "status-poll": 48,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.05,
+            0.08,
+            0.12
+          ],
+          "cbh_m": [
+            0.3,
+            0.3,
+            2.0
+          ],
+          "cc_pct": [
+            25.0,
+            45.0,
+            55.0
+          ],
+          "ch_m": [
+            7.0,
+            15.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 25.03,
+        "canopy_pct_by_fuel_class": {
+          "GR": 1.4,
+          "GS": 64.9,
+          "NB": 1.1,
+          "SH": 32.4,
+          "TL": 90.3,
+          "TU": 95.1
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 25.46,
+        "raw_max": {
+          "cbd_kgm3": 0.38,
+          "cbh_m": 10.0,
+          "cc_pct": 75.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "eagle_co": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -106.995003,
+        39.569152,
+        -106.784997,
+        39.730848
+      ],
+      "cell_m": 90.0,
+      "checked_utc": "2026-10-12T17:57:50Z",
+      "fetch_seconds": 430.3,
+      "fetched_utc": "2026-10-12T16:02:14Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Eagle / Gypsum, CO (corridor base)",
+      "requests": {
+        "bytes": 305811,
+        "status-poll": 42,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.05,
+            0.12,
+            0.19
+          ],
+          "cbh_m": [
+            0.3,
+            0.3,
+            1.4
+          ],
+          "cc_pct": [
+            15.0,
+            25.0,
+            45.0
+          ],
+          "ch_m": [
+            3.0,
+            7.0,
+            15.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 55.13,
+        "canopy_pct_by_fuel_class": {
+          "GR": 1.8,
+          "GS": 58.6,
+          "NB": 0.0,
+          "SH": 0.0,
+          "TL": 91.4,
+          "TU": 99.7
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 55.13,
+        "raw_max": {
+          "cbd_kgm3": 0.34,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "eagle_co_ext": {
+      "bbox_half_m": 24000.0,
+      "bbox_wsen": [
+        -107.170009,
+        39.434405,
+        -106.609991,
+        39.865595
+      ],
+      "cell_m": 240.0,
+      "checked_utc": "2026-10-12T17:57:58Z",
+      "fetch_seconds": 368.8,
+      "fetched_utc": "2026-10-12T16:56:31Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Eagle / Gypsum, CO (corridor base)",
+      "requests": {
+        "bytes": 2048408,
+        "status-poll": 36,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.08,
+            0.19
+          ],
+          "cbh_m": [
+            0.3,
+            0.5,
+            10.0
+          ],
+          "cc_pct": [
+            15.0,
+            35.0,
+            65.0
+          ],
+          "ch_m": [
+            3.0,
+            11.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 57.26,
+        "canopy_pct_by_fuel_class": {
+          "GR": 0.5,
+          "GS": 54.7,
+          "NB": 0.0,
+          "SH": 0.3,
+          "TL": 82.0,
+          "TU": 97.9
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 57.26,
+        "raw_max": {
+          "cbd_kgm3": 0.38,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "eagle_vail_co": {
+      "bbox_half_m": 30000.0,
+      "bbox_wsen": [
+        -106.969935,
+        39.365507,
+        -106.270065,
+        39.904493
+      ],
+      "cell_m": 200.0,
+      "checked_utc": "2026-10-12T17:57:50Z",
+      "fetched_utc": "2026-10-12T17:02:26Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Eagle \u2192 Vail corridor, CO",
+      "requests": {
+        "bytes": 3763364,
+        "status-poll": 45,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.09,
+            0.16
+          ],
+          "cbh_m": [
+            0.3,
+            0.6,
+            10.0
+          ],
+          "cc_pct": [
+            15.0,
+            55.0,
+            65.0
+          ],
+          "ch_m": [
+            7.0,
+            15.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 67.35,
+        "canopy_pct_by_fuel_class": {
+          "GR": 2.2,
+          "GS": 58.6,
+          "NB": 0.0,
+          "SB": 100.0,
+          "SH": 0.2,
+          "TL": 81.9,
+          "TU": 99.7
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 67.35,
+        "raw_max": {
+          "cbd_kgm3": 0.34,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "glenwood_springs_co": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -107.424844,
+        39.464152,
+        -107.215156,
+        39.625848
+      ],
+      "cell_m": 90.0,
+      "checked_utc": "2026-10-12T17:57:50Z",
+      "fetch_seconds": 420.5,
+      "fetched_utc": "2026-10-12T16:02:14Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Glenwood Springs, CO",
+      "requests": {
+        "bytes": 340440,
+        "status-poll": 41,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.06,
+            0.19
+          ],
+          "cbh_m": [
+            0.3,
+            0.6,
+            10.0
+          ],
+          "cc_pct": [
+            25.0,
+            45.0,
+            65.0
+          ],
+          "ch_m": [
+            7.0,
+            15.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 48.97,
+        "canopy_pct_by_fuel_class": {
+          "GR": 0.4,
+          "GS": 27.9,
+          "NB": 0.0,
+          "SH": 2.9,
+          "TL": 80.7,
+          "TU": 88.3
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 48.97,
+        "raw_max": {
+          "cbd_kgm3": 0.38,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "glenwood_springs_co_ext": {
+      "bbox_half_m": 24000.0,
+      "bbox_wsen": [
+        -107.599585,
+        39.329405,
+        -107.040415,
+        39.760595
+      ],
+      "cell_m": 240.0,
+      "checked_utc": "2026-10-12T17:57:58Z",
+      "fetch_seconds": 366.7,
+      "fetched_utc": "2026-10-12T16:56:31Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Glenwood Springs, CO",
+      "requests": {
+        "bytes": 2061548,
+        "status-poll": 36,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.08,
+            0.19
+          ],
+          "cbh_m": [
+            0.3,
+            0.6,
+            10.0
+          ],
+          "cc_pct": [
+            15.0,
+            35.0,
+            65.0
+          ],
+          "ch_m": [
+            7.0,
+            15.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 55.55,
+        "canopy_pct_by_fuel_class": {
+          "GR": 0.4,
+          "GS": 41.2,
+          "NB": 0.0,
+          "SH": 1.1,
+          "TL": 80.0,
+          "TU": 94.6
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 55.55,
+        "raw_max": {
+          "cbd_kgm3": 0.38,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "malibu_ca": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -118.817584,
+        33.974152,
+        -118.622416,
+        34.135848
+      ],
+      "cell_m": 90.0,
+      "checked_utc": "2026-10-12T17:57:50Z",
+      "fetch_seconds": 168.8,
+      "fetched_utc": "2026-10-12T16:02:14Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Malibu / Santa Monica Mtns, CA",
+      "requests": {
+        "bytes": 130514,
+        "status-poll": 17,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.06,
+            0.11
+          ],
+          "cbh_m": [
+            1.2,
+            4.1,
+            10.0
+          ],
+          "cc_pct": [
+            35.0,
+            45.0,
+            55.0
+          ],
+          "ch_m": [
+            11.0,
+            23.0,
+            39.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 9.44,
+        "canopy_pct_by_fuel_class": {
+          "GR": 3.8,
+          "GS": 14.6,
+          "NB": 0.8,
+          "SH": 5.2,
+          "TL": 69.9,
+          "TU": 78.8
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 9.79,
+        "raw_max": {
+          "cbd_kgm3": 0.24,
+          "cbh_m": 10.0,
+          "cc_pct": 65.0,
+          "ch_m": 43.0
+        }
+      }
+    },
+    "malibu_ca_ext": {
+      "bbox_half_m": 24000.0,
+      "bbox_wsen": [
+        -118.980223,
+        33.839405,
+        -118.459777,
+        34.270595
+      ],
+      "cell_m": 240.0,
+      "checked_utc": "2026-10-12T17:57:58Z",
+      "fetch_seconds": 177.6,
+      "fetched_utc": "2026-10-12T16:56:31Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Malibu / Santa Monica Mtns, CA",
+      "requests": {
+        "bytes": 431321,
+        "status-poll": 18,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.06,
+            0.11
+          ],
+          "cbh_m": [
+            1.3,
+            3.6,
+            10.0
+          ],
+          "cc_pct": [
+            25.0,
+            45.0,
+            55.0
+          ],
+          "ch_m": [
+            11.0,
+            23.0,
+            39.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 4.58,
+        "canopy_pct_by_fuel_class": {
+          "GR": 15.7,
+          "GS": 9.5,
+          "NB": 0.3,
+          "SH": 4.4,
+          "TL": 72.7,
+          "TU": 75.2
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 4.81,
+        "raw_max": {
+          "cbd_kgm3": 0.24,
+          "cbh_m": 10.0,
+          "cc_pct": 65.0,
+          "ch_m": 43.0
+        }
+      }
+    },
+    "paradise_ca": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -121.705194,
+        39.694152,
+        -121.494806,
+        39.855848
+      ],
+      "cell_m": 90.0,
+      "checked_utc": "2026-10-12T17:57:50Z",
+      "fetch_seconds": 157.7,
+      "fetched_utc": "2026-10-12T16:02:14Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Paradise / Magalia, CA",
+      "requests": {
+        "bytes": 396983,
+        "status-poll": 16,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.03,
+            0.06,
+            0.12
+          ],
+          "cbh_m": [
+            0.4,
+            2.4,
+            9.0
+          ],
+          "cc_pct": [
+            15.0,
+            45.0,
+            65.0
+          ],
+          "ch_m": [
+            11.0,
+            23.0,
+            31.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 65.08,
+        "canopy_pct_by_fuel_class": {
+          "GR": 51.4,
+          "GS": 73.1,
+          "NB": 15.6,
+          "SH": 24.7,
+          "TL": 91.4,
+          "TU": 94.9
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 66.86,
+        "raw_max": {
+          "cbd_kgm3": 0.24,
+          "cbh_m": 10.0,
+          "cc_pct": 75.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "paradise_ca_ext": {
+      "bbox_half_m": 24000.0,
+      "bbox_wsen": [
+        -121.880517,
+        39.559405,
+        -121.319483,
+        39.990595
+      ],
+      "cell_m": 240.0,
+      "checked_utc": "2026-10-12T17:57:58Z",
+      "fetch_seconds": 177.6,
+      "fetched_utc": "2026-10-12T16:56:31Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Paradise / Magalia, CA",
+      "requests": {
+        "bytes": 2052286,
+        "status-poll": 18,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.06,
+            0.16
+          ],
+          "cbh_m": [
+            0.4,
+            2.1,
+            10.0
+          ],
+          "cc_pct": [
+            25.0,
+            45.0,
+            65.0
+          ],
+          "ch_m": [
+            11.0,
+            23.0,
+            31.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 57.0,
+        "canopy_pct_by_fuel_class": {
+          "GR": 36.7,
+          "GS": 64.5,
+          "NB": 9.4,
+          "SH": 48.0,
+          "TL": 77.6,
+          "TU": 84.6
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 58.09,
+        "raw_max": {
+          "cbd_kgm3": 0.24,
+          "cbh_m": 10.0,
+          "cc_pct": 75.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "park_city_ut": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -111.656673,
+        40.639152,
+        -111.443327,
+        40.800848
+      ],
+      "cell_m": 90.0,
+      "checked_utc": "2026-10-12T17:57:50Z",
+      "fetched_utc": "2026-10-12T15:55:25Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Park City / Summit Park, UT",
+      "requests": {
+        "bytes": 321016,
+        "status-poll": 30,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.01,
+            0.16
+          ],
+          "cbh_m": [
+            0.3,
+            10.0,
+            10.0
+          ],
+          "cc_pct": [
+            25.0,
+            45.0,
+            65.0
+          ],
+          "ch_m": [
+            11.0,
+            15.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 47.93,
+        "canopy_pct_by_fuel_class": {
+          "GR": 7.9,
+          "GS": 22.8,
+          "NB": 4.1,
+          "SH": 57.5,
+          "TL": 91.3,
+          "TU": 98.3
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 48.39,
+        "raw_max": {
+          "cbd_kgm3": 0.38,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "park_city_ut_ext": {
+      "bbox_half_m": 24000.0,
+      "bbox_wsen": [
+        -111.834461,
+        40.504405,
+        -111.265539,
+        40.935595
+      ],
+      "cell_m": 240.0,
+      "checked_utc": "2026-10-12T17:57:58Z",
+      "fetch_seconds": 345.0,
+      "fetched_utc": "2026-10-12T16:56:31Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Park City / Summit Park, UT",
+      "requests": {
+        "bytes": 1774659,
+        "status-poll": 34,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.01,
+            0.16
+          ],
+          "cbh_m": [
+            0.3,
+            10.0,
+            10.0
+          ],
+          "cc_pct": [
+            15.0,
+            45.0,
+            65.0
+          ],
+          "ch_m": [
+            7.0,
+            15.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 43.69,
+        "canopy_pct_by_fuel_class": {
+          "GR": 9.5,
+          "GS": 26.2,
+          "NB": 3.4,
+          "SH": 48.5,
+          "TL": 90.8,
+          "TU": 97.5
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 44.04,
+        "raw_max": {
+          "cbd_kgm3": 0.35,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "rancho_santa_fe_ca": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -117.296422,
+        32.939152,
+        -117.103578,
+        33.100848
+      ],
+      "cell_m": 90.0,
+      "checked_utc": "2026-10-12T17:57:50Z",
+      "fetch_seconds": 209.8,
+      "fetched_utc": "2026-10-12T16:02:14Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Rancho Santa Fe / Covenant, CA",
+      "requests": {
+        "bytes": 107764,
+        "status-poll": 21,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.06,
+            0.09
+          ],
+          "cbh_m": [
+            0.6,
+            2.0,
+            10.0
+          ],
+          "cc_pct": [
+            35.0,
+            45.0,
+            45.0
+          ],
+          "ch_m": [
+            11.0,
+            27.0,
+            39.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 4.62,
+        "canopy_pct_by_fuel_class": {
+          "GR": 2.3,
+          "GS": 6.8,
+          "NB": 1.1,
+          "SH": 3.0,
+          "TL": 68.7,
+          "TU": 63.4
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 5.24,
+        "raw_max": {
+          "cbd_kgm3": 0.24,
+          "cbh_m": 10.0,
+          "cc_pct": 65.0,
+          "ch_m": 43.0
+        }
+      }
+    },
+    "santa_rosa_ca": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -122.753306,
+        38.419152,
+        -122.546694,
+        38.580848
+      ],
+      "cell_m": 90.0,
+      "checked_utc": "2026-10-12T17:57:50Z",
+      "fetch_seconds": 167.3,
+      "fetched_utc": "2026-10-12T16:02:14Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Santa Rosa NE / Mark West, CA",
+      "requests": {
+        "bytes": 307513,
+        "status-poll": 17,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.03,
+            0.08,
+            0.16
+          ],
+          "cbh_m": [
+            0.8,
+            4.3,
+            10.0
+          ],
+          "cc_pct": [
+            35.0,
+            45.0,
+            65.0
+          ],
+          "ch_m": [
+            15.0,
+            23.0,
+            31.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 44.19,
+        "canopy_pct_by_fuel_class": {
+          "GR": 17.1,
+          "GS": 59.1,
+          "NB": 3.3,
+          "SB": 100.0,
+          "SH": 32.0,
+          "TL": 84.0,
+          "TU": 78.7
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 45.1,
+        "raw_max": {
+          "cbd_kgm3": 0.34,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 43.0
+        }
+      }
+    },
+    "santa_rosa_ca_ext": {
+      "bbox_half_m": 24000.0,
+      "bbox_wsen": [
+        -122.925482,
+        38.284405,
+        -122.374518,
+        38.715595
+      ],
+      "cell_m": 240.0,
+      "checked_utc": "2026-10-12T17:57:58Z",
+      "fetch_seconds": 157.0,
+      "fetched_utc": "2026-10-12T16:56:31Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Santa Rosa NE / Mark West, CA",
+      "requests": {
+        "bytes": 1648030,
+        "status-poll": 16,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.08,
+            0.16
+          ],
+          "cbh_m": [
+            0.6,
+            2.8,
+            10.0
+          ],
+          "cc_pct": [
+            35.0,
+            45.0,
+            65.0
+          ],
+          "ch_m": [
+            15.0,
+            23.0,
+            31.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 38.01,
+        "canopy_pct_by_fuel_class": {
+          "GR": 13.3,
+          "GS": 48.5,
+          "NB": 5.9,
+          "SB": 93.5,
+          "SH": 32.0,
+          "TL": 82.4,
+          "TU": 86.3
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 39.56,
+        "raw_max": {
+          "cbd_kgm3": 0.45,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 43.0
+        }
+      }
+    },
+    "vail_co": {
+      "bbox_half_m": 9000.0,
+      "bbox_wsen": [
+        -106.464981,
+        39.554152,
+        -106.255019,
+        39.715848
+      ],
+      "cell_m": 90.0,
+      "checked_utc": "2026-10-12T17:57:50Z",
+      "fetch_seconds": 448.3,
+      "fetched_utc": "2026-10-12T16:02:14Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Vail / East Vail / Minturn, CO",
+      "requests": {
+        "bytes": 457139,
+        "status-poll": 44,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.08,
+            0.16
+          ],
+          "cbh_m": [
+            0.5,
+            0.7,
+            10.0
+          ],
+          "cc_pct": [
+            25.0,
+            55.0,
+            65.0
+          ],
+          "ch_m": [
+            11.0,
+            15.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 74.76,
+        "canopy_pct_by_fuel_class": {
+          "GR": 15.1,
+          "GS": 43.7,
+          "NB": 0.0,
+          "SH": 1.2,
+          "TL": 78.1,
+          "TU": 99.9
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 74.76,
+        "raw_max": {
+          "cbd_kgm3": 0.27,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    },
+    "vail_co_ext": {
+      "bbox_half_m": 24000.0,
+      "bbox_wsen": [
+        -106.639948,
+        39.419405,
+        -106.080052,
+        39.850595
+      ],
+      "cell_m": 240.0,
+      "checked_utc": "2026-10-12T17:57:58Z",
+      "fetch_seconds": 389.1,
+      "fetched_utc": "2026-10-12T16:56:31Z",
+      "layers": "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+      "name": "Vail / East Vail / Minturn, CO",
+      "requests": {
+        "bytes": 2543264,
+        "status-poll": 38,
+        "submit": 1,
+        "zip-download": 1
+      },
+      "status": "cached",
+      "summary": {
+        "burnable_canopy_p10_p50_p90": {
+          "cbd_kgm3": [
+            0.01,
+            0.09,
+            0.16
+          ],
+          "cbh_m": [
+            0.4,
+            0.7,
+            10.0
+          ],
+          "cc_pct": [
+            25.0,
+            55.0,
+            65.0
+          ],
+          "ch_m": [
+            11.0,
+            15.0,
+            19.0
+          ]
+        },
+        "burnable_with_canopy_pct_of_tile": 68.62,
+        "canopy_pct_by_fuel_class": {
+          "GR": 4.5,
+          "GS": 62.5,
+          "NB": 0.0,
+          "SH": 0.2,
+          "TL": 78.2,
+          "TU": 99.9
+        },
+        "canopy_source": "lfps:LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH",
+        "forest_canopy_pct_of_tile": 68.62,
+        "raw_max": {
+          "cbd_kgm3": 0.34,
+          "cbh_m": 10.0,
+          "cc_pct": 85.0,
+          "ch_m": 39.0
+        }
+      }
+    }
+  },
+  "units": "cbh_m / ch_m metres, cbd_kgm3 kg/m^3, cc_pct percent (LANDFIRE raw: CBH, CH m x 10; CBD kg/m^3 x 100; CC %)"
+}

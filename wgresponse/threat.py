@@ -1478,7 +1478,8 @@ class ThreatMonitor:
             # FUEL-TIERED EROSION: built here because this is where the fuel
             # tile lives; dispatch consumes it via the eroded_rasters seam.
             eroded_map[inc.incident_id] = spread.tiered_eroded_p10(
-                ens.p10, tile.fuel, self._cfg)
+                ens.p10, tile.fuel, self._cfg,
+                canopy=getattr(tile, "canopy", None))
         ens.incident_id = inc.incident_id
         ensembles[inc.incident_id] = ens
         for client in near:

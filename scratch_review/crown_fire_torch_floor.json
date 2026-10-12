@@ -1,0 +1,234 @@
+[
+ {
+  "scenario": "park_city_windstorm",
+  "torch_min_fire_ha": 0.0,
+  "acres": {
+   "1h": 50,
+   "3h": 735,
+   "6h": 6825
+  },
+  "head_km_6h": 12.37,
+  "fastest_1h_head_gain_kmh": 5.39,
+  "spotting": {
+   "spot_ignitions_6h": 614,
+   "thrown_by_one_cell_fire": 7,
+   "longest_spot_m": 2338,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 124.3,
+    "fire_ha": 31.6
+   },
+   "first_spot_over_1km": {
+    "age_min": 152.7,
+    "fire_ha": 96.4
+   },
+   "first_spot_over_2km": {
+    "age_min": 182.4,
+    "fire_ha": 327.2
+   }
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "torch_min_fire_ha": 2.0,
+  "acres": {
+   "1h": 50,
+   "3h": 735,
+   "6h": 6821
+  },
+  "head_km_6h": 12.37,
+  "fastest_1h_head_gain_kmh": 5.39,
+  "spotting": {
+   "spot_ignitions_6h": 608,
+   "thrown_by_one_cell_fire": 1,
+   "longest_spot_m": 2338,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 124.3,
+    "fire_ha": 31.6
+   },
+   "first_spot_over_1km": {
+    "age_min": 152.7,
+    "fire_ha": 94.0
+   },
+   "first_spot_over_2km": {
+    "age_min": 182.4,
+    "fire_ha": 327.2
+   }
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "torch_min_fire_ha": 10.0,
+  "acres": {
+   "1h": 50,
+   "3h": 735,
+   "6h": 6821
+  },
+  "head_km_6h": 12.37,
+  "fastest_1h_head_gain_kmh": 5.39,
+  "spotting": {
+   "spot_ignitions_6h": 605,
+   "thrown_by_one_cell_fire": 1,
+   "longest_spot_m": 2338,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 124.3,
+    "fire_ha": 31.6
+   },
+   "first_spot_over_1km": {
+    "age_min": 152.7,
+    "fire_ha": 94.0
+   },
+   "first_spot_over_2km": {
+    "age_min": 182.4,
+    "fire_ha": 327.2
+   }
+  }
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "torch_min_fire_ha": null,
+  "acres": {
+   "1h": 50,
+   "3h": 735,
+   "6h": 6821
+  },
+  "head_km_6h": 12.37,
+  "fastest_1h_head_gain_kmh": 5.39,
+  "spotting": {
+   "spot_ignitions_6h": 605,
+   "thrown_by_one_cell_fire": 1,
+   "longest_spot_m": 2338,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 124.3,
+    "fire_ha": 31.6
+   },
+   "first_spot_over_1km": {
+    "age_min": 152.7,
+    "fire_ha": 94.0
+   },
+   "first_spot_over_2km": {
+    "age_min": 182.4,
+    "fire_ha": 327.2
+   }
+  }
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "torch_min_fire_ha": 0.0,
+  "acres": {
+   "1h": 424,
+   "3h": 1829,
+   "6h": 5074
+  },
+  "head_km_6h": 10.99,
+  "fastest_1h_head_gain_kmh": 3.97,
+  "spotting": {
+   "spot_ignitions_6h": 404,
+   "thrown_by_one_cell_fire": 9,
+   "longest_spot_m": 3312,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 15.7,
+    "fire_ha": 23.5
+   },
+   "first_spot_over_1km": {
+    "age_min": 80.9,
+    "fire_ha": 251.1
+   },
+   "first_spot_over_2km": {
+    "age_min": 97.4,
+    "fire_ha": 351.5
+   }
+  }
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "torch_min_fire_ha": 2.0,
+  "acres": {
+   "1h": 424,
+   "3h": 1829,
+   "6h": 5068
+  },
+  "head_km_6h": 10.99,
+  "fastest_1h_head_gain_kmh": 3.97,
+  "spotting": {
+   "spot_ignitions_6h": 396,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 3312,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 15.7,
+    "fire_ha": 23.5
+   },
+   "first_spot_over_1km": {
+    "age_min": 80.9,
+    "fire_ha": 251.1
+   },
+   "first_spot_over_2km": {
+    "age_min": 97.4,
+    "fire_ha": 351.5
+   }
+  }
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "torch_min_fire_ha": 10.0,
+  "acres": {
+   "1h": 424,
+   "3h": 1829,
+   "6h": 5068
+  },
+  "head_km_6h": 10.99,
+  "fastest_1h_head_gain_kmh": 3.97,
+  "spotting": {
+   "spot_ignitions_6h": 396,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 3312,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 15.7,
+    "fire_ha": 23.5
+   },
+   "first_spot_over_1km": {
+    "age_min": 80.9,
+    "fire_ha": 251.1
+   },
+   "first_spot_over_2km": {
+    "age_min": 97.4,
+    "fire_ha": 351.5
+   }
+  }
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "torch_min_fire_ha": null,
+  "acres": {
+   "1h": 424,
+   "3h": 1829,
+   "6h": 5072
+  },
+  "head_km_6h": 10.99,
+  "fastest_1h_head_gain_kmh": 3.97,
+  "spotting": {
+   "spot_ignitions_6h": 396,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 3312,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 15.7,
+    "fire_ha": 23.5
+   },
+   "first_spot_over_1km": {
+    "age_min": 80.9,
+    "fire_ha": 251.1
+   },
+   "first_spot_over_2km": {
+    "age_min": 97.4,
+    "fire_ha": 351.5
+   }
+  }
+ }
+]

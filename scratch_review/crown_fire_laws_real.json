@@ -1,0 +1,42 @@
+[
+ {
+  "scenario": "park_city_windstorm",
+  "memo_equals_reference": true,
+  "noop_reanchor": [
+   {
+    "t_h": 1,
+    "cells_differing": 0,
+    "kept": 25
+   },
+   {
+    "t_h": 2,
+    "cells_differing": 0,
+    "kept": 37
+   },
+   {
+    "t_h": 3,
+    "cells_differing": 0,
+    "kept": 367
+   }
+  ],
+  "memo_equals_reference_any_angle": true,
+  "noop_reanchor_any_angle": [
+   {
+    "t_h": 1,
+    "cells_differing": 0,
+    "kept": 25
+   },
+   {
+    "t_h": 2,
+    "cells_differing": 0,
+    "kept": 37
+   },
+   {
+    "t_h": 3,
+    "cells_differing": 0,
+    "kept": 391
+   }
+  ],
+  "knob_off_canopy_inert": true
+ }
+]

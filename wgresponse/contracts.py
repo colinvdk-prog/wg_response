@@ -878,6 +878,85 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    Knob OFF = byte-identical arrival rasters (pinned in
    tests/test_spread_any_angle.py against tests/test_spread.py's legacy
    fingerprints, with the new arguments passed).
+22. A FOREST FIRE MAY CROWN (founder 2026-10-12, option 3 of the Park City
+   speed review: "build a crown-fire model"; docs/review/crown_fire_model_
+   2026-10-12.md; scratch_review/crown_fire_*.py; cfg.crown_fire, default
+   OFF, NOT armed by the simulator or the live watcher — the founder
+   decides). The engine modelled surface fire only: with the fuel-class
+   floor on grass alone a timber ignition crawled at its litter's rate
+   (Park City one-click: 50 acres in 6 h), while wind-driven conifer fires
+   run as crown fires at roughly 10 % of the 10-m wind (Cruz & Alexander
+   2019). With the knob on, on a tile carrying LANDFIRE canopy layers
+   (TerrainTile.canopy; LF2024 CBH / CBD / CC / CH):
+   (a) CROWN FUEL. A burnable cell holds crown fuel when CBD >= 0.02 kg/m^3
+       (rothermel.CROWN_MIN_CBD_KGM3 — LANDFIRE codes broadleaf stands CBH
+       10 m / CBD 0.01 "to prevent false simulation of crown fire") and
+       CH > CBH. Only such cells change.
+   (b) INITIATION AND TYPE (rothermel.crown_fire). The cell's surface fire
+       (Rothermel after the fuel-class floor) crowns when its Byram
+       intensity reaches Van Wagner's (1977) I_o = (0.010 CBH (460 + 25.9
+       FMC))^1.5 kW/m; ACTIVE when the Cruz, Alexander & Wakimoto (2005)
+       crown rate CROS_A = 11.02 U10^0.90 CBD^0.19 exp(-0.17 EFFM) m/min
+       reaches Van Wagner's 3.0 / CBD m/min (CAC >= 1), else PASSIVE at
+       CROS_A exp(-CAC). U10 the cell's 10-m wind (km/h, after gust blend
+       and ensemble scaling), EFFM the fine dead fuel moisture as Cruz et
+       al. define it (Rothermel 1983 tables: the engine's dead fuel
+       moisture, +3 points under a canopy cover >= 50 %), FMC
+       cfg.crown_foliar_moisture_pct (100 %) or, with
+       cfg.crown_foliar_moisture_seasonal, the FBP System's seasonal model
+       per cell (latitude, longitude, elevation) and UTC day.
+   (c) THE CELL'S FIRE. Head ROS = max(surface, crown rate); Byram
+       intensity = ROS (HPA + CFB CBD (CH - CBH) 18,608 kJ/kg) with CFB 1
+       (active) or Van Wagner's (1993) passive crown fraction burned with
+       FARSITE's coefficient; where the crown leads, the ellipse is
+       Rothermel's (1991) crown ratio 1 + 0.125 U20 (mi/h) when broader.
+       Then ros_scale / hour_ros_scale (ensemble, belief) and the spot
+       tuple apply as to any cell: an ember flies on the crown intensity
+       (SEMANTICS 11), and under SEMANTICS 19 a crowning cell's reach is at
+       least the distance one torching tree of the stand height lofts a
+       brand (rothermel.torching_spot_max_m, Albini 1979 as BehavePlus
+       codes it) once its fire covers spread._TORCH_MIN_FIRE_HA — a lone
+       spot fire relays no torching ember.
+   (d) LAWS KEPT. Deterministic, never wall-clock (no new draw; seasonal FMC
+       reads the forecast hour's date); the ROS memo exact (the canopy
+       values and FMC ride in the crown memo key: memo = WGRESP_NO_ROS_MEMO=1
+       reference with the knob on, zones / piecewise / any-angle / hour
+       scale included); label-setting; RE-ANCHOR HISTORY continuous (a
+       no-op re-anchor is the continuous run cell for cell, spotting and
+       any-angle included). Under constant weather and with spotting off no
+       cell burns later than without the knob; with spotting on, single
+       cells can (each ember's draw re-scales with the crown intensity —
+       as with any change that moves embers) while the burned area grows.
+       Crew safety keys off P10 and arrivals move EARLIER: a crowning cell
+       only spreads faster.
+   (e) CREW-SAFETY CORRIDOR. With the knob on, spread.tiered_eroded_p10
+       (cfg.corridor_erosion_tiered) puts every crown-fuel cell in the FAST
+       tier (550 m) whatever its fuel class: a crowning timber cell spreads
+       at grass-like rates with long flames and torching embers, so the
+       slow tier's premise no longer holds. Only ever widens the halo.
+   (f) WHAT IT CANNOT DO. No slope term in the crown rate (Cruz's model is
+       for level terrain; the surface fire keeps its slope); no plume-
+       dominated fires or long-range plume spotting; the surface fire under
+       the canopy keeps the engine's unsheltered wind (FlamMap shelters it,
+       which with Rothermel's 1991 crown model is the US systems' known
+       under-prediction); LANDFIRE's canopy fuels were built for those US
+       systems; the 10-m wind is the forecast's, not the in-stand wind.
+       Measured (the review): uniform conifer tiles reproduce the Cruz rate
+       exactly and run at 8-15 % of the 10-m wind at 18-40 mi/h where the
+       canopy shades the litter (the 10 %-of-wind rule +-50 %); the Cruz
+       model runs 1.3-5.5 times faster (geometric mean 3.3x) than the
+       AVERAGES of the eight northern-Rockies runs Rothermel (1991) fitted
+       his model to, 1.7x their observed maxima. With the grass-only floor
+       and the calibrated embers the crowning one-click demos' fastest hours
+       run at 9-21 % of the wind (7-16 % with spot_ignition_delay_min 10),
+       crew audit 0 / 0; on the 11 real fires of the belief-vs-physics
+       hindcast, grass-only floor + crown matches the deployed timber floor's
+       pooled area ratio and P10 adequacy (3.50x vs 3.55x; 99.78 % both) with
+       a worse P10 tail (worst step 82 % vs 94 %).
+   Knob OFF = byte-identical arrival rasters, ON byte-identical on a tile
+   without canopy or without crown fuel (pinned in tests/test_crown_fire.py
+   against tests/test_spread.py's legacy fingerprints with a canopy
+   attached, and against the surface solve under every physics knob).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -909,6 +988,18 @@ wgresponse.rothermel
     ellipse_lb(effective_wind_mps: float) -> float                   # Anderson 1983, capped 8
     directional_ros_mps(head_ros_mps: float, lb: float, theta_deg: float) -> float
         # theta = angle between max-spread direction and the direction of interest
+    # SAFETY SEMANTICS 22 (2026-10-12), crown fire, all pure SI:
+    crown_fire(surface_ros_mps, surface_intensity_kwm, hpa_kjm2, wind10_mps,
+               effm_pct, cbh_m, cbd_kgm3, ch_m, fmc_pct) -> (ros_mps, intensity_kwm, cfb, kind)
+        # kind CROWN_NONE / CROWN_PASSIVE / CROWN_ACTIVE; never lowers ROS or intensity
+    crown_initiation_kwm(cbh_m, fmc_pct) -> float                    # Van Wagner 1977
+    crown_active_threshold_mps(cbd_kgm3) -> float                    # 3.0 / CBD m/min
+    cruz_active_crown_ros_mps(wind10_mps, cbd_kgm3, effm_pct) -> float  # Cruz et al. 2005
+    crown_fraction_burned(ros_s, ros_init, ros_active) -> float      # Van Wagner 1993 / FARSITE
+    crown_effm_pct(m_dead_frac, cc_pct) -> float                     # Rothermel 1983 shading
+    crown_lb(wind10_mps) -> float                                    # Rothermel 1991, capped 8
+    foliar_moisture_fbp_pct(lat, lon, elev_m, day_of_year) -> float  # FBP ST-X-3
+    torching_spot_max_m(tree_height_m, u20_mps, cover_height_m) -> float  # Albini 1979
 
 wgresponse.spread
     compute_arrival(tile: TerrainTile, ignition: list[LatLon], wx: WeatherForecast,
@@ -944,6 +1035,10 @@ wgresponse.spread
         # receiving {cell: anchor}) — also on ensemble_arrival (anchor_log
         # nominal only); default None = byte-identical, inert with the
         # knob off.
+        # SAFETY SEMANTICS 22 (2026-10-12): cfg.crown_fire lets crown-fuel
+        # cells of a canopy-carrying tile torch or crown; optional
+        # crown_trace (a dict; default None = nothing recorded) receives
+        # {cell: rothermel.CROWN_* kind} for every crown-fuel cell settled.
     spot_reach_m(intensity_kwm, u20_mps, fire_ha, cfg) -> float
         # SEMANTICS 19 reach (m): Albini's surface-fire maximum spotting
         # distance x (fire_ha / cfg.spot_fire_size_ref_ha) ** cfg.spot_fire_size_exp
@@ -987,6 +1082,12 @@ wgresponse.weather
 wgresponse.terrain
     class LfpsTerrain / SyntheticTerrain                (TerrainProvider protocol)
     load_ascii_tile(path) / save_ascii_tile(tile, path)  # dependency-free cache format
+    # SAFETY SEMANTICS 22 (2026-10-12): TerrainTile.canopy (CanopyLayers) —
+    # LfpsTerrain(canopy_layer_list=LfpsTerrain.DEFAULT_CANOPY_LAYERS) also
+    # fetches the LANDFIRE canopy (.canopy(bbox, cell_m), its own cache);
+    # the ascii format carries four optional canopy bands (a file without
+    # them loads with canopy=None); attach_canopy(tile, canopy) and
+    # save_ascii_canopy / load_ascii_canopy (the canopy cache file).
 
 wgresponse.clients
     class DynamoClientRegistry / MockClientRegistry     (ClientRegistry protocol)
@@ -1771,14 +1872,35 @@ class FuelModel:
 
 
 @dataclass
+class CanopyLayers:
+    """LANDFIRE forest canopy layers on a TerrainTile's grid (SAFETY SEMANTICS
+    22, the crown-fire model). PHYSICAL units at the seam (terrain.py converts
+    LANDFIRE's integer encodings: CBH and CH metres x 10, CBD kg/m^3 x 100, CC
+    percent). A cell with no forest canopy (LANDFIRE non-forest, nodata) holds
+    0.0 in every layer; spread.py lets a cell crown only where cbd_kgm3 > 0
+    and ch_m > cbh_m."""
+    cbh_m: Raster                      # canopy base height, m
+    cbd_kgm3: Raster                   # canopy bulk density, kg/m^3
+    cc_pct: Raster                     # canopy cover, percent 0-100
+    ch_m: Raster                       # canopy (stand) height, m
+    source: str = ""                   # provenance, e.g. "lfps:LF2024_CBH;..."
+
+
+@dataclass
 class TerrainTile:
-    """Aligned rasters on one GridSpec. fuel holds FBFM40 integer codes as floats."""
+    """Aligned rasters on one GridSpec. fuel holds FBFM40 integer codes as floats.
+
+    canopy (SAFETY SEMANTICS 22, 2026-10-12): the optional LANDFIRE canopy
+    layers on the same grid. None (every tile built before the crown-fire
+    model, and every tile whose provider fetched no canopy) = no crown fire
+    anywhere: the spread is exactly the surface model, whatever the config."""
     spec: GridSpec
     fuel: Raster
     slope_deg: Raster
     aspect_deg: Raster                 # downslope-facing compass direction
     elev_m: Raster
     source: str = "synthetic"
+    canopy: Optional[CanopyLayers] = None
 
 
 class TerrainProvider(Protocol):
@@ -2566,6 +2688,38 @@ class ResponseConfig:
     # Default OFF = byte-identical; the simulator A/B and the hindcast decide
     # the flips (watch --any-angle arms it live).
     spread_any_angle: bool = False
+    # CROWN FIRE (founder 2026-10-12, option 3 of the Park City speed review:
+    # "build a crown-fire model"; SAFETY SEMANTICS 22; docs/review/crown_
+    # fire_model_2026-10-12.md). The engine models surface fire only, so a
+    # timber fire crawls at its litter's rate (Park City with the floor on
+    # grass only: 50 acres in 6 h) while real wind-driven conifer fires run
+    # as crown fires at ~10 % of the 10-m wind. When True, on a tile that
+    # carries LANDFIRE canopy layers (TerrainTile.canopy), each forest cell's
+    # surface fire may CROWN: Van Wagner (1977) initiation (the cell's Byram
+    # intensity >= (0.010 CBH (460 + 25.9 FMC))^1.5 kW/m), active vs passive
+    # by his critical spread rate 3.0 / CBD m/min, the crown rate of spread
+    # of Cruz, Alexander & Wakimoto (2005) (active 11.02 U10^0.90 CBD^0.19
+    # exp(-0.17 EFFM) m/min, passive x exp(-CAC)), the crown fire's Byram
+    # intensity (canopy fuel CBD x (CH - CBH) at the crown fraction burned)
+    # and Rothermel's (1991) crown-fire ellipse; a crowning cell's ember flies
+    # on the crown intensity and, under SEMANTICS 19, at least as far as a
+    # torching tree lofts one (Albini 1979). It only ever RAISES a cell's
+    # spread. A tile without canopy layers spreads exactly as with the knob
+    # off. Default OFF = byte-identical; NOT armed by the simulator or the
+    # live watcher (the founder decides; watch --crown-fire arms it live).
+    crown_fire: bool = False
+    # ... the foliar moisture content (%) of the live canopy, the FMC of Van
+    # Wagner's initiation threshold: 100 % is the US systems' default (Scott
+    # & Reinhardt 2001; FlamMap / FARSITE). Within [50, 300]. Read only with
+    # crown_fire.
+    crown_foliar_moisture_pct: float = 100.0
+    # ... True = the FMC follows the season instead: the Canadian FBP
+    # System's foliar moisture model (Forestry Canada Fire Danger Group 1992,
+    # ST-X-3 eqs. 1-8) from each cell's latitude, longitude and elevation and
+    # the day of year of the weather hour — the spring dip to 85 % around
+    # the date of minimum FMC, 120 % from 50 days after it. Read only with
+    # crown_fire.
+    crown_foliar_moisture_seasonal: bool = False
     # LOCAL WEATHER ACROSS THE DOMAIN (founder 2026-09-27: "ensure that fire
     # spread includes local weather forecast"; SAFETY SEMANTICS 17;
     # wgresponse.wxfield). Legacy: ONE forecast at the fire centroid prices
@@ -3078,6 +3232,11 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
     if not (0.0 <= cfg.spot_ignition_delay_min <= 120.0):
         problems.append("spot_ignition_delay_min must be within [0, 120] "
                         "minutes")
+    # --- crown fire (SAFETY SEMANTICS 22) ---
+    if not (math.isfinite(cfg.crown_foliar_moisture_pct)
+            and 50.0 <= cfg.crown_foliar_moisture_pct <= 300.0):
+        problems.append("crown_foliar_moisture_pct must be within [50, 300] "
+                        "percent (live conifer foliage)")
     # --- local weather across the domain (SAFETY SEMANTICS 17) ---
     if not (cfg.weather_grid_km == 0.0
             or (math.isfinite(cfg.weather_grid_km)

@@ -437,23 +437,43 @@ class TestTerrainOverlay:
         if path and os.path.exists(path):
             try:
                 from wgresponse.terrain import load_ascii_tile
-                return load_ascii_tile(path)
+                return self._with_canopy(load_ascii_tile(path), bbox, cell_m)
             except Exception as exc:
                 log.warning("test world: live cached tile %s unreadable (%s)"
                             " — fetching in the test namespace", path, exc)
         return self._own.tile(bbox, cell_m)
 
+    def _with_canopy(self, tile, bbox, cell_m: float):
+        """CROWN FIRE (SAFETY SEMANTICS 22): when the live provider fetches
+        canopy layers, a tile read from the live cache carries them too —
+        the live canopy cache read-only, else the test namespace's own
+        fetch. A live provider without canopy layers: the tile as read."""
+        if not getattr(self._live, "canopy_layer_list", None):
+            return tile
+        from wgresponse.terrain import attach_canopy, load_ascii_canopy
+        cpath = self._live.canopy_cache_path(bbox, cell_m)
+        if cpath and os.path.exists(cpath):
+            try:
+                return attach_canopy(tile, load_ascii_canopy(cpath)[1])
+            except Exception as exc:
+                log.warning("test world: live cached canopy %s unreadable "
+                            "(%s) — fetching in the test namespace", cpath,
+                            exc)
+        return attach_canopy(tile, self._own.canopy(bbox, cell_m))
+
 
 def test_terrain_for(live, test_dir, email=None, s3_uri=None):
     """The test world's terrain provider for the daemon's live provider: a
     live LfpsTerrain gets a TestTerrainOverlay whose own LfpsTerrain caches
-    in <test_dir>/terrain_cache (+ the test S3 prefix); a stateless provider
-    (SyntheticTerrain, a stub) is shared as is — it writes nothing."""
+    in <test_dir>/terrain_cache (+ the test S3 prefix) and fetches the same
+    canopy layers as the live one (SAFETY SEMANTICS 22); a stateless
+    provider (SyntheticTerrain, a stub) is shared as is — it writes
+    nothing."""
     from wgresponse import terrain as terrain_mod
     if isinstance(live, terrain_mod.LfpsTerrain):
         own = terrain_mod.LfpsTerrain(
             cache_dir=str(Path(test_dir) / "terrain_cache"), email=email,
-            s3_uri=s3_uri)
+            s3_uri=s3_uri, canopy_layer_list=live.canopy_layer_list)
         return TestTerrainOverlay(live, own)
     return live
 

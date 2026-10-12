@@ -1,0 +1,80 @@
+{
+ "park_city_windstorm": {
+  "min": 13.8,
+  "mean": 20.2,
+  "max": 21.3,
+  "n": 7
+ },
+ "vail_westerly": {
+  "min": 17.4,
+  "mean": 21.3,
+  "max": 21.9,
+  "n": 7
+ },
+ "beaver_creek_westerly": {
+  "min": 17.4,
+  "mean": 21.3,
+  "max": 21.9,
+  "n": 7
+ },
+ "glenwood_springs_westerly": {
+  "min": 15.4,
+  "mean": 19.0,
+  "max": 19.6,
+  "n": 7
+ },
+ "basalt_carbondale_southwesterly": {
+  "min": 11.9,
+  "mean": 13.5,
+  "max": 13.8,
+  "n": 7
+ },
+ "aspen_southwesterly": {
+  "min": 11.9,
+  "mean": 13.5,
+  "max": 13.8,
+  "n": 7
+ },
+ "eagle_vail_corridor_westerly": {
+  "min": 17.4,
+  "mean": 21.3,
+  "max": 21.9,
+  "n": 7
+ },
+ "eagle_gypsum_westerly": {
+  "min": 17.4,
+  "mean": 21.3,
+  "max": 21.9,
+  "n": 7
+ },
+ "boulder_chinook": {
+  "min": 12.8,
+  "mean": 29.2,
+  "max": 31.9,
+  "n": 7
+ },
+ "rancho_santa_fe_santa_ana": {
+  "min": 13.7,
+  "mean": 13.7,
+  "max": 13.7,
+  "n": 7
+ },
+ "malibu_santa_ana": {
+  "min": 29.4,
+  "mean": 29.4,
+  "max": 29.4,
+  "n": 7
+ },
+ "paradise_ne_wind": {
+  "min": 24.4,
+  "mean": 24.4,
+  "max": 24.4,
+  "n": 7
+ },
+ "santa_rosa_diablo": {
+  "min": 23.2,
+  "mean": 25.4,
+  "max": 26.0,
+  "n": 7
+ }
+}

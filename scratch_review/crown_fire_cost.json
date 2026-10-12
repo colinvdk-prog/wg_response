@@ -1,0 +1,44 @@
+[
+ {
+  "case": "park_city_windstorm",
+  "crown_fire": false,
+  "cells": 40000,
+  "horizon_h": 96.0,
+  "nominal_s": 0.632
+ },
+ {
+  "case": "park_city_windstorm",
+  "crown_fire": true,
+  "cells": 40000,
+  "horizon_h": 96.0,
+  "nominal_s": 0.835
+ },
+ {
+  "case": "paradise_ne_wind",
+  "crown_fire": false,
+  "cells": 40000,
+  "horizon_h": 96.0,
+  "nominal_s": 0.794
+ },
+ {
+  "case": "paradise_ne_wind",
+  "crown_fire": true,
+  "cells": 40000,
+  "horizon_h": 96.0,
+  "nominal_s": 1.118
+ },
+ {
+  "case": "littlegiant step 25",
+  "arm": "grassonly",
+  "cells": 300792,
+  "horizon_h": 96.0,
+  "nominal_s": 1.332
+ },
+ {
+  "case": "littlegiant step 25",
+  "arm": "crown",
+  "cells": 300792,
+  "horizon_h": 96.0,
+  "nominal_s": 3.098
+ }
+]

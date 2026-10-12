@@ -27,6 +27,14 @@ paths execute identical float operations — byte-identical by construction
 (pinned by tests/test_rothermel.py wrapper-equivalence sweeps). This module
 holds NO cache of its own: every function here stays pure; callers own their
 memo lifetimes.
+
+CROWN FIRE (contracts SAFETY SEMANTICS 22, 2026-10-12; the section at the end
+of the module): Van Wagner (1977) initiation, the Cruz, Alexander & Wakimoto
+(2005) crown rate of spread with Van Wagner's active criterion, the crown
+fraction burned, Rothermel's (1991) crown-fire ellipse, the FBP System's
+seasonal foliar moisture and Albini's (1979) torching-tree spotting distance
+— pure SI functions; spread.py applies them per forest cell behind
+cfg.crown_fire.
 """
 from __future__ import annotations
 
@@ -458,3 +466,262 @@ def directional_ros_mps(head_ros_mps: float, lb: float, theta_deg: float) -> flo
     ecc = math.sqrt(lb * lb - 1.0) / lb
     r = head_ros_mps * (1.0 - ecc) / (1.0 - ecc * math.cos(math.radians(theta_deg)))
     return max(0.0, r)
+
+
+# ---------------------------------------------------------------------------
+# CROWN FIRE (contracts SAFETY SEMANTICS 22, 2026-10-12; spread.py applies it
+# per forest cell behind cfg.crown_fire; docs/review/crown_fire_model_
+# 2026-10-12.md). Pure SI functions of a cell's surface fire, weather and
+# LANDFIRE canopy (contracts.CanopyLayers), the model ELMFIRE also runs:
+#   INITIATION  Van Wagner (1977): the surface fire's Byram intensity reaches
+#               I_o = (0.010 CBH (460 + 25.9 FMC))^1.5 kW/m (CBH m, FMC %);
+#   ACTIVE?     Van Wagner's critical spread rate for a continuous crown
+#               fire R'_A = S0 / CBD (S0 = 0.05 kg/m^2/s, i.e. 3.0 / CBD
+#               m/min); CAC = CROS_A / R'_A (Cruz et al. 2005);
+#   SPREAD      Cruz, Alexander & Wakimoto (2005): active CROS_A = 11.02
+#               U10^0.90 CBD^0.19 exp(-0.17 EFFM) m/min (U10 the 10-m open
+#               wind, km/h; EFFM the fine dead fuel moisture, %); passive
+#               CROS_A exp(-CAC). Tested on 57 independent wildfire runs
+#               (Alexander & Cruz 2006): 42 % within +-25 %, mean absolute
+#               percent error 51 % (Canada) / 60 % (US);
+#   INTENSITY   Byram's I = R (HPA + CFB CFL H), CFL = CBD (CH - CBH) the
+#               canopy fuel load, H = 18,608 kJ/kg (8,000 Btu/lb of needles,
+#               Rothermel 1991), CFB = 1 for an active crown fire and
+#               Van Wagner's (1993) exponential crown fraction burned with
+#               FARSITE's coefficient (Finney 1998) for a passive one;
+#   SHAPE       Rothermel's (1991) crown-fire length-to-width ratio
+#               1 + 0.125 U20 (mi/h), after Andrews (1986).
+# Domain: LANDFIRE codes broadleaf stands that do not carry crown fire with
+# CBH 10 m and CBD 0.01 kg/m^3 "to prevent false simulation of crown fire";
+# a CBD below CROWN_MIN_CBD_KGM3 (0.02) is therefore no crown fuel here
+# (Cruz's passive factor exp(-CAC) would otherwise approach 1 as CBD -> 0).
+# EFFM: Cruz et al. define it by Rothermel's (1983) look-up procedure (the
+# NWCG pocket-guide tables): a reference moisture from temperature and
+# humidity — which the engine's dead fuel moisture reproduces for EXPOSED
+# fuel at midday (102 F, 6 % RH: table 1 %, engine 1.4 %) — plus a
+# correction that is 0-1 point for exposed fuel at midday and 3 points
+# (1200-1559, level, May-July) where the surface fuel is >= 50 % shaded by
+# the canopy: crown_effm_pct.
+# ---------------------------------------------------------------------------
+CROWN_NONE = 0          # surface fire: not initiated, or no crown fuel
+CROWN_PASSIVE = 1       # passive crown fire (torching, intermittent crowning)
+CROWN_ACTIVE = 2        # active crown fire
+
+CROWN_MIN_CBD_KGM3 = 0.02
+CROWN_SHADED_CC_PCT = 50.0             # Rothermel 1983: >= 50 % shading
+CROWN_EFFM_SHADE_PCT = 3.0             # shaded - exposed correction, midday
+_VW_INIT_C = 0.010                     # Van Wagner 1977 eq. 4 constant
+_VW_MASS_FLOW = 0.05                   # S0, kg/m^2/s (R'_A = S0 / CBD)
+_CRUZ_A = 11.02                        # Cruz et al. 2005, m/min
+_CRUZ_U_EXP = 0.90
+_CRUZ_CBD_EXP = 0.19
+_CRUZ_M_COEF = -0.17
+_CANOPY_HEAT_KJKG = 8000.0 * 2.326     # 18,608 kJ/kg (Rothermel 1991)
+_NEG_LN_01 = -math.log(0.1)            # FARSITE CFB: 0.9 at 90 % of the way
+_KMH_PER_MPS = 3.6
+_MPH_PER_MPS = 2.2369362920544025
+_U20_PER_U10 = 1.0 / 1.15              # 10-m -> 20-ft wind (as midflame_wind_mps)
+
+
+def crown_effm_pct(m_dead_frac: float, cc_pct: float) -> float:
+    """Cruz et al.'s estimated fine fuel moisture (%) for a cell: the
+    engine's dead fuel moisture (the EXPOSED midday value of Rothermel's
+    1983 tables) plus CROWN_EFFM_SHADE_PCT where the canopy shades the
+    surface fuel (cover >= CROWN_SHADED_CC_PCT)."""
+    effm = 100.0 * m_dead_frac
+    if cc_pct >= CROWN_SHADED_CC_PCT:
+        effm = effm + CROWN_EFFM_SHADE_PCT
+    return effm
+
+
+def crown_initiation_kwm(cbh_m: float, fmc_pct: float) -> float:
+    """Van Wagner (1977) critical surface fireline intensity (kW/m) for crown
+    fire initiation: I_o = (0.010 CBH (460 + 25.9 FMC))^1.5, CBH the canopy
+    base height (m), FMC the foliar moisture content (%). 0.0 for CBH <= 0
+    (a canopy reaching the ground ignites from any surface fire)."""
+    if cbh_m <= 0.0:
+        return 0.0
+    return (_VW_INIT_C * cbh_m * (460.0 + 25.9 * fmc_pct)) ** 1.5
+
+
+def crown_active_threshold_mps(cbd_kgm3: float) -> float:
+    """Van Wagner (1977) critical spread rate for ACTIVE crowning (m/s):
+    R'_A = S0 / CBD with S0 = 0.05 kg/m^2/s (3.0 / CBD m/min). inf for
+    CBD <= 0 (no canopy: never active)."""
+    if cbd_kgm3 <= 0.0:
+        return math.inf
+    return _VW_MASS_FLOW / cbd_kgm3
+
+
+def cruz_active_crown_ros_mps(wind10_mps: float, cbd_kgm3: float,
+                              effm_pct: float) -> float:
+    """Cruz, Alexander & Wakimoto (2005) ACTIVE crown fire rate of spread
+    (m/s): CROS_A = 11.02 U10^0.90 CBD^0.19 exp(-0.17 EFFM) m/min, U10 the
+    10-m open wind in km/h, CBD kg/m^3, EFFM the estimated fine dead fuel
+    moisture in %. 0.0 without wind or canopy."""
+    if wind10_mps <= 0.0 or cbd_kgm3 <= 0.0:
+        return 0.0
+    return (_CRUZ_A * (wind10_mps * _KMH_PER_MPS) ** _CRUZ_U_EXP
+            * cbd_kgm3 ** _CRUZ_CBD_EXP
+            * math.exp(_CRUZ_M_COEF * effm_pct)) / 60.0
+
+
+def crown_fraction_burned(ros_surface_mps: float, ros_initiation_mps: float,
+                          ros_active_mps: float) -> float:
+    """Crown fraction burned of a PASSIVE crown fire: Van Wagner's (1993)
+    exponential form CFB = 1 - exp(-a_c (R - R_o)) with FARSITE's (Finney
+    1998) coefficient a_c = -ln(0.1) / (0.9 (R'_A - R_o)) — 0.9 when the
+    surface spread rate R has gone 90 % of the way from the initiation rate
+    R_o (= I_o / HPA) to the active threshold R'_A. Any consistent units;
+    0 at or below R_o, 1 when R'_A <= R_o."""
+    if ros_surface_mps <= ros_initiation_mps:
+        return 0.0
+    span = ros_active_mps - ros_initiation_mps
+    if span <= 0.0:
+        return 1.0
+    a_c = _NEG_LN_01 / (0.9 * span)
+    return 1.0 - math.exp(-a_c * (ros_surface_mps - ros_initiation_mps))
+
+
+def crown_lb(wind10_mps: float) -> float:
+    """Length-to-breadth ratio of a crown fire: Rothermel (1991) eq. 10
+    (after Andrews 1986), L/W = 1 + 0.125 U20 with U20 the 20-ft wind in
+    mi/h (U20 = U10 / 1.15), capped at 8 like ellipse_lb."""
+    u20_mph = max(0.0, wind10_mps) * _U20_PER_U10 * _MPH_PER_MPS
+    return min(1.0 + 0.125 * u20_mph, 8.0)
+
+
+def crown_fire(surface_ros_mps: float, surface_intensity_kwm: float,
+               hpa_kjm2: float, wind10_mps: float, effm_pct: float,
+               cbh_m: float, cbd_kgm3: float, ch_m: float,
+               fmc_pct: float) -> tuple:
+    """(ros_mps, intensity_kwm, cfb, kind) of one cell's fire once its
+    surface fire (head ROS m/s, Byram intensity kW/m, heat per unit area
+    HPA kJ/m^2) meets its canopy (CBH m, CBD kg/m^3, CH m) under a 10-m wind
+    (m/s), estimated fine fuel moisture EFFM (%, crown_effm_pct) and foliar
+    moisture FMC (%):
+
+      kind CROWN_NONE    no crown fuel (CBD < CROWN_MIN_CBD_KGM3, CH <= CBH),
+                         no surface fire, or I < I_o: the surface fire as is;
+      kind CROWN_ACTIVE  CAC >= 1: R = max(surface, CROS_A), CFB = 1;
+      kind CROWN_PASSIVE CAC < 1: R = max(surface, CROS_A exp(-CAC)), CFB
+                         the passive crown fraction burned.
+
+    Intensity of a crowning cell = R (HPA + CFB CBD (CH - CBH) H), never
+    below the surface intensity. The result never lowers the surface ROS or
+    intensity. Pure; identical inputs give identical floats."""
+    if (cbd_kgm3 < CROWN_MIN_CBD_KGM3 or ch_m <= cbh_m
+            or surface_ros_mps <= 0.0 or surface_intensity_kwm <= 0.0):
+        return surface_ros_mps, surface_intensity_kwm, 0.0, CROWN_NONE
+    i_o = crown_initiation_kwm(cbh_m, fmc_pct)
+    if surface_intensity_kwm < i_o:
+        return surface_ros_mps, surface_intensity_kwm, 0.0, CROWN_NONE
+    r_a = cruz_active_crown_ros_mps(wind10_mps, cbd_kgm3, effm_pct)
+    r_thr = crown_active_threshold_mps(cbd_kgm3)
+    cac = r_a / r_thr
+    if cac >= 1.0:
+        kind = CROWN_ACTIVE
+        ros_c = r_a
+        cfb = 1.0
+    else:
+        kind = CROWN_PASSIVE
+        ros_c = r_a * math.exp(-cac)
+        r_init = i_o / hpa_kjm2 if hpa_kjm2 > 0.0 else 0.0
+        cfb = crown_fraction_burned(surface_ros_mps, r_init, r_thr)
+    ros = surface_ros_mps if surface_ros_mps > ros_c else ros_c
+    cfl = cbd_kgm3 * (ch_m - cbh_m)
+    intensity = ros * (hpa_kjm2 + cfb * cfl * _CANOPY_HEAT_KJKG)
+    if intensity < surface_intensity_kwm:
+        intensity = surface_intensity_kwm
+    return ros, intensity, cfb, kind
+
+
+def foliar_moisture_fbp_pct(lat_deg: float, lon_deg: float, elev_m: float,
+                            day_of_year: int) -> float:
+    """Seasonal foliar moisture content (%) of conifer foliage — the Canadian
+    Forest Fire Behavior Prediction System model (Forestry Canada Fire Danger
+    Group 1992, ST-X-3 eqs. 1-8; as coded in cffdrs foliar_moisture_content):
+    normalised latitude LATN = 43 + 33.7 exp(-0.0351 (150 - |LON|)) and the
+    date of minimum FMC D0 = 142.1 LAT / LATN + 0.0172 ELV (elevation in m;
+    without an elevation, LATN = 46 + 23.4 exp(-0.0360 (150 - |LON|)) and
+    D0 = 151 LAT / LATN), rounded to a day; ND = |day - D0|; FMC = 85 +
+    0.0189 ND^2 (ND < 30), 32.9 + 3.17 ND - 0.0288 ND^2 (30 <= ND < 50), 120
+    (ND >= 50). The spring dip reaches 85 % on D0."""
+    return fbp_fmc_from_nd(abs(int(day_of_year)
+                               - fbp_fmc_min_day(lat_deg, lon_deg, elev_m)))
+
+
+def fbp_fmc_min_day(lat_deg: float, lon_deg: float, elev_m: float) -> int:
+    """D0, the day of year of minimum foliar moisture (FBP eqs. 1-4,
+    rounded to a whole day as cffdrs does); see foliar_moisture_fbp_pct."""
+    lon_w = abs(lon_deg)
+    if elev_m > 0.0:
+        latn = 43.0 + 33.7 * math.exp(-0.0351 * (150.0 - lon_w))
+        d0 = 142.1 * (lat_deg / latn) + 0.0172 * elev_m
+    else:
+        latn = 46.0 + 23.4 * math.exp(-0.0360 * (150.0 - lon_w))
+        d0 = 151.0 * (lat_deg / latn)
+    return int(round(d0))
+
+
+def fbp_fmc_from_nd(nd: int) -> float:
+    """FBP eqs. 6-8: foliar moisture (%) ND days from the date of minimum."""
+    if nd < 30:
+        return 85.0 + 0.0189 * nd * nd
+    if nd < 50:
+        return 32.9 + 3.17 * nd - 0.0288 * nd * nd
+    return 120.0
+
+
+# Albini (1979) TORCHING-TREE spotting as BehavePlus implements it (firelab/
+# behave spot.cpp, calculateSpottingDistanceFromTorchingTrees): flame height
+# and duration from the species coefficients, the firebrand lofting height by
+# flame ratio class, then the flat-terrain distance with the critical cover
+# height. The engine knows the stand height (LANDFIRE CH) and cover, not the
+# species, DBH or the number of trees, so it uses ONE torching tree of the
+# Douglas-fir coefficient set (the commonest interior-West conifer; its flame
+# height coefficients are shared with Engelmann spruce and subalpine fir) and
+# a DBH from a height / diameter ratio of 60 (DBH inches = height feet / 5).
+# The distance goes as DBH^~0.18: a factor 2 in DBH moves it ~13 %.
+_TORCH_FLAME_HEIGHT = (15.7, 0.451)           # ft = a DBH^b (Douglas-fir)
+_TORCH_FLAME_DURATION = (10.7, -0.278)        # a DBH^b
+_TORCH_FIREBRAND = ((4.24, 0.332), (3.64, 0.391), (2.78, 0.418), (4.70, 0.0))
+_TORCH_DBH_IN_PER_FT = 1.0 / 5.0
+_FT_PER_M_T = 1.0 / 0.3048
+_M_PER_MI = 1609.344
+
+
+def torching_spot_max_m(tree_height_m: float, u20_mps: float,
+                        cover_height_m: float) -> float:
+    """Maximum spotting distance (m, flat terrain) of a firebrand lofted by
+    ONE torching tree of height `tree_height_m` in a 20-ft wind `u20_mps`
+    over downwind cover of height `cover_height_m` (Albini 1979, BehavePlus
+    equations; see the constants block). 0.0 without a tree or wind.
+    Example: a 20 m tree, 35 mi/h 20-ft wind, closed 20 m cover -> ~0.8 km
+    (BehavePlus range for single torching trees: ~0.5-1.5 km)."""
+    if tree_height_m <= 0.0 or u20_mps <= 0.0:
+        return 0.0
+    ht_ft = tree_height_m * _FT_PER_M_T
+    u_mph = u20_mps * _MPH_PER_MPS
+    dbh = ht_ft * _TORCH_DBH_IN_PER_FT
+    flame_ht = _TORCH_FLAME_HEIGHT[0] * dbh ** _TORCH_FLAME_HEIGHT[1]
+    duration = _TORCH_FLAME_DURATION[0] * dbh ** _TORCH_FLAME_DURATION[1]
+    ratio = ht_ft / flame_ht
+    if ratio >= 1.0:
+        k = 0
+    elif ratio >= 0.5:
+        k = 1
+    elif duration < 3.5:
+        k = 2
+    else:
+        k = 3
+    c0, c1 = _TORCH_FIREBRAND[k]
+    z = c0 * duration ** c1 * flame_ht + ht_ft / 2.0
+    hc = 2.2 * z ** 0.337 - 4.0
+    cover = max(0.0, cover_height_m) * _FT_PER_M_T
+    h = cover if cover > hc else hc
+    if h <= 0.0:
+        return 0.0
+    d_mi = 0.000718 * u_mph * math.sqrt(h) * (
+        0.362 + math.sqrt(z / h) / 2.0 * math.log(z / h))
+    return max(0.0, d_mi * _M_PER_MI)
