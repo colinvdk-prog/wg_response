@@ -167,12 +167,20 @@ _MAX_BODY_BYTES = 1_000_000
 #: fills location/clients/crews/reinforcements AND ignites the preset fire
 #: (deterministic seed -> identical demo every run); the simulator UI accepts
 #: /simulator?scenario=KEY and auto-runs. Explicit payload keys still win.
+#: FINE-FUEL STARTS (founder option 2, 2026-10-12: "move the seven
+#: timber-start fires"): a scenario with "ign_fine_fuel": True starts on the
+#: patch of grass / grass-shrub / shrub nearest its canonical point
+#: (SimSession.fine_fuel_start), not on the first burnable cell, which for
+#: these seven was timber (docs/review/timber_start_resite_2026-10-12.md).
+#: The six others already start in grass or brush and keep their exact cells.
+#: A payload {"ign_fine_fuel": false} replays the first-burnable start.
 SCENARIOS = {
     # Park City, UT — dry SW-flow wind event: ignition in the oak/brush SW of
     # the Snyderville/Park City interface, running NE into the resort WUI.
     "park_city_windstorm": {
         "location": "park_city_ut", "clients": 40, "crews": 2, "crews_1h": 1,
         "intensity": "extreme", "ign_bearing": 225.0, "ign_dist_m": 7000.0,
+        "ign_fine_fuel": True,
     },
     # Boulder County, CO — Marshall-style downslope WEST wind grass fire:
     # ignition west of the Boulder–Louisville interface, running east through
@@ -218,12 +226,13 @@ SCENARIOS = {
     "vail_westerly": {
         "location": "vail_co", "clients": 40, "crews": 2, "crews_1h": 1,
         "intensity": "high", "ign_bearing": 240.0, "ign_dist_m": 6000.0,
+        "ign_fine_fuel": True,
     },
     # Beaver Creek / Avon / Edwards, CO — WSW wind along the Eagle Valley.
     "beaver_creek_westerly": {
         "location": "beaver_creek_co", "clients": 40, "crews": 2,
         "crews_1h": 1, "intensity": "high", "ign_bearing": 240.0,
-        "ign_dist_m": 6000.0,
+        "ign_dist_m": 6000.0, "ign_fine_fuel": True,
     },
     # Eagle / Gypsum, CO — WSW wind through the sage and grass of the lower
     # Eagle Valley (the corridor base).
@@ -235,26 +244,27 @@ SCENARIOS = {
     "glenwood_springs_westerly": {
         "location": "glenwood_springs_co", "clients": 40, "crews": 2,
         "crews_1h": 1, "intensity": "high", "ign_bearing": 240.0,
-        "ign_dist_m": 6000.0,
+        "ign_dist_m": 6000.0, "ign_fine_fuel": True,
     },
     # Basalt / El Jebel / Carbondale, CO — Lake Christine-style SW wind up
     # the Roaring Fork Valley.
     "basalt_carbondale_southwesterly": {
         "location": "basalt_carbondale_co", "clients": 40, "crews": 2,
         "crews_1h": 1, "intensity": "high", "ign_bearing": 225.0,
-        "ign_dist_m": 6000.0,
+        "ign_dist_m": 6000.0, "ign_fine_fuel": True,
     },
     # Aspen / Snowmass Village, CO — SW wind up the Roaring Fork Valley.
     "aspen_southwesterly": {
         "location": "aspen_co", "clients": 40, "crews": 2, "crews_1h": 1,
         "intensity": "high", "ign_bearing": 225.0, "ign_dist_m": 6000.0,
+        "ign_fine_fuel": True,
     },
     # Eagle -> Vail corridor, CO — the whole valley on one tile; a WSW fire
     # 8 km out, as in tests/test_sim_fire_shading.py's corridor frame.
     "eagle_vail_corridor_westerly": {
         "location": "eagle_vail_co", "clients": 40, "crews": 2,
         "crews_1h": 1, "intensity": "high", "ign_bearing": 240.0,
-        "ign_dist_m": 8000.0,
+        "ign_dist_m": 8000.0, "ign_fine_fuel": True,
     },
 }
 
@@ -426,6 +436,10 @@ class SimSessionManager:
             for k in ("location", "clients", "crews", "crews_1h"):
                 payload.setdefault(k, preset[k])
             payload.setdefault("seed", f"scenario-{scenario}")
+            payload.setdefault("ign_fine_fuel",
+                               preset.get("ign_fine_fuel", False))
+            if not isinstance(payload["ign_fine_fuel"], bool):
+                return 400, {"error": "ign_fine_fuel must be true or false"}
         loc = payload.get("location")
         if not isinstance(loc, str) or loc not in simui.LOCATIONS:
             return 400, {"error": "location must be one of "
@@ -550,10 +564,26 @@ class SimSessionManager:
             # burnable cell takes (the surface model cannot ignite developed/
             # water cells); wind blows FROM the ignition bearing so the fire
             # runs at the community. Deterministic given the fixed seed.
+            # A fine-fuel scenario first takes the nearest grass / brush
+            # patch (SCENARIOS note above); none in its envelope -> this
+            # search, unchanged.
             preset = SCENARIOS[scenario]
             center = simui.LOCATIONS[loc].center
             lit = False
+            if payload["ign_fine_fuel"]:
+                p = session.fine_fuel_start(preset["ign_bearing"],
+                                            preset["ign_dist_m"])
+                if p is not None:
+                    try:
+                        session.ignite(p.lat, p.lon,
+                                       intensity=preset["intensity"],
+                                       wind_dir_deg=preset["ign_bearing"])
+                        lit = True
+                    except ValueError:
+                        pass
             for db in (0, 10, -10, 20, -20, 30, -30):
+                if lit:
+                    break
                 for shrink in (1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3):
                     p = geo.destination(center, preset["ign_bearing"] + db,
                                         preset["ign_dist_m"] * shrink)
@@ -565,8 +595,6 @@ class SimSessionManager:
                         break
                     except ValueError:
                         continue
-                if lit:
-                    break
             if not lit:
                 return 500, {"error": f"scenario {scenario!r} could not "
                                       "find a burnable ignition cell"}

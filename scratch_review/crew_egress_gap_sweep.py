@@ -17,6 +17,7 @@ wall seconds.
 Usage:
   py -3 scratch_review/crew_egress_gap_sweep.py OUT.jsonl [--workers N]
         [--hours H] [--only KEY[,KEY]] [--cfg JSON]
+        [--profiles city[,generic]] [--floors grass[,all]]
   py -3 scratch_review/crew_egress_gap_sweep.py --table A.jsonl [B.jsonl]
   py -3 scratch_review/crew_egress_gap_sweep.py --doc A.jsonl B.jsonl
 
@@ -45,7 +46,7 @@ PROFILES = ("city", "generic")
 FLOORS = (("grass", True), ("all", False))
 
 
-def combos(only=None):
+def combos(only=None, profiles=None, floors=None):
     from wgresponse import server
     out = []
     for key in sorted(server.SCENARIOS):
@@ -53,7 +54,11 @@ def combos(only=None):
             continue
         for inten in INTENSITIES:
             for prof in PROFILES:
+                if profiles and prof not in profiles:
+                    continue
                 for fname, _flag in FLOORS:
+                    if floors and fname not in floors:
+                        continue
                     out.append((key, inten, prof, fname))
     return out
 
@@ -118,8 +123,10 @@ def _done(path):
     return done
 
 
-def sweep(out_path, workers=1, hours=6.0, only=None, extra=None):
-    todo = [c for c in combos(only) if c not in _done(out_path)]
+def sweep(out_path, workers=1, hours=6.0, only=None, extra=None,
+          profiles=None, floors=None):
+    todo = [c for c in combos(only, profiles, floors)
+            if c not in _done(out_path)]
     args = [c + (hours, extra) for c in todo]
     print(f"{len(todo)} runs to go -> {out_path}", flush=True)
     if workers <= 1:
@@ -240,6 +247,7 @@ if __name__ == "__main__":
         sys.exit(0)
     out_path = argv[0]
     workers, hours, only, extra = 1, 6.0, None, None
+    profiles = floors = None
     i = 1
     while i < len(argv):
         if argv[i] == "--workers":
@@ -254,6 +262,13 @@ if __name__ == "__main__":
         elif argv[i] == "--cfg":
             extra = json.loads(argv[i + 1])
             i += 2
+        elif argv[i] == "--profiles":
+            profiles = set(argv[i + 1].split(","))
+            i += 2
+        elif argv[i] == "--floors":
+            floors = set(argv[i + 1].split(","))
+            i += 2
         else:
             raise SystemExit(f"unknown arg {argv[i]}")
-    sweep(out_path, workers=workers, hours=hours, only=only, extra=extra)
+    sweep(out_path, workers=workers, hours=hours, only=only, extra=extra,
+          profiles=profiles, floors=floors)

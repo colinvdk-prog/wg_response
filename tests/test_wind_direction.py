@@ -274,7 +274,11 @@ def test_midrun_turn_matches_one_continuous_run_with_the_shift(tmp_path):
                                   T0_S)
     from wgresponse.weather import MockWeather
 
-    s = _grass_session(tmp_path, cell_m=250.0, spotting_enabled=True)
+    # EMBER PIN (2026-10-12): the legacy ember draw makes the re-anchor ember
+    # shower this control needs (the calibrated-ember default, founder option
+    # 1: tests/test_sim_reanchor_progress.py's calibrated re-anchor test)
+    s = _grass_session(tmp_path, cell_m=250.0, spotting_enabled=True,
+                       spot_fire_size=False)
     ign = _snap(s, geo.destination(LOCATIONS[LOC].center, 270.0, 5000.0))
     fid = s.ignite(ign.lat, ign.lon, intensity="extreme", wind_dir_deg=270.0)
     f = s._fires[fid]

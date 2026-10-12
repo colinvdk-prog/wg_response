@@ -1306,3 +1306,43 @@ when no lawful one exists, and a genuinely cornered crew is still reported. Disp
 emits one zone per crew plan and the road-egress guard still times the egress to it
 (conservative: it may withdraw earlier than a nearer zone would need). The census and
 60-scenario benches were not re-run.
+
+## Founder options 1 and 2: embers, timber rule, fire starts (2026-10-12)
+
+Founder, 2026-10-12: *"go with option 1 and fix the slow first step but then continue to
+option 2 and 3."* City weather and the grass-only speed rule (2026-10-09) had left the
+Colorado and Utah timber-start demos nearly static: Park City's fire was 4 acres after an
+hour.
+
+- **Option 1: calibrated embers plus the timber rule, until a crown-fire model exists.**
+  `SimSession.configure` now arms `cfg.spot_fire_size` (contracts SAFETY SEMANTICS 19:
+  ember reach scales with fire size, landings ignite after a delay;
+  `docs/review/ember_spotting_calibration_2026-10-09.md`). It also sets
+  `cfg.ros_floor_grass_only` back to False, so the fuel-class speed floor lifts
+  timber-understory and timber-litter again. That floor is a stand-in for crown fire,
+  which the engine does not model (`docs/review/park_city_speed_2026-10-09.md`). An
+  explicit `cfg_overrides` key still wins. The live engine is unchanged (`ResponseConfig`
+  defaults: both knobs False; the live watcher keeps its own `--grass-floor`).
+  `tests/test_sim_floor_grass_only.py` holds the defaults. Tests built on scenarios the
+  legacy ember draw formed now pin `spot_fire_size: False` and say so. The two invariants
+  those scenarios carried are also tested under the calibrated embers: the drawn fire is
+  the nominal burned mask, islands included
+  (`tests/test_sim_fire_shading.py::test_shaded_fire_equals_the_nominal_burned_mask_calibrated_embers`),
+  and a same-wind re-anchor with embers in flight is the continuous run cell for cell
+  (`tests/test_sim_reanchor_progress.py::test_same_wind_reanchor_reproduces_the_continuous_run_calibrated_embers`).
+- **Option 2: the seven timber-start fires start in grass or brush.** These are Park City,
+  Vail, Beaver Creek, Glenwood Springs, Basalt / Carbondale, Aspen and the Eagle → Vail
+  corridor (`"ign_fine_fuel": True` in `server.SCENARIOS`). Each now lights on the patch
+  of grass, grass-shrub or shrub nearest its old canonical point
+  (`SimSession.fine_fuel_start`), searched in the old envelope (±30°, 30–100 % of the
+  distance) and nearest first. A patch means at least half the ground within 250 m is
+  fine fuel. Failing a patch it takes a lone fine cell, then the old first-burnable
+  search. The fires moved 300–1,050 m, within 5° of the bearing, in the same wind. The
+  six other scenarios already lit on grass or brush and keep their exact cells. Payload
+  `{"ign_fine_fuel": false}` replays the old start. Measured on the real tiles: under the
+  timber rule, 6-h areas change −30 % to +36 %; under the grass-only rule, the old starts
+  burned 2–346 acres in 6 h and the new ones burn 248–2,912. Review of record:
+  `docs/review/timber_start_resite_2026-10-12.md`; tests:
+  `tests/test_scenario_fine_fuel_start.py`.
+- **Option 3** (the crown-fire model) is a separate build. When it is validated, the
+  timber rule can go back to grass only.

@@ -484,11 +484,16 @@ def _hash(st):
 def _one_click(key, intensity, profile, grass_only, **cfg):
     """The page's one-click scenario (server.SCENARIOS: spotting, grass
     floor 0.10, plan on roads, 24 h hold, the simulator defaults), re-lit at
-    its own ignition point and wind when `intensity` is not its preset."""
+    its own ignition point and wind when `intensity` is not its preset.
+    The legacy ember draw and first-burnable ignition are pinned: the sweep
+    that reproduced these overruns and the goldens below predate the
+    simulator's calibrated-ember default and the fine-fuel starts (founder
+    options 1 and 2, 2026-10-12)."""
     mgr = server.SimSessionManager()
-    code, out = mgr.new_session({"scenario": key, "cfg": dict(
-        {"sim_weather_profile": profile, "ros_floor_grass_only": grass_only},
-        **cfg)})
+    code, out = mgr.new_session({"scenario": key, "ign_fine_fuel": False,
+                                 "cfg": dict(
+        {"sim_weather_profile": profile, "ros_floor_grass_only": grass_only,
+         "spot_fire_size": False}, **cfg)})
     assert code == 200, out
     s = mgr._entry(out["session_id"]).session
     f = s._fires["sim-f1"]

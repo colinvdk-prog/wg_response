@@ -300,7 +300,8 @@ from wgresponse.contracts import (
     validate_config,
 )
 from wgresponse.crews import CrewTracker
-from wgresponse.fuels import cold_black_minutes, is_burnable
+from wgresponse.fuels import (cold_black_minutes, is_burnable, is_grass,
+                              is_grass_shrub, is_shrub)
 from wgresponse.sim import (
     SafetyAudit,
     ServicedStop,
@@ -362,6 +363,13 @@ INTENSITY_WEATHER = {
 #: held constant (the legacy law, byte-identical). An explicit
 #: cfg_overrides['sim_weather_profile'] always wins.
 SIM_WEATHER_PROFILE = "city"
+
+#: FINE-FUEL START (SimSession.fine_fuel_start; founder option 2, 2026-10-12):
+#: a one-click fire marked ign_fine_fuel starts on a patch of grass / grass-
+#: shrub / shrub — at least this fraction of the ground within this radius is
+#: fine fuel — before any lone fine cell.
+FINE_START_PATCH_RADIUS_M = 250.0
+FINE_START_PATCH_FRAC = 0.5
 
 #: The intensity whose daily cycle a high / extreme wind event eases back to
 #: (a dry fire-season day at that community — the event is over, the season
@@ -2770,17 +2778,27 @@ class SimSession:
             cfg.left_map_out = True
         if "escape_prefer_on_map" not in overrides:
             cfg.escape_prefer_on_map = True
-        # ROS-FLOOR CLASS SET IN THE SIMULATOR (founder 2026-10-09: "limit the
-        # speed rule to grass in the simulator"). The page's "Realistic grass
-        # speed" floor (grass_ros_floor_frac) stays on grass (GR) and grass-
-        # shrub (GS) only; timber understory and litter (TU/TL) spread on the
-        # Rothermel physics alone. Measured: the Park City one-click fire at
-        # 1 h 45 fell from 3,054 to 36 acres (docs/review/park_city_speed_
-        # 2026-10-09.md); on 11 real fires the area over-prediction fell from
-        # 3.5x to 2.3x (docs/review/belief_vs_physics_2026-09-27.md). Explicit
-        # override wins; the live engine's default is unchanged.
+        # FOUNDER OPTION 1 (2026-10-12: "go with option 1"): CALIBRATED EMBERS
+        # + THE TIMBER FLOOR, until a crown-fire model exists.
+        # (a) Embers fly as far as the fire that throws them (contracts
+        #     spot_fire_size, SAFETY SEMANTICS 19; its defaults 300 ha / 0.43 /
+        #     5 min): a young fire no longer spots kilometres in its first
+        #     minutes (docs/review/ember_spotting_calibration_2026-10-09.md).
+        # (b) The fuel-class floor stays on timber understory and litter as
+        #     well as grass (ros_floor_grass_only False). It stands in for crown
+        #     fire, which the engine does not model yet: with the floor on
+        #     grass only AND calibrated embers, the seven timber-start demos
+        #     barely burn (Park City 50 acres in 6 h), while option 1 runs
+        #     Park City's fastest hour at 7.1 km/h against the ~6.4 km/h
+        #     10 %-of-wind benchmark for wind-driven forest fire. The 2026-10-09
+        #     grass-only default ("limit the speed rule to grass") is replaced
+        #     by this decision; it returns once the crown-fire model lands
+        #     (founder option 3). Explicit overrides win for both keys; the live
+        #     engine's defaults are unchanged.
+        if "spot_fire_size" not in overrides:
+            cfg.spot_fire_size = True
         if "ros_floor_grass_only" not in overrides:
-            cfg.ros_floor_grass_only = True
+            cfg.ros_floor_grass_only = False
         # SIMULATOR CITY WEATHER (founder 2026-10-09 "change the weather
         # conditions for each city specific"; contracts sim_weather_profile):
         # the simulator's intensities mean THIS community's conditions — a
@@ -3289,6 +3307,54 @@ class SimSession:
                               "wind_dir_deg": (None if wind_dir_deg is None
                                                else float(wind_dir_deg) % 360.0)})
         return fid
+
+    def fine_fuel_start(self, bearing_deg: float,
+                        dist_m: float) -> Optional[LatLon]:
+        """FINE-FUEL START (founder option 2, 2026-10-12: "move the seven
+        timber-start fires"): the point NEAREST the canonical start
+        (bearing_deg / dist_m from the community centre) that lies on grass,
+        grass-shrub or shrub, preferring a PATCH (at least FINE_START_PATCH_FRAC
+        of the ground within FINE_START_PATCH_RADIUS_M is fine fuel) over a lone
+        fine cell. Searched over the one-click scenarios' own envelope (bearing
+        +-30 deg, 30-100 % of the distance, in 5 deg / 5 % steps), nearest
+        first; None when the envelope holds no fine fuel (the caller falls back
+        to its first-burnable search). Tile lookups only: deterministic, no
+        spread solve. A fire that starts in timber barely moves until it finds
+        grass or brush; most wildland-urban fires start in fine fuel."""
+        spec = self._tile.spec
+        fuel = self._tile.fuel
+        center = self._loc.center
+        k = max(1, int(round(FINE_START_PATCH_RADIUS_M / spec.cell_m)))
+        cands = []
+        for db in range(-30, 31, 5):
+            for i in range(15):
+                s = 1.0 - 0.05 * i
+                p = geo.destination(center, bearing_deg + db, dist_m * s)
+                rc = geo.latlon_to_rc(spec, p)
+                if rc is None:
+                    continue
+                code = int(round(fuel.get(*rc)))
+                if not (is_grass(code) or is_grass_shrub(code)
+                        or is_shrub(code)):
+                    continue
+                disp = dist_m * math.sqrt(max(
+                    0.0, 1.0 + s * s - 2.0 * s * math.cos(math.radians(db))))
+                cands.append((round(disp, 3), abs(db), -s, db, p, rc))
+        cands.sort(key=lambda t: t[:4])
+        for _d, _a, _s, _db, p, (r0, c0) in cands:
+            n = fine = 0
+            for dr in range(-k, k + 1):
+                for dc in range(-k, k + 1):
+                    r, c = r0 + dr, c0 + dc
+                    if (dr * dr + dc * dc > k * k or not 0 <= r < spec.nrows
+                            or not 0 <= c < spec.ncols):
+                        continue
+                    v = int(round(fuel.get(r, c)))
+                    n += 1
+                    fine += is_grass(v) or is_grass_shrub(v) or is_shrub(v)
+            if fine >= FINE_START_PATCH_FRAC * n:
+                return p
+        return cands[0][4] if cands else None
 
     def set_wind(self, dir_deg: float) -> None:
         """Turn the domain wind dial (meteorological FROM degrees); forecasts

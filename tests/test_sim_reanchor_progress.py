@@ -333,7 +333,10 @@ def test_same_wind_reanchor_reproduces_the_continuous_run(tmp_path):
     change with no physical change — used to slow the fire (every cell
     late). It now leaves the nominal truth untouched cell for cell, with
     spot fires and an ember in flight at the anchor."""
-    s = _session(tmp_path)
+    # EMBER PIN (2026-10-12): the legacy ember draw puts the ember in flight
+    # at this anchor (the calibrated-ember default, founder option 1, has its
+    # own re-anchor test below)
+    s = _session(tmp_path, spot_fire_size=False)
     fid = _ignite(s)
     for _ in range(2):
         s.tick()
@@ -349,6 +352,30 @@ def test_same_wind_reanchor_reproduces_the_continuous_run(tmp_path):
     t_hi = f.t_ignite_s + s._cfg.horizon_h * HOUR
     assert _diff_below(new, old, t_hi) == []
     # the kept burn is the truth in the new field, cell for cell
+    assert {i: v for i, v in enumerate(new) if v <= t_sw} == kept
+
+
+def test_same_wind_reanchor_reproduces_the_continuous_run_calibrated_embers(
+        tmp_path):
+    """The same law under the simulator's calibrated embers (contracts SAFETY
+    SEMANTICS 19, armed by founder option 1, 2026-10-12): the embers in
+    flight at the anchor keep their delayed landing, so the no-op re-anchor
+    is still the continuous run cell for cell."""
+    s = _session(tmp_path, spot_fire_size=True)
+    fid = _ignite(s, intensity="extreme")
+    for _ in range(2):
+        s.tick()
+    f = s._fires[fid]
+    t_sw = s._now_s
+    old = f.ens.members[0].data
+    kept, aloft = s._reanchor_history(f, t_sw)
+    assert aloft, "scenario must have an ember aloft at the re-anchor"
+    s.set_wind(f.wind_dir_deg)
+    s.tick()
+    assert f.anchor_t0_s == t_sw, "the no-op set_wind must re-anchor"
+    new = f.ens.members[0].data
+    t_hi = f.t_ignite_s + s._cfg.horizon_h * HOUR
+    assert _diff_below(new, old, t_hi) == []
     assert {i: v for i, v in enumerate(new) if v <= t_sw} == kept
 
 

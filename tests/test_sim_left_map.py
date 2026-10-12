@@ -487,6 +487,10 @@ def test_real_session_where_crews_leave_replays_from_its_command_log():
                                   # the legacy presets this probe was derived
                                   # under (city weather: 2026-10-09)
                                   "sim_weather_profile": "generic",
+                                  # EMBER PIN (2026-10-12): the legacy ember
+                                  # draw this probe was derived under (the
+                                  # calibrated-ember default: founder option 1)
+                                  "spot_fire_size": False,
                                   # the crew-safety law this probe was derived
                                   # under (SAFETY SEMANTICS 20, 2026-10-09:
                                   # judged egresses + cell-exact corridors

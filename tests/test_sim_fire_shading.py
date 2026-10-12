@@ -150,10 +150,34 @@ def test_shaded_fire_equals_the_nominal_burned_mask(tmp_path):
     mask as terrain.burned and the 10c audit — spot-fire islands included;
     the compat rings follow (burned = nominal rings, burned_p50 = the old
     median fill, verbatim)."""
-    s = _session(tmp_path)
+    # EMBER PIN (2026-10-12): the legacy ember draw throws the islands this
+    # scenario was built around (the calibrated-ember default, founder option
+    # 1, has its own islands test below)
+    s = _session(tmp_path, cfg={"spot_fire_size": False})
     _ignite(s)
+    max_parts, st = _assert_shaded_is_nominal(s, 10)
+    assert max_parts > 1, "spotting should throw at least one island here"
+    assert st["scoreboard"]["violations"] == 0
+
+
+def test_shaded_fire_equals_the_nominal_burned_mask_calibrated_embers(
+        tmp_path):
+    """The same law under the simulator's calibrated embers (contracts SAFETY
+    SEMANTICS 19, armed by founder option 1, 2026-10-12): a young fire's
+    embers fly short, so this frame lights 1 km upwind of the centre pocket
+    and the river they must jump."""
+    s = _session(tmp_path, cfg={"spot_fire_size": True})
+    _ignite(s, dist_m=1_000.0, intensity="extreme")
+    max_parts, st = _assert_shaded_is_nominal(s, 10)
+    assert max_parts > 1, "calibrated embers should throw an island here"
+    assert st["scoreboard"]["violations"] == 0
+
+
+def _assert_shaded_is_nominal(s, ticks):
+    """Tick `ticks` times asserting the shading law each tick; (most burn
+    pieces seen, last state)."""
     max_parts = 0
-    for _ in range(10):
+    for _ in range(ticks):
         st = s.tick()
         now = st["sim_now_s"]
         nom = _union(s, "nominal")
@@ -175,8 +199,7 @@ def test_shaded_fire_equals_the_nominal_burned_mask(tmp_path):
                  if _loop_area(x) > 0]
         assert len(outer) == parts
         max_parts = max(max_parts, parts)
-    assert max_parts > 1, "spotting should throw at least one island here"
-    assert st["scoreboard"]["violations"] == 0
+    return max_parts, st
 
 
 def _components4(cells, nc):
@@ -324,6 +347,10 @@ def _real_session(key, intensity, bearing, dist_m=None, ignition=None,
                                   # the situation under test still forms. The law under test is speed-blind.
                                   "ros_floor_grass_only": False,
                                   "sim_weather_profile": "generic",
+                                  # EMBER PIN (2026-10-12): the legacy ember
+                                  # draw these frames were measured under (the
+                                  # calibrated-ember default: founder option 1)
+                                  "spot_fire_size": False,
                                   **({} if p50_bound is None else
                                      {"ensemble_p50_nominal_bound": p50_bound})},
                    roads_module=None)

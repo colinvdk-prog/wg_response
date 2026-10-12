@@ -486,6 +486,10 @@ def test_real_tile_escape_drives_roads_to_a_node():
                                   # the legacy presets this probe was derived
                                   # under (city weather: 2026-10-09)
                                   "sim_weather_profile": "generic",
+                                  # EMBER PIN (2026-10-12): the legacy ember
+                                  # draw this probe was derived under (the
+                                  # calibrated-ember default: founder option 1)
+                                  "spot_fire_size": False,
                                   "dispatch_late_shift": True,
                                   "dispatch_plan_on_roads": True,
                                   "dispatch_hold_h": 24.0, "deploy_min": 15.0,
