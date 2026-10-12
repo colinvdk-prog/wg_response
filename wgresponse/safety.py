@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import math
 import weakref
+from array import array
 
 from wgresponse.contracts import (
     UNREACHED,
@@ -692,6 +693,344 @@ class LegOracle:
                 reason = (f"corridor unsafe at {where}: {what} {v:.0f}s < "
                           f"pass {t_pass:.0f}s + margin {ms:.0f}s")
         return CorridorVerdict(safe, reason, worst_h)
+
+
+#: leg_tstar's shared walks: road legs are walked in chunks of this many
+#: polyline spans, and each chunk's samples are kept in a prefix trie.
+_TSTAR_CHUNK = 16
+#: chunks one _TstarWalk keeps before it starts afresh (memory bound)
+_TSTAR_WALK_MAX_CHUNKS = 60_000
+
+
+class _TstarWalk:
+    """The corridor-law constants of one (eroded raster, law) pair, and the
+    prefix trie of the road legs walked over it (leg_tstar, walks=...).
+
+    A road leg's polyline is walked span by span; the walk state carried
+    from span to span is (legacy cumulative distance, the previous resampled
+    point's trig, cell-walk distance, the open cell run and its exit). The
+    samples a span yields depend only on that state and the span, so two
+    legs whose polylines share their first vertices share those samples
+    exactly — legs from one start point fan out along the same roads (on the
+    one-click scenarios 69-80 % of a leg's vertices repeat an earlier leg
+    from the same start). Chunks of _TSTAR_CHUNK spans are cached in a trie
+    keyed by the chunk's exact vertex coordinates under the parent chunk, so
+    a leg re-walks only the spans past its divergence from every earlier
+    leg. Samples are kept as (arrival, distance) — the leg's own speed and
+    margins only enter its final minimum."""
+
+    __slots__ = ("raster", "data", "north", "west", "cell", "nr", "nc", "mlat",
+                 "two_r", "step", "off_bound", "unr_bound", "runs", "ros_max",
+                 "cell_m", "cells_on", "hav", "roots", "n_chunks")
+
+    def __init__(self, g, eroded_p10, cfg, ros_max):
+        fail_closed = bool(getattr(cfg, "corridor_fail_closed", False))
+        unreached_bound = bool(getattr(cfg, "corridor_unreached_bound", False))
+        spec = eroded_p10.spec
+        self.raster = eroded_p10
+        self.data = eroded_p10.data
+        self.north, self.west, self.cell = (spec.north_lat, spec.west_lon,
+                                            spec.cell_m)
+        self.nr, self.nc = spec.nrows, spec.ncols
+        self.mlat = g.M_PER_DEG_LAT
+        self.two_r = 2.0 * g.EARTH_RADIUS_M
+        self.step = max(cfg.corridor_sample_m, 1.0)
+        self.runs = (_boundary_runs(eroded_p10)
+                     if fail_closed or unreached_bound else None)
+        self.off_bound = fail_closed and bool(self.runs)
+        self.unr_bound = unreached_bound and bool(self.runs)
+        self.ros_max = ros_max
+        self.cell_m = float(spec.cell_m)
+        self.cells_on = bool(getattr(cfg, "corridor_cell_exact", False))
+        self.hav = g.haversine_m
+        self.roots: dict = {}
+        self.n_chunks = 0
+
+
+class _TstarChunk:
+    """One trie node: the walk state after its spans, their samples — flat
+    (arrival, distance, arrival, distance, ...) float arrays, which hold no
+    references (the garbage collector never walks them)."""
+    __slots__ = ("st", "ub", "bd", "cl", "kids")
+
+    def __init__(self, st, ub, bd, cl):
+        self.st = st                    # state after the chunk's last span
+        self.ub = array("d", ub)        # modelled legacy samples
+        self.bd = array("d", bd)        # bounded legacy samples
+        self.cl = array("d", cl)        # closed cell runs (arrival, exit)
+        self.kids = None
+
+
+def _walk_point(w, st, lat, lon, ub, bd):
+    """One legacy sample point (LegOracle's loop body): the cumulative
+    haversine from the previous point, the containing cell, the fail-closed
+    bounds; a sample goes to ub (modelled) or bd (bounded) as a flat
+    (arrival, cum) pair. Returns the new legacy state (cum, phi, cos phi,
+    lon)."""
+    cum_m, pphi, pcos, plon = st
+    phi = math.radians(lat)
+    cphi = math.cos(phi)
+    if pphi is not None:
+        # geo.haversine_m(prev, p)
+        dphi = phi - pphi
+        dlam = math.radians(lon - plon)
+        h = (math.sin(dphi / 2.0) ** 2
+             + pcos * cphi * math.sin(dlam / 2.0) ** 2)
+        cum_m += w.two_r * math.asin(min(1.0, math.sqrt(h)))
+    # geo.raster_sample: geo.latlon_to_rc + Raster.get
+    r = math.floor((w.north - lat) * w.mlat / w.cell)
+    c = math.floor((lon - w.west) * (w.mlat * max(cphi, 1e-6)) / w.cell)
+    if 0 <= r < w.nr and 0 <= c < w.nc:
+        v = w.data[r * w.nc + c]
+        if math.isinf(v):                      # UNREACHED in-domain
+            if w.unr_bound:
+                v = _bound_arrival_s(LatLon(lat, lon), w.runs, w.ros_max,
+                                     w.cell_m)
+                if not math.isinf(v):
+                    bd.append(v)
+                    bd.append(cum_m)
+        else:
+            ub.append(v)
+            ub.append(cum_m)
+    elif w.off_bound:                          # outside the raster
+        v = _bound_arrival_s(LatLon(lat, lon), w.runs, w.ros_max, w.cell_m)
+        if not math.isinf(v):
+            bd.append(v)
+            bd.append(cum_m)
+    return (cum_m, phi, cphi, lon)
+
+
+def _walk_spans(w, st, path, i0, i1, ub, bd, cl):
+    """Walk the spans path[i-1] -> path[i], i0 <= i < i1, from walk state
+    st = (cum, phi, cos phi, lon, cell distance, open run, its exit):
+    _resample_path's points of each span through _walk_point, and (cell-
+    exact) geo.path_cell_runs' sub-spans, stretches and run merging, a run
+    that closes going to cl as a flat (arrival, exit) pair. Zero-length
+    spans are skipped by both walks, as there. Returns the new state."""
+    cum_m, pphi, pcos, plon, ccum, cur, cur_exit = st
+    lst = (cum_m, pphi, pcos, plon)
+    hav, step, cells_on = w.hav, w.step, w.cells_on
+    north, west, cell, nr, nc = w.north, w.west, w.cell, w.nr, w.nc
+    mlat, data = w.mlat, w.data
+    floor, isinf, cos, radians = math.floor, math.isinf, math.cos, math.radians
+    ceil = math.ceil
+    for i in range(i0, i1):
+        p0 = path[i - 1]
+        p1 = path[i]
+        d = hav(p0, p1)
+        if d <= 0.0:
+            continue
+        la_0, lo_0 = p0.lat, p0.lon
+        dla, dlo = p1.lat - la_0, p1.lon - lo_0
+        # _resample_path: the span cut into n linear pieces (their ends)
+        n = max(1, int(ceil(d / step)))
+        for k in range(1, n + 1):
+            lst = _walk_point(w, lst, la_0 + dla * k / n, lo_0 + dlo * k / n,
+                              ub, bd)
+        if not cells_on:
+            continue
+        # geo.path_cell_runs: sub-spans of at most one cell; a sub-span's end
+        # is the next one's start (the same expression), computed once
+        nn = max(1, int(ceil(d / cell)))
+        dsub = d / nn
+        f = 0 / nn
+        la1 = la_0 + dla * f
+        lo1 = lo_0 + dlo * f
+        y1 = (north - la1) * mlat / cell
+        x1 = (lo1 - west) * (mlat * max(cos(radians(la1)), 1e-6)) / cell
+        for k in range(nn):
+            la0, lo0, y0, x0 = la1, lo1, y1, x1
+            f = (k + 1) / nn
+            la1 = la_0 + dla * f
+            lo1 = lo_0 + dlo * f
+            y1 = (north - la1) * mlat / cell
+            x1 = (lo1 - west) * (mlat * max(cos(radians(la1)), 1e-6)) / cell
+            # sorted(set(_boundary_params(y0, y1) + _boundary_params(x0, x1)))
+            bp = []
+            if y0 != y1:
+                lo, hi = (y0, y1) if y0 < y1 else (y1, y0)
+                q = floor(lo) + 1
+                while q < hi:
+                    bp.append((q - y0) / (y1 - y0))
+                    q += 1
+            if x0 != x1:
+                lo, hi = (x0, x1) if x0 < x1 else (x1, x0)
+                q = floor(lo) + 1
+                while q < hi:
+                    bp.append((q - x0) / (x1 - x0))
+                    q += 1
+            if bp:
+                ss = sorted(set(bp))
+                ss.append(1.0)
+            else:
+                ss = (1.0,)
+            base = ccum + k * dsub
+            sa = 0.0
+            for sb in ss:
+                if sb <= sa:
+                    continue
+                sm = 0.5 * (sa + sb)
+                # geo.latlon_to_rc(spec, LatLon(stretch midpoint))
+                lat = la0 + (la1 - la0) * sm
+                lon = lo0 + (lo1 - lo0) * sm
+                r = floor((north - lat) * mlat / cell)
+                c = floor((lon - west) * (mlat * max(cos(radians(lat)), 1e-6))
+                          / cell)
+                idx = r * nc + c if (0 <= r < nr and 0 <= c < nc) else -1
+                exit_m = base + sb * dsub
+                if cur is not None and idx == cur:
+                    cur_exit = exit_m              # the run goes on
+                else:
+                    if cur is not None and cur >= 0:   # a run closes
+                        v = data[cur]
+                        if not isinf(v):
+                            cl.append(v)
+                            cl.append(cur_exit)
+                    cur = idx
+                    cur_exit = exit_m
+                sa = sb
+        ccum += d
+    return lst + (ccum, cur, cur_exit)
+
+
+def leg_tstar(a: LatLon, b: LatLon, speed_mps: float,
+              eroded_p10: "Raster | None", cfg: ResponseConfig,
+              path: "list | None" = None,
+              margin_min: "float | None" = None,
+              offraster_ros_mps: "float | None" = None,
+              offraster_margin_min: "float | None" = None,
+              walks: "dict | None" = None) -> float:
+    """LegOracle(a, b, speed_mps, eroded_p10, cfg, path=..., ...)
+    .latest_safe_depart_s — the leg's closed-form latest safe departure T* —
+    without building the oracle (first-step perf 2026-10-12; docs/
+    SIMULATOR_DESIGN.md "The slow first step"). The dispatch planner reads
+    only T* of every leg it scans, never a verdict.
+
+    BIT-IDENTICAL to the oracle: the same resampled points (the same
+    interpolation expressions), the same cumulative haversine walk
+    (geo.haversine_m's expression on the same floats), the same containing
+    cell (geo.latlon_to_rc's expression), the same fail-closed bounds
+    (_bound_arrival_s) and margins, and under corridor_cell_exact the same
+    sub-span walk and run merging as geo.path_cell_runs (_walk_spans). T*
+    is a minimum, so it does not depend on the order samples are visited in;
+    only the sample lists are never built.
+
+    walks: optional dict the caller keeps across legs (dispatch: one per
+    plan() call): road legs over the same raster and law then share the walk
+    of their common polyline prefix (_TstarWalk) — the same samples, so the
+    same T*. Property-tested against LegOracle in tests/test_safety.py (with
+    and without shared walks); without the geo module it is the oracle."""
+    g = _geo()
+    if g is None or not hasattr(g, "M_PER_DEG_LAT"):
+        return LegOracle(a, b, speed_mps, eroded_p10, cfg, path=path,
+                         margin_min=margin_min,
+                         offraster_ros_mps=offraster_ros_mps,
+                         offraster_margin_min=offraster_margin_min
+                         ).latest_safe_depart_s
+    if speed_mps <= 0.0:
+        raise ValueError("speed_mps must be > 0")
+    m = cfg.route_margin_min if margin_min is None else margin_min
+    margin_s = m * 60.0
+    fail_closed = bool(getattr(cfg, "corridor_fail_closed", False))
+    unreached_bound = bool(getattr(cfg, "corridor_unreached_bound", False))
+    if eroded_p10 is None:
+        return -math.inf if fail_closed else UNREACHED
+    ros_max = 0.0
+    bound_margin_s = margin_s                 # SEMANTICS 15c (bounded samples)
+    if fail_closed or unreached_bound:
+        ros_max = (float(getattr(cfg, "corridor_offraster_ros_mps", 1.7))
+                   if offraster_ros_mps is None
+                   else float(offraster_ros_mps))
+        if offraster_margin_min is not None:
+            bound_margin_s = max(margin_s, float(offraster_margin_min) * 60.0)
+    wkey = (id(eroded_p10), cfg.corridor_sample_m, fail_closed,
+            unreached_bound, ros_max,
+            bool(getattr(cfg, "corridor_cell_exact", False)))
+    w = walks.get(wkey) if walks is not None else None
+    if w is None or w.raster is not eroded_p10:
+        w = _TstarWalk(g, eroded_p10, cfg, ros_max)
+        if walks is not None:
+            walks[wkey] = w
+    road = path is not None and len(path) >= 2
+    blocks = []                         # (ub, bd, cl) sample lists to minimise
+    if road and walks is not None:
+        # the start point, then whole chunks through the trie, then the rest
+        p = path[0]
+        node = w.roots.get((p.lat, p.lon))
+        if node is None:
+            ub, bd = [], []
+            lst = _walk_point(w, (0.0, None, None, None), p.lat, p.lon, ub, bd)
+            node = _TstarChunk(lst + (0.0, None, 0.0), ub, bd, [])
+            w.roots[(p.lat, p.lon)] = node
+        blocks.append((node.ub, node.bd, node.cl))
+        n = len(path)
+        i = 1
+        K = _TSTAR_CHUNK
+        while i + K <= n:
+            key = tuple([(q.lat, q.lon) for q in path[i:i + K]])
+            kids = node.kids
+            child = kids.get(key) if kids is not None else None
+            if child is None:
+                if w.n_chunks >= _TSTAR_WALK_MAX_CHUNKS:
+                    # memory bound: drop the trie (only speed changes; this
+                    # leg finishes on its own, now unreachable, branch)
+                    w.roots = {}
+                    w.n_chunks = 0
+                ub, bd, cl = [], [], []
+                st = _walk_spans(w, node.st, path, i, i + K, ub, bd, cl)
+                child = _TstarChunk(st, ub, bd, cl)
+                if kids is None:
+                    kids = node.kids = {}
+                kids[key] = child
+                w.n_chunks += 1
+            blocks.append((child.ub, child.bd, child.cl))
+            node = child
+            i += K
+        ub, bd, cl = [], [], []
+        st = _walk_spans(w, node.st, path, i, n, ub, bd, cl)
+        blocks.append((ub, bd, cl))
+    elif road:
+        ub, bd, cl = [], [], []
+        p = path[0]
+        lst = _walk_point(w, (0.0, None, None, None), p.lat, p.lon, ub, bd)
+        st = _walk_spans(w, lst + (0.0, None, 0.0), path, 1, len(path),
+                         ub, bd, cl)
+        blocks.append((ub, bd, cl))
+    else:
+        # the chord a -> b: geo.sample_polyline's points, the cell walk on
+        # [a, b] (not shared: a chord has no road prefix)
+        ub, bd, cl = [], [], []
+        lst = (0.0, None, None, None)
+        for q in _sample_polyline(a, b, cfg.corridor_sample_m):
+            lst = _walk_point(w, lst, q.lat, q.lon, ub, bd)
+        st = (0.0, None, None, None, 0.0, None, 0.0)
+        if w.cells_on:
+            st = _walk_spans(w, st, [a, b], 1, 2, [], [], cl)
+        blocks.append((ub, bd, cl))
+    tstar = UNREACHED
+    for ub, bd, cl in blocks:               # flat (arrival, distance) pairs
+        for v, cum in zip(ub[0::2], ub[1::2]):
+            t = v - margin_s - cum / speed_mps
+            if t < tstar:
+                tstar = t
+        for v, cum in zip(bd[0::2], bd[1::2]):
+            t = v - bound_margin_s - cum / speed_mps
+            if t < tstar:
+                tstar = t
+        for v, ex in zip(cl[0::2], cl[1::2]):
+            t = v - margin_s - ex / speed_mps
+            if t < tstar:
+                tstar = t
+    if w.cells_on:
+        # the run still open at the leg's end is its last cell sample
+        cur, cur_exit = st[5], st[6]
+        if cur is not None and cur >= 0:
+            v = w.data[cur]
+            if not math.isinf(v):
+                t = v - margin_s - cur_exit / speed_mps
+                if t < tstar:
+                    tstar = t
+    return tstar
 
 
 def corridor_safe(a: LatLon, b: LatLon, depart_s: float, speed_mps: float,

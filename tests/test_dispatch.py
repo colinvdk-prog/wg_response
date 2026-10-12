@@ -1917,3 +1917,205 @@ def test_urgency_reorder_respects_frozen_prefix_and_value_mode_noop():
     cfgv = ResponseConfig(dispatch_objective="value")
     ctxv = _ctx_for(cfgv, [crew], [U, C], ens, zones)
     assert dispatch._urgency_reorder(ctxv, "G1", [ck, uk], 0) == [ck, uk]
+
+
+# ---------------------------------------------------------------------------
+# FIRST-STEP PERF (2026-10-12; docs/SIMULATOR_DESIGN.md "The slow first
+# step"): the fast route chain (_Ctx._run + prefix resumption + LS delta
+# tables) and the shared LegMemo are PERFORMANCE ONLY — every plan must be
+# byte-identical to the per-stop eval_route arithmetic and to a memo-less
+# plan(), under a burning raster (binding corridor T*), several crews and a
+# road provider with real polylines.
+# ---------------------------------------------------------------------------
+
+def _perf_instance(i, n_jobs=14, n_crews=3, objective="homes"):
+    rng = seeded_rng("first-step-perf", i)
+    spec = spec20()
+    # a front sweeping in from the west: finite arrivals on the west half
+    data = []
+    for r in range(spec.nrows):
+        for c in range(spec.ncols):
+            if c < 11:
+                data.append(NOW + (1.0 + 0.6 * c + rng.uniform(0.0, 0.8)) * 3600.0)
+            else:
+                data.append(UNREACHED)
+    ens = {INC: make_ens(Raster(spec, data))}
+    crews = [make_crew(f"G{k + 1}", cc(spec, rng.uniform(2, 18), rng.uniform(12, 19)))
+             for k in range(n_crews)]
+    jobs = []
+    for j in range(n_jobs):
+        loc = cc(spec, rng.uniform(1, 19), rng.uniform(3, 19))
+        p10 = NOW + rng.uniform(1.5, 9.0) * 3600.0
+        p50 = p10 + rng.uniform(0.3, 2.0) * 3600.0
+        jobs.append(make_job(f"J{j:02d}", loc, p10, p50,
+                             value=rng.uniform(5e5, 4e6),
+                             weight=2.0 if rng.random() < 0.2 else 1.0))
+    zones = [SafeZone(f"Z{z}", cc(spec, rng.uniform(0, 19), rng.uniform(15, 19)))
+             for z in range(3)]
+    cfg = ResponseConfig(dispatch_objective=objective, solver_budget_evals=4000,
+                         corridor_cell_exact=True, corridor_fail_closed=True)
+    return cfg, ens, crews, jobs, zones
+
+
+class _FakeRoute:
+    def __init__(self, a, b):
+        mid = LatLon((a.lat + b.lat) / 2.0 + 0.004, (a.lon + b.lon) / 2.0)
+        self.polyline = [a, mid, b]
+        self.dist_m = (travel.travel_time_s(a, mid, ResponseConfig())
+                       + travel.travel_time_s(mid, b, ResponseConfig())) * 9.0
+        self.time_s = self.dist_m / 12.0
+        self.on_roads = True
+
+
+def _fake_provider(calls):
+    def provider(a, b, mode="ingress"):
+        calls.append((a.lat, a.lon, b.lat, b.lon, mode))
+        return _FakeRoute(a, b)
+    return provider
+
+
+def test_route_contrib_equals_the_per_stop_eval_route_sums():
+    """_Ctx._run (route_contrib) == the original route_contrib: the stops of
+    eval_route summed in stop order with _served_value / travel hours /
+    churn, then lam_travel, churn_unit and the convex spread term."""
+    checked = 0
+    for i in range(6):
+        cfg, ens, crews, jobs, zones = _perf_instance(i)
+        ctx = _ctx_for(cfg, crews, jobs, ens, zones)
+        keys = sorted(ctx.jobmap)
+        rng = seeded_rng("first-step-perf-routes", i)
+        for _ in range(60):
+            cid = rng.choice(ctx.crew_ids)
+            route = tuple(rng.sample(keys, rng.randrange(0, 6)))
+            stops, _fail = ctx.eval_route(cid, route)
+            got = ctx.route_contrib(cid, route)
+            if stops is None:
+                assert got is None
+                continue
+            value = drive_h = churn_w = 0.0
+            for st in stops:
+                value += dispatch._served_value(ctx.jobmap[st.key], st.gel_frac, cfg)
+                drive_h += st.travel_s / 3600.0
+            j = value - ctx.lam_travel * drive_h - ctx.churn_unit * churn_w
+            if ctx.spread_unit:
+                n = len(stops)
+                j -= ctx.spread_unit * (n * (n - 1) * 0.5)
+            assert (got.value, got.drive_h, got.churn_w, got.j) == (
+                value, drive_h, churn_w, j)
+            checked += 1
+    assert checked >= 100
+
+
+@pytest.mark.parametrize("objective", ["homes", "value"])
+def test_leg_memo_plans_are_byte_identical(objective):
+    """plan() with a shared LegMemo — fresh, warm (a second call on the same
+    inputs), and warm across a DIFFERENT job set on the same legs (the
+    coating-hold probe pattern) — equals plan() without one, and the warm
+    calls really reuse the memo (no new provider calls)."""
+    for i in range(3):
+        cfg, ens, crews, jobs, zones = _perf_instance(i, objective=objective)
+        # the simulator hands its memoised eroded field (one object per fire)
+        er = {INC: safety._erode(ens[INC].p10, cfg.corridor_erosion_m)}
+        sub = jobs[: len(jobs) - 3]
+        ref_calls, mem_calls = [], []
+        ref_all = dispatch.plan(crews, jobs, ens, zones, cfg, NOW,
+                                road_provider=_fake_provider(ref_calls),
+                                eroded_rasters=er)
+        ref_sub = dispatch.plan(crews, sub, ens, zones, cfg, NOW,
+                                road_provider=_fake_provider([]),
+                                eroded_rasters=er)
+        memo = dispatch.LegMemo()
+        p1 = dispatch.plan(crews, jobs, ens, zones, cfg, NOW, leg_memo=memo,
+                           road_provider=_fake_provider(mem_calls),
+                           eroded_rasters=er)
+        n_first = len(mem_calls)
+        p2 = dispatch.plan(crews, jobs, ens, zones, cfg, NOW, leg_memo=memo,
+                           road_provider=_fake_provider(mem_calls),
+                           eroded_rasters=er)
+        p3 = dispatch.plan(crews, sub, ens, zones, cfg, NOW, leg_memo=memo,
+                           road_provider=_fake_provider(mem_calls),
+                           eroded_rasters=er)
+        assert _fingerprint(p1) == _fingerprint(ref_all)
+        assert _fingerprint(p2) == _fingerprint(ref_all)
+        assert _fingerprint(p3) == _fingerprint(ref_sub)
+        assert len(mem_calls) == n_first           # warm: every leg reused
+        assert n_first == len(ref_calls)            # same provider queries
+        assert len(memo.tt) > 0 and len(memo.ts) > 0
+
+
+def test_leg_memo_resets_when_a_leg_input_changes():
+    """A new raster (a re-anchored fire) or new cfg starts the memo afresh —
+    and the plan still equals the memo-less plan."""
+    import dataclasses
+    cfg, ens, crews, jobs, zones = _perf_instance(1)
+    er1 = {INC: safety._erode(ens[INC].p10, cfg.corridor_erosion_m)}
+    memo = dispatch.LegMemo()
+    dispatch.plan(crews, jobs, ens, zones, cfg, NOW, leg_memo=memo,
+                  road_provider=_fake_provider([]), eroded_rasters=er1)
+    sig1 = memo.sig
+    dispatch.plan(crews, jobs, ens, zones, cfg, NOW, leg_memo=memo,
+                  road_provider=_fake_provider([]), eroded_rasters=er1)
+    assert memo.sig == sig1                        # same inputs: kept
+    spec = ens[INC].p10.spec
+    ens2 = {INC: make_ens(Raster(spec, [v + 1800.0 for v in ens[INC].p10.data]))}
+    er2 = {INC: safety._erode(ens2[INC].p10, cfg.corridor_erosion_m)}
+    p = dispatch.plan(crews, jobs, ens2, zones, cfg, NOW, leg_memo=memo,
+                      road_provider=_fake_provider([]), eroded_rasters=er2)
+    assert memo.sig != sig1                        # new field: afresh
+    ref = dispatch.plan(crews, jobs, ens2, zones, cfg, NOW,
+                        road_provider=_fake_provider([]), eroded_rasters=er2)
+    assert _fingerprint(p) == _fingerprint(ref)
+    cfg2 = dataclasses.replace(cfg, route_margin_roads_min=cfg.route_margin_roads_min + 5.0)
+    sig2 = memo.sig
+    p = dispatch.plan(crews, jobs, ens2, zones, cfg2, NOW, leg_memo=memo,
+                      road_provider=_fake_provider([]), eroded_rasters=er2)
+    assert memo.sig != sig2                        # new cfg: afresh
+    assert _fingerprint(p) == _fingerprint(dispatch.plan(
+        crews, jobs, ens2, zones, cfg2, NOW, road_provider=_fake_provider([]),
+        eroded_rasters=er2))
+    memo.reset()
+    assert memo.sig is None and not (memo.rp or memo.tt or memo.ts)
+
+
+def test_leg_memo_unused_when_two_points_share_a_leg_key():
+    """Two distinct points 1e-9 deg apart round to one per-plan leg key; the
+    plan then keeps the original first-touch semantics and does not use the
+    shared memo at all."""
+    cfg, ens, crews, jobs, zones = _perf_instance(2)
+    j0 = jobs[0]
+    twin = make_job("JTWIN", LatLon(j0.client.loc.lat + 1e-9, j0.client.loc.lon),
+                    j0.eta.eta_p10_s, j0.eta.eta_p50_s)
+    memo = dispatch.LegMemo()
+    p = dispatch.plan(crews, jobs + [twin], ens, zones, cfg, NOW, leg_memo=memo,
+                      road_provider=_fake_provider([]))
+    assert memo.sig is None and not memo.tt
+    ref = dispatch.plan(crews, jobs + [twin], ens, zones, cfg, NOW,
+                        road_provider=_fake_provider([]))
+    assert _fingerprint(p) == _fingerprint(ref)
+
+
+def test_ils_skip_all_served_only_when_every_job_is_served():
+    """contracts dispatch_ils_skip_all_served ('homes'): with every job in the
+    pool served by the construction the ILS is skipped (reported in the
+    breakdown) and the plan still serves every job; with a job left over the
+    knob changes nothing — the plan is byte-identical to the knob off. Off
+    (the default) adds no breakdown key."""
+    import dataclasses
+    skipped = kept = 0
+    for i in range(10):
+        cfg, ens, crews, jobs, zones = _perf_instance(i, n_jobs=6 + 2 * (i % 4))
+        off = dispatch.plan(crews, jobs, ens, zones, cfg, NOW)
+        assert "ils_skipped" not in off.objective_breakdown
+        on_cfg = dataclasses.replace(cfg, dispatch_ils_skip_all_served=True)
+        on = dispatch.plan(crews, jobs, ens, zones, on_cfg, NOW)
+        n_pool = len(jobs) - sum(1 for u in off.unserved
+                                 if u.reason not in ("capacity", "triaged",
+                                                     "dropped_by_optimizer"))
+        if on.objective_breakdown["ils_skipped"]:
+            skipped += 1
+            assert on.objective_breakdown["served"] == n_pool
+            assert on.objective_breakdown["served"] == off.objective_breakdown["served"]
+        else:
+            kept += 1
+            assert _fingerprint(on) == _fingerprint(off)
+    assert skipped >= 2 and kept >= 2, (skipped, kept)

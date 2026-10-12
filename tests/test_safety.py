@@ -532,3 +532,118 @@ def test_b1_egress_per_zone_tstar_matches_egress_choice():
         assert verdict.safe == (expect != "")
         agree += 1
     assert agree >= 50
+
+
+# ---------------------------------------------------------------------------
+# leg_tstar — LegOracle's T* without the oracle (first-step perf 2026-10-12;
+# docs/SIMULATOR_DESIGN.md "The slow first step"). The dispatch planner reads
+# only T*; leg_tstar must return LegOracle(...).latest_safe_depart_s BIT FOR
+# BIT under every law that shapes the samples: chord vs road path, the
+# fail-closed bound and the unreached bound, the per-fire off-domain horizon
+# (SEMANTICS 15), the road margin override, and the cell-exact law (20a).
+# ---------------------------------------------------------------------------
+
+def _tstar_path(rng, spec, a, b):
+    """A random 'road' polyline a -> b: wandering vertices (some off the
+    grid), repeated vertices (zero-length spans) and long spans that the
+    resampling subdivides."""
+    pts = [a]
+    for _ in range(rng.randrange(0, 9)):
+        pts.append(safety._rc_center(spec, rng.uniform(-3.0, spec.nrows + 2.0),
+                                     rng.uniform(-3.0, spec.ncols + 2.0)))
+        if rng.random() < 0.2:
+            pts.append(pts[-1])                     # zero-length span
+    pts.append(b)
+    return pts
+
+
+def test_leg_tstar_bit_identical_to_leg_oracle_on_seeded_legs():
+    import dataclasses
+    seen = {"bounded": 0, "cell": 0, "path": 0, "unreached": 0}
+    for k in range(260):
+        a, b, _depart, speed, ras, cfg = _b1_case(k, tag="leg-tstar-prop")
+        rng = seeded_rng("leg-tstar-variant", k)
+        cfg = dataclasses.replace(
+            cfg,
+            corridor_cell_exact=rng.random() < 0.6,
+            corridor_fail_closed=rng.random() < 0.6,
+            corridor_unreached_bound=rng.random() < 0.3,
+            corridor_sample_m=rng.choice([90.0, 300.0, 750.0]))
+        path = _tstar_path(rng, ras.spec, a, b) if rng.random() < 0.7 else None
+        kw = {}
+        if rng.random() < 0.4:
+            kw["margin_min"] = rng.choice([10.0, 25.0, 45.0])
+        if rng.random() < 0.3:
+            kw["offraster_ros_mps"] = rng.uniform(0.3, 2.5)
+            kw["offraster_margin_min"] = rng.choice([0.0, 30.0, 90.0])
+        ras_k = None if rng.random() < 0.05 else ras
+        want = safety.LegOracle(a, b, speed, ras_k, cfg, path=path,
+                                **kw).latest_safe_depart_s
+        got = safety.leg_tstar(a, b, speed, ras_k, cfg, path=path, **kw)
+        assert got == want, (k, got, want)
+        seen["path"] += path is not None
+        seen["cell"] += cfg.corridor_cell_exact and ras_k is not None
+        seen["bounded"] += cfg.corridor_fail_closed
+        seen["unreached"] += want == UNREACHED
+    # the corpus must genuinely exercise every regime
+    assert min(seen["bounded"], seen["cell"], seen["path"]) >= 100, seen
+    assert seen["unreached"] >= 5, seen
+
+
+def test_leg_tstar_bad_speed_raises_like_the_oracle():
+    cfg = ResponseConfig()
+    ras = uniform_raster(grid(), NOW + 3600.0)
+    with pytest.raises(ValueError):
+        safety.leg_tstar(LatLon(34.1, -117.1), LatLon(34.1, -117.0), 0.0,
+                         ras, cfg)
+
+
+def test_leg_tstar_shared_prefix_walks_bit_identical():
+    """leg_tstar(walks=...) — road legs from one start point share the walk
+    of their common polyline prefix through a chunked trie: every leg must
+    still equal its own LegOracle T* bit for bit, whatever its divergence
+    point (inside a chunk, on a chunk boundary, past the last full chunk),
+    speed, margin or law; repeated legs hit the trie; a different raster or
+    law gets its own walk."""
+    import dataclasses
+    walks = {}
+    n = 0
+    for k in range(40):
+        _a, _b, _depart, _speed, ras, cfg = _b1_case(k, tag="leg-tstar-walks")
+        rng = seeded_rng("leg-tstar-walks-variant", k)
+        cfg = dataclasses.replace(
+            cfg, corridor_cell_exact=rng.random() < 0.7,
+            corridor_fail_closed=rng.random() < 0.6,
+            corridor_unreached_bound=rng.random() < 0.3,
+            corridor_sample_m=rng.choice([90.0, 300.0]))
+        spec = ras.spec
+
+        def pt():
+            return safety._rc_center(spec, rng.uniform(-2.0, spec.nrows + 1.0),
+                                     rng.uniform(-2.0, spec.ncols + 1.0))
+
+        start = pt()
+        trunk = [start] + [pt() for _ in range(rng.randrange(20, 60))]
+        for _leg in range(8):
+            cut = rng.randrange(1, len(trunk) + 1)
+            path = trunk[:cut] + [pt() for _ in range(rng.randrange(0, 25))]
+            if len(path) < 2:
+                path.append(pt())
+            b = path[-1]
+            speed = rng.uniform(3.0, 25.0)
+            kw = {}
+            if rng.random() < 0.4:
+                kw["margin_min"] = rng.choice([10.0, 25.0])
+            if rng.random() < 0.3:
+                kw["offraster_ros_mps"] = rng.uniform(0.3, 2.5)
+                kw["offraster_margin_min"] = rng.choice([0.0, 60.0])
+            want = safety.LegOracle(start, b, speed, ras, cfg, path=path,
+                                    **kw).latest_safe_depart_s
+            for _rep in range(2):           # the second call walks the trie
+                got = safety.leg_tstar(start, b, speed, ras, cfg, path=path,
+                                       walks=walks, **kw)
+                assert got == want, (k, _leg, got, want)
+            n += 1
+    assert n == 320
+    assert len(walks) >= 30                 # one walk per raster x law
+    assert sum(w.n_chunks for w in walks.values()) > 100

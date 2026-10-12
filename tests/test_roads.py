@@ -726,3 +726,70 @@ def test_real_graph_spur_smoke_boulder():
     # the introduced off-network approach shows up as a leading spur segment
     assert r.segments[0].kind == "spur" and r.segments[0].points[0] == a_off
     assert any(s.kind == "road" for s in r.segments)      # real road middle
+
+
+# ---------------------------------------------------------------------------
+# Shortest-path trees (first-step perf 2026-10-12; roads module comment
+# "Shortest-path trees", docs/SIMULATOR_DESIGN.md "The slow first step"):
+# from the _SPT_AFTER-th search out of one start node the path comes from
+# that node's Dijkstra tree when a uniqueness margin proves it IS the A*
+# search's path, else from the search. Either way: the search's path.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("key", ["park_city_ut", "rancho_santa_fe_ca",
+                                 "boulder_co"])
+def test_spt_tree_paths_equal_the_astar_search_on_real_graphs(key):
+    from wgresponse import roads
+    path = road_file(key)
+    if not path.exists():
+        pytest.skip(f"SIMULATOR ROAD GRAPH MISSING: {path}")
+    g = load_road_graph(key)
+    ids = sorted(g.nodes)
+    rng = seeded_rng("spt-tree-vs-search", key)
+    starts = [rng.choice(ids) for _ in range(6)]
+    n = 0
+    for s in starts:
+        for _ in range(20):                # many goals per start: the trees
+            t = rng.choice(ids)
+            assert roads._astar(g, s, t) == roads._astar_search(g, s, t)
+            n += 1
+    st = g._spt
+    assert st is not None and len(st.trees) == len(set(starts))
+    assert n == 120
+
+
+def test_spt_exact_tie_falls_back_to_the_search_tie_break():
+    # the symmetric diamond again: the two paths 0->3 cost EXACTLY the same,
+    # so no tree certificate can prove which one A* returns — every query
+    # (well past the tree threshold) must still return the search's choice.
+    from wgresponse import roads
+    nodes = {0: LatLon(39.0, -105.0), 1: LatLon(39.009, -105.012),
+             2: LatLon(38.991, -105.012), 3: LatLon(39.0, -105.024)}
+    edges = [RoadEdge(0, 1, "residential", 1500.0),
+             RoadEdge(1, 3, "residential", 1500.0),
+             RoadEdge(0, 2, "residential", 1500.0),
+             RoadEdge(2, 3, "residential", 1500.0)]
+    g = RoadGraph(nodes, edges)
+    for _ in range(roads._SPT_AFTER + 3):
+        assert roads._astar(g, 0, 3) == ([0, 1, 3], [0, 1])
+    assert 0 in g._spt.trees                 # the tree exists, the tie fell back
+
+
+def test_spt_unreachable_goal_is_none_like_the_search():
+    from wgresponse import roads
+    nodes = {0: LatLon(39.0, -105.0), 1: LatLon(39.0, -105.01),
+             2: LatLon(39.1, -105.0), 3: LatLon(39.1, -105.01)}
+    g = RoadGraph(nodes, [RoadEdge(0, 1, "residential", 900.0),
+                          RoadEdge(2, 3, "residential", 900.0)])
+    for _ in range(roads._SPT_AFTER + 2):
+        assert roads._astar(g, 0, 3) is None
+        assert roads._astar(g, 0, 1) == ([0, 1], [0])
+
+
+def test_nearest_node_memo_returns_the_search_result():
+    g = _grid12()
+    p = LatLon(39.004, -104.995)
+    first = g.nearest_node(p, max_m=5000.0)
+    assert first == g._nearest_node(p, 5000.0)
+    assert g.nearest_node(p, max_m=5000.0) == first      # memo hit
+    assert g.nearest_node(p, max_m=1.0) is None           # cap is in the key

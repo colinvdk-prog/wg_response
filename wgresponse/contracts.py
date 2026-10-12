@@ -1198,6 +1198,15 @@ wgresponse.dispatch
         # | (ros_mps, margin_min, reason)} — that incident's fail-closed bound
         # extrapolates at ros_mps with margin max(leg margin, margin_min);
         # None / a missing incident = the legacy flat law, byte-identical.
+        # FIRST-STEP PERF (2026-10-12; docs/SIMULATOR_DESIGN.md "The slow
+        # first step"): optional leg_memo=dispatch.LegMemo() shared across
+        # calls (each exact leg's road route, travel time and corridor T*,
+        # bound to the cfg / eroded rasters / zones it was computed under) —
+        # PERFORMANCE ONLY, plans are byte-identical with or without it.
+        # cfg.dispatch_ils_skip_all_served ('homes' objective; default False
+        # = byte-identical): no ILS when the best plan already serves every
+        # job in the pool — its shakes search for MORE protected homes and
+        # could only re-polish tie-break terms (freshness, drive, spread).
 
 wgresponse.travel
     travel_time_s(a: LatLon, b: LatLon, cfg: ResponseConfig) -> float
@@ -2757,6 +2766,18 @@ class ResponseConfig:
     # solver work on the dev box is derived in docs/FIX_PROGRAM_2026-09-11.md.
     solver_budget_evals: int = 0
     ils_iterations: int = 30
+    # ILS ONLY WHERE A HOME IS LEFT TO FIND (first-step perf 2026-10-12;
+    # docs/SIMULATOR_DESIGN.md "The slow first step"; 'homes' objective
+    # only). The ILS is the planner's search for MORE protected homes; when
+    # the best construction already protects every job in the pool there is
+    # none left to find, and its ils_iterations shakes can only re-polish
+    # the tie-break terms (gel freshness, drive time, churn, the anti-
+    # concentration spread) — measured at ~12 s per plan on the Rancho Santa
+    # Fe 100-estate / 10-crew one-click fleet, three plans a tick, no home
+    # gained. True = skip the ILS when every job in the pool is served (the
+    # exact micro-solver, the guardrails and the adoption law are unchanged).
+    # Default False = byte-identical; the SIMULATOR arms it.
+    dispatch_ils_skip_all_served: bool = False
     # --- crew tracking ---
     beacon_stale_s: float = 600.0
     # --- feeds ---

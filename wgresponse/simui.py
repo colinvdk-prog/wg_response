@@ -2741,6 +2741,19 @@ class SimSession:
         # wins; the engine default stays 0 (legacy wall clock).
         if "solver_budget_evals" not in overrides:
             cfg.solver_budget_evals = SIM_SOLVER_BUDGET_EVALS
+        # ILS ONLY WHERE A HOME IS LEFT TO FIND (founder 2026-10-12 "fix the
+        # slow first step"; contracts dispatch_ils_skip_all_served; docs/
+        # SIMULATOR_DESIGN.md "The slow first step"): no ILS shakes when the
+        # plan already protects every job in the pool. Measured on the 13
+        # one-click scenarios x 4 intensities (6 h, page defaults with
+        # spot_fire_size + the timber floor): first step Rancho Santa Fe
+        # ~40 -> ~10 s, the 40-home low / moderate runs 2-7 s faster; 51 of
+        # 52 runs identical tick for tick; homes protected at 6 h 1,831 ->
+        # 1,830 (one Eagle-Vail home still in progress at the cut-off),
+        # departure violations 0 -> 0, crew-overrun ticks 0 -> 0. Explicit
+        # override wins; the engine default stays OFF.
+        if "dispatch_ils_skip_all_served" not in overrides:
+            cfg.dispatch_ils_skip_all_served = True
         # SEM-10d ROAD-NETWORK ESCAPE (founder "rework the crews fleeing"
         # 2026-09-26; contracts escape_road_network): a crew that must flee
         # with no catalog zone lawfully reachable searches the ROAD GRAPH for
@@ -2858,6 +2871,14 @@ class SimSession:
         self._road_graph = None
         # PLAN-ON-ROADS session route cache (see _plan_road_provider)
         self._road_plan_cache = {}
+        # SHARED LEG MEMO (first-step perf 2026-10-12; dispatch.LegMemo): the
+        # coating-hold probes and the real plan of a tick — and later ticks
+        # while the fire field and zones hold — reuse each other's leg
+        # routes, travel times and corridor T*. Performance only (plans are
+        # byte-identical); reset with the route cache it depends on.
+        self._plan_leg_memo = dispatch.LegMemo()
+        self._road_plan_gen = 0          # bumps whenever the route cache clears
+        self._probe_now_plan = None      # (plan, jobs, gen) of a hold release
         if mod is not None:
             g = None
             ext_loaded = False
@@ -3886,6 +3907,10 @@ class SimSession:
                 return cache[k]
             if len(cache) >= _ROAD_PLAN_CACHE_MAX:
                 cache.clear()
+                # the shared leg memo holds this cache's answers: forget them
+                # too (dispatch.LegMemo — the caller owns the provider half)
+                self._plan_leg_memo.reset()
+                self._road_plan_gen += 1
             if alts > 1:
                 rr = self._route_choose(a, b, mode, self._now_s)
             else:
@@ -5763,10 +5788,12 @@ class SimSession:
             return jobs, None, set()
         held_ids = {j.client.client_id for j in held}
         buf_s = cfg.dispatch_hold_weather_buffer_h * 3600.0
+        gen0 = self._road_plan_gen
         probe_now = dispatch.plan(crew_args, jobs, ens_map, plan_zones, cfg,
                                   now, None, forecasts=forecasts,
                                   road_provider=self._plan_road_provider(),
-                                  eroded_rasters=self._plan_eroded_rasters())
+                                  eroded_rasters=self._plan_eroded_rasters(),
+                                  leg_memo=self._plan_leg_memo)
         # The probe must encode deferral + buffer through job.eta — plan()
         # RE-DERIVES every job's windows from eta via
         # safety.derive_job_windows (field edits are overwritten):
@@ -5795,7 +5822,8 @@ class SimSession:
         probe_hold = dispatch.plan(crew_args, deferred, ens_map, plan_zones,
                                    cfg, now, None, forecasts=forecasts,
                                    road_provider=self._plan_road_provider(),
-                                   eroded_rasters=self._plan_eroded_rasters())
+                                   eroded_rasters=self._plan_eroded_rasters(),
+                                   leg_memo=self._plan_leg_memo)
         def served_ids(p):
             return {s.client_id for cp in p.plans.values() for s in cp.stops}
         s_now = served_ids(probe_now)
@@ -5804,6 +5832,9 @@ class SimSession:
             # deferral would sacrifice a coatable home -> release, forever
             self._hold_released = True
             self._hold_active_n = 0
+            # the probe NOW plan IS the plan the tick is about to compute
+            # when nothing else differs (see _tick_step step 4)
+            self._probe_now_plan = (probe_now, jobs, gen0)
             lost = sorted(s_now - s_hold)
             self._notes.append(
                 f"COATING HOLD RELEASED — deferring past the "
@@ -6226,14 +6257,34 @@ class SimSession:
             # are withheld from the emitted plan while (and only while) the
             # per-cycle feasibility gate proves deferral costs no home; idle
             # crews preposition toward their deferred first stops instead.
+            self._probe_now_plan = None
             plan_jobs, probe_hold, held_ids = self._apply_coating_hold(
                 jobs, crew_args, ens_map, plan_zones, forecasts, now)
             if plan_jobs:
-                plan = dispatch.plan(crew_args, plan_jobs, ens_map,
-                                     plan_zones, cfg, now,
-                                     incumbent, forecasts=forecasts,
-                                     road_provider=self._plan_road_provider(),
-                                     eroded_rasters=self._plan_eroded_rasters())
+                # FIRST-STEP PERF (2026-10-12): when the hold released this
+                # tick, its probe NOW plan was dispatch.plan over EXACTLY
+                # these arguments — the same crews, jobs, fields, zones, cfg,
+                # clock and no incumbent — and plan() is a pure function of
+                # them under the counted solver budget (its route provider
+                # answers identically while the route cache has not been
+                # cleared), so it IS this plan; computing it again only
+                # doubled the tick. Not reused when the probe's wall-clock
+                # runaway guard tripped (its plan would be load-dependent).
+                pn = self._probe_now_plan
+                if (pn is not None and incumbent is None
+                        and pn[1] is plan_jobs
+                        and pn[2] == self._road_plan_gen
+                        and not pn[0].objective_breakdown.get(
+                            "budget_runaway", False)
+                        and getattr(cfg, "solver_budget_evals", 0) > 0):
+                    plan = pn[0]
+                else:
+                    plan = dispatch.plan(
+                        crew_args, plan_jobs, ens_map, plan_zones, cfg, now,
+                        incumbent, forecasts=forecasts,
+                        road_provider=self._plan_road_provider(),
+                        eroded_rasters=self._plan_eroded_rasters(),
+                        leg_memo=self._plan_leg_memo)
                 self._adopt(plan, plan_jobs, now, eligible_ids)
                 for uj in plan.unserved:
                     self._unserved_reason[uj.client_id] = uj.reason

@@ -1364,3 +1364,181 @@ hour.
   `world11`.
 - **Option 3** (the crown-fire model) is a separate build. When it is validated, the
   timber rule can go back to grass only.
+
+## The slow first step (2026-10-12)
+
+Founder, 2026-10-12: *"fix the slow first step."* On the live simulator (App Runner, image
+world10 = main 76c4b41) the Park City one-click scenario took **106 s** for its first step;
+later steps ~0 s. Probe and records: `scratch_review/first_step_perf_probe.py` (every
+one-click scenario × low / moderate / high / extreme, page defaults plus the integrator's
+"option 1" — `spot_fire_size` on, `ros_floor_grass_only` off — a non-preset intensity re-lit
+at the preset's own point and wind; `--compare` = plan and state identity tick by tick,
+`--outcomes` = a knob's measurement, `--table` = first-step seconds).
+
+**For the founder.** The first step is where the crew planner meets every home at once. It
+planned three times — two "coating hold" checks (coat now vs. wait until the fire is within
+24 h) and then the real plan, which whenever the check says "coat now" (Park City, every
+intensity) is *exactly* the first check computed again — and each plan drove every home to
+every other home over the road map, walked every
+one of those roads square by square against the fire's danger band, and then spent 30 rounds
+shuffling the plan in search of one more protected home. On a busy or slower machine the
+first plan hit the planner's 50-second emergency cut-off, which also made its answer depend
+on machine load. Now the planner computes the same plans much faster: the three plans share
+the road and danger-band work, the repeat of the first check is reused instead of recomputed,
+the road search builds one map of fastest routes per starting point (and keeps the old search
+for the rare near-tie), the danger-band walk reuses the shared start of routes that leave the
+same home, and the planner's inner loop does a fraction of the work per candidate. Every one
+of the 52 demo runs (13 scenarios × 4 intensities, 6 simulated hours) produces the same plans,
+crew moves and outcomes as before, step for step. One rule changed, measured and switchable:
+when the plan already protects every home it can reach, the 30 shuffling rounds — which can
+only polish the order of the stops — are skipped (homes protected at 6 h 1,831 → 1,830, the
+one being still in progress at the cut-off; no crew ever in the danger band, before or after).
+
+**Where the time went** (main 76c4b41, this machine, Park City extreme first step, cProfile
+and timers): fire field 6.1 s (spread — untouched here); probe NOW 28.4 s = road routing 7.9 s
+(1,677 A\* searches from a cold route cache) + corridor oracles 2.8 s (1,677 cell-exact legs)
++ solver 16.5 s (475 k route evaluations re-walking whole routes, 25 M leg-key roundings, 51 M
+`round` calls); probe HOLD 6.9 s; the real plan 17.7 s — the probe NOW plan computed again
+(identical inputs, no incumbent). At low / moderate the first plan ran into the 10 × 5 s
+wall-clock runaway guard of the deterministic budget (`budget_runaway` true — the plan then
+depends on load); Rancho Santa Fe's three plans need 216 + 134 + 92 s to run their counted
+budget (445 s), of which 30 ILS shakes cost ~12 s per plan with every one of its 100 homes
+already served by the construction.
+
+**What changed** (all plans byte-identical unless named):
+
+1. *The route chain* (`dispatch._Ctx`): per-plan records of every job's deadline thresholds,
+   gel window and objective terms (the same expressions, so the same floats); every plan
+   point gets a dense id and the chain reads travel / ingress T\* / egress order from id
+   matrices filled from the leg memos on first access (first touches unchanged);
+   `route_contrib` runs one fused chain (`_run`) that resumes a candidate after the prefix it
+   shares with an evaluated route (`states` / `contrib_from`); regret-2 keeps each (job, crew)
+   best insertion until that crew's route changes; the local-search scans cache each
+   neighbour's objective deltas per pair of current routes (`_ls_table`) and redo only the
+   float test against the new threshold. Same scan order, same budget consults, same early
+   exits.
+2. *A shared leg memo* (`dispatch.LegMemo`, `plan(leg_memo=)`, one per simulator session):
+   the road route, travel time and corridor T\* of every exact leg, bound to the cfg, the
+   eroded rasters, the zones and the off-map table; reset with the session's bucketed route
+   cache; not used by a plan whose own points collide on the leg key.
+3. *The probe NOW plan is the plan* when the hold releases with no incumbent (same arguments,
+   counted budget, route cache not cleared, no runaway) — `simui._tick_step` step 4.
+4. *Road routing* (`roads`): from the 2nd search out of one start node, one exact Dijkstra
+   tree per start node, and a goal's tree path is returned when a uniqueness margin proves the
+   A\* search returns that very path (the proof is in the module comment "Shortest-path trees":
+   A\* without reopening returns a path within the summed heuristic inconsistency of P, and
+   every other simple path costs more than that); otherwise the search runs. Per-graph A\*
+   tables (edge costs, node trig) and a heuristic memo per search; a `nearest_node` memo; a
+   per-graph `route()` memo (a pure function of the graph, the exact endpoints and four cfg
+   numbers), so a second session of a scenario — another intensity, another visitor — routes
+   nothing.
+5. *Corridor T\** (`safety.leg_tstar`): `LegOracle(...).latest_safe_depart_s` without the
+   oracle's sample lists — the same resampling, haversine walk, cell lookup, fail-closed
+   bounds and cell-exact sub-span walk and run merging — and with `walks=` the road legs over
+   one raster share the walk of their common polyline prefix in a chunked trie (69-80 % of a
+   leg's vertices repeat an earlier leg from the same start).
+6. *A knob* — contracts `dispatch_ils_skip_all_served` ('homes' objective; default OFF =
+   byte-identical; README config table; armed in the simulator's sim-defaults block): no ILS
+   shakes when the best plan already serves every job in the pool.
+
+**Plan identity.** The deterministic baseline is main 76c4b41 run with the runaway guard lifted
+(`solver_budget_s` 10 000, so every plan runs its counted budget to the end — what the budget
+law promises); the new code with the same cfg and the knob off. 13 scenarios × 4 intensities ×
+24 ticks: **52 / 52 runs identical** — every adopted plan (stops, times, unserved reasons,
+objective) and every tick's full `state()` hash. Also pinned: `tests/test_safety.py`
+(`leg_tstar` == `LegOracle` bit for bit on seeded legs under every corridor law, with and
+without shared walks), `tests/test_roads.py` (tree paths == the A\* search on three real graphs;
+an exact tie falls back), `tests/test_dispatch.py` (the fused chain == the per-stop
+`eval_route` sums; plans with a fresh, warm and cross-plan `LegMemo` == plans without one;
+the knob), `tests/test_simui.py` (the hold-release tick adopts the probe NOW plan, == planning
+afresh). Every road query of the 13 scenarios' first four ticks (27,622) returned the old A\*'s
+path, and every first-step corridor leg (~67 k, with chord and off-domain variants) the
+oracle's T\*.
+
+**The knob, measured** (`--outcomes`, the same 52 runs × 24 ticks, guard lifted; knob off vs
+the simulator default with it armed): homes protected at 6 h **1,831 → 1,830**; serviced-stop
+departure violations **0 → 0**; crew-overrun ticks **0 → 0**; **51 of 52 runs identical tick
+for tick** — when the ILS finds no improvement its plan is the one it started from, so
+skipping it changes nothing. The one that differs, Eagle → Vail corridor extreme: its
+first-tick probes skipped a tie-break polish (shorter drives), the crews' order shifted, and
+its last home was still in progress (assigned, en route) at the 6 h cut-off instead of done at
+5 h. What it buys: Rancho Santa Fe's first step ~40 → ~10 s with every other change in place
+(every one of its plans serves the whole pool after construction — 30 shakes, 7-12 s per
+plan, three plans; they found nothing in any traced plan), and the 40-home low / moderate
+runs 2-7 s each. Where a home is left to find (Park City high and
+extreme, Aspen extreme: +1 / +2 homes found by the ILS at iterations 0-14 in the traced
+first steps) the ILS runs exactly as before.
+
+**Later steps are not slower.** The 24-tick identity runs (same inputs, both versions under
+6 parallel workers): the 1,196 later ticks sum 973 s → 186 s (knob off) / 119 s (simulator
+defaults); the slowest later tick 96.5 s → 9.9 s / 1.5 s (re-plan ticks of the guard-lifted
+baseline). A quiet tick stays ~0.05-0.25 s; the memos that outlive a plan (the session's leg
+memo, the per-graph trees, route and snap memos) leave fewer objects for the garbage
+collector than main's global path memo did (Rancho Santa Fe after the first step: +108 k
+tracked objects, a full collection 92 ms, vs +160 k and 123 ms on main).
+
+**First step, before → after** (this machine, every run a fresh process, nothing else running for the after column; *before* = main at production settings — the 50 s runaway guard live, as on the server — two runs at a time, `scratch_review/first_step_perf_timing_before.jsonl`; *after* = this change at the simulator defaults, one at a time, `first_step_perf_timing_after.jsonl`; *live est.* = after × 2, the ratio measured between the App Runner instance and this machine; *(guard)* = the runaway guard cut a plan short, so that plan depended on machine load — the new code never trips it):
+
+| Scenario | Intensity | Before (s) | After (s) | After, live est. (s) | Later steps after (max s) |
+|---|---|---|---|---|---|
+| aspen_southwesterly | low | 119.4 (guard) | 5.8 | 12 | 0.05 |
+| aspen_southwesterly | moderate | 119.6 (guard) | 6.0 | 12 | 0.05 |
+| aspen_southwesterly | high | 88.4 | 8.3 | 17 | 0.04 |
+| aspen_southwesterly | extreme | 64.0 | 7.5 | 15 | 0.05 |
+| basalt_carbondale_southwesterly | low | 117.4 | 8.8 | 18 | 0.05 |
+| basalt_carbondale_southwesterly | moderate | 108.9 | 8.4 | 17 | 0.07 |
+| basalt_carbondale_southwesterly | high | 97.5 | 8.2 | 16 | 0.05 |
+| basalt_carbondale_southwesterly | extreme | 83.8 | 7.9 | 16 | 0.05 |
+| beaver_creek_westerly | low | 121.0 | 7.6 | 15 | 0.04 |
+| beaver_creek_westerly | moderate | 97.6 | 7.3 | 15 | 0.05 |
+| beaver_creek_westerly | high | 64.5 | 7.5 | 15 | 0.05 |
+| beaver_creek_westerly | extreme | 56.5 | 7.1 | 14 | 0.07 |
+| boulder_chinook | low | 34.3 | 4.0 | 8 | 0.04 |
+| boulder_chinook | moderate | 32.9 | 4.2 | 8 | 0.04 |
+| boulder_chinook | high | 29.9 | 4.2 | 8 | 0.03 |
+| boulder_chinook | extreme | 29.9 | 4.2 | 8 | 0.05 |
+| eagle_gypsum_westerly | low | 73.1 | 7.7 | 15 | 0.05 |
+| eagle_gypsum_westerly | moderate | 69.2 | 7.5 | 15 | 0.06 |
+| eagle_gypsum_westerly | high | 47.9 | 7.4 | 15 | 0.03 |
+| eagle_gypsum_westerly | extreme | 62.3 | 7.5 | 15 | 0.05 |
+| eagle_vail_corridor_westerly | low | 20.0 | 6.2 | 12 | 0.04 |
+| eagle_vail_corridor_westerly | moderate | 22.9 | 6.1 | 12 | 0.04 |
+| eagle_vail_corridor_westerly | high | 22.0 | 6.1 | 12 | 0.07 |
+| eagle_vail_corridor_westerly | extreme | 22.3 | 6.0 | 12 | 0.05 |
+| glenwood_springs_westerly | low | 121.9 (guard) | 6.8 | 14 | 0.03 |
+| glenwood_springs_westerly | moderate | 115.8 (guard) | 6.6 | 13 | 0.03 |
+| glenwood_springs_westerly | high | 51.9 | 7.3 | 15 | 0.04 |
+| glenwood_springs_westerly | extreme | 41.3 | 6.9 | 14 | 0.06 |
+| malibu_santa_ana | low | 0.2 | 0.2 | 0 | 0.01 |
+| malibu_santa_ana | moderate | 87.4 | 5.2 | 10 | 0.06 |
+| malibu_santa_ana | high | 42.0 | 6.4 | 13 | 0.06 |
+| malibu_santa_ana | extreme | 40.3 | 6.0 | 12 | 0.05 |
+| paradise_ne_wind | low | 109.1 | 10.1 | 20 | 0.05 |
+| paradise_ne_wind | moderate | 119.3 | 12.1 | 24 | 0.09 |
+| paradise_ne_wind | high | 81.5 | 9.3 | 19 | 0.11 |
+| paradise_ne_wind | extreme | 67.7 | 8.9 | 18 | 0.09 |
+| park_city_windstorm | low | 125.6 (guard) | 8.4 | 17 | 0.06 |
+| park_city_windstorm | moderate | 116.0 | 7.4 | 15 | 0.07 |
+| park_city_windstorm | high | 46.2 | 7.1 | 14 | 0.07 |
+| park_city_windstorm | extreme | 45.6 | 7.3 | 15 | 0.06 |
+| rancho_santa_fe_santa_ana | low | 121.7 (guard) | 8.4 | 17 | 0.14 |
+| rancho_santa_fe_santa_ana | moderate | 144.9 (guard) | 8.6 | 17 | 0.06 |
+| rancho_santa_fe_santa_ana | high | 153.8 (guard) | 8.3 | 17 | 0.06 |
+| rancho_santa_fe_santa_ana | extreme | 153.9 (guard) | 8.6 | 17 | 0.17 |
+| santa_rosa_diablo | low | 63.0 | 5.6 | 11 | 0.04 |
+| santa_rosa_diablo | moderate | 58.8 | 5.5 | 11 | 0.09 |
+| santa_rosa_diablo | high | 51.0 | 5.5 | 11 | 0.10 |
+| santa_rosa_diablo | extreme | 39.1 | 6.0 | 12 | 0.05 |
+| vail_westerly | low | 121.4 (guard) | 6.6 | 13 | 0.03 |
+| vail_westerly | moderate | 107.3 | 6.3 | 13 | 0.04 |
+| vail_westerly | high | 98.8 | 6.3 | 13 | 0.05 |
+| vail_westerly | extreme | 97.4 | 6.2 | 12 | 0.04 |
+
+Sum over the 52 runs **4,028 s → 359 s**; slowest **153.9 s → 12.1 s**; 50 of 52 first steps under 10 s (Paradise low 10.1 s, moderate 12.1 s: a 5 s fire field and two full ILS solves). Park City extreme, the founder's case: 45.6 s → 7.3 s here (106 s measured live → ~15 s estimated). The same code timed under another agent's parallel load (~70 % of the CPU busy) read 0-41 % slower (median 13 %), the fire-field-only runs included — machine load, not the planner.
+
+**Limits.** The fire field (`spread.ensemble_arrival`, untouched here — the crown-fire model
+was being built in `spread.py` in parallel) is 2-6 s of every first step. Where homes remain to
+find (Paradise and Basalt at low / moderate) both coating-hold probes still run their full
+ILS, ~2 s each. A freshly started server routes each scenario once (the per-graph route memo
+then serves every later session of it — any intensity, any visitor). The live figures are
+estimates (× 2, the ratio measured between the App Runner instance and this machine).

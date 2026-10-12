@@ -3179,6 +3179,55 @@ def test_hold_releases_when_coverage_would_be_lost(tmp_path):
     assert any("COATING HOLD RELEASED" in n for n in st["notes"])
 
 
+def test_hold_release_tick_adopts_the_probe_now_plan(tmp_path, monkeypatch):
+    """FIRST-STEP PERF (2026-10-12; docs/SIMULATOR_DESIGN.md "The slow first
+    step"): on the tick the hold releases with no incumbent, the plan the
+    tick adopts was computed over EXACTLY the probe-NOW arguments, so the
+    probe's plan is adopted instead of planning a third time — and it is
+    byte-identical to planning afresh."""
+    from wgresponse import dispatch as _dispatch
+    calls = []
+    orig = _dispatch.plan
+
+    def plan_w(*a, **k):
+        p = orig(*a, **k)
+        calls.append((a, k, p))
+        return p
+
+    adopted = []
+    orig_adopt = SimSession._adopt
+
+    def adopt_w(self, plan, *a, **k):
+        adopted.append(plan)
+        return orig_adopt(self, plan, *a, **k)
+
+    monkeypatch.setattr(_dispatch, "plan", plan_w)
+    monkeypatch.setattr(SimSession, "_adopt", adopt_w)
+    s = _hold_session(tmp_path, 12, 1, buffer_h=40.0, seed="scarce")
+    ign = _upwind_ignition("boulder_co", 9_000.0)
+    s.ignite(ign.lat, ign.lon, intensity="moderate")
+    st = s.tick()
+    if not st["hold"]["released"]:
+        import pytest
+        pytest.skip("scenario no longer releases the hold on its first tick")
+    assert len(calls) == 2                     # probe NOW + probe HOLD only
+    (a0, k0, probe_now), _probe_hold = calls[0], calls[1]
+    assert len(adopted) == 1 and adopted[0] is probe_now
+    k0 = dict(k0)
+    k0["leg_memo"] = None                      # plan afresh, no shared memo
+    fresh = orig(*a0, **k0)
+
+    def canon(p):
+        return (repr(sorted(
+            (cid, [(x.client_id, repr(x.arrive_s), repr(x.service_start_s),
+                    repr(x.depart_s), repr(x.margin_h),
+                    repr(x.gel_fresh_frac)) for x in cp.stops],
+             cp.egress_zone_id) for cid, cp in p.plans.items())),
+            [(u.client_id, u.reason) for u in p.unserved], repr(p.objective))
+
+    assert canon(fresh) == canon(probe_now)
+
+
 def test_hold_off_is_byte_identical(tmp_path):
     """dispatch_hold_h = 0 (the engine default) must leave the tick stream
     byte-identical to a session that never knew the knob."""
