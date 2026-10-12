@@ -134,3 +134,12 @@ a shrub patch: 80 % of the ground within 250 m was fine fuel.
   rule. They start 5.1–8 km from the town centre and the wind event eases. That is the city-weather finding
   of 2026-10-09 (`docs/review/city_weather_2026-10-09.md`), not something this change
   introduced.
+
+## Later the same day: the corridor moved again for crown fire
+
+With crown fire armed in the simulator (founder 2026-10-12, "Switch, 10-min delay") the
+corridor fire from its 400 m start still crawled: its path to the valley is aspen, which
+never crowns (277 acres in 6 h). The founder chose "Move its start". The preset distance is
+now 8.8 km (was 8 km), and the fine-fuel search picks the grass-shrub patch there, from
+which the fire runs into conifer and crowns (5,367 acres in 6 h). See
+`docs/SIMULATOR_DESIGN.md`, "Founder option 3: crown fire in the simulator".

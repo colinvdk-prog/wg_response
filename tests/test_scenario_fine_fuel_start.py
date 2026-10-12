@@ -137,11 +137,38 @@ def test_every_one_click_fire_starts_in_grass_or_brush(key):
     if key in SEVEN:
         lcode = int(round(s._tile.fuel.get(*geo.latlon_to_rc(s._tile.spec,
                                                              legacy))))
-        assert is_timber_understory(lcode) or is_timber_litter(lcode), key
+        # the corridor's preset moved out to 8.8 km, where the first burnable
+        # cell is already grass-shrub (test_the_corridor_fire_runs_into_conifer)
+        if key != "eagle_vail_corridor_westerly":
+            assert is_timber_understory(lcode) or is_timber_litter(lcode), key
         assert geo.haversine_m(o, canon) < 1500.0, key
         assert s._fires["sim-f1"].wind_dir_deg == sc["ign_bearing"]
     else:
         assert (o.lat, o.lon) == (legacy.lat, legacy.lon), key
+
+
+@pytest.mark.skipif(not _REAL, reason="real tiles data/tiles/*.wgt not present")
+def test_the_corridor_fire_runs_into_conifer():
+    """Founder 2026-10-12 ("Move its start"): under the simulator's crown fire
+    the corridor fire from 8 km ran through aspen, which never crowns (277
+    acres in 6 h); from its 8.8 km grass-shrub start the nominal fire crowns
+    and runs (measured 5,367 acres, 1,532 crowned)."""
+    from wgresponse import rothermel, spread
+    s, o = _origin("eagle_vail_corridor_westerly")
+    assert s._cfg.crown_fire and s._cfg.ros_floor_grass_only
+    code = int(round(s._tile.fuel.get(*geo.latlon_to_rc(s._tile.spec, o))))
+    assert is_grass_shrub(code)
+    f = s._fires["sim-f1"]
+    crown = {}
+    data = spread.compute_arrival(s._tile, [f.origin], s._wx, f.t_ignite_s,
+                                  s._cfg, incident_id="sim-f1", member_k=0,
+                                  crown_trace=crown).data
+    t6 = f.t_ignite_s + 6 * 3600.0
+    cell_ac = s._tile.spec.cell_m ** 2 / 4046.8564224
+    burned = sum(1 for v in data if v <= t6) * cell_ac
+    crowned = sum(1 for i, k in crown.items() if data[i] <= t6 and k in (
+        rothermel.CROWN_ACTIVE, rothermel.CROWN_PASSIVE)) * cell_ac
+    assert burned > 2500.0 and crowned > 500.0, (burned, crowned)
 
 
 @pytest.mark.skipif(not _REAL, reason="real tiles data/tiles/*.wgt not present")

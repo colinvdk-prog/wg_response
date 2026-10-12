@@ -260,11 +260,16 @@ SCENARIOS = {
         "ign_fine_fuel": True,
     },
     # Eagle -> Vail corridor, CO — the whole valley on one tile; a WSW fire
-    # 8 km out, as in tests/test_sim_fire_shading.py's corridor frame.
+    # 8.8 km out (founder 2026-10-12, "Move its start"): from 8 km the fire's
+    # path to the valley is aspen, which never crowns (277 acres in 6 h
+    # under crown fire); 800 m farther out, on a grass-shrub patch, it runs
+    # into conifer that crowns (5,367 acres; scratch_review/
+    # corridor_resite_solve.py, docs/review/crown_fire_model_2026-10-12.md
+    # section 3.8).
     "eagle_vail_corridor_westerly": {
         "location": "eagle_vail_co", "clients": 40, "crews": 2,
         "crews_1h": 1, "intensity": "high", "ign_bearing": 240.0,
-        "ign_dist_m": 8000.0, "ign_fine_fuel": True,
+        "ign_dist_m": 8800.0, "ign_fine_fuel": True,
     },
 }
 

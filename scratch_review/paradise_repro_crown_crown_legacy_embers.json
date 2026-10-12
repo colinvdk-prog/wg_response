@@ -1,0 +1,1247 @@
+{
+ "variant": "crown_legacy_embers",
+ "cfg": {
+  "sim_weather_profile": "generic",
+  "spot_fire_size": false
+ },
+ "idle_in_burn_ticks": 167,
+ "hidden_ticks": 166,
+ "relocations": 8,
+ "violations_final": 0,
+ "served": 36,
+ "fire_acres": 207635,
+ "first_events": [
+  {
+   "tick": 14,
+   "t_h": 3.5,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -1.01,
+     "p10_h": -1.48,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 15,
+   "t_h": 3.75,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -0.42,
+     "p10_h": -0.88,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -1.26,
+     "p10_h": -1.73,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 16,
+   "t_h": 4.0,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -0.67,
+     "p10_h": -1.13,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -1.51,
+     "p10_h": -1.98,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 17,
+   "t_h": 4.25,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -0.92,
+     "p10_h": -1.38,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -1.76,
+     "p10_h": -2.23,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 18,
+   "t_h": 4.5,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -1.17,
+     "p10_h": -1.63,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -2.01,
+     "p10_h": -2.48,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 19,
+   "t_h": 4.75,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -1.42,
+     "p10_h": -1.88,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -2.26,
+     "p10_h": -2.73,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 20,
+   "t_h": 5.0,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -1.67,
+     "p10_h": -2.13,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -2.51,
+     "p10_h": -2.98,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 21,
+   "t_h": 5.25,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -1.92,
+     "p10_h": -2.38,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -2.76,
+     "p10_h": -3.23,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 22,
+   "t_h": 5.5,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -2.17,
+     "p10_h": -2.63,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -3.01,
+     "p10_h": -3.48,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 23,
+   "t_h": 5.75,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -2.42,
+     "p10_h": -2.88,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -3.26,
+     "p10_h": -3.73,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 24,
+   "t_h": 6.0,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -2.67,
+     "p10_h": -3.13,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -3.51,
+     "p10_h": -3.98,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 25,
+   "t_h": 6.25,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -2.92,
+     "p10_h": -3.38,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -3.76,
+     "p10_h": -4.23,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 26,
+   "t_h": 6.5,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -3.17,
+     "p10_h": -3.63,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -4.01,
+     "p10_h": -4.48,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 27,
+   "t_h": 6.75,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -3.42,
+     "p10_h": -3.88,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -4.26,
+     "p10_h": -4.73,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 28,
+   "t_h": 7.0,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -3.67,
+     "p10_h": -4.13,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -4.51,
+     "p10_h": -4.98,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 29,
+   "t_h": 7.25,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -3.92,
+     "p10_h": -4.38,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -4.76,
+     "p10_h": -5.23,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 30,
+   "t_h": 7.5,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -4.17,
+     "p10_h": -4.63,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -5.01,
+     "p10_h": -5.48,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 31,
+   "t_h": 7.75,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -4.42,
+     "p10_h": -4.88,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -5.26,
+     "p10_h": -5.73,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 32,
+   "t_h": 8.0,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -4.67,
+     "p10_h": -5.13,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -5.51,
+     "p10_h": -5.98,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 33,
+   "t_h": 8.25,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -4.92,
+     "p10_h": -5.38,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -5.76,
+     "p10_h": -6.23,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 34,
+   "t_h": 8.5,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -5.17,
+     "p10_h": -5.63,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -6.01,
+     "p10_h": -6.48,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 35,
+   "t_h": 8.75,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -5.42,
+     "p10_h": -5.88,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -6.26,
+     "p10_h": -6.73,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "CREW SAFETY (SEMANTICS 10d area escape, by road): no catalog safe zone is safely REACHABLE ahead of the front \u2014 crews are leaving the operating area on the road network, each to the road point with the least exposure on the way and the longest safety horizon",
+    "crew sim-g5 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 36,
+   "t_h": 9.0,
+   "violations": 1,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -5.67,
+     "p10_h": -6.13,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -6.51,
+     "p10_h": -6.98,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 37,
+   "t_h": 9.25,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -5.92,
+     "p10_h": -6.38,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -6.76,
+     "p10_h": -7.23,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 38,
+   "t_h": 9.5,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -6.17,
+     "p10_h": -6.63,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -7.01,
+     "p10_h": -7.48,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g3 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)"
+   ]
+  },
+  {
+   "tick": 39,
+   "t_h": 9.75,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -6.42,
+     "p10_h": -6.88,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -7.26,
+     "p10_h": -7.73,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g2 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)"
+   ]
+  },
+  {
+   "tick": 40,
+   "t_h": 10.0,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -6.67,
+     "p10_h": -7.13,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -7.51,
+     "p10_h": -7.98,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  },
+  {
+   "tick": 41,
+   "t_h": 10.25,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -6.92,
+     "p10_h": -7.38,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -7.76,
+     "p10_h": -8.23,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  },
+  {
+   "tick": 42,
+   "t_h": 10.5,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -7.17,
+     "p10_h": -7.63,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -8.01,
+     "p10_h": -8.48,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  },
+  {
+   "tick": 43,
+   "t_h": 10.75,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -7.42,
+     "p10_h": -7.88,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -8.26,
+     "p10_h": -8.73,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  },
+  {
+   "tick": 44,
+   "t_h": 11.0,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -7.67,
+     "p10_h": -8.13,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -8.51,
+     "p10_h": -8.98,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  },
+  {
+   "tick": 45,
+   "t_h": 11.25,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -7.92,
+     "p10_h": -8.38,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -8.76,
+     "p10_h": -9.23,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  },
+  {
+   "tick": 46,
+   "t_h": 11.5,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -8.17,
+     "p10_h": -8.63,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -9.01,
+     "p10_h": -9.48,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  },
+  {
+   "tick": 47,
+   "t_h": 11.75,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -8.42,
+     "p10_h": -8.88,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -9.26,
+     "p10_h": -9.73,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  },
+  {
+   "tick": 48,
+   "t_h": 12.0,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -8.67,
+     "p10_h": -9.13,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -9.51,
+     "p10_h": -9.98,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  },
+  {
+   "tick": 49,
+   "t_h": 12.25,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -8.92,
+     "p10_h": -9.38,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -9.76,
+     "p10_h": -10.23,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  },
+  {
+   "tick": 50,
+   "t_h": 12.5,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -9.17,
+     "p10_h": -9.63,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -10.01,
+     "p10_h": -10.48,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  },
+  {
+   "tick": 51,
+   "t_h": 12.75,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -9.42,
+     "p10_h": -9.88,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -10.26,
+     "p10_h": -10.73,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  },
+  {
+   "tick": 52,
+   "t_h": 13.0,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -9.67,
+     "p10_h": -10.13,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -10.51,
+     "p10_h": -10.98,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  },
+  {
+   "tick": 53,
+   "t_h": 13.25,
+   "violations": 0,
+   "crews": [
+    {
+     "crew": "sim-g2",
+     "lat": 39.76977,
+     "lon": -121.58801,
+     "nom_h": -9.92,
+     "p10_h": -10.38,
+     "zone": null,
+     "status": "available"
+    },
+    {
+     "crew": "sim-g3",
+     "lat": 39.77936,
+     "lon": -121.5882,
+     "nom_h": -10.76,
+     "p10_h": -11.23,
+     "zone": null,
+     "status": "available"
+    }
+   ],
+   "notes": [
+    "crew sim-g4 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z1 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead",
+    "crew sim-g1 repositioning \u2014 zone threatened (relocating to escape)",
+    "crew sim-g5 proactive escape by road \u2014 the pessimistic front reaches this spot within 2.8h, no catalog zone is a durable clean exit, and a road point 3.2 km out still is (relocating by road)",
+    "crew sim-g1 egress re-routed (SEMANTICS 20b): the road from here to paradise_ca-z3 is not lawful as it leaves (it runs inside the pessimistic front's band, or the zone is threatened before the next check) \u2014 heading to escape instead"
+   ]
+  }
+ ],
+ "secs": 16.4
+}

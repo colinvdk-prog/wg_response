@@ -1,0 +1,17 @@
+{
+ "variant": "option1",
+ "cfg": {
+  "sim_weather_profile": "generic",
+  "crown_fire": false,
+  "ros_floor_grass_only": false,
+  "spot_ignition_delay_min": 5.0
+ },
+ "idle_in_burn_ticks": 0,
+ "hidden_ticks": 0,
+ "relocations": 2,
+ "violations_final": 0,
+ "served": 49,
+ "fire_acres": 24951,
+ "first_events": [],
+ "secs": 6.2
+}

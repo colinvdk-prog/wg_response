@@ -1362,8 +1362,8 @@ hour.
   starts); burned area 220,229 → 115,100 acres. Raw rows:
   `scratch_review/crew_egress_gap_sweep_option12.jsonl`. Deployed as simulator image
   `world11`.
-- **Option 3** (the crown-fire model) is a separate build. When it is validated, the
-  timber rule can go back to grass only.
+- **Option 3** (the crown-fire model) landed the same day and replaced the timber rule:
+  "Founder option 3: crown fire in the simulator (2026-10-12)" below.
 
 ## The slow first step (2026-10-12)
 
@@ -1542,3 +1542,48 @@ find (Paradise and Basalt at low / moderate) both coating-hold probes still run 
 ILS, ~2 s each. A freshly started server routes each scenario once (the per-graph route memo
 then serves every later session of it — any intensity, any visitor). The live figures are
 estimates (× 2, the ratio measured between the App Runner instance and this machine).
+
+## Founder option 3: crown fire in the simulator (2026-10-12)
+
+Founder, 2026-10-12, on the crown-fire model's measurements on the fine-fuel starts:
+*"Switch, 10-min delay"*, and for the Eagle → Vail corridor, *"Move its start"*. Model and
+validation: `docs/review/crown_fire_model_2026-10-12.md` (section 3.8: the one-click
+scenarios on the fine-fuel starts).
+
+- **Defaults** (`SimSession.configure`): `crown_fire` True (contracts SAFETY SEMANTICS 22),
+  `spot_fire_size` True with `spot_ignition_delay_min` 10 (a landed ember lights its spot
+  fire after 10 minutes, the top of the ember calibration's 0-10 min), and
+  `ros_floor_grass_only` True (the speed floor back on grass only, the founder's 2026-10-09
+  rule). Crown fire stands in place of option 1's timber floor and never on top of it: a
+  session that explicitly keeps the timber floor (`ros_floor_grass_only` False) keeps the
+  pre-crown physics unless it also asks for `crown_fire`. Explicit overrides win. The live
+  engine is unchanged: crown fire off. The review recommends a shadow run before arming it
+  there, because on three days of the 11-fire hindcast the pessimistic footprint held only
+  82-89 % of the new burn, against at least 93.9 % with today's engine.
+- **The demos** (13 one-click scenarios, city weather, 6 h): fastest hours at 7-14 % of the
+  wind (option 1: 5-11 %; the 10 %-of-wind benchmark for forest fire). Acres at 6 h, option 1
+  → crown fire: Glenwood Springs 2,032 → 5,338, Paradise 1,942 → 4,662, Basalt 3,955 →
+  7,284, Beaver Creek 2,566 → 3,693, Park City 6,945 → 8,847, Malibu 5,536 → 7,496, Vail
+  1,171 → 1,427, Santa Rosa 3,925 → 2,084, Aspen 4,173 → 2,874; Boulder and Rancho Santa
+  Fe unchanged.
+- **The corridor's start** moved from 8 km to 8.8 km WSW of the corridor centre
+  (`server.SCENARIOS`). From 8 km the fire's path to the valley is aspen, which never
+  crowns: 277 acres in 6 h. Of the 30 grass / brush patch starts nearest the old point,
+  solved under the new defaults (`scratch_review/corridor_resite_solve.py`), the nearest
+  whose fire crowns is 800 m farther out on the same bearing, on grass-shrub (GS1):
+  405 / 1,651 / 5,367 acres at 1 / 3 / 6 h, 1,532 acres crowned. The fine-fuel search
+  selects it unchanged (`tests/test_scenario_fine_fuel_start.py::test_the_corridor_fire_runs_into_conifer`).
+- **Crew safety.** The sweep of the live configuration (13 scenarios × 4 intensities, city
+  weather, 6 h, the slow-first-step fix included;
+  `scratch_review/crew_egress_gap_sweep_world12.jsonl`): 52 runs, 0 departure violations,
+  0 crew-overrun ticks. Homes served 1,809 → 1,820 against `world11`; burned area
+  115,100 → 148,339 acres; one crew left the map (Eagle / Gypsum, high) by the left-map
+  law. The founder's Paradise repro (extended tile, generic extreme, 45 h) under crown fire
+  burns 207,635 acres against 24,951 without it, and two crews end their area escape idle
+  on OLD BLACK, a refuge by the founder's 2026-09-26 ruling: 477 idle crew-ticks, each at
+  least 15 minutes past its cell's cold-black window, 0 on hot black or imminent ground
+  (`tests/test_simui.py::test_crew_safety_paradise_founder_repro_under_crown_fire`; the
+  2026-07-10 repro keeps its surface-only physics, pinned).
+- **Tests.** `tests/test_sim_floor_grass_only.py` (the defaults; crown never on an
+  explicit timber floor; the live engine unchanged); `tests/test_crown_fire.py::test_simulator_arms_crown_fire_by_default`;
+  replay tests built before crown fire pin `crown_fire: False` and say so.

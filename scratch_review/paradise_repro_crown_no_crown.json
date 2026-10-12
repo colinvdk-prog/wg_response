@@ -1,0 +1,15 @@
+{
+ "variant": "no_crown",
+ "cfg": {
+  "sim_weather_profile": "generic",
+  "crown_fire": false
+ },
+ "idle_in_burn_ticks": 0,
+ "hidden_ticks": 0,
+ "relocations": 2,
+ "violations_final": 0,
+ "served": 49,
+ "fire_acres": 24951,
+ "first_events": [],
+ "secs": 6.2
+}

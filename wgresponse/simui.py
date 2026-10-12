@@ -2791,27 +2791,35 @@ class SimSession:
             cfg.left_map_out = True
         if "escape_prefer_on_map" not in overrides:
             cfg.escape_prefer_on_map = True
-        # FOUNDER OPTION 1 (2026-10-12: "go with option 1"): CALIBRATED EMBERS
-        # + THE TIMBER FLOOR, until a crown-fire model exists.
+        # FOUNDER OPTION 3 (2026-10-12, crown fire: "Switch, 10-min delay"):
+        # CROWN FIRE + CALIBRATED EMBERS + THE SPEED FLOOR ON GRASS ONLY,
+        # replacing option 1's interim timber floor ("go with option 1" the
+        # same day; docs/review/crown_fire_model_2026-10-12.md, section 3.8).
         # (a) Embers fly as far as the fire that throws them (contracts
-        #     spot_fire_size, SAFETY SEMANTICS 19; its defaults 300 ha / 0.43 /
-        #     5 min): a young fire no longer spots kilometres in its first
-        #     minutes (docs/review/ember_spotting_calibration_2026-10-09.md).
-        # (b) The fuel-class floor stays on timber understory and litter as
-        #     well as grass (ros_floor_grass_only False). It stands in for crown
-        #     fire, which the engine does not model yet: with the floor on
-        #     grass only AND calibrated embers, the seven timber-start demos
-        #     barely burn (Park City 50 acres in 6 h), while option 1 runs
-        #     Park City's fastest hour at 7.1 km/h against the ~6.4 km/h
-        #     10 %-of-wind benchmark for wind-driven forest fire. The 2026-10-09
-        #     grass-only default ("limit the speed rule to grass") is replaced
-        #     by this decision; it returns once the crown-fire model lands
-        #     (founder option 3). Explicit overrides win for both keys; the live
-        #     engine's defaults are unchanged.
+        #     spot_fire_size, SAFETY SEMANTICS 19; 300 ha / 0.43) and a landed
+        #     ember lights its spot fire 10 min later (spot_ignition_delay_min,
+        #     the top of the calibration's 0-10 min: at the calibrated 5 min,
+        #     crown-fire embers drove Glenwood Springs' fastest hour to 18 % of
+        #     the wind; docs/review/ember_spotting_calibration_2026-10-09.md).
+        # (b) The fuel-class floor is on grass only (ros_floor_grass_only, the
+        #     founder's 2026-10-09 "limit the speed rule to grass").
+        # (c) Forest crowns where LANDFIRE's canopy lets it (crown_fire, SAFETY
+        #     SEMANTICS 22): the one-click demos' fastest hours land at 7-14 %
+        #     of the wind (option 1: 5-11 %). Crown fire stands IN PLACE of the
+        #     timber floor and never on top of it (that ran away: Glenwood
+        #     Springs 22,984 acres in 6 h), so a session that explicitly keeps
+        #     the timber floor (ros_floor_grass_only False) keeps the pre-crown
+        #     physics unless it asks for crown_fire too.
+        # Explicit overrides win for every key; the live engine's defaults are
+        # unchanged.
         if "spot_fire_size" not in overrides:
             cfg.spot_fire_size = True
+        if "spot_ignition_delay_min" not in overrides:
+            cfg.spot_ignition_delay_min = 10.0
         if "ros_floor_grass_only" not in overrides:
-            cfg.ros_floor_grass_only = False
+            cfg.ros_floor_grass_only = True
+        if "crown_fire" not in overrides:
+            cfg.crown_fire = cfg.ros_floor_grass_only
         # SIMULATOR CITY WEATHER (founder 2026-10-09 "change the weather
         # conditions for each city specific"; contracts sim_weather_profile):
         # the simulator's intensities mean THIS community's conditions — a

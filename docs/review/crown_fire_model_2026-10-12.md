@@ -849,6 +849,13 @@ city weather's mean 10-m wind over 0-6 h (`crown_fire_city_wind.json`). Raw rows
   1,427); smaller at Santa Rosa (3,925 → 2,084), Aspen (4,173 → 2,874) and the corridor;
   Boulder and Rancho Santa Fe unchanged.
 * **Crew safety.** All 39 runs: 0 departure violations, 0 crew-overrun rows.
+* **Founder decision (2026-10-12):** "Switch, 10-min delay" (crown fire armed in the
+  simulator with the floor on grass only and a 10-min spot delay; the live engine
+  unchanged) and, for the corridor, "Move its start". The corridor now starts 8.8 km out on
+  grass-shrub, 800 m beyond its old point, where its fire runs into conifer: 405 / 1,651 /
+  5,367 acres at 1 / 3 / 6 h, 1,532 acres crowned (`scratch_review/corridor_resite_solve.py`).
+  The live-configuration crew-safety sweep (52 runs): 0 departure violations, 0 overrun
+  ticks. `docs/SIMULATOR_DESIGN.md` "Founder option 3: crown fire in the simulator".
 
 ## 4. Recommendation
 

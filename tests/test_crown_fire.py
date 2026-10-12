@@ -959,11 +959,15 @@ def _park_city_session(**cfg):
     raise AssertionError("no ignition")
 
 
-def test_simulator_does_not_arm_crown_fire_by_default():
+def test_simulator_arms_crown_fire_by_default():
+    """Founder 2026-10-12 ("Switch, 10-min delay"): the simulator arms crown
+    fire with the floor on grass only (tests/test_sim_floor_grass_only.py
+    holds the full set of simulator defaults)."""
     from wgresponse.simui import SimSession
     s = SimSession("boulder_co", 2, 1, seed="crown-default",
                    cfg_overrides={"spotting_enabled": True}, roads_module=None)
-    assert s._cfg.crown_fire is False
+    assert s._cfg.crown_fire is True
+    assert s._cfg.ros_floor_grass_only is True
 
 
 def test_simulator_park_city_timber_fire_runs_as_a_crown_fire():

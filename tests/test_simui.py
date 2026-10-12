@@ -2827,8 +2827,14 @@ def test_crew_safety_paradise_founder_repro_when_tile_present():
         pytest.skip("LOUD SKIP: no data/tiles/paradise_ca_ext.wgt — the founder "
                     "Paradise repro is not exercised this run "
                     "(py -3 tools/fetch_sim_tiles.py --extended)")
+    # PHYSICS PIN (2026-10-12): the 2026-07-10 report's surface-only forest.
+    # Under the simulator's crown fire (founder option 3) the fire is ~8x
+    # larger and two crews end their escape idle on OLD BLACK, a refuge by
+    # the founder's 2026-09-26 ruling that the strict any-burned-ground
+    # check below predates; test_crew_safety_paradise_founder_repro_under_
+    # crown_fire holds the law there.
     s = SimSession("paradise_ca", 64, 5, seed="caught-1", fire_zone="extended",
-                   cfg_overrides=dict(LEGACY_WX))
+                   cfg_overrides=dict(LEGACY_WX, crown_fire=False))
     s.ignite(39.83, -121.52, intensity="extreme")
     idle_in_burn_ticks = 0
     hidden_ticks = 0
@@ -2853,6 +2859,43 @@ def test_crew_safety_paradise_founder_repro_when_tile_present():
     # (4) violations END at 0 LEGITIMATELY — the crews escaped to the safe zone
     assert st["scoreboard"]["violations"] == 0
     assert not _idle_crews_in_burn(s, s._now_s)
+    assert st["scoreboard"]["served"] >= 1
+
+
+def test_crew_safety_paradise_founder_repro_under_crown_fire():
+    """The founder repro above under the simulator's crown fire (founder
+    2026-10-12, "Switch, 10-min delay"): the crowning fire is ~8x larger
+    (207,635 against 24,951 acres at 45 h) and two crews end their area
+    escape idle on OLD BLACK, burned ground past its cold-black window and a
+    refuge by the founder's 2026-09-26 ruling (contracts old_black_refuge).
+    The law holds: no idle crew ever stands on hot black or an imminent cell
+    (so the scoreboard's 0 never hides one), every idle crew on burned ground
+    is on old black, crews relocated and violations end at 0. Measured
+    2026-10-12: 477 idle crew-ticks on old black, each at least 15 min past
+    its window (median 20 h); 0 on hot black or imminent ground."""
+    ext = DEFAULT_TILE_DIR / "paradise_ca_ext.wgt"
+    if not ext.exists():
+        pytest.skip("LOUD SKIP: no data/tiles/paradise_ca_ext.wgt — the founder "
+                    "Paradise repro is not exercised this run "
+                    "(py -3 tools/fetch_sim_tiles.py --extended)")
+    s = SimSession("paradise_ca", 64, 5, seed="caught-1", fire_zone="extended",
+                   cfg_overrides=dict(LEGACY_WX))
+    assert s._cfg.crown_fire and s._cfg.old_black_refuge
+    s.ignite(39.83, -121.52, intensity="extreme")
+    on_old_black = 0
+    st = None
+    for _ in range(180):
+        st = s.tick()
+        now = s._now_s
+        for cid in _idle_crews_in_burn(s, now):
+            pos = s._crew_sims[cid].pos
+            unsafe, _burned, _imminent = s._cell_unsafe(pos, now)
+            assert not unsafe, (cid, now)
+            assert s._on_old_black(pos, now), (cid, now)
+            on_old_black += 1
+    assert on_old_black > 0, "control: the crown fire must drive crews onto old black"
+    assert st["scoreboard"]["relocations"] > 0
+    assert st["scoreboard"]["violations"] == 0
     assert st["scoreboard"]["served"] >= 1
 
 
