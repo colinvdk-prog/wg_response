@@ -656,6 +656,16 @@ offline sanity pins: `tests/test_sim_tiles.py`; raw job zips cached in `out/lfps
 (a decode failure never re-burns a completed LFPS job). Refetch: `--force`; one location:
 `--only <key>`.
 
+**Canopy layers (2026-10-12, the crown-fire model, contracts SAFETY SEMANTICS 22).**
+`py -3 tools/fetch_sim_tiles.py --canopy [--extended]` added LANDFIRE
+**`LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH`** to the committed tiles (one LFPS job per
+tile over its own bbox, nearest-neighbour onto the same grid, terrain bands verified
+byte-identical): four optional bands `CBH_M` / `CBD_KGM3` / `CC_PCT` / `CH_M` after
+`ELEV_M`, read only by `cfg.crown_fire`. Provenance and request counts:
+`data/tiles/provenance_canopy.json`; review: `docs/review/crown_fire_model_2026-10-12.md`.
+The table's bytes column is the terrain-only file as first fetched; the canopy bands
+add ~0.45 MB to a standard tile (~1.1 MB to Eagle–Vail's larger one).
+
 | key | bbox W, S, E, N (deg) | bytes | burnable | dev 91/93 | water 98 | top fuels (% of cells) | WUI dev cells (r≤3) | elev m | slope max |
 |---|---|---|---|---|---|---|---|---|---|
 | malibu_ca | -118.817584, 33.974152, -118.622416, 34.135848 | 849,857 | 57.1% | 9.3% | 30.5% | SH2 16.8, GS2 14.3, SH5 10.1 | 3,686 | 0*–853 | 56° |

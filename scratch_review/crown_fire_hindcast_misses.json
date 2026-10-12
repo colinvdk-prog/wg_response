@@ -1,0 +1,50 @@
+[
+ {
+  "key": "timber",
+  "k": 7,
+  "phase": "growing",
+  "new_burnable_cells": 1007,
+  "missed_by_crown_held_by_deployed": 178,
+  "held_by_crown_missed_by_deployed": 0,
+  "missed_by_class": {
+   "TL / crown fuel / crown arm nominal: surface": 161,
+   "GS / crown fuel / crown arm nominal: passive": 8,
+   "GR / no canopy / crown arm nominal: -": 4,
+   "TL / crown fuel / crown arm nominal: -": 3,
+   "GS / crown fuel / crown arm nominal: surface": 1,
+   "TU / crown fuel / crown arm nominal: surface": 1
+  }
+ },
+ {
+  "key": "timber",
+  "k": 10,
+  "phase": "growing",
+  "new_burnable_cells": 750,
+  "missed_by_crown_held_by_deployed": 90,
+  "held_by_crown_missed_by_deployed": 0,
+  "missed_by_class": {
+   "TL / crown fuel / crown arm nominal: surface": 83,
+   "TL / crown fuel / crown arm nominal: -": 7
+  }
+ },
+ {
+  "key": "littlegiant",
+  "k": 40,
+  "phase": "stalled",
+  "new_burnable_cells": 1913,
+  "missed_by_crown_held_by_deployed": 187,
+  "held_by_crown_missed_by_deployed": 3,
+  "missed_by_class": {
+   "TU / crown fuel / crown arm nominal: passive": 116,
+   "TU / crown fuel / crown arm nominal: surface": 22,
+   "SH / crown fuel / crown arm nominal: passive": 13,
+   "SH / crown fuel / crown arm nominal: surface": 12,
+   "TU / crown fuel / crown arm nominal: active": 7,
+   "GS / no canopy / crown arm nominal: -": 5,
+   "GR / no canopy / crown arm nominal: -": 5,
+   "TU / crown fuel / crown arm nominal: -": 5,
+   "TL / crown fuel / crown arm nominal: passive": 1,
+   "TU / no canopy / crown arm nominal: -": 1
+  }
+ }
+]

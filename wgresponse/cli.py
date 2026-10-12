@@ -266,6 +266,13 @@ def _build_parser() -> argparse.ArgumentParser:
                          "the wind lies between the 16 grid directions; "
                          "2-3.4x spread cost (docs/review/grid_orientation_"
                          "2026-10-09.md)")
+    pw.add_argument("--crown-fire", action="store_true",
+                    help="cfg.crown_fire: the crown-fire model (SAFETY "
+                         "SEMANTICS 22) — forest cells may torch or crown "
+                         "(Van Wagner 1977 / Cruz et al. 2005); every live "
+                         "tile also fetches the LANDFIRE canopy layers "
+                         "(LF2024 CBH;CBD;CC;CH, one more LFPS job per "
+                         "domain; docs/review/crown_fire_model_2026-10-12.md)")
     pw.add_argument("--solver-evals", type=int, default=0,
                     help="cfg.solver_budget_evals: deterministic dispatch "
                          "budget as a consult COUNT (0 = wall clock); the "
@@ -796,12 +803,19 @@ def _watch_terrain(args, state_dir):
     # tile + zip cache, so a fresh container (App Runner /tmp is wiped on
     # every restart) refetches nothing it has already fetched.
     s3_uri = os.environ.get(_STATE_S3_ENV) or None
+    # CROWN FIRE (SAFETY SEMANTICS 22): --crown-fire tiles carry the LANDFIRE
+    # canopy layers (one more LFPS job per domain, cached like the terrain)
+    canopy = (terrain_mod.LfpsTerrain.DEFAULT_CANOPY_LAYERS
+              if getattr(args, "crown_fire", False) else None)
     provider = terrain_mod.LfpsTerrain(cache_dir=cache_dir, email=email,
-                                       s3_uri=s3_uri)
+                                       s3_uri=s3_uri,
+                                       canopy_layer_list=canopy)
     return provider, [
         f"terrain: live LANDFIRE via LFPS (zip+tile cache: {cache_dir}"
         + (f", mirrored to {s3_uri}/terrain/" if s3_uri else "")
-        + f"; job email {email} — override with env {_LFPS_EMAIL_ENV})"]
+        + f"; job email {email} — override with env {_LFPS_EMAIL_ENV})"
+        + (f"; canopy layers {canopy} for the crown-fire model"
+           if canopy else "")]
 
 
 def _watch_registry(args, aoi, notes=None):
@@ -1734,6 +1748,13 @@ def _cmd_watch(args) -> int:
         startup_notes_fix.append(
             "ANY-ANGLE spread ACTIVE (SAFETY SEMANTICS 21): straight runs at "
             "any angle besides the 16 grid edges (2-3.4x spread cost)")
+    if getattr(args, "crown_fire", False):
+        cfg = dataclasses.replace(cfg, crown_fire=True)
+        startup_notes_fix.append(
+            "CROWN FIRE ACTIVE (SAFETY SEMANTICS 22): forest cells torch or "
+            "crown (Van Wagner 1977 initiation, Cruz et al. 2005 crown rate "
+            f"of spread, foliar moisture {cfg.crown_foliar_moisture_pct:g} %);"
+            " every domain tile also fetches the LANDFIRE canopy layers")
     if getattr(args, "solver_evals", 0):
         cfg = dataclasses.replace(cfg, solver_budget_evals=int(args.solver_evals))
         startup_notes_fix.append(

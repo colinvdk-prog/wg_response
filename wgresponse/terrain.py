@@ -8,6 +8,16 @@
                        GeoTIFF; optional tifffile/numpy decode; disk cache
     load_ascii_tile /  dependency-free text cache format so a live tile is
     save_ascii_tile    fetched once and reused forever without tifffile/numpy
+                       (optional canopy bands: below)
+
+CANOPY LAYERS (contracts SAFETY SEMANTICS 22, the crown-fire model, 2026-10-12):
+TerrainTile.canopy carries LANDFIRE canopy base height, bulk density, cover
+and height (contracts.CanopyLayers, physical units). LfpsTerrain fetches them
+with a separate LFPS job when given canopy_layer_list (default None: no
+canopy, every byte as before); the ascii format carries them as four optional
+bands after the terrain bands (a file without them loads with canopy=None);
+attach_canopy() puts canopy layers on an existing tile (the simulator tiles:
+tools/fetch_sim_tiles.py --canopy).
 
 Units and grid law (contracts): grids row-major, row 0 = NORTH edge, col 0 =
 west; cell_m meters; fuel raster holds FBFM40 integer codes as floats
@@ -52,7 +62,8 @@ import urllib.request
 import zipfile
 from typing import Callable, Optional
 
-from .contracts import BBox, GridSpec, Raster, TerrainTile, seeded_rng
+from .contracts import (BBox, CanopyLayers, GridSpec, Raster, TerrainTile,
+                        seeded_rng)
 from .persist import S3Mirror, mirror_off_status
 
 log = logging.getLogger(__name__)
@@ -200,6 +211,42 @@ class SyntheticTerrain:
 # ---------------------------------------------------------------------------
 
 _BANDS = ("FUEL", "SLOPE_DEG", "ASPECT_DEG", "ELEV_M")
+#: CANOPY BANDS (contracts SAFETY SEMANTICS 22): optional, all four or none,
+#: after the terrain bands, in PHYSICAL units (contracts.CanopyLayers). A file
+#: carrying them also carries a ``canopy_source <str>`` line after its
+#: ``source`` line. A tile written without them reads back with canopy=None —
+#: exactly the tile it always was.
+_CANOPY_BANDS = ("CBH_M", "CBD_KGM3", "CC_PCT", "CH_M")
+
+
+def _canopy_token(v: float) -> str:
+    """Compact exact token for a canopy value: LANDFIRE's quantised layers
+    (0.1 m, 0.01 kg/m^3, 1 %) are mostly zeros and short decimals, so an
+    integral value drops its '.0' ('0', '45') and anything else is repr —
+    float(token) == v exactly either way."""
+    t = repr(float(v))
+    return t[:-2] if t.endswith(".0") else t
+
+
+def _canopy_lines(canopy, spec) -> list:
+    """The four canopy band blocks (name line + nrows rows) of `canopy`."""
+    lines = []
+    for name, band in zip(_CANOPY_BANDS, (canopy.cbh_m, canopy.cbd_kgm3,
+                                          canopy.cc_pct, canopy.ch_m)):
+        if band.spec != spec:
+            raise ValueError(f"canopy band {name} is not on the tile grid")
+        lines.append(name)
+        for r in range(spec.nrows):
+            row = band.data[r * spec.ncols:(r + 1) * spec.ncols]
+            lines.append(" ".join(_canopy_token(v) for v in row))
+    return lines
+
+
+def _write_lines(lines: list, path: str) -> None:
+    tmp = f"{path}.tmp"
+    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(lines) + "\n")
+    os.replace(tmp, path)
 
 
 def save_ascii_tile(tile: TerrainTile, path: str) -> None:
@@ -208,25 +255,33 @@ def save_ascii_tile(tile: TerrainTile, path: str) -> None:
     Line 1 header: ``nrows ncols cell_m north_lat west_lon`` (floats via repr
     for exact round-trip); line 2: ``source <str>``; then the 4 band blocks
     (FUEL, SLOPE_DEG, ASPECT_DEG, ELEV_M), each a name line + nrows rows of
-    ncols space-separated repr floats. Units per contracts.TerrainTile."""
+    ncols space-separated repr floats. Units per contracts.TerrainTile.
+
+    CANOPY (SAFETY SEMANTICS 22): a tile with canopy layers also writes a
+    ``canopy_source <str>`` line after the source line and the four canopy
+    blocks (CBH_M, CBD_KGM3, CC_PCT, CH_M; compact exact tokens) after
+    ELEV_M. A tile without them is written byte for byte as before."""
     spec = tile.spec
+    canopy = getattr(tile, "canopy", None)
     lines = [f"{spec.nrows} {spec.ncols} {spec.cell_m!r} "
              f"{spec.north_lat!r} {spec.west_lon!r}",
              f"source {tile.source}"]
+    if canopy is not None:
+        lines.append(f"canopy_source {canopy.source}")
     for name, band in zip(_BANDS, (tile.fuel, tile.slope_deg,
                                    tile.aspect_deg, tile.elev_m)):
         lines.append(name)
         for r in range(spec.nrows):
             row = band.data[r * spec.ncols:(r + 1) * spec.ncols]
             lines.append(" ".join(repr(v) for v in row))
-    tmp = f"{path}.tmp"
-    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
-        f.write("\n".join(lines) + "\n")
-    os.replace(tmp, path)
+    if canopy is not None:
+        lines.extend(_canopy_lines(canopy, spec))
+    _write_lines(lines, path)
 
 
-def load_ascii_tile(path: str) -> TerrainTile:
-    """Read a TerrainTile written by save_ascii_tile (exact float round-trip)."""
+def _read_ascii(path: str) -> tuple:
+    """(spec, source, canopy_source | None, {band name: Raster}) of a file in
+    the ascii tile format; every band name must be a terrain or canopy band."""
     with open(path, "r", encoding="utf-8") as f:
         lines = [ln.rstrip("\n") for ln in f]
     if not lines:
@@ -242,13 +297,17 @@ def load_ascii_tile(path: str) -> TerrainTile:
     if i < len(lines) and lines[i].startswith("source "):
         source = lines[i][len("source "):]
         i += 1
+    canopy_source = None
+    if i < len(lines) and lines[i].startswith("canopy_source "):
+        canopy_source = lines[i][len("canopy_source "):]
+        i += 1
     bands: dict = {}
     while i < len(lines):
         name = lines[i].strip()
         if not name:
             i += 1
             continue
-        if name not in _BANDS:
+        if name not in _BANDS and name not in _CANOPY_BANDS:
             raise ValueError(f"unknown band {name!r} in {path}")
         i += 1
         data: list = []
@@ -260,12 +319,71 @@ def load_ascii_tile(path: str) -> TerrainTile:
             data.extend(row)
             i += 1
         bands[name] = Raster(spec, data=data)
+    return spec, source, canopy_source, bands
+
+
+def _canopy_of(bands: dict, canopy_source, path: str):
+    """CanopyLayers from parsed bands: None when the file carries none, the
+    layers when it carries all four, ValueError for a partial set."""
+    have = [b for b in _CANOPY_BANDS if b in bands]
+    if not have:
+        return None
+    if len(have) != len(_CANOPY_BANDS):
+        missing = [b for b in _CANOPY_BANDS if b not in bands]
+        raise ValueError(f"ascii tile {path} has a partial canopy (missing "
+                         f"{missing}): all four canopy bands or none")
+    return CanopyLayers(cbh_m=bands["CBH_M"], cbd_kgm3=bands["CBD_KGM3"],
+                        cc_pct=bands["CC_PCT"], ch_m=bands["CH_M"],
+                        source=canopy_source or "ascii")
+
+
+def load_ascii_tile(path: str) -> TerrainTile:
+    """Read a TerrainTile written by save_ascii_tile (exact float round-trip).
+    Canopy bands, when the file has them (all four), come back as
+    TerrainTile.canopy; a file without them reads back with canopy=None."""
+    spec, source, canopy_source, bands = _read_ascii(path)
     missing = [b for b in _BANDS if b not in bands]
     if missing:
         raise ValueError(f"ascii tile {path} missing bands: {missing}")
     return TerrainTile(spec=spec, fuel=bands["FUEL"], slope_deg=bands["SLOPE_DEG"],
                        aspect_deg=bands["ASPECT_DEG"], elev_m=bands["ELEV_M"],
-                       source=source)
+                       source=source,
+                       canopy=_canopy_of(bands, canopy_source, path))
+
+
+def save_ascii_canopy(canopy: CanopyLayers, spec: GridSpec, path: str) -> None:
+    """Write canopy layers ALONE (the LFPS canopy cache file): the tile
+    header for `spec`, ``source <canopy.source>``, the four canopy blocks."""
+    lines = [f"{spec.nrows} {spec.ncols} {spec.cell_m!r} "
+             f"{spec.north_lat!r} {spec.west_lon!r}",
+             f"source {canopy.source}"]
+    lines.extend(_canopy_lines(canopy, spec))
+    _write_lines(lines, path)
+
+
+def load_ascii_canopy(path: str) -> tuple:
+    """(spec, CanopyLayers) of a file written by save_ascii_canopy."""
+    spec, source, _cs, bands = _read_ascii(path)
+    if any(b in bands for b in _BANDS):
+        raise ValueError(f"{path} carries terrain bands; not a canopy file")
+    canopy = _canopy_of(bands, source, path)
+    if canopy is None:
+        raise ValueError(f"{path} carries no canopy bands")
+    return spec, canopy
+
+
+def attach_canopy(tile: TerrainTile, canopy: Optional[CanopyLayers]) -> TerrainTile:
+    """The tile with `canopy` attached (a new TerrainTile sharing the terrain
+    rasters). The canopy must sit on exactly the tile's grid."""
+    if canopy is not None:
+        for band in (canopy.cbh_m, canopy.cbd_kgm3, canopy.cc_pct,
+                     canopy.ch_m):
+            if band.spec != tile.spec:
+                raise ValueError("canopy layers are not on the tile grid "
+                                 f"({band.spec} vs {tile.spec})")
+    return TerrainTile(spec=tile.spec, fuel=tile.fuel,
+                       slope_deg=tile.slope_deg, aspect_deg=tile.aspect_deg,
+                       elev_m=tile.elev_m, source=tile.source, canopy=canopy)
 
 
 # ---------------------------------------------------------------------------
@@ -346,12 +464,26 @@ class LfpsTerrain:
     EVERY S3 failure is loud + non-fatal: the live LFPS path still runs.
     With ``s3_uri=None`` nothing about this class changes.
 
+    CANOPY LAYERS (contracts SAFETY SEMANTICS 22, the crown-fire model):
+    with ``canopy_layer_list`` (e.g. DEFAULT_CANOPY_LAYERS = LF2024 CBH;CBD;
+    CC;CH, the vintage of the default fuel layer) every tile() also carries
+    TerrainTile.canopy, fetched by a SEPARATE LFPS job over the same AOI
+    (canopy()), decoded onto the same grid by the same nearest-neighbour
+    rule (so each cell's canopy is the pixel its fuel came from), converted
+    from LANDFIRE's integer encodings to physical units (CBH and CH metres
+    x 10, CBD kg/m^3 x 100, CC percent; nodata and non-forest -> 0.0) and
+    cached exactly like the terrain: its own zip and decoded files
+    (``lfps_<hash>.zip`` / ``lfps_<hash>.wgcanopy``, keyed on the canopy
+    layers), mirrored to S3 the same way. canopy_layer_list=None (the
+    default) changes nothing: no canopy job, no canopy file, canopy=None.
+
     poll_interval_s/timeout_s in seconds; sleep_fn and dep_probe injectable
     for tests (dep_probe defaults to probe_live_decode_deps)."""
 
     SUBMIT_URL = "https://lfps.usgs.gov/api/job/submit"
     STATUS_URL = "https://lfps.usgs.gov/api/job/status"
     DEFAULT_LAYERS = "LF2024_FBFM40;LF2020_SlpD;LF2020_Asp;LF2020_Elev"
+    DEFAULT_CANOPY_LAYERS = "LF2024_CBH;LF2024_CBD;LF2024_CC;LF2024_CH"
 
     def __init__(self, cache_dir: Optional[str] = None,
                  http_get: Optional[HttpGet] = None,
@@ -362,10 +494,16 @@ class LfpsTerrain:
                  sleep_fn: Callable[[float], None] = time.sleep,
                  dep_probe: Optional[Callable[[], None]] = None,
                  s3_uri: Optional[str] = None,
-                 s3_client: Optional[object] = None):
+                 s3_client: Optional[object] = None,
+                 canopy_layer_list: Optional[str] = None):
         if len(layer_list.split(";")) != 4:
             raise ValueError("layer_list must name exactly 4 layers "
                              "(fuel;slope;aspect;elev) to fill a TerrainTile")
+        if canopy_layer_list is not None and \
+                len(canopy_layer_list.split(";")) != 4:
+            raise ValueError("canopy_layer_list must name exactly 4 layers "
+                             "(CBH;CBD;CC;CH) to fill a CanopyLayers")
+        self._canopy_layers = canopy_layer_list
         self._cache_dir = cache_dir
         self._http_get = http_get or _default_http_get
         self._layer_list = layer_list
@@ -399,7 +537,93 @@ class LfpsTerrain:
         are probed FIRST (fail fast, before any network); then a cached job
         zip — local, else mirrored — is re-decoded without re-submitting;
         only then is a fresh LFPS job submitted, and its zip is written to
-        the cache (and mirrored) BEFORE decode."""
+        the cache (and mirrored) BEFORE decode.
+
+        With canopy_layer_list the tile also carries canopy() for the same
+        bbox and cell_m (SAFETY SEMANTICS 22); without it, this is the
+        terrain tile exactly as before."""
+        tile = self._terrain_tile(bbox, cell_m)
+        if self._canopy_layers:
+            tile = attach_canopy(tile, self.canopy(bbox, cell_m))
+        return tile
+
+    def canopy(self, bbox: BBox, cell_m: float) -> CanopyLayers:
+        """The LANDFIRE canopy layers (canopy_layer_list) for bbox at cell_m,
+        on exactly the grid tile() builds for the same arguments; disk-
+        cached with the same order of operations as tile() (decoded file,
+        mirrored decoded file, dep probe, cached / mirrored zip, then one
+        LFPS job whose zip is persisted before decode). ValueError when no
+        canopy_layer_list was configured."""
+        if not self._canopy_layers:
+            raise ValueError("LfpsTerrain has no canopy_layer_list")
+        cache_path = self.canopy_cache_path(bbox, cell_m)
+        if cache_path and os.path.exists(cache_path):
+            return load_ascii_canopy(cache_path)[1]
+        if cache_path and self._s3_pull(cache_path):
+            try:
+                return load_ascii_canopy(cache_path)[1]
+            except Exception as exc:
+                log.error("terrain: mirrored canopy %s is unusable (%s) — "
+                          "discarding it and falling back to a live LFPS job",
+                          self.s3_key(cache_path), exc)
+                self._discard_local(cache_path)
+        self._dep_probe()
+        zip_path = self.canopy_zip_cache_path(bbox)
+        body = None
+        if zip_path and os.path.exists(zip_path):
+            log.info("LFPS canopy zip cache hit for %s; re-decoding without "
+                     "re-submitting a job", zip_path)
+            with open(zip_path, "rb") as f:
+                body = f.read()
+        elif zip_path and self._s3_pull(zip_path):
+            with open(zip_path, "rb") as f:
+                body = f.read()
+        if body is None:
+            job_id = self._submit(bbox, self._canopy_layers)
+            zip_url = self._poll(job_id)
+            status, body = self._http_get(zip_url, {})
+            if status != 200:
+                raise RuntimeError(f"LFPS canopy zip download failed: "
+                                   f"HTTP {status}")
+            if zip_path:
+                os.makedirs(os.path.dirname(zip_path), exist_ok=True)
+                tmp = f"{zip_path}.tmp"
+                with open(tmp, "wb") as f:
+                    f.write(body)
+                os.replace(tmp, zip_path)
+                self._s3_push(zip_path, body)
+        spec, canopy = self._decode_canopy_zip(body, bbox, cell_m)
+        if cache_path:
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            save_ascii_canopy(canopy, spec, cache_path)
+            self._s3_push(cache_path)
+        return canopy
+
+    def canopy_cache_path(self, bbox: BBox, cell_m: float) -> Optional[str]:
+        """Deterministic decoded-canopy cache path for (canopy layers, bbox,
+        cell_m) — the tile cache's hash law over the canopy layer list, with
+        its own ``.wgcanopy`` suffix; None without a cache_dir or canopy
+        layers."""
+        if not self._cache_dir or not self._canopy_layers:
+            return None
+        key = (f"{self._canopy_layers}|{bbox.west:.6f},{bbox.south:.6f},"
+               f"{bbox.east:.6f},{bbox.north:.6f}|{cell_m:.1f}")
+        h = hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
+        return os.path.join(self._cache_dir, f"lfps_{h}.wgcanopy")
+
+    def canopy_zip_cache_path(self, bbox: BBox) -> Optional[str]:
+        """Raw canopy job zip cache path, keyed on (canopy layers, AOI) like
+        zip_cache_path; None without a cache_dir or canopy layers."""
+        if not self._cache_dir or not self._canopy_layers:
+            return None
+        key = (f"{self._canopy_layers}|{bbox.west:.6f},{bbox.south:.6f},"
+               f"{bbox.east:.6f},{bbox.north:.6f}")
+        h = hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
+        return os.path.join(self._cache_dir, f"lfps_{h}.zip")
+
+    def _terrain_tile(self, bbox: BBox, cell_m: float) -> TerrainTile:
+        """The terrain tile (fuel, slope, aspect, elevation) — tile()'s
+        pre-canopy body, unchanged."""
         cache_path = self.cache_path(bbox, cell_m)
         if cache_path and os.path.exists(cache_path):
             return load_ascii_tile(cache_path)
@@ -475,6 +699,11 @@ class LfpsTerrain:
                f"{bbox.east:.6f},{bbox.north:.6f}")
         h = hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
         return os.path.join(self._cache_dir, f"lfps_{h}.zip")
+
+    @property
+    def canopy_layer_list(self) -> Optional[str]:
+        """The canopy layers every tile() carries (None: no canopy)."""
+        return self._canopy_layers
 
     # -- S3 cache mirror -----------------------------------------------------
 
@@ -562,8 +791,8 @@ class LfpsTerrain:
 
     # -- job API --------------------------------------------------------------
 
-    def _submit(self, bbox: BBox) -> str:
-        params = {"Layer_List": self._layer_list,
+    def _submit(self, bbox: BBox, layer_list: Optional[str] = None) -> str:
+        params = {"Layer_List": layer_list or self._layer_list,
                   "Area_of_Interest": f"{bbox.west} {bbox.south} {bbox.east} {bbox.north}",
                   "Output_Projection": "4326"}
         if self._email:
@@ -605,6 +834,37 @@ class LfpsTerrain:
     # -- decode ----------------------------------------------------------------
 
     def _decode_zip(self, zip_bytes: bytes, bbox: BBox, cell_m: float) -> TerrainTile:
+        spec, out = self._decode_rasters(zip_bytes, bbox, cell_m,
+                                         self._layer_list)
+        return TerrainTile(spec=spec, fuel=out[0], slope_deg=out[1],
+                           aspect_deg=out[2], elev_m=out[3],
+                           source=f"lfps:{self._layer_list}")
+
+    #: LANDFIRE canopy encodings (LF 2.x products, LF2016 Remap onward):
+    #: CBH and CH in metres x 10, CBD in kg/m^3 x 100, CC in percent — the
+    #: divisor turning each raw value into contracts.CanopyLayers units.
+    CANOPY_DIVISORS = (10.0, 100.0, 1.0, 10.0)
+
+    def _decode_canopy_zip(self, zip_bytes: bytes, bbox: BBox,
+                           cell_m: float) -> tuple:
+        """(spec, CanopyLayers) from a canopy job zip: the same nearest-
+        neighbour decode as the terrain, then raw -> physical units (a raw
+        value <= 0 — LANDFIRE non-forest 0 or nodata -9999 — is 0.0: no
+        canopy). Division (not multiplication by 0.1) keeps each value the
+        nearest double to its decimal (35 / 10 == 3.5 exactly)."""
+        spec, out = self._decode_rasters(zip_bytes, bbox, cell_m,
+                                         self._canopy_layers)
+        for band, div in zip(out, self.CANOPY_DIVISORS):
+            band.data = [v / div if v > 0.0 else 0.0 for v in band.data]
+        return spec, CanopyLayers(cbh_m=out[0], cbd_kgm3=out[1],
+                                  cc_pct=out[2], ch_m=out[3],
+                                  source=f"lfps:{self._canopy_layers}")
+
+    def _decode_rasters(self, zip_bytes: bytes, bbox: BBox, cell_m: float,
+                        layer_list: str) -> tuple:
+        """(spec, [Raster per layer]) of an LFPS job zip resampled nearest-
+        neighbour onto _grid_for_bbox(bbox, cell_m) — the decode shared by
+        the terrain and the canopy jobs (raw band values as floats)."""
         with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
             tif_names = [n for n in zf.namelist() if n.lower().endswith(".tif")]
             tfw_names = [n for n in zf.namelist() if n.lower().endswith(".tfw")]
@@ -621,7 +881,7 @@ class LfpsTerrain:
         # tfw: A=x-scale, D, B, E=y-scale (negative), C=x of UL pixel center,
         #      F=y of UL pixel center. Output_Projection=4326 -> degrees.
         xa, _, _, ye, x_ul, y_ul = tfw
-        n_bands = len(self._layer_list.split(";"))
+        n_bands = len(layer_list.split(";"))
         if getattr(arr, "ndim", 0) != 3:
             raise RuntimeError(f"LFPS GeoTIFF: expected {n_bands}-band raster, "
                                f"got shape {getattr(arr, 'shape', None)}")
@@ -644,9 +904,7 @@ class LfpsTerrain:
                 sc = min(max(int(round((lon - x_ul) / xa)), 0), src_cols - 1)
                 for b in range(n_bands):
                     out[b].set(r, c, float(bands[b][sr, sc]))
-        return TerrainTile(spec=spec, fuel=out[0], slope_deg=out[1],
-                           aspect_deg=out[2], elev_m=out[3],
-                           source=f"lfps:{self._layer_list}")
+        return spec, out
 
     @staticmethod
     def _decode_geotiff(tif_bytes: bytes):

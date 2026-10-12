@@ -3968,7 +3968,8 @@ class SimSession:
                 # sweep, LegOracle judge, dispatch via the eroded_rasters
                 # seam, server overlay) is the tiered field.
                 fire._eroded_p10 = spread.tiered_eroded_p10(
-                    ens.p10, self._tile.fuel, self._cfg)
+                    ens.p10, self._tile.fuel, self._cfg,
+                    canopy=getattr(self._tile, "canopy", None))
             else:
                 fire._eroded_p10 = geo.erode_min(
                     ens.p10, self._cfg.corridor_erosion_m,

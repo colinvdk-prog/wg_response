@@ -61,6 +61,24 @@ The live GeoTIFF decode deps (tifffile+numpy+imagecodecs) are probed by
 LfpsTerrain BEFORE any job is submitted (OPS-2); the committed ascii tiles this
 tool produces need none of them. No RNG anywhere — the tool is a cache filler;
 determinism of the simulator comes from the committed tiles being static files.
+
+CANOPY (--canopy; contracts SAFETY SEMANTICS 22, the crown-fire model,
+2026-10-12): adds the LANDFIRE canopy layers (LF2024 CBH;CBD;CC;CH — the
+vintage of the tiles' LF2024_FBFM40 fuel) to the COMMITTED tiles without
+re-fetching their terrain: for each tile one LFPS canopy job over the tile's
+own bbox (the same bbox law, so the same grid), decoded onto that grid by the
+terrain's nearest-neighbour rule, attached (terrain.attach_canopy) and the tile
+re-saved. The terrain bands are checked to come back BYTE-IDENTICAL (the tool
+refuses to write otherwise), so a tile's surface fire is unchanged; the knob
+crown_fire alone decides whether the canopy is read. Idempotent (a tile that
+already carries canopy is re-summarised, not re-fetched, unless --force);
+every LFPS round-trip is logged (data/tiles/provenance_canopy.json keeps the
+per-tile request counts; out/lfps_sim_cache/canopy_requests.jsonl every
+request). --canopy --extended does the same for the *_ext tiles.
+
+    py -3 tools/fetch_sim_tiles.py --canopy                  # 13 standard tiles
+    py -3 tools/fetch_sim_tiles.py --canopy --only vail_co
+    py -3 tools/fetch_sim_tiles.py --canopy --extended       # the _ext tiles
 """
 from __future__ import annotations
 
@@ -78,7 +96,8 @@ if _REPO_ROOT not in sys.path:
 from wgresponse.contracts import BBox  # noqa: E402
 from wgresponse.fuels import FUEL_TABLE, is_burnable  # noqa: E402
 from wgresponse.terrain import (M_PER_DEG_LAT, LfpsTerrain,  # noqa: E402
-                                _default_http_get, _m_per_deg_lon,
+                                _default_http_get, _grid_for_bbox,
+                                _m_per_deg_lon, attach_canopy,
                                 load_ascii_tile, save_ascii_tile)
 
 #: The SIMULATOR_DESIGN.md locations: (key, display name, lat, lon).
@@ -602,6 +621,263 @@ def _main_extended(args, now: str) -> int:
     return 0
 
 
+# ---------------------------------------------------------------------------
+# --canopy: LANDFIRE canopy layers on the committed tiles (SAFETY SEMANTICS 22)
+# ---------------------------------------------------------------------------
+
+CANOPY_LAYERS = LfpsTerrain.DEFAULT_CANOPY_LAYERS
+PROVENANCE_CANOPY_PATH = os.path.join(TILE_DIR, "provenance_canopy.json")
+CANOPY_REQUEST_LOG = os.path.join(CACHE_DIR, "canopy_requests.jsonl")
+
+
+def _logging_http_get(tag: str, t0: float, counts: dict):
+    """LfpsTerrain http_get wrapper: a progress line per LFPS round-trip, a
+    JSON line per request in CANOPY_REQUEST_LOG (time, tile, kind, URL
+    without the job email, HTTP status, bytes, seconds) and per-kind counts
+    in `counts` (they go into the provenance record)."""
+    def get(url, headers=None, timeout_s=180.0):
+        kind = ("submit" if "/submit" in url
+                else "status-poll" if "/status" in url else "zip-download")
+        print(f"  [{tag}] +{time.monotonic() - t0:6.1f}s LFPS {kind}", flush=True)
+        t_req = time.monotonic()
+        status, body = None, b""
+        try:
+            status, body = _default_http_get(url, headers, timeout_s=timeout_s)
+            return status, body
+        finally:
+            counts[kind] = counts.get(kind, 0) + 1
+            counts["bytes"] = counts.get("bytes", 0) + len(body or b"")
+            shown = "&".join(p for p in url.split("&")
+                             if not p.lower().startswith("email="))
+            os.makedirs(os.path.dirname(CANOPY_REQUEST_LOG), exist_ok=True)
+            with open(CANOPY_REQUEST_LOG, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps({
+                    "t_utc": datetime.now(timezone.utc).strftime(
+                        "%Y-%m-%dT%H:%M:%SZ"),
+                    "tile": tag, "kind": kind, "url": shown,
+                    "status": status, "bytes": len(body or b""),
+                    "s": round(time.monotonic() - t_req, 2)}) + "\n")
+    return get
+
+
+def _pct(sorted_vals: list, p: float):
+    if not sorted_vals:
+        return None
+    return sorted_vals[min(len(sorted_vals) - 1,
+                           int(p * (len(sorted_vals) - 1) + 0.5))]
+
+
+def summarize_canopy(tile) -> dict:
+    """Canopy summary of a tile carrying canopy layers (provenance): the
+    share of cells with a forest canopy (CBD > 0 and CH > CBH), its layer
+    distributions (P10 / P50 / P90) and how the canopy sits on the FBFM40
+    fuel classes (the crown model reads the canopy of burnable cells)."""
+    cp = tile.canopy
+    n = tile.spec.nrows * tile.spec.ncols
+    cls_tot: dict = {}
+    cls_can: dict = {}
+    cbh, cbd, cc, ch = [], [], [], []
+    for i in range(n):
+        code = int(tile.fuel.data[i])
+        cls = ("GR" if 101 <= code <= 109 else "GS" if 121 <= code <= 124
+               else "SH" if 141 <= code <= 149 else "TU" if 161 <= code <= 165
+               else "TL" if 181 <= code <= 189 else "SB" if 201 <= code <= 204
+               else "NB")
+        cls_tot[cls] = cls_tot.get(cls, 0) + 1
+        b, d, h = cp.cbh_m.data[i], cp.cbd_kgm3.data[i], cp.ch_m.data[i]
+        if d > 0.0 and h > b:
+            cls_can[cls] = cls_can.get(cls, 0) + 1
+            if is_burnable(code):
+                cbh.append(b)
+                cbd.append(d)
+                cc.append(cp.cc_pct.data[i])
+                ch.append(h)
+    for v in (cbh, cbd, cc, ch):
+        v.sort()
+
+    def q3(v):
+        return [_pct(v, 0.1), _pct(v, 0.5), _pct(v, 0.9)]
+
+    return {
+        "canopy_source": cp.source,
+        "forest_canopy_pct_of_tile": round(
+            100.0 * sum(cls_can.values()) / n, 2),
+        "burnable_with_canopy_pct_of_tile": round(100.0 * len(cbd) / n, 2),
+        "canopy_pct_by_fuel_class": {
+            k: round(100.0 * cls_can.get(k, 0) / cls_tot[k], 1)
+            for k in sorted(cls_tot)},
+        "burnable_canopy_p10_p50_p90": {
+            "cbh_m": q3(cbh), "cbd_kgm3": q3(cbd), "cc_pct": q3(cc),
+            "ch_m": q3(ch)},
+        "raw_max": {"cbh_m": max(cp.cbh_m.data), "cbd_kgm3": max(cp.cbd_kgm3.data),
+                    "cc_pct": max(cp.cc_pct.data), "ch_m": max(cp.ch_m.data)},
+    }
+
+
+def _terrain_lines(path: str) -> list:
+    """The terrain part of a saved tile: every line before its first canopy
+    band and without the canopy_source line — the bytes the canopy fetch
+    must leave unchanged."""
+    out = []
+    with open(path, "r", encoding="utf-8") as f:
+        for ln in f:
+            if ln.startswith("canopy_source "):
+                continue
+            if ln.strip() == "CBH_M":
+                break
+            out.append(ln)
+    return out
+
+
+def fetch_canopy_one(key: str, name: str, lat: float, lon: float,
+                     force: bool, suffix: str = "") -> dict:
+    """Attach the LANDFIRE canopy to the committed tile <key><suffix>.wgt:
+    returns its provenance record (status cached / fetched / FAILED)."""
+    tag = f"{key}{suffix}"
+    path = tile_path(key, suffix)
+    rec = {"name": name, "layers": CANOPY_LAYERS}
+    print(f"[canopy {tag}] {name}")
+    if not os.path.exists(path):
+        print(f"  ** no committed tile {path} — fetch it first")
+        rec.update(status="FAILED", error="no committed tile")
+        return rec
+    tile = load_ascii_tile(path)
+    geom = saved_geometry(path)
+    half_m, cell_m = geom
+    bbox = bbox_for(lat, lon, half_m)
+    spec = _grid_for_bbox(bbox, cell_m)
+    if spec != tile.spec:
+        # the half_m read back from the header is nrows*cell/2: re-derive the
+        # bbox from the ladder rung / standard law that wrote the tile
+        for h, c in (geometry_ladder(key) if not suffix else EXT_SIZES):
+            if abs(c - cell_m) <= 1.0:
+                cand = _grid_for_bbox(bbox_for(lat, lon, h), c)
+                if cand == tile.spec:
+                    half_m, cell_m, bbox, spec = h, c, bbox_for(lat, lon, h), cand
+                    break
+    if spec != tile.spec:
+        print(f"  ** {path}: its grid {tile.spec} is not the bbox law's "
+              f"{spec} — refusing to attach a canopy decoded elsewhere")
+        rec.update(status="FAILED", error="tile grid does not match the bbox law")
+        return rec
+    rec.update(bbox_wsen=[round(bbox.west, 6), round(bbox.south, 6),
+                          round(bbox.east, 6), round(bbox.north, 6)],
+               cell_m=cell_m, bbox_half_m=half_m)
+    if tile.canopy is not None and not force:
+        print("  canopy already attached — re-summarising (use --force to "
+              "refetch)")
+        rec.update(status="cached", summary=summarize_canopy(tile))
+        return rec
+    email = os.environ.get("LFPS_EMAIL") or "ops@thewildfireguardian.com"
+    counts: dict = {}
+    t0 = time.monotonic()
+    lfps = LfpsTerrain(cache_dir=CACHE_DIR,
+                       http_get=_logging_http_get(tag, t0, counts),
+                       email=email, poll_interval_s=10.0,
+                       timeout_s=EXT_TIMEOUT_S, canopy_layer_list=CANOPY_LAYERS)
+    if force:
+        for stale in (lfps.canopy_cache_path(bbox, cell_m),
+                      lfps.canopy_zip_cache_path(bbox)):
+            if stale and os.path.exists(stale):
+                os.remove(stale)
+    before = _terrain_lines(path)
+    last_err = "never attempted"
+    for attempt in range(1, RETRIES + 2):
+        try:
+            canopy = lfps.canopy(bbox, cell_m)
+            new = attach_canopy(tile, canopy)
+            tmp_path = path + ".canopy.tmp"
+            save_ascii_tile(new, tmp_path)
+            if _terrain_lines(tmp_path) != before:
+                os.remove(tmp_path)
+                raise RuntimeError("re-saved terrain bands differ from the "
+                                   "committed tile — not written")
+            os.replace(tmp_path, path)
+            rec.update(status="fetched", summary=summarize_canopy(new),
+                       requests=dict(counts),
+                       fetch_seconds=round(time.monotonic() - t0, 1),
+                       bytes_after=os.path.getsize(path))
+            print(f"  saved {path} ({rec['bytes_after']:,} bytes) in "
+                  f"{time.monotonic() - t0:.0f} s; forest canopy "
+                  f"{rec['summary']['forest_canopy_pct_of_tile']}% of the tile")
+            return rec
+        except Exception as e:  # noqa: BLE001 — one tile must not kill the run
+            last_err = f"{type(e).__name__}: {e}"
+            print(f"  !! [{tag}] attempt {attempt} FAILED: {last_err}", flush=True)
+            if attempt <= RETRIES:
+                time.sleep(RETRY_SLEEP_S)
+    rec.update(status="FAILED", error=last_err, requests=dict(counts))
+    return rec
+
+
+def _main_canopy(args, now: str) -> int:
+    """--canopy: the LANDFIRE canopy on every requested committed tile
+    (standard, or the *_ext tiles with --extended)."""
+    suffix = EXT_SUFFIX if args.extended else ""
+    prior = {}
+    if os.path.exists(PROVENANCE_CANOPY_PATH):
+        try:
+            with open(PROVENANCE_CANOPY_PATH, "r", encoding="utf-8") as f:
+                prior = json.load(f)
+        except (ValueError, OSError):
+            prior = {}
+    doc = {"layers": CANOPY_LAYERS,
+           "units": "cbh_m / ch_m metres, cbd_kgm3 kg/m^3, cc_pct percent "
+                    "(LANDFIRE raw: CBH, CH m x 10; CBD kg/m^3 x 100; CC %)",
+           "note": "canopy layers attached to the committed simulator tiles "
+                   "(contracts SAFETY SEMANTICS 22); terrain bands verified "
+                   "byte-identical; read only with cfg.crown_fire",
+           "tiles": dict(prior.get("tiles", {}))}
+    failed = []
+    for key, name, lat, lon in LOCATIONS:
+        if args.only and key not in args.only:
+            continue
+        if suffix and key in NO_EXTENDED:
+            continue
+        if suffix and not os.path.exists(tile_path(key, suffix)):
+            # no extended tile committed for this location (never fetched):
+            # nothing to attach a canopy to, and nothing to report
+            print(f"[canopy {key}{suffix}] no committed extended tile — "
+                  f"skipped")
+            doc["tiles"].pop(f"{key}{suffix}", None)
+            continue
+        rec = fetch_canopy_one(key, name, lat, lon, args.force, suffix)
+        rec["checked_utc"] = now
+        if rec["status"] == "fetched":
+            rec["fetched_utc"] = now
+        else:
+            # a cached tile keeps its fetch's record (time, requests); the
+            # request counts are rebuilt from the request log if missing
+            prior_rec = doc["tiles"].get(f"{key}{suffix}", {})
+            for fld in ("fetched_utc", "requests", "fetch_seconds"):
+                if fld in prior_rec:
+                    rec[fld] = prior_rec[fld]
+            if "requests" not in rec and os.path.exists(CANOPY_REQUEST_LOG):
+                counts: dict = {}
+                with open(CANOPY_REQUEST_LOG, "r", encoding="utf-8") as fh:
+                    for ln in fh:
+                        r = json.loads(ln)
+                        if r.get("tile") == f"{key}{suffix}":
+                            counts[r["kind"]] = counts.get(r["kind"], 0) + 1
+                            counts["bytes"] = counts.get("bytes", 0) + r["bytes"]
+                            rec.setdefault("fetched_utc", r["t_utc"])
+                if counts:
+                    rec["requests"] = counts
+        doc["tiles"][f"{key}{suffix}"] = rec
+        if rec["status"] == "FAILED":
+            failed.append(f"{key}{suffix}")
+        tmp = PROVENANCE_CANOPY_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(doc, f, indent=2, sort_keys=True)
+            f.write("\n")
+        os.replace(tmp, PROVENANCE_CANOPY_PATH)
+    print(f"\ncanopy provenance written: {PROVENANCE_CANOPY_PATH}")
+    if failed:
+        print(f"EXIT 1 — canopy FAILED for: {', '.join(failed)}")
+        return 1
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(
         description="Fetch the five SIMULATOR_DESIGN.md terrain tiles from "
@@ -616,10 +892,16 @@ def main(argv=None) -> int:
                     help="fetch the EXTENDED fire-zone tiles (<key>_ext.wgt, "
                     "~48x48 km @ 240 m, fallback 36x36 km @ 180 m) instead of "
                     "the standard ~18x18 km tiles")
+    ap.add_argument("--canopy", action="store_true",
+                    help="attach the LANDFIRE canopy layers (LF2024 CBH;CBD;"
+                    "CC;CH) to the committed tiles (crown-fire model, SAFETY "
+                    "SEMANTICS 22); terrain bands stay byte-identical")
     args = ap.parse_args(argv)
     _console_safe()
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if args.canopy:
+        return _main_canopy(args, now)
     if args.extended:
         return _main_extended(args, now)
 

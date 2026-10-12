@@ -1,0 +1,3177 @@
+[
+ {
+  "scenario": "aspen_southwesterly",
+  "variant": "crown@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.07,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 2,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 2,
+    "surface": 2,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 206,
+    "surface": 24,
+    "passive": 0,
+    "active": 388
+   },
+   "ignition_cell": {
+    "fuel": 181,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 75,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 2077,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 315.3,
+    "fire_ha": 8.1
+   },
+   "first_spot_over_1km": {
+    "age_min": 333.2,
+    "fire_ha": 69.7
+   },
+   "first_spot_over_2km": {
+    "age_min": 354.1,
+    "fire_ha": 223.6
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 2,
+     "head_km": 0.05
+    },
+    "3.0": {
+     "acres": 4,
+     "head_km": 0.06
+    },
+    "6.0": {
+     "acres": 618,
+     "head_km": 4.23
+    }
+   },
+   "max_head_gain_km_per_h": 4.17
+  },
+  "wall_s": 1.9
+ },
+ {
+  "scenario": "aspen_southwesterly",
+  "variant": "crown_d10@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.22,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 2,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 2,
+    "surface": 2,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 162,
+    "surface": 24,
+    "passive": 0,
+    "active": 388
+   },
+   "ignition_cell": {
+    "fuel": 181,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 62,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 2077,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 316.3,
+    "fire_ha": 10.5
+   },
+   "first_spot_over_1km": {
+    "age_min": 336.4,
+    "fire_ha": 69.7
+   },
+   "first_spot_over_2km": {
+    "age_min": 356.4,
+    "fire_ha": 214.7
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 2,
+     "head_km": 0.05
+    },
+    "3.0": {
+     "acres": 4,
+     "head_km": 0.06
+    },
+    "6.0": {
+     "acres": 574,
+     "head_km": 4.16
+    }
+   },
+   "max_head_gain_km_per_h": 4.1
+  },
+  "wall_s": 2.2
+ },
+ {
+  "scenario": "aspen_southwesterly",
+  "variant": "grass_law@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 0.35,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 2,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 4,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 6,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 181,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 0,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 0,
+   "max_chain_depth": 0,
+   "first_spot_over_0.5km": null,
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 2,
+     "head_km": 0.05
+    },
+    "3.0": {
+     "acres": 4,
+     "head_km": 0.06
+    },
+    "6.0": {
+     "acres": 6,
+     "head_km": 0.15
+    }
+   },
+   "max_head_gain_km_per_h": 0.09
+  },
+  "wall_s": 1.1
+ },
+ {
+  "scenario": "aspen_southwesterly",
+  "variant": "opt1@generic",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 0.71,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 102,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 1133,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 2814,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 181,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 212,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 953,
+   "max_chain_depth": 4,
+   "first_spot_over_0.5km": {
+    "age_min": 86.4,
+    "fire_ha": 106.1
+   },
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 102,
+     "head_km": 1.74
+    },
+    "3.0": {
+     "acres": 1133,
+     "head_km": 6.32
+    },
+    "6.0": {
+     "acres": 2814,
+     "head_km": 9.31
+    }
+   },
+   "max_head_gain_km_per_h": 2.29
+  },
+  "wall_s": 1.6
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "variant": "crown@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.2,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 82,
+    "surface": 0,
+    "passive": 0,
+    "active": 26
+   },
+   "3h": {
+    "surface_no_crown_fuel": 2754,
+    "surface": 90,
+    "passive": 0,
+    "active": 2894
+   },
+   "6h": {
+    "surface_no_crown_fuel": 12826,
+    "surface": 879,
+    "passive": 0,
+    "active": 6887
+   },
+   "ignition_cell": {
+    "fuel": 161,
+    "canopy": {
+     "cbh_m": 10.0,
+     "cbd_kgm3": 0.01,
+     "cc_pct": 35.0,
+     "ch_m": 19.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 1785,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 2633,
+   "max_chain_depth": 8,
+   "first_spot_over_0.5km": {
+    "age_min": 51.7,
+    "fire_ha": 16.2
+   },
+   "first_spot_over_1km": {
+    "age_min": 65.9,
+    "fire_ha": 73.7
+   },
+   "first_spot_over_2km": {
+    "age_min": 76.8,
+    "fire_ha": 196.8
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 108,
+     "head_km": 1.54
+    },
+    "3.0": {
+     "acres": 5738,
+     "head_km": 13.9
+    },
+    "6.0": {
+     "acres": 20592,
+     "head_km": 18.68
+    }
+   },
+   "max_head_gain_km_per_h": 7.71
+  },
+  "wall_s": 2.3
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "variant": "crown_d10@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.2,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 76,
+    "surface": 0,
+    "passive": 0,
+    "active": 26
+   },
+   "3h": {
+    "surface_no_crown_fuel": 2376,
+    "surface": 78,
+    "passive": 0,
+    "active": 2776
+   },
+   "6h": {
+    "surface_no_crown_fuel": 11821,
+    "surface": 795,
+    "passive": 0,
+    "active": 6635
+   },
+   "ignition_cell": {
+    "fuel": 161,
+    "canopy": {
+     "cbh_m": 10.0,
+     "cbd_kgm3": 0.01,
+     "cc_pct": 35.0,
+     "ch_m": 19.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 1124,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 3772,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 51.7,
+    "fire_ha": 16.2
+   },
+   "first_spot_over_1km": {
+    "age_min": 66.4,
+    "fire_ha": 67.2
+   },
+   "first_spot_over_2km": {
+    "age_min": 76.8,
+    "fire_ha": 175.0
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 102,
+     "head_km": 1.36
+    },
+    "3.0": {
+     "acres": 5230,
+     "head_km": 12.31
+    },
+    "6.0": {
+     "acres": 19251,
+     "head_km": 18.68
+    }
+   },
+   "max_head_gain_km_per_h": 7.19
+  },
+  "wall_s": 2.4
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "variant": "grass_law@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 0.59,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 4,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 72,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 394,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 161,
+    "canopy": {
+     "cbh_m": 10.0,
+     "cbd_kgm3": 0.01,
+     "cc_pct": 35.0,
+     "ch_m": 19.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 30,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 654,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 341.6,
+    "fire_ha": 132.0
+   },
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 4,
+     "head_km": 0.08
+    },
+    "3.0": {
+     "acres": 72,
+     "head_km": 1.73
+    },
+    "6.0": {
+     "acres": 394,
+     "head_km": 4.29
+    }
+   },
+   "max_head_gain_km_per_h": 2.04
+  },
+  "wall_s": 1.7
+ },
+ {
+  "scenario": "basalt_carbondale_southwesterly",
+  "variant": "opt1@generic",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 0.75,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 96,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 995,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 2496,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 161,
+    "canopy": {
+     "cbh_m": 10.0,
+     "cbd_kgm3": 0.01,
+     "cc_pct": 35.0,
+     "ch_m": 19.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 243,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1077,
+   "max_chain_depth": 4,
+   "first_spot_over_0.5km": {
+    "age_min": 112.6,
+    "fire_ha": 132.8
+   },
+   "first_spot_over_1km": {
+    "age_min": 203.8,
+    "fire_ha": 507.1
+   },
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 96,
+     "head_km": 2.05
+    },
+    "3.0": {
+     "acres": 995,
+     "head_km": 6.64
+    },
+    "6.0": {
+     "acres": 2496,
+     "head_km": 9.07
+    }
+   },
+   "max_head_gain_km_per_h": 2.74
+  },
+  "wall_s": 1.9
+ },
+ {
+  "scenario": "beaver_creek_westerly",
+  "variant": "crown@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.34,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 2,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 6,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 777,
+    "surface": 0,
+    "passive": 0,
+    "active": 212
+   },
+   "ignition_cell": {
+    "fuel": 161,
+    "canopy": {
+     "cbh_m": 10.0,
+     "cbd_kgm3": 0.01,
+     "cc_pct": 75.0,
+     "ch_m": 15.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 125,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1707,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 242.5,
+    "fire_ha": 15.4
+   },
+   "first_spot_over_1km": {
+    "age_min": 299.4,
+    "fire_ha": 100.4
+   },
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 2,
+     "head_km": 0.04
+    },
+    "3.0": {
+     "acres": 6,
+     "head_km": 0.42
+    },
+    "6.0": {
+     "acres": 989,
+     "head_km": 4.69
+    }
+   },
+   "max_head_gain_km_per_h": 2.62
+  },
+  "wall_s": 2.2
+ },
+ {
+  "scenario": "beaver_creek_westerly",
+  "variant": "crown_d10@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.3,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 2,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 6,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 679,
+    "surface": 0,
+    "passive": 0,
+    "active": 196
+   },
+   "ignition_cell": {
+    "fuel": 161,
+    "canopy": {
+     "cbh_m": 10.0,
+     "cbd_kgm3": 0.01,
+     "cc_pct": 75.0,
+     "ch_m": 15.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 98,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1576,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 242.5,
+    "fire_ha": 15.4
+   },
+   "first_spot_over_1km": {
+    "age_min": 304.4,
+    "fire_ha": 98.8
+   },
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 2,
+     "head_km": 0.04
+    },
+    "3.0": {
+     "acres": 6,
+     "head_km": 0.42
+    },
+    "6.0": {
+     "acres": 875,
+     "head_km": 4.55
+    }
+   },
+   "max_head_gain_km_per_h": 2.04
+  },
+  "wall_s": 2.2
+ },
+ {
+  "scenario": "beaver_creek_westerly",
+  "variant": "grass_law@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 0.42,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 2,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 6,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 12,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 161,
+    "canopy": {
+     "cbh_m": 10.0,
+     "cbd_kgm3": 0.01,
+     "cc_pct": 75.0,
+     "ch_m": 15.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 0,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 0,
+   "max_chain_depth": 0,
+   "first_spot_over_0.5km": null,
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 2,
+     "head_km": 0.04
+    },
+    "3.0": {
+     "acres": 6,
+     "head_km": 0.42
+    },
+    "6.0": {
+     "acres": 12,
+     "head_km": 0.82
+    }
+   },
+   "max_head_gain_km_per_h": 0.2
+  },
+  "wall_s": 1.1
+ },
+ {
+  "scenario": "beaver_creek_westerly",
+  "variant": "opt1@generic",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 0.92,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 70,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 829,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 2776,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 161,
+    "canopy": {
+     "cbh_m": 10.0,
+     "cbd_kgm3": 0.01,
+     "cc_pct": 75.0,
+     "ch_m": 15.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 250,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1009,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 127.2,
+    "fire_ha": 145.8
+   },
+   "first_spot_over_1km": {
+    "age_min": 292.1,
+    "fire_ha": 887.0
+   },
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 70,
+     "head_km": 1.83
+    },
+    "3.0": {
+     "acres": 829,
+     "head_km": 5.57
+    },
+    "6.0": {
+     "acres": 2776,
+     "head_km": 8.79
+    }
+   },
+   "max_head_gain_km_per_h": 2.38
+  },
+  "wall_s": 1.7
+ },
+ {
+  "scenario": "eagle_gypsum_westerly",
+  "variant": "crown@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.45,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 12,
+    "surface": 0,
+    "passive": 0,
+    "active": 2
+   },
+   "3h": {
+    "surface_no_crown_fuel": 38,
+    "surface": 0,
+    "passive": 0,
+    "active": 2
+   },
+   "6h": {
+    "surface_no_crown_fuel": 178,
+    "surface": 2,
+    "passive": 0,
+    "active": 28
+   },
+   "ignition_cell": {
+    "fuel": 102,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 2,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 136,
+   "max_chain_depth": 1,
+   "first_spot_over_0.5km": null,
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 14,
+     "head_km": 0.29
+    },
+    "3.0": {
+     "acres": 40,
+     "head_km": 0.79
+    },
+    "6.0": {
+     "acres": 208,
+     "head_km": 3.59
+    }
+   },
+   "max_head_gain_km_per_h": 2.42
+  },
+  "wall_s": 2.3
+ },
+ {
+  "scenario": "eagle_gypsum_westerly",
+  "variant": "crown_d10@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.26,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 12,
+    "surface": 0,
+    "passive": 0,
+    "active": 2
+   },
+   "3h": {
+    "surface_no_crown_fuel": 38,
+    "surface": 0,
+    "passive": 0,
+    "active": 2
+   },
+   "6h": {
+    "surface_no_crown_fuel": 178,
+    "surface": 2,
+    "passive": 0,
+    "active": 28
+   },
+   "ignition_cell": {
+    "fuel": 102,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 1,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 136,
+   "max_chain_depth": 1,
+   "first_spot_over_0.5km": null,
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 14,
+     "head_km": 0.29
+    },
+    "3.0": {
+     "acres": 40,
+     "head_km": 0.79
+    },
+    "6.0": {
+     "acres": 208,
+     "head_km": 3.59
+    }
+   },
+   "max_head_gain_km_per_h": 2.42
+  },
+  "wall_s": 2.1
+ },
+ {
+  "scenario": "eagle_gypsum_westerly",
+  "variant": "grass_law@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 0.45,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 12,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 40,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 172,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 102,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 2,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 136,
+   "max_chain_depth": 1,
+   "first_spot_over_0.5km": null,
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 12,
+     "head_km": 0.29
+    },
+    "3.0": {
+     "acres": 40,
+     "head_km": 0.79
+    },
+    "6.0": {
+     "acres": 172,
+     "head_km": 3.23
+    }
+   },
+   "max_head_gain_km_per_h": 2.06
+  },
+  "wall_s": 1.2
+ },
+ {
+  "scenario": "eagle_gypsum_westerly",
+  "variant": "opt1@generic",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 0.89,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 12,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 40,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 172,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 102,
+    "canopy": {
+     "cbh_m": 0.0,
+     "cbd_kgm3": 0.0,
+     "cc_pct": 0.0,
+     "ch_m": 0.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 2,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 136,
+   "max_chain_depth": 1,
+   "first_spot_over_0.5km": null,
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 12,
+     "head_km": 0.29
+    },
+    "3.0": {
+     "acres": 40,
+     "head_km": 0.79
+    },
+    "6.0": {
+     "acres": 172,
+     "head_km": 3.23
+    }
+   },
+   "max_head_gain_km_per_h": 2.06
+  },
+  "wall_s": 1.7
+ },
+ {
+  "scenario": "eagle_vail_corridor_westerly",
+  "variant": "crown@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.4,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 30,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 138,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 465,
+    "surface": 10,
+    "passive": 0,
+    "active": 40
+   },
+   "ignition_cell": {
+    "fuel": 162,
+    "canopy": {
+     "cbh_m": 10.0,
+     "cbd_kgm3": 0.01,
+     "cc_pct": 25.0,
+     "ch_m": 11.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 5,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1439,
+   "max_chain_depth": 1,
+   "first_spot_over_0.5km": {
+    "age_min": 309.1,
+    "fire_ha": 152.0
+   },
+   "first_spot_over_1km": {
+    "age_min": 309.1,
+    "fire_ha": 152.0
+   },
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 30,
+     "head_km": 0.97
+    },
+    "3.0": {
+     "acres": 138,
+     "head_km": 2.14
+    },
+    "6.0": {
+     "acres": 514,
+     "head_km": 4.25
+    }
+   },
+   "max_head_gain_km_per_h": 1.67
+  },
+  "wall_s": 1.9
+ },
+ {
+  "scenario": "eagle_vail_corridor_westerly",
+  "variant": "crown_d10@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.62,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 30,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 138,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 465,
+    "surface": 10,
+    "passive": 0,
+    "active": 30
+   },
+   "ignition_cell": {
+    "fuel": 162,
+    "canopy": {
+     "cbh_m": 10.0,
+     "cbd_kgm3": 0.01,
+     "cc_pct": 25.0,
+     "ch_m": 11.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 4,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1439,
+   "max_chain_depth": 1,
+   "first_spot_over_0.5km": {
+    "age_min": 314.1,
+    "fire_ha": 152.0
+   },
+   "first_spot_over_1km": {
+    "age_min": 314.1,
+    "fire_ha": 152.0
+   },
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 30,
+     "head_km": 0.97
+    },
+    "3.0": {
+     "acres": 138,
+     "head_km": 2.14
+    },
+    "6.0": {
+     "acres": 504,
+     "head_km": 4.25
+    }
+   },
+   "max_head_gain_km_per_h": 1.67
+  },
+  "wall_s": 2.2
+ },
+ {
+  "scenario": "eagle_vail_corridor_westerly",
+  "variant": "grass_law@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 0.17,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 30,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 138,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 395,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 162,
+    "canopy": {
+     "cbh_m": 10.0,
+     "cbd_kgm3": 0.01,
+     "cc_pct": 25.0,
+     "ch_m": 11.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 4,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 300,
+   "max_chain_depth": 1,
+   "first_spot_over_0.5km": null,
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 30,
+     "head_km": 0.97
+    },
+    "3.0": {
+     "acres": 138,
+     "head_km": 2.14
+    },
+    "6.0": {
+     "acres": 395,
+     "head_km": 2.86
+    }
+   },
+   "max_head_gain_km_per_h": 1.61
+  },
+  "wall_s": 0.6
+ },
+ {
+  "scenario": "eagle_vail_corridor_westerly",
+  "variant": "opt1@generic",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 0.68,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 89,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 583,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 2817,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 162,
+    "canopy": {
+     "cbh_m": 10.0,
+     "cbd_kgm3": 0.01,
+     "cc_pct": 25.0,
+     "ch_m": 11.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 48,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 843,
+   "max_chain_depth": 3,
+   "first_spot_over_0.5km": {
+    "age_min": 231.9,
+    "fire_ha": 360.0
+   },
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 89,
+     "head_km": 1.86
+    },
+    "3.0": {
+     "acres": 583,
+     "head_km": 4.75
+    },
+    "6.0": {
+     "acres": 2817,
+     "head_km": 9.49
+    }
+   },
+   "max_head_gain_km_per_h": 2.44
+  },
+  "wall_s": 1.1
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "variant": "crown@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.26,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 168,
+    "surface": 0,
+    "passive": 0,
+    "active": 20
+   },
+   "3h": {
+    "surface_no_crown_fuel": 1936,
+    "surface": 76,
+    "passive": 0,
+    "active": 2206
+   },
+   "6h": {
+    "surface_no_crown_fuel": 10314,
+    "surface": 604,
+    "passive": 0,
+    "active": 7630
+   },
+   "ignition_cell": {
+    "fuel": 188,
+    "canopy": {
+     "cbh_m": 0.5,
+     "cbd_kgm3": 0.11,
+     "cc_pct": 55.0,
+     "ch_m": 19.0
+    },
+    "kind": 2
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 1893,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 5700,
+   "max_chain_depth": 6,
+   "first_spot_over_0.5km": {
+    "age_min": 31.1,
+    "fire_ha": 27.5
+   },
+   "first_spot_over_1km": {
+    "age_min": 93.7,
+    "fire_ha": 176.6
+   },
+   "first_spot_over_2km": {
+    "age_min": 158.0,
+    "fire_ha": 883.7
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 188,
+     "head_km": 2.07
+    },
+    "3.0": {
+     "acres": 4217,
+     "head_km": 13.16
+    },
+    "6.0": {
+     "acres": 18548,
+     "head_km": 17.2
+    }
+   },
+   "max_head_gain_km_per_h": 7.54
+  },
+  "wall_s": 2.0
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "variant": "crown_d10@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.24,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 132,
+    "surface": 0,
+    "passive": 0,
+    "active": 20
+   },
+   "3h": {
+    "surface_no_crown_fuel": 1049,
+    "surface": 28,
+    "passive": 0,
+    "active": 504
+   },
+   "6h": {
+    "surface_no_crown_fuel": 8915,
+    "surface": 558,
+    "passive": 0,
+    "active": 7200
+   },
+   "ignition_cell": {
+    "fuel": 188,
+    "canopy": {
+     "cbh_m": 0.5,
+     "cbd_kgm3": 0.11,
+     "cc_pct": 55.0,
+     "ch_m": 19.0
+    },
+    "kind": 2
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 1369,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 5700,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 31.1,
+    "fire_ha": 25.1
+   },
+   "first_spot_over_1km": {
+    "age_min": 96.3,
+    "fire_ha": 121.5
+   },
+   "first_spot_over_2km": {
+    "age_min": 197.8,
+    "fire_ha": 912.9
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 152,
+     "head_km": 1.95
+    },
+    "3.0": {
+     "acres": 1581,
+     "head_km": 9.12
+    },
+    "6.0": {
+     "acres": 16673,
+     "head_km": 16.89
+    }
+   },
+   "max_head_gain_km_per_h": 5.78
+  },
+  "wall_s": 2.1
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "variant": "grass_law@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 0.43,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 8,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 12,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 298,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 188,
+    "canopy": {
+     "cbh_m": 0.5,
+     "cbd_kgm3": 0.11,
+     "cc_pct": 55.0,
+     "ch_m": 19.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 32,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 562,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 348.6,
+    "fire_ha": 98.8
+   },
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 8,
+     "head_km": 0.3
+    },
+    "3.0": {
+     "acres": 12,
+     "head_km": 0.68
+    },
+    "6.0": {
+     "acres": 298,
+     "head_km": 3.69
+    }
+   },
+   "max_head_gain_km_per_h": 1.72
+  },
+  "wall_s": 1.1
+ },
+ {
+  "scenario": "glenwood_springs_westerly",
+  "variant": "opt1@generic",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.0,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 58,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 889,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 1839,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 188,
+    "canopy": {
+     "cbh_m": 0.5,
+     "cbd_kgm3": 0.11,
+     "cc_pct": 55.0,
+     "ch_m": 19.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 210,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1113,
+   "max_chain_depth": 8,
+   "first_spot_over_0.5km": {
+    "age_min": 86.5,
+    "fire_ha": 64.8
+   },
+   "first_spot_over_1km": {
+    "age_min": 225.1,
+    "fire_ha": 456.0
+   },
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 58,
+     "head_km": 1.87
+    },
+    "3.0": {
+     "acres": 889,
+     "head_km": 5.05
+    },
+    "6.0": {
+     "acres": 1839,
+     "head_km": 5.55
+    }
+   },
+   "max_head_gain_km_per_h": 2.46
+  },
+  "wall_s": 1.8
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "variant": "crown@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 40.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "nominal_solve_s": 1.34,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 422,
+    "surface": 334,
+    "passive": 0,
+    "active": 540
+   },
+   "3h": {
+    "surface_no_crown_fuel": 1249,
+    "surface": 1089,
+    "passive": 0,
+    "active": 1617
+   },
+   "6h": {
+    "surface_no_crown_fuel": 8284,
+    "surface": 3679,
+    "passive": 0,
+    "active": 7802
+   },
+   "ignition_cell": {
+    "fuel": 144,
+    "canopy": {
+     "cbh_m": 0.3,
+     "cbd_kgm3": 0.05,
+     "cc_pct": 15.0,
+     "ch_m": 3.0
+    },
+    "kind": 2
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 1584,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 4452,
+   "max_chain_depth": 6,
+   "first_spot_over_0.5km": {
+    "age_min": 5.9,
+    "fire_ha": 14.6
+   },
+   "first_spot_over_1km": {
+    "age_min": 5.9,
+    "fire_ha": 14.6
+   },
+   "first_spot_over_2km": {
+    "age_min": 27.9,
+    "fire_ha": 136.1
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 1297,
+     "head_km": 6.69
+    },
+    "3.0": {
+     "acres": 3955,
+     "head_km": 9.75
+    },
+    "6.0": {
+     "acres": 19765,
+     "head_km": 19.67
+    }
+   },
+   "max_head_gain_km_per_h": 8.63
+  },
+  "wall_s": 1.5
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "variant": "crown_d10@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 40.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "nominal_solve_s": 1.26,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 356,
+    "surface": 286,
+    "passive": 0,
+    "active": 460
+   },
+   "3h": {
+    "surface_no_crown_fuel": 1187,
+    "surface": 1017,
+    "passive": 0,
+    "active": 1535
+   },
+   "6h": {
+    "surface_no_crown_fuel": 7212,
+    "surface": 3571,
+    "passive": 0,
+    "active": 7334
+   },
+   "ignition_cell": {
+    "fuel": 144,
+    "canopy": {
+     "cbh_m": 0.3,
+     "cbd_kgm3": 0.05,
+     "cc_pct": 15.0,
+     "ch_m": 3.0
+    },
+    "kind": 2
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 1081,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 6133,
+   "max_chain_depth": 4,
+   "first_spot_over_0.5km": {
+    "age_min": 5.9,
+    "fire_ha": 14.6
+   },
+   "first_spot_over_1km": {
+    "age_min": 5.9,
+    "fire_ha": 14.6
+   },
+   "first_spot_over_2km": {
+    "age_min": 35.0,
+    "fire_ha": 170.9
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 1103,
+     "head_km": 6.19
+    },
+    "3.0": {
+     "acres": 3739,
+     "head_km": 9.1
+    },
+    "6.0": {
+     "acres": 18116,
+     "head_km": 19.67
+    }
+   },
+   "max_head_gain_km_per_h": 7.32
+  },
+  "wall_s": 1.5
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "variant": "grass_law@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 40.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "nominal_solve_s": 0.77,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 82,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 733,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 1571,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 144,
+    "canopy": {
+     "cbh_m": 0.3,
+     "cbd_kgm3": 0.05,
+     "cc_pct": 15.0,
+     "ch_m": 3.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 214,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 2106,
+   "max_chain_depth": 6,
+   "first_spot_over_0.5km": {
+    "age_min": 58.1,
+    "fire_ha": 30.0
+   },
+   "first_spot_over_1km": {
+    "age_min": 98.1,
+    "fire_ha": 102.1
+   },
+   "first_spot_over_2km": {
+    "age_min": 167.7,
+    "fire_ha": 260.8
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 82,
+     "head_km": 1.72
+    },
+    "3.0": {
+     "acres": 733,
+     "head_km": 5.54
+    },
+    "6.0": {
+     "acres": 1571,
+     "head_km": 6.0
+    }
+   },
+   "max_head_gain_km_per_h": 2.86
+  },
+  "wall_s": 0.9
+ },
+ {
+  "scenario": "paradise_ne_wind",
+  "variant": "opt1@generic",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 40.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "nominal_solve_s": 0.75,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 186,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 1175,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 2282,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 144,
+    "canopy": {
+     "cbh_m": 0.3,
+     "cbd_kgm3": 0.05,
+     "cc_pct": 15.0,
+     "ch_m": 3.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 202,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 2106,
+   "max_chain_depth": 4,
+   "first_spot_over_0.5km": {
+    "age_min": 33.1,
+    "fire_ha": 25.1
+   },
+   "first_spot_over_1km": {
+    "age_min": 59.2,
+    "fire_ha": 73.7
+   },
+   "first_spot_over_2km": {
+    "age_min": 92.4,
+    "fire_ha": 199.3
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 186,
+     "head_km": 2.48
+    },
+    "3.0": {
+     "acres": 1175,
+     "head_km": 6.36
+    },
+    "6.0": {
+     "acres": 2282,
+     "head_km": 8.3
+    }
+   },
+   "max_head_gain_km_per_h": 4.07
+  },
+  "wall_s": 0.9
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "variant": "crown@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 40.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "nominal_solve_s": 0.99,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 42,
+    "surface": 0,
+    "passive": 0,
+    "active": 6
+   },
+   "3h": {
+    "surface_no_crown_fuel": 2726,
+    "surface": 50,
+    "passive": 0,
+    "active": 755
+   },
+   "6h": {
+    "surface_no_crown_fuel": 13545,
+    "surface": 240,
+    "passive": 0,
+    "active": 2130
+   },
+   "ignition_cell": {
+    "fuel": 165,
+    "canopy": {
+     "cbh_m": 0.3,
+     "cbd_kgm3": 0.22,
+     "cc_pct": 75.0,
+     "ch_m": 15.0
+    },
+    "kind": 2
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 1424,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 3389,
+   "max_chain_depth": 6,
+   "first_spot_over_0.5km": {
+    "age_min": 86.0,
+    "fire_ha": 48.6
+   },
+   "first_spot_over_1km": {
+    "age_min": 88.9,
+    "fire_ha": 56.7
+   },
+   "first_spot_over_2km": {
+    "age_min": 104.9,
+    "fire_ha": 157.1
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 48,
+     "head_km": 0.34
+    },
+    "3.0": {
+     "acres": 3531,
+     "head_km": 11.19
+    },
+    "6.0": {
+     "acres": 15914,
+     "head_km": 19.61
+    }
+   },
+   "max_head_gain_km_per_h": 8.86
+  },
+  "wall_s": 1.2
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "variant": "crown_d10@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 40.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "nominal_solve_s": 1.1,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 42,
+    "surface": 0,
+    "passive": 0,
+    "active": 6
+   },
+   "3h": {
+    "surface_no_crown_fuel": 2152,
+    "surface": 46,
+    "passive": 0,
+    "active": 707
+   },
+   "6h": {
+    "surface_no_crown_fuel": 12876,
+    "surface": 226,
+    "passive": 0,
+    "active": 2060
+   },
+   "ignition_cell": {
+    "fuel": 165,
+    "canopy": {
+     "cbh_m": 0.3,
+     "cbd_kgm3": 0.22,
+     "cc_pct": 75.0,
+     "ch_m": 15.0
+    },
+    "kind": 2
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 985,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 4373,
+   "max_chain_depth": 4,
+   "first_spot_over_0.5km": {
+    "age_min": 92.9,
+    "fire_ha": 55.1
+   },
+   "first_spot_over_1km": {
+    "age_min": 94.5,
+    "fire_ha": 59.9
+   },
+   "first_spot_over_2km": {
+    "age_min": 109.9,
+    "fire_ha": 124.7
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 48,
+     "head_km": 0.34
+    },
+    "3.0": {
+     "acres": 2904,
+     "head_km": 10.01
+    },
+    "6.0": {
+     "acres": 15162,
+     "head_km": 19.55
+    }
+   },
+   "max_head_gain_km_per_h": 8.02
+  },
+  "wall_s": 1.3
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "variant": "grass_law@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 40.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "nominal_solve_s": 0.57,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 4,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 16,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 50,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 165,
+    "canopy": {
+     "cbh_m": 0.3,
+     "cbd_kgm3": 0.22,
+     "cc_pct": 75.0,
+     "ch_m": 15.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 0,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 0,
+   "max_chain_depth": 0,
+   "first_spot_over_0.5km": null,
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 4,
+     "head_km": 0.14
+    },
+    "3.0": {
+     "acres": 16,
+     "head_km": 0.51
+    },
+    "6.0": {
+     "acres": 50,
+     "head_km": 0.82
+    }
+   },
+   "max_head_gain_km_per_h": 0.25
+  },
+  "wall_s": 0.7
+ },
+ {
+  "scenario": "park_city_windstorm",
+  "variant": "opt1@generic",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 40.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "nominal_solve_s": 0.68,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 64,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 2410,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 11029,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 165,
+    "canopy": {
+     "cbh_m": 0.3,
+     "cbd_kgm3": 0.22,
+     "cc_pct": 75.0,
+     "ch_m": 15.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 1115,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 3003,
+   "max_chain_depth": 7,
+   "first_spot_over_0.5km": {
+    "age_min": 68.9,
+    "fire_ha": 44.6
+   },
+   "first_spot_over_1km": {
+    "age_min": 85.9,
+    "fire_ha": 92.3
+   },
+   "first_spot_over_2km": {
+    "age_min": 106.9,
+    "fire_ha": 198.5
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 64,
+     "head_km": 1.41
+    },
+    "3.0": {
+     "acres": 2410,
+     "head_km": 9.93
+    },
+    "6.0": {
+     "acres": 11029,
+     "head_km": 19.55
+    }
+   },
+   "max_head_gain_km_per_h": 7.13
+  },
+  "wall_s": 0.8
+ },
+ {
+  "scenario": "santa_rosa_diablo",
+  "variant": "crown@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 40.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "nominal_solve_s": 1.03,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 72,
+    "surface": 142,
+    "passive": 0,
+    "active": 128
+   },
+   "3h": {
+    "surface_no_crown_fuel": 1743,
+    "surface": 1173,
+    "passive": 0,
+    "active": 1173
+   },
+   "6h": {
+    "surface_no_crown_fuel": 3799,
+    "surface": 2612,
+    "passive": 0,
+    "active": 2604
+   },
+   "ignition_cell": {
+    "fuel": 121,
+    "canopy": {
+     "cbh_m": 8.4,
+     "cbd_kgm3": 0.03,
+     "cc_pct": 15.0,
+     "ch_m": 19.0
+    },
+    "kind": 0
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 851,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 4554,
+   "max_chain_depth": 6,
+   "first_spot_over_0.5km": {
+    "age_min": 24.2,
+    "fire_ha": 5.7
+   },
+   "first_spot_over_1km": {
+    "age_min": 34.7,
+    "fire_ha": 21.1
+   },
+   "first_spot_over_2km": {
+    "age_min": 53.2,
+    "fire_ha": 99.6
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 342,
+     "head_km": 3.82
+    },
+    "3.0": {
+     "acres": 4089,
+     "head_km": 13.07
+    },
+    "6.0": {
+     "acres": 9015,
+     "head_km": 13.71
+    }
+   },
+   "max_head_gain_km_per_h": 6.44
+  },
+  "wall_s": 1.4
+ },
+ {
+  "scenario": "santa_rosa_diablo",
+  "variant": "crown_d10@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 40.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "nominal_solve_s": 0.95,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 38,
+    "surface": 96,
+    "passive": 0,
+    "active": 102
+   },
+   "3h": {
+    "surface_no_crown_fuel": 1385,
+    "surface": 1019,
+    "passive": 0,
+    "active": 1055
+   },
+   "6h": {
+    "surface_no_crown_fuel": 3635,
+    "surface": 2486,
+    "passive": 0,
+    "active": 2546
+   },
+   "ignition_cell": {
+    "fuel": 121,
+    "canopy": {
+     "cbh_m": 8.4,
+     "cbd_kgm3": 0.03,
+     "cc_pct": 15.0,
+     "ch_m": 19.0
+    },
+    "kind": 0
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 711,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 4554,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 24.2,
+    "fire_ha": 5.7
+   },
+   "first_spot_over_1km": {
+    "age_min": 39.7,
+    "fire_ha": 23.5
+   },
+   "first_spot_over_2km": {
+    "age_min": 65.1,
+    "fire_ha": 132.0
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 236,
+     "head_km": 3.31
+    },
+    "3.0": {
+     "acres": 3459,
+     "head_km": 10.72
+    },
+    "6.0": {
+     "acres": 8667,
+     "head_km": 13.71
+    }
+   },
+   "max_head_gain_km_per_h": 5.54
+  },
+  "wall_s": 1.3
+ },
+ {
+  "scenario": "santa_rosa_diablo",
+  "variant": "grass_law@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 40.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "nominal_solve_s": 0.53,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 26,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 156,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 885,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 121,
+    "canopy": {
+     "cbh_m": 8.4,
+     "cbd_kgm3": 0.03,
+     "cc_pct": 15.0,
+     "ch_m": 19.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 121,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 1259,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 189.4,
+    "fire_ha": 79.4
+   },
+   "first_spot_over_1km": {
+    "age_min": 279.2,
+    "fire_ha": 264.9
+   },
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 26,
+     "head_km": 0.53
+    },
+    "3.0": {
+     "acres": 156,
+     "head_km": 1.72
+    },
+    "6.0": {
+     "acres": 885,
+     "head_km": 5.47
+    }
+   },
+   "max_head_gain_km_per_h": 2.61
+  },
+  "wall_s": 0.6
+ },
+ {
+  "scenario": "santa_rosa_diablo",
+  "variant": "opt1@generic",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "extreme",
+  "weather0": {
+   "wind_mph": 40.0,
+   "rh_pct": 6.0,
+   "temp_c": 39.0
+  },
+  "nominal_solve_s": 0.63,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 98,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 943,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 3839,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 121,
+    "canopy": {
+     "cbh_m": 8.4,
+     "cbd_kgm3": 0.03,
+     "cc_pct": 15.0,
+     "ch_m": 19.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 352,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 2044,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 80.8,
+    "fire_ha": 86.7
+   },
+   "first_spot_over_1km": {
+    "age_min": 143.3,
+    "fire_ha": 260.0
+   },
+   "first_spot_over_2km": {
+    "age_min": 282.2,
+    "fire_ha": 1111.3
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 98,
+     "head_km": 1.71
+    },
+    "3.0": {
+     "acres": 943,
+     "head_km": 7.13
+    },
+    "6.0": {
+     "acres": 3839,
+     "head_km": 12.07
+    }
+   },
+   "max_head_gain_km_per_h": 3.56
+  },
+  "wall_s": 0.8
+ },
+ {
+  "scenario": "vail_westerly",
+  "variant": "crown@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.38,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 130,
+    "surface": 38,
+    "passive": 0,
+    "active": 290
+   },
+   "3h": {
+    "surface_no_crown_fuel": 550,
+    "surface": 104,
+    "passive": 0,
+    "active": 600
+   },
+   "6h": {
+    "surface_no_crown_fuel": 2222,
+    "surface": 272,
+    "passive": 0,
+    "active": 2294
+   },
+   "ignition_cell": {
+    "fuel": 185,
+    "canopy": {
+     "cbh_m": 1.0,
+     "cbd_kgm3": 0.08,
+     "cc_pct": 45.0,
+     "ch_m": 15.0
+    },
+    "kind": 2
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 465,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 3118,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 10.3,
+    "fire_ha": 14.6
+   },
+   "first_spot_over_1km": {
+    "age_min": 32.3,
+    "fire_ha": 72.1
+   },
+   "first_spot_over_2km": {
+    "age_min": 274.9,
+    "fire_ha": 786.5
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 458,
+     "head_km": 4.41
+    },
+    "3.0": {
+     "acres": 1255,
+     "head_km": 4.98
+    },
+    "6.0": {
+     "acres": 4788,
+     "head_km": 14.8
+    }
+   },
+   "max_head_gain_km_per_h": 4.81
+  },
+  "wall_s": 1.8
+ },
+ {
+  "scenario": "vail_westerly",
+  "variant": "crown_d10@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "crown_fire": true,
+   "spot_ignition_delay_min": 10.0,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 1.24,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 110,
+    "surface": 24,
+    "passive": 0,
+    "active": 256
+   },
+   "3h": {
+    "surface_no_crown_fuel": 524,
+    "surface": 104,
+    "passive": 0,
+    "active": 598
+   },
+   "6h": {
+    "surface_no_crown_fuel": 1565,
+    "surface": 194,
+    "passive": 0,
+    "active": 1595
+   },
+   "ignition_cell": {
+    "fuel": 185,
+    "canopy": {
+     "cbh_m": 1.0,
+     "cbd_kgm3": 0.08,
+     "cc_pct": 45.0,
+     "ch_m": 15.0
+    },
+    "kind": 2
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 292,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 2718,
+   "max_chain_depth": 4,
+   "first_spot_over_0.5km": {
+    "age_min": 10.3,
+    "fire_ha": 14.6
+   },
+   "first_spot_over_1km": {
+    "age_min": 35.7,
+    "fire_ha": 74.5
+   },
+   "first_spot_over_2km": {
+    "age_min": 308.2,
+    "fire_ha": 857.8
+   }
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 390,
+     "head_km": 3.61
+    },
+    "3.0": {
+     "acres": 1227,
+     "head_km": 4.98
+    },
+    "6.0": {
+     "acres": 3355,
+     "head_km": 11.39
+    }
+   },
+   "max_head_gain_km_per_h": 3.77
+  },
+  "wall_s": 1.6
+ },
+ {
+  "scenario": "vail_westerly",
+  "variant": "grass_law@generic",
+  "cfg": {
+   "ros_floor_grass_only": true,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 0.1,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 2,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 8,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 32,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 185,
+    "canopy": {
+     "cbh_m": 1.0,
+     "cbd_kgm3": 0.08,
+     "cc_pct": 45.0,
+     "ch_m": 15.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 0,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 0,
+   "max_chain_depth": 0,
+   "first_spot_over_0.5km": null,
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 2,
+     "head_km": 0.04
+    },
+    "3.0": {
+     "acres": 8,
+     "head_km": 0.42
+    },
+    "6.0": {
+     "acres": 32,
+     "head_km": 1.22
+    }
+   },
+   "max_head_gain_km_per_h": 0.4
+  },
+  "wall_s": 0.4
+ },
+ {
+  "scenario": "vail_westerly",
+  "variant": "opt1@generic",
+  "cfg": {
+   "ros_floor_grass_only": false,
+   "spot_fire_size": true,
+   "sim_weather_profile": "generic"
+  },
+  "intensity": "high",
+  "weather0": {
+   "wind_mph": 28.0,
+   "rh_pct": 12.0,
+   "temp_c": 35.0
+  },
+  "nominal_solve_s": 0.51,
+  "crown": {
+   "1h": {
+    "surface_no_crown_fuel": 28,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "3h": {
+    "surface_no_crown_fuel": 270,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "6h": {
+    "surface_no_crown_fuel": 586,
+    "surface": 0,
+    "passive": 0,
+    "active": 0
+   },
+   "ignition_cell": {
+    "fuel": 185,
+    "canopy": {
+     "cbh_m": 1.0,
+     "cbd_kgm3": 0.08,
+     "cc_pct": 45.0,
+     "ch_m": 15.0
+    },
+    "kind": null
+   }
+  },
+  "spotting": {
+   "spot_ignitions_6h": 58,
+   "thrown_by_one_cell_fire": 0,
+   "longest_spot_m": 790,
+   "max_chain_depth": 5,
+   "first_spot_over_0.5km": {
+    "age_min": 177.2,
+    "fire_ha": 106.9
+   },
+   "first_spot_over_1km": null,
+   "first_spot_over_2km": null
+  },
+  "nominal": {
+   "marks": {
+    "1.0": {
+     "acres": 28,
+     "head_km": 1.02
+    },
+    "3.0": {
+     "acres": 270,
+     "head_km": 3.2
+    },
+    "6.0": {
+     "acres": 586,
+     "head_km": 4.41
+    }
+   },
+   "max_head_gain_km_per_h": 1.62
+  },
+  "wall_s": 0.9
+ }
+]

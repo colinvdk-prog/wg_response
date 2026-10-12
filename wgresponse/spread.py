@@ -148,6 +148,22 @@ burned), memo-exact (memo = WGRESP_NO_ROS_MEMO=1 reference with the knob
 on), and RE-ANCHOR HISTORY stays continuous through kept_anchor /
 anchor_log (a no-op re-anchor is the continuous run cell for cell).
 
+CROWN FIRE (contracts SAFETY SEMANTICS 22, 2026-10-12; cfg.crown_fire,
+default OFF => BYTE-IDENTICAL, and so is a tile without canopy layers or
+without crown fuel; docs/review/crown_fire_model_2026-10-12.md). On a tile
+carrying LANDFIRE canopy layers (TerrainTile.canopy), a forest cell's
+surface fire may torch or crown — rothermel.crown_fire: Van Wagner (1977)
+initiation, active vs passive by his critical rate 3.0 / CBD m/min, the
+Cruz, Alexander & Wakimoto (2005) crown rate of spread, the crown fire's
+Byram intensity — and where the crown leads the head, the ellipse is
+Rothermel's (1991) crown-fire ratio when that is the broader. The crown
+step sits between the fuel-class floor and the ensemble / belief ROS
+multipliers (_floor_part, _pack_crown, _finish_part), so a crowning cell's
+ember launches on the crown intensity; under SEMANTICS 19 its reach is at
+least one torching tree's (Albini 1979) once its fire covers
+_TORCH_MIN_FIRE_HA. The crown memo (surface key + the cell's canopy values
++ FMC) keeps memo = WGRESP_NO_ROS_MEMO=1 reference with the knob on.
+
 Stdlib only; deterministic (ensemble perturbations via contracts.seeded_rng).
 """
 from __future__ import annotations
@@ -157,6 +173,7 @@ import heapq
 import logging
 import math
 import os
+import time
 from statistics import NormalDist
 
 from wgresponse import geo, rothermel
@@ -307,6 +324,17 @@ def _albini_surface_max_spot_m(intensity_kwm: float, u20_mps: float) -> float:
                * (0.362 + 0.5 * math.sqrt(ratio) * math.log(ratio)))
     drift_mi = 0.000278 * u_mph * z_ft ** 0.643
     return (flat_mi + drift_mi) * _M_PER_MI
+
+
+# CROWN FIRE TORCHING REACH (contracts SAFETY SEMANTICS 22, with SEMANTICS
+# 19 armed): a crowning cell's ember may fly as far as one torching tree of
+# the stand lofts it (rothermel.torching_spot_max_m, Albini 1979), whatever
+# the fire's size — but not from the first patches of a fire: a fire of
+# fewer than this many hectares keeps the size-scaled reach alone. A spot
+# fire starts as one patch, so it cannot relay torching embers until it has
+# grown (SEMANTICS 19's "a spot fire is a new, small fire"). Not a config
+# knob; measured in docs/review/crown_fire_model_2026-10-12.md section 3.5.
+_TORCH_MIN_FIRE_HA = 2.0
 
 
 def spot_reach_m(intensity_kwm: float, u20_mps: float, fire_ha: float,
@@ -559,8 +587,33 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     weather_field=None,
                     spot_trace: list = None,
                     kept_anchor: dict = None,
-                    anchor_log: dict = None) -> Raster:
+                    anchor_log: dict = None,
+                    crown_trace: dict = None) -> Raster:
     """Fire arrival-time raster (absolute unix SECONDS per cell; UNREACHED=inf).
+
+    CROWN FIRE (cfg.crown_fire, contracts SAFETY SEMANTICS 22; default OFF
+    => byte-identical, and so is a tile without canopy layers, every branch
+    guarded): a cell whose tile carries LANDFIRE canopy (TerrainTile.canopy:
+    CBD >= rothermel.CROWN_MIN_CBD_KGM3 and CH > CBH) may crown. Its surface
+    fire (Rothermel, after the fuel-class floor) is handed to
+    rothermel.crown_fire: Van Wagner (1977) initiation at its Byram
+    intensity, active / passive by Van Wagner's critical rate 3.0 / CBD
+    m/min, the Cruz et al. (2005) crown rate of spread (EFFM =
+    rothermel.crown_effm_pct), the crown fire's intensity; where the crown
+    leads the head the ellipse is Rothermel's (1991) crown-fire ratio when
+    that is the broader. Then ros_scale / hour_ros_scale and spotting apply
+    as to any cell, so a crowning cell's ember flies on the crown intensity
+    and, under SEMANTICS 19, at least rothermel.torching_spot_max_m (Albini
+    1979: one torching tree of the stand height) once its fire covers
+    _TORCH_MIN_FIRE_HA. It only ever raises a cell's head ROS and intensity.
+    Foliar moisture: cfg.crown_foliar_moisture_pct, or the FBP seasonal
+    model per cell and day (cfg.crown_foliar_moisture_seasonal). The ROS
+    memo stays exact (the canopy values and FMC are in the crown memo key;
+    memo = WGRESP_NO_ROS_MEMO=1 reference with the knob on).
+      crown_trace   diagnostics (default None: nothing recorded): a dict
+                    receiving {cell index: rothermel.CROWN_* kind} for every
+                    cell that SETTLES while crown fire is armed on the tile
+                    — its fire type at the hour it burned.
 
     ANY-ANGLE SPREAD (cfg.spread_any_angle, contracts SAFETY SEMANTICS 21;
     default OFF => byte-identical, every branch guarded): besides the 16
@@ -1035,7 +1088,18 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             MEAN distance, downwind bearing, and 20-ft wind. The per-cell
             lognormal landing DRAW happens at the teleport-edge site keyed on the
             source cell (SEMANTICS 11) — NOT here — because cells sharing a
-            ROS-memo key must draw independent landing distances."""
+            ROS-memo key must draw independent landing distances.
+
+        It is _floor_part followed by _finish_part (the CROWN FIRE path,
+        _pack_crown, runs its step between the two): the same float
+        operations in the same order as before the split."""
+        head_ros, intensity, lb = _floor_part(res, wind10, code)
+        return _finish_part(head_ros, intensity, lb, brg, wind10, wdir,
+                            hscale)
+
+    def _floor_part(res, wind10: float, code: int):
+        """(head_ros, intensity, lb) of a RosResult after the fuel-class
+        floor — the first half of _pack_params."""
         lb = rothermel.ellipse_lb(res.effective_wind_mps)
         head_ros = res.ros_mps
         intensity = res.intensity_kwm
@@ -1043,6 +1107,15 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         if ff > 0.0 and wind10 > 0.0:
             head_ros, intensity = _floored(head_ros, intensity, ff * wind10,
                                            floor_gate)
+        return head_ros, intensity, lb
+
+    def _finish_part(head_ros: float, intensity: float, lb: float,
+                     brg: float, wind10: float, wdir: float, hscale: float,
+                     d_torch: float = None):
+        """The second half of _pack_params: the member and hour ROS scales,
+        then the spot tuple. d_torch (CROWN FIRE cells only; None for every
+        other cell, the legacy tuple) rides as a 5th spot element under
+        SEMANTICS 19: the torching-tree reach floor."""
         if ros_scale != 1.0:
             head_ros = head_ros * ros_scale
             intensity = intensity * ros_scale
@@ -1060,6 +1133,9 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                 # intensity and wind rides as a 4th element (a pure function
                 # of the memo key, so the memo stays exact).
                 spot = spot + (_albini_surface_max_spot_m(intensity, u20),)
+                if d_torch is not None:
+                    # SEMANTICS 22: a crowning cell's torching-tree reach
+                    spot = spot + (d_torch,)
         return (head_ros, lb, brg, spot)
 
     # B3 ROS memo (module docstring; replaces the (cell_idx, hour) cache that
@@ -1150,29 +1226,45 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             key = (fuel.code, slope, aspect, wind10, m_dead, wdir, hs)
         p = ros_cache.get(key)
         if p is None:
-            bkey = (fuel.code, m_dead)
-            bed = bed_cache.get(bkey, _BED_MISS)
-            if bed is _BED_MISS:
-                bed = rothermel.fuel_bed(fuel, m_dead, herb, woody)
-                bed_cache[bkey] = bed
-            u_wind = rothermel.midflame_wind_mps(wind10, fuel)
-            if phi_vector:
-                phi_e, brg = _phi_max_spread_vector(bed, u_wind, slope, wdir,
-                                                    aspect)
-                res = rothermel.surface_ros_from_bed_phi(bed, phi_e)
-            else:
-                u_slope = rothermel.effective_wind_from_bed(bed, 0.0, slope)
-                u_eff, brg = _max_spread_vector(u_wind, u_slope, wdir, aspect)
-                res = rothermel.surface_ros_from_bed(bed, u_eff, 0.0)
+            res, brg = _memo_surface(fuel, wind10, m_dead, wdir, slope,
+                                     aspect)
             p = _pack_params(res, wind10, wdir, brg, fuel.code, hs)
             if len(ros_cache) < _ROS_CACHE_MAX:
                 ros_cache[key] = p
         return p
 
+    def _memo_surface(fuel, wind10: float, m_dead: float, wdir: float,
+                      slope: float, aspect: float):
+        """(RosResult, max-spread bearing) of the memo path's miss: the
+        Rothermel evaluation from the per-invocation fuel-bed cache."""
+        bkey = (fuel.code, m_dead)
+        bed = bed_cache.get(bkey, _BED_MISS)
+        if bed is _BED_MISS:
+            bed = rothermel.fuel_bed(fuel, m_dead, herb, woody)
+            bed_cache[bkey] = bed
+        u_wind = rothermel.midflame_wind_mps(wind10, fuel)
+        if phi_vector:
+            phi_e, brg = _phi_max_spread_vector(bed, u_wind, slope, wdir,
+                                                aspect)
+            res = rothermel.surface_ros_from_bed_phi(bed, phi_e)
+        else:
+            u_slope = rothermel.effective_wind_from_bed(bed, 0.0, slope)
+            u_eff, brg = _max_spread_vector(u_wind, u_slope, wdir, aspect)
+            res = rothermel.surface_ros_from_bed(bed, u_eff, 0.0)
+        return res, brg
+
     def cell_params_reference(idx: int, hour: int):
         """WGRESP_NO_ROS_MEMO=1 escape hatch: the pre-B3 structure — every
         quantity computed fresh per settled cell through the classic rothermel
         seams. The byte-identity oracle for the memo path above."""
+        res, wind10, _m_dead, wdir, brg = _reference_surface(idx, hour)
+        return _pack_params(res, wind10, wdir, brg, fuel_of[idx].code,
+                            1.0 if hscales is None else _hour_scale(hour))
+
+    def _reference_surface(idx: int, hour: int):
+        """(RosResult, wind10, m_dead, wdir, bearing) of cell idx at `hour`,
+        recomputed from scratch through the classic rothermel seams — the
+        reference path's evaluation (cell_params_reference)."""
         s = _weather_sample(hour if zone_of is None else (zone_of[idx], hour))
         fuel = fuel_of[idx]
         ws_eff = (s.wind_speed_mps
@@ -1199,11 +1291,163 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                                             aspect_d[idx])
             res = rothermel.surface_ros_mps(fuel, m_dead, herb, woody,
                                             u_eff, 0.0)
-        return _pack_params(res, wind10, wdir, brg, fuel.code,
-                            1.0 if hscales is None else _hour_scale(hour))
+        return res, wind10, m_dead, wdir, brg
 
-    if os.environ.get("WGRESP_NO_ROS_MEMO") == "1":
+    use_reference = os.environ.get("WGRESP_NO_ROS_MEMO") == "1"
+    if use_reference:
         cell_params = cell_params_reference
+
+    # CROWN FIRE (cfg.crown_fire; SAFETY SEMANTICS 22; docstring). Armed only
+    # when the tile carries canopy layers AND some burnable cell holds crown
+    # fuel; otherwise every operation below is the surface solve's.
+    crown_on = (bool(getattr(cfg, "crown_fire", False))
+                and getattr(tile, "canopy", None) is not None)
+    crown_ok = None
+    if crown_on:
+        canopy = tile.canopy
+        for band in (canopy.cbh_m, canopy.cbd_kgm3, canopy.cc_pct,
+                     canopy.ch_m):
+            bs = band.spec
+            if (bs.nrows != nrows or bs.ncols != ncols
+                    or bs.cell_m != cell_m or bs.north_lat != spec.north_lat
+                    or bs.west_lon != spec.west_lon):
+                raise ValueError("tile canopy layers are not on the tile grid")
+        cbh_d = canopy.cbh_m.data
+        cbd_d = canopy.cbd_kgm3.data
+        cc_d = canopy.cc_pct.data
+        ch_d = canopy.ch_m.data
+        min_cbd = rothermel.CROWN_MIN_CBD_KGM3
+        crown_ok = bytearray(n)
+        for i in range(n):
+            if (fuel_of[i] is not None and cbd_d[i] >= min_cbd
+                    and ch_d[i] > cbh_d[i]):
+                crown_ok[i] = 1
+        if not any(crown_ok):
+            crown_on = False           # no crown fuel: the surface solve
+            crown_ok = None
+    if crown_on:
+        fmc_const = float(cfg.crown_foliar_moisture_pct)
+        fmc_seasonal = bool(getattr(cfg, "crown_foliar_moisture_seasonal",
+                                    False))
+        elev_d = tile.elev_m.data
+        crown_cache = {}   # surface key + canopy + FMC -> (params, kind)
+        surf_cache = {}    # surface key -> (RosResult, bearing)
+        fmc_d0 = {}        # seasonal FMC: cell -> day of minimum FMC
+        hour_doy = {}      # seasonal FMC: hour key -> UTC day of year
+        surface_params = cell_params   # the memo or the reference path
+
+        def _hour_doy(hour) -> int:
+            """UTC day of year at the start of an hour key (an int bucket
+            relative to t0_s, or a RE-ANCHOR ('kept_wx', j) span)."""
+            doy = hour_doy.get(hour)
+            if doy is None:
+                if hour.__class__ is tuple:
+                    t = float(kept_wx[hour[1]][0])
+                else:
+                    t = t0_s + hour * 3600.0
+                doy = time.gmtime(t).tm_yday
+                hour_doy[hour] = doy
+            return doy
+
+        def _cell_fmc(idx: int, hour) -> float:
+            """Foliar moisture (%) of cell idx at `hour`: the constant, or
+            (seasonal) the FBP model at the cell's latitude, longitude and
+            elevation on the hour's day."""
+            if not fmc_seasonal:
+                return fmc_const
+            d0 = fmc_d0.get(idx)
+            if d0 is None:
+                ll = geo.rc_to_latlon(spec, idx // ncols, idx % ncols)
+                d0 = rothermel.fbp_fmc_min_day(ll.lat, ll.lon, elev_d[idx])
+                fmc_d0[idx] = d0
+            return rothermel.fbp_fmc_from_nd(abs(_hour_doy(hour) - d0))
+
+        def _pack_crown(res, wind10: float, m_dead: float, wdir: float,
+                        brg: float, code: int, hscale: float, cbh: float,
+                        cbd: float, cc: float, ch: float, fmc: float):
+            """((head_ros, lb, bearing, spot), kind) of a crown-fuel cell:
+            _floor_part, the crown step (rothermel.crown_fire), then
+            _finish_part — so ros_scale / hour_ros_scale and the spot tuple
+            see the crown fire."""
+            head_ros, intensity, lb = _floor_part(res, wind10, code)
+            hpa = (res.intensity_kwm / res.ros_mps
+                   if res.ros_mps > 0.0 else 0.0)
+            effm = rothermel.crown_effm_pct(m_dead, cc)
+            ros_c, int_c, _cfb, kind = rothermel.crown_fire(
+                head_ros, intensity, hpa, wind10, effm, cbh, cbd, ch, fmc)
+            d_torch = 0.0
+            if kind != rothermel.CROWN_NONE:
+                if ros_c > head_ros:
+                    # the crown fire leads the head: Rothermel's (1991)
+                    # crown-fire ellipse when it is the broader (a lower
+                    # ratio never lowers the spread at any angle)
+                    lb_c = rothermel.crown_lb(wind10)
+                    if lb_c < lb:
+                        lb = lb_c
+                head_ros = ros_c
+                intensity = int_c
+                if size_law:
+                    cover = (ch if cc >= rothermel.CROWN_SHADED_CC_PCT
+                             else 0.5 * ch)
+                    d_torch = rothermel.torching_spot_max_m(
+                        ch, wind10 / 1.15, cover)
+            return (_finish_part(head_ros, intensity, lb, brg, wind10, wdir,
+                                 hscale, d_torch), kind)
+
+        def _crown_lookup(idx: int, hour):
+            """((params, kind)) of crown-fuel cell idx at `hour`, memoised on
+            the surface key + the cell's canopy values + FMC (every input
+            _pack_crown reads), or recomputed from scratch on the reference
+            path."""
+            fuel = fuel_of[idx]
+            cbh = cbh_d[idx]
+            cbd = cbd_d[idx]
+            cc = cc_d[idx]
+            ch = ch_d[idx]
+            fmc = _cell_fmc(idx, hour)
+            if use_reference:
+                res, wind10, m_dead, wdir, brg = _reference_surface(idx, hour)
+                return _pack_crown(res, wind10, m_dead, wdir, brg, fuel.code,
+                                   1.0 if hscales is None
+                                   else _hour_scale(hour),
+                                   cbh, cbd, cc, ch, fmc)
+            wkey = hour if zone_of is None else (zone_of[idx], hour)
+            wt = hour_wx.get(wkey)
+            if wt is None:
+                wt = _eff_weather(_weather_sample(wkey))
+                if hscales is not None:
+                    wt = wt + (_hour_scale(hour),)
+                hour_wx[wkey] = wt
+            slope = slope_d[idx]
+            aspect = aspect_d[idx]
+            if hscales is None:
+                wind10, m_dead, wdir = wt
+                hs = 1.0
+                key = (fuel.code, slope, aspect, wind10, m_dead, wdir)
+            else:
+                wind10, m_dead, wdir, hs = wt
+                key = (fuel.code, slope, aspect, wind10, m_dead, wdir, hs)
+            ckey = key + (cbh, cbd, cc, ch, fmc)
+            got = crown_cache.get(ckey)
+            if got is None:
+                s = surf_cache.get(key)
+                if s is None:
+                    s = _memo_surface(fuel, wind10, m_dead, wdir, slope,
+                                      aspect)
+                    if len(surf_cache) < _ROS_CACHE_MAX:
+                        surf_cache[key] = s
+                got = _pack_crown(s[0], wind10, m_dead, wdir, s[1],
+                                  fuel.code, hs, cbh, cbd, cc, ch, fmc)
+                if len(crown_cache) < _ROS_CACHE_MAX:
+                    crown_cache[ckey] = got
+            return got
+
+        def cell_params(idx: int, hour):
+            """CROWN FIRE dispatcher: a crown-fuel cell's params through the
+            crown step; every other cell exactly the surface path."""
+            if crown_ok[idx]:
+                return _crown_lookup(idx, hour)[0]
+            return surface_params(idx, hour)
 
     def _piecewise_edge_arrival(idx: int, t_u: float, hour0: int,
                                 dist_m: float, ebrg: float, ros0: float,
@@ -1537,6 +1781,10 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
         hour = int((t_u - t0_s) // 3600.0)
         params = cell_params(idx, hour)
         head, lb, brg, spot = params
+        if crown_trace is not None and crown_ok is not None and crown_ok[idx]:
+            # CROWN FIRE diagnostics: the cell's fire type at the hour it
+            # burned (a memo hit: _crown_lookup just ran for this key)
+            crown_trace[idx] = _crown_lookup(idx, hour)[1]
         aa = -1             # ANY-ANGLE SPREAD: this cell's live anchor, if any
         if any_angle:
             a = anc[idx]
@@ -1655,7 +1903,13 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                 heapq.heappush(heap, (t_v, nidx))
         if spot is not None and not (quiet is not None and quiet[idx]):
             if size_law:
-                mean_m, sbrg, u20, d_alb = spot
+                if crown_ok is not None and len(spot) == 5:
+                    # SEMANTICS 22: a crown-fuel cell's spot tuple also
+                    # carries its torching-tree reach (0.0 unless crowning)
+                    mean_m, sbrg, u20, d_alb, d_torch = spot
+                else:
+                    mean_m, sbrg, u20, d_alb = spot
+                    d_torch = 0.0
             else:
                 mean_m, sbrg, u20 = spot
             # SEMANTICS 11: draw ONE lognormal landing distance for THIS burning
@@ -1674,6 +1928,12 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     # joined; a longer draw burns out in flight (no spot).
                     reach = d_alb * ((fire_cells * cell_ha) / size_ref_ha) \
                         ** size_exp
+                    if d_torch > reach and \
+                            fire_cells * cell_ha >= _TORCH_MIN_FIRE_HA:
+                        # SEMANTICS 22: a torching tree lofts its brand
+                        # whatever the fire's size (Albini 1979), once the
+                        # fire is past its first patches
+                        reach = d_torch
                     if dist_m > reach:
                         dist_m = 0.0
             if dist_m >= cell_m:
@@ -2034,7 +2294,7 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
 _EMBER_ERODE_ATTR = "_ember_erode_cache"
 
 
-def tiered_eroded_p10(p10, fuel, cfg):
+def tiered_eroded_p10(p10, fuel, cfg, canopy=None):
     """FUEL-TIERED corridor erosion (contracts corridor_erosion_tiered;
     founder 2026-07-30 "in chaparral which will burn slower 100m is likely
     sufficient"): each SOURCE cell's P10 arrival projects over a radius set
@@ -2054,7 +2314,16 @@ def tiered_eroded_p10(p10, fuel, cfg):
     Non-burnable cells never carry finite arrivals and fall out naturally.
     SPEC-MISMATCH FAIL-SAFE: if the fuel raster's grid differs from the
     arrival raster's, returns the UNIFORM erosion at the WIDEST tier radius
-    (never a silently thinner shield)."""
+    (never a silently thinner shield).
+
+    CROWN FIRE (contracts SAFETY SEMANTICS 22): with cfg.crown_fire and the
+    tile's canopy layers passed as `canopy`, every cell holding crown fuel
+    (CBD >= rothermel.CROWN_MIN_CBD_KGM3 and CH > CBH) joins the FAST tier
+    whatever its fuel class: a crowning timber cell spreads at grass-like
+    rates with long flames and torching embers, so the slow tier's premise
+    (slow spread, short flames) no longer holds there. Only ever widens the
+    halo. canopy=None, or the knob off: byte-identical. A canopy not on the
+    p10 grid falls back to the widest uniform erosion, like the fuel."""
     from wgresponse import geo as _geo
     fast_m = float(getattr(cfg, "corridor_erosion_fast_m", 550.0))
     shrub_m = float(getattr(cfg, "corridor_erosion_shrub_m", 200.0))
@@ -2065,6 +2334,18 @@ def tiered_eroded_p10(p10, fuel, cfg):
     if (fs is None or fs.nrows != ps.nrows or fs.ncols != ps.ncols
             or fs.cell_m != ps.cell_m):
         return _geo.erode_min(p10, widest, shape="euclidean")
+    crown_fuel = None
+    if canopy is not None and getattr(cfg, "crown_fire", False):
+        cs = canopy.cbd_kgm3.spec
+        if (cs.nrows != ps.nrows or cs.ncols != ps.ncols
+                or cs.cell_m != ps.cell_m):
+            return _geo.erode_min(p10, widest, shape="euclidean")
+        min_cbd = rothermel.CROWN_MIN_CBD_KGM3
+        cbd_d = canopy.cbd_kgm3.data
+        cbh_d = canopy.cbh_m.data
+        ch_d = canopy.ch_m.data
+        crown_fuel = [cbd_d[i] >= min_cbd and ch_d[i] > cbh_d[i]
+                      for i in range(ps.nrows * ps.ncols)]
     inf = math.inf
     n = ps.nrows * ps.ncols
     masked = {"fast": [inf] * n, "shrub": [inf] * n, "slow": [inf] * n}
@@ -2073,7 +2354,9 @@ def tiered_eroded_p10(p10, fuel, cfg):
         if not math.isfinite(v):
             continue
         code = int(fuel.data[i])
-        if is_shrub(code):
+        if crown_fuel is not None and crown_fuel[i]:
+            masked["fast"][i] = v        # SEMANTICS 22: crown fuel is fast
+        elif is_shrub(code):
             masked["shrub"][i] = v
         elif (is_timber_understory(code) or is_timber_litter(code)
               or 201 <= code <= 204):
