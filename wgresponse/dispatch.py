@@ -92,6 +92,7 @@ plans — contracts.seeded_rng drives the shakes and every sort key is stable.
 """
 from __future__ import annotations
 
+import dataclasses
 import logging
 import math
 import time
@@ -349,6 +350,23 @@ def _gel_fresh_frac(job: DispatchJob, depart_s: float, cfg: ResponseConfig) -> f
     return (window_h - dt_h) / (window_h - full_h)
 
 
+def _gel_frac_rec(fin50: bool, eta50: float, depart_s: float,
+                  window_h: float, full_h: float) -> float:
+    """_gel_fresh_frac on a job's precomputed (_Ctx._jrec) fields — the same
+    comparisons and arithmetic, so the same float."""
+    if not fin50:
+        return 0.0
+    dt_h = (eta50 - depart_s) / 3600.0
+    if dt_h <= full_h:
+        return 1.0
+    if dt_h >= window_h:
+        return 0.0
+    return (window_h - dt_h) / (window_h - full_h)
+
+
+_MISS = object()          # memo sentinel (None is a cached "infeasible")
+
+
 class _Stop:
     """Internal timed stop (all absolute times unix seconds)."""
     __slots__ = ("key", "arrive_s", "service_start_s", "depart_s", "margin_h",
@@ -394,6 +412,70 @@ class _Contrib:
         self.j = j
 
 
+class LegMemo:
+    """Leg memo SHARED across plan() calls (first-step perf 2026-10-12;
+    docs/SIMULATOR_DESIGN.md "The slow first step"): the road route, travel
+    time and combined corridor T* of every leg a plan() computed, keyed on
+    the leg's EXACT endpoint coordinates (and mode), so later calls — the
+    simulator's two coating-hold probes and the real plan of one tick, and
+    later ticks while nothing a leg depends on has changed — reuse them
+    instead of re-routing and re-sampling the same ground.
+
+    A plan() binds it to a signature of everything a leg value depends on
+    besides its endpoints and the road provider — every cfg field, the
+    eroded rasters (by identity; the memo keeps them alive), the safe zones
+    and the off-map table (and the plan clock when cfg.route_alternatives >
+    1, whose provider answers per tick) — and it resets whenever that
+    changes. The caller owns the provider half of the law: reset() it
+    whenever the provider could start answering an exact (a, b, mode)
+    differently (simui resets it with its bucketed route cache). A plan()
+    whose own points collide on the per-plan leg key (two distinct points
+    rounding to one _lkey) does not use it at all, so every value a plan
+    reads is the value its own first touch would compute: plans are
+    byte-identical with or without a memo (pinned in tests/test_dispatch.py
+    and on the one-click scenarios, scratch_review/first_step_perf_probe.py).
+    """
+
+    __slots__ = ("sig", "keep", "rp", "tt", "ts")
+
+    #: entries (all three tables) before a bind starts the memo afresh
+    MAX_ENTRIES = 150_000
+
+    def __init__(self) -> None:
+        self.sig = None
+        self.keep = None
+        self.rp: dict = {}          # (alat, alon, blat, blon, mode) -> route
+        self.tt: dict = {}          # (alat, alon, blat, blon) -> travel s
+        self.ts: dict = {}          # (alat, alon, blat, blon, mode) -> T*
+
+    def reset(self) -> None:
+        """Forget everything (in place: a plan() in flight sees it too)."""
+        self.sig = None
+        self.keep = None
+        self.rp.clear()
+        self.tt.clear()
+        self.ts.clear()
+
+    def bind(self, sig, keep) -> None:
+        """Start afresh unless `sig` is the signature already bound."""
+        if (sig != self.sig or len(self.rp) + len(self.tt) + len(self.ts)
+                > self.MAX_ENTRIES):
+            self.reset()
+            self.sig = sig
+            self.keep = keep
+
+
+def _leg_memo_sig(cfg, rasters, safe_zones, offmap_tab, now_s):
+    """LegMemo signature: every value a leg's travel / T* depends on besides
+    its endpoints and the road provider's answer."""
+    return (tuple(getattr(cfg, f.name) for f in dataclasses.fields(cfg)),
+            tuple((iid, id(ras)) for iid, ras in rasters),
+            tuple((z.zone_id, z.loc.lat, z.loc.lon) for z in safe_zones),
+            tuple(sorted(offmap_tab.items())),
+            (now_s if int(getattr(cfg, "route_alternatives", 1) or 1) > 1
+             else None))
+
+
 class _Ctx:
     """Per-plan() evaluation context: caches for travel, per-leg corridor
     T* oracles, per-(stop, zone) egress T*, and route timelines. All caches are
@@ -408,7 +490,8 @@ class _Ctx:
     verdict cache could never absorb (measured 94% of plan() wall time)."""
 
     def __init__(self, crews, jobmap, rasters, safe_zones, cfg, now_s,
-                 inc_assign, inc_first, road_provider=None, offmap=None):
+                 inc_assign, inc_first, road_provider=None, offmap=None,
+                 leg_memo=None):
         self.crews = crews
         self.crew_ids = [c.crew_id for c in crews]
         self.crew_by_id = {c.crew_id: c for c in crews}
@@ -481,6 +564,96 @@ class _Ctx:
         self._ezones = {}                           # loc key -> [(zone_id, T*)] ordered
         self._route = {}
         self._contrib = {}
+        # FAST ROUTE CHAIN (first-step perf 2026-10-12; docs/
+        # SIMULATOR_DESIGN.md "The slow first step"). Everything the per-stop
+        # chain reads that does not depend on the route is computed ONCE per
+        # plan() here — the same expressions on the same inputs, hence the
+        # same floats — and every crew start / job / zone location is rounded
+        # to its leg-memo key (_lkey) once instead of on every lookup.
+        # _pstates memoises the chain state after every stop of a FEASIBLE
+        # route, so a candidate that shares a prefix with an evaluated route
+        # (every insertion / relocate / swap / 2-opt neighbour) resumes after
+        # the prefix instead of re-walking it (see _run). Every distinct
+        # point (exact coordinates) gets a dense id, and the chain reads leg
+        # travel / ingress T* / egress order from per-plan id matrices — a
+        # view of the leg memos, filled from them on first access, so the
+        # memos (and the road provider) see the original first touches.
+        self._dep_s = cfg.deploy_min * 60.0
+        slack_s = cfg.slack_min * 60.0
+        self._pid = {}                  # (lat, lon) -> dense point id
+        self._pts = []                  # point id -> (LatLon, leg key)
+        self._cstart = {}
+        for c in crews:
+            cl = c.loc()
+            self._cstart[c.crew_id] = (cl, self._lkey(cl), self._point(cl))
+        self._zkeys = [(z, self._lkey(z.loc)) for z in safe_zones]
+        jrec = {}
+        for k, job in jobmap.items():
+            cl = job.client.loc
+            ld = job.latest_depart_s
+            eta50 = job.eta.eta_p50_s
+            fin50 = math.isfinite(eta50)
+            if fin50:
+                window_h, full_h = _eff_gel_window_h(job, cfg)
+            else:
+                window_h = full_h = 0.0
+            if self.homes_mode:
+                # _served_value: pw * (1 + (EPS * tiebreak) * gel_frac)
+                pw = job.client.priority_weight
+                etb = _HOMES_VALUE_EPS * _homes_value_tiebreak(job, cfg)
+                vs = 0.0
+            else:
+                # _served_value: value_score * gel_frac
+                pw = etb = 0.0
+                vs = _value_score(job, cfg)
+            inc = inc_assign.get(k)
+            if inc is not None and inc in self.crew_by_id:
+                cw = 2.0 if k in inc_first else 1.0
+            else:
+                inc, cw = None, 0.0
+            # _depart_fail's two thresholds, verbatim:
+            #   deadline  depart > latest_depart + _EPS
+            #   slack     depart > latest_depart - slack_min*60 + _EPS
+            thr_dead = ld + _EPS
+            thr_slack = ld - slack_s + _EPS
+            jrec[k] = (cl, self._lkey(cl), self._point(cl),
+                       job.earliest_useful_start_s, ld, thr_dead, thr_slack,
+                       # "depart > thr_dead or depart > thr_slack"
+                       min(thr_dead, thr_slack),
+                       fin50, eta50, window_h, full_h, pw, etb, vs, inc, cw)
+        self._jrec = jrec
+        npts = len(self._pts)
+        self._tti = [None] * npts       # travel s       [from][to]
+        self._tsi = [None] * npts       # ingress T*     [from][to]
+        self._ezi = [None] * npts       # egress order   [stop]
+        self._ezx = [None] * npts       # its best T*    [stop]
+        self._pstates = {}
+        self._ls_cache = {}             # local-search delta tables (_ls_table)
+        # SHARED LEG MEMO (LegMemo): used only when no two distinct points of
+        # this plan share a leg key — then a leg key names one exact leg and
+        # the memo's exact-coordinate entries are this plan's own values.
+        self._sh = None
+        # safety.leg_tstar's shared prefix walks — this plan's own (legs
+        # from one start fan out along the same roads; a later plan reads
+        # the shared memo's T* instead), freed with the plan
+        self._walks = {}
+        if leg_memo is not None:
+            seen = {}
+            clash = False
+            pts = ([c.loc() for c in crews]
+                   + [r[0] for r in jrec.values()]
+                   + [z.loc for z in safe_zones])
+            for p in pts:
+                k = self._lkey(p)
+                x = (p.lat, p.lon)
+                if seen.setdefault(k, x) != x:
+                    clash = True
+                    break
+            if not clash:
+                leg_memo.bind(_leg_memo_sig(cfg, rasters, safe_zones,
+                                            self.offmap, now_s),
+                              [ras for _iid, ras in rasters])
+                self._sh = leg_memo
 
     # -- primitives ---------------------------------------------------------
 
@@ -495,6 +668,87 @@ class _Ctx:
     def _lkey(p):
         return (round(p.lat, 7), round(p.lon, 7))
 
+    def _point(self, p) -> int:
+        """Dense id of the exact point p (registered on first sight; a point
+        first seen after construction grows the id matrices by one)."""
+        x = (p.lat, p.lon)
+        i = self._pid.get(x)
+        if i is None:
+            i = self._pid[x] = len(self._pts)
+            self._pts.append((p, self._lkey(p)))
+            tti = getattr(self, "_tti", None)
+            if tti is not None:
+                for mat in (self._tti, self._tsi):
+                    for row in mat:
+                        if row is not None:
+                            row.append(None)
+                    mat.append(None)
+                self._ezi.append(None)
+                self._ezx.append(None)
+        return i
+
+    def _tt_row(self, a: int):
+        row = self._tti[a]
+        if row is None:
+            row = self._tti[a] = [None] * len(self._pts)
+        return row
+
+    def _ts_row(self, a: int):
+        row = self._tsi[a]
+        if row is None:
+            row = self._tsi[a] = [None] * len(self._pts)
+        return row
+
+    def _leg(self, a: int, b: int):
+        """Travel seconds of the leg between plan points a -> b, through the
+        id matrix (filled from the leg memo — _travel_k — on first access)."""
+        row = self._tti[a]
+        if row is None:
+            row = self._tt_row(a)
+        tt = row[b]
+        if tt is None:
+            pa, ka = self._pts[a]
+            pb, kb = self._pts[b]
+            tt = row[b] = self._travel_k(pa, pb, ka, kb)
+        return tt
+
+    def _tstar_ab(self, a: int, b: int) -> float:
+        """Ingress corridor T* of the leg a -> b, through the id matrix
+        (filled from _tstar_k on first need: T* stays lazy, read only once
+        a stop's timing has passed, as in eval_route)."""
+        row = self._tsi[a]
+        if row is None:
+            row = self._ts_row(a)
+        ts = row[b]
+        if ts is None:
+            pa, ka = self._pts[a]
+            pb, kb = self._pts[b]
+            ts = row[b] = self._tstar_k(pa, pb, ka, kb, "ingress")
+        return ts
+
+    def _ezones_p(self, b: int):
+        zl = self._ezi[b]
+        if zl is None:
+            pb, kb = self._pts[b]
+            zl = self._ezones.get(kb)
+            if zl is None:
+                zl = self._ezones_k(pb, kb)
+            self._ezi[b] = zl
+        return zl
+
+    def _ezmax_p(self, b: int) -> float:
+        """max over the egress order of plan point b of the zone T*: a stop
+        departing at d has a lawful egress (some zone with d <= T*) iff
+        d <= this — the egress test of the chain in one comparison."""
+        x = self._ezx[b]
+        if x is None:
+            x = -math.inf
+            for _zid, zt in self._ezones_p(b):
+                if zt > x:
+                    x = zt
+            self._ezx[b] = x
+        return x
+
     def _road_route(self, a, b, mode: str = "ingress"):
         """Memoized road_provider lookup for the a->b leg; None when no
         provider, no route, or the route is the off-network chord fallback
@@ -507,9 +761,23 @@ class _Ctx:
         without the hint — byte-identical."""
         if self.road_provider is None:
             return None
-        k = (self._lkey(a), self._lkey(b), mode)
+        return self._road_route_k(a, b, self._lkey(a), self._lkey(b), mode)
+
+    def _road_route_k(self, a, b, ka, kb, mode):
+        """_road_route with the endpoints' leg keys already rounded (the
+        memo key is (ka, kb, mode) exactly as before)."""
+        if self.road_provider is None:
+            return None
+        k = (ka, kb, mode)
         if k in self._rp_cache:
             return self._rp_cache[k]
+        sh = self._sh
+        if sh is not None:
+            xk = (a.lat, a.lon, b.lat, b.lon, mode)
+            rr = sh.rp.get(xk, _MISS)
+            if rr is not _MISS:            # the provider's current answer
+                self._rp_cache[k] = rr
+                return rr
         try:
             rr = self.road_provider(a, b, mode=mode)
         except TypeError:
@@ -520,17 +788,34 @@ class _Ctx:
                 or rr.dist_m <= 0.0):
             rr = None
         self._rp_cache[k] = rr
+        if sh is not None:
+            sh.rp[xk] = rr
         return rr
 
     def travel(self, a, b) -> float:
-        k = (self._lkey(a), self._lkey(b))
+        return self._travel_k(a, b, self._lkey(a), self._lkey(b))
+
+    def _travel_k(self, a, b, ka, kb) -> float:
+        """travel(a, b) with the leg keys already rounded."""
+        k = (ka, kb)
         v = self._tt.get(k)
         if v is None:
-            rr = self._road_route(a, b)
-            # PLAN-ON-ROADS: the route's own time IS the kinematic truth (sim
-            # crews drive the polyline at rr.dist_m/rr.time_s); tier-0 chord
-            # otherwise (which is what off-network crews drive).
-            v = rr.time_s if rr is not None else travel_time_s(a, b, self.cfg)
+            # (the route lookup first, as always: it seeds this plan's route
+            # memo exactly as a first touch does)
+            rr = self._road_route_k(a, b, ka, kb, "ingress")
+            sh = self._sh
+            if sh is not None:
+                xk = (a.lat, a.lon, b.lat, b.lon)
+                v = sh.tt.get(xk)
+            if v is None:
+                # PLAN-ON-ROADS: the route's own time IS the kinematic truth
+                # (sim crews drive the polyline at rr.dist_m/rr.time_s);
+                # tier-0 chord otherwise (which is what off-network crews
+                # drive).
+                v = (rr.time_s if rr is not None
+                     else travel_time_s(a, b, self.cfg))
+                if sh is not None:
+                    sh.tt[xk] = v
             self._tt[k] = v
         return v
 
@@ -548,10 +833,20 @@ class _Ctx:
         ``mode`` reaches the candidate-aware provider so an egress leg's T*
         is computed on the SAFEST candidate's polyline (the ground actually
         driven), never a faster-but-hotter one."""
-        k = (self._lkey(a), self._lkey(b), mode)
+        return self._tstar_k(a, b, self._lkey(a), self._lkey(b), mode)
+
+    def _tstar_k(self, a, b, ka, kb, mode) -> float:
+        """leg_latest_depart(a, b, mode) with the leg keys already rounded."""
+        k = (ka, kb, mode)
         v = self._tstar.get(k)
+        if v is not None:
+            return v
+        rr = self._road_route_k(a, b, ka, kb, mode)
+        sh = self._sh
+        if sh is not None:
+            xk = (a.lat, a.lon, b.lat, b.lon, mode)
+            v = sh.ts.get(xk)
         if v is None:
-            rr = self._road_route(a, b, mode)
             path = rr.polyline if rr is not None else None
             spd = (rr.dist_m / rr.time_s) if rr is not None else self.corr_speed
             # road legs use the leaner road margin (the chord margin's extra
@@ -559,19 +854,23 @@ class _Ctx:
             mm = (self.cfg.route_margin_roads_min if rr is not None else None)
             v = UNREACHED
             for iid, ras in self.rasters:
+                # safety.leg_tstar == safety.LegOracle(...)
+                # .latest_safe_depart_s, bit for bit, without the samples
                 om = self.offmap.get(iid) if self.offmap else None
                 if om is None:
-                    t = safety.LegOracle(a, b, spd, ras, self.cfg, path=path,
-                                         margin_min=mm).latest_safe_depart_s
+                    t = safety.leg_tstar(a, b, spd, ras, self.cfg, path=path,
+                                         margin_min=mm, walks=self._walks)
                 else:
                     # SAFETY SEMANTICS 15: THIS fire's off-domain horizon
-                    t = safety.LegOracle(
+                    t = safety.leg_tstar(
                         a, b, spd, ras, self.cfg, path=path, margin_min=mm,
                         offraster_ros_mps=om[0],
-                        offraster_margin_min=om[1]).latest_safe_depart_s
+                        offraster_margin_min=om[1], walks=self._walks)
                 if t < v:
                     v = t
-            self._tstar[k] = v
+            if sh is not None:
+                sh.ts[xk] = v
+        self._tstar[k] = v
         return v
 
     def corridor_ok(self, a, b, depart_s) -> bool:
@@ -594,23 +893,31 @@ class _Ctx:
         k = self._lkey(loc)
         zl = self._ezones.get(k)
         if zl is None:
-            if int(getattr(self.cfg, "route_alternatives", 1) or 1) > 1:
-                rows = [(z.zone_id,
-                         self.leg_latest_depart(loc, z.loc, mode="egress"),
-                         self.travel(loc, z.loc))
-                        for z in self.safe_zones]
-                rows.sort(key=lambda r: (-r[1], r[2], r[0]))
-                zl = [(zid, tstar) for zid, tstar, _tt in rows]
-            else:
-                zl = [(z.zone_id, self.leg_latest_depart(loc, z.loc))
-                      for z in sorted(self.safe_zones,
-                                      key=lambda z: (self.travel(loc, z.loc),
-                                                     z.zone_id))]
-            self._ezones[k] = zl
+            zl = self._ezones_k(loc, k)
         for zid, tstar in zl:
             if depart_s <= tstar:
                 return (True, zid)
         return (False, "")
+
+    def _ezones_k(self, loc, k):
+        """Build and memoise the egress zone order of the stop at loc (leg
+        key k) — egress()'s list, the same calls in the same order."""
+        if int(getattr(self.cfg, "route_alternatives", 1) or 1) > 1:
+            rows = [(z.zone_id,
+                     self._tstar_k(loc, z.loc, k, zk, "egress"),
+                     self._travel_k(loc, z.loc, k, zk))
+                    for z, zk in self._zkeys]
+            rows.sort(key=lambda r: (-r[1], r[2], r[0]))
+            zl = [(zid, tstar) for zid, tstar, _tt in rows]
+        else:
+            order = sorted(self._zkeys,
+                           key=lambda zz: (self._travel_k(loc, zz[0].loc, k,
+                                                          zz[1]),
+                                           zz[0].zone_id))
+            zl = [(z.zone_id, self._tstar_k(loc, z.loc, k, zk, "ingress"))
+                  for z, zk in order]
+        self._ezones[k] = zl
+        return zl
 
     # -- route evaluation ----------------------------------------------------
 
@@ -622,33 +929,43 @@ class _Ctx:
         hit = self._route.get(ck)
         if hit is not None:
             return hit
-        crew = self.crew_by_id[crew_id]
-        loc = crew.loc()
+        pa = self._cstart[crew_id][2]
         t = self.now_s
         stops = []
         fail = None
+        jrec = self._jrec
+        dep_s = self._dep_s
         for key in keys:
-            job = self.jobmap[key]
-            tt = self.travel(loc, job.client.loc)
+            (_cl, _clk, pb, eus, ld, thr_dead, thr_slack, _thr, fin50, eta50,
+             window_h, full_h, _pw, _etb, _vs, _inc, _cw) = jrec[key]
+            tt = self._leg(pa, pb)
             arrive = t + tt
-            service = arrive if job.earliest_useful_start_s <= arrive else job.earliest_useful_start_s
-            depart = service + self.cfg.deploy_min * 60.0
-            fk = _depart_fail(depart, job.latest_depart_s, self.cfg)
-            if fk is not None:
-                fail = (fk, key)
+            service = arrive if eus <= arrive else eus
+            depart = service + dep_s
+            # _depart_fail, verbatim thresholds (SAFETY SEMANTICS 7)
+            if depart > thr_dead:
+                fail = ("deadline", key)
                 break
-            if not self.corridor_ok(loc, job.client.loc, t):
+            if depart > thr_slack:
+                fail = ("slack", key)
+                break
+            if not t <= self._tstar_ab(pa, pb):
                 fail = ("corridor", key)
                 break
-            eok, zid = self.egress(job.client.loc, depart)
-            if not eok:
+            zl = self._ezones_p(pb)
+            zid = None
+            for z_id, zt in zl:
+                if depart <= zt:
+                    zid = z_id
+                    break
+            if zid is None:
                 fail = ("egress", key)
                 break
             stops.append(_Stop(key, arrive, service, depart,
-                               (job.latest_depart_s - depart) / 3600.0,
-                               _gel_fresh_frac(job, depart, self.cfg), zid, tt))
-            loc = job.client.loc
-            t = depart
+                               (ld - depart) / 3600.0,
+                               _gel_frac_rec(fin50, eta50, depart, window_h,
+                                             full_h), zid, tt))
+            pa, t = pb, depart
         res = (stops, None) if fail is None else (None, fail)
         self._route[ck] = res
         return res
@@ -656,23 +973,109 @@ class _Ctx:
     def route_contrib(self, crew_id, keys):
         """Objective contribution of one route, or None if infeasible."""
         ck = (crew_id, keys)
-        if ck in self._contrib:
-            return self._contrib[ck]
-        stops, _fail = self.eval_route(crew_id, keys)
-        if stops is None:
-            self._contrib[ck] = None
-            return None
-        value = 0.0
-        drive_h = 0.0
-        churn_w = 0.0
-        for st in stops:
-            job = self.jobmap[st.key]
-            value += _served_value(job, st.gel_frac, self.cfg)
-            drive_h += st.travel_s / 3600.0
-            inc = self.inc_assign.get(st.key)
-            # churn only for voluntary reassignment: incumbent crew still eligible
-            if inc is not None and inc != crew_id and inc in self.crew_by_id:
-                churn_w += 2.0 if st.key in self.inc_first else 1.0
+        c = self._contrib.get(ck, _MISS)
+        if c is _MISS:
+            c = self._run(crew_id, keys, 0,
+                          (self._cstart[crew_id][2], self.now_s, 0.0, 0.0,
+                           0.0), None)
+            self._contrib[ck] = c
+        return c
+
+    def states(self, crew_id, keys):
+        """The chain state after every stop of the FEASIBLE route `keys`
+        ([0] = the crew's start, [p] = after the first p stops), memoised;
+        None when the route is infeasible. Called only for a route
+        route_contrib has already evaluated, so the walk touches no new leg."""
+        ck = (crew_id, keys)
+        sts = self._pstates.get(ck)
+        if sts is None:
+            st0 = (self._cstart[crew_id][2], self.now_s, 0.0, 0.0, 0.0)
+            sts = [st0]
+            if self._run(crew_id, keys, 0, st0, sts) is None:
+                return None
+            self._pstates[ck] = sts
+        return sts
+
+    def contrib_from(self, crew_id, keys, p, sts):
+        """route_contrib(crew_id, keys) for a route whose first p keys are
+        those of an evaluated FEASIBLE route with prefix states `sts`: the
+        chain resumes from sts[p]. Identical result — the state after p stops
+        depends only on those p stops — and no leg first-touch moves: the
+        prefix's legs were all walked when that route was evaluated."""
+        ck = (crew_id, keys)
+        c = self._contrib.get(ck, _MISS)
+        if c is _MISS:
+            c = self._run(crew_id, keys, p, sts[p], None)
+            self._contrib[ck] = c
+        return c
+
+    def _run(self, crew_id, keys, p0, st, rec):
+        """THE route chain behind route_contrib: walk keys[p0:] for crew_id
+        from chain state st = (point id, t, value, drive_h, churn_w) and
+        return the route's _Contrib, or None on its first hard-constraint
+        failure. Per stop, in eval_route's order: travel; the _depart_fail
+        deadline and slack floor; the ingress corridor T*; the egress T*;
+        then the stop's objective terms (_served_value at _gel_fresh_frac,
+        travel hours, churn) accumulated in stop order — the same
+        comparisons and the same float operations in the same order as
+        eval_route + the per-stop sums, so every result is bit-identical,
+        and the leg memos are first touched in the same order. rec: None, or
+        a list that receives the chain state after every stop."""
+        pa, t, value, drive_h, churn_w = st
+        jrec = self._jrec
+        tti = self._tti
+        tsi = self._tsi
+        ezx = self._ezx
+        dep_s = self._dep_s
+        homes = self.homes_mode
+        for i in range(p0, len(keys)):
+            (_cl, _clk, pb, eus, _ld, _thr_dead, _thr_slack, thr, fin50,
+             eta50, window_h, full_h, pw, etb, vs, inc, cw) = jrec[keys[i]]
+            row = tti[pa]
+            tt = None if row is None else row[pb]
+            if tt is None:
+                tt = self._leg(pa, pb)
+            arrive = t + tt
+            service = arrive if eus <= arrive else eus
+            depart = service + dep_s
+            if depart > thr:                     # _depart_fail (either)
+                return None
+            row = tsi[pa]
+            ts = None if row is None else row[pb]
+            if ts is None:
+                ts = self._tstar_ab(pa, pb)
+            if not t <= ts:
+                return None
+            zx = ezx[pb]
+            if zx is None:
+                zx = self._ezmax_p(pb)
+            if not depart <= zx:                 # no lawful egress zone
+                return None
+            # _gel_fresh_frac
+            if fin50:
+                dt_h = (eta50 - depart) / 3600.0
+                if dt_h <= full_h:
+                    g = 1.0
+                elif dt_h >= window_h:
+                    g = 0.0
+                else:
+                    g = (window_h - dt_h) / (window_h - full_h)
+            else:
+                g = 0.0
+            # _served_value
+            if homes:
+                value += pw * (1.0 + etb * g)
+            else:
+                value += vs * g
+            drive_h += tt / 3600.0
+            # churn only for voluntary reassignment: incumbent crew still
+            # eligible (cw is 0 / inc None otherwise)
+            if inc is not None and inc != crew_id:
+                churn_w += cw
+            pa = pb
+            t = depart
+            if rec is not None:
+                rec.append((pa, t, value, drive_h, churn_w))
         j = value - self.lam_travel * drive_h - self.churn_unit * churn_w
         if self.spread_unit:
             # anti-concentration (founder FULL-UTILIZATION law): a mild CONVEX
@@ -682,11 +1085,25 @@ class _Ctx:
             # (spread_unit, 'homes' mode only) far below one home, and the never-
             # worse-than-greedy COUNT guardrail backstops any over-penalty, so it
             # can only ever break ties among equal-count plans, never drop a home.
-            n = len(stops)
+            n = len(keys)
             j -= self.spread_unit * (n * (n - 1) * 0.5)
-        c = _Contrib(value, drive_h, churn_w, j)
-        self._contrib[ck] = c
-        return c
+        return _Contrib(value, drive_h, churn_w, j)
+
+    def extend_p(self, pa: int, t, key):
+        """_extend from plan point id pa."""
+        (_cl, _clk, pb, eus, _ld, _thr_dead, _thr_slack, thr, _fin50,
+         _eta50, _window_h, _full_h, _pw, _etb, _vs, _inc, _cw) =             self._jrec[key]
+        tt = self._leg(pa, pb)
+        arrive = t + tt
+        service = arrive if eus <= arrive else eus
+        depart = service + self._dep_s
+        if depart > thr:
+            return None
+        if not t <= self._tstar_ab(pa, pb):
+            return None
+        if not depart <= self._ezmax_p(pb):
+            return None
+        return arrive, service, depart
 
     def plan_j(self, state: _State) -> float:
         total = 0.0
@@ -829,24 +1246,34 @@ def _sub_budget(ctx, seconds: float, evals: int) -> "_Budget":
 # Construction: regret-2 insertion
 # ---------------------------------------------------------------------------
 
+def _best_ins_crew(ctx: _Ctx, state: _State, cid, key):
+    """Best (delta_j, position) for inserting key into crew cid's route, or
+    None (route infeasible / no feasible position). The scan of
+    _best_insertions for ONE crew: every candidate resumes the route chain
+    after the prefix it shares with the current route (_Ctx.contrib_from)."""
+    kt = tuple(state.assign[cid])
+    old = ctx.route_contrib(cid, kt)
+    if old is None:
+        return None
+    sts = ctx.states(cid, kt)
+    oj = old.j
+    best = None
+    for pos in range(state.frozen[cid], len(kt) + 1):
+        new = ctx.contrib_from(cid, kt[:pos] + (key,) + kt[pos:], pos, sts)
+        if new is None:
+            continue
+        dj = new.j - oj
+        if best is None or dj > best[0] + _EPS:
+            best = (dj, pos)
+    return best
+
+
 def _best_insertions(ctx: _Ctx, state: _State, key):
     """Per-crew best (delta_j, crew_id, position) for inserting key; sorted by
     descending delta then crew_id/position for determinism."""
     out = []
     for cid in ctx.crew_ids:
-        keys = state.assign[cid]
-        old = ctx.route_contrib(cid, tuple(keys))
-        if old is None:
-            continue
-        best = None
-        for pos in range(state.frozen[cid], len(keys) + 1):
-            nk = tuple(keys[:pos] + [key] + keys[pos:])
-            new = ctx.route_contrib(cid, nk)
-            if new is None:
-                continue
-            dj = new.j - old.j
-            if best is None or dj > best[0] + _EPS:
-                best = (dj, pos)
+        best = _best_ins_crew(ctx, state, cid, key)
         if best is not None:
             out.append((best[0], cid, best[1]))
     out.sort(key=lambda t: (-t[0], t[1], t[2]))
@@ -855,15 +1282,34 @@ def _best_insertions(ctx: _Ctx, state: _State, key):
 
 def _regret2_insert(ctx: _Ctx, state: _State, pool, deadline: float) -> None:
     """Insert pool jobs by regret-2 (spec section 6.2) until nothing feasible
-    and value-positive remains. Mutates state; leftover jobs stay unrouted."""
+    and value-positive remains. Mutates state; leftover jobs stay unrouted.
+
+    Each round inserts ONE job into ONE crew, so a (job, crew) best insertion
+    is recomputed only when that crew's route changed since it was last
+    scanned (per-crew route versions); the scan order, the budget consults
+    and every comparison are the original's (first-step perf 2026-10-12)."""
     pool = set(pool)
+    crew_ids = ctx.crew_ids
+    ver = {cid: 0 for cid in crew_ids}
+    tab = {}                       # (key, crew) -> (route version, best)
     while pool and not deadline.expired():
         cands = []
         for key in sorted(pool):
             if deadline.expired():     # in-scan budget check (perf D4)
                 break
             job = ctx.jobmap[key]
-            options = _best_insertions(ctx, state, key)
+            options = []
+            for cid in crew_ids:
+                v = ver[cid]
+                hit = tab.get((key, cid))
+                if hit is not None and hit[0] == v:
+                    best = hit[1]
+                else:
+                    best = _best_ins_crew(ctx, state, cid, key)
+                    tab[(key, cid)] = (v, best)
+                if best is not None:
+                    options.append((best[0], cid, best[1]))
+            options.sort(key=lambda t: (-t[0], t[1], t[2]))
             options = [o for o in options if o[0] > _EPS]   # only value-positive inserts
             if not options:
                 continue
@@ -882,6 +1328,7 @@ def _regret2_insert(ctx: _Ctx, state: _State, pool, deadline: float) -> None:
         cands.sort(key=lambda t: (-t[0], -t[1], t[2], t[3]))
         _r, _sc, _dl, key, (dj, cid, pos) = cands[0]
         state.assign[cid].insert(pos, key)
+        ver[cid] += 1
         pool.discard(key)
 
 
@@ -905,19 +1352,7 @@ def _extend(ctx: _Ctx, loc, t, key):
     construction and the exact micro-solver; anything they admit is
     re-verified by eval_route at adoption/emission time (an infeasible route
     evaluates to J = -inf and can never be emitted)."""
-    job = ctx.jobmap[key]
-    tt = ctx.travel(loc, job.client.loc)
-    arrive = t + tt
-    service = arrive if job.earliest_useful_start_s <= arrive \
-        else job.earliest_useful_start_s
-    depart = service + ctx.cfg.deploy_min * 60.0
-    if _depart_fail(depart, job.latest_depart_s, ctx.cfg) is not None:
-        return None
-    if not ctx.corridor_ok(loc, job.client.loc, t):
-        return None
-    if not ctx.egress(job.client.loc, depart)[0]:
-        return None
-    return arrive, service, depart
+    return ctx.extend_p(ctx._point(loc), t, key)
 
 
 def _edf_insert(ctx: _Ctx, state: _State, pool, deadline: float) -> None:
@@ -939,22 +1374,23 @@ def _edf_insert(ctx: _Ctx, state: _State, pool, deadline: float) -> None:
     the greedy baseline serves everything feasible, and the guardrail's value
     floor depends on that."""
     ends = {}
+    jrec = ctx._jrec
     for cid in ctx.crew_ids:
         keys = tuple(state.assign[cid])
         if keys:
             stops, _fail = ctx.eval_route(cid, keys)
             if stops is None:              # defensive; seeded skeletons are lawful
                 return
-            ends[cid] = (ctx.jobmap[keys[-1]].client.loc, stops[-1].depart_s)
+            ends[cid] = (jrec[keys[-1]][2], stops[-1].depart_s)
         else:
-            ends[cid] = (ctx.crew_by_id[cid].loc(), ctx.now_s)
+            ends[cid] = (ctx._cstart[cid][2], ctx.now_s)
     for key in sorted(pool, key=lambda k: (ctx.jobmap[k].latest_service_start_s, k)):
         if deadline.expired():
             break
         best = None
         for cid in ctx.crew_ids:
-            loc, t = ends[cid]
-            ext = _extend(ctx, loc, t, key)
+            pa, t = ends[cid]
+            ext = ctx.extend_p(pa, t, key)
             if ext is None:
                 continue
             cand = (ext[2], cid)
@@ -963,7 +1399,7 @@ def _edf_insert(ctx: _Ctx, state: _State, pool, deadline: float) -> None:
         if best is not None:
             depart, cid = best
             state.assign[cid].append(key)
-            ends[cid] = (ctx.jobmap[key].client.loc, depart)
+            ends[cid] = (jrec[key][2], depart)
 
 
 def _state_value(ctx: _Ctx, state: _State) -> float:
@@ -982,58 +1418,214 @@ def _state_value(ctx: _Ctx, state: _State) -> float:
 # Local search: relocate / swap / 2-opt / drop-and-refill (first-improvement)
 # ---------------------------------------------------------------------------
 
+def _ls_routes(ctx, state):
+    """crew_id -> (route tuple, route_contrib, prefix states or None) of the
+    CURRENT state, for the local-search neighbourhood scans. Every current
+    route is already evaluated when a scan starts (_local_search's plan_j,
+    then each accepted move's new routes), so this touches no new leg."""
+    cur = {}
+    for cid in ctx.crew_ids:
+        kt = tuple(state.assign[cid])
+        old = ctx.route_contrib(cid, kt)
+        cur[cid] = (kt, old, ctx.states(cid, kt) if old is not None else None)
+    return cur
+
+
+def _cand(ctx, cid, nk, p, entry):
+    """route_contrib(cid, nk) for a neighbour that shares its first p keys
+    with the crew's current route (`entry` from _ls_routes): resumed after
+    the shared prefix (_Ctx.contrib_from)."""
+    sts = entry[2]
+    if sts is None:
+        return ctx.route_contrib(cid, nk)
+    return ctx.contrib_from(cid, nk, p, sts)
+
+
+_NOFEAS = object()        # LS delta cache: the neighbour is infeasible
+
+
+def _ls_table(ctx, key, kt1, kt2, nrows):
+    """The LS delta table of neighbourhood block `key` for the current
+    routes (kt1, kt2): rows of per-candidate cached deltas, None = not yet
+    evaluated. A block whose routes changed starts afresh."""
+    ent = ctx._ls_cache.get(key)
+    if ent is None or ent[0] != kt1 or ent[1] != kt2:
+        ent = (kt1, kt2, [None] * nrows)
+        ctx._ls_cache[key] = ent
+    return ent[2]
+
+
+# The three neighbourhood scans below are _delta_j-driven first-improvement
+# scans; each candidate's J is computed exactly as _delta_j does (per changed
+# crew, in the same order: the new route, an early None, then
+# nj += new.j - old.j), with the routes resumed after their shared prefix.
+#
+# LS DELTA CACHE (first-step perf 2026-10-12): a scan restarts from the top
+# after every accepted move, but only the moved crews' routes changed — a
+# neighbour's per-crew deltas (new.j - old.j) depend only on the routes it
+# changes, so they are cached per block of current routes (_ls_table) and a
+# rescan only redoes nj = cur_j; nj += d1; nj += d2 against the new
+# threshold. Candidates are visited, and (when not cached) evaluated, in the
+# original order with the original early exits, so the leg memos see the
+# same first touches and every accepted move is the original's.
+
 def _try_relocate(ctx, state, cur_j):
-    for cid1 in ctx.crew_ids:
-        keys1 = state.assign[cid1]
-        for i in range(state.frozen[cid1], len(keys1)):
-            moved = keys1[i]
-            base1 = keys1[:i] + keys1[i + 1:]
-            for cid2 in ctx.crew_ids:
-                target = base1 if cid2 == cid1 else state.assign[cid2]
-                for pos in range(state.frozen[cid2], len(target) + 1):
-                    if cid2 == cid1 and pos == i:
-                        continue
-                    if cid2 == cid1:
-                        changed = {cid1: target[:pos] + [moved] + target[pos:]}
-                    else:
-                        changed = {cid1: base1,
-                                   cid2: target[:pos] + [moved] + target[pos:]}
-                    nj = _delta_j(ctx, state, cur_j, changed)
-                    if nj is not None and nj > cur_j + _imp_eps(cur_j):
-                        for c, ks in changed.items():
-                            state.assign[c] = list(ks)
-                        return nj
+    thr = cur_j + _imp_eps(cur_j)
+    crew_ids = ctx.crew_ids
+    frozen = state.frozen
+    cur = _ls_routes(ctx, state)
+    for cid1 in crew_ids:
+        e1 = cur[cid1]
+        kt1, old1 = e1[0], e1[1]
+        f1 = frozen[cid1]
+        n1 = len(kt1)
+        if f1 >= n1:
+            continue
+        # cid1 without its i-th stop: delta per i (shared by every target)
+        rem = _ls_table(ctx, ("rel1", cid1), kt1, kt1, n1)
+        same = _ls_table(ctx, ("rels", cid1), kt1, kt1, n1)
+        for i in range(f1, n1):
+            moved = kt1[i]
+            base1 = kt1[:i] + kt1[i + 1:]
+            for cid2 in crew_ids:
+                if cid2 == cid1:
+                    row = same[i]
+                    if row is None:
+                        row = same[i] = [None] * n1
+                    for pos in range(f1, n1):     # len(base1) + 1 slots
+                        if pos == i:
+                            continue
+                        d = row[pos]
+                        if d is None:
+                            nk = base1[:pos] + (moved,) + base1[pos:]
+                            new = _cand(ctx, cid1, nk,
+                                        pos if pos < i else i, e1)
+                            d = (_NOFEAS if new is None or old1 is None
+                                 else new.j - old1.j)
+                            row[pos] = d
+                        if d is _NOFEAS:
+                            continue
+                        nj = cur_j
+                        nj += d
+                        if nj > thr:
+                            state.assign[cid1] = list(
+                                base1[:pos] + (moved,) + base1[pos:])
+                            return nj
+                else:
+                    e2 = cur[cid2]
+                    kt2, old2 = e2[0], e2[1]
+                    f2 = frozen[cid2]
+                    n2 = len(kt2)
+                    tab = _ls_table(ctx, ("rel", cid1, cid2), kt1, kt2, n1)
+                    row = tab[i]
+                    if row is None:
+                        row = tab[i] = [None] * (n2 + 1)
+                    for pos in range(f2, n2 + 1):
+                        d1 = rem[i]
+                        if d1 is None:
+                            new1 = _cand(ctx, cid1, base1, i, e1)
+                            d1 = (_NOFEAS if new1 is None or old1 is None
+                                  else new1.j - old1.j)
+                            rem[i] = d1
+                        if d1 is _NOFEAS:
+                            continue
+                        d2 = row[pos]
+                        if d2 is None:
+                            nk2 = kt2[:pos] + (moved,) + kt2[pos:]
+                            new2 = _cand(ctx, cid2, nk2, pos, e2)
+                            d2 = (_NOFEAS if new2 is None or old2 is None
+                                  else new2.j - old2.j)
+                            row[pos] = d2
+                        if d2 is _NOFEAS:
+                            continue
+                        nj = cur_j
+                        nj += d1
+                        nj += d2
+                        if nj > thr:
+                            state.assign[cid1] = list(base1)
+                            state.assign[cid2] = list(
+                                kt2[:pos] + (moved,) + kt2[pos:])
+                            return nj
     return None
 
 
 def _try_swap(ctx, state, cur_j):
-    n = len(ctx.crew_ids)
+    thr = cur_j + _imp_eps(cur_j)
+    crew_ids = ctx.crew_ids
+    frozen = state.frozen
+    cur = _ls_routes(ctx, state)
+    n = len(crew_ids)
     for a in range(n):
         for b in range(a + 1, n):
-            cid1, cid2 = ctx.crew_ids[a], ctx.crew_ids[b]
-            k1, k2 = state.assign[cid1], state.assign[cid2]
-            for i in range(state.frozen[cid1], len(k1)):
-                for j in range(state.frozen[cid2], len(k2)):
-                    n1 = k1[:i] + [k2[j]] + k1[i + 1:]
-                    n2 = k2[:j] + [k1[i]] + k2[j + 1:]
-                    nj = _delta_j(ctx, state, cur_j, {cid1: n1, cid2: n2})
-                    if nj is not None and nj > cur_j + _imp_eps(cur_j):
-                        state.assign[cid1] = n1
-                        state.assign[cid2] = n2
+            cid1, cid2 = crew_ids[a], crew_ids[b]
+            e1, e2 = cur[cid1], cur[cid2]
+            k1, old1 = e1[0], e1[1]
+            k2, old2 = e2[0], e2[1]
+            f2 = frozen[cid2]
+            if frozen[cid1] >= len(k1) or f2 >= len(k2):
+                continue
+            tab = _ls_table(ctx, ("swap", cid1, cid2), k1, k2, len(k1))
+            for i in range(frozen[cid1], len(k1)):
+                row = tab[i]
+                if row is None:
+                    row = tab[i] = [None] * len(k2)
+                for j in range(f2, len(k2)):
+                    ent = row[j]
+                    if ent is None:
+                        n1 = k1[:i] + (k2[j],) + k1[i + 1:]
+                        new1 = _cand(ctx, cid1, n1, i, e1)
+                        if new1 is None or old1 is None:
+                            ent = _NOFEAS
+                        else:
+                            n2 = k2[:j] + (k1[i],) + k2[j + 1:]
+                            new2 = _cand(ctx, cid2, n2, j, e2)
+                            ent = (new1.j - old1.j,
+                                   _NOFEAS if new2 is None or old2 is None
+                                   else new2.j - old2.j)
+                        row[j] = ent
+                    if ent is _NOFEAS:
+                        continue
+                    nj = cur_j
+                    nj += ent[0]
+                    if ent[1] is _NOFEAS:
+                        continue
+                    nj += ent[1]
+                    if nj > thr:
+                        state.assign[cid1] = list(k1[:i] + (k2[j],) + k1[i + 1:])
+                        state.assign[cid2] = list(k2[:j] + (k1[i],) + k2[j + 1:])
                         return nj
     return None
 
 
 def _try_2opt(ctx, state, cur_j):
+    thr = cur_j + _imp_eps(cur_j)
+    cur = _ls_routes(ctx, state)
     for cid in ctx.crew_ids:
-        keys = state.assign[cid]
+        e = cur[cid]
+        kt, old = e[0], e[1]
         fz = state.frozen[cid]
-        for i in range(fz, len(keys) - 1):
-            for j in range(i + 1, len(keys)):
-                nk = keys[:i] + list(reversed(keys[i:j + 1])) + keys[j + 1:]
-                nj = _delta_j(ctx, state, cur_j, {cid: nk})
-                if nj is not None and nj > cur_j + _imp_eps(cur_j):
-                    state.assign[cid] = nk
+        if fz >= len(kt) - 1:
+            continue
+        tab = _ls_table(ctx, ("2opt", cid), kt, kt, len(kt))
+        for i in range(fz, len(kt) - 1):
+            row = tab[i]
+            if row is None:
+                row = tab[i] = [None] * len(kt)
+            for j in range(i + 1, len(kt)):
+                d = row[j]
+                if d is None:
+                    nk = kt[:i] + kt[i:j + 1][::-1] + kt[j + 1:]
+                    new = _cand(ctx, cid, nk, i, e)
+                    d = (_NOFEAS if new is None or old is None
+                         else new.j - old.j)
+                    row[j] = d
+                if d is _NOFEAS:
+                    continue
+                nj = cur_j
+                nj += d
+                if nj > thr:
+                    state.assign[cid] = list(kt[:i] + kt[i:j + 1][::-1]
+                                             + kt[j + 1:])
                     return nj
     return None
 
@@ -1166,6 +1758,7 @@ def _exact_small_solve(ctx: _Ctx, base: _State, deadline: float):
     lam = ctx.lam_travel
     cunit = ctx.churn_unit
     spread_unit = ctx.spread_unit
+    jrec = ctx._jrec
     counter = [0]
 
     def crew_table(cid):
@@ -1176,26 +1769,27 @@ def _exact_small_solve(ctx: _Ctx, base: _State, deadline: float):
             return None
         if prefix:
             stops, _f = ctx.eval_route(cid, prefix)
-            loc0, t0 = ctx.jobmap[prefix[-1]].client.loc, stops[-1].depart_s
+            p0, t0 = jrec[prefix[-1]][2], stops[-1].depart_s
         else:
-            loc0, t0 = ctx.crew_by_id[cid].loc(), ctx.now_s
+            p0, t0 = ctx._cstart[cid][2], ctx.now_s
         table = {0: (pc.j, prefix)}
 
-        def dfs(mask, route, loc, t, value, drive_h, churn_w):
+        def dfs(mask, route, pa, t, value, drive_h, churn_w):
             counter[0] += 1
             if counter[0] % 256 == 0 and deadline.expired():
                 raise _ExactAbort()
             for i, key in enumerate(universe):
                 if mask & (1 << i):
                     continue
-                ext = _extend(ctx, loc, t, key)
+                ext = ctx.extend_p(pa, t, key)
                 if ext is None:
                     continue
                 depart = ext[2]
                 job = ctx.jobmap[key]
+                pb = jrec[key][2]
                 nv = value + _served_value(job, _gel_fresh_frac(job, depart, cfg),
                                            cfg)
-                nd = drive_h + ctx.travel(loc, job.client.loc) / 3600.0
+                nd = drive_h + ctx._leg(pa, pb) / 3600.0
                 inc = ctx.inc_assign.get(key)
                 nw = churn_w
                 if inc is not None and inc != cid and inc in ctx.crew_by_id:
@@ -1209,9 +1803,9 @@ def _exact_small_solve(ctx: _Ctx, base: _State, deadline: float):
                 cur = table.get(nm)
                 if cur is None or j > cur[0] + 1e-9:
                     table[nm] = (j, nr)
-                dfs(nm, nr, job.client.loc, depart, nv, nd, nw)
+                dfs(nm, nr, pb, depart, nv, nd, nw)
 
-        dfs(0, prefix, loc0, t0, pc.value, pc.drive_h, pc.churn_w)
+        dfs(0, prefix, p0, t0, pc.value, pc.drive_h, pc.churn_w)
         return table
 
     try:
@@ -1424,7 +2018,8 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
          forecasts: "dict | None" = None,
          road_provider=None,
          eroded_rasters: "dict | None" = None,
-         offmap: "dict | None" = None) -> DispatchPlan:
+         offmap: "dict | None" = None,
+         leg_memo: "LegMemo | None" = None) -> DispatchPlan:
     """Build a DispatchPlan for `crews` over `jobs` at unix time now_s.
 
     ens: incident_id -> EnsembleArrival; each incident's P10 raster is eroded
@@ -1481,6 +2076,12 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
     modelled samples keep the leg margin. Incidents missing from the map (or
     with a malformed entry) keep the flat legacy law; None (default) =
     byte-identical. The simulator never passes it.
+
+    leg_memo (first-step perf, 2026-10-12): optional LegMemo shared across
+    calls — the road route, travel time and corridor T* of every leg, keyed
+    on exact endpoints and bound to a signature of the rest of their inputs
+    (see LegMemo). PERFORMANCE ONLY: a plan is byte-identical with or
+    without it. None (default) = every leg computed afresh in this call.
     """
     t0 = time.monotonic()
     _evals = int(getattr(cfg, "solver_budget_evals", 0) or 0)
@@ -1592,7 +2193,8 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
                     frozen_keys.add(key)
 
     ctx = _Ctx(eligible, jobmap, rasters, safe_zones, cfg, now_s, inc_assign,
-               inc_first, road_provider=road_provider, offmap=offmap)
+               inc_first, road_provider=road_provider, offmap=offmap,
+               leg_memo=leg_memo)
 
     # -- step 2: warm start (repair incumbent; freeze committed stops) --------
     state = _State({cid: [] for cid in ctx.crew_ids}, {cid: 0 for cid in ctx.crew_ids})
@@ -1667,7 +2269,18 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
             best, best_j, seed_tag = exact, ej, "exact"
 
     stall = 0                            # VNS escalation counter (B2, F3)
-    for it in range(cfg.ils_iterations if exact is None else 0):
+    n_ils = cfg.ils_iterations if exact is None else 0
+    # ILS ONLY WHERE A HOME IS LEFT TO FIND (contracts
+    # dispatch_ils_skip_all_served; 'homes' mode): when the best plan already
+    # protects every job in the pool, the shakes could only re-polish
+    # tie-break terms. Off = byte-identical.
+    ils_skipped = False
+    if (n_ils and getattr(cfg, "dispatch_ils_skip_all_served", False)
+            and ctx.homes_mode
+            and _state_served(best) >= len(ctx.active_keys)):
+        n_ils = 0
+        ils_skipped = True
+    for it in range(n_ils):
         if deadline.expired():
             break
         cand = best.copy()
@@ -1800,6 +2413,8 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
         "budget_runaway": deadline.runaway,
         "dedup_dropped_jobs": dedup_dropped,
     }
+    if getattr(cfg, "dispatch_ils_skip_all_served", False):
+        breakdown["ils_skipped"] = ils_skipped    # knob on only (off: same keys)
     return DispatchPlan(computed_at_s=now_s, plans=plans, unserved=unserved,
                         objective=objective, objective_breakdown=breakdown,
                         churn_from_incumbent=churn_w)

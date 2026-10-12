@@ -376,6 +376,7 @@ the shipped values.
 | `solver_budget_s` | 5.0 | Wall-clock budget per plan cycle. |
 | `solver_budget_evals` | 0 | DETERMINISTIC SOLVER BUDGET (review held item): > 0 makes the dispatch solver's budget a COUNT of budget checks instead of a wall clock, so identical inputs stop at the identical point regardless of machine load (the measured ±1-home nondeterminism); `solver_budget_s` stays as a hard ceiling. 0 = legacy wall clock, byte-identical; the simulator arms it. |
 | `ils_iterations` | 30 | Iterated-local-search restarts. |
+| `dispatch_ils_skip_all_served` | False | ILS ONLY WHERE A HOME IS LEFT TO FIND (2026-10-12, first-step perf; docs/SIMULATOR_DESIGN.md "The slow first step"; `homes` objective only): the ILS searches for MORE protected homes — when the best construction already serves every job in the pool there is none left to find and its `ils_iterations` shakes can only re-polish tie-break terms (gel freshness, drive time, churn, the anti-concentration spread). True = skip the ILS then (the exact micro-solver, both guardrails and the adoption law unchanged; `objective_breakdown['ils_skipped']` reports it). Measured on the Rancho Santa Fe one-click fleet (100 estates, 10 crews): ~12 s per plan, three plans on the first tick, no home gained. Default OFF = byte-identical; the SIMULATOR arms it. |
 
 ### Crew tracking / feeds
 

@@ -102,6 +102,9 @@ import json
 import logging
 import math
 import os
+import threading
+from array import array
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -173,6 +176,20 @@ _FORMAT_VERSION = 1
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_ROAD_DIR = _REPO_ROOT / "data" / "roads"
+
+
+#: RoadGraph.nearest_node memo bound (entries per graph; cleared whole on
+#: overflow — simple, deterministic: the memo only ever returns what the
+#: search itself returns).
+_SNAP_MEMO_MAX = 100_000
+#: route() memo bound (results per graph; cleared whole on overflow). A
+#: road route is a pure function of the graph, its exact endpoints and four
+#: cfg numbers, so every session on one graph — another visitor, another
+#: intensity of the same one-click scenario, a reset — reuses the first
+#: one's routes (first-step perf 2026-10-12). The result objects are shared
+#: read-only, exactly as one session already shares them across its caches.
+_ROUTE_MEMO_MAX = 20_000
+_MISS = object()
 
 
 def class_speed_mps(highway_class: str) -> float:
@@ -275,12 +292,15 @@ class RoadGraph:
     sorted for determinism). Self-loop edges (u == v) are retained in
     .edges for provenance but excluded from adjacency — they can never
     improve a route. The nearest-node snap index (grid buckets of
-    _SNAP_CELL_DEG degrees) is built lazily on first use."""
+    _SNAP_CELL_DEG degrees) is built lazily on first use, and so are the A*
+    tables (_astar_tables) and the snap memo (nearest_node) — pure functions
+    of the graph, which is never mutated after construction."""
 
     # __weakref__: lets the simulator share one loaded graph across its
     # concurrent sessions (simui._load_road_graph_shared, a
     # WeakValueDictionary) without keeping it alive after the last session.
     __slots__ = ("nodes", "edges", "meta", "_adj", "_snap_grid", "_vmax_mps",
+                 "_astar_tab", "_snap_memo", "_spt", "_route_memo",
                  "__weakref__")
 
     def __init__(self, nodes: dict, edges: list, meta: Optional[dict] = None):
@@ -289,6 +309,10 @@ class RoadGraph:
         self.meta = dict(meta or {})
         self._adj: dict = {}
         self._snap_grid: Optional[dict] = None
+        self._astar_tab = None
+        self._snap_memo: dict = {}
+        self._spt = None                # shortest-path trees (_spt_state)
+        self._route_memo: dict = {}     # route() results (exact endpoints)
         vmax = MAX_TABLE_SPEED_MPS
         for i, e in enumerate(self.edges):
             if e.u not in self.nodes or e.v not in self.nodes:
@@ -326,7 +350,22 @@ class RoadGraph:
     def nearest_node(self, p: LatLon, max_m: float = SNAP_MAX_M):
         """(node_id, dist_m) of the node nearest to p, or None when every node
         is farther than max_m. O(1)-ish: expanding square rings of grid
-        buckets; deterministic ties -> smaller node id."""
+        buckets; deterministic ties -> smaller node id. Memoised per exact
+        (p, max_m) — a pure function of the never-mutated graph (first-step
+        perf 2026-10-12: every road route snaps both ends, and the planner
+        routes each client to every other one); bounded, cleared whole on
+        overflow."""
+        k = (p.lat, p.lon, max_m)
+        hit = self._snap_memo.get(k, _MISS)
+        if hit is not _MISS:
+            return hit
+        out = self._nearest_node(p, max_m)
+        if len(self._snap_memo) >= _SNAP_MEMO_MAX:
+            self._snap_memo.clear()
+        self._snap_memo[k] = out
+        return out
+
+    def _nearest_node(self, p: LatLon, max_m: float):
         if not self.nodes:
             return None
         grid = self._grid()
@@ -484,23 +523,269 @@ def _fallback(a: LatLon, b: LatLon, cfg: ResponseConfig,
                      segments=[seg], note=reason)
 
 
+def _astar_tables(g: RoadGraph):
+    """(cost adjacency, per-node trig) for _astar, built once per graph:
+    node -> ((other, edge_index, length_m / speed_mps), ...) in neighbors()
+    order, and node -> (radians(lat), cos(radians(lat)), lon) — exactly the
+    values _astar and geo.haversine_m compute inline, so the search is
+    bit-identical (first-step perf 2026-10-12)."""
+    tab = g._astar_tab
+    if tab is None:
+        edges = g.edges
+        adjc = {}
+        for nid, lst in g._adj.items():
+            adjc[nid] = tuple((other, ei,
+                               edges[ei].length_m / edges[ei].speed_mps)
+                              for other, ei in lst)
+        trig = {}
+        for nid, p in g.nodes.items():
+            phi = math.radians(p.lat)
+            trig[nid] = (phi, math.cos(phi), p.lon)
+        tab = g._astar_tab = (adjc, trig)
+    return tab
+
+
+# ---------------------------------------------------------------------------
+# Shortest-path trees: the A* result without the A* search (perf 2026-10-12)
+# ---------------------------------------------------------------------------
+#
+# SHORTEST-PATH TREES (first-step perf 2026-10-12; docs/SIMULATOR_DESIGN.md
+# "The slow first step"). The planner routes every client to every other
+# one, so most searches start from a node many searches started from before.
+# From the _SPT_AFTER-th search out of one start node, that node gets ONE
+# exact Dijkstra tree over the graph, and _astar returns a goal's tree path
+# instead of searching — but ONLY when a uniqueness margin PROVES that A*
+# would return that very path; otherwise A* runs exactly as before.
+#
+# The proof. Let P be the tree path s -> t (a shortest path: Dijkstra's
+# float path sums are minimal, float addition being monotone). A* here is a
+# graph search without reopening whose heuristic h = haversine-to-goal /
+# vmax is, on a handful of edges per graph, INCONSISTENT by up to a few
+# hundredths of a second (node coordinates are stored to 1e-5 deg, lengths
+# to 0.1 m; measured on every committed graph — so it is not strictly
+# admissible either, which the argument never needs): delta(u, v) =
+# max(0, h(u) - c(u, v) - h(v)) <= dhat(u, v) =
+# max(0, haversine(u, v) / vmax - c(u, v)) by the triangle inequality. By
+# induction over the order nodes are closed, every node v_j of P is closed
+# with g <= g*(v_j) + sum of delta over P's first j edges (when v_j pops,
+# the first not-yet-closed node v_m of P sits in the heap with a near-
+# optimal g and f(v_j) <= f(v_m), and h(v_m) - h(v_j) is at most P's cost
+# from v_m to v_j plus the delta on the way), so the path A* returns costs
+# at most C* + tau_P, tau_P = the sum of delta over P (computed from A*'s
+# own heuristic toward this goal, on the edges where dhat > 0 — dhat bounds
+# delta, so the other edges contribute nothing). The margin: for every
+# node v of P and every other edge (u', e') into v whose u' is not later on
+# P, dist(u') + c(e') - dist(v) > tau_P + _SPT_EPS_S. Any other simple path
+# to t leaves P's suffix through such an edge, so it costs more than C* +
+# tau_P — hence A*'s path IS P, node for node and edge for edge (a parallel
+# edge is an alternative too). Ties and near-ties fail the margin and fall
+# back to A*. Checked on every road query of the 13 one-click scenarios'
+# first steps (tests/test_roads.py pins many-targets-per-source queries on
+# real graphs against the search).
+_SPT_AFTER = 2
+#: per-graph tree memory bound (bytes; least recently used tree evicted)
+_SPT_MAX_BYTES = 48 << 20
+#: certificate slack (seconds) on top of tau_P: orders of magnitude above the
+#: float rounding of second-scale path sums, far below any real alternative
+_SPT_EPS_S = 1e-6
+_UNREACHABLE = object()
+
+
+class _SptState:
+    """One graph's tree cache (built lazily; guarded by `lock`)."""
+    __slots__ = ("lock", "idx", "ids", "adj", "dhat", "count", "trees",
+                 "tree_bytes")
+
+    def __init__(self, g: "RoadGraph"):
+        self.lock = threading.Lock()
+        adjc, _trig = _astar_tables(g)
+        self.ids = sorted(g.nodes)
+        self.idx = {nid: i for i, nid in enumerate(self.ids)}
+        idx = self.idx
+        self.adj = [tuple((idx[o], ei, c) for o, ei, c in adjc.get(nid, ()))
+                    for nid in self.ids]
+        vmax = g._vmax_mps
+        dhat = array("d", [0.0]) * len(g.edges)
+        for ei, e in enumerate(g.edges):
+            if e.u == e.v:
+                continue
+            over = (geo.haversine_m(g.nodes[e.u], g.nodes[e.v]) / vmax
+                    - e.length_m / e.speed_mps)
+            if over > 0.0:
+                dhat[ei] = over
+        self.dhat = dhat
+        self.count: dict = {}
+        self.trees: OrderedDict = OrderedDict()
+        self.tree_bytes = 16 * len(self.ids)
+
+
+def _spt_state(g: "RoadGraph") -> "_SptState":
+    st = g._spt
+    if st is None:
+        st = g._spt = _SptState(g)
+    return st
+
+
+def _spt_build(st: "_SptState", src: int):
+    """Exact Dijkstra from dense index src over the whole graph: (dist,
+    pred node, pred edge) arrays — float path sums, strict improvement."""
+    n = len(st.ids)
+    dist = array("d", [math.inf]) * n
+    pn = array("i", [-1]) * n
+    pe = array("i", [-1]) * n
+    done = bytearray(n)
+    adj = st.adj
+    heappush, heappop = heapq.heappush, heapq.heappop
+    dist[src] = 0.0
+    heap = [(0.0, src)]
+    while heap:
+        d, u = heappop(heap)
+        if done[u]:
+            continue
+        done[u] = 1
+        for v, ei, c in adj[u]:
+            if done[v]:
+                continue
+            nd = d + c
+            if nd < dist[v]:
+                dist[v] = nd
+                pn[v] = u
+                pe[v] = ei
+                heappush(heap, (nd, v))
+    return dist, pn, pe
+
+
+def _spt_path(g: "RoadGraph", st: "_SptState", tree, s: int, t: int):
+    """A*'s (node_path, edge_path) s -> t (dense indices in, node ids out)
+    when the tree's margin proves it (module comment above), _UNREACHABLE
+    when t is not reachable from s (A* returns None then too), else None:
+    run A*."""
+    dist, pn, pe = tree
+    if dist[t] == math.inf:
+        return _UNREACHABLE
+    nodes = [t]
+    edges = []
+    v = t
+    while v != s:
+        edges.append(pe[v])
+        v = pn[v]
+        nodes.append(v)
+    nodes.reverse()
+    edges.reverse()
+    dhat = st.dhat
+    ids = st.ids
+    tau = _SPT_EPS_S
+    hgoal = None
+    for k, ei in enumerate(edges):
+        if dhat[ei] > 0.0:
+            # delta = max(0, h(u) - c(u, v) - h(v)) along P's direction, with
+            # _astar_search's own heuristic toward this goal
+            if hgoal is None:
+                hgoal = _HeurToGoal(g, ids[t])
+            e = g.edges[ei]
+            over = (hgoal(ids[nodes[k]]) - e.length_m / e.speed_mps
+                    - hgoal(ids[nodes[k + 1]]))
+            if over > 0.0:
+                tau += over
+    adj = st.adj
+    later = set()
+    for i in range(len(nodes) - 1, 0, -1):
+        v = nodes[i]
+        pu = nodes[i - 1]
+        pei = edges[i - 1]
+        dv = dist[v]
+        for u2, e2, c2 in adj[v]:
+            if e2 == pei and u2 == pu:
+                continue
+            if u2 in later:
+                continue
+            if (dist[u2] + c2) - dv <= tau:
+                return None                     # a (near-)tie: run A*
+        later.add(v)
+    return [ids[i] for i in nodes], edges
+
+
+class _HeurToGoal:
+    """_astar_search's heuristic toward one goal node, the same float."""
+    __slots__ = ("trig", "phi2", "cos2", "lon2", "two_r", "vmax")
+
+    def __init__(self, g: "RoadGraph", goal: int):
+        _adjc, trig = _astar_tables(g)
+        self.trig = trig
+        self.phi2, self.cos2, self.lon2 = trig[goal]
+        self.two_r = 2.0 * geo.EARTH_RADIUS_M
+        self.vmax = g._vmax_mps
+
+    def __call__(self, node: int) -> float:
+        phi1, cos1, lon1 = self.trig[node]
+        dphi = self.phi2 - phi1
+        dlam = math.radians(self.lon2 - lon1)
+        hh = (math.sin(dphi / 2.0) ** 2
+              + cos1 * self.cos2 * math.sin(dlam / 2.0) ** 2)
+        return self.two_r * math.asin(min(1.0, math.sqrt(hh))) / self.vmax
+
+
 def _astar(g: RoadGraph, start: int, goal: int):
     """A* over free-flow edge seconds. Returns (node_path, edge_index_path)
     or None when start and goal are disconnected. Heuristic: haversine to
     goal / fastest speed present (admissible + consistent). Deterministic:
-    heap ties break on node id; strict-improvement relaxation."""
+    heap ties break on node id; strict-improvement relaxation.
+
+    From the _SPT_AFTER-th search out of one start node the result comes
+    from that node's shortest-path tree whenever the tree's uniqueness
+    margin proves it is A*'s (module comment "Shortest-path trees"), else
+    from the search itself (_astar_search) — the same paths either way."""
     if start == goal:
         return [start], []
+    st = _spt_state(g)
+    tree = None
+    with st.lock:
+        tree = st.trees.get(start)
+        if tree is not None:
+            st.trees.move_to_end(start)
+        else:
+            n = st.count.get(start, 0) + 1
+            st.count[start] = n
+            if n >= _SPT_AFTER:
+                tree = _spt_build(st, st.idx[start])
+                st.trees[start] = tree
+                while (len(st.trees) > 1
+                       and len(st.trees) * st.tree_bytes > _SPT_MAX_BYTES):
+                    st.trees.popitem(last=False)
+    if tree is not None:
+        r = _spt_path(g, st, tree, st.idx[start], st.idx[goal])
+        if r is _UNREACHABLE:
+            return None
+        if r is not None:
+            return r
+    return _astar_search(g, start, goal)
+
+
+def _astar_search(g: RoadGraph, start: int, goal: int):
+    """The A* search itself (see _astar). Edge costs and the per-node trig
+    of the heuristic come from _astar_tables, and each node's heuristic is
+    computed once per search — geo.haversine_m's expression on the same
+    values, so every f-value, every heap order and the returned path are
+    the original search's."""
+    if start == goal:
+        return [start], []
+    adjc, trig = _astar_tables(g)
     nodes = g.nodes
     goal_ll = nodes[goal]
     vmax = g._vmax_mps
     h0 = geo.haversine_m(nodes[start], goal_ll) / vmax
+    phi2, cos2, lon2 = trig[goal]
+    two_r = 2.0 * geo.EARTH_RADIUS_M
+    sin, asin, sqrt, radians = math.sin, math.asin, math.sqrt, math.radians
+    heappush, heappop = heapq.heappush, heapq.heappop
+    inf = math.inf
     g_score = {start: 0.0}
     came: dict = {}
+    hmemo: dict = {}
     open_heap = [(h0, start)]
     closed = set()
     while open_heap:
-        _f, cur = heapq.heappop(open_heap)
+        _f, cur = heappop(open_heap)
         if cur == goal:
             node_path = [cur]
             edge_path = []
@@ -515,17 +800,24 @@ def _astar(g: RoadGraph, start: int, goal: int):
             continue
         closed.add(cur)
         gc = g_score[cur]
-        for other, ei in g.neighbors(cur):
+        for other, ei, cost in adjc.get(cur, ()):
             if other in closed:
                 continue
-            e = g.edges[ei]
-            ng = gc + e.length_m / e.speed_mps
-            if ng < g_score.get(other, math.inf):
+            ng = gc + cost
+            if ng < g_score.get(other, inf):
                 g_score[other] = ng
                 came[other] = (cur, ei)
-                heapq.heappush(
-                    open_heap,
-                    (ng + geo.haversine_m(nodes[other], goal_ll) / vmax, other))
+                h = hmemo.get(other)
+                if h is None:
+                    # geo.haversine_m(nodes[other], goal_ll) / vmax
+                    phi1, cos1, lon1 = trig[other]
+                    dphi = phi2 - phi1
+                    dlam = radians(lon2 - lon1)
+                    hh = (sin(dphi / 2.0) ** 2
+                          + cos1 * cos2 * sin(dlam / 2.0) ** 2)
+                    h = two_r * asin(min(1.0, sqrt(hh))) / vmax
+                    hmemo[other] = h
+                heappush(open_heap, (ng + h, other))
     return None
 
 
@@ -739,17 +1031,31 @@ def route(g: Optional[RoadGraph], a: LatLon, b: LatLon,
     cap = cfg.road_spur_max_m
     if g is None or not g.nodes:
         return _fallback(a, b, cfg, "no road graph loaded")
+    # every input of the result: the exact endpoints, the spur cap, the fire
+    # traffic factor (route time) and the tier-0 fallback's speed model
+    mk = (a.lat, a.lon, b.lat, b.lon, cap, cfg.fire_traffic_factor,
+          cfg.circuity, cfg.road_speed_mps)
+    memo = g._route_memo
+    hit = memo.get(mk)
+    if hit is not None:
+        return hit
     snap_a = g.nearest_node(a, cap)
     snap_b = g.nearest_node(b, cap)
     if snap_a is None or snap_b is None:
-        return _fallback(a, b, cfg,
-                         _beyond_cap_reason(g, a, b, snap_a, snap_b, cap))
-    found = _astar(g, snap_a[0], snap_b[0])
-    if found is None:
-        return _fallback(a, b, cfg,
-                         f"snapped nodes {snap_a[0]} and {snap_b[0]} on "
-                         f"disconnected road components")
-    return _assemble(g, a, b, snap_a, snap_b, found, cfg)
+        rr = _fallback(a, b, cfg,
+                       _beyond_cap_reason(g, a, b, snap_a, snap_b, cap))
+    else:
+        found = _astar(g, snap_a[0], snap_b[0])
+        if found is None:
+            rr = _fallback(a, b, cfg,
+                           f"snapped nodes {snap_a[0]} and {snap_b[0]} on "
+                           f"disconnected road components")
+        else:
+            rr = _assemble(g, a, b, snap_a, snap_b, found, cfg)
+    if len(memo) >= _ROUTE_MEMO_MAX:
+        memo.clear()
+    memo[mk] = rr
+    return rr
 
 
 def route_on_path(g: RoadGraph, a: LatLon, node_path, edge_path,
