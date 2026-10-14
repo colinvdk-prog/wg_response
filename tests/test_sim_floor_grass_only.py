@@ -27,13 +27,16 @@ PAGE = {"spotting_enabled": True, "grass_ros_floor_frac": 0.10}
 
 def test_simulator_defaults_to_crown_fire():
     """Founder option 3 (2026-10-12, "Switch, 10-min delay"): crown fire on,
-    calibrated embers with a 10-min spot delay, the floor on grass only."""
+    calibrated embers with a 10-min spot delay, the floor on grass only; and
+    the spread-direction fix (2026-10-14, "perform the spread-direction
+    fix")."""
     s = SimSession("boulder_co", 2, 1, seed="floor-default",
                    cfg_overrides=dict(PAGE), roads_module=None)
     assert s._cfg.crown_fire is True
     assert s._cfg.spot_fire_size is True
     assert s._cfg.spot_ignition_delay_min == 10.0
     assert s._cfg.ros_floor_grass_only is True
+    assert s._cfg.spread_any_angle is True
 
 
 def test_an_explicit_override_still_wins():
@@ -68,6 +71,7 @@ def test_the_live_engine_defaults_are_unchanged():
     assert cfg.spot_fire_size is False
     assert cfg.crown_fire is False
     assert cfg.spot_ignition_delay_min == 5.0
+    assert cfg.spread_any_angle is False
 
 
 def _park_city_acres_at_1h45(grass_only: bool) -> float:

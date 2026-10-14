@@ -537,8 +537,9 @@ def test_simulator_same_wind_reanchor_reproduces_the_continuous_run(tmp_path):
 
 
 def test_simulator_knob_off_records_no_anchors(tmp_path):
-    """Knob off: the simulator passes no anchor keyword (legacy calls)."""
-    s = _session(tmp_path)
+    """Knob off: the simulator passes no anchor keyword (legacy calls).
+    Off explicitly: the simulator arms the knob by default since 2026-10-14."""
+    s = _session(tmp_path, spread_any_angle=False)
     fid = _ignite(s)
     s.tick()
     assert s._fires[fid]._anchors is None

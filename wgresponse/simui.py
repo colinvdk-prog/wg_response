@@ -2852,6 +2852,16 @@ class SimSession:
             cfg.ros_floor_grass_only = True
         if "crown_fire" not in overrides:
             cfg.crown_fire = cfg.ros_floor_grass_only
+        # THE SPREAD-DIRECTION FIX (founder 2026-10-14: "perform the spread-
+        # direction fix"; contracts spread_any_angle, SAFETY SEMANTICS 21;
+        # docs/review/grid_orientation_2026-10-09.md): a burning cell also
+        # offers its neighbours the straight run from its anchor at any
+        # angle, so a fire whose wind lies between the 16 grid directions no
+        # longer zig-zags at a fifth to a quarter of its head speed; under
+        # steady weather no cell burns later than the 16-direction field.
+        # 2-3x the fire field's cost. Explicit override wins.
+        if "spread_any_angle" not in overrides:
+            cfg.spread_any_angle = True
         # SIMULATOR CITY WEATHER (founder 2026-10-09 "change the weather
         # conditions for each city specific"; contracts sim_weather_profile):
         # the simulator's intensities mean THIS community's conditions — a

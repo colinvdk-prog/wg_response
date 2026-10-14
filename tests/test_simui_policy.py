@@ -58,9 +58,14 @@ from wgresponse.terrain import SyntheticTerrain, save_ascii_tile
 # under the legacy constant intensity presets (victim ids, arm ticks, p10
 # gaps, deficits) and PIN them — the simulator's default is now each
 # community's own weather (2026-10-09, tests/test_city_weather.py).
+# spread_any_angle False: these demos' scripted geometry (victim ids, arm
+# ticks, p10 gaps, served counts) was derived under the 16-direction spread;
+# the simulator arms the spread-direction fix since 2026-10-14 (founder:
+# "perform the spread-direction fix"), which moves every constant. Their laws
+# under the fix: tests/test_crew_work_judged.py (spread law pinned both ways).
 FAST_TIGHT = {"ensemble_n": 3, "grid_cell_m": 500.0, "horizon_h": 24.0,
               "slack_min": 0.0, "egress_buffer_min": 10.0,
-              "sim_weather_profile": "generic"}
+              "sim_weather_profile": "generic", "spread_any_angle": False}
 KEY = "boulder_co"
 
 

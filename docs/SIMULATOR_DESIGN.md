@@ -1680,3 +1680,37 @@ dispatch can still plan a stop whose cell the 10c line reaches before its depart
 existing dispatch / audit split (seen in an any-angle slider test at a ~13 h buffer: a fresh
 plan, the deploying crew audited imminent; identical with this law off). The serviced-stop
 audit still reads each stop's own fire. The census and 60-scenario benches were not re-run.
+
+## The spread-direction fix in the simulator (2026-10-14)
+
+Founder, 2026-10-14: *"perform the spread-direction fix"*. `SimSession.configure` arms
+`spread_any_angle` (contracts SAFETY SEMANTICS 21; `docs/review/grid_orientation_2026-10-09.md`):
+a burning cell also offers its neighbours the straight run from its anchor at any angle, so a
+fire whose wind lies between the 16 grid directions no longer zig-zags at a fifth to a quarter
+of its head speed. Under steady weather no cell burns later than the 16-direction field.
+Explicit override wins; the live watcher arms it separately (`watch --any-angle`, the same
+day; `docs/review/crown_fire_model_2026-10-12.md` section 3.9).
+
+- **The demos** (13 one-click scenarios, city weather, crown fire, 10-min spot delay, 6 h;
+  `scratch_review/sim_defaults_aa_{1,2,3}.json` against `crown_fire_finestart_*` crown 10):
+  fastest hours 7-13 % of the wind (the 10 %-of-wind benchmark), 6-h acres +3 % to +56 %:
+  Glenwood Springs 5,338 → 8,196, Santa Rosa 2,084 → 3,259, Park City 8,847 → 10,158,
+  Basalt 7,284 → 8,064, Aspen 2,874 → 3,120, Malibu 7,496 → 7,788, Vail 1,427 → 1,633.
+- **Crew safety.** Under the fix, the scripted rug-pull of `tests/test_simui_policy.py` (a
+  second fire planted ~1.3 km upwind of a working crew, the wind swung onto it) caught a crew
+  on an ingress leg planned before the second fire existed. That was a gap in the crew-safety
+  law, present in the 16-direction engine too: work planned against older fields was never
+  re-judged after a world change. Fixed the same day: "A world change re-judges committed
+  work" (SAFETY SEMANTICS 23, `crew_work_judged`, armed). The one-click sweep under the final
+  defaults (`scratch_review/crew_egress_gap_sweep_world14.jsonl`) is in the deploy record
+  below.
+- **Cost.** The fire field takes 2-3x longer; the 52-run sweep's wall time went 587 s → 1,088 s.
+- **Tests.** The policy demos, the crew-egress goldens and replays, the Beaver Creek
+  left-map probe and the any-angle suite's knob-off test pin `spread_any_angle: False` (their
+  constants were derived under the 16-direction spread); `tests/test_crew_work_judged.py`
+  holds the laws under the fix, with the spread law pinned both ways.
+- **Deploy record.** The one-click sweep under the final defaults (spread-direction fix,
+  crown fire, 10-min spot delay, SEMANTICS 23; city weather, grass floor; 52 runs):
+  0 departure violations, 0 crew-overrun ticks, 0 crews off the map; homes served 1,820
+  (`world12`) → 1,835; every run identical to the same sweep without SEMANTICS 23 (no
+  one-click scenario changes the world mid-run). Simulator image `world14`.

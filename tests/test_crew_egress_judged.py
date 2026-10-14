@@ -485,15 +485,17 @@ def _one_click(key, intensity, profile, grass_only, **cfg):
     """The page's one-click scenario (server.SCENARIOS: spotting, grass
     floor 0.10, plan on roads, 24 h hold, the simulator defaults), re-lit at
     its own ignition point and wind when `intensity` is not its preset.
-    The legacy ember draw, first-burnable ignition and surface-only forest
-    are pinned: the sweep that reproduced these overruns and the goldens below
-    predate the simulator's calibrated-ember default, the fine-fuel starts and
-    crown fire (founder options 1-3, 2026-10-12)."""
+    The legacy ember draw, first-burnable ignition, surface-only forest and
+    16-direction spread are pinned: the sweep that reproduced these overruns
+    and the goldens below predate the simulator's calibrated-ember default,
+    the fine-fuel starts, crown fire (founder options 1-3, 2026-10-12) and the
+    spread-direction fix (2026-10-14)."""
     mgr = server.SimSessionManager()
     code, out = mgr.new_session({"scenario": key, "ign_fine_fuel": False,
                                  "cfg": dict(
         {"sim_weather_profile": profile, "ros_floor_grass_only": grass_only,
-         "spot_fire_size": False, "crown_fire": False}, **cfg)})
+         "spot_fire_size": False, "crown_fire": False,
+         "spread_any_angle": False}, **cfg)})
     assert code == 200, out
     s = mgr._entry(out["session_id"]).session
     f = s._fires["sim-f1"]
@@ -534,7 +536,10 @@ def test_knobs_off_triage_scatter_is_byte_identical_and_still_overruns(
     d = _triage_scatter_dir(tmp_path, seed="C")
     s = SimSession("boulder_co", 50, 1, seed="C", cfg_overrides=dict({
         "ensemble_n": 3, "grid_cell_m": 500.0, "horizon_h": 120.0,
-        "sim_weather_profile": "city"}, **OFF), tile_dir=d, roads_module=None)
+        "sim_weather_profile": "city",
+        # the 16-direction spread the golden was computed under (the
+        # simulator arms the spread-direction fix since 2026-10-14)
+        "spread_any_angle": False}, **OFF), tile_dir=d, roads_module=None)
     ign = _nudge_to_burnable(s, _upwind_ignition("boulder_co", 5_000.0))
     s.ignite(ign.lat, ign.lon, intensity="moderate")
     hashes, viol = [], []

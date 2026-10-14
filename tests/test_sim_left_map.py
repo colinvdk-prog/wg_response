@@ -491,6 +491,9 @@ def test_real_session_where_crews_leave_replays_from_its_command_log():
                                   # draw this probe was derived under (the
                                   # calibrated-ember default: founder option 1)
                                   "spot_fire_size": False,
+                                  # the 16-direction spread it was derived
+                                  # under (spread-direction fix: 2026-10-14)
+                                  "spread_any_angle": False,
                                   # the crew-safety law this probe was derived
                                   # under (SAFETY SEMANTICS 20, 2026-10-09:
                                   # judged egresses + cell-exact corridors
