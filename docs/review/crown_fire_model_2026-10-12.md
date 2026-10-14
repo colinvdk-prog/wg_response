@@ -898,6 +898,14 @@ processes (contracts `ensemble_workers`; identical members, `tests/test_ensemble
 one live-style ensemble on Little Giant (300,792 cells) took 69.7 s in-process, 25.6 s with 3
 workers, 13.8 s with 5.
 
+**Live, 2026-10-14.** The first cycle on `world13` took 4,575 s: 2,918 s of it was the one-time
+LANDFIRE canopy fetch for 14 fire domains, 1,552 s spread. The second took 2,286 s for 15
+domains (spread 1,750 s; one new domain's terrain and canopy 394 s), so a steady cycle is about
+31-32 min against 23 min before (19 domains, 1,365 s). The four largest domains take 4.4-7.4 min
+each (they took 1.5-4.3 min). Two of them are one fire reported twice (FIRIS
+"CA-LAC-BIKE-N50X" and WFIGS "Bike Fire", 171.5 acres each), solved as two domains: a
+feed-fusion gap that predates this change and now costs ~4.5 min a cycle.
+
 ## 4. Recommendation
 
 1. **Simulator: arm crown fire with the grass-only floor and the calibrated
