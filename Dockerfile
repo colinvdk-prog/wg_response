@@ -3,7 +3,10 @@
 #   wg-response-watch  StartCommand override: `python -m wgresponse.cli watch
 #                      ...` — the SHADOW-OPS worker (live feeds, real cycles,
 #                      dry-notify: computes everything, sends nothing).
-FROM python:3.13-slim
+# The official python image via AWS's ECR Public mirror of the Docker
+# Official Images: CodeBuild's shared IPs hit Docker Hub's anonymous pull
+# limit (429 on the world14 build, 2026-10-14).
+FROM public.ecr.aws/docker/library/python:3.13-slim
 
 WORKDIR /app
 
