@@ -957,6 +957,106 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    without canopy or without crown fuel (pinned in tests/test_crown_fire.py
    against tests/test_spread.py's legacy fingerprints with a canopy
    attached, and against the surface solve under every physics knob).
+23. A WORLD CHANGE RE-JUDGES COMMITTED WORK (2026-10-14; the integrator's
+   any-angle rug-pull finding; docs/SIMULATOR_DESIGN.md "A world change
+   re-judges committed work"; scratch_review/world_change_probe.py;
+   cfg.crew_work_judged, read only by the simulator — the live engine
+   moves no crew). SEMANTICS 20 judges every
+   EGRESS leg a crew starts and keeps judging it in flight. A crew's
+   INGRESS legs and the stops it works were judged once, by dispatch,
+   against the fields of the tick that planned them — and the simulator's
+   fields change only on a world change (a scripted ignition, the wind
+   dial, a horizon rebase), which committed work outlives: a deploying
+   crew is never re-planned, its queued stops ride along, and nothing re-
+   read them (the road-egress guard and the policy re-check read only the
+   stop's OWN fire, and only in road sessions / after a slider move).
+   Measured on the rug-pull choreography of tests/test_simui_policy.py (a
+   second fire planted 1.25-1.5 km dead upwind of the deploying client,
+   the domain wind swung onto it): with spread_any_angle the crew finished
+   its stop 26 min after the planted fire, drove its queued INGRESS leg —
+   planned before that fire existed — 494 m past the fire's ignition point
+   (136 s inside its eroded band, 40 min past the 10c line) and was audited
+   "imminent" there; the SEM-10d area escape that followed was the least-
+   exposure way out, and from the stop every alternative was lawful (two
+   other queued stops, all three zones): NOT cornered. The 16-direction
+   engine has the same gap: the choreography at nearby geometries (spot
+   fire 0.75-3 km, moderate / high / extreme, first or second deploy, 48
+   runs) audited 107 rows in 24 runs, every one a crew still DEPLOYING
+   where the new band arrived before its deploy ended, with 48 summed
+   per-run maxima of departure violations; the any-angle twin 53 rows in
+   37 of 48 (ingress and deploy branches), 12 departure violations. The
+   pinned control twin itself was clean only between audits: one stop was
+   left 4.8 min AFTER the planted fire's P10 reached it (the departure
+   audit reads the stop's own fire only) and four, no longer threatened
+   after the wind swing, were reached over legs crossing the new band.
+   With the knob on, every stop a crew holds carries the FIELD GENERATION
+   it was judged against (tick() step 2 bumps it whenever a fire's field is
+   built or rebuilt; dispatch's adoption stamps the current one), and work
+   judged against an older generation is judged again:
+   (a) INGRESS LEGS ARE JUDGED WHEN THEY START. The moment a crew turns
+       onto an ingress leg (leaving a stop for its next one, or setting out
+       from rest) toward a stale stop, the leg from where it is — the road
+       it will drive, at the speed it drives it, every field cell under
+       corridor_cell_exact — must be on the audit's side of the 10c line at
+       every pass time (nothing burned, eroded P10 >= pass +
+       egress_buffer_min: the 20b line), and the stop must still be
+       WORKABLE: its departure (arrival, or the planned service start if
+       later, + the deploy) no later than its own rule before the
+       pessimistic arrival at the client across EVERY fire (a fire planted
+       later is one dispatch's worst-case dedupe never saw), nor than its
+       cell's eroded P10 less egress_buffer_min (the crew stands there
+       until it leaves; old black is a refuge). A stop that fails is
+       RELEASED to the job pool (no terminal reason, loud note) and the
+       next is judged the same way from here; a crew left with nothing
+       leaves as after its last stop (20b judges that egress).
+   (b) WORK IN FLIGHT IS RE-JUDGED BEFORE THE CREWS MOVE. At the start of
+       every step, before dispatch and before any crew moves (a no-op
+       while every held stop carries the current generation): a DEPLOYING
+       crew whose stale stop is no longer workable for its projected
+       departure (the scheduled deploy end) WITHDRAWS — the withdrawal law
+       of _recheck_deploy (abort unfinished, no ServicedStop, egress judged
+       from the stop, client freed 'withdrawn_unsafe', a loud record),
+       cause 'work_judged'; an EN-ROUTE crew's leg in flight and its stop
+       are judged as in (a) from where it is. In a step whose fields
+       changed, idle / egressing crews then pass the sweep's emergency
+       branch — the 10a relocation when the new fields threaten their cell
+       within the step (eroded P10 within egress_buffer_min + the step)
+       and the 20b judgement of an egress in flight — instead of spending
+       the step where the new fire is (no voluntary SEM-10e decamp here).
+   (c) NEVER SILENT. A crew the change landed ON — the 10c audit's own test
+       already true at the instant its field took effect (a fire lit on it,
+       its band already over it) — was overrun by the world change itself:
+       unavoidable. A deploying / en-route one is still pulled out at once
+       by (b), and its 10c row at that instant (world_change=True) is
+       reported by the step's audit even when the crew is clear by then;
+       an idle / egressing one keeps the existing handling (the audit
+       reports it, the end-of-step sweep moves it).
+   Work stamped with the current generation is dispatch's and is never re-
+   judged, so the law cannot churn against a fresh plan. Measured on the
+   96 runs above: crew-overrun rows 160 -> 14, every one a (c) instant (the
+   spot fire 750 m from the deploying crew, its band over it at ignition;
+   or the new band 0.2 min inside the crew's 10c line as its field took
+   effect), each crew clear at the audit; departure violations 60 -> 0;
+   withdrawals 2 -> 38; homes served 494 -> 325 (the stale plans' unlawful
+   service: stops worked past their rule against the planted fire, stops
+   reached over band legs, homes the wind swing no longer threatened). The
+   finding's control twin: 1 row -> 0, served 8 -> 8. The 52-run one-click
+   sweep (city weather, grass-only floor, crown fire, spot delay 10 min,
+   any-angle) is byte-identical (its single ignition is the only field
+   change), as is every session without a world change. WHAT IT CANNOT
+   DO: the step is the clock — a crew the change lands on is in the band
+   until it drives out, an idle / egressing one until the end-of-step
+   sweep moves it (as before); a horizon rebase re-judges too (the
+   progress-preserving re-anchor reproduces the field, so a lawful plan
+   stays lawful); a stop planned against the
+   current fields is dispatch's, so with egress_buffer_min above the
+   corridor margin (route_margin_min / route_margin_roads_min) a fresh
+   plan can still hold a stop whose cell the 10c line reaches before its
+   departure (the pre-existing dispatch / audit split), and the serviced-
+   stop audit still reads each stop's own fire. Knob OFF = byte-identical
+   (pinned in tests/test_crew_work_judged.py against goldens computed on
+   commit 3dd341a, before this rule, on worlds where it bites); the
+   SIMULATOR arms it (explicit override wins).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -2597,6 +2697,32 @@ class ResponseConfig:
     # escape_proactive_lawful_only rule, on every tile). False = byte-
     # identical. The SIMULATOR arms it.
     crew_egress_judged: bool = False
+    # A WORLD CHANGE RE-JUDGES COMMITTED WORK (2026-10-14, the any-angle
+    # rug-pull finding; SAFETY SEMANTICS 23; read only by the simulator —
+    # the live engine moves no crew). Dispatch judges a crew's ingress legs
+    # and stops once, against the fields of the tick that planned them; a
+    # deploying crew is never re-planned and its queued stops ride along, so
+    # after a world change (a scripted ignition, the wind dial) nothing
+    # re-read them — measured: a crew finished its stop 26 min after a fire
+    # was planted 1.5 km upwind, drove its queued ingress leg (planned
+    # before that fire existed) through the new fire's eroded band and was
+    # audited "imminent" there, while every alternative from the stop was
+    # lawful; and crews still deploying where the new band arrived before
+    # the deploy ended (the 16-direction engine, nearby geometries). When
+    # True, every stop a crew holds carries the field generation it was
+    # judged against, and after the fields change: (a) an ingress leg is
+    # judged the moment the crew starts it (the leg at the 10c line, the
+    # stop still workable: its departure inside its rule against every
+    # fire, its cell clear of the imminent line until the crew leaves) —
+    # a stop that fails is released to the job pool and the next one is
+    # judged; (b) before any crew moves, a deploying crew whose stop is no
+    # longer workable withdraws (cause 'work_judged'), an en-route crew's
+    # leg is re-judged as in (a), and idle / egressing crews the new fields
+    # threaten within the step relocate at once; (c) a crew the change
+    # landed ON is still reported by that step's audit (world_change rows).
+    # False = byte-identical; with unchanged fields it is byte-identical
+    # too. The SIMULATOR arms it.
+    crew_work_judged: bool = False
     # --- gel product parameters (UNVERIFIED — pending supplier data) ---
     gel_window_h: float = 72.0         # operational window after application (outer weathering/wash-off horizon still UNVERIFIED)
     gel_full_strength_h: float = 72.0  # == gel_window_h: GraphGel is Class A at 1/8" DRY — flat effectiveness, no decay ramp (product data 2026-07-11)

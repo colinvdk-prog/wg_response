@@ -87,7 +87,7 @@ def _checkerboard_dir(tmp_path, key=KEY, size_km=20.0, cell_m=500.0,
 
 
 def _session(tmp_path, seed="m1", n_clients=16, n_crews=1,
-             intensity="high", ign_dist_m=8_000.0):
+             intensity="high", ign_dist_m=8_000.0, cfg=None):
     d = _checkerboard_dir(tmp_path)
     # roads_module=None: these are kinematics-pinned regression demos — they
     # must stay straight-leg even after wgresponse.roads + data/roads/ land
@@ -103,8 +103,11 @@ def _session(tmp_path, seed="m1", n_clients=16, n_crews=1,
     # constant. The withdrawal law under test is objective-independent, so these
     # demos are pinned to the objective they were derived under; re-deriving them
     # for 'homes' belongs with the simui re-plan work.
+    # cfg: extra overrides (the pre-SEMANTICS-23 demo below pins
+    # crew_work_judged off; tests/test_crew_work_judged.py the variants).
     s = SimSession(KEY, n_clients, n_crews, seed=seed,
-                   cfg_overrides={**FAST_TIGHT, "dispatch_objective": "value"},
+                   cfg_overrides={**FAST_TIGHT, "dispatch_objective": "value",
+                                  **(cfg or {})},
                    tile_dir=d, roads_module=None)
     loc = LOCATIONS[KEY]
     ign = geo.destination(loc.center, loc.hazard_wind_dir_deg,
@@ -282,9 +285,20 @@ def test_live_tightening_reduces_served_vs_control(tmp_path):
     ember-threat radius now gives fire-adjacent developed homes finite ETAs,
     so the control run gels 6 more of them — served 3 -> 9. LAW is unchanged:
     the tightened twin still withdraws its mid-deploy victim and serves
-    strictly fewer; the withdrawn/served-0 pins hold.)"""
+    strictly fewer; the withdrawn/served-0 pins hold.)
+
+    SAFETY SEMANTICS 23 pinned OFF (2026-10-14; contracts crew_work_judged):
+    the served pins come from a control twin that keeps working its stale
+    plan after the spot fire — it leaves sim-c15 4.8 min AFTER the planted
+    fire's P10 reached it (14.8 min past its 10-min rule; the departure audit
+    reads the stop's own fire only) and reaches four stops the wind swing no
+    longer threatens over legs crossing the planted fire's band between two
+    audits. Under the simulator's law the same twins serve 4 and 1 with every
+    law assertion below holding: tests/test_crew_work_judged.py::
+    test_rugpull_twins_armed_control_keeps_no_stale_unlawful_work."""
     def run(tighten):
-        s = _session(tmp_path, ign_dist_m=4_600.0)
+        s = _session(tmp_path, ign_dist_m=4_600.0,
+                     cfg={"crew_work_judged": False})
         st, crew, cur, _gap = _arm_mid_deploy(s)
         _inject_spot_fire(s, st, cur)          # identical world change
         st = s.tick()
@@ -493,11 +507,19 @@ def test_homes_mode_withdrawal_still_fires(tmp_path):
     # 2026-07-30): this test's arm/rug-pull choreography was derived under
     # the uniform corridor field; its subject is the WITHDRAWAL LAW, not
     # corridor defaults, so it pins the old field rather than re-deriving.
+    # SAFETY SEMANTICS 23 pinned OFF too (2026-10-14; contracts
+    # crew_work_judged): the choreography needs the victim crew still
+    # deploying at tick 3, inside the collapsed P10 the 10c row below
+    # tolerates — an AVOIDABLE row (the victim's cell was clear when the
+    # spot fire's field took effect and imminent 12 min later). Under the
+    # simulator's law the crew withdraws before it moves, no row:
+    # tests/test_crew_work_judged.py::test_homes_mode_rugpull_armed_no_row.
     s = SimSession(KEY, 16, 1, seed="m1",
                    cfg_overrides=dict(FAST_TIGHT,
                                       corridor_erosion_tiered=False,
                                       escape_hysteresis_margin_min=0.0,
-                                      transit_cold_black_by_class=False),
+                                      transit_cold_black_by_class=False,
+                                      crew_work_judged=False),
                    tile_dir=d, roads_module=None)
     assert s._cfg.dispatch_objective == "homes", "test must run the real default"
     loc = LOCATIONS[KEY]

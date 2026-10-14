@@ -1587,3 +1587,96 @@ scenarios on the fine-fuel starts).
 - **Tests.** `tests/test_sim_floor_grass_only.py` (the defaults; crown never on an
   explicit timber floor; the live engine unchanged); `tests/test_crown_fire.py::test_simulator_arms_crown_fire_by_default`;
   replay tests built before crown fire pin `crown_fire: False` and say so.
+
+## A world change re-judges committed work (2026-10-14)
+
+The integrator's finding: with `spread_any_angle` armed, the scripted rug-pull of
+`tests/test_simui_policy.py` (a second "high" fire planted 1.25–1.5 km dead upwind of the
+client a crew is gelling, the domain wind swung onto it) recorded a SEM-10c crew overrun the
+16-direction engine did not: at T+1.0 h sim-g1 stood on unburned grass inside the planted
+fire's 550 m eroded band (eroded P10 = that fire's ignition time), just before a SEMANTICS 10d
+area escape. Contracts **SAFETY SEMANTICS 23**, knob `crew_work_judged` (default OFF, armed in
+the simulator's sim-defaults block; explicit overrides win; the live engine moves no crew).
+Code: `simui` `_judge_ingress_start` / `_ingress_unworkable` / `_work_latest_depart_s` /
+`_rejudge_work` / `_work_withdraw` / `_note_instant_overrun`, the `_SimCrew` ingress hook and
+`_crew_safety_sweep(emergency_only=True)`. Tests: `tests/test_crew_work_judged.py`. Probe:
+`scratch_review/world_change_probe.py` (records `world_change_probe_before.jsonl` — the law
+off — and `world_change_probe_after.jsonl`); sweep records
+`scratch_review/crew_egress_gap_sweep_anyangle_before.jsonl` (commit 3dd341a) and
+`crew_egress_gap_sweep_anyangle_sem23.jsonl`.
+
+**For the founder.** The crew was not trapped. When the second fire was lit, the crew was still
+gelling a home with more homes queued after it — a plan made before that fire existed. Twenty-
+six minutes later it finished the home and drove to the next one on its list, and that road
+passed 494 m from where the new fire started, inside its danger band. Nothing checked the old
+plan against the new fire: a crew that is working is never re-planned, and the checks that
+re-read its work looked only at the original fire. From that home every other choice was safe —
+two other homes on its list and all three safe zones. Now, whenever the fire picture changes, a
+crew's plan is checked again: before it drives to its next home (the road and the home itself,
+against every fire), and before anyone moves for a crew already gelling or on the road. A home
+that is no longer safe to reach or to finish goes back to the job list; a crew with nothing safe
+left goes to a safe zone. When a new fire is lit right on top of a working crew, the crew leaves
+at once and the scoreboard still records that it was caught.
+
+**Diagnosis.** At T+56 min (the deploy end at sim-c4) the queued leg to sim-c16 ran 136 s inside
+the planted fire's band (worst 40 min past the 10c line; 494 m from the ignition point) while
+the legs to sim-c11 and sim-c14 and to zones z1 / z2 / z3 were all lawful (`_best_escape` from
+the stop picks z2). The crew drove the stale leg during the next step and the end-of-step sweep
+found it inside the band; the 10d escape it then took (bearing 210°, zero transit exposure) was
+the least-exposure way out — not the defect. The 16-direction engine has the same gap on another
+branch: the choreography at nearby geometries (spot fire 0.75–3 km, moderate / high / extreme,
+first or second deploy; 48 runs per engine) audited 107 rows in 24 runs (16-direction) and 53 in
+37 (any-angle) — every 16-direction row a crew still DEPLOYING where the new band arrived before
+its deploy ended (a straight-leg session re-checked an in-flight deploy only after a slider
+move, and the road-egress guard reads the stop's own fire) — and 60 summed departure-violation
+maxima. The pinned control twin of `test_live_tightening_reduces_served_vs_control` was clean
+only between audits: it left sim-c15 4.8 min after the planted fire's P10 reached it (14.8 min
+past its rule; the departure audit reads each stop's own fire) and reached four homes the wind
+swing no longer threatened over legs crossing the band. The one-click demos plant no second
+fire: 0 rows in 52 runs, before and after (below).
+
+**The law.** Every stop a crew holds carries the field generation it was judged against
+(`tick()` step 2 bumps it whenever a fire's field is built or rebuilt; adoption stamps the
+current one); work judged against an older generation is judged again — never a fresh plan, so
+the law cannot churn against dispatch:
+- **Ingress at its start.** The moment a crew turns onto an ingress leg toward a stale stop, the
+  leg from where it is must be lawful at the 10c line (the 20b test) and the stop WORKABLE: its
+  departure (arrival or the planned service start, + the deploy) within its rule against the
+  pessimistic arrival from every fire, and its cell's eroded P10 at least the buffer beyond that
+  departure. Else the stop is released (note "released … (SEMANTICS 23)") and the next is
+  judged; with none left the crew leaves as after its last stop.
+- **Before any crew moves.** A deploying crew whose stale stop is no longer workable for its
+  projected departure withdraws (cause `work_judged`); an en-route crew's leg in flight is judged
+  as above; in a step whose fields changed, idle and egressing crews pass the sweep's emergency
+  branch (the 10a relocation when the new band reaches them within the step, the 20b egress
+  judgement; no voluntary decamp).
+- **Never silent.** A deploying or en-route crew the change landed ON (already inside the band at
+  that instant) is pulled out at once and its row at that instant is reported by the step's
+  audit (`world_change: true`); an idle or egressing one keeps the existing handling (reported by
+  the audit, moved by the end-of-step sweep).
+
+**Measured** (before → after):
+
+| Run set | Crew-overrun rows | Departure violations | Withdrawals | Homes served |
+|---|---|---|---|---|
+| the finding: any-angle rug-pull control twin, 60 ticks | 1 → 0 | 0 → 0 | 0 → 0 | 8 → 8 |
+| nearby geometries, 16-direction (48 runs, 12 ticks after the spot fire) | 107 → 3 | 48 → 0 | 0 → 19 | 264 → 158 |
+| nearby geometries, any-angle (48 runs) | 53 → 11 | 12 → 0 | 2 → 19 | 230 → 167 |
+| one-click sweep, city weather, grass-only floor, crown, 10-min delay, any-angle (52 runs, 6 h) | 0 → 0 | 0 → 0 | 3 → 3 | 1,835 → 1,835 |
+
+Every remaining row is a `world_change` instant — the spot fire planted 750 m from the deploying
+crew (its band over the crew at ignition), or, at the extreme second deploy, the new band 0.2
+min inside the crew's 10c line when its field took effect; each crew was pulled out and was
+clear at the audit. The homes the nearby-geometry runs no longer serve were the stale plans'
+unlawful service: stops worked past their rule against the planted fire, stops reached over
+band legs, homes the wind swing no longer threatened. The one-click sweep is byte-identical
+(its single ignition is the only field change), as is any session without a world change.
+
+**Limits.** A step is the clock: a crew the change lands on is inside the band until it drives
+out (minutes), and an idle or egressing one waits for the end-of-step sweep (one step, as
+before). A stop planned against the current fields is dispatch's: with `egress_buffer_min`
+above the corridor margin (`route_margin_min` 56 chord / `route_margin_roads_min` 30 road)
+dispatch can still plan a stop whose cell the 10c line reaches before its departure — a pre-
+existing dispatch / audit split (seen in an any-angle slider test at a ~13 h buffer: a fresh
+plan, the deploying crew audited imminent; identical with this law off). The serviced-stop
+audit still reads each stop's own fire. The census and 60-scenario benches were not re-run.
