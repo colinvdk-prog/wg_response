@@ -857,6 +857,47 @@ city weather's mean 10-m wind over 0-6 h (`crown_fire_city_wind.json`). Raw rows
   The live-configuration crew-safety sweep (52 runs): 0 departure violations, 0 overrun
   ticks. `docs/SIMULATOR_DESIGN.md` "Founder option 3: crown fire in the simulator".
 
+### 3.9 The live watcher (2026-10-14)
+
+Founder, 2026-10-14: *"put crown fire on live watcher. perform the spread-direction fix"*.
+The live watcher (`wg-response-watch`, the CONUS shadow-ops world: mock client registry,
+dry notifications) now runs `--crown-fire --any-angle` on top of its production posture,
+with `--ensemble-workers 3` on a 4 vCPU / 8 GB instance (simulator image `world13`).
+
+**It keeps its timber floor.** The simulator runs crown fire *in place of* the timber
+floor (the founder's demo decision, section 3.8). The live watcher keeps the floor and adds
+crown fire on top, because there the question is crew safety, which keys off the earliest
+(P10) arrival. Crown fire only ever raises a cell's spread, and the spread-direction fix never
+makes a cell later under steady weather, so on top of the floor both can only move arrivals
+earlier. With the floor on grass only, crown fire left three hindcast days under 90 % P10
+adequacy (section 3.3); on top of the floor, none.
+
+**The 11-fire hindcast of exactly that setting** (arm `crown_dep_aa` of
+`scratch_review/crown_fire_hindcast.py`; production posture + `crown_fire` +
+`spread_any_angle`; 255 daily steps; same scores as section 3.3):
+
+| Phase (steps) | P50 area / burned area: today → live | P10 adequacy: today → live | P50 hit: today → live | False alarm (× fire area): today → live |
+|---|---|---|---|---|
+| all (255) | 3.55× → 4.07× | 99.78 % → 99.91 % | 98.85 % → 99.52 % | 2.53 → 3.05 |
+| growing (70) | 5.56× → 8.21× | 99.68 % → 99.92 % | 98.09 % → 99.26 % | 4.54 → 7.19 |
+| moderate (50) | 4.14× → 5.13× | 99.90 % → 99.95 % | 99.73 % → 99.93 % | 3.11 → 4.11 |
+| stalled (135) | 2.97× → 3.33× | 99.83 % → 99.88 % | 99.26 % → 99.61 % | 1.95 → 2.31 |
+
+* **Worst day:** 93.9 % P10 adequacy today (Hagen, step 9) → 96.9 % (Grasshopper, step
+  25). No day under 90 % either way.
+* **Days less safe than today:** 2 of 254 scored, by 0.05 and 0.04 percentage points
+  (Little Giant step 51: 98.85 → 98.80 %; Sinlahekin step 20: 98.98 → 98.94 %), the
+  ensemble's members redrawing a few edge cells.
+* **The price** is more over-forecast: the median forecast footprint grows from 3.55× to
+  4.07× the burned area (8.21× on growing days), i.e. earlier and wider alerts.
+
+**Cost.** On the hindcast domains the spread-direction fix costs a median 2.2× per ensemble on
+top of crown fire. The watcher solved its fires one member at a time (its last cycle before
+the change: 1,365 s, 1,000 s of it spread), so the perturbed members now run in worker
+processes (contracts `ensemble_workers`; identical members, `tests/test_ensemble_workers.py`):
+one live-style ensemble on Little Giant (300,792 cells) took 69.7 s in-process, 25.6 s with 3
+workers, 13.8 s with 5.
+
 ## 4. Recommendation
 
 1. **Simulator: arm crown fire with the grass-only floor and the calibrated

@@ -57,13 +57,26 @@ default path is fingerprint-pinned.
 ## 3. As-deployed configuration
 
 Live watcher StartCommand (verify via `aws apprunner describe-service`,
-service `wg-response-watch`, us-west-2), image tag `fix3c` (2026-09-11,
-docs/FIX_PROGRAM_2026-09-11.md): `--gust-blend 0.5 --grass-floor 0.10
+service `wg-response-watch`, us-west-2), image tag `world13` (2026-10-14,
+4 vCPU / 8 GB): `--aoi data/aoi_conus.json --registry mock-presets
+--dry-notify --gust-blend 0.5 --grass-floor 0.10 --floor-gate --model-error
+0.71 --extreme-regime --fail-closed --ember-radius 200 --p50-bound
+--solver-evals 20000 --phi-vector --drop-contained --confirmed-perimeters
+--offmap-per-fire --fire-belief --feed-sanity --fire-belief-v2 --crown-fire
+--any-angle --ensemble-workers 3`, env
+`WGRESP_STATE_S3=s3://wg-response-state-296920174396/watch-conus` (alert
+state + LANDFIRE terrain and canopy cache mirrored across restarts; instance
+role `wg-response-apprunner-instance`). Crown fire and the spread-direction
+fix were armed live on the founder's instruction 2026-10-14, on top of the
+timber floor (docs/review/crown_fire_model_2026-10-12.md section 3.9: 11-fire
+hindcast P10 adequacy 99.78 % -> 99.91 %, P50 footprint 3.55x -> 4.07x the
+burned area); `--ensemble-workers 3` runs the perturbed members in worker
+processes (identical members). Previous: `world7` (2026-09-28) = the same
+without the last three flags on 2 vCPU / 4 GB; `fix3c` (2026-09-11,
+docs/FIX_PROGRAM_2026-09-11.md) = `--gust-blend 0.5 --grass-floor 0.10
 --floor-gate --model-error 0.71 --extreme-regime --fail-closed
---ember-radius 200 --p50-bound --solver-evals 20000 --phi-vector`, env
-`WGRESP_STATE_S3=s3://wg-response-state-296920174396/watch` (alert state +
-LANDFIRE cache mirrored across restarts; instance role
-`wg-response-apprunner-instance`). Built but NOT armed live:
+--ember-radius 200 --p50-bound --solver-evals 20000 --phi-vector` with the
+state prefix `/watch`. Built but NOT armed live:
 `--regime-floor` (the regime detector trips on 2/18 July blow-up pairs) and
 `edge_weather_piecewise` (3.7-7x spread cost: unaffordable on 1 vCPU; matrix
 round 2 verdicts in that doc). `--phi-vector` IS armed (rule-compliant,
