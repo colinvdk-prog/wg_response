@@ -1713,4 +1713,7 @@ day; `docs/review/crown_fire_model_2026-10-12.md` section 3.9).
   crown fire, 10-min spot delay, SEMANTICS 23; city weather, grass floor; 52 runs):
   0 departure violations, 0 crew-overrun ticks, 0 crews off the map; homes served 1,820
   (`world12`) → 1,835; every run identical to the same sweep without SEMANTICS 23 (no
-  one-click scenario changes the world mid-run). Simulator image `world14`.
+  one-click scenario changes the world mid-run). Simulator image `world14`, live
+  2026-10-14: Park City and the corridor start where the local code puts them and their
+  first hour matches it acre for acre (Park City 10 / 12 / 36 / 112 acres); first step
+  15.8 s (Park City) and 20.4 s (corridor) on App Runner.
