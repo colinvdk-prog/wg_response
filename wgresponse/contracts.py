@@ -2625,6 +2625,15 @@ class ResponseConfig:
     # --- spread / forecast ---
     horizon_h: float = 96.0
     ensemble_n: int = 6                # perturbed members (+1 nominal)
+    # ENSEMBLE WORKERS (2026-10-14; founder: crown fire and the spread-
+    # direction fix on the live watcher, which cost 1.3-2.3x and 2.7-3.4x the
+    # spread): when > 1 the perturbed members of spread.ensemble_arrival run
+    # in this many worker processes while the nominal runs in the caller.
+    # Each member is the same pure function of the same arguments, so the
+    # ensemble is identical; only the wall time changes. A worker that fails
+    # hands its members back to the caller (the same members). 1 = in-process,
+    # the legacy path. watch --ensemble-workers.
+    ensemble_workers: int = 1
     wind_perturb_frac: float = 0.25    # +/- scale at max lead; grows with lead time
     moisture_perturb_frac: float = 0.20
     spotting_enabled: bool = False     # Sardoy lognormal, default OFF
@@ -3226,6 +3235,10 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("horizon_h must be > 0")
     if cfg.ensemble_n < 1:
         problems.append("ensemble_n must be >= 1")
+    if (isinstance(cfg.ensemble_workers, bool)
+            or not isinstance(cfg.ensemble_workers, int)
+            or not 1 <= cfg.ensemble_workers <= 64):
+        problems.append("ensemble_workers must be an int within [1, 64]")
     if not (0.0 <= cfg.wind_perturb_frac <= 1.0):
         problems.append("wind_perturb_frac must be within [0, 1]")
     if not (0.0 <= cfg.moisture_perturb_frac <= 1.0):

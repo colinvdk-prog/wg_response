@@ -15,6 +15,7 @@ perimeter k+1) with the LANDFIRE canopy attached to each fire's terrain tile
                 verified to reproduce)
   crown         CFG_PROD + ros_floor_grass_only + crown_fire   (run here)
   crown_dep     CFG_PROD + crown_fire (timber floor kept)      (run here)
+  crown_dep_aa  crown_dep + spread_any_angle (the live watcher of 2026-10-14)
 
 Scores (bvp_run.score, at t_{k+1} against perimeter k+1): the P50 area ratio
 (footprint / burned), P10 adequacy (share of the newly burned cells inside
@@ -63,6 +64,11 @@ ARMS = {
     "crown": dataclasses.replace(R.CFG_PROD, ros_floor_grass_only=True,
                                  crown_fire=True),
     "crown_dep": dataclasses.replace(R.CFG_PROD, crown_fire=True),
+    # the live watcher as switched on 2026-10-14 (founder: "put crown fire on
+    # live watcher. perform the spread-direction fix"): the production
+    # posture + crown fire + the spread-direction fix (spread_any_angle)
+    "crown_dep_aa": dataclasses.replace(R.CFG_PROD, crown_fire=True,
+                                        spread_any_angle=True),
 }
 FIRES = ["aspenacres", "bobcatlakes", "border2", "grasshopper", "hagen",
          "littlegiant", "plaskett", "sandcreek", "sinlahekin", "timber",

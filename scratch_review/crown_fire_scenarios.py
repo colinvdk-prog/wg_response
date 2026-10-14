@@ -69,6 +69,9 @@ VARIANTS = {
     # in forest needs time to build to a crown fire
     "crown_d10": {"ros_floor_grass_only": True, "spot_fire_size": True,
                   "crown_fire": True, "spot_ignition_delay_min": 10.0},
+    # the simulator's own defaults, whatever they are at run time (2026-10-14:
+    # crown_d10 + the spread-direction fix, spread_any_angle)
+    "sim_defaults": {},
 }
 
 

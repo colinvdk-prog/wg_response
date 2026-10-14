@@ -347,6 +347,7 @@ the shipped values.
 |---|---|---|
 | `horizon_h` | 96.0 | Forecast horizon. |
 | `ensemble_n` | 6 | Perturbed ensemble members (+1 nominal). |
+| `ensemble_workers` | 1 | ENSEMBLE WORKERS (2026-10-14; crown fire and the spread-direction fix on the live watcher cost 1.3-2.3x and 2.7-3.4x the spread): when > 1 the perturbed members of `spread.ensemble_arrival` run in this many worker processes ("spawn"; one pool per process, kept) while the nominal runs in the caller. Each member is the same pure function of the same arguments, so the ensemble is identical, cell for cell; only the wall time changes. A failed worker hands its members back to the caller. 1 = in-process, the legacy path. `watch --ensemble-workers N`. |
 | `wind_perturb_frac` | 0.25 | +/- wind-speed scale at max lead; grows with lead time. |
 | `moisture_perturb_frac` | 0.20 | +/- moisture scale. |
 | `spotting_enabled` | False | Sardoy lognormal ember transport; default OFF. |

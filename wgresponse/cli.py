@@ -266,6 +266,10 @@ def _build_parser() -> argparse.ArgumentParser:
                          "the wind lies between the 16 grid directions; "
                          "2-3.4x spread cost (docs/review/grid_orientation_"
                          "2026-10-09.md)")
+    pw.add_argument("--ensemble-workers", type=int, default=1,
+                    help="cfg.ensemble_workers: run the perturbed ensemble "
+                         "members in N worker processes (identical members, "
+                         "less wall time; 1 = in-process)")
     pw.add_argument("--crown-fire", action="store_true",
                     help="cfg.crown_fire: the crown-fire model (SAFETY "
                          "SEMANTICS 22) — forest cells may torch or crown "
@@ -1748,6 +1752,12 @@ def _cmd_watch(args) -> int:
         startup_notes_fix.append(
             "ANY-ANGLE spread ACTIVE (SAFETY SEMANTICS 21): straight runs at "
             "any angle besides the 16 grid edges (2-3.4x spread cost)")
+    if getattr(args, "ensemble_workers", 1) != 1:
+        cfg = dataclasses.replace(cfg, ensemble_workers=args.ensemble_workers)
+        startup_notes_fix.append(
+            f"ENSEMBLE WORKERS: the perturbed members run in "
+            f"{args.ensemble_workers} worker processes (identical members, "
+            f"less wall time)")
     if getattr(args, "crown_fire", False):
         cfg = dataclasses.replace(cfg, crown_fire=True)
         startup_notes_fix.append(

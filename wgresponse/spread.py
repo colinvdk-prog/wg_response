@@ -173,6 +173,7 @@ import heapq
 import logging
 import math
 import os
+import threading
 import time
 from statistics import NormalDist
 
@@ -2074,6 +2075,82 @@ def _stratified_member_draws(incident_id: str, m: int) -> list:
     return [tuple(t) for t in draws]
 
 
+#: ENSEMBLE WORKERS (contracts ensemble_workers): one process pool per
+#: process, created on first use and kept (the watch daemon reuses it every
+#: cycle); "spawn" workers, so a threaded parent (the daemon's HTTP server)
+#: never forks a held lock. A broken pool is dropped and its members re-run
+#: here, which gives the same members.
+_MEMBER_POOL = None
+_MEMBER_POOL_N = 0
+_MEMBER_POOL_LOCK = threading.Lock()
+
+
+def _member_pool(n: int):
+    global _MEMBER_POOL, _MEMBER_POOL_N
+    with _MEMBER_POOL_LOCK:
+        if _MEMBER_POOL is None or _MEMBER_POOL_N != n:
+            if _MEMBER_POOL is not None:
+                _MEMBER_POOL.shutdown(wait=False, cancel_futures=True)
+            import multiprocessing
+            from concurrent.futures import ProcessPoolExecutor
+            _MEMBER_POOL = ProcessPoolExecutor(
+                max_workers=n, mp_context=multiprocessing.get_context("spawn"))
+            _MEMBER_POOL_N = n
+        return _MEMBER_POOL
+
+
+def _drop_member_pool() -> None:
+    global _MEMBER_POOL, _MEMBER_POOL_N
+    with _MEMBER_POOL_LOCK:
+        if _MEMBER_POOL is not None:
+            _MEMBER_POOL.shutdown(wait=False, cancel_futures=True)
+        _MEMBER_POOL, _MEMBER_POOL_N = None, 0
+
+
+def _member_job(blob: bytes, kw: dict):
+    """One perturbed member in a worker: the shared inputs travel pickled
+    once per ensemble (blob), each member's own arguments in kw."""
+    import pickle
+    tile, pts, wx, t0_s, cfg = pickle.loads(blob)
+    return compute_arrival(tile, pts, wx, t0_s, cfg, **kw)
+
+
+def _submit_members(workers, tile, pts, wx, t0_s, cfg, kws):
+    """[(kw, future)] for the perturbed members in order; future None when
+    the pool is unavailable or the inputs cannot travel (the member then
+    runs in-process — the same member)."""
+    import pickle
+    try:
+        blob = pickle.dumps((tile, pts, wx, t0_s, cfg),
+                            protocol=pickle.HIGHEST_PROTOCOL)
+        pool = _member_pool(workers)
+        return [(kw, pool.submit(_member_job, blob, kw)) for kw in kws]
+    except Exception:
+        _LOG.exception("spread: ensemble workers unavailable — the perturbed "
+                      "members run in-process (same members)")
+        _drop_member_pool()
+        return [(kw, None) for kw in kws]
+
+
+def _gather_members(futs, tile, pts, wx, t0_s, cfg) -> list:
+    out = []
+    failed = False
+    for kw, fut in futs:
+        m = None
+        if fut is not None and not failed:
+            try:
+                m = fut.result()
+            except Exception:
+                _LOG.exception("spread: an ensemble worker failed — the rest "
+                              "of this ensemble runs in-process (same members)")
+                failed = True
+                _drop_member_pool()
+        if m is None:
+            m = compute_arrival(tile, pts, wx, t0_s, cfg, **kw)
+        out.append(m)
+    return out
+
+
 def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                      t0_s: float, cfg: ResponseConfig, incident_id: str = "",
                      perimeter: list = None,
@@ -2194,20 +2271,18 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     nom_kw = dict(aa_kw)
     if anchor_log is not None:
         nom_kw["anchor_log"] = anchor_log
-    members = [compute_arrival(tile, pts, wx, t0_s, cfg,
-                               perimeter=perimeter,
-                               perimeter_at_s=perimeter_at_s,
-                               incident_id=incident_id, member_k=0,
-                               seed_spotting=seed_spotting, kept=kept,
-                               embers_aloft=embers_aloft,
-                               ember_log=ember_log, kept_wx=kept_wx,
-                               weather_field=weather_field, **hs_kw,
-                               **nom_kw)]
+    nom_args = dict(perimeter=perimeter, perimeter_at_s=perimeter_at_s,
+                    incident_id=incident_id, member_k=0,
+                    seed_spotting=seed_spotting, kept=kept,
+                    embers_aloft=embers_aloft, ember_log=ember_log,
+                    kept_wx=kept_wx, weather_field=weather_field, **hs_kw,
+                    **nom_kw)
     draws = _stratified_member_draws(incident_id, n_members - 1)
     dir_lead = min(1.0, (cfg.horizon_h * 0.5) / _DIR_RAMP_SATURATION_H)
     sd_log = float(getattr(cfg, "model_error_sd_log", 0.0) or 0.0)
     p50_bound = bool(getattr(cfg, "ensemble_p50_nominal_bound", False))
-    for k in range(1, n_members):
+
+    def member_args(k):
         u_w, u_m, u_d, u_e = draws[k - 1]
         w_scale = max(0.05, 1.0 + u_w * cfg.wind_perturb_frac * 0.5)
         m_scale = max(0.05, 1.0 + u_m * cfg.moisture_perturb_frac * 0.5)
@@ -2227,18 +2302,31 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             if hs is not None:
                 hs_kw = {"hour_ros_scale": hs}
                 r_scale = 1.0
-        members.append(compute_arrival(tile, pts, wx, t0_s, cfg,
-                                       moisture_scale=m_scale, wind_scale=w_scale,
-                                       dir_offset_deg=d_off,
-                                       perimeter=perimeter,
-                                       perimeter_at_s=perimeter_at_s,
-                                       incident_id=incident_id, member_k=k,
-                                       ros_scale=r_scale,
-                                       seed_spotting=seed_spotting,
-                                       kept=kept, embers_aloft=embers_aloft,
-                                       kept_wx=kept_wx,
-                                       weather_field=weather_field, **hs_kw,
-                                       **aa_kw))
+        return dict(moisture_scale=m_scale, wind_scale=w_scale,
+                    dir_offset_deg=d_off, perimeter=perimeter,
+                    perimeter_at_s=perimeter_at_s, incident_id=incident_id,
+                    member_k=k, ros_scale=r_scale,
+                    seed_spotting=seed_spotting, kept=kept,
+                    embers_aloft=embers_aloft, kept_wx=kept_wx,
+                    weather_field=weather_field, **hs_kw, **aa_kw)
+
+    workers = int(getattr(cfg, "ensemble_workers", 1) or 1)
+    if workers > 1 and n_members > 2:
+        # ENSEMBLE WORKERS (contracts ensemble_workers): the perturbed
+        # members run in worker processes while the nominal runs here (it
+        # alone writes ember_log / anchor_log / the traces). Each member is
+        # the same pure function of the same arguments, so the ensemble is
+        # identical to the in-process run; member_hour_scale is pure, so
+        # calling it before the nominal changes nothing.
+        futs = _submit_members(workers, tile, pts, wx, t0_s, cfg,
+                               [member_args(k) for k in range(1, n_members)])
+        members = [compute_arrival(tile, pts, wx, t0_s, cfg, **nom_args)]
+        members.extend(_gather_members(futs, tile, pts, wx, t0_s, cfg))
+    else:
+        members = [compute_arrival(tile, pts, wx, t0_s, cfg, **nom_args)]
+        for k in range(1, n_members):
+            members.append(compute_arrival(tile, pts, wx, t0_s, cfg,
+                                           **member_args(k)))
 
     ncells = tile.spec.nrows * tile.spec.ncols
     if len(members) == 1:
