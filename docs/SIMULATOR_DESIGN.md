@@ -1844,3 +1844,204 @@ re-offer them while the disagreement lasts (never driven; said once per field ge
 planner's road margin (`route_margin_roads_min`) is the 10c line only while it equals
 `egress_buffer_min`. The harness's 33-run matrix and the one-click sweep under the new
 defaults are the integrator's to run on this commit.
+
+## A crew never waits in a pocket (2026-10-21)
+
+Iteration 2 of the Eagle River valley review's crew-safety lens (the iteration-0 review:
+`scratch_review/eagle_valley/review_iter0_crew_safety.md`; iteration 1: the section above,
+commit 0109ad3; the independent review of iteration 1, folded in here:
+`scratch_review/eagle_valley/review_iter1_sonnet.md` in the review worktree). Nine knobs, six
+contracts SAFETY SEMANTICS entries (28-33), each default OFF and armed in the simulator's
+sim-defaults block (explicit overrides win; the live engine moves no crew — only 31 and 32 are
+read by dispatch):
+
+| Knob | SEMANTICS | What it changes |
+|---|---|---|
+| `egress_durable_min_h` (8 h) | 28a, 28c | an egress target must stay clear of the 10c line 8 h after arrival; a crew a re-plan strips mid-road leaves at once |
+| `escape_last_exit_lead_min` (30) | 28b | the last-exit trigger: a parked crew leaves while its last lawful way to a durable refuge is open |
+| `escape_pocket_exit` | 28d | a pocketed crew (no lawful way to a durable refuge) leaves at once by the least exposed way — while the pocket is young |
+| `egress_corridor_guard` | 29 | ONE predicate — a lawful way out of the stop, reached by its deadline — judged as the crew sets out, every step en route (kept stops included), at arrival and every step of the work |
+| `reinforce_stage_by_need` | 30a | a reinforcement enters at its region's road entry on the tile edge, judged, instead of being placed at Minturn |
+| `idle_restage` | 30b | an idle crew restages to the durable zone nearest the waiting homes |
+| `route_margin_egress_roads_min` (45) | 31 | road egress legs carry 15 min of traffic slack over the 10c line |
+| `plan_egress_time_deadline` | 32 | the planner's egress test is the guard's: the zone must be reached by the home's latest departure |
+| `crew_overrun_ledger` | 33 | the scoreboard carries the run's crew-overrun totals and rows; the page labels a transit row for what it is |
+
+Code: `simui` `_durable_egress` / `_durable_retarget` / `_leg_verdict` / `_last_exit_choice` /
+`_pocket_exit_choice` / `_leave_if_pocketed` (28), `_egress_ways` / `_egress_way_out` /
+`_client_latest_s` / `_stop_exit_verdict` / `_exit_why` / `_judge_head_en_route` /
+`_egress_guard_at_arrival` / `_egress_guard_withdraw` / `_cell_exit_s` / `_strict_points` and the
+exit-aware `_work_latest_depart_s` (29), `_reinforce_entry` / `_entry_closed` / `_open_work` /
+`_restage_idle` (30), `_ledger_tick` and `state()`'s scoreboard (33), the `_SimCrew` arrival hook
+in `advance()` and `withdraw_now`; `dispatch._Ctx._tstar_k` / `_ezones_k` (31) and `_egress_s` /
+`_egx_key` / `egress()` / `eval_route` / `_run` / `extend_p` / `diagnose` / `_late_shift` (32);
+`console/simulator.html` `overrunLabel` and the scoreboard (33). Tests: `tests/test_crew_pocket.py`,
+`tests/test_egress_guard.py`, `tests/test_stage_by_need.py`, `tests/test_egress_margin.py`,
+`tests/test_overrun_ledger.py`. Probes: `out/eagle_valley/probes/iter2/` (the matrix arms
+`m_fold2` — all armed —, `v_off` / `v28`-`v31` — each law alone —, `s75_m30` / `s75_m45` — the
+slower drive; `golden_calc.py`; `parity_probe.py`; `campfire_probe.py`; `pocket_exit_probe.py`;
+`member_probe.py`; `oneclick_ab.py`).
+
+**For the founder.** Iteration 1 made the scoreboard see every road a crew drove; it found crews
+driving through the danger band in 8 of the 33 valley runs, the worst seven hours after the
+danger line had passed there. Almost every one was a crew that had waited somewhere whose ways
+out were closing — a safe zone with an hour of life left, or a zone the band had already cut
+off — and then had to drive out through it. Now a crew never waits in a pocket: it only heads
+for a refuge that stays safe for eight hours after it gets there, it leaves while its last safe
+road out is still open, and when the fire has cut every safe road at once — as it did to a crew
+staged 1.4 km from where Beaver Creek's northwest fire started — it leaves immediately, while the
+band is twenty minutes deep, not four hours later when it is four hours deep. A home is only
+worked if the crew can still drive away from it safely and in time, and that is checked when the
+crew sets out, every fifteen minutes on the way, when it arrives and while it works, so a home
+the crew could not safely leave is given back before the crew gets there instead of abandoned
+half-coated. The independent review found the planner and the safety check disagreeing about how
+long the drive out of a home takes (Vail, south fire: the home was lost); they now use the same
+rule. Reinforcements come in on I-70 at the valley edge and go where the work is, and the page now
+says "drove through the band at 04:17" instead of "caught in fire", and keeps the count after
+the tick.
+
+**What was measured** (the valley harness, 33 runs, 12 h; iteration 1 = the integrator's matrix
+on 0109ad3, `scratch_review/eagle_valley/iter1_runs.jsonl`; iteration 2 = this commit's armed
+defaults, `m_fold2`):
+
+| | iteration 1 | iteration 2 |
+|---|---|---|
+| transit rows / episodes | 10 / 10 (in 8 runs) | 2 / 2 |
+| seconds in the band | 1,554 | 2 |
+| deepest row (min past the 10c line) | 434 | 24 |
+| rows deeper than 30 min | 6 | 0 |
+| member-credible rows (a member's front within the buffer at the pass) | 2 of 10 (the review) | 0 of 2 (the first member front 183 / 218 min after the pass) |
+| withdrawals · relocations · crews off the map | 1 · 31 · 2 | 0 · 14 · 0 |
+| homes served · reached / unprotected | 1,047 · 125 / 15 | 1,040 · 125 / 14 |
+| km driven · crew time idle | 5,624 · 61.0 % | 5,700 · 60.8 % |
+
+The two rows left are the pocket exits (28d) of Beaver Creek's northwest fire (high and
+extreme): 21 and 24 min past the line, 1 s each, at the first field — where iteration 1's sweep
+moved the same crew 4 and 5 h later, 262 and 328 min past it. Homes served: seven fewer net —
+Beaver Creek's canonical fire loses 3 coatings each in its high, pair and late runs and 1 at
+extreme (unserved `no_safe_egress` / `no_safe_corridor`), Eagle-Vail canonical extreme 1, and
+four runs gain one each; the egress margin (31) alone costs 6 on the runs it changes (below).
+They are homes the nominal fire does not reach in 12 h: reached-unprotected falls 15 → 14.
+
+**Each law's share.** Each law alone against all off, on the 10 runs the laws changed (before
+the fold-in of the independent review: the guard then without the deadline term and the
+en-route judgement, no pocket exit, no planner term), then the full set before and after the
+fold-in:
+
+| 10 runs | served | unprotected | transit rows | s in band | deepest (min) | > 30 min | withdrawn | relocations | off map | km |
+|---|---|---|---|---|---|---|---|---|---|---|
+| all off (iteration 1) | 329 | 8 | 7 | 924 | 434 | 4 | 1 | 14 | 2 | 1,459 |
+| 28a-c alone | 328 | 8 | 2 | 244 | 262 | 1 | 1 | 10 | 1 | 1,441 |
+| 29 alone (pre-fold) | 329 | 8 | 7 | 924 | 434 | 4 | 1 | 14 | 2 | 1,459 |
+| 30 alone | 331 | 8 | 9 | 1,209 | 434 | 6 | 1 | 17 | 2 | 1,456 |
+| 31 alone | 323 | 7 | 4 | 621 | 434 | 2 | 0 | 9 | 2 | 1,558 |
+| 28-31 (pre-fold) | 322 | 7 | 1 | 228 | 262 | 1 | 0 | 4 | 0 | 1,507 |
+| 28-33 (this commit) | 322 | 7 | 1 | 1 | 21 | 0 | 0 | 7 | 0 | 1,543 |
+
+28 removes most of the band; 31 is the service cost (the egress margin refuses coatings whose
+road out has less than 15 min of slack) and removes the withdrawal; 30 alone moves idle crews
+toward the work (+2 homes) but into more band until 28 keeps them out of pockets; the fold-in's
+pocket exit (28d) takes the last deep row (Beaver Creek northwest, 262 min) to 21 min, 1 s.
+
+**The margin, sized from data** (31; every crew driving 25 % slower than planned — the
+independent review's traffic test, which turned iteration 1's 10 rows into 16):
+
+| 25 % slower drive, iteration 2 armed | egress margin 30 (31 off) | 45 (armed) |
+|---|---|---|
+| rows / episodes | 7 / 6 | 5 / 5 |
+| of which egress drives (not pocket exits) | 3 (up to 26.8 min past the line) | 0 |
+| of which pocket exits · ingress legs | 2 · 2 | 2 · 3 (one geometry, 0.5 min, 31 s) |
+| seconds in the band · deepest | 123 · 26.8 min | 97 · 24.8 min |
+| homes served · reached / unprotected · off map | 988 · 125 / 27 · 1 | 968 · 125 / 28 · 1 |
+
+**Byte-identity.** With all nine knobs off the simulator replays commit 0109ad3 byte for byte —
+per-tick sha256 of `state()` (minus `cmd_log`) on nine worlds where the laws bite, 175 ticks
+(`golden_calc.py` against a pristine 0109ad3 worktree): Beaver Creek canonical high (26 ticks),
+its late fire (16), its northwest fire (6); Vail westerly as served (8), canonical extreme (24),
+northwest extreme (24), south extreme (8); Eagle-Vail south extreme (10); the rug-pull control
+(17).
+
+**The law.**
+- **28, a crew never waits in a pocket.** (a) An egress target must stay clear of the 10c line
+  8 h after arrival: else the nearest zone with a lawful leg that does, else a lawful road refuge
+  that does, else the longest-lived lawful zone (an hour more than the target), else 20b. (b) An
+  idle crew whose own line arrives within 8 h leaves when every lawful leg to such a refuge closes
+  within 30 min plus a step; with none, under 4 h of its own, a lawful road refuge. (c) A crew a
+  re-plan strips mid-road leaves at once. (d) With no lawful way to a durable refuge at all, it
+  leaves now by the least exposed way — only while the pocket is young (no way out more than one
+  egress buffer past the line).
+- **29, one predicate.** A stop is workable only if, leaving at its projected departure, a leg to
+  a catalog zone is lawful at every pass time — the stop's cell judged as the crew leaves it, the
+  egress line 45 min on roads — and reaches that zone by the home's latest departure (every
+  fire). Judged as the crew sets out, every step en route (a stop that fails is released before
+  the crew gets there: "released … en route (SEMANTICS 29)"), at arrival and every step of the
+  work (withdrawal: `egress_guard`, or `road_egress` when no lawful zone is reached in time). It
+  supersedes the road-egress guard, which timed the egress to the plan's route-level zone.
+- **30, staging by need.** A reinforcement arrives at its region's road entry on the tile edge
+  (I-70: the east edge for the 1 h crew), turns from INBOUND there and is swept and audited from
+  then on; it enters only when the entry is clear and a lawful leg leads to a safe zone (else it
+  holds, said once). Idle crews restage to the durable zone nearest the waiting homes when it is
+  2 km nearer.
+- **31, egress slack.** Road egress legs need 45 min between every sample's eroded P10 and its
+  pass time (the planner's zone legs, and 29's egress line).
+- **32, the planner's egress fits the deadline.** A stop needs a zone whose leg is lawful at its
+  departure and reached by the job's latest departure (the guard's law) — the planner's margin
+  covers the stop's road-egress minutes.
+- **33, the page.** Run totals and the latest 20 rows on the scoreboard; transit rows labelled
+  "drove through the band at hh:mm, N min past the line"; the violations box "0 now — N this run".
+
+**Guard parity (the review's regression).** Vail, south fire, extreme (`parity_probe.py`, 10
+ticks): iteration 1 withdraws sim-g1 at sim-c14 on arrival at tick 6 (road egress 22.1 min to the
+route-level zone, 4.6 min late; served 14); 32 alone does not change it (the legacy guard still
+times the route-level zone); 29 alone, 29 + 32, and the armed defaults work the stop at tick 7,
+nothing withdrawn (served 15, 15, 16). On the 13 one-click presets (12 ticks, the page's
+arming; `oneclick_ab.py`, the review's probe): homes served 284 → 291 → 288 (iterations 0, 1,
+2), safety withdrawals 3 → 3 → 0 (Park City, Malibu, Paradise), crew-overrun rows, crews off
+the map and reached-unprotected homes 0 in all three; per preset −2 to +1 (Beaver Creek and
+Santa Rosa −2, Boulder and Basalt −1; Park City, Vail and Glenwood +1).
+
+**The extended Camp-Fire-scale run** (`tests/test_crew_path_audit.py`'s yardstick, 120 ticks):
+iteration 1's four egress drives through the band (ticks 65, 82, 88, 89: 496, 326, 909, 217 min
+past the line) → two: sim-g2 leaves by its last exit at tick 30 and its pocket at tick 70, so its
+drives at 82 and 89 are gone; sim-g1's at 65 and 88 stay — it waits at paradise_ca-z1, a refuge
+with 24 h of life whose only exit (z2) stops being durable at tick 29 and lawful at tick 43, while
+the last-exit trigger watches only crews within 8 h of their own line; by then every way out is
+older than the pocket exit's cap. Widening the trigger's watch to any threatened crew was
+measured worse (both crews trapped, four rows: restaging returned them to the dead end) and is
+not in this commit. Pinned as a strict xfail, the counts as ratchets.
+
+**The live P10 posture** (item 5 of the brief) is not armed — available through `--cfg`
+(`{"model_error_sd_log": 0.71, "wind_gust_blend": 0.5, "slope_phi_vector": true,
+"ros_floor_extinction_gate": true}`). On iteration 1 the independent review measured served
+1,047 → 949, unprotected 15 → 34, relocations 31 → 75, crews off the map 2 → 20 (the audit
+quieter only because off-map crews are skipped). With P10 at ~0.46× the nominal the pocket laws
+see far more pockets: expect more relocations and pocket exits, more releases at setting out and
+en route, and fewer homes served than on iteration 1's posture arm; judge it on unprotected and
+off-map counts. The integrator's posture arm runs on this commit.
+
+**Tests pinned** (none weakened; each keeps its own law and says why — the house rule): every
+golden and control derived before these laws pins the nine knobs off (`ITER2_OFF`), each with
+its armed twin: `test_crew_path_audit.py` (one-row rule, rug-pull, the SEMANTICS-23-off control,
+the homes-mode and late-departure controls, the extended Camp-Fire yardstick),
+`test_crew_work_judged.py` (the 16-direction withdrawal — 8.5 min deficit off, 9.3 armed: the cell
+exit), `test_simui_policy.py` (the slider demos; the frozen-stop slider world — armed, the one
+predicate withdraws at the world change, before the slider), `test_ingress_exact.py`,
+`test_keep_frozen.py`, `test_crew_egress_judged.py` (goldens; the 20b withdrawal; the reproduced-
+overrun windows pin the pocket exit off — in Glenwood extreme it trades the tick-7 row 92.9 min
+deep for a tick-2 row 17.9 min deep), `test_simui.py` (the road-egress guard world — armed, no
+stop is ever set out for; the Paradise crown-fire repro), `test_sim_escape_roads.py` (the SEM-10e
+decamp worlds: 28b leaves first, for the same road node), `test_sim_left_map.py` (with these laws
+the crews stay on the map); `test_crew_work_judged.py`'s armed-agreement test pins only the
+ledger off (it adds keys to every tick's state). The new armed twins use the review's style:
+law-level assertions on a known defect `xfail(strict=True)`, exact numbers as ratchets.
+
+**Limits.** A pocket the first field forms cannot be left lawfully: the pocket exit takes the
+youngest band (21-24 min, 1 s), and only a staging choice made before the fire could avoid it. The
+last-exit trigger watches crews within 8 h of their own line (the Camp-Fire dead end above). Under
+a 25 % slower drive the ingress legs carry the 30-min road margin and one geometry drives 0.5 min
+past the line (ingress slack — `route_margin_roads_min` above 30 — would cover it, at a service
+cost). The one
+predicate is cell-exact and the planner samples T*: a stop the two disagree on is released, and
+may be re-offered (never driven). Each step the guard judges every zone leg of every working and
+en-route crew: the valley runs take ~30 s, not ~22. The integrator's 33-run matrix and the
+one-click sweep under the new defaults are the integrator's to run on this commit.

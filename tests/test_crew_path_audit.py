@@ -42,8 +42,19 @@ from tests.test_simui_policy import (FAST_TIGHT, KEY, _arm_mid_deploy,
 
 INF = math.inf
 #: the 2026-10-21 knobs (SAFETY SEMANTICS 25-27) all off: the pre-rule session
+#: ... and the iteration-2 knobs (SAFETY SEMANTICS 28-33, 2026-10-21), armed
+#: by the simulator since: this file's goldens and derivations predate
+#: them too (their own goldens and armed behaviour: tests/test_crew_pocket.
+#: py, test_egress_guard.py, test_stage_by_need.py, test_egress_margin.py)
+ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
+             "egress_corridor_guard": False,
+             "reinforce_stage_by_need": False, "idle_restage": False,
+             "route_margin_egress_roads_min": 0.0,
+             "escape_pocket_exit": False, "plan_egress_time_deadline": False,
+             "crew_overrun_ledger": False}
 ITER1_OFF = {"crew_path_audit": False, "dispatch_keep_frozen": False,
-             "plan_route_exact": False, "crew_ingress_judged": False}
+             "plan_route_exact": False, "crew_ingress_judged": False,
+             **ITER2_OFF}
 #: the path audit alone (the session the pre-rule one is, plus the report)
 PATH_ONLY = dict(ITER1_OFF, crew_path_audit=True)
 
@@ -201,8 +212,11 @@ def test_a_stop_the_line_reaches_before_the_crew_leaves_is_reported(
 
 def test_one_row_per_crew_per_step(tmp_path):
     """A crew exposed on the way AND at the tick end keeps the tick-end
-    audit's row (no transit flag) — still one row."""
-    s = _judged_session(tmp_path)
+    audit's row (no transit flag) — still one row. The iteration-2 knobs are
+    pinned off (2026-10-21): the SEMANTICS 29 guard withdraws the crew as it
+    arrives at a stop inside the band (no way out of it) — this test's law is
+    the one-row rule (tests/test_egress_guard.py: the guard's own)."""
+    s = _judged_session(tmp_path, **ITER2_OFF)
     t0 = s._now_s
     _paint(s, p10_paint=[(_pt(90, 1.5), 300.0, t0 + 120.0),
                          (_pt(90, 3.0), 300.0, t0 + 120.0)])
@@ -413,8 +427,12 @@ def test_rugpull_twins_path_audit_reports_what_the_tick_end_audit_missed(
     before the eroded P10, outside the original 10-min line). No tick-end
     row and no departure violation in either."""
     def run(tighten):
+        # the iteration-2 knobs pinned off (2026-10-21): the SEMANTICS 29
+        # guard judges sim-c9's cell as the crew leaves it and ends the 12 s
+        # (its armed twin: tests/test_egress_guard.py::test_rugpull_control_
+        # no_departure_inside_the_line_with_the_guard)
         s = _session(tmp_path, ign_dist_m=4_600.0,
-                     cfg={"spread_any_angle": False})
+                     cfg=dict({"spread_any_angle": False}, **ITER2_OFF))
         st, crew, cur, _gap = _arm_mid_deploy(s)
         _inject_spot_fire(s, st, cur)
         st = s.tick()
@@ -494,7 +512,12 @@ def test_homes_mode_withdrawal_egress_is_inside_even_the_original_line(
                                       corridor_erosion_tiered=False,
                                       escape_hysteresis_margin_min=0.0,
                                       transit_cold_black_by_class=False,
-                                      crew_work_judged=False),
+                                      crew_work_judged=False,
+                                      # the iteration-2 knobs (2026-10-21)
+                                      # pinned off: the finding is the pre-
+                                      # rule escape choice (SEMANTICS 28's
+                                      # durable egress picks another target)
+                                      **ITER2_OFF),
                    tile_dir=d, roads_module=None)
     loc = LOCATIONS[KEY]
     ign = geo.destination(loc.center, loc.hazard_wind_dir_deg, 4_600.0)
@@ -534,9 +557,11 @@ def test_every_fire_at_the_door_counts_the_pinned_controls_late_departure(
     counted nothing; every fire at the door counts it, on every tick from
     that departure, naming the planted fire. The rest of the control is
     unchanged (served 9)."""
+    # the iteration-2 knobs pinned off as well (2026-10-21): the control is
+    # the pre-rule twin (the SEMANTICS 29 guard changes which stops it works)
     s = _session(tmp_path, ign_dist_m=4_600.0,
-                 cfg={"crew_work_judged": False,
-                      "crew_ingress_judged": False})
+                 cfg=dict({"crew_work_judged": False,
+                           "crew_ingress_judged": False}, **ITER2_OFF))
     st, crew, cur, _gap = _arm_mid_deploy(s)
     spot = _inject_spot_fire(s, st, cur)
     st = s.tick()
@@ -641,10 +666,14 @@ def test_extended_campfire_scale_egress_transits_are_reported():
     if not simui.tile_file(key, fire_zone="extended").exists():
         pytest.skip("LOUD SKIP: paradise_ca extended tile not cached")
     loc = simui.LOCATIONS[key]
+    # the iteration-2 knobs pinned off (2026-10-21): this is iteration 1's
+    # yardstick for them — their armed twin, through all four drives:
+    # tests/test_crew_pocket.py::test_extended_campfire_scale_armed_twin
     s = simui.SimSession(
         key, 20, 2, seed="alerted|paradise_ca",
-        cfg_overrides={"spotting_enabled": True, "grass_ros_floor_frac": 0.10,
-                       "deploy_min": 15.0},
+        cfg_overrides=dict({"spotting_enabled": True,
+                            "grass_ros_floor_frac": 0.10,
+                            "deploy_min": 15.0}, **ITER2_OFF),
         fire_zone="extended")
     ign = _geo.destination(loc.center, loc.hazard_wind_dir_deg, 13_500.0)
     s.ignite(ign.lat, ign.lon, intensity="high",

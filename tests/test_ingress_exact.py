@@ -37,8 +37,19 @@ from tests.test_crew_work_judged import _crew_at, _paint, _stop
 from tests.test_simui_policy import (_arm_mid_deploy, _inject_spot_fire,
                                      _session)
 
+#: ... and the iteration-2 knobs (SAFETY SEMANTICS 28-33, 2026-10-21), armed
+#: by the simulator since: this file's goldens and derivations predate
+#: them too (their own goldens and armed behaviour: tests/test_crew_pocket.
+#: py, test_egress_guard.py, test_stage_by_need.py, test_egress_margin.py)
+ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
+             "egress_corridor_guard": False,
+             "reinforce_stage_by_need": False, "idle_restage": False,
+             "route_margin_egress_roads_min": 0.0,
+             "escape_pocket_exit": False, "plan_egress_time_deadline": False,
+             "crew_overrun_ledger": False}
 ITER1_OFF = {"crew_path_audit": False, "dispatch_keep_frozen": False,
-             "plan_route_exact": False, "crew_ingress_judged": False}
+             "plan_route_exact": False, "crew_ingress_judged": False,
+             **ITER2_OFF}
 
 
 def _only(knob):

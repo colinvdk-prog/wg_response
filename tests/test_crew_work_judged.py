@@ -46,8 +46,19 @@ OFF = {"crew_work_judged": False}
 #: simulator arms since: OFF reproduces the sessions this file's goldens and
 #: pinned controls were derived on. Their armed twins: tests/test_crew_path_
 #: audit.py and tests/test_ingress_exact.py.
+#: ... and the iteration-2 knobs (SAFETY SEMANTICS 28-33, 2026-10-21), armed
+#: by the simulator since: this file's goldens and derivations predate
+#: them too (their own goldens and armed behaviour: tests/test_crew_pocket.
+#: py, test_egress_guard.py, test_stage_by_need.py, test_egress_margin.py)
+ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
+             "egress_corridor_guard": False,
+             "reinforce_stage_by_need": False, "idle_restage": False,
+             "route_margin_egress_roads_min": 0.0,
+             "escape_pocket_exit": False, "plan_egress_time_deadline": False,
+             "crew_overrun_ledger": False}
 ITER1_OFF = {"crew_path_audit": False, "dispatch_keep_frozen": False,
-             "plan_route_exact": False, "crew_ingress_judged": False}
+             "plan_route_exact": False, "crew_ingress_judged": False,
+             **ITER2_OFF}
 
 
 def _hash(st):
@@ -135,10 +146,13 @@ def test_knob_off_is_byte_identical_and_still_overruns(tmp_path, world):
 @pytest.mark.parametrize("world", sorted(GOLDENS))
 def test_knob_on_the_same_worlds_have_no_overrun(tmp_path, world):
     """Armed (the simulator default): no crew-overrun row on any tick, and
-    the sessions agree with the pre-rule ones up to the world change."""
+    the sessions agree with the pre-rule ones up to the world change. The
+    run ledger (SAFETY SEMANTICS 33, 2026-10-21, reporting only) is pinned
+    off: it adds the run's totals to every tick's scoreboard, so no state
+    matches a pre-rule one (its own test: tests/test_overrun_ledger.py)."""
     any_angle, spot_d, nth, ticks, golden, _rows = GOLDENS[world]
     hashes, rows, s = _golden_world(tmp_path, any_angle, spot_d, nth, ticks,
-                                    {})
+                                    {"crew_overrun_ledger": False})
     assert s._cfg.crew_work_judged
     assert rows == [0] * len(rows)
     first = len(golden) - ticks              # the first tick after the change
@@ -270,7 +284,11 @@ def test_sixteen_direction_deploy_outrun_by_the_world_change_withdraws(
     moves in the step the spot fire's field takes effect, it withdraws
     (cause work_judged: it would leave 8.5 min past its latest lawful
     departure, every fire and its own cell counted)."""
-    _h, rows, s = _golden_world(tmp_path, False, 1500.0, 2, 6, {})
+    # the iteration-2 knobs pinned off (2026-10-21): with the SEMANTICS 29
+    # guard the stop's cell is judged as the crew leaves it, so the same
+    # withdrawal carries a 9.3-min deficit (tests/test_egress_guard.py::
+    # test_the_sixteen_direction_withdrawal_counts_the_cell_exit)
+    _h, rows, s = _golden_world(tmp_path, False, 1500.0, 2, 6, ITER2_OFF)
     assert rows == [0] * len(rows)
     (w,) = s.state()["withdrawn"]
     assert (w["client_id"], w["cause"]) == ("sim-c15", "work_judged")
@@ -300,9 +318,13 @@ def test_rugpull_twins_armed_control_keeps_no_stale_unlawful_work(tmp_path):
     tests/test_crew_path_audit.py::test_rugpull_twins_path_audit_reports_
     what_the_tick_end_audit_missed is the armed twin."""
     def run(tighten, cfg=None):
+        # the iteration-2 knobs pinned off (2026-10-21): with the SEMANTICS
+        # 29 guard the control also releases sim-c9 (its cell judged as the
+        # crew leaves it: the 12 s) — tests/test_egress_guard.py is the
+        # armed twin
         s = _session(tmp_path, ign_dist_m=4_600.0,
                      cfg=dict(cfg or {}, spread_any_angle=False,
-                              crew_path_audit=False))
+                              crew_path_audit=False, **ITER2_OFF))
         st, crew, cur, _gap = _arm_mid_deploy(s)
         _inject_spot_fire(s, st, cur)
         st = s.tick()

@@ -587,6 +587,16 @@ class _Ctx:
             cl = c.loc()
             self._cstart[c.crew_id] = (cl, self._lkey(cl), self._point(cl))
         self._zkeys = [(z, self._lkey(z.loc)) for z in safe_zones]
+        # A STOP'S EGRESS FITS ITS DEADLINE (contracts plan_egress_time_
+        # deadline, SAFETY SEMANTICS 32): a stop departing at d needs a zone
+        # whose egress leg is lawful at d (d <= T*) AND that it reaches by
+        # the home's latest departure (d + egress <= latest_depart) — the
+        # simulator's arrival guard's law; the per-job threshold is memoised
+        # in _egx (job key -> max over zones of min(T*, latest - egress)).
+        # Off: the egress test is d <= T* alone (byte-identical).
+        self._egt = bool(getattr(cfg, "plan_egress_time_deadline", False))
+        self._egx = {}
+        self._zbyid = {z.zone_id: (z, zk) for z, zk in self._zkeys}
         jrec = {}
         for k, job in jobmap.items():
             cl = job.client.loc
@@ -749,6 +759,32 @@ class _Ctx:
             self._ezx[b] = x
         return x
 
+    def _egress_s(self, loc, k, zid: str) -> float:
+        """SAFETY SEMANTICS 32: the effective egress seconds from loc (leg
+        key k) to zone zid — max(tier-0, the road's time), the simulator's
+        road-egress guard's conservative time (its tier-0 is this model)."""
+        z, zk = self._zbyid[zid]
+        return max(travel_time_s(loc, z.loc, self.cfg),
+                   self._travel_k(loc, z.loc, k, zk))
+
+    def _egx_key(self, key) -> float:
+        """SAFETY SEMANTICS 32 (contracts plan_egress_time_deadline): the
+        latest departure from job `key`'s stop that has an egress — some
+        zone whose leg is lawful (d <= T*) and reached by the job's latest
+        departure (d + egress <= latest_depart): max over the stop's egress
+        order of min(T*, latest_depart - egress). Memoised per job."""
+        x = self._egx.get(key)
+        if x is None:
+            rec = self._jrec[key]
+            loc, k, pb, ld = rec[0], rec[1], rec[2], rec[4]
+            x = -math.inf
+            for zid, zt in self._ezones_p(pb):
+                v = min(zt, ld - self._egress_s(loc, k, zid))
+                if v > x:
+                    x = v
+            self._egx[key] = x
+        return x
+
     def _road_route(self, a, b, mode: str = "ingress"):
         """Memoized road_provider lookup for the a->b leg; None when no
         provider, no route, or the route is the off-network chord fallback
@@ -852,6 +888,12 @@ class _Ctx:
             # road legs use the leaner road margin (the chord margin's extra
             # width compensated flat-travel-model error; see contracts)
             mm = (self.cfg.route_margin_roads_min if rr is not None else None)
+            # ROAD EGRESS CARRIES TRAFFIC SLACK (contracts route_margin_
+            # egress_roads_min, SAFETY SEMANTICS 31): an EGRESS leg on roads
+            # needs the larger egress margin (0 = off: the road margin)
+            em = getattr(self.cfg, "route_margin_egress_roads_min", 0.0)
+            if mode == "egress" and rr is not None and em > 0.0:
+                mm = max(mm, em)
             v = UNREACHED
             for iid, ras in self.rasters:
                 # safety.leg_tstar == safety.LegOracle(...)
@@ -878,9 +920,14 @@ class _Ctx:
         comparison (same semantics as corridor_safe over all rasters)."""
         return depart_s <= self.leg_latest_depart(a, b)
 
-    def egress(self, loc, depart_s):
+    def egress(self, loc, depart_s, latest_depart_s=None):
         """Safely-reachable SafeZone at depart_s, checked against every
         incident raster. Returns (safe, zone_id).
+
+        SAFETY SEMANTICS 32 (contracts plan_egress_time_deadline): given the
+        stop's latest_depart_s, a zone counts only when it is also reached
+        by then (depart_s + its effective egress <= latest_depart_s); None
+        or the knob off = the T* test alone (legacy).
 
         Legacy (route_alternatives <= 1): nearest-first — ascending
         (travel_time, zone_id), first-safe-wins, exactly safety.egress_choice.
@@ -894,6 +941,12 @@ class _Ctx:
         zl = self._ezones.get(k)
         if zl is None:
             zl = self._ezones_k(loc, k)
+        if self._egt and latest_depart_s is not None:
+            for zid, tstar in zl:
+                if (depart_s <= tstar and depart_s
+                        <= latest_depart_s - self._egress_s(loc, k, zid)):
+                    return (True, zid)
+            return (False, "")
         for zid, tstar in zl:
             if depart_s <= tstar:
                 return (True, zid)
@@ -914,7 +967,13 @@ class _Ctx:
                            key=lambda zz: (self._travel_k(loc, zz[0].loc, k,
                                                           zz[1]),
                                            zz[0].zone_id))
-            zl = [(z.zone_id, self._tstar_k(loc, z.loc, k, zk, "ingress"))
+            # SAFETY SEMANTICS 31 (contracts route_margin_egress_roads_min):
+            # with the egress margin armed the zone legs are judged as EGRESS
+            # legs (its margin on roads); off = the legacy ingress-mode T*
+            emode = ("egress" if getattr(self.cfg,
+                                         "route_margin_egress_roads_min",
+                                         0.0) > 0.0 else "ingress")
+            zl = [(z.zone_id, self._tstar_k(loc, z.loc, k, zk, emode))
                   for z, zk in order]
         self._ezones[k] = zl
         return zl
@@ -954,6 +1013,15 @@ class _Ctx:
                 break
             zl = self._ezones_p(pb)
             zid = None
+            if self._egt:
+                # SAFETY SEMANTICS 32: the zone must also be reached by the
+                # home's latest departure
+                for z_id, zt in zl:
+                    if (depart <= zt and depart <= ld - self._egress_s(
+                            _cl, _clk, z_id)):
+                        zid = z_id
+                        break
+                zl = ()
             for z_id, zt in zl:
                 if depart <= zt:
                     zid = z_id
@@ -1026,6 +1094,7 @@ class _Ctx:
         tti = self._tti
         tsi = self._tsi
         ezx = self._ezx
+        egt = self._egt
         dep_s = self._dep_s
         homes = self.homes_mode
         for i in range(p0, len(keys)):
@@ -1046,9 +1115,13 @@ class _Ctx:
                 ts = self._tstar_ab(pa, pb)
             if not t <= ts:
                 return None
-            zx = ezx[pb]
-            if zx is None:
-                zx = self._ezmax_p(pb)
+            if egt:
+                # SAFETY SEMANTICS 32: a lawful zone reached by the deadline
+                zx = self._egx_key(keys[i])
+            else:
+                zx = ezx[pb]
+                if zx is None:
+                    zx = self._ezmax_p(pb)
             if not depart <= zx:                 # no lawful egress zone
                 return None
             # _gel_fresh_frac
@@ -1101,7 +1174,8 @@ class _Ctx:
             return None
         if not t <= self._tstar_ab(pa, pb):
             return None
-        if not depart <= self._ezmax_p(pb):
+        if not depart <= (self._egx_key(key) if self._egt
+                          else self._ezmax_p(pb)):
             return None
         return arrive, service, depart
 
@@ -1147,7 +1221,8 @@ class _Ctx:
             if not self.corridor_ok(loc, job.client.loc, self.now_s):
                 outcomes.add("corridor")
                 continue
-            if not self.egress(job.client.loc, depart)[0]:
+            if not self.egress(job.client.loc, depart,
+                               job.latest_depart_s)[0]:
                 outcomes.add("egress")
                 continue
             outcomes.add("feasible")
@@ -1884,7 +1959,8 @@ def _late_shift(ctx: _Ctx, crew_id: str, keys, stops, frozen_n: int):
         new_depart = min(max(stops[i].depart_s, desired), cap)
         if new_depart <= stops[i].depart_s + _EPS:
             continue
-        if not ctx.egress(job.client.loc, new_depart)[0]:
+        if not ctx.egress(job.client.loc, new_depart,
+                          job.latest_depart_s)[0]:
             continue
         if i + 1 < n and not ctx.corridor_ok(job.client.loc,
                                              ctx.jobmap[keys[i + 1]].client.loc,
@@ -1905,7 +1981,7 @@ def _late_shift(ctx: _Ctx, crew_id: str, keys, stops, frozen_n: int):
         if service < arrive - _EPS:            # defensive; caps should prevent this
             service = max(arrive, job.earliest_useful_start_s)
             depart = service + cfg.deploy_min * 60.0
-        _eok, zid = ctx.egress(job.client.loc, depart)
+        _eok, zid = ctx.egress(job.client.loc, depart, job.latest_depart_s)
         out.append(_Stop(key, arrive, service, depart,
                          (job.latest_depart_s - depart) / 3600.0,
                          _gel_fresh_frac(job, depart, cfg),

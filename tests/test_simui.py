@@ -48,6 +48,16 @@ from wgresponse.terrain import SyntheticTerrain, save_ascii_tile
 #: fire behaviour and the same safety assertions, never re-pinned numbers.
 #: City weather has its own coverage in tests/test_city_weather.py.
 LEGACY_WX = {"sim_weather_profile": "generic"}
+#: the iteration-2 crew-safety knobs (SAFETY SEMANTICS 28-33, 2026-10-21),
+#: which the simulator arms since — pinned off where a test below was derived
+#: before them (their own tests: tests/test_crew_pocket.py, test_egress_
+#: guard.py, test_stage_by_need.py, test_egress_margin.py)
+ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
+             "egress_corridor_guard": False,
+             "reinforce_stage_by_need": False, "idle_restage": False,
+             "route_margin_egress_roads_min": 0.0,
+             "escape_pocket_exit": False, "plan_egress_time_deadline": False,
+             "crew_overrun_ledger": False}
 
 # Fast-engine overrides shared by the scripted-session tests: small ensemble,
 # coarse grid, short horizon — config only, never forked physics.
@@ -709,10 +719,12 @@ def _dist_to_polyline_m(p, pts):
     return min(_pt_seg_dist_m(p, a, b) for a, b in zip(pts, pts[1:]))
 
 
-def _road_session(tmp_path, fake, seed="road1", n_clients=8, n_crews=1):
+def _road_session(tmp_path, fake, seed="road1", n_clients=8, n_crews=1,
+                  cfg=None):
     d = _controlled_tile_dir(tmp_path, "boulder_co")
     s = SimSession("boulder_co", n_clients, n_crews, seed=seed,
-                   cfg_overrides=dict(FAST), tile_dir=d, roads_module=fake)
+                   cfg_overrides=dict(FAST, **(cfg or {})), tile_dir=d,
+                   roads_module=fake)
     ign = _upwind_ignition("boulder_co", 8_000.0)
     s.ignite(ign.lat, ign.lon, intensity="high")
     return s
@@ -817,7 +829,11 @@ def test_road_egress_guard_withdraws_before_unsafe_deploy(tmp_path):
     unsafe completion never happens."""
     zones = [z.loc for z in LOCATIONS["boulder_co"].safe_zones]
     fake = _FakeRoads(speed_mps=15.0, slow_to=zones, slow_time_s=40 * 3600.0)
-    s = _road_session(tmp_path, fake)
+    # the iteration-2 knobs pinned off (2026-10-21): the SEMANTICS 29 guard
+    # and the 31 egress margin refuse the stop before the crew sets out (no
+    # way out of it on a 40 h road) — the road-egress guard under test never
+    # gets a deploy to withdraw (tests/test_egress_guard.py: the guard's own)
+    s = _road_session(tmp_path, fake, cfg=ITER2_OFF)
     st = None
     for _ in range(8):
         st = s.tick()
@@ -2878,8 +2894,11 @@ def test_crew_safety_paradise_founder_repro_under_crown_fire():
         pytest.skip("LOUD SKIP: no data/tiles/paradise_ca_ext.wgt — the founder "
                     "Paradise repro is not exercised this run "
                     "(py -3 tools/fetch_sim_tiles.py --extended)")
+    # the iteration-2 knobs pinned off (2026-10-21): the founder repro's
+    # control — crews ending their area escape idle on old black — was
+    # derived before SEMANTICS 28 sends them to durable refuges instead
     s = SimSession("paradise_ca", 64, 5, seed="caught-1", fire_zone="extended",
-                   cfg_overrides=dict(LEGACY_WX))
+                   cfg_overrides=dict(LEGACY_WX, **ITER2_OFF))
     assert s._cfg.crown_fire and s._cfg.old_black_refuge
     s.ignite(39.83, -121.52, intensity="extreme")
     on_old_black = 0

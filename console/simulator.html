@@ -177,6 +177,9 @@
                    border-radius: 6px; background: #06300d; color: var(--cleared); }
   #sb_violations.viol { background: #b3121f; color: #fff;
                         animation: vblink 0.7s linear infinite; }
+  /* SAFETY SEMANTICS 33 (scoreboard crew_overruns_total): no row THIS tick,
+     but the run has had some — amber, never the green "SAFE" */
+  #sb_violations.past { background: #4a2a00; color: var(--amber); }
   @keyframes vblink { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
   /* SAFETY SEMANTICS 10c crews-caught breakout + 10a relocation counter. The
      overrun count sits right under violations and goes red/blinking when >0
@@ -1122,6 +1125,10 @@ const OUTCOME_LABEL = {
 const outcomeLabel = o => OUTCOME_LABEL[o] || o || "";
 // SEMANTICS 9 REGIONAL / MUTUAL-AID CREWS: crew region label (tooltip + card).
 const REGION_LABEL = { in_zone: "in-zone", reg_1h: "1h away", reg_3h: "3h away" };
+// SAFETY SEMANTICS 28 / 30 (2026-10-21): the moves the iteration-2 laws make,
+// named for what they are (the SEM-10 reasons keep their labels below)
+const RELOC_LABEL = { restage: "staging toward the work",
+  last_exit: "leaving by its last exit", pocket_exit: "leaving its pocket" };
 // FIRE PROJECTION BANDS (founder UX contract): the fire the crowd can read.
 // state.fire_bands = {h1, h5, h24} rings — RED = reached in <1 h, ORANGE =
 // <5 h, YELLOW = <24 h. Solid borders, faint fills; replaces the old
@@ -1263,6 +1270,19 @@ function fmtClock(t_s) {
   if (t_s == null) return "–";
   const d = new Date(t_s * 1000);
   return d.toISOString().replace("T", " ").slice(5, 16) + "Z";
+}
+// SAFETY SEMANTICS 25 / 33: what a crew_overruns row says. A TRANSIT row (the
+// path audit: the crew drove through the pessimistic front's band between two
+// tick ends — it is not standing in the fire now) reads "drove through the
+// band at hh:mm"; a tick-end row is a crew caught where it stands.
+function overrunLabel(o) {
+  if (o && o.transit) {
+    const hhmm = o.at_s != null ? new Date(o.at_s * 1000).toISOString().slice(11, 16) + "Z" : "–";
+    const past = (o.margin_min != null && isFinite(o.margin_min) && o.margin_min < 0)
+      ? `, ${(-o.margin_min).toFixed(0)} min past the line` : "";
+    return `DROVE THROUGH THE BAND at ${hhmm}${past}`;
+  }
+  return `CAUGHT IN FIRE (${(o && o.reason) || ""})`;
 }
 // SIM CLOCK (founder 2026-07-11): "Xh YYm" from a second count (fire age).
 function fmtDur(sec) {
@@ -2520,11 +2540,20 @@ function render(st) {
   $("sb_margin").textContent = mm == null ? "n/a" : mm.toFixed(2) + " h";
   $("sb_margin").style.color = (mm != null && mm < 1.0) ? "var(--extreme)" : "";
   const nv = sb.violations ?? 0;
-  $("sb_violations").textContent = nv === 0 ? "0 — SAFE" : `${nv} — UNSAFE`;
+  // SAFETY SEMANTICS 33 (additive keys): the run's crew-overrun rows so far —
+  // a tick with no row after one that had some is NOT "SAFE"
+  const runRows = sb.crew_overruns_total, runTransit = sb.transit_overruns_total;
+  const pastRows = (nv === 0 && runRows != null && runRows > 0);
+  $("sb_violations").textContent = nv > 0 ? `${nv} — UNSAFE`
+    : pastRows ? `0 now — ${runRows} this run` : "0 — SAFE";
   $("sb_violations").classList.toggle("viol", nv > 0);
+  $("sb_violations").classList.toggle("past", pastRows);
   // SAFETY SEMANTICS 10a relocations (cumulative) + 10c crews-caught breakout.
   $("sb_relocations").textContent = sb.relocations ?? 0;
-  $("sb_overruns").textContent = nOverruns;
+  $("sb_overruns").textContent = runRows != null
+    ? `${nOverruns} now · ${runRows} this run` +
+      (runTransit ? ` (${runTransit} drove through the band)` : "")
+    : nOverruns;
   $("sb_overruns_row").classList.toggle("hot", nOverruns > 0);
   // A CREW THAT LEAVES THE MAP IS OUT (founder ruling 2026-09-26)
   const nLeft = sb.crews_left_map ?? 0;
@@ -2572,9 +2601,18 @@ function render(st) {
   // when the count returns to 0. The scoreboard violations already blink red.
   const cob = $("crewoverrunbanner");
   if (nOverruns > 0) {
-    const caught = overrunRows.map(o => o.crew_id).filter(x => x != null);
-    cob.textContent = `⚠ CREW OVERRUN — ${nOverruns} crew${nOverruns === 1 ? "" : "s"} caught in fire` +
-      (caught.length ? " (" + caught.join(", ") + ")" : "");
+    // SAFETY SEMANTICS 25 / 33: a transit row is a crew that DROVE THROUGH the
+    // band between tick ends, not one standing in the fire — said as such
+    const caughtRows = overrunRows.filter(o => o && !o.transit);
+    const transitRows = overrunRows.filter(o => o && o.transit);
+    const parts = [];
+    if (caughtRows.length)
+      parts.push(`${caughtRows.length} crew${caughtRows.length === 1 ? "" : "s"} caught in fire (` +
+        caughtRows.map(o => o.crew_id).join(", ") + ")");
+    transitRows.forEach(o => parts.push(`${o.crew_id} ${overrunLabel(o).toLowerCase()}`));
+    if (!parts.length)
+      parts.push(`${nOverruns} crew${nOverruns === 1 ? "" : "s"} caught in fire`);
+    cob.textContent = "⚠ CREW OVERRUN — " + parts.join(" · ");
     cob.style.display = "block";
   } else { cob.style.display = "none"; }
 
@@ -2871,9 +2909,9 @@ function render(st) {
       (c.inbound && c.arrival_eta_s != null
         ? `<br>▸ inbound — arrives in ${Math.max(0, Math.ceil(c.arrival_eta_s / 60))} min` : "") +
       (c.relocating
-        ? `<br>⟳ REPOSITIONING — ${c.relocate_reason === "proactive_escape" ? "proactive escape" : c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened"}` : "") +
+        ? `<br>⟳ REPOSITIONING — ${RELOC_LABEL[c.relocate_reason] || (c.relocate_reason === "proactive_escape" ? "proactive escape" : c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened")}` : "") +
       (overrunIds[c.crew_id]
-        ? `<br>⚠ CAUGHT IN FIRE (${overrunIds[c.crew_id].reason || ""})` : "") +
+        ? `<br>⚠ ${overrunLabel(overrunIds[c.crew_id])}` : "") +
       // founder rulings 2026-09-26 (state crews[i].left_map / on_old_black)
       (c.left_map
         ? `<br>⇥ LEFT THE MAP at ${fmtClock(c.left_map_at_s)} — out of the ` +
@@ -3097,9 +3135,11 @@ function render(st) {
     if (c.inbound)
       badges += ` <span class="chip inb" title="out-of-region reinforcement mobilizing on the first ignition (SEMANTICS 9) — excluded from dispatch until it arrives">inbound · ${regionTag}${inbMin != null ? " · " + inbMin + "m" : ""}</span>`;
     if (c.relocating)
-      badges += ` <span class="chip amber" title="continuous crew safety (SEMANTICS 10a/10e): the fire threatens (or is projected to reach) this crew's position — it is repositioning to a currently-safe zone">⟳ repositioning — ${c.relocate_reason === "proactive_escape" ? "proactive escape" : c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened"}</span>`;
+      badges += ` <span class="chip amber" title="continuous crew safety (SEMANTICS 10a/10e): the fire threatens (or is projected to reach) this crew's position — it is repositioning to a currently-safe zone">⟳ repositioning — ${RELOC_LABEL[c.relocate_reason] || (c.relocate_reason === "proactive_escape" ? "proactive escape" : c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened")}</span>`;
     if (overrunIds[c.crew_id])
-      badges += ` <span class="chip caught" title="SEMANTICS 10c: a crew is standing in the fire (the founder's G1/G2 bug) — audited so violations can never read 0 while a crew is in the burn">⚠ CAUGHT IN FIRE (${overrunIds[c.crew_id].reason || ""})</span>`;
+      badges += ` <span class="chip caught" title="${overrunIds[c.crew_id].transit
+        ? "SEMANTICS 25: the path audit — this crew drove through the pessimistic front's band between two tick ends (each sample judged at its own pass time)"
+        : "SEMANTICS 10c: a crew is standing in the fire (the founder's G1/G2 bug) — audited so violations can never read 0 while a crew is in the burn"}">⚠ ${overrunLabel(overrunIds[c.crew_id])}</span>`;
     // founder rulings 2026-09-26: a crew that LEFT THE MAP is out of the
     // simulation (card greyed); a crew on OLD BLACK rests on a refuge
     if (c.left_map)

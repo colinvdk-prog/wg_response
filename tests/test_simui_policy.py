@@ -76,6 +76,17 @@ KEY = "boulder_co"
 # planted fire's P10) — so the demos pin it off; the armed twins are in
 # tests/test_crew_path_audit.py.
 TICK_END_AUDIT = {"crew_path_audit": False}
+#: the iteration-2 crew-safety knobs (SAFETY SEMANTICS 28-33, 2026-10-21),
+#: which the simulator arms since: the slider demos pinning them below were
+#: derived before them (the 29 guard judges a stop's way out and its cell as
+#: the crew leaves it; 28 re-points a withdrawn crew's egress) — their armed
+#: behaviour: tests/test_egress_guard.py, tests/test_crew_pocket.py.
+ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
+             "egress_corridor_guard": False,
+             "reinforce_stage_by_need": False, "idle_restage": False,
+             "route_margin_egress_roads_min": 0.0,
+             "escape_pocket_exit": False, "plan_egress_time_deadline": False,
+             "crew_overrun_ledger": False}
 
 
 def _checkerboard_dir(tmp_path, key=KEY, size_km=20.0, cell_m=500.0,
@@ -227,7 +238,12 @@ def test_frozen_stop_withdrawn_when_buffer_tightens_midflight(tmp_path):
     completing under the old rule stays legal.
     (The tick-end audit's law: TICK_END_AUDIT.)
     """
-    s = _session(tmp_path, ign_dist_m=4_600.0, cfg=TICK_END_AUDIT)
+    # (the iteration-2 knobs, SAFETY SEMANTICS 28-33, 2026-10-21, pinned
+    # off: the 29 one predicate pulls the crew out at the world change
+    # itself, before the slider moves — tests/test_egress_guard.py::test_
+    # the_slider_world_s_crew_leaves_at_the_world_change is the armed twin)
+    s = _session(tmp_path, ign_dist_m=4_600.0,
+                 cfg=dict(TICK_END_AUDIT, **ITER2_OFF))
     # phase 1: arm ANY mid-deploy stop via normal service (wide-open window)
     st, crew, cur, gap_min = _arm_mid_deploy(s)
     victim = cur["client_id"]
@@ -320,7 +336,7 @@ def test_live_tightening_reduces_served_vs_control(tmp_path):
     def run(tighten):
         s = _session(tmp_path, ign_dist_m=4_600.0,
                      cfg=dict(TICK_END_AUDIT, crew_work_judged=False,
-                              crew_ingress_judged=False))
+                              crew_ingress_judged=False, **ITER2_OFF))
         st, crew, cur, _gap = _arm_mid_deploy(s)
         _inject_spot_fire(s, st, cur)          # identical world change
         st = s.tick()
@@ -544,7 +560,7 @@ def test_homes_mode_withdrawal_still_fires(tmp_path):
                                       escape_hysteresis_margin_min=0.0,
                                       transit_cold_black_by_class=False,
                                       crew_work_judged=False,
-                                      **TICK_END_AUDIT),
+                                      **TICK_END_AUDIT, **ITER2_OFF),
                    tile_dir=d, roads_module=None)
     assert s._cfg.dispatch_objective == "homes", "test must run the real default"
     loc = LOCATIONS[KEY]
