@@ -502,6 +502,13 @@ def test_real_session_where_crews_leave_replays_from_its_command_log():
                                   # road — would not form)
                                   "corridor_cell_exact": False,
                                   "crew_egress_judged": False,
+                                  # the dispatch commitment law it was
+                                  # derived under (SAFETY SEMANTICS 26,
+                                  # 2026-10-21: with their frozen stops held
+                                  # these crews keep working — 32 homes by
+                                  # tick 10, not 27 — and none flees off
+                                  # the map)
+                                  "dispatch_keep_frozen": False,
                                   "dispatch_late_shift": True,
                                   "dispatch_plan_on_roads": True,
                                   "dispatch_hold_h": 24.0, "deploy_min": 15.0,

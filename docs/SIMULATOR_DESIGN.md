@@ -1717,3 +1717,130 @@ day; `docs/review/crown_fire_model_2026-10-12.md` section 3.9).
   2026-10-14: Park City and the corridor start where the local code puts them and their
   first hour matches it acre for acre (Park City 10 / 12 / 36 / 112 acres); first step
   15.8 s (Park City) and 20.4 s (corridor) on App Runner.
+
+## The audit sees the whole drive (2026-10-21)
+
+Iteration 1 of the Eagle River valley review's crew-safety lens (the review:
+`scratch_review/eagle_valley/review_iter0_crew_safety.md`; the valley harness:
+`scratch_review/eagle_valley/run_matrix.py`, 33 runs, 12 h; its baseline:
+`iter0_baseline_runs.jsonl`). Three changes, four knobs, each a contracts SAFETY SEMANTICS
+entry, default OFF and armed in the simulator's sim-defaults block (explicit overrides win;
+the live engine moves no crew and audits no crew position):
+
+| Knob | SEMANTICS | What it changes |
+|---|---|---|
+| `crew_path_audit` | 25 | the 10c audit also judges every crew's driven path between tick ends, and each departure against every fire (reports only) |
+| `dispatch_keep_frozen` | 26 | a frozen near-term stop stays on its crew across re-plans (the en-route ping-pong) |
+| `plan_route_exact` | 27a | the planner routes a crew's leg from its exact position (no ~110 m bucket) |
+| `crew_ingress_judged` | 27b | every ingress leg is judged from where the crew is as it starts, not only after a world change |
+
+Code: `simui` `_SimCrew.path_track` / `_mark` (bookkeeping) and the fresh-leg hook in
+`advance()`, `_tick_step` steps 4 / 5 / 6c, `_run_audit`, `_path_overruns`,
+`_path_cell_samples`, `_judge_ingress_start`, `_plan_road_provider`; `dispatch.plan`'s
+incumbent repair (`_inc_key`). Tests: `tests/test_crew_path_audit.py`,
+`tests/test_keep_frozen.py`, `tests/test_ingress_exact.py`.
+
+**For the founder.** The safety scoreboard looked at each crew once every 15 minutes, where
+it stood at that moment. In between, crews drive several kilometres; the review's path probe
+found crews driving through the danger band 12 times in the valley runs, one of them 7 hours
+past the line, and the scoreboard read zero every time. The scoreboard now checks every
+stretch of road a crew drove and every stop it stood at, at the moment it was there, and
+counts it as a violation — marked "in transit" so you can tell it from a crew caught where it
+stands. It also now checks each departure against every fire, not only the one the home was
+coated for. This changes what is reported, never what crews do. Two dispatch fixes ride along:
+a crew a minute from a home it is committed to is no longer sent elsewhere whenever another
+crew finishes (that is what made crews shuttle between homes), and the planner now judges the
+exact road a crew will drive, from exactly where it is — and every drive to a home is checked
+again the moment the crew sets out.
+
+**What the review measured** (the review's runtime prototypes over the 33 valley runs; the
+integrator re-runs the matrix on this commit):
+
+| | baseline | keep frozen (26) | exact routes (27a) | 26 + durable egress + 27a |
+|---|---|---|---|---|
+| path-audit band samples / episodes | 1,029 / 12 | 548 / 10 | 1,000 / 11 | 245 / 7 |
+| tick-end 10c rows · departure violations | 0 · 0 | 0 · 0 | 0 · 0 | 0 · 0 |
+| homes served | 1,023 | 1,047 | 1,025 | 1,046 |
+| reached / unprotected | 125 / 20 | 125 / 15 | 125 / 20 | 125 / 15 |
+| en-route head swaps (km) | 39 (261) | 0 | 33 (239) | 0 |
+
+(The "durable egress" column is the review's R3 prototype, not in this iteration.)
+
+**The law.**
+- **25, the path audit.** Each step every crew records each position and mode change with its
+  time (`path_track`; pure bookkeeping). The audit judges every field cell a driven span passed
+  through (`geo.path_cell_runs`, the 20a walk) at the moment the crew left it, and every spot
+  it stood at at the moment it left — the tick-end law exactly (burned, or eroded P10 within
+  `egress_buffer_min`; old black when it already was when the crew got there). One row per
+  crew per step: a crew the tick-end audit already counts keeps that row; one clear at the
+  tick end but exposed on the way gets a `crew_overruns` row with `transit: true`, its worst
+  sample's `at_s`, place, mode and status, `margin_min` and `exposed_s` — counted in
+  `scoreboard.violations` and `crew_overruns`. Each serviced departure reads every fire's P10
+  at the home; the audit row names `worst_incident_id` when another fire bounds it. A direct
+  `_run_audit()` call still judges the instant. With one fire and nothing exposed on the way
+  it is byte-identical to the tick-end audit.
+- **26, keep frozen.** The simulator's job pool keeps an eligible crew's frozen stops, and
+  `dispatch.plan` matches each incumbent stop to its client's surviving job by `client_id`
+  (the worst-case fire may have changed), so the commitment freeze holds it — dropped only
+  when infeasible.
+- **27a, exact routes.** The plan-on-roads cache is keyed on exact endpoints, so the planner's
+  leg for a crew is the route its own leg resolves (`_leg_route`).
+- **27b, every ingress leg judged.** The 23a judgement (the road at the 10c line at every pass
+  time, the stop still workable against every fire) runs as every ingress leg starts — from
+  rest, from a stop, and a fresh leg begun en route after a re-plan — whatever generation the
+  stop carries. A stop that fails is released (note "released … (SEMANTICS 27b)", once per
+  crew, client and field generation).
+
+**Measured on this commit** (goldens computed on commit 7bebc7a, before the rules; each knob
+alone against all four off):
+
+| World | Knob | All four off | The knob alone |
+|---|---|---|---|
+| valley Eagle-Vail, south start, extreme, 10 ticks | 25 | byte-identical | byte-identical but tick 10: sim-g2's egress 20.9 min past the line for 16 s, the run's one violation |
+| valley Eagle-Vail, canonical, moderate, 6 ticks | 26 | byte-identical | tick 5: sim-g1 (0.8 min from sim-c10) and sim-g2 (8.3 min from sim-c22) keep their frozen stops instead of being sent to sim-c37 / sim-c23; 5 homes by tick 6, not 4 |
+| Malibu one-click, extreme, 12 ticks | 27a | byte-identical | tick 11: every route the planner asked for from sim-g1's position was another point's (~68 m off); now its own |
+| Boulder one-click, chord planning, 3 ticks | 27b | byte-identical | tick 1: the road leg the chord planner sent sim-g1 down (the path audit sees it the same tick) is refused as it sets out |
+| Paradise one-click, chord planning, 3 ticks | 27b | byte-identical | the tick-3 crew overrun of the pre-rule session is gone |
+
+On the 12 one-click scenarios (each knob alone, 3 h, plan-on-roads as the page runs them):
+26 changed 10 (from 1-2.5 h), 27a one (Malibu, from 2.75 h), 27b none; with chord planning
+27b released stops in 6 (1-10 each).
+
+**What the path audit found in the existing choreographies.** Every existing test whose law is
+"no row, ever" holds for the tick-end audit; under the path audit these are reported (each
+pins the path audit off with that comment; its armed twin in `tests/test_crew_path_audit.py`
+pins exactly what is seen):
+- the extended Camp-Fire-scale Paradise run (`test_sem10d_extended_campfire_scale_no_overrun_ever`):
+  four egress drives through the band between ticks — the first at tick 65 (8 h past the
+  line, 13.6 min of the step), then ticks 82, 88, 89;
+- slider withdrawals (`test_simui_policy.py`, `test_withdrawal_law_holds_under_any_angle`): the
+  withdrawn crew's egress inside the raised line (no road on the audit's side of it; 20b takes
+  the least exposure) — in the homes-mode demo 5.0 min before the eroded P10, inside even the
+  demo's original 10-min line;
+- the rug-pull control: the crew drives out of the stop it just worked 12 s after the 10c line
+  reached the stop's cell — its departure lawful at that instant (the 23a / 27b workability
+  law tests the stop's cell at the departure instant; the walk judges the cell as the crew
+  leaves it);
+- the pinned SEMANTICS-23-off control: the departure from sim-c15 4.8 min after the planted
+  fire's P10 (now a departure violation naming that fire);
+- the coarse-jump burned-out map: both crews cross one grass cell whose eroded P10 is 19 h
+  old (the band the burned-out ground beside it projects) for 20 s;
+- a fire lit on a placed crew (strict law): its drive out through the burning ground.
+
+**Tests pinned** (none weakened; each keeps its own law and says why): the 23 / 20 goldens and
+their controls pin the four knobs off (they predate them); the slider demos, the burned-out
+coarse map, the placed-crew strict law and the extended Paradise run pin `crew_path_audit`
+off (their law is the tick-end audit's); the 23a current-stop arm and the 23-off rug-pull
+reproduction pin `crew_ingress_judged` off (27b judges what 23 deliberately leaves to
+dispatch); the Beaver Creek left-map probe pins `dispatch_keep_frozen` off (with frozen stops
+held its crews keep working — 32 homes by tick 10, not 27 — and none leaves the map).
+
+**Limits.** The path audit reports; it never moves a crew (the review's iteration 2 — durable
+egress, the last-exit trigger, the egress-corridor guard — steers them). The workability law
+still tests a stop's cell at the departure instant. A crew whose plan is unchanged keeps its
+live leg, not the planner's fresh route from where it now is. With plan-on-roads off the
+planner still judges chords: 27b refuses the road legs it disagrees with, and the planner may
+re-offer them while the disagreement lasts (never driven; said once per field generation). The
+planner's road margin (`route_margin_roads_min`) is the 10c line only while it equals
+`egress_buffer_min`. The harness's 33-run matrix and the one-click sweep under the new
+defaults are the integrator's to run on this commit.

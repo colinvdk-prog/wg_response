@@ -3122,6 +3122,11 @@ def test_crew_safety_determinism_same_script(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_sem10d_extended_campfire_scale_no_overrun_ever():
+    # "no overrun ever" is the TICK-END audit's law (crew_path_audit pinned
+    # off, 2026-10-21): the path audit sees four egress drives through the
+    # band between ticks (from tick 65) — tests/test_crew_path_audit.py::
+    # test_extended_campfire_scale_egress_transits_are_reported is the armed
+    # twin (the yardstick for the review's iteration-2 egress laws).
     from wgresponse import geo as _geo
     from wgresponse import simui
     key = "paradise_ca"
@@ -3129,7 +3134,7 @@ def test_sem10d_extended_campfire_scale_no_overrun_ever():
     s = simui.SimSession(
         key, 20, 2, seed="alerted|paradise_ca",
         cfg_overrides={"spotting_enabled": True, "grass_ros_floor_frac": 0.10,
-                       "deploy_min": 15.0},
+                       "deploy_min": 15.0, "crew_path_audit": False},
         fire_zone="extended")
     ign = _geo.destination(loc.center, loc.hazard_wind_dir_deg, 13_500.0)
     s.ignite(ign.lat, ign.lon, intensity="high",

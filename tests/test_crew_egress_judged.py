@@ -465,7 +465,13 @@ def test_road_escape_into_the_black_cell_exact(tmp_path):
 # SEMANTICS 20, on worlds where it bites)
 # ---------------------------------------------------------------------------
 
-OFF = {"corridor_cell_exact": False, "crew_egress_judged": False}
+OFF = {"corridor_cell_exact": False, "crew_egress_judged": False,
+       # the 2026-10-21 crew-safety knobs (SAFETY SEMANTICS 25-27), armed by
+       # the simulator since: the goldens below predate them (their own
+       # goldens: tests/test_crew_path_audit.py, tests/test_keep_frozen.py,
+       # tests/test_ingress_exact.py)
+       "crew_path_audit": False, "dispatch_keep_frozen": False,
+       "plan_route_exact": False, "crew_ingress_judged": False}
 
 #: sha256(state minus cmd_log)[:16] per tick, computed on 8973cd9
 GOLDEN_MALIBU = ["9ef10b49b9e37515", "00776b4a801c205d", "ae4d5f0d648277d2",

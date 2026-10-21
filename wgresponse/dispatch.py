@@ -2178,6 +2178,22 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
             continue
         jobmap[key] = job
 
+    # A COMMITTED NEAR-TERM STOP STAYS COMMITTED (contracts
+    # dispatch_keep_frozen, SAFETY SEMANTICS 26): an incumbent stop is matched
+    # to its client's surviving job by client_id — after step 0 the pool holds
+    # one job per client, keyed by the worst-case fire, which a second fire
+    # may have changed since the stop was planned — so the commitment freeze
+    # below holds it. Knob off: matched by the exact (client, incident) key,
+    # byte-identical.
+    keep_frozen = bool(getattr(cfg, "dispatch_keep_frozen", False))
+    client_key = ({k[0]: k for k in jobmap} if keep_frozen else {})
+
+    def _inc_key(st):
+        key = (st.client_id, st.incident_id)
+        if keep_frozen and key not in jobmap:
+            return client_key.get(st.client_id, key)
+        return key
+
     inc_assign = {}
     inc_first = set()
     frozen_keys = set()
@@ -2185,7 +2201,7 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
         for cid in sorted(incumbent.plans):
             cp = incumbent.plans[cid]
             for idx, st in enumerate(cp.stops):
-                key = (st.client_id, st.incident_id)
+                key = _inc_key(st)
                 inc_assign[key] = cid
                 if idx == 0:
                     inc_first.add(key)
@@ -2203,8 +2219,8 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
             cp = incumbent.plans.get(cid)
             if cp is None:
                 continue
-            keys = [(st.client_id, st.incident_id) for st in cp.stops
-                    if (st.client_id, st.incident_id) in jobmap]
+            keys = [k for k in (_inc_key(st) for st in cp.stops)
+                    if k in jobmap]
             # drop now-infeasible stops one at a time (safety trumps commitment)
             while keys:
                 stops, fail = ctx.eval_route(cid, tuple(keys))

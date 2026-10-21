@@ -2060,11 +2060,25 @@ class _SimCrew(_CrewSim):
 
     def __init__(self, crew, speed_mps: float, route_fn=None, latest_fn=None,
                  road_guard: bool = False, egress_judge=None,
-                 ingress_judge=None):
+                 ingress_judge=None, fresh_ingress_judge=None):
         super().__init__(crew, speed_mps)
         self._route_fn = route_fn        # (a, b) -> RoadRoute | None
         self._latest_fn = latest_fn      # (stop dict) -> live latest-depart s
         self._road_guard = bool(road_guard)
+        # EVERY INGRESS LEG IS JUDGED AS IT STARTS (contracts
+        # crew_ingress_judged, SAFETY SEMANTICS 27b): (crew, t_s) -> None,
+        # called before a FRESH ingress leg starts while the crew is already
+        # en route (a re-plan changed its head stop, or reset its leg) — the
+        # setting-out legs go through ingress_judge. None = legacy (the
+        # fresh leg is driven as resolved).
+        self._fresh_ingress_judge = fresh_ingress_judge
+        # THE AUDIT SEES THE WHOLE DRIVE (contracts crew_path_audit, SAFETY
+        # SEMANTICS 25): the session sets a list before advance() when the
+        # knob is on; every position change and mode change is appended as
+        # (t_s, LatLon, mode, status value) — the mode / status the crew is
+        # in FROM t_s on. Pure bookkeeping: never read by the kinematics.
+        # None (the default) records nothing.
+        self.path_track = None
         # EVERY EGRESS IS JUDGED (contracts crew_egress_judged, SAFETY
         # SEMANTICS 20b): (crew, t_s) -> None, called the moment this crew
         # turns onto an egress leg from a stop (a withdrawal, or leaving its
@@ -2132,6 +2146,14 @@ class _SimCrew(_CrewSim):
                      # the leg began and the roads seam's chord reason
                      "origin": self.pos, "note": getattr(rr, "note", None)}
 
+    def _mark(self, t: float) -> None:
+        """crew_path_audit bookkeeping (SAFETY SEMANTICS 25): the crew is at
+        its position, in its mode and status, from t on (path_track None =
+        nothing recorded). Never read by the kinematics."""
+        if self.path_track is not None:
+            self.path_track.append((t, self.pos, self._mode,
+                                    self.status.value))
+
     def _move_leg(self, t: float, t_end_s: float):
         """Advance along the active leg point-to-point; (t_new, arrived).
         The position always lies ON the polyline (waypoint or interpolated
@@ -2140,6 +2162,7 @@ class _SimCrew(_CrewSim):
         speed = max(leg["speed"], 0.1)
         pts = leg["pts"]
         kinds = leg.get("edge_kind")
+        self._mark(t)                          # (path-audit bookkeeping)
         while pts:
             seg = _haversine_m(self.pos, pts[0])
             budget = (t_end_s - t) * speed
@@ -2148,12 +2171,14 @@ class _SimCrew(_CrewSim):
                     self.pos = _interp(self.pos, pts[0], budget / seg)
                     self.driven.append(self.pos)
                     self.pos_since_s = t_end_s    # (audit bookkeeping)
+                self._mark(t_end_s)
                 return t_end_s, False
             t += seg / speed
             self.pos = pts.pop(0)
             self.driven.append(self.pos)
             if seg > 1e-9:
                 self.pos_since_s = t              # (audit bookkeeping)
+            self._mark(t)
             if kinds:                          # consume this edge's render kind
                 kinds.pop(0)
         return t, True
@@ -2369,14 +2394,18 @@ class _SimCrew(_CrewSim):
         self.driven = [self.pos]         # ROADS LEGIBILITY: this tick's drive
         t = t_start_s
         guard = 0
+        judged_at = None                 # SEMANTICS 27b: judged at this t
         while t < t_end_s and guard < 1000:
             guard += 1
             if self._mode == "idle":
                 if self.itinerary and self._ingress_judge is not None:
                     # SAFETY SEMANTICS 23a (contracts crew_work_judged): the
                     # ingress leg about to start — and the stop it leads to
-                    # — is judged against the fields as they are now
+                    # — is judged against the fields as they are now (27b,
+                    # crew_ingress_judged: every such leg, not only a stale
+                    # one)
                     self._ingress_judge(self, t)
+                    judged_at = t
                     if not self.itinerary:
                         # nothing workable left: the crew leaves from HERE
                         # as after its last stop (20b judges that egress)
@@ -2394,6 +2423,21 @@ class _SimCrew(_CrewSim):
                 target = self.itinerary[0]["loc"]
                 if (self._leg is None or self._leg["kind"] != "ingress"
                         or self._leg["target"] != target):
+                    if (self._fresh_ingress_judge is not None
+                            and judged_at != t):
+                        # EVERY INGRESS LEG IS JUDGED AS IT STARTS (contracts
+                        # crew_ingress_judged, SAFETY SEMANTICS 27b): a fresh
+                        # leg begun while already en route (a re-plan changed
+                        # the head stop, or reset the leg) is judged from
+                        # where the crew is, now
+                        self._fresh_ingress_judge(self, t)
+                        judged_at = t
+                        if not self.itinerary:
+                            # nothing workable left: it leaves from HERE as
+                            # after its last stop (20b judges that egress)
+                            self.leave_from_here(t)
+                            continue
+                        target = self.itinerary[0]["loc"]
                     self._begin_leg("ingress", target)
                 t, arrived = self._move_leg(t, t_end_s)
                 if not arrived:
@@ -2408,6 +2452,7 @@ class _SimCrew(_CrewSim):
                 stop["actual_service_start_s"] = service_start
                 self._mode = "deploy"
                 self.status = CrewStatus.DEPLOYING
+                self._mark(t)                  # (path-audit bookkeeping)
                 self._refresh_egress_plan()
                 # ROAD-EGRESS DEPARTURE GUARD at arrival: closes the
                 # same-tick hole where an arrival + full deploy would fit
@@ -2426,6 +2471,7 @@ class _SimCrew(_CrewSim):
                         margin_h=(stop["latest_depart_s"] - t) / 3600.0,
                         gel_fresh_frac=stop["gel_fresh_frac"]))
                     self._mode = "idle"
+                    self._mark(t)              # (path-audit bookkeeping)
                     self._refresh_egress_plan()
                     if not self.itinerary:
                         # EVERY EGRESS IS JUDGED (contracts crew_egress_
@@ -2447,6 +2493,7 @@ class _SimCrew(_CrewSim):
                 self.egress_loc = None
                 self._mode = "idle"
                 self.status = CrewStatus.AVAILABLE
+                self._mark(t)                  # (path-audit bookkeeping)
 
 
 @dataclass
@@ -2908,6 +2955,25 @@ class SimSession:
         # the ResponseConfig default stays OFF (the live engine moves no crew).
         if "crew_work_judged" not in overrides:
             cfg.crew_work_judged = True
+        # THE EAGLE RIVER VALLEY CREW-SAFETY ITERATION (2026-10-21; contracts
+        # SAFETY SEMANTICS 25-27; docs/SIMULATOR_DESIGN.md "The audit sees the
+        # whole drive"; scratch_review/eagle_valley): (25) the 10c audit also
+        # judges every crew's driven path between tick ends and each
+        # departure against every fire (crew_path_audit — it changes what is
+        # REPORTED, never what crews do); (26) a frozen near-term stop stays
+        # on its crew across re-plans (dispatch_keep_frozen — the en-route
+        # ping-pong); (27a) the planner routes a crew's leg from its exact
+        # position (plan_route_exact) and (27b) every ingress leg is judged
+        # from where the crew is as it starts (crew_ingress_judged). Explicit
+        # override wins for every key; the ResponseConfig defaults stay OFF.
+        if "crew_path_audit" not in overrides:
+            cfg.crew_path_audit = True
+        if "dispatch_keep_frozen" not in overrides:
+            cfg.dispatch_keep_frozen = True
+        if "plan_route_exact" not in overrides:
+            cfg.plan_route_exact = True
+        if "crew_ingress_judged" not in overrides:
+            cfg.crew_ingress_judged = True
 
         # --- roads (contracts wgresponse.roads seam; loaded ONCE per
         # configure). LAZY import: the sibling module lands independently —
@@ -3109,6 +3175,10 @@ class SimSession:
         self._crew_default_start = {}
         self._placed = {}
         tile_bbox = self._tile_bbox()
+        # SAFETY SEMANTICS 27b (contracts crew_ingress_judged): a fresh ingress
+        # leg begun while already en route is judged too (None = legacy)
+        fresh_judge = (self._judge_ingress_start
+                       if getattr(cfg, "crew_ingress_judged", False) else None)
         k = 0
         # in-zone crews (staged round-robin at safe zones, AVAILABLE now) —
         # construction is byte-identical to the pre-SEMANTICS-9 loop.
@@ -3122,7 +3192,8 @@ class SimSession:
                 latest_fn=self._stop_latest_depart_s,
                 road_guard=(self._road_graph is not None),
                 egress_judge=self._judge_egress_start,
-                ingress_judge=self._judge_ingress_start)
+                ingress_judge=self._judge_ingress_start,
+                fresh_ingress_judge=fresh_judge)
             # STAGING seam: park the crew at its custom start (position +
             # beacon only; home_base/egress anchor stay the safe zone above).
             start = zone.loc
@@ -3163,7 +3234,8 @@ class SimSession:
                     latest_fn=self._stop_latest_depart_s,
                     road_guard=(self._road_graph is not None),
                     egress_judge=self._judge_egress_start,
-                    ingress_judge=self._judge_ingress_start)
+                    ingress_judge=self._judge_ingress_start,
+                    fresh_ingress_judge=fresh_judge)
                 cs.status = CrewStatus.INBOUND      # base ctor defaults AVAILABLE
                 cs.pos = self._edge_entry_point(tile_bbox, region, i, n_reg)
                 self._crew_sims[crew.crew_id] = cs
@@ -3247,6 +3319,19 @@ class SimSession:
         # outran them (internal count, said in the notes).
         self._field_gen = 0
         self._n_work_released = 0
+        # SAFETY SEMANTICS 27b (contracts crew_ingress_judged): stops released
+        # as their crew set out although dispatch had judged them against the
+        # current fields (internal count) and the (crew, client, generation)
+        # releases already said in the notes. Never read when off.
+        self._n_ingress_refused = 0
+        self._ingress_refused_noted = set()
+        # SAFETY SEMANTICS 25 (contracts crew_path_audit): True only while
+        # tick() runs its audit — the path audit judges the step's driven
+        # paths then (a direct _run_audit call judges the instant, as ever);
+        # and client_id -> the OTHER fire bounding an audited departure
+        # (state's audit rows name it). Empty when off.
+        self._audit_paths = False
+        self._audit_fire = {}
         # ... and the crews whose work it pulled out of a band the change
         # dropped on them at its very instant (crew_id -> the 10c row then;
         # reported by that step's audit — never silent). Empty when off.
@@ -3960,12 +4045,22 @@ class SimSession:
         session; a crew's rows re-compute only when it moves out of its
         bucket (~12 s of drive), keeping per-tick A* work small. Bounded to
         _ROAD_PLAN_CACHE_MAX entries (cleared whole on overflow — simple,
-        deterministic)."""
+        deterministic). Under contracts plan_route_exact (SAFETY SEMANTICS
+        27a) the key is the EXACT endpoints: a bucket served every point in
+        it the route from whichever point was routed first, so dispatch
+        judged a crew's leg on a road it would not drive (client legs still
+        compute once per session; a moving crew's rows every tick)."""
         if (not getattr(self._cfg, "dispatch_plan_on_roads", False)
                 or self._roads is None or self._road_graph is None):
             return None
         cache = self._road_plan_cache
         alts = int(getattr(self._cfg, "route_alternatives", 1) or 1)
+        # THE PLANNER JUDGES THE ROAD THE CREW DRIVES (contracts
+        # plan_route_exact, SAFETY SEMANTICS 27a): routes keyed on the EXACT
+        # endpoints, so a crew's planned leg is the route its own leg
+        # resolves from where it stands (_leg_route: the same roads.route
+        # call) — never the route from another point of its ~110 m bucket.
+        exact = bool(getattr(self._cfg, "plan_route_exact", False))
 
         def provider(a: LatLon, b: LatLon, mode: str = "ingress"):
             # CORRIDOR HONESTY: candidate choice depends on fire state and
@@ -3973,7 +4068,11 @@ class SimSession:
             # time (within-plan reuse only — a stale choice must never
             # outlive the fire state it was judged against). Legacy path
             # keeps the original tick-free key, byte-identical.
-            if alts > 1:
+            if exact:
+                k = ("exact", a.lat, a.lon, b.lat, b.lon)
+                if alts > 1:
+                    k = k + (mode, round(self._now_s))
+            elif alts > 1:
                 k = (round(a.lat, 3), round(a.lon, 3),
                      round(b.lat, 3), round(b.lon, 3), mode,
                      round(self._now_s))
@@ -5265,37 +5364,63 @@ class SimSession:
         generation; not -> RELEASED to the job pool (loud note) and the next
         stop is judged the same way. The caller turns a crew left with
         nothing onto its egress (as after its last stop). Knob off: a no-op
-        (byte-identical)."""
-        if not getattr(self._cfg, "crew_work_judged", False):
+        (byte-identical).
+
+        EVERY INGRESS LEG IS JUDGED AS IT STARTS (contracts crew_ingress_
+        judged, SAFETY SEMANTICS 27b; also the _SimCrew fresh_ingress_judge
+        hook): every head stop is judged the same way, whatever generation
+        it carries — dispatch judged it from where the crew stood at the
+        plan, at the plan's time, on the planner's route; the crew sets out
+        from here, now, on the road it will drive. A stop released while it
+        carried the current generation is said once per crew, client and
+        generation (a disagreement with a fresh plan may repeat while the
+        planner re-offers it)."""
+        work = bool(getattr(self._cfg, "crew_work_judged", False))
+        every = bool(getattr(self._cfg, "crew_ingress_judged", False))
+        if not (work or every):
             return
         gen = self._field_gen
         released = []
         while cs.itinerary:
             stop = cs.itinerary[0]
-            if stop.get("fields_gen", -1) >= gen:
+            stale = work and stop.get("fields_gen", -1) < gen
+            if not (stale or every):
                 break
             why = self._ingress_unworkable(cs, stop, t_s)
             if why is None:
-                stop["fields_gen"] = gen
+                if work:
+                    stop["fields_gen"] = gen
                 break
             cs.itinerary.pop(0)
-            released.append((stop, why))
+            released.append((stop, why, stale))
         if not released:
             return
         cid = cs.crew.crew_id
-        for stop, why in released:
+        for stop, why, stale in released:
             c = stop["client_id"]
             # freed for re-planning (no terminal reason): back to the job
             # pool, re-offered next tick while still threatened
             self._assigned.discard(c)
             self._superseded.discard(c)
             self._stop_rule.pop(c, None)
-            self._n_work_released += 1
+            tail = ("" if cs.itinerary else
+                    "; nothing workable left, the crew leaves")
+            if stale:
+                self._n_work_released += 1
+                self._notes.append(
+                    f"crew {cid} released {c} (SEMANTICS 23): the fire "
+                    f"picture changed since the stop was planned and {why} "
+                    f"— back to the job pool" + tail)
+                continue
+            self._n_ingress_refused += 1
+            key = (cid, c, gen)
+            if key in self._ingress_refused_noted:
+                continue
+            self._ingress_refused_noted.add(key)
             self._notes.append(
-                f"crew {cid} released {c} (SEMANTICS 23): the fire picture "
-                f"changed since the stop was planned and {why} — back to the "
-                f"job pool" + ("" if cs.itinerary else
-                               "; nothing workable left, the crew leaves"))
+                f"crew {cid} released {c} (SEMANTICS 27b): judged from "
+                f"where the crew is as it sets out, {why} — back to the job "
+                f"pool" + tail)
         cs._leg = None
         cs._refresh_egress_plan()
 
@@ -6549,6 +6674,14 @@ class SimSession:
         # backlog — is offered, so a backlog committed to one crew rebalances
         # onto crews that would otherwise idle. Dispatch keeps the frozen /
         # in-flight prefixes via the incumbent (below).
+        # A COMMITTED NEAR-TERM STOP STAYS COMMITTED (contracts
+        # dispatch_keep_frozen, SAFETY SEMANTICS 26): the frozen stops of an
+        # eligible crew stay IN the pool, so dispatch's incumbent repair —
+        # which keeps only incumbent stops it finds in the pool — holds them
+        # in the frozen prefix (dropped there only when no longer feasible);
+        # out of the pool, every re-plan stripped an en-route crew's head
+        # stop. Knob off: frozen stops are protected (legacy), byte-identical.
+        keep_frozen = bool(getattr(cfg, "dispatch_keep_frozen", False))
         serviced_ids = {s.client_id for s in self._serviced}
         eligible_ids = self._eligible_replan_ids()
         eligible_set = set(eligible_ids)
@@ -6558,7 +6691,8 @@ class SimSession:
             cs = self._crew_sims[cid]
             for st in cs.itinerary:
                 if (cid not in eligible_set
-                        or st["service_start_s"] < frozen_cut_s):
+                        or (not keep_frozen
+                            and st["service_start_s"] < frozen_cut_s)):
                     protected.add(st["client_id"])
         jobs = []
         for inc in incidents:
@@ -6647,12 +6781,25 @@ class SimSession:
         # 5. kinematic crew movement (sim.py physics; legs follow roads when
         # a graph is loaded) + service completion
         jumps = self._map_jumps(arrived)     # display only (ROADS LEGIBILITY)
+        # THE AUDIT SEES THE WHOLE DRIVE (contracts crew_path_audit, SAFETY
+        # SEMANTICS 25): each moving crew records the path it drives this
+        # step — opened at the step start, closed at its end (bookkeeping
+        # only; _run_audit judges it). Knob off: nothing is recorded.
+        path_audit = bool(getattr(cfg, "crew_path_audit", False))
         for cid in _idsort(self._crew_sims):
             if cid in self._left_map:
                 # LEFT THE MAP (contracts left_map_out): no movement ever again
                 self._crew_sims[cid].driven = [self._crew_sims[cid].pos]
+                if path_audit:
+                    self._crew_sims[cid].path_track = None
                 continue
-            self._crew_sims[cid].advance(now, now + step, self._serviced)
+            cs = self._crew_sims[cid]
+            if path_audit:
+                cs.path_track = [(now, cs.pos, cs._mode, cs.status.value)]
+            cs.advance(now, now + step, self._serviced)
+            if path_audit:
+                cs.path_track.append((now + step, cs.pos, cs._mode,
+                                      cs.status.value))
         self._record_map_paths(jumps)        # display only (ROADS LEGIBILITY)
 
         # 5b. drain ROAD-EGRESS departure-guard withdrawals raised inside
@@ -6736,8 +6883,12 @@ class SimSession:
         # step start is handed over so OLD BLACK (contracts old_black_refuge)
         # is judged over the whole step: a front that overran a crew since
         # the last audit is reported even if its fuel burned out meanwhile.
+        # (SAFETY SEMANTICS 25, contracts crew_path_audit: and every crew's
+        # driven path this step, each sample at its own pass time)
         self._audit_since_s = now
+        self._audit_paths = path_audit
         self._run_audit()
+        self._audit_paths = False
         self._audit_since_s = None
 
         if not emit:
@@ -6970,6 +7121,14 @@ class SimSession:
         cfg = self._cfg
         now = self._now_s
         buffer_s = cfg.egress_buffer_min * 60.0
+        # THE AUDIT SEES THE WHOLE DRIVE (contracts crew_path_audit, SAFETY
+        # SEMANTICS 25): each departure is judged against EVERY fire's
+        # pessimistic arrival at the home (dispatch plans a client against its
+        # worst-case fire; a second fire may arrive first) — the state row
+        # names the bounding fire when it is not the stop's own. Knob off:
+        # the stop's own fire.
+        path_audit = bool(getattr(cfg, "crew_path_audit", False))
+        self._audit_fire = {}
         audits = []
         violations = []
         min_margin = None
@@ -6985,14 +7144,27 @@ class SimSession:
             # fires when the own cell is UNREACHED).
             eta = spread.eta_at(fire.ens, cl.loc,
                                 fallback_radius_m=cfg.ember_threat_radius_m)
+            p10 = eta.eta_p10_s
+            if path_audit:
+                for fid in self._fire_order:
+                    f = self._fires[fid]
+                    if fid == st.incident_id or f.ens is None:
+                        continue
+                    v = spread.eta_at(
+                        f.ens, cl.loc,
+                        fallback_radius_m=cfg.ember_threat_radius_m
+                    ).eta_p10_s
+                    if v < p10:
+                        p10 = v
+                        self._audit_fire[st.client_id] = fid
             buf_min, ember_min = self._stop_rule.get(
                 st.client_id, (cfg.egress_buffer_min, cfg.ember_buffer_min))
-            latest = eta.eta_p10_s - (buf_min + ember_min) * 60.0
+            latest = p10 - (buf_min + ember_min) * 60.0
             margin_h = (UNREACHED if math.isinf(latest)
                         else (latest - st.depart_s) / 3600.0)
             entry = SafetyAudit(
                 crew_id=st.crew_id, client_id=st.client_id,
-                depart_s=st.depart_s, eta_p10_s=eta.eta_p10_s,
+                depart_s=st.depart_s, eta_p10_s=p10,
                 latest_depart_s=latest, margin_h=margin_h,
                 violation=(not math.isinf(margin_h)) and margin_h < 0.0)
             audits.append(entry)
@@ -7074,7 +7246,145 @@ class SimSession:
                 rank = {c: i for i, c in enumerate(_idsort(self._crew_sims))}
                 overruns = sorted(overruns + extra,
                                   key=lambda o: rank[o["crew_id"]])
+        if path_audit and self._audit_paths:
+            # SAFETY SEMANTICS 25 (contracts crew_path_audit): a crew clear at
+            # this audit but exposed on the way since the last one — its
+            # driven path, every sample at its own pass time — gets ONE row
+            # (transit: true); still one row per crew per step
+            have = {o["crew_id"] for o in overruns}
+            extra = [o for o in self._path_overruns(t_since)
+                     if o["crew_id"] not in have]
+            if extra:
+                rank = {c: i for i, c in enumerate(_idsort(self._crew_sims))}
+                overruns = sorted(overruns + extra,
+                                  key=lambda o: rank[o["crew_id"]])
         self._crew_overruns = overruns
+
+    def _path_cell_samples(self, pa, pb, ta: float, tb: float, spec):
+        """SAFETY SEMANTICS 25: the samples of one DRIVEN span pa -> pb
+        (left pa at ta, reached pb at tb, linearly in lat/lon as the crew
+        moves), [(t_enter, t_leave, LatLon)]: one per field cell the span
+        passes through (geo.path_cell_runs — the cell-exact walk of
+        SEMANTICS 20a), its centre (its value), the moments the crew enters
+        and LEAVES it (judged at the latest it is there). Fires with no
+        common grid (never in the simulator): every <= half the finest cell
+        instead."""
+        d = geo.haversine_m(pa, pb)
+        dur = max(0.0, tb - ta)
+        if d <= 0.0:
+            return [(ta, tb, pb)]
+        if spec is not None:
+            exits, idxs = geo.path_cell_runs(spec, (pa, pb))
+            nc = spec.ncols
+            out = []
+            prev = 0.0
+            for e, ix in zip(exits, idxs):
+                e = min(e, d)
+                out.append((ta + dur * prev / d, ta + dur * e / d,
+                            geo.rc_to_latlon(spec, ix // nc, ix % nc)))
+                prev = max(prev, e)
+            return out
+        cell = min((f.ens.members[0].spec.cell_m
+                    for f in self._fires.values() if f.ens is not None),
+                   default=90.0)
+        n = max(1, int(math.ceil(d / max(1.0, 0.5 * cell))))
+        return [(ta + dur * (k - 1) / n, ta + dur * k / n,
+                 LatLon(pa.lat + (pb.lat - pa.lat) * k / n,
+                        pa.lon + (pb.lon - pa.lon) * k / n))
+                for k in range(1, n + 1)]
+
+    def _path_overruns(self, t_since: float) -> list:
+        """THE AUDIT SEES THE WHOLE DRIVE (contracts crew_path_audit, SAFETY
+        SEMANTICS 25): the 10c law over every crew's path this step
+        (_SimCrew.path_track) — each driven span at every field cell it
+        passed through, at the moment it left the cell, and each spot it
+        stood at at the moment it left (or the step ended). A sample counts
+        exactly as the tick-end audit counts a crew: BURNED (the nominal
+        front at or past it) or IMMINENT (eroded P10 within
+        egress_buffer_min), OLD BLACK excused as the audit excuses it — black
+        older than its cold-black window when the crew got there (a driven
+        cell: when the crew entered it; a stop: when it arrived, or the step
+        start if it stood there before). One row per exposed crew: the worst
+        sample (burned before imminent, then the least margin), transit:
+        true, its pass time (at_s), the seconds of the step the crew spent
+        on exposed cells (exposed_s: in each, from the moment the front or
+        the 10c line reached it) and the margin (eroded P10 − pass − buffer,
+        minutes; negative = inside the band). INBOUND crews are off the
+        tile; a crew that left the map THIS step is judged on the path it
+        drove before it left (it was on the map then), never after."""
+        if not any(f.ens is not None for f in self._fires.values()):
+            return []
+        cfg = self._cfg
+        buffer_s = cfg.egress_buffer_min * 60.0
+        old_black = bool(getattr(cfg, "old_black_refuge", False))
+        spec = None
+        for fid in self._fire_order:
+            f = self._fires[fid]
+            if f.ens is None:
+                continue
+            sp = f.ens.members[0].spec
+            if spec is None:
+                spec = sp
+            elif sp != spec:
+                spec = None
+                break
+        out = []
+        for cid in _idsort(self._crew_sims):
+            cs = self._crew_sims[cid]
+            trk = getattr(cs, "path_track", None)
+            if not trk or len(trk) < 2 or cs.status == CrewStatus.INBOUND:
+                continue
+            worst = None
+            exposed_s = 0.0
+            for i in range(1, len(trk)):
+                ta, pa, mode, status = trk[i - 1]
+                tb, pb = trk[i][0], trk[i][1]
+                if (pa.lat, pa.lon) == (pb.lat, pb.lon):
+                    if tb <= ta:
+                        continue                 # an instant: no time there
+                    # a spot the crew stood at from ta (the step start if it
+                    # stood there before), judged as it left it at tb
+                    samples = [(max(ta, t_since), tb, pa)]
+                else:
+                    samples = self._path_cell_samples(pa, pb, ta, tb, spec)
+                for t_in, t, q in samples:
+                    # judged at the moment the crew left the cell or spot;
+                    # old black only if it already was when the crew got
+                    # there (the tick-end audit's rule)
+                    nom, p10 = self._crew_exposure(q)
+                    if (old_black and not math.isinf(nom)
+                            and (t_in - nom) >= self._cold_black_pass_s(q)):
+                        continue                 # old black the whole time
+                    burned = (not math.isinf(nom)) and nom <= t
+                    imminent = (not math.isinf(p10)) and p10 < t + buffer_s
+                    if not (burned or imminent):
+                        continue
+                    # exposed from the moment the front or the 10c line
+                    # reached the cell (or the crew got there, if later)
+                    exposed_s += max(0.0, t - max(t_in,
+                                                  min(nom, p10 - buffer_s)))
+                    margin = (math.inf if math.isinf(p10)
+                              else p10 - t - buffer_s)
+                    key = (0 if burned else 1, margin, t)
+                    if worst is None or key < worst[0]:
+                        worst = (key, t, q, mode, status, burned, nom, p10)
+            if worst is None:
+                continue
+            _k, t, q, mode, status, burned, nom, p10 = worst
+            out.append({
+                "crew_id": cid, "kind": "crew_overrun",
+                "reason": "burned" if burned else "imminent",
+                "status": status, "mode": mode,
+                "lat": round(q.lat, 6), "lon": round(q.lon, 6),
+                "nominal_arrival_s": (None if math.isinf(nom) else nom),
+                "eroded_p10_s": (None if math.isinf(p10) else p10),
+                "transit": True,
+                "at_s": round(t, 3),
+                "exposed_s": round(exposed_s, 1),
+                "margin_min": (None if math.isinf(p10)
+                               else round((p10 - t - buffer_s) / 60.0, 2)),
+            })
+        return out
 
     # -- state ------------------------------------------------------------------
 
@@ -7989,7 +8299,6 @@ class SimSession:
             # so a scrub replay shows the tick's breakdown too.
             "outcomes": {t: outcome_counts.get(t, 0) for t in OUTCOME_TAGS},
         }
-
         # audit rows carry the rule they were checked under, so a stop
         # completed before a slider move is VISIBLY under its adoption-time
         # rule (never a silent mismatch with scoreboard.buffer_min)
@@ -8000,6 +8309,12 @@ class SimSession:
                 a.client_id, (cfg.egress_buffer_min, cfg.ember_buffer_min))
             row["rule_buffer_min"] = rb
             row["rule_ember_min"] = re_
+            bound = self._audit_fire.get(a.client_id)
+            if bound is not None:
+                # SAFETY SEMANTICS 25 (contracts crew_path_audit; additive):
+                # ANOTHER fire's pessimistic arrival at the home bounds this
+                # departure (every fire is read) — named on the row
+                row["worst_incident_id"] = bound
             audit_rows.append(row)
 
         burned_rings, fire_bands, burned_p50, fire_view = self._fire_visuals()

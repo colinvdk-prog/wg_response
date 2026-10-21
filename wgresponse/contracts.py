@@ -1057,6 +1057,136 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    (pinned in tests/test_crew_work_judged.py against goldens computed on
    commit 3dd341a, before this rule, on worlds where it bites); the
    SIMULATOR arms it (explicit override wins).
+25. THE AUDIT SEES THE WHOLE DRIVE (2026-10-21; the Eagle River valley
+   review, crew-safety lens — docs/SIMULATOR_DESIGN.md "The audit sees the
+   whole drive"; scratch_review/eagle_valley; cfg.crew_path_audit, read only
+   by the simulator — the live engine audits no crew position). The 10c
+   audit judged each crew at its position at the END of each step; between
+   two audits a crew drives up to a step of road and stands at stops it
+   leaves before the audit looks. Measured with the review's path probe
+   (every crew's driven path sampled between tick ends at its pass time,
+   the 10c law) on the valley harness (33 runs, 12 h): crews crossed the
+   eroded-P10 band in 12 episodes in 8 runs — 1,029 samples, the worst 433
+   min past the 10c line, never inside the nominal fire — while the
+   scoreboard read 0 crew-overrun rows; 11 of the 17 emergency
+   (zone_threatened) relocations rode through the band, and 13 of the 14
+   closest tick-end margins were crews the sweep was ordering out. The
+   serviced-stop audit read only the stop's own fire. With the knob on:
+   (a) EVERY SAMPLE OF THE DRIVE. Each step every crew's path since the
+       last audit (_SimCrew.path_track: each position and mode change with
+       its time) is judged by the 10c law: every field cell a driven span
+       passes through (geo.path_cell_runs — the 20a walk) at the moment the
+       crew LEAVES it, and every spot the crew stood at (a stop, a wait) at
+       the moment it left it or the step ended. A sample counts exactly as
+       the tick-end audit counts a crew: BURNED (nominal arrival at or
+       before that moment) or IMMINENT (eroded P10 within egress_buffer_min
+       of it); OLD BLACK is excused as the tick-end audit excuses it —
+       black already older than its cold-black window when the crew got
+       there (entered the cell; arrived at the spot, or the step start if
+       it stood there before).
+   (b) ONE ROW PER CREW PER STEP. A crew the tick-end audit (or a 23c
+       world-change instant) already counts keeps that row; a crew clear
+       at the tick end but exposed on the way gets ONE crew_overrun row
+       with transit: true — its worst sample (burned before imminent, then
+       the least margin): at_s (the moment it left the cell or spot),
+       position, the mode and status it was in, the arrivals, margin_min
+       (eroded P10 − at_s − buffer; negative = inside the band) — and
+       exposed_s, the seconds of the step it spent on exposed cells (each
+       from the moment the front or the 10c line reached it). Counted in
+       scoreboard.violations and crew_overruns like every row. INBOUND
+       crews are off the tile; a crew that left the map during the step is
+       judged on the path it drove before it left (on the map then).
+   (c) EVERY FIRE AT THE DOOR. The serviced-stop departure audit reads the
+       pessimistic arrival at the home from EVERY fire (the ember /
+       adjacency fallback as everywhere), not only the stop's own — the
+       law 23a already holds a crew to; the audit row names the bounding
+       fire (worst_incident_id) when it is not the stop's own.
+   It REPORTS; it never moves a crew. With one fire and no crew exposed
+   on the way it is byte-identical to the tick-end audit (a strict
+   superset, like the 10c audit itself). What it found in the existing
+   choreographies: the seconds a crew spends driving out of a stop's own
+   cell after a departure judged lawful at the departure INSTANT (23a and
+   27b test the stop's cell then, the walk judges the cell when the crew
+   leaves it: 12 s inside the line in the rug-pull control); the least-
+   exposure egress of a crew a slider-raised buffer withdrew with no road
+   on the audit's side of that line (19-90 min inside it; in the homes-
+   mode demo 5 min before the eroded P10, inside the original 10-min line
+   too); and four egress drives through the band in the extended Camp-
+   Fire-scale run (up to 15 h past the line). Knob OFF = the
+   tick-end audit, byte-identical (pinned in tests/test_crew_path_audit.py
+   against goldens computed on commit 7bebc7a, before the rule, on worlds
+   where it bites); the SIMULATOR arms it (explicit override wins).
+26. A COMMITTED NEAR-TERM STOP STAYS COMMITTED (2026-10-21; the Eagle River
+   valley review; cfg.dispatch_keep_frozen — dispatch.plan, and the
+   simulator's job pool). plan()'s warm start repairs the incumbent with
+   only the stops it finds in the job pool, keyed (client_id,
+   incident_id), and the simulator kept an eligible crew's FROZEN stops
+   (service start inside commitment_horizon_min) OUT of its pool — so the
+   commitment freeze dispatch keeps for them never engaged: whenever any
+   crew idled (the simulator re-plans every such tick) an en-route crew
+   about to arrive lost its head stop, was sent elsewhere, and the stop
+   went back to the pool. Measured on the valley harness: 39 en-route head
+   swaps (261 km driven for them); a crew 17 m from sim-c8's driveway sent
+   4.7 km to sim-c33 and back the next tick, both homes unprotected; one
+   crew shuttled between two homes for 3 h (~100 km) while two idled. With
+   the knob on: (a) an eligible crew's frozen stops stay in the job pool;
+   (b) plan() matches each incumbent stop to its client's surviving job by
+   client_id (step 0 keeps one job per client, keyed by its worst-case
+   fire — a second fire may have changed it since the stop was planned),
+   so the repaired incumbent holds it in the frozen prefix, still dropped
+   one at a time when it is no longer feasible (safety trumps commitment).
+   Measured with the review's runtime prototype (33 runs): head swaps 39 ->
+   0, homes served 1,023 -> 1,047, reached-but-unprotected 20 -> 15, km
+   driven -6 %, the path audit's band samples -47 %, no new tick-end or
+   departure row. WHAT IT CANNOT DO: it keeps commitments — a frozen stop
+   another crew could now reach sooner stays put (the freeze's purpose);
+   the coating-hold probes see frozen stops as ordinary jobs. Knob OFF =
+   byte-identical (pinned in tests/test_keep_frozen.py against goldens
+   computed on commit 7bebc7a on a world where it bites); the SIMULATOR
+   arms it; the live engine's pool never excluded a stop, so there only
+   (b) applies, if armed.
+27. THE PLANNER JUDGES THE ROAD THE CREW DRIVES, AND EVERY INGRESS LEG IS
+   JUDGED AS IT STARTS (2026-10-21; the Eagle River valley review).
+   (a) cfg.plan_route_exact (read only by the simulator's plan-on-roads
+       provider). The provider cached routes on ~110 m position buckets
+       (3-decimal rounding), so dispatch judged a crew's leg on the route
+       from whichever point of its bucket was routed first (a client's
+       location, the crew's own position a tick earlier), while the crew
+       drove the route from its exact position. Measured (Beaver Creek,
+       northwest high fire, t+8.25 h): from 17 m away, planned 10.7 km and
+       +58.6 min clear; the crew's own leg 9.6 km and 51 min past the 10c
+       line, 113 s inside the band. With the knob on the cache is keyed on
+       the EXACT endpoints, so the planner's leg for a crew is the route
+       its leg resolves (_leg_route: the same roads.route call from the
+       same point).
+   (b) cfg.crew_ingress_judged (read only by the simulator). SEMANTICS 23a
+       judges an ingress leg as it starts only when the fields changed
+       since its stop was planned; a leg dispatch judged from another
+       point, at another time (a crew that arrives late), or on another
+       road (the bucket; tier-0 chords when plan-on-roads is off) was
+       driven unjudged. With the knob on EVERY ingress leg is judged by the
+       23a law as it starts — setting out from rest, leaving a stop for the
+       next, and a fresh leg begun while en route after a re-plan changed
+       or reset it — whatever generation its stop carries: the road the
+       crew will drive at the 10c line at every pass time, the stop still
+       workable; a stop that fails is released to the job pool with a loud
+       note (once per crew, client and field generation) and the next is
+       judged from here; a crew left with nothing leaves as after its last
+       stop (20b judges that egress).
+   Measured with the review's runtime prototype of (a) (33 runs): the
+   valley's one ingress band episode gone, +2 homes, 32 runs unchanged; on
+   the 12 one-click scenarios (3 h, each knob alone) (a) changed one
+   (Malibu, from 2.75 h) and (b) none with plan-on-roads, while with
+   tier-0 chord planning (b) released stops in 6 (1-10 each). WHAT IT
+   CANNOT DO: a crew whose plan is unchanged keeps its live leg (judged
+   when it started), not the planner's fresh route from where it now is;
+   with plan-on-roads off the planner still judges chords, so a released
+   stop may be re-offered to the same crew while the planner's law and
+   the crew's road disagree (it is never driven); the planner's road margin
+   (route_margin_roads_min) is the 10c line only while it equals
+   egress_buffer_min. Both knobs OFF = byte-identical (pinned in
+   tests/test_ingress_exact.py against goldens computed on commit 7bebc7a
+   on worlds where each bites); the SIMULATOR arms both.
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -2723,6 +2853,39 @@ class ResponseConfig:
     # False = byte-identical; with unchanged fields it is byte-identical
     # too. The SIMULATOR arms it.
     crew_work_judged: bool = False
+    # THE AUDIT SEES THE WHOLE DRIVE (2026-10-21, the Eagle River valley
+    # review; SAFETY SEMANTICS 25; read only by the simulator — the live
+    # engine audits no crew position). The 10c audit judged each crew at its
+    # tick-end position only: measured with the review's path probe on the
+    # valley's 33 runs (12 h), crews drove through the eroded-P10 band in 12
+    # episodes in 8 runs (1,029 path samples, the worst 433 min past the 10c
+    # line) and the scoreboard read 0. When True the audit ALSO judges every
+    # crew's driven path since the last audit — every field cell it passed
+    # through at the moment it left the cell, every stop it stood at at the
+    # moment it left — by the tick-end law (burned, or eroded P10 within
+    # egress_buffer_min; old black as the tick-end audit honours it); a crew
+    # clear at the tick end but exposed on the way gets ONE row
+    # (transit: true, the worst sample's time, place and margin, the seconds
+    # exposed), counted in scoreboard.violations / crew_overruns like every
+    # row; and the serviced-stop departure audit reads EVERY fire's
+    # pessimistic arrival at the home, not the stop's own fire only. It
+    # reports; it never moves a crew. False = the tick-end audit, byte-
+    # identical (and with one fire and nothing exposed on the way, so is
+    # True). The SIMULATOR arms it.
+    crew_path_audit: bool = False
+    # EVERY INGRESS LEG IS JUDGED AS IT STARTS (2026-10-21; SAFETY SEMANTICS
+    # 27b; read only by the simulator). SEMANTICS 23a judges an ingress leg
+    # at its start only when the fields changed since the stop was planned:
+    # a leg dispatch judged from another point (the plan-route cache's
+    # ~110 m buckets — measured: planned +58.6 min clear from 17 m away, the
+    # road the crew drove 51 min past the 10c line) or at another time was
+    # driven unjudged. When True every ingress leg — setting out from rest,
+    # leaving a stop for the next, or a fresh leg after a re-plan mid-drive
+    # — is judged from where the crew is, as it starts (the 23a law: the
+    # road it will drive at the 10c line, the stop still workable); a stop
+    # that fails is released to the job pool (loud note) and the next one
+    # is judged. False = byte-identical. The SIMULATOR arms it.
+    crew_ingress_judged: bool = False
     # --- gel product parameters (UNVERIFIED — pending supplier data) ---
     gel_window_h: float = 72.0         # operational window after application (outer weathering/wash-off horizon still UNVERIFIED)
     gel_full_strength_h: float = 72.0  # == gel_window_h: GraphGel is Class A at 1/8" DRY — flat effectiveness, no decay ramp (product data 2026-07-11)
@@ -2886,6 +3049,21 @@ class ResponseConfig:
     # --- dispatch ---
     replan_period_s: float = 900.0
     commitment_horizon_min: float = 20.0
+    # A COMMITTED NEAR-TERM STOP STAYS COMMITTED (2026-10-21, the Eagle River
+    # valley review; SAFETY SEMANTICS 26). plan() repairs the incumbent with
+    # only the stops whose (client, incident) key is in the job pool, and the
+    # simulator kept an eligible crew's FROZEN stops (service start inside
+    # commitment_horizon_min) out of its pool — so whenever any crew idled
+    # (a re-plan every tick) an en-route crew about to arrive lost its head
+    # stop: measured 39 en-route head swaps / 261 km on the valley's 33 runs,
+    # a crew 17 m from a driveway sent 4.7 km away and back, both homes
+    # unprotected. When True, plan() matches each incumbent stop to the
+    # client's surviving job by client_id (the worst-case fire may have
+    # changed), so the commitment freeze holds it (still dropped when it is
+    # no longer feasible: safety trumps commitment), and the simulator's job
+    # pool keeps an eligible crew's frozen stops. False = byte-identical.
+    # The SIMULATOR arms it; the live engine's pool never excluded them.
+    dispatch_keep_frozen: bool = False
     churn_penalty_frac: float = 0.05
     adoption_threshold_frac: float = 0.03
     solver_budget_s: float = 5.0
@@ -2966,6 +3144,18 @@ class ResponseConfig:
     # the simulator server turns it on per session (like spotting); the live
     # engine flips only after live road graphs + validation.
     dispatch_plan_on_roads: bool = False
+    # THE PLANNER JUDGES THE ROAD THE CREW DRIVES (2026-10-21, the Eagle
+    # River valley review; SAFETY SEMANTICS 27a; read only by the
+    # simulator's plan-on-roads provider). The provider cached routes on
+    # ~110 m position buckets (3-decimal rounding), so dispatch judged a
+    # crew's leg on the route from whichever point of the bucket was routed
+    # first while the crew drove the route from its exact position —
+    # measured: planned 10.7 km and +58.6 min clear, driven 9.6 km and 51
+    # min past the 10c line (113 s inside the band). When True the cache is
+    # keyed on the EXACT endpoints, so the planner's route for (crew, stop)
+    # is the one the crew's leg resolves. False = byte-identical. The
+    # SIMULATOR arms it (read only with dispatch_plan_on_roads).
+    plan_route_exact: bool = False
     # Corridor margin for ROAD-sampled legs (plan-on-roads only). The chord
     # margin (route_margin_min — 60 before the 2026-08-02 pair calibration)
     # was calibrated to ALSO absorb the flat travel model's -21..-33%
