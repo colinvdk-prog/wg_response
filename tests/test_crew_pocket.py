@@ -40,7 +40,10 @@ ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
              "reinforce_stage_by_need": False, "idle_restage": False,
              "route_margin_egress_roads_min": 0.0,
              "escape_pocket_exit": False, "plan_egress_time_deadline": False,
-             "crew_overrun_ledger": False}
+             "crew_overrun_ledger": False,
+             # ... and the iteration-3 knobs (SAFETY SEMANTICS 34-35)
+             "sim_far_side_zones": False, "reinforce_entry_by_need": False,
+             "ember_eta_landings": False}
 #: SEMANTICS 28 alone, at the simulator's values
 POCKET_ONLY = dict(ITER2_OFF, egress_durable_min_h=8.0,
                    escape_last_exit_lead_min=30.0)

@@ -1349,6 +1349,71 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    and the violations box reads "0 now — N this run" (amber) after a row.
    Reporting only — no crew moves differently. Off = byte-identical (tests/
    test_overrun_ledger.py); the SIMULATOR arms it.
+34. FAR-SIDE REFUGES (2026-10-21; the Eagle River valley review's iteration
+   3 — docs/SIMULATOR_DESIGN.md "Far-side refuges, ember ETAs and afternoon
+   starts"; cfg.sim_far_side_zones, reinforce_entry_by_need; read only by the
+   simulator). The valley tiles' zones were I-70 interchanges on the fire
+   runs' line: Beaver Creek's three sit at or east of a west-northwest
+   ignition and its Edwards one stands on grass, the corridor tile's Edwards
+   one on timber, and the valley's north side had none — measured (iteration
+   2, the valley harness, 33 runs): 869 idle crew-ticks while homes
+   waited behind a blocked road (dispatch's no_safe_corridor / no_safe_egress
+   with at least 1 h to the pessimistic front), 1,552 such home-ticks.
+   (a) sim_far_side_zones: each location's far_zones (SimLocation) join its
+       zone catalog after its own zones — non-burnable ground chosen from the
+       committed tile's fuel (connected non-burnable patches, each cell's
+       distance from burnable fuel) and road graph (a node within 50 m), on
+       the other side of the likely runs or where the interchange is fuel,
+       each named for what it is: Beaver Creek z4 Cordillera west (Club House
+       Dr; a developed cluster — the tile has no open non-burnable ground on
+       its west side) and z5 Edwards' Freedom Park / Battle Mountain HS; the
+       corridor tile z7 Edwards' Freedom Park / Battle Mountain HS and z8
+       Wolcott (US-6 / SH-131). Vail gets none: its largest non-burnable
+       ground (the Vail Village core, 345 m from fuel) is in every Vail fire's
+       P10 within 4-10 h, and Red Cliff and Vail Pass lie off the tile.
+       Every law that reads the catalog sees them (dispatch's egress zones,
+       the sweep, the egress and pocket laws, staging); the round-robin
+       staging of the first zones is unchanged.
+   (b) reinforce_entry_by_need: a reinforcement (with reinforce_stage_by_
+       need) enters by whichever road entry on the tile's east and west edges
+       is open (30a) and has the most homes waiting for a crew on a lawful
+       road from it, then the shortest drive to the nearest of them, then its
+       region's side — said when it is the other side. NOT armed: measured it
+       acted in 5 of 33 runs (the Vail 1 h crew entering from the west) for
+       -1 home; where work is cut off it lies beyond the fire from both
+       entries (Beaver Creek's northwest fire).
+   Measured with (a) and 35 armed (33 runs): homes served 1,040 -> 1,071 (Beaver Creek's canonical high, pair
+   and late runs +6, +6, +5 and its northwest high +6 — the refuges, law by
+   law on its two worst runs; the ember ETA alone +1 there — the corridor
+   tile's northwest runs +1 each), idle crew-ticks while homes waited behind
+   a blocked road 869 -> 616, such home-ticks 1,552 -> 934; reached-
+   unprotected 14, transit rows 2 (the pocket exits, 21-24 min, 1 s) and
+   crews off the map 0, unchanged. Knobs OFF = byte-
+   identical (pinned in tests/test_far_side_refuges.py against goldens
+   computed on commit b9e3b68 on the four harness runs where they bite); the
+   SIMULATOR arms (a).
+35. EMBER ETA FOR DEVELOPED HOMES (2026-10-21; the propagation review's R4;
+   cfg.ember_eta_landings; read by spread and the simulator). A home on a
+   developed or water cell — which the surface model never reaches — took
+   its ETA from the earliest BURNABLE arrival within ember_threat_radius_m
+   (law 6); an ember landing next to it ahead of the front gave it nothing,
+   since the spread records only embers that land on burnable cells. When
+   True: (i) the nominal member records EVERY ember it lands inside the
+   horizon, developed and water cells included (spread.compute_arrival
+   land_log; the arrival raster, the ROS memo and every label unchanged —
+   pinned bit for bit); (ii) the simulator keeps the landings across
+   re-anchors — the embers thrown before a re-anchor stay history (they flew
+   in the field they were thrown in), the new field's own follow — and
+   attaches their first landing per cell to the field
+   (spread.attach_ember_landings); (iii) eta_at's law-6 fallback takes the
+   earlier of the front within the radius and the first landing within it,
+   one time for every quantile (p10 <= p50 <= p90 kept). Measured: the
+   Vail northwest fire at extreme gives four developed homes an earlier ETA
+   at its first field (2.4, 0.6 and 7.8 h sooner; one — never near the front
+   in the horizon — an ETA at all), Beaver Creek's canonical fire one; most
+   valley homes' pessimistic front within 200 m still comes before any
+   ember lands within it. Off = byte-identical (no landing
+   raster attached; tests/test_ember_eta.py); the SIMULATOR arms it.
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -3141,6 +3206,52 @@ class ResponseConfig:
     # hh:mm". Reporting only — no crew moves differently. False = byte-
     # identical.
     crew_overrun_ledger: bool = False
+    # FAR-SIDE REFUGES (2026-10-21, the Eagle River valley review's
+    # iteration 3; SAFETY SEMANTICS 34; read only by the simulator). The
+    # valley tiles' zones were I-70 interchanges on the fire runs' line —
+    # Beaver Creek's three sit at or east of a northwest-wind ignition,
+    # Vail's Minturn is 3 km up single-access US-24, and two of them stand on
+    # burnable cells (the Edwards and Dowd interchanges). When True a
+    # location's far_zones (SimLocation: large non-burnable open ground —
+    # parks, fields, town cores — on the other side of the likely runs,
+    # chosen from the committed tile's fuel and road graph, each named for
+    # what it is) are appended to its zone catalog: every law that reads the
+    # catalog (dispatch's egress zones, the sweep, the egress and pocket
+    # laws, staging) sees them. False = byte-identical.
+    sim_far_side_zones: bool = False
+    # ... (b) REINFORCEMENTS ENTER WHERE THE WORK IS (SAFETY SEMANTICS 34b;
+    # read only by the simulator, with reinforce_stage_by_need): a
+    # reinforcement entered at its region's fixed edge (the 1 h crew from the
+    # east), so the work cut off on the other side of a fire stayed blocked
+    # — measured (iteration 2, the valley harness): Beaver Creek's northwest
+    # fire left 7 homes west of it at no_safe_corridor all run while three
+    # crews idled east of it, the corridor tile's canonical fire 2 homes at
+    # Eagle while all three idled at Avon. When True it enters by whichever
+    # of the two road entries (east, west edge) is open and has the most
+    # homes waiting for a crew on a lawful road from it, then the shortest
+    # drive to the nearest of them, then its region's side — said loudly when
+    # it is the other side. False = byte-identical. NOT armed by the
+    # simulator: measured on the valley harness it acted in 5 of 33 runs
+    # (the Vail 1 h crew entering from the west) for -1 home; in the runs
+    # where work is cut off it lies beyond the fire from both entries.
+    reinforce_entry_by_need: bool = False
+    # EMBER ETA FOR DEVELOPED HOMES (2026-10-21, the Eagle River valley
+    # review's iteration 3 — the propagation review's R4; SAFETY SEMANTICS
+    # 35; read by spread and the simulator). A home on a developed or water
+    # cell gets its ETA from the earliest BURNABLE arrival within
+    # ember_threat_radius_m (law 6); an ember landing next to it, ahead of
+    # the front, gave it nothing — measured: 2-13 homes per fire get an
+    # ember within 300 m before the front, 0-5 of them never reached by the
+    # front in 12 h. When True the nominal member records every ember it
+    # lands inside the horizon (spread.compute_arrival land_log: developed
+    # and water cells included; the spread itself, the ROS memo and every
+    # label unchanged), the simulator keeps the landings across re-anchors
+    # (the embers thrown before a re-anchor stay history: continuous) and
+    # attaches their first landing per cell to the field
+    # (spread.attach_ember_landings); eta_at's law-6 fallback then takes the
+    # earlier of the front within the radius and the first landing within
+    # it. False = byte-identical.
+    ember_eta_landings: bool = False
     # --- gel product parameters (UNVERIFIED — pending supplier data) ---
     gel_window_h: float = 72.0         # operational window after application (outer weathering/wash-off horizon still UNVERIFIED)
     gel_full_strength_h: float = 72.0  # == gel_window_h: GraphGel is Class A at 1/8" DRY — flat effectiveness, no decay ramp (product data 2026-07-11)

@@ -27,7 +27,12 @@ fastest 1-h head gain, its share of the wind, crowned acres, first home
 reached). Per-tick crew logs go to <out>/ticks/<run>.json.
 
 Usage: py -3 scratch_review/eagle_valley/run_matrix.py OUT_DIR [--workers N]
-       [--hours H] [--only RUN_ID[,RUN_ID]] [--cfg JSON]
+       [--hours H] [--only RUN_ID[,RUN_ID]] [--cfg JSON] [--start-hour H]
+
+--start-hour H (decimal LOCAL standard hours, e.g. 13.22 for 13:13): every
+session starts at that hour of the epoch's day (POST /api/sim/new
+start_local_hour; the default is the fixed epoch, 07:13 local) — the
+afternoon-start arm of the iteration-3 review. Recorded per run.
 """
 from __future__ import annotations
 
@@ -84,7 +89,7 @@ def _start(s, bearing, dist):
     raise RuntimeError("no burnable start")
 
 
-def build(loc, ign, inten, extra_cfg):
+def build(loc, ign, inten, extra_cfg, start_hour=None):
     from wgresponse import server
     mgr = server.SimSessionManager()
     key = LOCS[loc]
@@ -93,6 +98,8 @@ def build(loc, ign, inten, extra_cfg):
     payload = {"scenario": key}
     if extra_cfg:
         payload["cfg"] = dict(extra_cfg)
+    if start_hour is not None:
+        payload["start_local_hour"] = float(start_hour)
     code, out = mgr.new_session(payload)
     if code != 200:
         raise RuntimeError(out)
@@ -163,11 +170,12 @@ def crowned_acres(s, fid, hours):
 
 
 def run_one(args):
-    run_id, loc, ign, inten, hours, extra_cfg, out_dir = args
+    run_id, loc, ign, inten, hours, extra_cfg, out_dir = args[:7]
+    start_hour = args[7] if len(args) > 7 else None
     from wgresponse import geo
     t_wall = time.time()
     try:
-        mgr, s = build(loc, ign, inten, extra_cfg)
+        mgr, s = build(loc, ign, inten, extra_cfg, start_hour)
     except Exception as exc:                       # pragma: no cover - probe
         return {"run": run_id, "error": repr(exc)}
     ticks = int(round(hours * 4))
@@ -183,6 +191,8 @@ def run_one(args):
     log = []
     late_fired = False
     st = None
+    blocked_ticks = 0
+    idle_blocked = 0
     for k in range(ticks):
         if ign == "late" and not late_fired and k == 8:
             p = _start(s, LATE_SECOND[0], LATE_SECOND[1])
@@ -226,7 +236,24 @@ def run_one(args):
         for cl in st["clients"]:
             if cl.get("gelled_at_s") and (first_gel_s is None or cl["gelled_at_s"] < first_gel_s):
                 first_gel_s = cl["gelled_at_s"]
+        # iteration 3: homes WAITING behind a blocked road (dispatch's
+        # no_safe_corridor / no_safe_egress) with at least 1 h before the
+        # pessimistic front, and the crews idle meanwhile (on the map, no
+        # stop): idle-while-blocked crew-ticks = idle crews x [any blocked]
+        blocked = 0
+        for u in st.get("unserved") or []:
+            if u.get("reason") in ("no_safe_corridor", "no_safe_egress"):
+                eta = s._client_etas.get(u["client_id"])
+                if (eta is not None and math.isfinite(eta.eta_p10_s)
+                        and eta.eta_p10_s > now + 3600.0):
+                    blocked += 1
+        idle_now = sum(1 for c in crews_tick
+                       if c["st"] == "available" and c["itin"] == 0)
+        blocked_ticks += blocked
+        if blocked:
+            idle_blocked += idle_now
         log.append({"tick": k + 1, "t_h": round((now - t0) / 3600.0, 2),
+                    "blocked_homes": blocked, "idle_crews": idle_now,
                     "acres": round(st["fire_view"]["areas_km2"]["fire"] * 247.105),
                     "served": sb["served"], "violations": sb["violations"],
                     "overruns": len(st.get("crew_overruns") or []),
@@ -287,7 +314,9 @@ def run_one(args):
                     "homes_reached": reached, "reached_unprotected": unprotected,
                     "protection_lead_h": sorted(leads)},
         "crews": {"status_ticks": status_counts,
-                  "km_driven": {k3: round(v / 1000.0, 1) for k3, v in sorted(crew_dist.items())}},
+                  "km_driven": {k3: round(v / 1000.0, 1) for k3, v in sorted(crew_dist.items())},
+                  "idle_while_blocked": idle_blocked,
+                  "blocked_home_ticks": blocked_ticks},
         "fire": {"acres_by_h": acres, "head_km_by_h": head, "fastest_head_kmh": fastest,
                  "wind_mph_mean": round(sum(winds) / len(winds), 1) if winds else None,
                  "wind_mph_max": round(max(winds), 1) if winds else None,
@@ -297,6 +326,8 @@ def run_one(args):
                            "edge_reach": bool(edge_reach)}},
         "wall_s": round(time.time() - t_wall, 1),
     }
+    if start_hour is not None:
+        res["start_local_hour"] = start_hour
     os.makedirs(os.path.join(out_dir, "ticks"), exist_ok=True)
     with open(os.path.join(out_dir, "ticks", run_id.replace("|", "__") + ".json"), "w",
               encoding="utf-8") as fh:
@@ -309,10 +340,15 @@ def run_one(args):
 def main(argv):
     out_dir = argv[0]
     workers, hours, only, extra = 1, 12.0, None, None
+    start_hour = None
     i = 1
     while i < len(argv):
         if argv[i] == "--workers":
             workers = int(argv[i + 1]); i += 2
+        elif argv[i] == "--start-hour":
+            start_hour = float(argv[i + 1]); i += 2
+            if not 0.0 <= start_hour < 24.0:
+                raise SystemExit("--start-hour must be within [0, 24)")
         elif argv[i] == "--hours":
             hours = float(argv[i + 1]); i += 2
         elif argv[i] == "--only":
@@ -330,7 +366,8 @@ def main(argv):
                 done.add(json.loads(line)["run"])
     todo = [r for r in runs() if r[0] not in done and (not only or r[0] in only)]
     print(f"{len(todo)} runs -> {path}", flush=True)
-    args = [r + (hours, extra, out_dir) for r in todo]
+    args = [r + (hours, extra, out_dir)
+            + ((start_hour,) if start_hour is not None else ()) for r in todo]
     if workers <= 1:
         it = map(run_one, args)
     else:

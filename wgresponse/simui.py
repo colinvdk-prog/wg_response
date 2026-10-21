@@ -1029,6 +1029,15 @@ class SimLocation:
     #: preset. No road graph loaded -> whole-band fallback, noted LOUDLY.
     #: A different field from bounds_poly (a road rule, not a boundary).
     place_near_road_m: float = 0.0
+    #: FAR-SIDE REFUGES (2026-10-21, the Eagle River valley review's
+    #: iteration 3; contracts sim_far_side_zones, SAFETY SEMANTICS 34):
+    #: catalog zones on the other side of the likely fire runs from the
+    #: I-70 interchanges above — large non-burnable open ground (parks,
+    #: fields, town cores) chosen from the committed tile's fuel and the
+    #: road graph, each named for what it is. Appended to safe_zones only
+    #: with the knob on (the round-robin staging of the first zones is
+    #: unchanged); () = none, byte-identical.
+    far_zones: tuple = ()
 
 
 #: ROAD-PROXIMITY PLACEMENT of the six Vail -> Aspen corridor community
@@ -1186,7 +1195,29 @@ LOCATIONS = {
             SafeZone("beaver_creek_co-z3", LatLon(39.6210, -106.4715),
                      "I-70 exit 169 / Eagle-Vail"),
         ),
-        place_near_road_m=CORRIDOR_PLACE_NEAR_ROAD_M),
+        place_near_road_m=CORRIDOR_PLACE_NEAR_ROAD_M,
+        # FAR-SIDE REFUGES (contracts sim_far_side_zones, SEMANTICS 34; the
+        # committed tile's fuel + road graph, out/eagle_valley/probes/iter3/
+        # nb_patches.py + zone_pick.py): every zone above sits at or east of
+        # a west-northwest ignition and the Edwards interchange cell is grass.
+        far_zones=(
+            # Cordillera, Club House Dr / Cottage Circle — a developed
+            # (LANDFIRE non-burnable) cluster west of Edwards (13 ha of
+            # residential streets: a refuge, not open ground; the tile has no
+            # open non-burnable ground on its west side, and the larger Eagles
+            # Glen cluster 2.5 km east of it is in the northwest fire's P10
+            # within 7 h), ~8.7 km W; upwind of the northwest and canonical
+            # runs (21-39 h of eroded-P10 life in both)
+            SafeZone("beaver_creek_co-z4", LatLon(39.62208, -106.66129),
+                     "Cordillera west, Club House Dr (developed, non-"
+                     "burnable)"),
+            # Edwards, Freedom Park (soccer fields, pond) and Battle Mountain
+            # High School on Miller Ranch Rd — non-burnable town ground
+            # 180 m from fuel, ~2.5 km NE, where the Edwards interchange zone
+            # stands on grass; the northwest fire never reaches it in 12 h
+            SafeZone("beaver_creek_co-z5", LatLon(39.64343, -106.57873),
+                     "Edwards, Freedom Park / Battle Mountain HS"),
+        )),
     "eagle_co": SimLocation(
         key="eagle_co", name="Eagle / Gypsum, CO (corridor base)",
         center=LatLon(39.650, -106.890), hazard_wind_dir_deg=240.0,
@@ -1293,7 +1324,23 @@ LOCATIONS = {
                      "I-70 exit 180 / East Vail"),
         ),
         tile_half_m=30_000.0, tile_cell_m=200.0, extended_zone=False,
-        place_near_road_m=300.0),
+        place_near_road_m=300.0,
+        # FAR-SIDE REFUGES (contracts sim_far_side_zones, SEMANTICS 34): the
+        # interchanges sit on the runs' line along I-70 and the Edwards one
+        # on timber; the north side of the valley had none.
+        far_zones=(
+            # Edwards, Freedom Park and Battle Mountain High School — the
+            # tile's most robust non-burnable ground in Edwards (483 m from
+            # fuel), ~3.5 km NE; 15-32 h of life in the canonical and
+            # northwest runs where the Edwards interchange has 4
+            SafeZone("eagle_vail_co-z7", LatLon(39.64600, -106.58279),
+                     "Edwards, Freedom Park / Battle Mountain HS"),
+            # Wolcott, US-6 / SH-131 (State Bridge Rd) at I-70 exit 157 — the
+            # valley's north road out, ~8.6 km NW; 13-35 h of life in the
+            # canonical and northwest runs
+            SafeZone("eagle_vail_co-z8", LatLon(39.69763, -106.67118),
+                     "Wolcott, US-6 / SH-131 (I-70 exit 157)"),
+        )),
 }
 
 
@@ -2622,6 +2669,12 @@ class _SimFire:
     # anchor_log), so a re-anchor resumes every kept cell's straight run
     # (kept_anchor). Stays None with the knob off (no keyword is passed).
     _anchors: object = None
+    # EMBER ETA (cfg.ember_eta_landings, SAFETY SEMANTICS 35): every ember
+    # the truth has landed or will land — (landing index, thrown s, landing
+    # s) triples: the embers thrown before each re-anchor (history) plus the
+    # current field's; their first landing per cell is the field's landing
+    # raster (spread.attach_ember_landings). Stays () with the knob off.
+    _land_hist: tuple = ()
 
 
 class CrewPlacementError(ValueError):
@@ -2676,8 +2729,25 @@ class SimSession:
                  roads_module: object = _ROADS_AUTO,
                  client_locs: Optional[list] = None,
                  crew_locs: Optional[list] = None,
-                 place_near_road_m: Optional[float] = None):
+                 place_near_road_m: Optional[float] = None,
+                 start_local_hour: Optional[float] = None):
         self._tile_dir = tile_dir
+        # AFTERNOON STARTS (2026-10-21, the Eagle River valley review's
+        # iteration 3; docs/SIMULATOR_DESIGN.md "Far-side refuges, ember
+        # ETAs and afternoon starts"): the sim epoch's LOCAL STANDARD hour.
+        # None = the fixed epoch T0_S (07:13 in Colorado), byte-identical; a
+        # number H in [0, 24) moves the epoch to H on the epoch's own local
+        # day (_session_t0_s) — weather is a pure function of absolute time,
+        # so a fire lit at the start burns into that hour's weather.
+        if start_local_hour is not None:
+            try:
+                h = float(start_local_hour)
+            except (TypeError, ValueError):
+                raise ValueError("start_local_hour must be a number")
+            if not (math.isfinite(h) and 0.0 <= h < 24.0):
+                raise ValueError("start_local_hour must be within [0, 24)")
+            start_local_hour = h
+        self._start_local_hour = start_local_hour
         self._synth_size_km = float(synth_size_km)
         self._roads_module_arg = roads_module
         if place_near_road_m is not None and float(place_near_road_m) < 0.0:
@@ -2772,8 +2842,31 @@ class SimSession:
             "fire_zone": fire_zone,
             "n_crews_1h": n_crews_1h, "n_crews_3h": n_crews_3h,
         }]
+        if getattr(self, "_start_local_hour", None) is not None:
+            # AFTERNOON STARTS: the epoch is part of the script (absent =
+            # the fixed epoch: every pre-existing log unchanged)
+            self._cmd_log[0]["start_local_hour"] = self._start_local_hour
         self._init_state()
         return self
+
+    def _utc_offset_h(self) -> float:
+        """AFTERNOON STARTS: the location's local STANDARD time offset — its
+        CITY_WEATHER profile's (the daily cycle's clock), else the solar
+        zone of its centre (round(lon / 15))."""
+        prof = CITY_WEATHER.get(self._loc.key)
+        if prof is not None:
+            return float(prof.utc_offset_h)
+        return float(round(self._loc.center.lon / 15.0))
+
+    def _session_t0_s(self) -> float:
+        """AFTERNOON STARTS: the session epoch — T0_S, or with
+        start_local_hour H the instant of local standard hour H on T0_S's
+        own local day (T0_S + (H - its local hour) h; earlier or later the
+        same day). Pure function of (T0_S, H, the location)."""
+        if self._start_local_hour is None:
+            return T0_S
+        local = ((T0_S / 3600.0 + self._utc_offset_h()) % 24.0 + 24.0) % 24.0
+        return T0_S + (self._start_local_hour - local) * 3600.0
 
     def reset(self):
         """Re-arm the scenario exactly as configured (fires, crews, alerts,
@@ -3082,6 +3175,26 @@ class SimSession:
             cfg.plan_egress_time_deadline = True
         if "crew_overrun_ledger" not in overrides:
             cfg.crew_overrun_ledger = True
+        # THE EAGLE RIVER VALLEY CREW-SAFETY ITERATION 3 (2026-10-21;
+        # contracts SAFETY SEMANTICS 34-35; docs/SIMULATOR_DESIGN.md "Far-
+        # side refuges, ember ETAs and afternoon starts"): (34) the valley
+        # tiles' far-side refuges join the zone catalog (sim_far_side_zones);
+        # (35) a developed home an ember lands near gets that landing as its
+        # ETA (ember_eta_landings). Explicit override wins; defaults OFF.
+        if "sim_far_side_zones" not in overrides:
+            cfg.sim_far_side_zones = True
+        # (34b reinforce_entry_by_need is NOT armed: measured neutral on the
+        # valley harness — it acted in 5 of 33 runs, -1 home — available
+        # through cfg)
+        if "ember_eta_landings" not in overrides:
+            cfg.ember_eta_landings = True
+        if (getattr(cfg, "sim_far_side_zones", False)
+                and self._loc.far_zones):
+            # FAR-SIDE REFUGES (SEMANTICS 34): appended after the catalog's
+            # own zones, so the round-robin staging of the first ones and
+            # every zone id keep their meaning
+            self._loc = replace(self._loc, safe_zones=(
+                tuple(self._loc.safe_zones) + tuple(self._loc.far_zones)))
 
         # --- roads (contracts wgresponse.roads seam; loaded ONCE per
         # configure). LAZY import: the sibling module lands independently —
@@ -3264,6 +3377,7 @@ class SimSession:
         zones = list(self._loc.safe_zones)
         self._zone_by_id = {z.zone_id: z for z in zones}
         speed = _eff_ground_speed_mps(cfg)
+        t0_session = self._session_t0_s()    # AFTERNOON STARTS
         self._tracker = CrewTracker(cfg)
         self._crew_sims = {}
         self._tracks = {}
@@ -3328,7 +3442,8 @@ class SimSession:
             self._crew_reinforce_delay_min[crew.crew_id] = 0.0
             self._crew_available_at[crew.crew_id] = None
             self._tracker.ingest(CrewBeacon(crew_id=crew.crew_id, loc=start,
-                                            t_s=T0_S, status=CrewStatus.AVAILABLE))
+                                            t_s=t0_session,
+                                            status=CrewStatus.AVAILABLE))
         # out-of-region reinforcements: created INBOUND, staged for arrival at a
         # round-robin safe zone (crew.home_base / anchor_zone_id), but PARKED at
         # a deterministic staging-entry point on the tile EDGE toward their
@@ -3359,7 +3474,7 @@ class SimSession:
                 self._crew_reinforce_delay_min[crew.crew_id] = float(delay_min)
                 self._crew_available_at[crew.crew_id] = None
                 self._tracker.ingest(CrewBeacon(
-                    crew_id=crew.crew_id, loc=cs.pos, t_s=T0_S,
+                    crew_id=crew.crew_id, loc=cs.pos, t_s=t0_session,
                     status=CrewStatus.INBOUND))
 
         # ROADS LEGIBILITY (display only; module constants MAP_*): the road
@@ -3379,8 +3494,8 @@ class SimSession:
         self._map_gap_cache = {}
 
         self._alerts = AlertEngine(cfg, clients_by_id=dict(self._client_by_id))
-        self._t0_s = T0_S
-        self._now_s = T0_S
+        self._t0_s = t0_session              # AFTERNOON STARTS (T0_S by default)
+        self._now_s = t0_session
         self._tick_n = 0
         self._speed = 1.0
         self._paused = False
@@ -7221,7 +7336,15 @@ class SimSession:
         lying farthest toward that edge (node id breaks ties): I-70 where it
         leaves the tile in every valley preset. None without a road graph.
         Memoised per region (a pure function of the graph and the tile)."""
-        region = self._crew_region.get(cid, "reg_1h")
+        return self._side_entry(self._crew_region.get(cid, "reg_1h")
+                                == "reg_1h")
+
+    def _side_entry(self, east: bool):
+        """SAFETY SEMANTICS 30a / 34b: the road entry on the tile's EAST
+        (east=True) or WEST edge — the on-map node of the highest road class
+        present (motorway, else trunk, else primary, else any) lying farthest
+        toward that edge (node id breaks ties). Memoised per side."""
+        region = "reg_1h" if east else "reg_3h"
         if region in self._entry_node:
             return self._entry_node[region]
         g = self._road_graph
@@ -7237,13 +7360,50 @@ class SimSession:
             if not pool:
                 pool = [n for n in sorted(g.nodes)
                         if self._on_map(g.nodes[n])]
-            east = (region == "reg_1h")
             if pool:
                 n = min(pool, key=lambda n: ((-g.nodes[n].lon if east
                                               else g.nodes[n].lon), n))
                 node = g.nodes[n]
         self._entry_node[region] = node
         return node
+
+    def _entry_by_need(self, cid, now: float, step: float, speed_mps: float):
+        """REINFORCEMENTS ENTER WHERE THE WORK IS (contracts reinforce_entry_
+        by_need, SAFETY SEMANTICS 34b): (entry, note) for reinforcement cid —
+        of the two road entries on the tile's east and west edges
+        (_side_entry), the OPEN one (_entry_closed) from which the most homes
+        still waiting for a crew (_open_work) lie on a LAWFUL road (the 20b
+        line at every pass time, nothing burned), then the one whose nearest
+        such home is the shortest drive, then its region's own side; its
+        region's entry when neither is open (the hold says why). note is
+        None unless it enters on the other side."""
+        own_east = self._crew_region.get(cid, "reg_1h") == "reg_1h"
+        own = self._side_entry(own_east)
+        work = self._open_work(now)
+        best = None
+        for rank, east in enumerate((own_east, not own_east)):
+            e = self._side_entry(east)
+            if e is None or self._entry_closed(e, now, step, speed_mps):
+                continue
+            n_ok = 0
+            soonest = math.inf
+            for h in work:
+                b, _x, worst, total, _dm = self._metrics_of_points(
+                    self._route_points_with_times(e, h, speed_mps), now, 0.0)
+                if not b and worst >= 0.0:
+                    n_ok += 1
+                    soonest = min(soonest, total)
+            key = (-n_ok, soonest, rank)
+            if best is None or key < best[0]:
+                best = (key, east, e, n_ok, soonest)
+        if best is None or best[2] is own:
+            return own, None
+        side = "east" if best[1] else "west"
+        return best[2], (f"reinforcement {cid} enters from the {side} "
+                         f"(SEMANTICS 34b): {best[3]} of the {len(work)} "
+                         f"homes waiting for a crew lie on a lawful road from "
+                         f"there, the nearest {best[4] / 60.0:.0f} min away — "
+                         f"more, or sooner, than from its region's side")
 
     def _entry_closed(self, entry, now: float, step: float, speed_mps: float):
         """SAFETY SEMANTICS 30a: None when a reinforcement may enter at
@@ -7506,6 +7666,12 @@ class SimSession:
             if avail is None or now < avail:
                 continue
             entry = self._reinforce_entry(cid) if by_need else None
+            need_note = None
+            if entry is not None and getattr(cfg, "reinforce_entry_by_need",
+                                             False):
+                # REINFORCEMENTS ENTER WHERE THE WORK IS (SEMANTICS 34b)
+                entry, need_note = self._entry_by_need(cid, now, step,
+                                                       cs.speed)
             if entry is not None:
                 why = self._entry_closed(entry, now, step, cs.speed)
                 if why is not None:
@@ -7518,6 +7684,8 @@ class SimSession:
                     continue
                 cs.pos = entry                  # its region's road entry
                 self._stage_pending.add(cid)
+                if need_note is not None:
+                    self._notes.append(need_note)
             else:
                 cs.pos = cs.crew.home_base      # staging safe zone
             cs.pos_since_s = now                # (old-black audit bookkeeping)
@@ -7602,6 +7770,13 @@ class SimSession:
                 if getattr(cfg, "spread_any_angle", False):
                     alog = {}
                     aa_kw["anchor_log"] = alog
+                # EMBER ETA (contracts ember_eta_landings, SAFETY SEMANTICS
+                # 35): the nominal field's landings, every cell (off: no
+                # keyword, the legacy calls)
+                llog = None
+                if getattr(cfg, "ember_eta_landings", False):
+                    llog = []
+                    aa_kw["land_log"] = llog
                 if f.ens is None:
                     # first field: point seed at the TRUE ignition time
                     # (rings is None here — no field, no ring)
@@ -7635,6 +7810,19 @@ class SimSession:
                         ember_log=log, **aa_kw)
                 if alog is not None:
                     f._anchors = alog
+                if llog is not None:
+                    # EMBER ETA (SEMANTICS 35): the embers thrown before this
+                    # anchor stay history (they flew in the field they were
+                    # thrown in, landed or still aloft — a re-anchor never
+                    # re-throws them); the new field's own follow. Their first
+                    # landing per cell is the field's landing raster, so the
+                    # landing record is continuous across re-anchors.
+                    f._land_hist = tuple(
+                        e for e in f._land_hist if e[1] <= anchor) + tuple(
+                        llog)
+                    spread.attach_ember_landings(
+                        f.ens, spread.ember_landing_raster(
+                            self._tile.spec, f._land_hist))
                 f._ember_log = array("d", [x for e in log for x in e])
                 f._aloft = tuple(aloft)
                 f._wx_hist = f._wx_hist + ((anchor, self._wx.at(anchor)),)

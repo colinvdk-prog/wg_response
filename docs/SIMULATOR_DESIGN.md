@@ -2045,3 +2045,136 @@ predicate is cell-exact and the planner samples T*: a stop the two disagree on i
 may be re-offered (never driven). Each step the guard judges every zone leg of every working and
 en-route crew: the valley runs take ~30 s, not ~22. The integrator's 33-run matrix and the
 one-click sweep under the new defaults are the integrator's to run on this commit.
+
+## Far-side refuges, ember ETAs and afternoon starts (2026-10-21)
+
+Iteration 3 of the Eagle River valley review's crew-safety lens (iteration 2: the section
+above, commit b9e3b68; the integrator's iteration-2 matrices: `out/eagle_valley/iter2` and
+`iter2_posture` in the eagle-valley-iter2 worktree). Three knobs, two contracts SAFETY
+SEMANTICS entries (34-35), each default OFF; a session parameter; a harness option and metric:
+
+| Change | Where | Armed | What it changes |
+|---|---|---|---|
+| `sim_far_side_zones` | SEMANTICS 34a | yes | the valley tiles' far-side refuges join the zone catalog |
+| `reinforce_entry_by_need` | SEMANTICS 34b | no | a reinforcement enters by the edge entry with the most reachable waiting homes |
+| `ember_eta_landings` | SEMANTICS 35 | yes | a developed home an ember lands near takes the landing as its ETA |
+| `start_local_hour` | `SimSession`, `POST /api/sim/new` | — | the sim epoch at a local hour (None = 07:13, byte-identical) |
+| `--start-hour H` | `scratch_review/eagle_valley/run_matrix.py` | — | the 33-run matrix at an afternoon start |
+| `idle_while_blocked`, `blocked_home_ticks` | the harness's run record | — | idle crew-ticks while homes wait behind a blocked road |
+
+Code: `simui` `SimLocation.far_zones`, `_init_state` (catalog), `_side_entry` /
+`_entry_by_need` (34b), `_SimFire._land_hist` and the tick's field step (35), `_utc_offset_h` /
+`_session_t0_s` (start hour); `spread.compute_arrival(land_log=)`,
+`ensemble_arrival(land_log=)`, `attach_ember_landings`, `ember_landing_raster`,
+`_landing_eroded`, `eta_at`; `server.new_session` (`start_local_hour`). Tests:
+`tests/test_far_side_refuges.py`, `tests/test_ember_eta.py`, `tests/test_afternoon_start.py`.
+Probes: `out/eagle_valley/probes/iter3/` (`nb_patches.py` and `zone_pick.py` — the refuge
+search; `cand_life.py`, `blocked_probe.py`; the matrix arms `m_base` — iteration 2 with the
+new metric —, `m_final`, `m_pm` — 13:13 —, `m_posture`, `x_far` / `x_entry` / `x_ember`).
+
+**For the founder.** After iteration 2 no crew drove deep into the danger band, but in a
+third of the valley runs crews sat idle for hours while homes waited — the roads to them
+crossed the fire, or there was no safe place to leave to on their side of it: Beaver Creek's
+three safe zones all sit on I-70 east of where a northwest fire starts, and its Edwards zone
+is a grass interchange. We added safe places on the other sides — Edwards' Freedom Park
+fields next to Battle Mountain High School, the Cordillera streets west of Edwards (the only
+non-burnable ground on that side), and Wolcott on the corridor map — chosen from the map's
+own fuel data and roads, not from interchange numbers. Beaver Creek's runs now coat 5-6 more
+homes each; across the 33 runs 31 more homes are coated and crews sit idle behind blocked
+roads 29 % less. Vail has no far-side ground on its map that stays safe for long (the
+village core is reached by every Vail fire within 4-10 hours; Red Cliff and Vail Pass are
+off the map), so nothing was added there. Homes on developed ground now count an ember that
+lands next to them before the fire front as their threat time. And every run can now start at
+any hour: the integrator runs the valley again starting at 13:13.
+
+**What was measured** (the valley harness, 33 runs, 12 h; iteration 2 = the integrator's
+matrix on b9e3b68 — `m_base` reproduces it run for run and adds the idle-while-blocked
+metric; iteration 3 = this commit's armed defaults, `m_final`):
+
+| | iteration 2 | iteration 3 |
+|---|---|---|
+| homes served · reached / unprotected | 1,040 · 125 / 14 | 1,071 · 125 / 14 |
+| idle crew-ticks while homes waited behind a blocked road | 869 | 616 |
+| home-ticks waiting behind a blocked road | 1,552 | 934 |
+| transit rows / deepest / > 30 min / seconds in the band | 2 / 24 min / 0 / 2 | 2 / 24 min / 0 / 2 |
+| withdrawals · relocations · crews off the map | 0 · 14 · 0 | 0 · 15 · 0 |
+| km driven | 5,700 | 5,741 |
+
+Per run: Beaver Creek canonical high 33 → 39 (idle-while-blocked 82 → 0), its pair 33 → 39,
+late 33 → 38, northwest high 30 → 36 (83 → 15); the corridor tile's northwest runs +1 each,
+its late and pair +1; Vail northwest extreme and moderate +1; Beaver Creek south moderate +1.
+The two transit rows are iteration 2's pocket exits (Beaver Creek northwest), unchanged.
+
+**Law by law** (the two worst Beaver Creek runs and the corridor canonical, each law alone
+against iteration 2): the refuges (34a) carry the gains — canonical high +5 (33 → 38,
+idle-while-blocked 82 → 0), northwest high +6 (30 → 36, 83 → 15); the entry choice (34b)
+alone changes none of them (and across the 33 runs it acted only in 5 Vail runs, -1 home: not
+armed); the ember ETA (35) alone +1 on canonical high.
+
+**The refuges** (`nb_patches.py`: connected non-burnable patches of the committed tile and
+each cell's distance from burnable fuel; `zone_pick.py`: the road node; `cand_life.py`: the
+eroded-P10 life in the runs; names from OpenStreetMap — Nominatim / Photon):
+
+| Zone | What it is | Ground | Life in the runs |
+|---|---|---|---|
+| beaver_creek_co-z4 | Cordillera west, Club House Dr / Cottage Circle | a developed (LANDFIRE non-burnable) cluster, 13 ha of residential streets — the tile has no open non-burnable ground west of Edwards (the larger Eagles Glen cluster 2.5 km east is in the northwest fire's P10 within 7 h) | 21.6 h (northwest), 39.2 h (canonical) |
+| beaver_creek_co-z5 | Edwards, Freedom Park (soccer fields, pond) and Battle Mountain High School, Miller Ranch Rd | non-burnable town ground 180 m from fuel; the Edwards interchange zone is on grass | never reached (northwest), 1.2 h (canonical: in its path) |
+| eagle_vail_co-z7 | Edwards, Freedom Park / Battle Mountain HS | the corridor tile's most robust non-burnable ground in Edwards, 483 m from fuel; the interchange is on timber | 32 h (northwest), 14.8 h (canonical), 12 h (south) |
+| eagle_vail_co-z8 | Wolcott, US-6 / SH-131 (State Bridge Rd), I-70 exit 157 | the valley's north road out, 200 m from fuel | 35 h (northwest), 12.8 h (canonical), 4.3 h (south) |
+
+Not added: on Vail's tile the village core (345 m from fuel, the most robust ground) has
+4-10 h of life in every Vail run, Ford Park's fields are timber in LANDFIRE, the East Vail
+end is the existing East Vail zone, and Red Cliff and Vail Pass are off the tile; on Beaver
+Creek's tile Wolcott lies 1 km beyond the west edge (its nearest node 943 m from the
+non-burnable patch). Every name is the map's, not a field verification: the
+HOA_40_PLAYBOOK ground-verification gate applies before any real dispatch.
+
+**The ember ETA** (35): on the Vail northwest fire at extreme four developed homes get an
+earlier ETA at the first field (2.4, 0.6 and 7.8 h sooner; one, never near the front within
+the horizon, an ETA at all); Beaver Creek's canonical fire one (an ETA at all). On most valley
+runs the pessimistic front within 200 m still comes first: the propagation review's 2-13
+homes per fire with an ember within 300 m before the front counted the nominal front; law 6
+reads the P10 (earlier). The spread is unchanged bit for bit with the log (single solve and
+ensemble), and the landing record is continuous across a re-anchor (the embers thrown before
+it stay history).
+
+**Afternoon starts** (`--start-hour 13.22`, `m_pm`, the final code): homes served 1,071 → 1,064, reached 125 → 104, reached-unprotected
+14 → 13, transit rows 2 → 2 (the same pocket exits; none deeper than 30 min), crews off the
+map 0 → 2 (Beaver Creek canonical extreme at 11 h, an area escape east), idle-while-blocked
+616 → 809. The high / extreme fires burn less by 12 h (−30 % acres): their wind event,
+held from ignition, now eases into the evening and night. The moderate fires (no event)
+start at the afternoon peak instead — the corridor tile's northwest moderate fire burns
+6,919 acres by 12 h, not 10.
+
+**The live P10 posture** (`--cfg`, not armed; `m_posture` on this commit against the
+integrator's iteration-2 posture arm): homes served 926 → 959, reached-unprotected 41 → 39, crews off the map 17 → 14,
+relocations 22 → 18, transit rows 4 → 4 (iteration 1's posture arm: 949 / 34 / 20 / 13).
+Two rows stay deeper than 30 min (Vail canonical and pair high, 185 min at 7.25 h): a crew
+idling at Dowd Junction — a zone on timber — whose ways out close under the posture's early
+P10 while its own spot still has more than 8 h, then flees past the tile edge: the dead-end
+pattern of the extended Camp-Fire run (iteration 2). The posture stays unarmed.
+
+**Byte-identity.** With the three knobs off (and no start hour) the simulator replays commit
+b9e3b68 byte for byte — per-tick sha256 of `state()` minus `cmd_log` on the four harness runs
+where the laws bite, 40 ticks (Beaver Creek northwest high 8, canonical high 12; the
+corridor canonical high 12; Vail canonical extreme 8; `golden_calc.py` against a pristine
+b9e3b68 worktree).
+
+**Tests pinned** (none weakened): every iteration-1 / 2 golden and control already pinning
+the iteration-2 knobs off now pins the iteration-3 knobs off too (`ITER2_OFF` grows three
+keys; `test_sim_left_map.py` likewise). New: `test_far_side_refuges.py` (the knobs, the
+catalogs on / off, each refuge's ground and road, byte-identity on the four runs, the entry
+choice), `test_ember_eta.py` (the log leaves the spread unchanged and names road landings,
+the ensemble's quantiles unchanged, `eta_at`'s rule, the re-anchor history, a Vail home),
+`test_afternoon_start.py` (the default epoch, the local-hour arithmetic per location,
+validation, reset / re-roll, the weather at 13:13, the server payload, the harness option).
+
+**Limits.** The refuges are planning-grade map choices; Beaver Creek's west refuge is a
+subdivision's streets, not open ground. Crews east of a fire still cannot reach homes beyond
+it (no_safe_corridor): the refuges help the homes whose egress they make lawful and the
+crews on their side. The ember record is the nominal member's (one time for every
+quantile), and an ember still aloft at a re-anchor that lands on a non-burnable cell after
+it is kept only through the history (the new solve re-lands burnable ones). The extended
+Camp-Fire-scale run's dead end (iteration 2) is untouched: Paradise has no far zones and the
+fix needs a durable-exit test on staging targets. The integrator's 33-run matrices (default
+and 13:13) are the integrator's to run on this commit.
