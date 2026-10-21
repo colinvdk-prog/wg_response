@@ -259,9 +259,16 @@ def run_one(args):
     wx = s._wx
     winds = [smp.wind_speed_mps * 2.23694 for smp in wx.samples
              if t0 <= smp.t_s <= t0 + hours * 3600.0]
-    first_home = None
-    for k2, row in enumerate(log):
-        pass
+    # union area of every fire per hour (the state's fire area), the transit
+    # rows of the path audit (crew_path_audit), and run flags: a stall (<= 20
+    # acres at the end) and a head that reached the tile edge
+    union_by_h = [row["acres"] for row in log if abs(row["t_h"] - round(row["t_h"])) < 1e-6
+                  and row["t_h"] >= 1.0]
+    transit_rows = sum(1 for r in overrun_rows
+                       if r.get("transit") or r.get("mode") == "transit")
+    f1 = s._fires["sim-f1"]
+    half_w = min(spec.nrows, spec.ncols) * spec.cell_m / 2000.0
+    edge_reach = (head[-1] >= half_w - 1.0) if head else False
     res = {
         "run": run_id, "loc": loc, "ign": ign, "intensity": inten, "hours": hours,
         "cfg": extra_cfg or {},
@@ -269,7 +276,8 @@ def run_one(args):
                      "wind_from": f.wind_dir_deg, "t_h": round((f.t_ignite_s - t0) / 3600.0, 2)}
                     for fid, f in s._fires.items()],
         "safety": {"departure_violations_max": dep_viol_max, "violations_max": viol_max,
-                   "overrun_rows": len(overrun_rows), "overrun_detail": overrun_rows[:20],
+                   "overrun_rows": len(overrun_rows), "transit_rows": transit_rows,
+                   "overrun_detail": overrun_rows[:20],
                    "withdrawn": sb["withdrawn"], "relocations": sb["relocations"],
                    "left_map": sb.get("crews_left_map", 0),
                    "closest_p10_margin_h": {k3: v for k3, v in sorted(min_margin.items())}},
@@ -283,7 +291,10 @@ def run_one(args):
         "fire": {"acres_by_h": acres, "head_km_by_h": head, "fastest_head_kmh": fastest,
                  "wind_mph_mean": round(sum(winds) / len(winds), 1) if winds else None,
                  "wind_mph_max": round(max(winds), 1) if winds else None,
-                 "crowned_acres": {"active": act, "passive": pas}},
+                 "crowned_acres": {"active": act, "passive": pas},
+                 "union_acres_by_h": union_by_h,
+                 "flags": {"stall": bool(union_by_h and union_by_h[-1] <= 20),
+                           "edge_reach": bool(edge_reach)}},
         "wall_s": round(time.time() - t_wall, 1),
     }
     os.makedirs(os.path.join(out_dir, "ticks"), exist_ok=True)

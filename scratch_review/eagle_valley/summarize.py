@@ -78,7 +78,8 @@ def table(rows):
 
 def totals(rows):
     t = {"runs": 0, "served": 0, "reached": 0, "unprotected": 0, "violations": 0,
-         "overrun_rows": 0, "withdrawn": 0, "relocations": 0, "left_map": 0}
+         "overrun_rows": 0, "transit_rows": 0, "withdrawn": 0, "relocations": 0,
+         "left_map": 0, "km_driven": 0.0}
     margins = []
     for r in rows.values():
         if "error" in r:
@@ -89,6 +90,9 @@ def totals(rows):
         t["unprotected"] += r["service"]["reached_unprotected"]
         t["violations"] += r["safety"]["violations_max"]
         t["overrun_rows"] += r["safety"]["overrun_rows"]
+        t["transit_rows"] += r["safety"].get("transit_rows", 0)
+        t["km_driven"] = round(t["km_driven"] + sum(
+            (r.get("crews") or {}).get("km_driven", {}).values()), 1)
         t["withdrawn"] += r["safety"]["withdrawn"]
         t["relocations"] += r["safety"]["relocations"]
         t["left_map"] += r["safety"]["left_map"]
