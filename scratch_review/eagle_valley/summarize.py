@@ -79,7 +79,8 @@ def table(rows):
 def totals(rows):
     t = {"runs": 0, "served": 0, "reached": 0, "unprotected": 0, "violations": 0,
          "overrun_rows": 0, "transit_rows": 0, "withdrawn": 0, "relocations": 0,
-         "left_map": 0, "km_driven": 0.0}
+         "left_map": 0, "km_driven": 0.0, "transit_exposed_s": 0.0,
+         "transit_deepest_min": None, "transit_rows_over_30min": 0}
     margins = []
     for r in rows.values():
         if "error" in r:
@@ -91,6 +92,16 @@ def totals(rows):
         t["violations"] += r["safety"]["violations_max"]
         t["overrun_rows"] += r["safety"]["overrun_rows"]
         t["transit_rows"] += r["safety"].get("transit_rows", 0)
+        for row in r["safety"].get("overrun_detail") or []:
+            if not (row.get("transit") or row.get("mode") == "transit"):
+                continue
+            t["transit_exposed_s"] = round(t["transit_exposed_s"] + float(row.get("exposed_s") or 0.0), 1)
+            m = row.get("margin_min")
+            if m is not None:
+                if t["transit_deepest_min"] is None or m < t["transit_deepest_min"]:
+                    t["transit_deepest_min"] = round(m, 1)
+                if m < -30.0:
+                    t["transit_rows_over_30min"] += 1
         t["km_driven"] = round(t["km_driven"] + sum(
             (r.get("crews") or {}).get("km_driven", {}).values()), 1)
         t["withdrawn"] += r["safety"]["withdrawn"]
