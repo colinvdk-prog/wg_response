@@ -37,7 +37,9 @@ ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
              "crew_overrun_ledger": False,
              # ... and the iteration-3 knobs (SAFETY SEMANTICS 34-35)
              "sim_far_side_zones": False, "reinforce_entry_by_need": False,
-             "ember_eta_landings": False}
+             "ember_eta_landings": False,
+             # ... and the iteration-4 laws (SAFETY SEMANTICS 36-37)
+             "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0}
 STAGE_ONLY = dict(ITER2_OFF, reinforce_stage_by_need=True, idle_restage=True)
 RESTAGE_ONLY = dict(ITER2_OFF, idle_restage=True)
 

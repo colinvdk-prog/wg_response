@@ -596,6 +596,15 @@ class _Ctx:
         # Off: the egress test is d <= T* alone (byte-identical).
         self._egt = bool(getattr(cfg, "plan_egress_time_deadline", False))
         self._egx = {}
+        # THE EGRESS SLACK GROWS WITH THE DRIVE (contracts route_margin_
+        # egress_ramp, SAFETY SEMANTICS 37): with the ramp armed a stop's
+        # egress zones keep their flat-margin order and choice; a stop no zone
+        # serves at the flat margin may still egress to the first zone lawful
+        # under the ramped one (loc key -> [(zone_id, ramped T*)], same order)
+        self._ramp = (getattr(cfg, "route_margin_egress_ramp", 0.0) > 0.0
+                      and getattr(cfg, "route_margin_egress_roads_min",
+                                  0.0) > 0.0)
+        self._ezones_r = {}
         self._zbyid = {z.zone_id: (z, zk) for z, zk in self._zkeys}
         jrec = {}
         for k, job in jobmap.items():
@@ -753,11 +762,25 @@ class _Ctx:
         x = self._ezx[b]
         if x is None:
             x = -math.inf
-            for _zid, zt in self._ezones_p(b):
+            # SAFETY SEMANTICS 37: lawful under the ramped margin (each
+            # ramped T* is at least its flat one)
+            for _zid, zt in (self._ezones_rp(b) if self._ramp
+                             else self._ezones_p(b)):
                 if zt > x:
                     x = zt
             self._ezx[b] = x
         return x
+
+    def _ezones_rp(self, b: int):
+        """SAFETY SEMANTICS 37: plan point b's egress zones in _ezones_p's
+        order with their T* under the ramped margin."""
+        pb, kb = self._pts[b]
+        zr = self._ezones_r.get(kb)
+        if zr is None:
+            if self._ezones.get(kb) is None:
+                self._ezones_k(pb, kb)
+            zr = self._ezones_r[kb]
+        return zr
 
     def _egress_s(self, loc, k, zid: str) -> float:
         """SAFETY SEMANTICS 32: the effective egress seconds from loc (leg
@@ -778,7 +801,8 @@ class _Ctx:
             rec = self._jrec[key]
             loc, k, pb, ld = rec[0], rec[1], rec[2], rec[4]
             x = -math.inf
-            for zid, zt in self._ezones_p(pb):
+            for zid, zt in (self._ezones_rp(pb) if self._ramp
+                            else self._ezones_p(pb)):
                 v = min(zt, ld - self._egress_s(loc, k, zid))
                 if v > x:
                     x = v
@@ -877,7 +901,10 @@ class _Ctx:
         v = self._tstar.get(k)
         if v is not None:
             return v
-        rr = self._road_route_k(a, b, ka, kb, mode)
+        # SAFETY SEMANTICS 37: "egress_r" is the egress leg (its road, its
+        # margin) judged under the ramped margin
+        rmode = "egress" if mode == "egress_r" else mode
+        rr = self._road_route_k(a, b, ka, kb, rmode)
         sh = self._sh
         if sh is not None:
             xk = (a.lat, a.lon, b.lat, b.lon, mode)
@@ -892,7 +919,14 @@ class _Ctx:
             # egress_roads_min, SAFETY SEMANTICS 31): an EGRESS leg on roads
             # needs the larger egress margin (0 = off: the road margin)
             em = getattr(self.cfg, "route_margin_egress_roads_min", 0.0)
-            if mode == "egress" and rr is not None and em > 0.0:
+            ramp = None
+            if rmode == "egress" and rr is not None and em > 0.0:
+                if mode == "egress_r":
+                    # SAFETY SEMANTICS 37 (contracts route_margin_egress_
+                    # ramp): the slack over the road margin grows with the
+                    # time on the road, up to the egress margin
+                    ramp = (mm, getattr(self.cfg, "route_margin_egress_ramp",
+                                        0.0))
                 mm = max(mm, em)
             v = UNREACHED
             for iid, ras in self.rasters:
@@ -901,13 +935,15 @@ class _Ctx:
                 om = self.offmap.get(iid) if self.offmap else None
                 if om is None:
                     t = safety.leg_tstar(a, b, spd, ras, self.cfg, path=path,
-                                         margin_min=mm, walks=self._walks)
+                                         margin_min=mm, walks=self._walks,
+                                         margin_ramp=ramp)
                 else:
                     # SAFETY SEMANTICS 15: THIS fire's off-domain horizon
                     t = safety.leg_tstar(
                         a, b, spd, ras, self.cfg, path=path, margin_min=mm,
                         offraster_ros_mps=om[0],
-                        offraster_margin_min=om[1], walks=self._walks)
+                        offraster_margin_min=om[1], walks=self._walks,
+                        margin_ramp=ramp)
                 if t < v:
                     v = t
             if sh is not None:
@@ -941,15 +977,20 @@ class _Ctx:
         zl = self._ezones.get(k)
         if zl is None:
             zl = self._ezones_k(loc, k)
+        # SAFETY SEMANTICS 37: the flat margin's choice first; with none, the
+        # first zone lawful under the ramped margin (same order)
+        passes = (zl, self._ezones_r[k]) if self._ramp else (zl,)
         if self._egt and latest_depart_s is not None:
-            for zid, tstar in zl:
-                if (depart_s <= tstar and depart_s
-                        <= latest_depart_s - self._egress_s(loc, k, zid)):
-                    return (True, zid)
+            for zp in passes:
+                for zid, tstar in zp:
+                    if (depart_s <= tstar and depart_s
+                            <= latest_depart_s - self._egress_s(loc, k, zid)):
+                        return (True, zid)
             return (False, "")
-        for zid, tstar in zl:
-            if depart_s <= tstar:
-                return (True, zid)
+        for zp in passes:
+            for zid, tstar in zp:
+                if depart_s <= tstar:
+                    return (True, zid)
         return (False, "")
 
     def _ezones_k(self, loc, k):
@@ -975,6 +1016,14 @@ class _Ctx:
                                          0.0) > 0.0 else "ingress")
             zl = [(z.zone_id, self._tstar_k(loc, z.loc, k, zk, emode))
                   for z, zk in order]
+        if self._ramp:
+            # SAFETY SEMANTICS 37: the same zones, the same order, each T*
+            # under the ramped margin
+            zr = []
+            for zid, _tstar in zl:
+                z, zk = self._zbyid[zid]
+                zr.append((zid, self._tstar_k(loc, z.loc, k, zk, "egress_r")))
+            self._ezones_r[k] = zr
         self._ezones[k] = zl
         return zl
 
@@ -1013,18 +1062,27 @@ class _Ctx:
                 break
             zl = self._ezones_p(pb)
             zid = None
+            # SAFETY SEMANTICS 37: the flat margin's choice first; with none,
+            # the first zone lawful under the ramped margin (same order)
+            passes = (zl, self._ezones_rp(pb)) if self._ramp else (zl,)
             if self._egt:
                 # SAFETY SEMANTICS 32: the zone must also be reached by the
                 # home's latest departure
-                for z_id, zt in zl:
-                    if (depart <= zt and depart <= ld - self._egress_s(
-                            _cl, _clk, z_id)):
+                for zp in passes:
+                    for z_id, zt in zp:
+                        if (depart <= zt and depart <= ld - self._egress_s(
+                                _cl, _clk, z_id)):
+                            zid = z_id
+                            break
+                    if zid is not None:
+                        break
+                passes = ()
+            for zp in passes:
+                for z_id, zt in zp:
+                    if depart <= zt:
                         zid = z_id
                         break
-                zl = ()
-            for z_id, zt in zl:
-                if depart <= zt:
-                    zid = z_id
+                if zid is not None:
                     break
             if zid is None:
                 fail = ("egress", key)

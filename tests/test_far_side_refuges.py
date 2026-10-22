@@ -27,9 +27,11 @@ import pytest
 from wgresponse import fuels, geo, server, simui
 from wgresponse.contracts import ResponseConfig
 
-#: the iteration-3 knobs, all off: the sessions of commit b9e3b68
+#: the iteration-3 knobs, all off: the sessions of commit b9e3b68 (and the
+#: iteration-4 laws, SAFETY SEMANTICS 36-37, which that commit did not have)
 ITER3_OFF = {"sim_far_side_zones": False, "reinforce_entry_by_need": False,
-             "ember_eta_landings": False}
+             "ember_eta_landings": False,
+             "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0}
 FAR_ONLY = dict(ITER3_OFF, sim_far_side_zones=True)
 
 
@@ -41,14 +43,19 @@ def _hash(st):
 
 
 def test_knobs_are_off_by_default_and_the_simulator_arms_the_refuges():
-    """34a is armed by the simulator; 34b is NOT (measured neutral on the
-    valley harness: it acted in 5 of 33 runs for -1 home) — an explicit
-    override arms it."""
+    """34a is armed by the simulator; 34b was not (iteration 3 measured it
+    neutral on the valley harness: it acted in 5 of 33 runs for -1 home) —
+    re-pinned 2026-10-22: the FOUNDER ARMED it ("Either end of I-70";
+    simui.SIM_ARMS_REINFORCE_ENTRY_BY_NEED). An explicit override still wins
+    either way."""
     cfg = ResponseConfig()
     assert cfg.sim_far_side_zones is False
     assert cfg.reinforce_entry_by_need is False
     s = simui.SimSession("boulder_co", 2, 1, seed="fz", roads_module=None)
     assert s._cfg.sim_far_side_zones is True
+    assert s._cfg.reinforce_entry_by_need is True
+    s = simui.SimSession("boulder_co", 2, 1, seed="fz", roads_module=None,
+                         cfg_overrides={"reinforce_entry_by_need": False})
     assert s._cfg.reinforce_entry_by_need is False
     s = simui.SimSession("boulder_co", 2, 1, seed="fz", roads_module=None,
                          cfg_overrides={"reinforce_entry_by_need": True})
@@ -67,9 +74,19 @@ def test_the_catalog_on_and_off(key, ids):
     assert [z.zone_id for z in loc.far_zones] == ids
     off = simui.SimSession(key, 4, 2, seed="fz", roads_module=None,
                            cfg_overrides=ITER3_OFF)
-    on = simui.SimSession(key, 4, 2, seed="fz", roads_module=None)
+    # every far zone in (iteration 3's catalog: the per-zone switch empty —
+    # since 2026-10-22 the simulator leaves Cordillera west out, below)
+    on = simui.SimSession(key, 4, 2, seed="fz", roads_module=None,
+                          cfg_overrides={"sim_far_zones_off": ""})
     assert off._loc.safe_zones == loc.safe_zones
     assert on._loc.safe_zones == tuple(loc.safe_zones) + tuple(loc.far_zones)
+    # the simulator's catalog: Cordillera west DROPPED by founder decision
+    # 2026-10-22 (simui.SIM_FAR_ZONES_OFF) — not a credible safety zone
+    # without a ground check; Freedom Park / Battle Mountain HS (z5) and the
+    # corridor's z7 / z8 stay
+    sim = simui.SimSession(key, 4, 2, seed="fz", roads_module=None)
+    assert sim._loc.safe_zones == tuple(loc.safe_zones) + tuple(
+        z for z in loc.far_zones if z.zone_id != "beaver_creek_co-z4")
     # the round-robin staging of the first zones is unchanged
     assert ({c: cs.crew.home_base for c, cs in off._crew_sims.items()}
             == {c: cs.crew.home_base for c, cs in on._crew_sims.items()})

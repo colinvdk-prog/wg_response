@@ -1378,10 +1378,26 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
        need) enters by whichever road entry on the tile's east and west edges
        is open (30a) and has the most homes waiting for a crew on a lawful
        road from it, then the shortest drive to the nearest of them, then its
-       region's side — said when it is the other side. NOT armed: measured it
-       acted in 5 of 33 runs (the Vail 1 h crew entering from the west) for
-       -1 home; where work is cut off it lies beyond the fire from both
-       entries (Beaver Creek's northwest fire).
+       region's side — said when it is the other side. Iteration 3 left it
+       unarmed (it acted in 5 of 33 runs — the Vail 1 h crew entering from
+       the west — for -1 home); ARMED BY FOUNDER DECISION 2026-10-22 ("Either
+       end of I-70"), after the independent review measured it on 24 fresh
+       fires: +18 homes, reached-unprotected 42 -> 37 (Vail's east entry lay
+       behind the fire).
+   (a') THE PER-ZONE SWITCH (iteration 4; cfg.sim_far_zones_off): comma-
+       separated far-zone ids left OUT of the catalog — the founder's keep-
+       or-drop call on Cordillera west (beaver_creek_co-z4: 13 ha of
+       developed streets, 127 m from fuel, 49 % timber within 300 m, not
+       ground-verified; the independent review measured it carrying all of
+       iteration 3's Beaver Creek gain). An id no location's far_zones carry
+       is an error at session start; "" = every far zone, byte-identical.
+       THE FOUNDER'S TWO CALLS, one line each, measured both ways
+       (docs/SIMULATOR_DESIGN.md "Pre-ship fixes") and DECIDED 2026-10-22:
+       Cordillera west DROPPED — not a credible safety zone without a ground
+       check (simui.SIM_FAR_ZONES_OFF = "beaver_creek_co-z4", the
+       simulator's value of this knob; its definition stays in the catalog
+       for the record) — and (b) ARMED (simui.SIM_ARMS_REINFORCE_ENTRY_BY_
+       NEED = True).
    Measured with (a) and 35 armed (33 runs): homes served 1,040 -> 1,071 (Beaver Creek's canonical high, pair
    and late runs +6, +6, +5 and its northwest high +6 — the refuges, law by
    law on its two worst runs; the ember ETA alone +1 there — the corridor
@@ -1391,7 +1407,8 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    crews off the map 0, unchanged. Knobs OFF = byte-
    identical (pinned in tests/test_far_side_refuges.py against goldens
    computed on commit b9e3b68 on the four harness runs where they bite); the
-   SIMULATOR arms (a).
+   SIMULATOR arms (a) — without Cordillera west since 2026-10-22 — and,
+   since 2026-10-22, (b).
 35. EMBER ETA FOR DEVELOPED HOMES (2026-10-21; the propagation review's R4;
    cfg.ember_eta_landings; read by spread and the simulator). A home on a
    developed or water cell — which the surface model never reaches — took
@@ -1414,6 +1431,76 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    valley homes' pessimistic front within 200 m still comes before any
    ember lands within it. Off = byte-identical (no landing
    raster attached; tests/test_ember_eta.py); the SIMULATOR arms it.
+36. A REFUGE OFF THE MAP IS THE LAST EXIT (2026-10-21; the Eagle River
+   valley review's iteration 4, the pre-ship fixes — docs/SIMULATOR_DESIGN.md
+   "Pre-ship fixes"; cfg.escape_refuge_on_map; read only by the simulator).
+   The road-refuge branches of the voluntary moves — the durable egress
+   (28a), the last-exit trigger (28b), the SEM-10e proactive decamp — took
+   the SEM-10d search's best node, and a node beyond the tile edge has no
+   fire field: its "unbounded horizon" is the edge of the data, and reaching
+   it takes the crew out of the simulation (left_map_out). Measured (the
+   independent review of iterations 2-3, 24 fresh valley fires): crews off
+   the map 5 -> 10 — Beaver Creek's b340 fire re-pointed sim-g2's egress at
+   2.25 h to a road refuge 0.1 km past the edge; at a 13:13 start Beaver
+   Creek's canonical extreme fire took two crews off with 4.35 h of life.
+   When True: (a) 28a and 10e choose on-map nodes only (_on_map; a node
+   beyond the edge may still be driven through); (b) an off-map refuge is
+   the LAST exit — 28b takes the search's lawful refuge that stays clear H
+   only when it lies off the map, no on-map node does, and the lawful way to
+   it closes within L plus one step (it stays open min(its transit margin
+   after the start, its arrival margin less the step's lead): the zone
+   exits' law); until then the crew stays on the map (said once), and it is
+   not in a pocket (28d defers to that way). The pocket exit (28d) and the
+   emergency flight (SEM-10 / 10d) are unchanged: they may still leave the
+   map. Measured (36 alone, against iteration 3) on the 24 fresh fires:
+   crews off the map 10 -> 4 — three
+   last exits 0.25-3.25 h later than iteration 3 took them (the crews' own
+   spots 0.4-2.4 h from the line then) and one pocket exit at 12 h, as
+   before — homes served (647), unprotected (42) and transit rows (3, the
+   deepest 22 min) unchanged, relocations 8 -> 12; the 33-run matrix
+   unchanged; at 13:13 Beaver Creek's canonical extreme fire keeps both
+   crews on the map (2 -> 0). Forbidding every off-map refuge instead
+   (measured) took the count to 0 but left crews in on-map dead ends that
+   the sweep moved hours later through band 345 and 368 min old. Knob OFF =
+   byte-identical (pinned in tests/test_preship_fixes.py against goldens
+   computed on commit 1963df2 on worlds where it bites); the SIMULATOR arms
+   it.
+37. THE EGRESS SLACK GROWS WITH THE DRIVE — A RESCUE, NOT A NEW PREFERENCE
+   (2026-10-21; the Eagle River valley review's iteration 4; cfg.route_
+   margin_egress_ramp; read by dispatch and the simulator's 29 predicate,
+   with route_margin_egress_roads_min). The egress margin (31) asked a road
+   egress for its 15 min of slack at the first sample as at the last,
+   though a delay costs time in proportion to the road already driven —
+   measured: on the public Eagle / Gypsum preset it refused sim-c5 (P10 2.6
+   h out at its first field), whose roads out pass 36-37 min ahead of the
+   10c line within their first 2.4 min, a home iteration 1 coated with that
+   minute to spare (reached-unprotected 0 -> 1). When > 0 the RAMPED margin
+   at a sample tau seconds into an egress leg on roads is route_margin_
+   roads_min + min(route_margin_egress_roads_min - route_margin_roads_min,
+   this * tau), the leg's END (the zone, where the crew waits after it
+   arrives: the 20b destination lead) keeping the flat margin (safety.
+   leg_tstar margin_ramp); 1/3 covers a drive at 75 % of the planned speed
+   (the review's traffic test: tau / 0.75 - tau) for the first 45 min of an
+   egress. Dispatch keeps the flat margin's zone order and choice and takes
+   a zone under the ramped margin only for a stop NO zone serves at the
+   flat one; the 29 predicate's egress line is the ramped one (the stops
+   the planner may now take are workable). Measured against iteration 4
+   without it (before the founder's 2026-10-22 calls): the Eagle / Gypsum
+   home coated (its preset's reached-unprotected 1 -> 0) but Park City's
+   windstorm loses one (0 -> 1) and 7 coatings — the 13 presets 475 -> 468
+   served, reached-unprotected 7 -> 7; the 33-run matrix 1,071 -> 1,076
+   served, reached-unprotected 14 -> 14, one new transit row (5.9 min, 16
+   s) and two crews off the map; the 24 fresh fires 647 -> 635 served,
+   unprotected 42 -> 43 (on Vail's b110 fire it rescues three homes 0.9-2.1
+   h from the P10, the planner re-routes both crews toward them and the
+   fire then cuts that side off); every crew driving 25 % slower: 988 ->
+   994 served and three new rows of at most 1.6 min. No row deeper than 30
+   min anywhere. Without
+   the end's flat margin (measured) a Vail crew worked a stop whose zone 20b
+   then refused at departure: a pocket exit 23 min past the line. 0 = the
+   flat margin, byte-identical (tests/test_preship_fixes.py). NOT armed by
+   the simulator: simui.SIM_ROUTE_MARGIN_EGRESS_RAMP (0.0) is the founder's
+   one-line call, measured both ways.
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -3233,8 +3320,22 @@ class ResponseConfig:
     # it is the other side. False = byte-identical. NOT armed by the
     # simulator: measured on the valley harness it acted in 5 of 33 runs
     # (the Vail 1 h crew entering from the west) for -1 home; in the runs
-    # where work is cut off it lies beyond the fire from both entries.
+    # where work is cut off it lies beyond the fire from both entries. ARMED
+    # by the simulator by founder decision 2026-10-22 ("Either end of I-70";
+    # simui.SIM_ARMS_REINFORCE_ENTRY_BY_NEED): on the independent review's 24
+    # fresh fires it coats 18 more homes (Vail's east entry lay behind the
+    # fire). An explicit override still wins.
     reinforce_entry_by_need: bool = False
+    # ... (a') THE PER-ZONE SWITCH (2026-10-21, iteration 4; read only by the
+    # simulator, with sim_far_side_zones): comma-separated far-zone ids
+    # (SimLocation.far_zones, e.g. "beaver_creek_co-z4") left OUT of the
+    # catalog — the founder's keep-or-drop call on a refuge nobody has
+    # ground-verified. An id no location's far_zones carry is an error at
+    # session start. "" = every far zone, byte-identical. The simulator's
+    # value is simui.SIM_FAR_ZONES_OFF = "beaver_creek_co-z4": Cordillera
+    # west DROPPED by founder decision 2026-10-22 — not a credible safety
+    # zone without a ground check.
+    sim_far_zones_off: str = ""
     # EMBER ETA FOR DEVELOPED HOMES (2026-10-21, the Eagle River valley
     # review's iteration 3 — the propagation review's R4; SAFETY SEMANTICS
     # 35; read by spread and the simulator). A home on a developed or water
@@ -3252,6 +3353,21 @@ class ResponseConfig:
     # earlier of the front within the radius and the first landing within
     # it. False = byte-identical.
     ember_eta_landings: bool = False
+    # A VOLUNTARY REFUGE IS ON THE MAP (2026-10-21, the Eagle River valley
+    # review's iteration 4; SAFETY SEMANTICS 36; read only by the simulator).
+    # The road-refuge branches of the voluntary moves — the durable egress
+    # (28a), the last-exit trigger (28b), the pocket exit (28d) and the
+    # SEM-10e proactive decamp — took the SEM-10d search's best node, and a
+    # node beyond the tile edge has no fire field: its "unbounded horizon" is
+    # the edge of the data, and reaching it takes the crew out of the
+    # simulation (left_map_out). Measured (the independent review's 24 fresh
+    # valley fires): iteration 2-3's laws sent crews off the map 5 -> 10 times,
+    # crews with 2-5 h of work left. When True those searches return on-map
+    # nodes only (_on_map; a node beyond the edge may still be driven
+    # through). The emergency flight (the sweep's SEM-10 / 10d escape) is
+    # unchanged: it may still leave the map when that is strictly safer.
+    # False = byte-identical.
+    escape_refuge_on_map: bool = False
     # --- gel product parameters (UNVERIFIED — pending supplier data) ---
     gel_window_h: float = 72.0         # operational window after application (outer weathering/wash-off horizon still UNVERIFIED)
     gel_full_strength_h: float = 72.0  # == gel_window_h: GraphGel is Class A at 1/8" DRY — flat effectiveness, no decay ramp (product data 2026-07-11)
@@ -3546,6 +3662,24 @@ class ResponseConfig:
     # unchanged. 0 = off (route_margin_roads_min for egress too), byte-
     # identical. The SIMULATOR arms it (45).
     route_margin_egress_roads_min: float = 0.0
+    # THE EGRESS SLACK GROWS WITH THE DRIVE (2026-10-21, the Eagle River
+    # valley review's iteration 4; SAFETY SEMANTICS 37; read by dispatch and
+    # the simulator, with route_margin_egress_roads_min). The flat egress
+    # margin asks a road egress for 15 min of slack at its first sample as
+    # at its last — measured: on the public Eagle / Gypsum preset it refuses
+    # a home (sim-c5; P10 2.6 h out) whose only roads out pass 36-37 min
+    # ahead of the line within the first 2.4 min of the drive, a home
+    # iteration 1 coated with that minute to spare. When > 0 a RAMPED margin
+    # grows the slack over route_margin_roads_min with the time on the
+    # road: at a sample tau into the leg route_margin_roads_min + min(route_
+    # margin_egress_roads_min - route_margin_roads_min, this * tau), the
+    # leg's end (the zone) keeping the flat margin — 1/3 is a drive at 75 %
+    # of the planned speed, the review's traffic test (tau / 0.75 - tau).
+    # Dispatch keeps the flat margin's zone order and choice and uses the
+    # ramped margin only for a stop no zone serves at the flat one (a
+    # rescue); the simulator's 29 predicate judges with the ramped margin.
+    # 0 = the flat margin, byte-identical.
+    route_margin_egress_ramp: float = 0.0
     # A STOP'S EGRESS FITS ITS DEADLINE (2026-10-21, the Eagle River valley
     # review's iteration 2; SAFETY SEMANTICS 32; read by dispatch). The
     # planner required a stop's departure to carry slack_min before the
@@ -3893,6 +4027,9 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
     if (cfg.route_margin_egress_roads_min < 0
             or cfg.route_margin_egress_roads_min > MAX_MARGIN_MIN):
         problems.append(f"route_margin_egress_roads_min must be within [0, {MAX_MARGIN_MIN:g}] minutes")
+    # SAFETY SEMANTICS 37 (2026-10-21): seconds of slack per second driven
+    if not (0.0 <= cfg.route_margin_egress_ramp <= 1.0):
+        problems.append("route_margin_egress_ramp must be within [0, 1]")
 
     # --- corridor erosion / sampling ---
     if cfg.corridor_erosion_m < 0:
@@ -4178,6 +4315,10 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("feed_sanity_memory_h must be a finite value > 0")
     if cfg.sim_weather_profile not in ("generic", "city"):
         problems.append("sim_weather_profile must be 'generic' or 'city'")
+    # SAFETY SEMANTICS 34a' (2026-10-21): comma-separated far-zone ids
+    if not isinstance(cfg.sim_far_zones_off, str):
+        problems.append("sim_far_zones_off must be a string of comma-"
+                        "separated far-zone ids")
 
     # --- type discipline: bool-typed fields must hold bool, int-typed fields
     # must hold int (and not bool -- bool is an int subclass in Python) ---

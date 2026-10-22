@@ -60,7 +60,9 @@ ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
              "crew_overrun_ledger": False,
              # ... and the iteration-3 knobs (SAFETY SEMANTICS 34-35)
              "sim_far_side_zones": False, "reinforce_entry_by_need": False,
-             "ember_eta_landings": False}
+             "ember_eta_landings": False,
+             # ... and the iteration-4 laws (SAFETY SEMANTICS 36-37)
+             "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0}
 
 # Fast-engine overrides shared by the scripted-session tests: small ensemble,
 # coarse grid, short horizon — config only, never forked physics.
@@ -2897,11 +2899,12 @@ def test_crew_safety_paradise_founder_repro_under_crown_fire():
         pytest.skip("LOUD SKIP: no data/tiles/paradise_ca_ext.wgt — the founder "
                     "Paradise repro is not exercised this run "
                     "(py -3 tools/fetch_sim_tiles.py --extended)")
-    # the iteration-2 knobs pinned off (2026-10-21): the founder repro's
-    # control — crews ending their area escape idle on old black — was
-    # derived before SEMANTICS 28 sends them to durable refuges instead
+    # un-pinned 2026-10-21 (the Eagle River valley review's iteration 4):
+    # iteration 2 pinned its knobs off here, but the independent review of
+    # iterations 2-3 measured the repro passing with every crew-safety law
+    # armed — the simulator's defaults, as the founder runs it
     s = SimSession("paradise_ca", 64, 5, seed="caught-1", fire_zone="extended",
-                   cfg_overrides=dict(LEGACY_WX, **ITER2_OFF))
+                   cfg_overrides=dict(LEGACY_WX))
     assert s._cfg.crown_fire and s._cfg.old_black_refuge
     s.ignite(39.83, -121.52, intensity="extreme")
     on_old_black = 0

@@ -670,6 +670,19 @@ SIM_SOLVER_BUDGET_EVALS = 20_000
 SIM_EGRESS_DURABLE_MIN_H = 8.0
 SIM_ESCAPE_LAST_EXIT_LEAD_MIN = 30.0
 SIM_ROUTE_MARGIN_EGRESS_ROADS_MIN = 45.0
+#: ... iteration 4 (contracts route_margin_egress_ramp, SAFETY SEMANTICS 37):
+#: a ramped margin whose slack grows with the time on the road — RAMP of it,
+#: up to the 15 min (the zone keeps them); a rescue: dispatch keeps the flat
+#: margin's zone choice and takes the ramped one only for a stop no zone
+#: serves at the flat one. NOT ARMED — a one-line call for the founder:
+#: measured both ways (docs/SIMULATOR_DESIGN.md "Pre-ship fixes"), 1/3 (a
+#: drive at 75 % of the planned speed covered for the first 45 min of every
+#: egress) keeps the public Eagle / Gypsum home and 5 more matrix homes but
+#: costs 12 on the 24 fresh fires and 7 on the presets (Park City's
+#: windstorm loses a reached home). 0.0 = the flat margin.
+SIM_ROUTE_MARGIN_EGRESS_RAMP = 0.0
+#: the ramp the founder's switch would arm (tests; the measured value)
+ROUTE_MARGIN_EGRESS_RAMP_MEASURED = 1.0 / 3.0
 #: SAFETY SEMANTICS 30b (contracts idle_restage): an idle crew restages only
 #: to a zone at least this much nearer the open work than where it stands
 #: (straight-line metres) — so a crew never shuffles for a few hundred metres.
@@ -682,6 +695,22 @@ RESTAGE_MIN_LIFE_H = 8.0
 #: SAFETY SEMANTICS 33 (contracts crew_overrun_ledger): the latest crew-
 #: overrun rows state()'s scoreboard carries (the totals count every row)
 OVERRUN_LEDGER_N = 20
+#: THE FOUNDER'S TWO CALLS (2026-10-21, the Eagle River valley review's
+#: iteration 4; docs/SIMULATOR_DESIGN.md "Pre-ship fixes"), each a one-line
+#: switch here, built and measured both ways — DECIDED BY THE FOUNDER
+#: 2026-10-22:
+#: (1) SEMANTICS 34b, "Either end of I-70": the simulator arms
+#:     reinforce_entry_by_need — a reinforcement enters by whichever edge
+#:     entry has the most waiting homes on a lawful road (the Vail 1 h crew
+#:     may enter from the west); an explicit override still wins;
+SIM_ARMS_REINFORCE_ENTRY_BY_NEED = True
+#: (2) SEMANTICS 34a', "Drop it": the simulator leaves Cordillera west
+#:     (beaver_creek_co-z4) out of its catalog — not a credible safety zone
+#:     without a ground check (13 ha of developed streets, 127 m from fuel,
+#:     49 % timber within 300 m). Its definition stays in LOCATIONS for the
+#:     record; an explicit cfg.sim_far_zones_off ("" = every far zone)
+#:     restores it, to reproduce iteration 3.
+SIM_FAR_ZONES_OFF = "beaver_creek_co-z4"
 
 #: SEM-10 escape-path sample spacing (m): _route_points_with_times subdivides
 #: every polyline span into pieces of at most this length so the front cannot
@@ -1201,6 +1230,9 @@ LOCATIONS = {
         # nb_patches.py + zone_pick.py): every zone above sits at or east of
         # a west-northwest ignition and the Edwards interchange cell is grass.
         far_zones=(
+            # DROPPED from the simulator's catalog by founder decision
+            # 2026-10-22 (SIM_FAR_ZONES_OFF): not a credible safety zone
+            # without a ground check — kept here for the record.
             # Cordillera, Club House Dr / Cottage Circle — a developed
             # (LANDFIRE non-burnable) cluster west of Edwards (13 ha of
             # residential streets: a refuge, not open ground; the tile has no
@@ -1342,6 +1374,22 @@ LOCATIONS = {
                      "Wolcott, US-6 / SH-131 (I-70 exit 157)"),
         )),
 }
+
+
+def _far_zones_off(spec) -> frozenset:
+    """The far-zone ids cfg.sim_far_zones_off leaves out of the catalog
+    (SAFETY SEMANTICS 34a', the per-zone switch): comma-separated, blanks
+    ignored. An id that no location's far_zones carry is a loud error — a
+    typo must never silently keep a refuge the founder dropped (ids carry
+    their location's key, so one value serves every location)."""
+    ids = frozenset(s.strip() for s in str(spec or "").split(",")
+                    if s.strip())
+    known = {z.zone_id for loc in LOCATIONS.values() for z in loc.far_zones}
+    unknown = sorted(ids - known)
+    if unknown:
+        raise ValueError(f"sim_far_zones_off names no far zone: {unknown} "
+                         f"(known: {sorted(known)})")
+    return ids
 
 
 # ---------------------------------------------------------------------------
@@ -3183,18 +3231,41 @@ class SimSession:
         # ETA (ember_eta_landings). Explicit override wins; defaults OFF.
         if "sim_far_side_zones" not in overrides:
             cfg.sim_far_side_zones = True
-        # (34b reinforce_entry_by_need is NOT armed: measured neutral on the
-        # valley harness — it acted in 5 of 33 runs, -1 home — available
-        # through cfg)
+        # (34b reinforce_entry_by_need and the per-zone switch 34a': the
+        # founder's two calls, decided 2026-10-22 — entry by need armed
+        # (SIM_ARMS_REINFORCE_ENTRY_BY_NEED), Cordillera west dropped
+        # (SIM_FAR_ZONES_OFF). Explicit overrides win.)
+        if "reinforce_entry_by_need" not in overrides:
+            cfg.reinforce_entry_by_need = bool(
+                SIM_ARMS_REINFORCE_ENTRY_BY_NEED)
+        if "sim_far_zones_off" not in overrides:
+            cfg.sim_far_zones_off = SIM_FAR_ZONES_OFF
         if "ember_eta_landings" not in overrides:
             cfg.ember_eta_landings = True
+        # THE EAGLE RIVER VALLEY CREW-SAFETY ITERATION 4 (2026-10-21;
+        # contracts SAFETY SEMANTICS 36-37; docs/SIMULATOR_DESIGN.md "Pre-
+        # ship fixes"): (36) a refuge off the map is the last exit — the
+        # voluntary refuge laws choose on-map refuges, and an off-map one
+        # only by the last lawful way to it (escape_refuge_on_map); (37) the
+        # road-egress slack that grows with the time on the road
+        # (route_margin_egress_ramp) is NOT armed — SIM_ROUTE_MARGIN_EGRESS_
+        # RAMP, the founder's one-line call. Explicit override wins; defaults
+        # OFF.
+        if "escape_refuge_on_map" not in overrides:
+            cfg.escape_refuge_on_map = True
+        if "route_margin_egress_ramp" not in overrides:
+            cfg.route_margin_egress_ramp = SIM_ROUTE_MARGIN_EGRESS_RAMP
+        far_off = _far_zones_off(getattr(cfg, "sim_far_zones_off", ""))
         if (getattr(cfg, "sim_far_side_zones", False)
                 and self._loc.far_zones):
             # FAR-SIDE REFUGES (SEMANTICS 34): appended after the catalog's
             # own zones, so the round-robin staging of the first ones and
-            # every zone id keep their meaning
+            # every zone id keep their meaning; the per-zone switch (34a',
+            # cfg.sim_far_zones_off) leaves the named ones out
             self._loc = replace(self._loc, safe_zones=(
-                tuple(self._loc.safe_zones) + tuple(self._loc.far_zones)))
+                tuple(self._loc.safe_zones)
+                + tuple(z for z in self._loc.far_zones
+                        if z.zone_id not in far_off)))
 
         # --- roads (contracts wgresponse.roads seam; loaded ONCE per
         # configure). LAZY import: the sibling module lands independently —
@@ -3580,6 +3651,13 @@ class SimSession:
         self._n_transit_rows = 0
         self._n_restaged = 0
         self._last_exit_none = {}
+        # SAFETY SEMANTICS 36 (contracts escape_refuge_on_map): crew_id ->
+        # (memo key, the off-map refuge search's result, the absolute time
+        # its way closes) — the off-map last exit watched without re-
+        # searching every step; and the crews told they wait for it
+        self._off_map_exit = {}
+        self._off_map_wait_noted = set()
+        self._n_off_map_last_exit = 0
         self._restage_target = {}
         self._entry_held_noted = set()
         self._entry_node = {}
@@ -5045,6 +5123,13 @@ class SimSession:
         return bool(getattr(self._cfg, "left_map_out", False)
                     and getattr(self._cfg, "escape_prefer_on_map", False))
 
+    def _refuge_on_map(self) -> bool:
+        """A VOLUNTARY REFUGE IS ON THE MAP (contracts escape_refuge_on_map,
+        SAFETY SEMANTICS 36): the road refuges the voluntary laws search
+        (28a durable egress, 28b last exit, 28d pocket exit, the SEM-10e
+        proactive decamp) are on-map nodes only."""
+        return bool(getattr(self._cfg, "escape_refuge_on_map", False))
+
     def _esc_horizon_step(self, hz: float) -> int:
         """The safety horizon capped at cfg.escape_road_horizon_cap_h, in
         ESCAPE_NET_HORIZON_Q_S steps (an infinite uncapped horizon would be
@@ -5056,7 +5141,8 @@ class SimSession:
 
     def _road_escape_search(self, pos, now, speed_mps: float, lead_s: float,
                             lawful_only: bool = False,
-                            min_p10_s: float = -math.inf):
+                            min_p10_s: float = -math.inf,
+                            on_map_only: bool = False):
         """SEM-10d ROAD-NETWORK ESCAPE search (contracts escape_road_network).
 
         A time-dependent Dijkstra over the loaded road graph from the crew's
@@ -5091,6 +5177,13 @@ class SimSession:
         lawful_only (the SEM-10e proactive decamp, a VOLUNTARY move): an
         exposed sample is impassable too, and a candidate must be lawful at
         arrival with its own eroded-P10 arrival >= min_p10_s (durable).
+
+        on_map_only (SAFETY SEMANTICS 36, contracts escape_refuge_on_map —
+        the voluntary refuge laws pass it): a candidate must lie ON the map
+        (_on_map). A node beyond the tile edge is still driven through on
+        the way to an on-map one, but is never the destination: no fire
+        field exists there (its "unbounded horizon" is the edge of the data,
+        not safety) and reaching it takes the crew out of the simulation.
 
         Returns None when there is NO passable road escape (the crew is
         beyond the spur cap from every node, the only way onto the network
@@ -5198,7 +5291,8 @@ class SimSession:
                 # later node can beat a lawful ON-map best on a smaller step
                 break
             if (geo.haversine_m(pos, g.nodes[u]) >= ESCAPE_NET_MIN_FLEE_M
-                    and p10_at[u] >= min_p10_s):
+                    and p10_at[u] >= min_p10_s
+                    and not (on_map_only and not self._on_map(g.nodes[u]))):
                 # the destination margin exactly as _metrics_of_points takes
                 # it: the last sample's p10 against its pass time
                 dm = p10_at[u] - (now + t + buffer_s + lead_s)
@@ -5554,7 +5648,8 @@ class SimSession:
             buffer_s = self._cfg.egress_buffer_min * 60.0
             found = self._road_escape_search(
                 cs.pos, t_s, cs.speed, lead_s, lawful_only=True,
-                min_p10_s=t_s + dur_s + buffer_s)
+                min_p10_s=t_s + dur_s + buffer_s,
+                on_map_only=self._refuge_on_map())
             if found is not None:
                 loc = found["loc"]
                 self._escape_pins[(cs.pos.lat, cs.pos.lon, loc.lat,
@@ -5613,6 +5708,13 @@ class SimSession:
                        f"{dur_s / 3600.0:g} h closes within "
                        f"{(le_s + lead_s) / 60.0:.0f} min")
         _nom, own = self._exposure_at(here, now)
+        off_state = "none"
+        if self._refuge_on_map():
+            # SAFETY SEMANTICS 36: a refuge off the map is the LAST exit
+            off, off_state = self._off_map_last_exit(cid, cs, now, lead_s,
+                                                    dur_s, le_s)
+            if off is not None:
+                return off
         if (math.isinf(own)
                 or own - now - self._cfg.egress_buffer_min * 60.0
                 >= 0.5 * dur_s):
@@ -5625,7 +5727,8 @@ class SimSession:
         if self._net_escape_capable():
             found = self._road_escape_search(
                 here, now, cs.speed, lead_s, lawful_only=True,
-                min_p10_s=now + dur_s + self._cfg.egress_buffer_min * 60.0)
+                min_p10_s=now + dur_s + self._cfg.egress_buffer_min * 60.0,
+                on_map_only=self._refuge_on_map())
             if found is not None:
                 loc = found["loc"]
                 self._escape_pins[(here.lat, here.lon, loc.lat, loc.lon)] = (
@@ -5636,8 +5739,111 @@ class SimSession:
                         f"refuge {geo.haversine_m(here, loc) / 1000.0:.1f} km "
                         f"out stays clear {dur_s / 3600.0:g} h on a fully "
                         f"lawful path")
+            if off_state != "none":
+                # SAFETY SEMANTICS 36: a lawful durable refuge OFF the map
+                # is still a way out (watched as the last exit above) — not
+                # a pocket: the memo below would tell 28d there is none
+                return None, None
         self._last_exit_none[cid] = key
         return None, None
+
+    def _off_map_last_exit(self, cid, cs, now: float, lead_s: float,
+                          dur_s: float, le_s: float):
+        """A REFUGE OFF THE MAP IS THE LAST EXIT (contracts escape_refuge_on_
+        map, SAFETY SEMANTICS 36), inside the last-exit trigger (28b) for an
+        idle crew no durable zone exit is open to: ((SafeZone("escape"),
+        why), "off_map") — leave NOW — when the SEM-10d search's lawful
+        refuge that stays clear dur_s lies OFF the map (no fire field there:
+        the edge of the data, not safety; reaching it takes the crew out of
+        the simulation), no on-map node does, and the lawful way to it
+        closes within le_s plus one step (it stays open min(its transit
+        margin after the start, its arrival margin less the step's lead), as
+        28b's zone exits); else (None, state) — the crew stays on the map:
+        "off_map" while that way stays open (said once), "onmap" when an
+        on-map node stays clear dur_s (28b's road refuge), "none" when no
+        lawful durable refuge is left at all. Only the outcomes that cannot
+        change before the next field generation, position or hour are kept
+        (none stays none and an off-map way's closing time is absolute — the
+        fields are static between world changes, lawful ways only close); an
+        on-map refuge's way may close within the hour, so "onmap" is
+        searched again every step."""
+        if not self._net_escape_capable():
+            return None, "none"
+        here = cs.pos
+        buf = self._cfg.egress_buffer_min * 60.0
+        key = (self._field_gen, here.lat, here.lon, int(now // 3600.0))
+        memo = self._off_map_exit.get(cid)
+        if memo is not None and memo[0] == key:
+            _k, found, close = memo
+        else:
+            found = self._road_escape_search(
+                here, now, cs.speed, lead_s, lawful_only=True,
+                min_p10_s=now + dur_s + buf)
+            close = None
+            if found is not None:
+                if self._on_map(found["loc"]) or self._road_escape_search(
+                        here, now, cs.speed, lead_s, lawful_only=True,
+                        min_p10_s=now + dur_s + buf,
+                        on_map_only=True) is not None:
+                    return None, "onmap"
+                close = now + self._route_open_s(here, found, cs.speed, now,
+                                                 lead_s)
+            self._off_map_exit[cid] = (key, found, close)
+        if found is None:
+            return None, "none"
+        loc = found["loc"]
+        km = geo.haversine_m(here, loc) / 1000.0
+        if close - now > le_s + lead_s:
+            if cid not in self._off_map_wait_noted:
+                self._off_map_wait_noted.add(cid)
+                self._notes.append(
+                    f"crew {cid} stays on the map (SEMANTICS 36): the only "
+                    f"refuge that stays clear {dur_s / 3600.0:g} h lies off "
+                    f"the map, {km:.1f} km out — it leaves by its last lawful "
+                    f"way there, open another "
+                    f"{(close - now) / 3600.0:.1f} h")
+            return None, "off_map"
+        self._escape_pins[(here.lat, here.lon, loc.lat, loc.lon)] = (
+            found["route"])
+        self._n_off_map_last_exit += 1
+        return ((SafeZone(zone_id="escape", loc=loc,
+                          name="road escape point"),
+                 f"its last lawful way to a refuge that stays clear "
+                 f"{dur_s / 3600.0:g} h leads off the map ({km:.1f} km out) "
+                 f"and closes within {(le_s + lead_s) / 60.0:.0f} min — it "
+                 f"leaves the simulation"), "off_map")
+
+    def _route_open_s(self, here, found, speed_mps: float, now: float,
+                      lead_s: float) -> float:
+        """SAFETY SEMANTICS 36: how long the SEM-10d search's route from
+        `here` to found["loc"] stays a lawful way out — min(its transit
+        margin after the start, its arrival margin less lead_s), margins to
+        the 10c line, at the route's own speed (_leg_verdict's law on the
+        searched path)."""
+        rr = found["route"]
+        loc = found["loc"]
+        pts = [here]
+        for p in list(rr.polyline) + [loc]:
+            if (pts[-1].lat, pts[-1].lon) != (p.lat, p.lon):
+                pts.append(p)
+        if len(pts) < 2:
+            return math.inf
+        spd = speed_mps
+        if rr.time_s and rr.time_s > 0.0 and rr.dist_m and rr.dist_m > 0.0:
+            spd = rr.dist_m / rr.time_s
+        samples = self._sem10_points(pts, max(spd, 0.1))
+        _b, _e, _w, _d, dest = self._metrics_of_points(samples, now, 0.0)
+        buffer_s = self._cfg.egress_buffer_min * 60.0
+        transit = math.inf
+        for q, dt in samples:
+            if dt <= 0.0:
+                continue
+            _nom, p10 = self._exposure_at(q, now + dt)
+            if not math.isinf(p10):
+                m = p10 - (now + dt + buffer_s)
+                if m < transit:
+                    transit = m
+        return min(transit, dest - lead_s)
 
     def _pocket_exit_choice(self, cid, cs, now: float, lead_s: float,
                             dur_s: float):
@@ -6129,11 +6335,16 @@ class SimSession:
         cfg = self._cfg
         buf_s = cfg.egress_buffer_min * 60.0
         em_s = getattr(cfg, "route_margin_egress_roads_min", 0.0) * 60.0
+        # SAFETY SEMANTICS 37 (contracts route_margin_egress_ramp): the
+        # egress line's slack over the 10c line grows with the time on the
+        # road (frac per second driven), up to the egress margin
+        ramp = getattr(cfg, "route_margin_egress_ramp", 0.0)
         ways = []
         latest = -math.inf
         for z in sorted(self._loc.safe_zones, key=lambda z: z.zone_id):
             rr = self._leg_route(loc, z.loc)
             line_s = buf_s
+            slack_s = 0.0
             spd = speed_mps
             raw = [z.loc]
             if rr is not None:
@@ -6142,14 +6353,21 @@ class SimSession:
                         and rr.dist_m > 0.0):
                     spd = rr.dist_m / rr.time_s
                 if em_s > 0.0 and getattr(rr, "on_roads", False):
-                    line_s = max(buf_s, em_s)
+                    if ramp > 0.0:
+                        slack_s = max(buf_s, em_s) - buf_s
+                    else:
+                        line_s = max(buf_s, em_s)
             pts = [loc]
             for p in raw:
                 if (pts[-1].lat, pts[-1].lon) != (p.lat, p.lon):
                     pts.append(p)
             worst = math.inf
             tot = 0.0
-            for q, dt in self._strict_points(pts, spd):
+            samples = self._strict_points(pts, spd)
+            # SAFETY SEMANTICS 37: the leg's end (the zone, where the crew
+            # waits after it arrives) keeps the flat egress line
+            t_end = samples[-1][1] if samples else 0.0
+            for q, dt in samples:
                 tot = dt
                 pass_t = depart_s + dt
                 nom, p10 = self._exposure_at(q, pass_t)
@@ -6158,7 +6376,12 @@ class SimSession:
                     worst = -math.inf          # the front is crossing it
                     break
                 if not math.isinf(p10):
-                    m = p10 - pass_t - line_s
+                    if slack_s > 0.0:
+                        m = p10 - pass_t - (line_s + (
+                            slack_s if dt >= t_end
+                            else min(slack_s, ramp * dt)))
+                    else:
+                        m = p10 - pass_t - line_s
                     if m < worst:
                         worst = m
             if worst >= 0.0:
@@ -6537,8 +6760,12 @@ class SimSession:
             if z is not None:
                 return z
         if self._net_escape_capable():
-            found = self._road_escape_search(pos, now, speed_mps, lead_s,
-                                             lawful_only=True, min_p10_s=bar)
+            # A VOLUNTARY REFUGE IS ON THE MAP (contracts escape_refuge_on_
+            # map, SAFETY SEMANTICS 36): the decamp never leaves the map —
+            # an off-map refuge is the last exit (28b), not a proactive one
+            found = self._road_escape_search(
+                pos, now, speed_mps, lead_s, lawful_only=True, min_p10_s=bar,
+                on_map_only=self._refuge_on_map())
             if found is not None:
                 loc = found["loc"]
                 self._escape_pins[(pos.lat, pos.lon, loc.lat, loc.lon)] = (
