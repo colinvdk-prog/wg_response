@@ -522,6 +522,14 @@ T0_S = 1_790_000_000.0
 #: pathological long-run growth.
 _ROAD_PLAN_CACHE_MAX = 50_000
 
+#: STEP-COST MEMOS (perf 2026-10-23: the Eagle River valley laws' step
+#: cost, SAFETY SEMANTICS 25-38). Geometry only, every field value read
+#: live — every decision byte-identical — each cleared whole on overflow
+#: (simple, deterministic): the grid cell of a point (_cell_of) and an
+#: egress leg's samples with their tile cells (_way_leg).
+_CELL_OF_MEMO_MAX = 200_000
+_WAY_LEGS_MAX = 20_000
+
 #: SEM-10d escape-path COLD-BLACK window (seconds): a cell the nominal front
 #: consumed at least this long before a fleeing crew would pass it counts as
 #: OLD BURN — passable (the hazard is the front's flaming residence, minutes
@@ -3686,6 +3694,12 @@ class SimSession:
         # each position's road-refuge window, per field generation
         self._dest_keep = {}
         self._dest_keep_key = None
+        # STEP-COST MEMOS (perf 2026-10-23; byte-identical): GEOMETRY only —
+        # the grid cell a point lies in (_cell_of) and an egress leg's
+        # samples with their tile cells (_way_leg); every field VALUE is
+        # still read from the rasters at the moment it is judged
+        self._rc_memo = (None, {})
+        self._way_legs = {}
         self._restage_target = {}
         self._entry_held_noted = set()
         self._entry_node = {}
@@ -4626,9 +4640,13 @@ class SimSession:
         rc = geo.latlon_to_rc(self._tile.spec, p)
         if rc is None:
             return _COLD_BLACK_PASS_S
-        code = int(self._tile.fuel.data[rc[0] * self._tile.spec.ncols
-                                        + rc[1]])
-        return cold_black_minutes(code) * 60.0
+        return self._cold_black_of_idx(rc[0] * self._tile.spec.ncols + rc[1])
+
+    def _cold_black_of_idx(self, idx: int) -> float:
+        """_cold_black_pass_s of an ON-TILE point under the per-class law
+        (transit_cold_black_by_class), from its tile flat index — for a
+        caller that already holds the index (the escape search's samples)."""
+        return cold_black_minutes(int(self._tile.fuel.data[idx])) * 60.0
 
     def _escape_switch_ok(self, cs, now: float, lead_s: float,
                           new_loc, new_id: str) -> bool:
@@ -4678,22 +4696,50 @@ class SimSession:
         is IMMINENT once it is within the egress buffer of now (SAFETY SEMANTICS
         10). The erosion already folds in the earliest burnable arrival within
         corridor_erosion_m, so a crew parked on a developed / non-burnable cell
-        still inherits the adjacent front. inf when no fire reaches the cell."""
+        still inherits the adjacent front. inf when no fire reaches the cell.
+        (geo.raster_sample on each grid — the cell through _cell_of, the
+        value read live.)"""
         nom = UNREACHED
         p10 = UNREACHED
         for fid in self._fire_order:
             f = self._fires[fid]
             if f.ens is None:
                 continue
-            nv = geo.raster_sample(f.ens.members[0], pos)
-            if nv is not None and nv < nom:
-                nom = nv
+            nr = f.ens.members[0]
+            i = self._cell_of(nr.spec, pos)
+            if i >= 0:
+                nv = nr.data[i]
+                if nv < nom:
+                    nom = nv
             er = self._eroded_p10(f)
             if er is not None:
-                ev = geo.raster_sample(er, pos)
-                if ev is not None and ev < p10:
-                    p10 = ev
+                i = self._cell_of(er.spec, pos)
+                if i >= 0:
+                    ev = er.data[i]
+                    if ev < p10:
+                        p10 = ev
         return nom, p10
+
+    def _cell_of(self, spec, pos) -> int:
+        """Flat index (row * ncols + col) of the cell of grid `spec` that
+        contains pos, -1 off the grid — geo.latlon_to_rc, the cell
+        geo.raster_sample reads. Memoised per session and grid (perf
+        2026-10-23): the cell a point lies in never changes, and the same
+        road samples are judged step after step; callers read the value."""
+        memo_spec, memo = self._rc_memo
+        if spec is not memo_spec:
+            if spec != memo_spec:
+                memo = {}
+            self._rc_memo = (spec, memo)
+        k = (pos.lat, pos.lon)
+        i = memo.get(k)
+        if i is None:
+            rc = geo.latlon_to_rc(spec, pos)
+            i = -1 if rc is None else rc[0] * spec.ncols + rc[1]
+            if len(memo) >= _CELL_OF_MEMO_MAX:
+                memo.clear()
+            memo[k] = i
+        return i
 
     def _exposure_at(self, pos, t: float):
         """_crew_exposure(pos) as the SEM-10 crew-safety law judges the cell
@@ -5025,13 +5071,19 @@ class SimSession:
         out = []
         cspec = self._cell_spec()
         if cspec is not None:
+            # (the cold-black window from the tile cell in hand: exactly
+            # _cold_black_pass_s(q), whose cell this is)
+            by_class = bool(getattr(self._cfg, "transit_cold_black_by_class",
+                                    False))
             for i in range(1, len(verts)):
                 for dsub, q, cix in self._cell_span_walk(verts[i - 1],
                                                          verts[i], cspec):
                     rc = geo.latlon_to_rc(spec, q)
                     idx = -1 if rc is None else rc[0] * spec.ncols + rc[1]
-                    out.append((dsub, q, idx, self._cold_black_pass_s(q),
-                                cix))
+                    out.append((dsub, q, idx,
+                                self._cold_black_of_idx(idx)
+                                if by_class and idx >= 0
+                                else _COLD_BLACK_PASS_S, cix))
             return tuple(out)
         for i in range(1, len(verts)):
             p0, p1 = verts[i - 1], verts[i]
@@ -5053,9 +5105,9 @@ class SimSession:
         """Escape samples for driving road edge `ei` u->v (fwd) or v->u, over
         the vertices roads._assemble emits for it (end node, OSM geometry in
         driving order, far node; consecutive duplicates dropped). Cached per
-        session — graph geometry and tile are static."""
-        key = (ei, fwd, self._cell_spec())     # (the cell grid, 20a)
-        hit = self._esc_edge_cache.get(key)
+        session and cell grid (20a) — graph geometry and tile are static."""
+        tab = self._esc_edge_table()
+        hit = tab.get((ei, fwd))
         if hit is None:
             g = self._road_graph
             e = g.edges[ei]
@@ -5069,9 +5121,19 @@ class SimSession:
                     verts.append(p)
             if verts[-1] != g.nodes[b]:
                 verts.append(g.nodes[b])
-            hit = self._esc_span_samples(verts)
-            self._esc_edge_cache[key] = hit
+            hit = tab[(ei, fwd)] = self._esc_span_samples(verts)
         return hit
+
+    def _esc_edge_table(self) -> dict:
+        """(edge index, forward) -> _esc_edge_samples under the CURRENT cell
+        grid (20a; None when the cell-exact law is off or no fire has a
+        field yet) — one table per grid, so a search looks its grid up once
+        instead of per edge (perf 2026-10-23)."""
+        cspec = self._cell_spec()
+        tab = self._esc_edge_cache.get(cspec)
+        if tab is None:
+            tab = self._esc_edge_cache[cspec] = {}
+        return tab
 
     def _esc_fields(self):
         """[(nominal-member data, eroded-P10 data or None)] per fire with a
@@ -5170,7 +5232,8 @@ class SimSession:
     def _road_escape_search(self, pos, now, speed_mps: float, lead_s: float,
                             lawful_only: bool = False,
                             min_p10_s: float = -math.inf,
-                            on_map_only: bool = False):
+                            on_map_only: bool = False,
+                            exists_only: bool = False):
         """SEM-10d ROAD-NETWORK ESCAPE search (contracts escape_road_network).
 
         A time-dependent Dijkstra over the loaded road graph from the crew's
@@ -5212,6 +5275,12 @@ class SimSession:
         the way to an on-map one, but is never the destination: no fire
         field exists there (its "unbounded horizon" is the edge of the data,
         not safety) and reaching it takes the crew out of the simulation.
+
+        exists_only (SAFETY SEMANTICS 38's bisection, which asks only
+        WHETHER a refuge exists; perf 2026-10-23): True at the first
+        candidate the full search would take as its best — every stop the
+        full search makes before that point waits on a best, so it finds one
+        exactly when this does — else None.
 
         Returns None when there is NO passable road escape (the crew is
         beyond the spur cap from every node, the only way onto the network
@@ -5308,6 +5377,7 @@ class SimSession:
         done = set()
         best = None
         top_step = -self._esc_horizon_step(math.inf)
+        etab = self._esc_edge_table()
         while heap:
             qe, t, e, u = heapq.heappop(heap)
             if u in done:
@@ -5329,6 +5399,8 @@ class SimSession:
                                         voluntary=lawful_only)
                 if (not lawful_only or key[0] == 0) and (
                         best is None or key < best[0]):
+                    if exists_only:
+                        return True
                     best = (key, u, t, e, dm, qz(e), off)
                 if (dm >= 0.0 and not off and -self._esc_horizon_step(
                         dm + buffer_s + lead_s) == top_step):
@@ -5342,8 +5414,11 @@ class SimSession:
             for v, ei in g.neighbors(u):
                 if v in done:
                     continue
-                r = drive(self._esc_edge_samples(ei, g.edges[ei].u == u), t,
-                          e, skip_at.get(u, -1))
+                fwd = g.edges[ei].u == u
+                es = etab.get((ei, fwd))
+                if es is None:
+                    es = self._esc_edge_samples(ei, fwd)
+                r = drive(es, t, e, skip_at.get(u, -1))
                 if r is None:
                     continue                            # burned: impassable
                 t2, e2, p10v, sk2 = r
@@ -6416,9 +6491,7 @@ class SimSession:
         line_s = buf_s
         slack_s = 0.0
         spd = speed_mps
-        raw = [dest]
         if rr is not None:
-            raw = list(rr.polyline) + [dest]
             if (rr.time_s and rr.time_s > 0.0 and rr.dist_m
                     and rr.dist_m > 0.0):
                 spd = rr.dist_m / rr.time_s
@@ -6427,24 +6500,61 @@ class SimSession:
                     slack_s = max(buf_s, em_s) - buf_s
                 else:
                     line_s = max(buf_s, em_s)
-        pts = [loc]
-        for p in raw:
-            if (pts[-1].lat, pts[-1].lon) != (p.lat, p.lon):
-                pts.append(p)
         worst = math.inf
         tot = 0.0
-        samples = self._strict_points(pts, spd)
-        # SAFETY SEMANTICS 37: the leg's end (the zone, where the crew
-        # waits after it arrives) keeps the flat egress line
-        t_end = samples[-1][1] if samples else 0.0
-        for q, dt in samples:
+        fields = self._live_fields()
+        if fields is None:
+            # (a scripted world: every sample through _exposure_at)
+            samples = self._strict_points(self._way_points(loc, dest, rr),
+                                          spd)
+            # SAFETY SEMANTICS 37: the leg's end (the zone, where the crew
+            # waits after it arrives) keeps the flat egress line
+            t_end = samples[-1][1] if samples else 0.0
+            for q, dt in samples:
+                tot = dt
+                pass_t = depart_s + dt
+                nom, p10 = self._exposure_at(q, pass_t)
+                if ((not math.isinf(nom)) and nom <= pass_t
+                        and (pass_t - nom) < self._cold_black_pass_s(q)):
+                    worst = -math.inf              # the front is crossing it
+                    break
+                if not math.isinf(p10):
+                    if slack_s > 0.0:
+                        m = p10 - pass_t - (line_s + (
+                            slack_s if dt >= t_end
+                            else min(slack_s, ramp * dt)))
+                    else:
+                        m = p10 - pass_t - line_s
+                    if m < worst:
+                        worst = m
+            return worst, tot
+        # the same law over the leg's memoised samples (_way_leg), every
+        # fire's grid read at each sample's own tile cell (_esc_fields), the
+        # cold-black window from that cell (_cold_black_pass_s)
+        t_end, dts, idxs = self._way_leg(loc, dest, rr, spd)
+        old_black = bool(getattr(cfg, "old_black_refuge", False))
+        by_class = bool(getattr(cfg, "transit_cold_black_by_class", False))
+        for dt, idx in zip(dts, idxs):
             tot = dt
             pass_t = depart_s + dt
-            nom, p10 = self._exposure_at(q, pass_t)
-            if ((not math.isinf(nom)) and nom <= pass_t
-                    and (pass_t - nom) < self._cold_black_pass_s(q)):
-                worst = -math.inf              # the front is crossing it
-                break
+            nom = p10 = UNREACHED
+            if idx >= 0:
+                for nd, pd in fields:
+                    v = nd[idx]
+                    if v < nom:
+                        nom = v
+                    if pd is not None:
+                        w = pd[idx]
+                        if w < p10:
+                            p10 = w
+            if not math.isinf(nom):
+                cb = (self._cold_black_of_idx(idx) if by_class and idx >= 0
+                      else _COLD_BLACK_PASS_S)
+                if old_black and (pass_t - nom) >= cb:
+                    continue                   # OLD BLACK: a refuge
+                if nom <= pass_t and (pass_t - nom) < cb:
+                    worst = -math.inf          # the front is crossing it
+                    break
             if not math.isinf(p10):
                 if slack_s > 0.0:
                     m = p10 - pass_t - (line_s + (
@@ -6455,6 +6565,55 @@ class SimSession:
                 if m < worst:
                     worst = m
         return worst, tot
+
+    @staticmethod
+    def _way_points(loc, dest, rr) -> list:
+        """SAFETY SEMANTICS 29: the de-duplicated vertices of the egress leg
+        `loc` -> `dest` on road route rr (None: the straight leg)."""
+        pts = [loc]
+        for p in ([dest] if rr is None else list(rr.polyline) + [dest]):
+            if (pts[-1].lat, pts[-1].lon) != (p.lat, p.lon):
+                pts.append(p)
+        return pts
+
+    def _way_leg(self, loc, dest, rr, spd: float):
+        """SAFETY SEMANTICS 29 (perf 2026-10-23): (t_end, offsets, cells) of
+        the egress leg `loc` -> `dest` on road route rr at spd —
+        _strict_points' samples as their pass offsets (s, array 'd') and
+        tile flat indices (-1 off the tile; array 'q'), t_end the last
+        offset (0.0 for none). Pure geometry, memoised per session while the
+        route object and the cell grid stay the same (compact: 16 bytes a
+        sample); _way_metrics reads the fields live."""
+        spec = self._cell_spec()
+        key = (loc.lat, loc.lon, dest.lat, dest.lon, spd)
+        ent = self._way_legs.get(key)
+        if (ent is not None and ent[0] is rr
+                and (ent[1] is spec or ent[1] == spec)):
+            return ent[2]
+        tspec = self._tile.spec
+        dts = array("d")
+        idxs = array("q")
+        for q, dt in self._strict_points(self._way_points(loc, dest, rr),
+                                         spd):
+            rc = geo.latlon_to_rc(tspec, q)
+            dts.append(dt)
+            idxs.append(-1 if rc is None else rc[0] * tspec.ncols + rc[1])
+        leg = (dts[-1] if dts else 0.0, dts, idxs)
+        if len(self._way_legs) >= _WAY_LEGS_MAX:
+            self._way_legs.clear()
+        self._way_legs[key] = (rr, spec, leg)
+        return leg
+
+    def _live_fields(self):
+        """_esc_fields — every fire's grid, read directly at a tile flat
+        index — or None when this instance replaces the exposure law
+        (_crew_exposure, which _esc_fields already declines, _exposure_at or
+        _cold_black_pass_s): then every sample is judged through
+        _exposure_at."""
+        d = self.__dict__
+        if "_exposure_at" in d or "_cold_black_pass_s" in d:
+            return None
+        return self._esc_fields()
 
     def _dest_keep_until(self, z, speed_mps: float) -> float:
         """THE DURABLE-DESTINATION WORKABILITY LAW (contracts egress_dest_
@@ -6530,12 +6689,17 @@ class SimSession:
             h_s = cfg.egress_dest_durable_h * 3600.0
             buf_s = cfg.egress_buffer_min * 60.0
             on_map = self._refuge_on_map()
+            # (the existence-only search: the same answer, stopped at the
+            # first refuge; a search replaced on this instance — a test's
+            # spy — is asked as it always was)
+            kw = ({} if "_road_escape_search" in self.__dict__
+                  else {"exists_only": True})
 
             def found(d):
                 return self._road_escape_search(
                     loc, d, speed_mps, lead_s, lawful_only=True,
                     min_p10_s=d + h_s + buf_s,
-                    on_map_only=on_map) is not None
+                    on_map_only=on_map, **kw) is not None
             lo = self._now_s
             if found(lo):
                 hi = lo + DEST_ROAD_SPAN_S

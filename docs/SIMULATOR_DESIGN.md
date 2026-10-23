@@ -2955,3 +2955,119 @@ homes), offset by Eagle / Gypsum's (sim-c5); on the slower drive 4 crew-steps in
 the law alone's 2 (the deepest 24.8 either way). Its gains: the afternoon start's Beaver Creek runs
 (canonical, late and pair high, 3 → 1 uncoated each) and the fresh fires' Vail b110 (32 → 35
 homes, 3 → 2 uncoated) and Beaver Creek b340 (10 → 12 homes, 11 → 9 uncoated).
+
+## The safety laws' step cost (2026-10-23)
+
+Integrator brief, 2026-10-23: the public simulator got slower when the Eagle River valley crew
+review shipped (image world15 = main 4bcb7a4, SAFETY SEMANTICS 25-38 armed in the sim-defaults
+block). Measured live, the first step of a one-click scenario took 33-42 s (world14: 16-20 s)
+and later steps ~1 s (was ~0.3 s). *"Make them faster WITHOUT changing any decision."* Probe and
+records: `scratch_review/safety_law_perf_probe.py` (every one-click scenario exactly as
+`POST /api/sim/new {scenario}` builds it; per tick the wall seconds, every `dispatch.plan()`
+call, the adopted plan and the `state()` hash; `--root` runs another tree, `--compare` =
+identity, `--table` = seconds) and `scratch_review/eagle_valley/run_matrix_hashed.py` (the
+valley matrix with every tick's `state()` hashed).
+
+**For the founder.** Nothing the crews do changes: every plan, every move, every withdrawal and
+every number on the page is the same as before, step for step. The new safety rules (a home is
+worked only if its crew can still leave; a way out must lead somewhere that lasts) kept checking
+the same roads over and over. Every check of a home traced each road from it to every safe zone
+again, square by square, and the question "how long does a road refuge stay open from here?"
+ran a full road search about ten times. Now each road is traced once and remembered. The fire
+picture is still read fresh at every check, and each refuge search stops as soon as it has its
+answer. On this machine, averaged over the 13 one-click scenarios, the first step is back where
+it was before the review: 15.3 s (world14 15.4 s, the review's code 16.1 s). The later steps
+lost about two thirds of what the review added (0.134 → 0.101 s; world14 0.085 s). Most of a
+first step is the fire itself. The spread forecast takes 10-17 s of it (3 s at Rancho Santa Fe,
+whose 100-home plan takes ~16 s), and that is unchanged since world14.
+
+**Where the time went** (4bcb7a4 → this change, this machine, Python 3.14, timers without the
+profiler, one process):
+
+| | Park City | Eagle → Vail corridor | Rancho Santa Fe |
+|---|---|---|---|
+| first step (4bcb7a4) | 15.6 s | 19.9 s | 22.1 s |
+| of which the fire field (`spread.ensemble_arrival`) | 12.4 s | 17.6 s | 3.4 s |
+| the coating-hold plans (`dispatch.plan` ×2) | 2.5 s | 1.3 s | 18.2 s |
+| SEMANTICS 38 road-refuge windows (`_road_refuge_until`) | 0.89 → 0.54 s (25 windows, 167 road searches) | 0.81 → 0.42 s (26, 139) | — |
+| SEMANTICS 38 zone keep-untils (`_dest_keep_until`, overlaps the above) | 0.45 → 0.27 s | 0.65 → 0.41 s | — |
+| SEMANTICS 29 way-out predicate (`_stop_exit_verdict`), 9 later steps | 0.21 → 0.08 s | 1.25 → 0.29 s | 1.55 → 0.47 s |
+
+In a later step the way-out predicate was 60-70 % of the step. Every judgement (25-30 a step at
+Rancho Santa Fe, three zones each; 8 zones on the corridor tile) re-traced the stop's road to
+every catalog zone with the cell-exact walk (800-1,200 samples a leg) and re-sampled every
+sample against every fire, though neither the roads nor the fields change between world
+changes. A road-refuge window bisects the departure time over 24 h to 5 min, and each of its
+probes was a full SEM-10d search that runs on after the first refuge to find the best one. The
+planner's SEMANTICS 32 bound (`_egx_key`) cost a method call per stop of every candidate route,
+a million calls in Park City's first step.
+
+**What changed** (every decision byte-identical):
+
+1. *The way-out leg* (`simui._way_metrics`, SEMANTICS 29 / 37 / 38). `_way_leg` memoises each
+   egress leg's samples per session: the pass offsets and tile cells of `_strict_points`'
+   samples, as compact arrays (16 bytes a sample). They are keyed on the endpoints and speed,
+   and kept while the route object and the cell grid are the same. The fields are read LIVE at
+   those cells (`_esc_fields`, as the road-network escape search reads them), so a raster
+   repainted in place is seen at once. A session that replaces the exposure law on the instance
+   (a scripted world: `_crew_exposure`, `_exposure_at` or `_cold_black_pass_s`) is judged sample
+   by sample through `_exposure_at`, the pre-change loop.
+2. *The fields at a point* (`_crew_exposure`). Each grid is read at the point's cell. The cell
+   is memoised per session and grid (`_cell_of` = `geo.latlon_to_rc`, the cell
+   `geo.raster_sample` reads); the value is read live.
+3. *The road-refuge window* (`_road_refuge_until`, SEMANTICS 38). The bisection's probes ask
+   only whether a lawful durable refuge exists. `_road_escape_search(exists_only=True)` returns
+   at the first candidate the full search would take as its best; every early stop of the full
+   search waits on a best, so it finds one exactly when the probe does. A search replaced on the
+   instance (a test's spy) is asked as before.
+4. *Escape-edge samples* (`_esc_span_samples`, `_esc_edge_samples`). The cold-black window comes
+   from the tile cell already in hand, exactly `_cold_black_pass_s`. There is one edge table per
+   cell grid, looked up once per search instead of hashing the grid for every edge.
+5. *The planner's SEMANTICS 32 bound* (`dispatch._Ctx._run`): `_egx_key`'s memo is read in
+   line.
+
+Tried and dropped: memoising `_cell_span_walk` (no measurable gain once the legs are memoised;
+3-6 MB a session) and caching field VALUES per field generation. Scripted worlds repaint rasters
+in place (`tests/test_sim_escape_roads.py` does), so a value cache would read stale fields.
+
+**Identity.** The 13 one-click scenarios × 48 ticks (12 h): **13 / 13 identical**. That covers
+every tick's full `state()` hash, every adopted plan and every `dispatch.plan()` call's plan
+(`safety_law_perf_before.jsonl` 4bcb7a4 vs `_after.jsonl`). The same holds for the 24-tick
+timing runs under Python 3.13. The valley harness (`run_matrix.py`, 33 runs × 12 h, 07:13
+starts): **33 / 33 identical**. That covers every result row (its wall clock aside), every
+per-tick crew log and every tick's `state()` hash (`eagle_valley/perf_before_runs.jsonl` vs
+`perf_after_runs.jsonl`). The before rows equal the review's own `iter5_final_runs.jsonl` row
+for row. No run tripped the solver's runaway guard. `tests/test_step_cost_memos.py` pins each
+fast path against the verbatim pre-change bodies on Boulder's one-click fire 2.5 h in (crossed,
+band-bounded and clear legs, old black on the way). It also pins that a field repainted in place
+is seen by the next judgement, that a scripted world takes the reference loop, that a pinned
+route is a new leg, and that the existence probe answers as the full search over the
+bisection's span (both answers occurring).
+
+**Timings** (this machine, Python 3.13 = the image's, 13 one-click scenarios × 24 ticks, two
+at a time; `safety_law_perf_timing_*.jsonl`):
+
+| | world14 (f70df84) | 4bcb7a4 (world15) | this change |
+|---|---|---|---|
+| first step, mean | 15.43 s | 16.11 s | 15.31 s |
+| later steps (2-24), mean | 0.085 s | 0.134 s | 0.101 s |
+| steps 2-4, mean | 0.068 s | 0.120 s | 0.082 s |
+| Park City first / later | 14.44 / 0.121 s | 15.23 / 0.163 s | 14.88 / 0.156 s |
+| Eagle → Vail corridor first / later | 19.06 / 0.062 s | 19.43 / 0.182 s | 18.64 / 0.101 s |
+| Rancho Santa Fe first / later | 21.19 / 0.084 s | 20.89 / 0.166 s | 20.48 / 0.108 s |
+
+Single first steps vary by about ±1 s from run to run; the means are the measure.
+
+**Live.** world14 measured 15.8 s (Park City) and 20.4 s (corridor) for its first step on App
+Runner, which is this machine's own 14.4 / 19.1 s. world14 ran live at about this machine's
+speed, not at half of it. The review's code costs 15.2 / 19.4 s here, so a live 33-42 s is not
+what the code costs. Look for something else on the instance: CPU shared with another session's
+ticker (one process, one GIL), or the instance size. Re-measure on the new image with one
+session and nothing else running.
+
+**What remains.** The fire field is 75-90 % of most first steps (six members, any-angle spread
+and crown fire since world12 / 14), and Rancho Santa Fe's plans take ~16 s; neither changed
+since world14. In a later step the page's fire shading (`_fire_visuals`, ~40 ms, the same as on
+world14) is now the largest part. The way-out predicate's remaining cost is mostly each new
+stop's first trace to every zone. Memory: geometry only, +4.8 MB a session over 24 ticks at
+Rancho Santa Fe (tracemalloc 29.6 → 34.4 MB).

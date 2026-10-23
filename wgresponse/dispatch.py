@@ -1242,6 +1242,7 @@ class _Ctx:
         tsi = self._tsi
         ezx = self._ezx
         egt = self._egt
+        egx = self._egx
         dep_s = self._dep_s
         homes = self.homes_mode
         for i in range(p0, len(keys)):
@@ -1264,7 +1265,10 @@ class _Ctx:
                 return None
             if egt:
                 # SAFETY SEMANTICS 32: a lawful zone reached by the deadline
-                zx = self._egx_key(keys[i])
+                # (_egx_key's memo read in line)
+                zx = egx.get(keys[i])
+                if zx is None:
+                    zx = self._egx_key(keys[i])
             else:
                 zx = ezx[pb]
                 if zx is None:
