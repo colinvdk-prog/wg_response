@@ -1501,6 +1501,64 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    flat margin, byte-identical (tests/test_preship_fixes.py). NOT armed by
    the simulator: simui.SIM_ROUTE_MARGIN_EGRESS_RAMP (0.0) is the founder's
    one-line call, measured both ways.
+38. A WAY OUT LEADS SOMEWHERE THAT LASTS — THE DURABLE-DESTINATION
+   WORKABILITY LAW (2026-10-22; the Eagle River valley review's iteration
+   5 — docs/SIMULATOR_DESIGN.md "A way out leads somewhere that lasts";
+   cfg.egress_dest_durable_h; read by dispatch and the simulator's 29
+   predicate). The way-out predicate (29) and the planner's egress test
+   (32) accepted a stop whose lawful way out led to SOME zone, however
+   short-lived. Measured (iteration 4, the founder's calls applied): on a
+   Beaver Creek fresh fire (bearing 250, 7 km, wind 235, high) a crew's
+   last homes near Edwards had one lawful way out — Freedom Park, 3.4 h from
+   the line on arrival and without a lawful exit by then — and the sweep
+   moved it at 7.75 h through band 337 min past the line; with every crew
+   driving 25 % slower, Vail's late fire sent the west-entry crew to an
+   East Vail zone 0.9 h from the line, and it fled 46.6 min past it. With
+   egress_dest_durable_h = H > 0 a zone counts as a stop's way out (29's
+   ways, 32's zone T*) only while (a) the crew reaches it by its KEEP-UNTIL
+   (_dest_keep_until) — the latest arrival for which it is not a DEAD END,
+   the latest of (i) its own 10c line less H (it stays clear H after the
+   arrival), (ii) for each other zone the latest departure on a lawful leg
+   there (the 29 law) that still reaches it H before its own line (28b's
+   exits), (iii) the latest departure for which 28a's road search (lawful
+   only; a refuge whose eroded P10 lies H plus the egress buffer past the
+   departure; on-map nodes only while 36 is armed) still finds a refuge,
+   (ii) and (iii) less one step (a waiting crew is moved at a step) — or
+   (b) the crew leaves the stop while that same search from the stop
+   itself still finds such a refuge (_road_refuge_until; 28a re-points
+   that egress there). Every term is an absolute time fixed while the
+   fields are: the values live one field generation, and a road refuge's
+   window is found by bisecting 28a's search over the departure time (5
+   min, at most 24 h). The simulator hands the planner both
+   (dispatch.plan(zone_keep=, stop_refuge=), the oracle asked only when a
+   zone's keep-until binds), so the plan, the leg start, every step of a
+   kept head, the arrival and every step of the work judge one law;
+   without them dispatch computes (i)-(ii) on its own rasters. A pure
+   restriction: every way it keeps is a lawful way of the law off. The
+   simulator arms 28a's horizon, 8 h. Measured on the valley harness's
+   five sets against iteration 4 (homes; reached-uncoated; deepest row;
+   crews off the map): the 33-run matrix 1,050 -> 1,051, 14 -> 15, 24 ->
+   24, 0 -> 0; the 13:13 start 1,034 -> 1,035, 20 -> 20, 24 -> 24, 0 -> 0;
+   the 24 fresh fires 647 -> 641, 39 -> 40, 337 -> 22, 8 -> 4; the 13
+   presets 473 -> 473, 7 -> 7, no rows, 0 -> 0; every crew 25 % slower 998
+   -> 998, 46.6 -> 24.8 min, 2 -> 1 (withdrawals 2 -> 4); the live-P10
+   posture's two Vail rows (185.3 min) gone. Both deep rows gone — the
+   Beaver Creek fire at no cost (36 homes, 1 uncoated, as before). With
+   37's ramp armed too, reached homes left uncoated are 14 / 15 / 39 / 7 on
+   the matrix, 13:13, the fresh fires and the presets (iteration 4: 14 /
+   20 / 39 / 7) and 24 more homes are coated: the law changes 37's
+   trade-off (still the founder's switch, off). Shaped
+   from data: judged step by step the values drifted (the search's best
+   node changes with the clock; a Vail crew sent to East Vail on a 2.48 h
+   keep-until arrived after it fell to 1.53 h and left the map), costing
+   reached homes and off-map crews on both sets; zones alone cost 23 homes
+   on the matrix; an onward refuge allowed off the map gives the matrix
+   iteration 4's 14 but the fresh fires 41 and 8 crews off the map — not
+   shipped: a refuge beyond the map cannot be vouched for. The Paradise
+   Camp-Fire-scale dead end is not this law's (its zone has 24 h of life
+   on arrival; the crew waits while its exits close: a waiting-crew law).
+   Knob OFF = byte-identical (pinned in tests/test_dest_durable.py
+   against goldens computed on commit 8d0fbdf).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -3680,6 +3738,29 @@ class ResponseConfig:
     # rescue); the simulator's 29 predicate judges with the ramped margin.
     # 0 = the flat margin, byte-identical.
     route_margin_egress_ramp: float = 0.0
+    # THE DURABLE-DESTINATION WORKABILITY LAW (2026-10-22, the Eagle River
+    # valley review's iteration 5; SAFETY SEMANTICS 38; read by dispatch and
+    # the simulator's SEMANTICS 29 predicate). The way-out predicate (29)
+    # and the planner's egress test (32) accepted a stop whose lawful way
+    # out led to SOME zone, however short-lived — measured (iteration 4, the
+    # founder's calls applied): on a Beaver Creek fresh fire a crew's last
+    # homes near Edwards had one lawful way out, to Freedom Park with 3.4 h
+    # of life and no lawful exit by the time it arrived, and the sweep moved
+    # it hours later through band 337 min past the line; with every crew
+    # 25 % slower, a Vail crew egressed to an East Vail zone 0.9 h from the
+    # line and fled it 46.6 min past it. When > 0 (hours, H) a zone counts
+    # as a stop's way out only while the crew reaches it before it is a
+    # DEAD END — the zone stays clear of the 10c line H after the arrival,
+    # or a lawful leg from it to another zone, or 28a's road search from it
+    # to a road refuge, that stays clear H is still open a step after the
+    # arrival — or while the crew leaves the stop with 28a's road search
+    # from the stop itself still finding such a refuge; on-map refuges only
+    # while escape_refuge_on_map (36) is armed. At the plan (dispatch's zone
+    # T*, bounded by the simulator's own numbers: dispatch.plan(zone_keep=,
+    # stop_refuge=)), the leg start, every step for a kept head, the arrival
+    # and every step of the work (the 29 predicate). 0 = off, byte-
+    # identical. The SIMULATOR arms 8 (28a's horizon).
+    egress_dest_durable_h: float = 0.0
     # A STOP'S EGRESS FITS ITS DEADLINE (2026-10-21, the Eagle River valley
     # review's iteration 2; SAFETY SEMANTICS 32; read by dispatch). The
     # planner required a stop's departure to carry slack_min before the
@@ -4030,6 +4111,9 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
     # SAFETY SEMANTICS 37 (2026-10-21): seconds of slack per second driven
     if not (0.0 <= cfg.route_margin_egress_ramp <= 1.0):
         problems.append("route_margin_egress_ramp must be within [0, 1]")
+    # SAFETY SEMANTICS 38 (2026-10-22): hours, 0 = off
+    if not (0.0 <= cfg.egress_dest_durable_h <= 168.0):
+        problems.append("egress_dest_durable_h must be within [0, 168] hours")
 
     # --- corridor erosion / sampling ---
     if cfg.corridor_erosion_m < 0:

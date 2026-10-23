@@ -500,7 +500,13 @@ def test_real_tile_escape_drives_roads_to_a_node():
                                   "dispatch_late_shift": True,
                                   "dispatch_plan_on_roads": True,
                                   "dispatch_hold_h": 24.0, "deploy_min": 15.0,
-                                  "dispatch_sequence": "auto"})
+                                  "dispatch_sequence": "auto",
+                                  # the iteration-5 law (SAFETY SEMANTICS
+                                  # 38) off: with it no crew here works a
+                                  # home it would have to flee, so no area
+                                  # escape forms (its twin:
+                                  # tests/test_dest_durable.py)
+                                  "egress_dest_durable_h": 0.0})
     ign = geo.destination(loc.center, loc.hazard_wind_dir_deg, 7000.0)
     s.ignite(ign.lat, ign.lon, intensity="high",
              wind_dir_deg=loc.hazard_wind_dir_deg)

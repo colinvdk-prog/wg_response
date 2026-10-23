@@ -62,7 +62,9 @@ ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
              "sim_far_side_zones": False, "reinforce_entry_by_need": False,
              "ember_eta_landings": False,
              # ... and the iteration-4 laws (SAFETY SEMANTICS 36-37)
-             "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0}
+             "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0,
+             # ... and the iteration-5 law (SAFETY SEMANTICS 38)
+             "egress_dest_durable_h": 0.0}
 
 # Fast-engine overrides shared by the scripted-session tests: small ensemble,
 # coarse grid, short horizon — config only, never forked physics.
@@ -2902,9 +2904,13 @@ def test_crew_safety_paradise_founder_repro_under_crown_fire():
     # un-pinned 2026-10-21 (the Eagle River valley review's iteration 4):
     # iteration 2 pinned its knobs off here, but the independent review of
     # iterations 2-3 measured the repro passing with every crew-safety law
-    # armed — the simulator's defaults, as the founder runs it
+    # armed — the simulator's defaults, as the founder runs it. The
+    # iteration-5 law (SAFETY SEMANTICS 38) is pinned off: with it no crew
+    # is driven into the burn at all, so this control (old black as a
+    # refuge) would not be exercised — its armed twin is
+    # tests/test_dest_durable.py, test_armed_the_paradise_crown_fire_repro
     s = SimSession("paradise_ca", 64, 5, seed="caught-1", fire_zone="extended",
-                   cfg_overrides=dict(LEGACY_WX))
+                   cfg_overrides=dict(LEGACY_WX, egress_dest_durable_h=0.0))
     assert s._cfg.crown_fire and s._cfg.old_black_refuge
     s.ignite(39.83, -121.52, intensity="extreme")
     on_old_black = 0

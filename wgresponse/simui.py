@@ -683,6 +683,19 @@ SIM_ROUTE_MARGIN_EGRESS_ROADS_MIN = 45.0
 SIM_ROUTE_MARGIN_EGRESS_RAMP = 0.0
 #: the ramp the founder's switch would arm (tests; the measured value)
 ROUTE_MARGIN_EGRESS_RAMP_MEASURED = 1.0 / 3.0
+#: THE EAGLE RIVER VALLEY CREW-SAFETY ITERATION 5 sim default (2026-10-22;
+#: contracts egress_dest_durable_h, SAFETY SEMANTICS 38): a stop's way out
+#: must not lead into a dead end — the zone stays clear of the 10c line this
+#: many hours after the crew arrives, or keeps a lawful way on to a refuge
+#: that does, or the stop itself has a lawful road to one (28a's horizon)
+SIM_EGRESS_DEST_DURABLE_H = 8.0
+#: SAFETY SEMANTICS 38: a road refuge's lawful window (the latest departure
+#: for which 28a's own search still finds a lawful refuge that stays clear H)
+#: is found by bisecting the departure time to this resolution (seconds),
+#: over at most DEST_ROAD_SPAN_S past now — the fields are static between
+#: world changes, and every way only closes as the departure grows
+DEST_ROAD_RES_S = 300.0
+DEST_ROAD_SPAN_S = 24 * 3600.0
 #: SAFETY SEMANTICS 30b (contracts idle_restage): an idle crew restages only
 #: to a zone at least this much nearer the open work than where it stands
 #: (straight-line metres) — so a crew never shuffles for a few hundred metres.
@@ -3255,6 +3268,13 @@ class SimSession:
             cfg.escape_refuge_on_map = True
         if "route_margin_egress_ramp" not in overrides:
             cfg.route_margin_egress_ramp = SIM_ROUTE_MARGIN_EGRESS_RAMP
+        # THE EAGLE RIVER VALLEY CREW-SAFETY ITERATION 5 (2026-10-22;
+        # contracts SAFETY SEMANTICS 38; docs/SIMULATOR_DESIGN.md "A way out
+        # leads somewhere that lasts"): a stop's way out leads to a zone that
+        # is not a dead end (egress_dest_durable_h). Explicit override wins;
+        # default OFF.
+        if "egress_dest_durable_h" not in overrides:
+            cfg.egress_dest_durable_h = SIM_EGRESS_DEST_DURABLE_H
         far_off = _far_zones_off(getattr(cfg, "sim_far_zones_off", ""))
         if (getattr(cfg, "sim_far_side_zones", False)
                 and self._loc.far_zones):
@@ -3658,6 +3678,11 @@ class SimSession:
         self._off_map_exit = {}
         self._off_map_wait_noted = set()
         self._n_off_map_last_exit = 0
+        # SAFETY SEMANTICS 38 (contracts egress_dest_durable_h): each zone's
+        # keep-until (the latest arrival at which it is not a dead end) and
+        # each position's road-refuge window, per field generation
+        self._dest_keep = {}
+        self._dest_keep_key = None
         self._restage_target = {}
         self._entry_held_noted = set()
         self._entry_node = {}
@@ -6331,7 +6356,52 @@ class SimSession:
         (the law of _egress_way_out), with the leg's drive seconds at the
         route's speed and its tier-0 seconds (haversine at speed_mps), and
         the latest departure from `loc` for which some zone leg stays
-        lawful."""
+        lawful.
+
+        THE DURABLE-DESTINATION WORKABILITY LAW (contracts egress_dest_
+        durable_h, SAFETY SEMANTICS 38): a zone counts only when the crew
+        reaches it while it is not a dead end (by _dest_keep_until: the zone
+        stays clear of the 10c line H after the arrival, or keeps a lawful
+        way on to a refuge that does) — or when the crew leaves `loc` while
+        `loc` itself still has a fully lawful road to a road refuge that
+        stays clear H (_road_refuge_until: 28a's search, which re-points such
+        an egress there); `latest` is bounded the same way. A pure
+        restriction: every way it keeps is a lawful leg of the law off."""
+        dur = getattr(self._cfg, "egress_dest_durable_h", 0.0) > 0.0
+        ways = []
+        latest = -math.inf
+        direct = None                          # _road_refuge_until(loc), lazy
+        for z in sorted(self._loc.safe_zones, key=lambda z: z.zone_id):
+            worst, tot = self._way_metrics(loc, z.loc, depart_s, speed_mps)
+            cand = depart_s + worst
+            ok = worst >= 0.0
+            if dur:
+                bound = self._dest_keep_until(z, speed_mps) - tot
+                if bound < cand or (ok and depart_s > bound):
+                    if direct is None:
+                        direct = self._road_refuge_until(loc, speed_mps)
+                    bound = max(bound, direct)
+                    ok = ok and depart_s <= bound
+                    cand = min(cand, bound)
+            if ok:
+                ways.append((z, tot, geo.haversine_m(loc, z.loc)
+                             / max(speed_mps, 0.1)))
+            if cand > latest:
+                latest = cand
+        return ways, latest
+
+    def _way_metrics(self, loc, dest, depart_s: float, speed_mps: float):
+        """SAFETY SEMANTICS 29: (worst_s, drive_s) of the egress leg from
+        `loc` to `dest` departing at depart_s — the road the crew will drive
+        (_leg_route from `loc`; the straight tier-0 leg off the network) at
+        the route's own speed, sampled by _strict_points (`loc`'s own cell
+        judged as the crew leaves it) and judged at every pass time: worst
+        is the least margin between a sample's eroded P10 and its pass time
+        less the EGRESS LINE (the 10c line, or route_margin_egress_roads_min
+        on roads when armed and larger; SEMANTICS 37's ramp when armed), the
+        destination at arrival included; -inf when the nominal front is
+        crossing a sample at its pass time. OLD BLACK at its pass time is a
+        refuge (_exposure_at)."""
         cfg = self._cfg
         buf_s = cfg.egress_buffer_min * 60.0
         em_s = getattr(cfg, "route_margin_egress_roads_min", 0.0) * 60.0
@@ -6339,57 +6409,180 @@ class SimSession:
         # egress line's slack over the 10c line grows with the time on the
         # road (frac per second driven), up to the egress margin
         ramp = getattr(cfg, "route_margin_egress_ramp", 0.0)
-        ways = []
-        latest = -math.inf
-        for z in sorted(self._loc.safe_zones, key=lambda z: z.zone_id):
-            rr = self._leg_route(loc, z.loc)
-            line_s = buf_s
-            slack_s = 0.0
-            spd = speed_mps
-            raw = [z.loc]
-            if rr is not None:
-                raw = list(rr.polyline) + [z.loc]
-                if (rr.time_s and rr.time_s > 0.0 and rr.dist_m
-                        and rr.dist_m > 0.0):
-                    spd = rr.dist_m / rr.time_s
-                if em_s > 0.0 and getattr(rr, "on_roads", False):
-                    if ramp > 0.0:
-                        slack_s = max(buf_s, em_s) - buf_s
+        rr = self._leg_route(loc, dest)
+        line_s = buf_s
+        slack_s = 0.0
+        spd = speed_mps
+        raw = [dest]
+        if rr is not None:
+            raw = list(rr.polyline) + [dest]
+            if (rr.time_s and rr.time_s > 0.0 and rr.dist_m
+                    and rr.dist_m > 0.0):
+                spd = rr.dist_m / rr.time_s
+            if em_s > 0.0 and getattr(rr, "on_roads", False):
+                if ramp > 0.0:
+                    slack_s = max(buf_s, em_s) - buf_s
+                else:
+                    line_s = max(buf_s, em_s)
+        pts = [loc]
+        for p in raw:
+            if (pts[-1].lat, pts[-1].lon) != (p.lat, p.lon):
+                pts.append(p)
+        worst = math.inf
+        tot = 0.0
+        samples = self._strict_points(pts, spd)
+        # SAFETY SEMANTICS 37: the leg's end (the zone, where the crew
+        # waits after it arrives) keeps the flat egress line
+        t_end = samples[-1][1] if samples else 0.0
+        for q, dt in samples:
+            tot = dt
+            pass_t = depart_s + dt
+            nom, p10 = self._exposure_at(q, pass_t)
+            if ((not math.isinf(nom)) and nom <= pass_t
+                    and (pass_t - nom) < self._cold_black_pass_s(q)):
+                worst = -math.inf              # the front is crossing it
+                break
+            if not math.isinf(p10):
+                if slack_s > 0.0:
+                    m = p10 - pass_t - (line_s + (
+                        slack_s if dt >= t_end
+                        else min(slack_s, ramp * dt)))
+                else:
+                    m = p10 - pass_t - line_s
+                if m < worst:
+                    worst = m
+        return worst, tot
+
+    def _dest_keep_until(self, z, speed_mps: float) -> float:
+        """THE DURABLE-DESTINATION WORKABILITY LAW (contracts egress_dest_
+        durable_h = H, SAFETY SEMANTICS 38): the latest ARRIVAL at catalog
+        zone z for which z is NOT A DEAD END — a place the crew can stay, or
+        leave again lawfully for a refuge that lasts. The latest of (i) z's
+        own 10c line (eroded P10 less the egress buffer) less H: z itself
+        stays clear H after the arrival (UNREACHED, old black included,
+        never bounds it); (ii) for each other zone z2, the latest departure
+        from z on a LAWFUL leg to z2 (the 29 law, _way_metrics: the fields
+        are static between world changes, so the leg's latest lawful
+        departure is now plus its worst margin now) that still reaches z2 H
+        before its own line — 28b's exits, the very ones a waiting crew
+        leaves by; (iii) with a road graph, the latest departure from z on
+        28a's search to a road refuge that stays clear H (_road_refuge_until;
+        on the map while 36 is armed). (ii) and (iii) less one step: the
+        waiting crew is moved at a step, so its exit must still be open one
+        step after it arrives. A destination reached later is a dead end:
+        the crew could neither wait there nor leave it lawfully for a refuge
+        that lasts. Cached per field generation, speed and step (every term
+        is a fixed time while the fields are); the planner is handed the
+        same values (_plan_zone_keep)."""
+        self._dest_cache_check()
+        lead_s = self._judge_lead_s()
+        key = (z.zone_id, speed_mps, lead_s)
+        v = self._dest_keep.get(key)
+        if v is not None:
+            return v
+        now = self._now_s
+        cfg = self._cfg
+        h_s = cfg.egress_dest_durable_h * 3600.0
+        buf_s = cfg.egress_buffer_min * 60.0
+
+        def durable_until(zz):
+            # the latest arrival at zz that it stays clear H after
+            _nom, p10 = self._exposure_at(zz.loc, now)
+            return math.inf if math.isinf(p10) else p10 - buf_s - h_s
+        best = durable_until(z)
+        if not math.isinf(best):
+            for z2 in sorted(self._loc.safe_zones, key=lambda q: q.zone_id):
+                if z2.zone_id == z.zone_id:
+                    continue
+                worst, tot = self._way_metrics(z.loc, z2.loc, now, speed_mps)
+                if math.isinf(worst) and worst < 0.0:
+                    continue                   # burned through now
+                cand = min(now + worst, durable_until(z2) - tot) - lead_s
+                if cand > best:
+                    best = cand
+            cand = self._road_refuge_until(z.loc, speed_mps) - lead_s
+            if cand > best:
+                best = cand
+        self._dest_keep[key] = best
+        return best
+
+    def _road_refuge_until(self, loc, speed_mps: float) -> float:
+        """SAFETY SEMANTICS 38: the latest departure from `loc` for which
+        28a's search (the SEM-10d search, lawful only, its refuge's eroded
+        P10 at least H + egress_buffer_min past the departure; on-map nodes
+        only while 36 is armed) still finds a road refuge — bisected over
+        the departure time to DEST_ROAD_RES_S (a way only closes as the
+        departure grows: the fields are static between world changes);
+        -inf with no road graph or none even now. Cached per field
+        generation, position, speed and step."""
+        self._dest_cache_check()
+        lead_s = self._judge_lead_s()
+        key = ("road", loc.lat, loc.lon, speed_mps, lead_s)
+        v = self._dest_keep.get(key)
+        if v is not None:
+            return v
+        v = -math.inf
+        if self._net_escape_capable():
+            cfg = self._cfg
+            h_s = cfg.egress_dest_durable_h * 3600.0
+            buf_s = cfg.egress_buffer_min * 60.0
+            on_map = self._refuge_on_map()
+
+            def found(d):
+                return self._road_escape_search(
+                    loc, d, speed_mps, lead_s, lawful_only=True,
+                    min_p10_s=d + h_s + buf_s,
+                    on_map_only=on_map) is not None
+            lo = self._now_s
+            if found(lo):
+                hi = lo + DEST_ROAD_SPAN_S
+                if found(hi):
+                    lo = hi
+                while hi - lo > DEST_ROAD_RES_S:
+                    mid = lo + 0.5 * (hi - lo)
+                    if found(mid):
+                        lo = mid
                     else:
-                        line_s = max(buf_s, em_s)
-            pts = [loc]
-            for p in raw:
-                if (pts[-1].lat, pts[-1].lon) != (p.lat, p.lon):
-                    pts.append(p)
-            worst = math.inf
-            tot = 0.0
-            samples = self._strict_points(pts, spd)
-            # SAFETY SEMANTICS 37: the leg's end (the zone, where the crew
-            # waits after it arrives) keeps the flat egress line
-            t_end = samples[-1][1] if samples else 0.0
-            for q, dt in samples:
-                tot = dt
-                pass_t = depart_s + dt
-                nom, p10 = self._exposure_at(q, pass_t)
-                if ((not math.isinf(nom)) and nom <= pass_t
-                        and (pass_t - nom) < self._cold_black_pass_s(q)):
-                    worst = -math.inf          # the front is crossing it
-                    break
-                if not math.isinf(p10):
-                    if slack_s > 0.0:
-                        m = p10 - pass_t - (line_s + (
-                            slack_s if dt >= t_end
-                            else min(slack_s, ramp * dt)))
-                    else:
-                        m = p10 - pass_t - line_s
-                    if m < worst:
-                        worst = m
-            if worst >= 0.0:
-                ways.append((z, tot, geo.haversine_m(loc, z.loc)
-                             / max(speed_mps, 0.1)))
-            if depart_s + worst > latest:
-                latest = depart_s + worst
-        return ways, latest
+                        hi = mid
+                v = lo
+        self._dest_keep[key] = v
+        return v
+
+    def _dest_cache_check(self) -> None:
+        """SAFETY SEMANTICS 38: the keep-until cache lives one field
+        generation (every value in it is an absolute time fixed while the
+        fields are)."""
+        if self._dest_keep_key != self._field_gen:
+            self._dest_keep_key = self._field_gen
+            self._dest_keep = {}
+
+    def _plan_keep_kw(self) -> dict:
+        """dispatch.plan's SEMANTICS 38 keywords when the law is armed —
+        zone_keep (every zone's keep-until) and stop_refuge (a stop's own
+        direct durable road refuge, asked lazily) — at the crews' speed; an
+        empty dict otherwise: the legacy call, byte-identical."""
+        keep = self._plan_zone_keep()
+        if keep is None:
+            return {}
+        spd = self._plan_keep_speed()
+        return {"zone_keep": keep,
+                "stop_refuge": lambda loc: self._road_refuge_until(loc, spd)}
+
+    def _plan_keep_speed(self) -> float:
+        """The slowest crew's speed (the planner's one keep-until)."""
+        speeds = sorted({cs.speed for cs in self._crew_sims.values()})
+        return speeds[0] if speeds else 1.0
+
+    def _plan_zone_keep(self):
+        """SAFETY SEMANTICS 38 (contracts egress_dest_durable_h): the keep-
+        until of every catalog zone (_dest_keep_until, at the slowest crew's
+        speed), handed to dispatch.plan so the planner bounds each stop's
+        egress by the very numbers the 29 predicate uses; None when off."""
+        if getattr(self._cfg, "egress_dest_durable_h", 0.0) <= 0.0:
+            return None
+        spd = self._plan_keep_speed()
+        return {z.zone_id: self._dest_keep_until(z, spd)
+                for z in self._loc.safe_zones}
 
     def _client_latest_s(self, stop: dict) -> float:
         """SAFETY SEMANTICS 29: the stop's latest departure under its own
@@ -7406,7 +7599,8 @@ class SimSession:
                                   now, None, forecasts=forecasts,
                                   road_provider=self._plan_road_provider(),
                                   eroded_rasters=self._plan_eroded_rasters(),
-                                  leg_memo=self._plan_leg_memo)
+                                  leg_memo=self._plan_leg_memo,
+                                  **self._plan_keep_kw())
         # The probe must encode deferral + buffer through job.eta — plan()
         # RE-DERIVES every job's windows from eta via
         # safety.derive_job_windows (field edits are overwritten):
@@ -7436,7 +7630,8 @@ class SimSession:
                                    cfg, now, None, forecasts=forecasts,
                                    road_provider=self._plan_road_provider(),
                                    eroded_rasters=self._plan_eroded_rasters(),
-                                   leg_memo=self._plan_leg_memo)
+                                   leg_memo=self._plan_leg_memo,
+                                   **self._plan_keep_kw())
         def served_ids(p):
             return {s.client_id for cp in p.plans.values() for s in cp.stops}
         s_now = served_ids(probe_now)
@@ -8269,7 +8464,8 @@ class SimSession:
                         incumbent, forecasts=forecasts,
                         road_provider=self._plan_road_provider(),
                         eroded_rasters=self._plan_eroded_rasters(),
-                        leg_memo=self._plan_leg_memo)
+                        leg_memo=self._plan_leg_memo,
+                        **self._plan_keep_kw())
                 self._adopt(plan, plan_jobs, now, eligible_ids)
                 for uj in plan.unserved:
                     self._unserved_reason[uj.client_id] = uj.reason

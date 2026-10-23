@@ -532,6 +532,9 @@ def test_real_session_where_crews_leave_replays_from_its_command_log():
                                   # under test)
                                   "escape_refuge_on_map": False,
                                   "route_margin_egress_ramp": 0.0,
+                                  # ... and the iteration-5 law
+                                  # (SAFETY SEMANTICS 38)
+                                  "egress_dest_durable_h": 0.0,
                                   "dispatch_late_shift": True,
                                   "dispatch_plan_on_roads": True,
                                   "dispatch_hold_h": 24.0, "deploy_min": 15.0,

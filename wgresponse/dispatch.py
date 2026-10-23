@@ -491,7 +491,7 @@ class _Ctx:
 
     def __init__(self, crews, jobmap, rasters, safe_zones, cfg, now_s,
                  inc_assign, inc_first, road_provider=None, offmap=None,
-                 leg_memo=None):
+                 leg_memo=None, zone_keep=None, stop_refuge=None):
         self.crews = crews
         self.crew_ids = [c.crew_id for c in crews]
         self.crew_by_id = {c.crew_id: c for c in crews}
@@ -605,6 +605,18 @@ class _Ctx:
                       and getattr(cfg, "route_margin_egress_roads_min",
                                   0.0) > 0.0)
         self._ezones_r = {}
+        # THE DURABLE-DESTINATION WORKABILITY LAW (contracts egress_dest_
+        # durable_h, SAFETY SEMANTICS 38): a stop's egress zone counts only
+        # when the crew reaches it while it is not a dead end (_zone_keep:
+        # zone_id -> the latest such arrival), or leaves the stop while the
+        # stop has its own durable road refuge (stop_refuge: loc -> the
+        # latest such departure, the simulator's; asked lazily); 0 = off
+        self._dest_h = float(getattr(cfg, "egress_dest_durable_h", 0.0)
+                             or 0.0)
+        self._zkeep = {}
+        self._zkeep_ext = zone_keep
+        self._srefuge = stop_refuge
+        self._sref = {}
         self._zbyid = {z.zone_id: (z, zk) for z, zk in self._zkeys}
         jrec = {}
         for k, job in jobmap.items():
@@ -993,9 +1005,74 @@ class _Ctx:
                     return (True, zid)
         return (False, "")
 
+    def _zone_keep(self, zid: str) -> float:
+        """SAFETY SEMANTICS 38 (contracts egress_dest_durable_h = H): the
+        latest ARRIVAL at zone zid for which it is not a dead end. Handed
+        by the simulator (plan(zone_keep=): its own fields and roads, the
+        very numbers its 29 predicate uses); else computed here on the
+        rasters, without roads: the later of zid's own 10c line (the least
+        eroded P10 over every incident at the zone, less the egress buffer)
+        less H, and for each other zone the latest lawful departure on the
+        egress leg there (its egress-mode T*) that still reaches it H before
+        its own line, less one replan period (a waiting crew is moved at a
+        step: its exit must still be open one step after it arrives)."""
+        v = self._zkeep.get(zid)
+        if v is not None:
+            return v
+        if self._zkeep_ext is not None:
+            # the simulator's own keep-until (its fields, its roads): the
+            # planner and the 29 predicate judge with the same numbers
+            v = self._zkeep_ext.get(zid, math.inf)
+            self._zkeep[zid] = v
+            return v
+        h_s = self._dest_h * 3600.0
+        buf_s = self.cfg.egress_buffer_min * 60.0
+        lead_s = float(self.cfg.replan_period_s)
+
+        def durable_until(zz):
+            p10 = UNREACHED
+            for _iid, ras in self.rasters:
+                val = safety._raster_value_at(ras, zz.loc)
+                if val is not None and val < p10:
+                    p10 = val
+            return math.inf if math.isinf(p10) else p10 - buf_s - h_s
+        z, zk = self._zbyid[zid]
+        best = durable_until(z)
+        if not math.isinf(best):
+            for z2, z2k in self._zkeys:
+                if z2.zone_id == zid:
+                    continue
+                cand = min(self._tstar_k(z.loc, z2.loc, zk, z2k, "egress"),
+                           durable_until(z2)
+                           - self._travel_k(z.loc, z2.loc, zk, z2k)) - lead_s
+                if cand > best:
+                    best = cand
+        self._zkeep[zid] = best
+        return best
+
+    def _stop_refuge(self, loc, k) -> float:
+        """SAFETY SEMANTICS 38: the latest departure from plan point loc
+        (leg key k) on a fully lawful road to a road refuge that stays clear
+        H after the crew reaches it — the simulator's (plan(stop_refuge=),
+        asked once per point and only when a zone's keep-until binds); -inf
+        without it."""
+        v = self._sref.get(k)
+        if v is None:
+            v = (-math.inf if self._srefuge is None
+                 else float(self._srefuge(loc)))
+            self._sref[k] = v
+        return v
+
     def _ezones_k(self, loc, k):
         """Build and memoise the egress zone order of the stop at loc (leg
-        key k) — egress()'s list, the same calls in the same order."""
+        key k) — egress()'s list, the same calls in the same order.
+
+        SAFETY SEMANTICS 38 (contracts egress_dest_durable_h): each zone's T*
+        is also bounded by its keep-until less the drive there (_zone_keep):
+        a stop whose crew would reach the zone after it became a dead end
+        has no lawful egress through it — unless the crew leaves while the
+        stop has its own durable road refuge (_stop_refuge). The order is
+        unchanged."""
         if int(getattr(self.cfg, "route_alternatives", 1) or 1) > 1:
             rows = [(z.zone_id,
                      self._tstar_k(loc, z.loc, k, zk, "egress"),
@@ -1024,6 +1101,18 @@ class _Ctx:
                 z, zk = self._zbyid[zid]
                 zr.append((zid, self._tstar_k(loc, z.loc, k, zk, "egress_r")))
             self._ezones_r[k] = zr
+        if self._dest_h > 0.0:
+            # SAFETY SEMANTICS 38: no egress through a dead end
+            def keep(zid, ts):
+                z, zk = self._zbyid[zid]
+                b = self._zone_keep(zid) - self._travel_k(loc, z.loc, k, zk)
+                if b >= ts:
+                    return ts
+                return min(ts, max(b, self._stop_refuge(loc, k)))
+            zl = [(zid, keep(zid, ts)) for zid, ts in zl]
+            if self._ramp:
+                self._ezones_r[k] = [(zid, keep(zid, ts))
+                                     for zid, ts in self._ezones_r[k]]
         self._ezones[k] = zl
         return zl
 
@@ -2153,7 +2242,9 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
          road_provider=None,
          eroded_rasters: "dict | None" = None,
          offmap: "dict | None" = None,
-         leg_memo: "LegMemo | None" = None) -> DispatchPlan:
+         leg_memo: "LegMemo | None" = None,
+         zone_keep: "dict | None" = None,
+         stop_refuge=None) -> DispatchPlan:
     """Build a DispatchPlan for `crews` over `jobs` at unix time now_s.
 
     ens: incident_id -> EnsembleArrival; each incident's P10 raster is eroded
@@ -2216,6 +2307,15 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
     on exact endpoints and bound to a signature of the rest of their inputs
     (see LegMemo). PERFORMANCE ONLY: a plan is byte-identical with or
     without it. None (default) = every leg computed afresh in this call.
+
+    zone_keep / stop_refuge (contracts SAFETY SEMANTICS 38, read only with
+    cfg.egress_dest_durable_h > 0): the simulator's own numbers for the
+    durable-destination workability law — zone_id -> the zone's KEEP-UNTIL
+    (the latest arrival at which it is not a dead end), and a callable
+    loc -> the latest departure from a plan point with a fully lawful road
+    to a road refuge that stays clear H (asked lazily, at most once per
+    point, only when a zone's keep-until binds). None = dispatch computes
+    the keep-until on its own rasters (no roads) and no stop refuge.
     """
     t0 = time.monotonic()
     _evals = int(getattr(cfg, "solver_budget_evals", 0) or 0)
@@ -2344,7 +2444,8 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
 
     ctx = _Ctx(eligible, jobmap, rasters, safe_zones, cfg, now_s, inc_assign,
                inc_first, road_provider=road_provider, offmap=offmap,
-               leg_memo=leg_memo)
+               leg_memo=leg_memo, zone_keep=zone_keep,
+               stop_refuge=stop_refuge)
 
     # -- step 2: warm start (repair incumbent; freeze committed stops) --------
     state = _State({cid: [] for cid in ctx.crew_ids}, {cid: 0 for cid in ctx.crew_ids})

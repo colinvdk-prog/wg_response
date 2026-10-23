@@ -28,10 +28,12 @@ from wgresponse import fuels, geo, server, simui
 from wgresponse.contracts import ResponseConfig
 
 #: the iteration-3 knobs, all off: the sessions of commit b9e3b68 (and the
-#: iteration-4 laws, SAFETY SEMANTICS 36-37, which that commit did not have)
+#: iteration-4 laws, SAFETY SEMANTICS 36-37, and the iteration-5 law,
+#: SAFETY SEMANTICS 38, which that commit did not have)
 ITER3_OFF = {"sim_far_side_zones": False, "reinforce_entry_by_need": False,
              "ember_eta_landings": False,
-             "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0}
+             "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0,
+             "egress_dest_durable_h": 0.0}
 FAR_ONLY = dict(ITER3_OFF, sim_far_side_zones=True)
 
 

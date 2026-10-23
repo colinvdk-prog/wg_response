@@ -49,7 +49,9 @@ from tests.test_safety import _b1_case, _tstar_path
 #: the iteration-4 laws off and the founder's 2026-10-22 calls undone: the
 #: sessions of commit 1963df2
 ITER4_OFF = {"escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0,
-             "reinforce_entry_by_need": False, "sim_far_zones_off": ""}
+             "reinforce_entry_by_need": False, "sim_far_zones_off": "",
+             # ... and the iteration-5 law (SAFETY SEMANTICS 38)
+             "egress_dest_durable_h": 0.0}
 #: 37 as the founder's switch would arm it (the measured value)
 RAMP_ON = {"route_margin_egress_ramp": simui.ROUTE_MARGIN_EGRESS_RAMP_MEASURED}
 
@@ -261,7 +263,12 @@ def test_armed_an_off_map_refuge_is_only_the_last_exit():
     an on-map road point, and leaves the map at 11 by its LAST lawful way
     there (28b: that way closes within 30 min plus one step). No crew drives
     through the band."""
-    s = _hold("beaver_creek_co", 340.0, 5000.0, 340.0, "high", {})
+    # the iteration-5 law (SAFETY SEMANTICS 38) off: with it this fire's
+    # crews no longer work the homes whose way out ends in the dead end the
+    # last exit leaves — none leaves the map (tests/test_dest_durable.py,
+    # test_armed_the_b340_crews_stay_on_the_map)
+    s = _hold("beaver_creek_co", 340.0, 5000.0, 340.0, "high",
+              {"egress_dest_durable_h": 0.0})
     assert s._cfg.escape_refuge_on_map is True
     picked = []
     orig_retarget, orig_pro = s._durable_retarget, s._proactive_escape_zone
