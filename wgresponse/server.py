@@ -45,7 +45,14 @@ runs the REAL engine — nothing here forks physics). All authed:
                                 400; mapped to cfg.spotting_enabled and
                                 cfg.grass_ros_floor_frac (0.10 on / 0.0 off) and
                                 echoed as state.spotting / state.grass_realism;
-                                reset + reroll_clients preserve them)
+                                reset + reroll_clients preserve them.
+                                start_local_hour? (AFTERNOON STARTS, 2026-10-
+                                21): the sim epoch's local STANDARD hour,
+                                decimal hours in [0, 24) — the epoch moves to
+                                that hour of its own local day (weather is a
+                                pure function of absolute time); absent / null
+                                = the fixed epoch, 07:13 in Colorado; anything
+                                else -> 400; reset + reroll_clients keep it)
     POST /api/sim/<id>/ignite   {lat, lon, intensity?, wind_dir_deg?}
     POST /api/sim/<id>/config   {egress_buffer_min?, slack_min?, speed?,
                                 deploy_min?, wind_dir_deg?}
@@ -547,11 +554,24 @@ class SimSessionManager:
         if crew_shifts:
             cfg["crew_shift_max_on_h"] = 12.0
             cfg["crew_shift_rest_h"] = 8.0
+        # AFTERNOON STARTS (2026-10-21; the Eagle River valley review's
+        # iteration 3): the sim epoch's local standard hour (decimal hours,
+        # [0, 24)); absent / null = the fixed epoch (07:13 in Colorado)
+        start_hour = payload.get("start_local_hour")
+        if start_hour is not None:
+            if (isinstance(start_hour, bool)
+                    or not isinstance(start_hour, (int, float))
+                    or not math.isfinite(float(start_hour))
+                    or not (0.0 <= float(start_hour) < 24.0)):
+                return 400, {"error": "start_local_hour must be a number "
+                                      "within [0, 24)"}
         with self._lock:
             self._n += 1
             sid = f"sim-{self._n}"
         seed = str(payload.get("seed") or sid)   # deterministic default
         kwargs = {}
+        if start_hour is not None:
+            kwargs["start_local_hour"] = float(start_hour)
         if self._tile_dir is not None:
             kwargs["tile_dir"] = self._tile_dir
         if self._synth_size_km is not None:
@@ -603,11 +623,13 @@ class SimSessionManager:
             if not lit:
                 return 500, {"error": f"scenario {scenario!r} could not "
                                       "find a burnable ignition cell"}
-        entry = _SimEntry(sid, session, seed,
-                          {"location": loc, "clients": n_clients,
-                           "crews": n_crews, "cfg": dict(cfg),
-                           "fire_zone": fire_zone,
-                           "crews_1h": n_crews_1h, "crews_3h": n_crews_3h})
+        params = {"location": loc, "clients": n_clients,
+                  "crews": n_crews, "cfg": dict(cfg),
+                  "fire_zone": fire_zone,
+                  "crews_1h": n_crews_1h, "crews_3h": n_crews_3h}
+        if start_hour is not None:
+            params["start_local_hour"] = float(start_hour)
+        entry = _SimEntry(sid, session, seed, params)
         evicted = []
         with self._lock:
             self._sessions[sid] = entry

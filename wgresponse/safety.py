@@ -899,7 +899,8 @@ def leg_tstar(a: LatLon, b: LatLon, speed_mps: float,
               margin_min: "float | None" = None,
               offraster_ros_mps: "float | None" = None,
               offraster_margin_min: "float | None" = None,
-              walks: "dict | None" = None) -> float:
+              walks: "dict | None" = None,
+              margin_ramp: "tuple | None" = None) -> float:
     """LegOracle(a, b, speed_mps, eroded_p10, cfg, path=..., ...)
     .latest_safe_depart_s — the leg's closed-form latest safe departure T* —
     without building the oracle (first-step perf 2026-10-12; docs/
@@ -919,7 +920,18 @@ def leg_tstar(a: LatLon, b: LatLon, speed_mps: float,
     plan() call): road legs over the same raster and law then share the walk
     of their common polyline prefix (_TstarWalk) — the same samples, so the
     same T*. Property-tested against LegOracle in tests/test_safety.py (with
-    and without shared walks); without the geo module it is the oracle."""
+    and without shared walks); without the geo module it is the oracle.
+
+    margin_ramp (SAFETY SEMANTICS 37, contracts route_margin_egress_ramp):
+    (base_min, frac) — the margin at a sample tau seconds into the leg is
+    base + min(margin - base, frac * tau) instead of the flat margin: the
+    slack over base grows with the time on the road, up to the margin; the
+    leg's END (its last sample — the zone, where the crew waits after it
+    arrives: the 20b destination lead) keeps the flat margin. None
+    (or frac <= 0, or margin <= base) = the flat margin, bit for bit. A
+    bounded sample (SEMANTICS 15c) keeps max(that, the off-raster margin).
+    Without the geo module (the oracle path) the flat margin applies — the
+    conservative side of the ramp."""
     g = _geo()
     if g is None or not hasattr(g, "M_PER_DEG_LAT"):
         return LegOracle(a, b, speed_mps, eroded_p10, cfg, path=path,
@@ -989,6 +1001,7 @@ def leg_tstar(a: LatLon, b: LatLon, speed_mps: float,
         ub, bd, cl = [], [], []
         st = _walk_spans(w, node.st, path, i, n, ub, bd, cl)
         blocks.append((ub, bd, cl))
+        total_m = st[0]
     elif road:
         ub, bd, cl = [], [], []
         p = path[0]
@@ -996,6 +1009,7 @@ def leg_tstar(a: LatLon, b: LatLon, speed_mps: float,
         st = _walk_spans(w, lst + (0.0, None, 0.0), path, 1, len(path),
                          ub, bd, cl)
         blocks.append((ub, bd, cl))
+        total_m = st[0]
     else:
         # the chord a -> b: geo.sample_polyline's points, the cell walk on
         # [a, b] (not shared: a chord has no road prefix)
@@ -1007,7 +1021,55 @@ def leg_tstar(a: LatLon, b: LatLon, speed_mps: float,
         if w.cells_on:
             st = _walk_spans(w, st, [a, b], 1, 2, [], [], cl)
         blocks.append((ub, bd, cl))
+        total_m = lst[0]
     tstar = UNREACHED
+    ramp = None
+    if margin_ramp is not None:
+        base_s = float(margin_ramp[0]) * 60.0
+        frac = float(margin_ramp[1])
+        if frac > 0.0 and margin_s > base_s:
+            ramp = (base_s, margin_s - base_s, frac)
+    if ramp is not None:
+        # SAFETY SEMANTICS 37: the margin ramps with the time on the road;
+        # the leg's END (the zone, where the crew waits after it arrives:
+        # the 20b destination lead) keeps the flat margin
+        base_s, slack_s, frac = ramp
+        floor_s = (float(offraster_margin_min) * 60.0
+                   if (fail_closed or unreached_bound)
+                   and offraster_margin_min is not None else -math.inf)
+        cur = cur_exit = None
+        if w.cells_on:
+            cur, cur_exit = st[5], st[6]
+        # the leg's end: its full walked length (the last sample point, and
+        # the cell the walk ends in), within a micrometre of float noise
+        end = total_m
+        if cur is not None and cur >= 0 and cur_exit > end:
+            end = cur_exit
+        end -= 1e-6
+
+        def _m(d):
+            return base_s + (slack_s if d >= end
+                             else min(slack_s, frac * (d / speed_mps)))
+        for ub, bd, cl in blocks:
+            for v, cum in zip(ub[0::2], ub[1::2]):
+                t = v - _m(cum) - cum / speed_mps
+                if t < tstar:
+                    tstar = t
+            for v, cum in zip(bd[0::2], bd[1::2]):
+                t = v - max(_m(cum), floor_s) - cum / speed_mps
+                if t < tstar:
+                    tstar = t
+            for v, ex in zip(cl[0::2], cl[1::2]):
+                t = v - _m(ex) - ex / speed_mps
+                if t < tstar:
+                    tstar = t
+        if cur is not None and cur >= 0:
+            v = w.data[cur]
+            if not math.isinf(v):
+                t = v - _m(cur_exit) - cur_exit / speed_mps
+                if t < tstar:
+                    tstar = t
+        return tstar
     for ub, bd, cl in blocks:               # flat (arrival, distance) pairs
         for v, cum in zip(ub[0::2], ub[1::2]):
             t = v - margin_s - cum / speed_mps

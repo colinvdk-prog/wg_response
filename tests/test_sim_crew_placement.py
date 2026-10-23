@@ -554,8 +554,13 @@ def test_crew_placed_where_the_fire_starts_is_reported_never_silent(tmp_path):
     ignition the grass under the crew has burned out (window 5-10 min), and
     under the founder's 2026-09-26 ruling old black is a refuge — the armed
     truth is test_armed_fire_lit_on_a_placed_crew_reported_then_rests_on_
-    the_black below."""
-    s = _session(tmp_path, seed="worst", cfg={"old_black_refuge": False})
+    the_black below. A row exactly when the crew's own cell is exposed is
+    the TICK-END audit's law (crew_path_audit pinned off, 2026-10-21): the
+    path audit also reports the drive out through the still-burning
+    ground in the next step — tests/test_crew_path_audit.py::test_the_
+    drive_out_of_a_fire_lit_on_a_crew_is_reported is the armed twin."""
+    s = _session(tmp_path, seed="worst",
+                 cfg={"old_black_refuge": False, "crew_path_audit": False})
     at_fire = _on_ew_road(8_000.0)
     s.place_crew("sim-g1", at_fire.lat, at_fire.lon)
     s.ignite(at_fire.lat, at_fire.lon, intensity="high")

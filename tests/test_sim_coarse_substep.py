@@ -118,8 +118,13 @@ def test_burned_out_map_crews_only_on_old_black(tmp_path):
     escape point), relocations 1 / 1 / 111 / 411 / 711 / 1,011; after, no
     rows, relocations 1 / 1 / 3 / 3 / 3 / 3. The strict law (knob off) is
     pinned in tests/test_sim_old_black.py::test_knob_off_keeps_the_strict_
-    audit_on_the_burned_out_map."""
-    s = _session(tmp_path, n_clients=8, n_crews=2)
+    audit_on_the_burned_out_map. Its law is the TICK-END audit's (crew_path_
+    audit pinned off, 2026-10-21): the path audit sees both crews cross one
+    cell of the burned-out ground's eroded halo (old black is a refuge per
+    cell, its halo is not) — tests/test_crew_path_audit.py::test_burned_out_
+    map_path_audit_sees_the_old_black_halo is the armed twin."""
+    s = _session(tmp_path, n_clients=8, n_crews=2,
+                 cfg={"crew_path_audit": False})
     st = s.tick()
     assert st["scoreboard"]["violations"] == 0
     s.set_speed(600.0)

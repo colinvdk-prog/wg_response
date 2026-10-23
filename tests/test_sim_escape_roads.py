@@ -363,7 +363,12 @@ def test_proactive_decamp_takes_a_lawful_durable_road_node(tmp_path):
     reaches inside the proactive window, with no catalog zone left, decamps
     along a FULLY LAWFUL road path to a durable node; exposed or burned
     paths are never taken by this voluntary move."""
-    s, g = _session(tmp_path, escape_proactive_lead_min=120.0)
+    # SEMANTICS 28b (the last-exit trigger, 2026-10-21) pinned off: in this
+    # world it leaves first, for the same lawful durable node (its own test:
+    # tests/test_crew_pocket.py::test_the_last_exit_trigger_takes_the_road_
+    # refuge_the_decamp_would) — the subject here is the SEM-10e decamp
+    s, g = _session(tmp_path, escape_proactive_lead_min=120.0,
+                    escape_last_exit_lead_min=0.0)
     now = s._now_s
     _fire(s, paint_nom=[(_pt(0, 1.5), 450.0, now + 1.0)],        # north burns
           paint_p10=[(_pt(90, 1.5), 500.0, now + 60.0),          # east exposed
@@ -427,7 +432,9 @@ def test_proactive_counterpart_no_durable_zone_decamps_by_road():
     b, e, w, _t, dm = s._route_metrics(cs.pos, pick.loc, now, cs.speed, 900.0)
     assert not b and e == 0.0 and dm >= 0.0
     # the sweep counterpart of test_sweep_holds_when_no_durable_exit
-    s2 = _scripted_session(escape_proactive_lead_min=120.0)
+    # (SEMANTICS 28b pinned off, as above: the subject is the SEM-10e sweep)
+    s2 = _scripted_session(escape_proactive_lead_min=120.0,
+                           escape_last_exit_lead_min=0.0)
     cs2 = next(iter(s2._crew_sims.values()))
     z1, z2, z3 = sorted(s2._loc.safe_zones, key=lambda z: z.zone_id)
     _script(s2, {z1.zone_id: s2._now_s + 2 * 3600.0,
@@ -493,7 +500,13 @@ def test_real_tile_escape_drives_roads_to_a_node():
                                   "dispatch_late_shift": True,
                                   "dispatch_plan_on_roads": True,
                                   "dispatch_hold_h": 24.0, "deploy_min": 15.0,
-                                  "dispatch_sequence": "auto"})
+                                  "dispatch_sequence": "auto",
+                                  # the iteration-5 law (SAFETY SEMANTICS
+                                  # 38) off: with it no crew here works a
+                                  # home it would have to flee, so no area
+                                  # escape forms (its twin:
+                                  # tests/test_dest_durable.py)
+                                  "egress_dest_durable_h": 0.0})
     ign = geo.destination(loc.center, loc.hazard_wind_dir_deg, 7000.0)
     s.ignite(ign.lat, ign.lon, intensity="high",
              wind_dir_deg=loc.hazard_wind_dir_deg)

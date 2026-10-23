@@ -42,6 +42,30 @@ from tests.test_simui_policy import (FAST_TIGHT, KEY, _arm_mid_deploy,
 INF = math.inf
 ANY = {"spread_any_angle": True}
 OFF = {"crew_work_judged": False}
+#: the 2026-10-21 crew-safety knobs (SAFETY SEMANTICS 25-27), which the
+#: simulator arms since: OFF reproduces the sessions this file's goldens and
+#: pinned controls were derived on. Their armed twins: tests/test_crew_path_
+#: audit.py and tests/test_ingress_exact.py.
+#: ... and the iteration-2 knobs (SAFETY SEMANTICS 28-33, 2026-10-21), armed
+#: by the simulator since: this file's goldens and derivations predate
+#: them too (their own goldens and armed behaviour: tests/test_crew_pocket.
+#: py, test_egress_guard.py, test_stage_by_need.py, test_egress_margin.py)
+ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
+             "egress_corridor_guard": False,
+             "reinforce_stage_by_need": False, "idle_restage": False,
+             "route_margin_egress_roads_min": 0.0,
+             "escape_pocket_exit": False, "plan_egress_time_deadline": False,
+             "crew_overrun_ledger": False,
+             # ... and the iteration-3 knobs (SAFETY SEMANTICS 34-35)
+             "sim_far_side_zones": False, "reinforce_entry_by_need": False,
+             "ember_eta_landings": False,
+             # ... and the iteration-4 laws (SAFETY SEMANTICS 36-37)
+             "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0,
+             # ... and the iteration-5 law (SAFETY SEMANTICS 38)
+             "egress_dest_durable_h": 0.0}
+ITER1_OFF = {"crew_path_audit": False, "dispatch_keep_frozen": False,
+             "plan_route_exact": False, "crew_ingress_judged": False,
+             **ITER2_OFF}
 
 
 def _hash(st):
@@ -115,10 +139,13 @@ def _golden_world(tmp_path, any_angle, spot_d, nth, ticks, cfg):
 @pytest.mark.parametrize("world", sorted(GOLDENS))
 def test_knob_off_is_byte_identical_and_still_overruns(tmp_path, world):
     """Knob off: both worlds replay the pre-rule sessions byte for byte,
-    their overrun rows included (so the armed arm below bites)."""
+    their overrun rows included (so the armed arm below bites). The
+    2026-10-21 knobs are off too (ITER1_OFF): the goldens predate them, and
+    these two-fire worlds' departure rows read every fire under
+    crew_path_audit (SEMANTICS 25c)."""
     any_angle, spot_d, nth, ticks, golden, golden_rows = GOLDENS[world]
     hashes, rows, _s = _golden_world(tmp_path, any_angle, spot_d, nth,
-                                     ticks, OFF)
+                                     ticks, dict(OFF, **ITER1_OFF))
     assert hashes == golden
     assert rows == golden_rows
 
@@ -126,10 +153,13 @@ def test_knob_off_is_byte_identical_and_still_overruns(tmp_path, world):
 @pytest.mark.parametrize("world", sorted(GOLDENS))
 def test_knob_on_the_same_worlds_have_no_overrun(tmp_path, world):
     """Armed (the simulator default): no crew-overrun row on any tick, and
-    the sessions agree with the pre-rule ones up to the world change."""
+    the sessions agree with the pre-rule ones up to the world change. The
+    run ledger (SAFETY SEMANTICS 33, 2026-10-21, reporting only) is pinned
+    off: it adds the run's totals to every tick's scoreboard, so no state
+    matches a pre-rule one (its own test: tests/test_overrun_ledger.py)."""
     any_angle, spot_d, nth, ticks, golden, _rows = GOLDENS[world]
     hashes, rows, s = _golden_world(tmp_path, any_angle, spot_d, nth, ticks,
-                                    {})
+                                    {"crew_overrun_ledger": False})
     assert s._cfg.crew_work_judged
     assert rows == [0] * len(rows)
     first = len(golden) - ticks              # the first tick after the change
@@ -187,8 +217,13 @@ def test_any_angle_rugpull_queued_ingress_leg_is_judged(tmp_path):
 def test_any_angle_rugpull_knob_off_overruns_on_the_ingress_leg(tmp_path):
     """The finding reproduced (knob off): at tick 4 the crew stands on
     unburned fuel inside the planted fire's eroded band — eroded P10 = that
-    fire's ignition time (T0 + 30 min) — after driving its queued leg."""
-    s = _session(tmp_path, ign_dist_m=4_600.0, cfg=dict(ANY, **OFF))
+    fire's ignition time (T0 + 30 min) — after driving its queued leg.
+    SEMANTICS 27b is pinned off too (crew_ingress_judged, 2026-10-21): it
+    judges EVERY ingress leg as it starts, stale or not, so with 23 off it
+    still releases this leg — the armed twin is tests/test_ingress_exact.py::
+    test_any_angle_rugpull_with_23_off_is_caught_by_27b."""
+    s = _session(tmp_path, ign_dist_m=4_600.0,
+                 cfg=dict(ANY, crew_ingress_judged=False, **OFF))
     st, crew, cur, _gap = _arm_mid_deploy(s)
     spot = _inject_spot_fire(s, st, cur)
     s.tick()
@@ -208,8 +243,14 @@ def test_withdrawal_law_holds_under_any_angle(tmp_path):
     with no crew-overrun row until it is next at work, and the victim is
     never served. (Later fresh plans under a ~13 h buffer meet dispatch's
     corridor margin, not the buffer — a pre-existing dispatch / audit split
-    the contracts entry names; not this law's.)"""
-    s = _session(tmp_path, ign_dist_m=4_600.0, cfg=ANY)
+    the contracts entry names; not this law's.) Its law is the TICK-END
+    audit's (crew_path_audit pinned off, 2026-10-21): under the slider's
+    ~13.5 h line the withdrawal egress has no road on the audit's side of
+    that line, and the path audit reports its least-exposure transit —
+    tests/test_crew_path_audit.py::test_withdrawal_egress_under_a_raised_
+    line_is_reported is the armed twin."""
+    s = _session(tmp_path, ign_dist_m=4_600.0,
+                 cfg=dict(ANY, crew_path_audit=False))
     st, crew, cur, _gap = _arm_mid_deploy(s)
     victim = cur["client_id"]
     _inject_spot_fire(s, st, cur)
@@ -250,7 +291,11 @@ def test_sixteen_direction_deploy_outrun_by_the_world_change_withdraws(
     moves in the step the spot fire's field takes effect, it withdraws
     (cause work_judged: it would leave 8.5 min past its latest lawful
     departure, every fire and its own cell counted)."""
-    _h, rows, s = _golden_world(tmp_path, False, 1500.0, 2, 6, {})
+    # the iteration-2 knobs pinned off (2026-10-21): with the SEMANTICS 29
+    # guard the stop's cell is judged as the crew leaves it, so the same
+    # withdrawal carries a 9.3-min deficit (tests/test_egress_guard.py::
+    # test_the_sixteen_direction_withdrawal_counts_the_cell_exit)
+    _h, rows, s = _golden_world(tmp_path, False, 1500.0, 2, 6, ITER2_OFF)
     assert rows == [0] * len(rows)
     (w,) = s.state()["withdrawn"]
     assert (w["client_id"], w["cause"]) == ("sim-c15", "work_judged")
@@ -272,10 +317,21 @@ def test_rugpull_twins_armed_control_keeps_no_stale_unlawful_work(tmp_path):
     sim-c15 (it would leave 14.8 min past its rule against the planted
     fire) and, at sim-c1, the queued legs to four homes the wind swing no
     longer threatens (each crosses the planted fire's band), then leaves.
-    The 16-direction spread is pinned (the choreography's geometry)."""
+    The 16-direction spread is pinned (the choreography's geometry). The
+    "violations 0" law is the TICK-END audit's (crew_path_audit pinned off,
+    2026-10-21): the path audit sees the control crew drive out of
+    sim-c9's own cell 12 s after the 10c line reached it, and the
+    tightened twin's withdrawal egress inside the raised 120-min line —
+    tests/test_crew_path_audit.py::test_rugpull_twins_path_audit_reports_
+    what_the_tick_end_audit_missed is the armed twin."""
     def run(tighten, cfg=None):
+        # the iteration-2 knobs pinned off (2026-10-21): with the SEMANTICS
+        # 29 guard the control also releases sim-c9 (its cell judged as the
+        # crew leaves it: the 12 s) — tests/test_egress_guard.py is the
+        # armed twin
         s = _session(tmp_path, ign_dist_m=4_600.0,
-                     cfg=dict(cfg or {}, spread_any_angle=False))
+                     cfg=dict(cfg or {}, spread_any_angle=False,
+                              crew_path_audit=False, **ITER2_OFF))
         st, crew, cur, _gap = _arm_mid_deploy(s)
         _inject_spot_fire(s, st, cur)
         st = s.tick()
@@ -306,8 +362,10 @@ def test_rugpull_twins_armed_control_keeps_no_stale_unlawful_work(tmp_path):
         assert eta[c] is None            # no longer threatened at all
     # what the pinned (knob-off) control did instead: sim-c15 served past
     # its rule against the planted fire (the departure audit reads only
-    # the stop's own fire, so it counted nothing)
-    st_o, s_o = run(False, cfg=OFF)
+    # the stop's own fire, so it counted nothing). SEMANTICS 27b pinned off
+    # with 23 (it judges the stale queued legs as they start, stale or not:
+    # the control would serve 4, not 9)
+    st_o, s_o = run(False, cfg=dict(OFF, crew_ingress_judged=False))
     c15 = next(x for x in st_o["serviced"] if x["client_id"] == "sim-c15")
     rollup = min(spread.eta_at(f.ens, s_o._client_by_id["sim-c15"].loc,
                                fallback_radius_m=s_o._cfg.ember_threat_radius_m
@@ -412,9 +470,13 @@ def test_an_ingress_leg_is_judged_when_it_starts(tmp_path, arm):
     stop planned against an older field generation is judged as the leg
     starts: released (loud note), and the next queued stop (3 km west, road
     clear) is judged and kept. A stop stamped with the CURRENT generation is
-    dispatch's — never re-judged; knob off — legacy, unjudged."""
-    s = _judged_session(tmp_path, **({"crew_work_judged": False}
-                                     if arm == "off" else {}))
+    dispatch's — never re-judged; knob off — legacy, unjudged. SEMANTICS
+    27b (crew_ingress_judged, 2026-10-21) is pinned off: it judges the
+    CURRENT-generation stop too — tests/test_ingress_exact.py::
+    test_a_current_stop_is_judged_as_the_crew_sets_out is the armed twin."""
+    s = _judged_session(tmp_path, crew_ingress_judged=False,
+                        **({"crew_work_judged": False}
+                           if arm == "off" else {}))
     _paint(s, p10_paint=[(_pt(90, 1.5), 400.0, s._now_s - 60.0)])
     s._field_gen = 2
     gen = 1 if arm == "stale" else 2

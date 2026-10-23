@@ -1119,6 +1119,512 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    in tests/test_fuse_colocated.py against goldens computed on commit
    bf2a868, before this rule, on the recorded payloads and a world where it
    bites); NOT armed live (the integrator decides).
+25. THE AUDIT SEES THE WHOLE DRIVE (2026-10-21; the Eagle River valley
+   review, crew-safety lens — docs/SIMULATOR_DESIGN.md "The audit sees the
+   whole drive"; scratch_review/eagle_valley; cfg.crew_path_audit, read only
+   by the simulator — the live engine audits no crew position). The 10c
+   audit judged each crew at its position at the END of each step; between
+   two audits a crew drives up to a step of road and stands at stops it
+   leaves before the audit looks. Measured with the review's path probe
+   (every crew's driven path sampled between tick ends at its pass time,
+   the 10c law) on the valley harness (33 runs, 12 h): crews crossed the
+   eroded-P10 band in 12 episodes in 8 runs — 1,029 samples, the worst 433
+   min past the 10c line, never inside the nominal fire — while the
+   scoreboard read 0 crew-overrun rows; 11 of the 17 emergency
+   (zone_threatened) relocations rode through the band, and 13 of the 14
+   closest tick-end margins were crews the sweep was ordering out. The
+   serviced-stop audit read only the stop's own fire. With the knob on:
+   (a) EVERY SAMPLE OF THE DRIVE. Each step every crew's path since the
+       last audit (_SimCrew.path_track: each position and mode change with
+       its time) is judged by the 10c law: every field cell a driven span
+       passes through (geo.path_cell_runs — the 20a walk) at the moment the
+       crew LEAVES it, and every spot the crew stood at (a stop, a wait) at
+       the moment it left it or the step ended. A sample counts exactly as
+       the tick-end audit counts a crew: BURNED (nominal arrival at or
+       before that moment) or IMMINENT (eroded P10 within egress_buffer_min
+       of it); OLD BLACK is excused as the tick-end audit excuses it —
+       black already older than its cold-black window when the crew got
+       there (entered the cell; arrived at the spot, or the step start if
+       it stood there before).
+   (b) ONE ROW PER CREW PER STEP. A crew the tick-end audit (or a 23c
+       world-change instant) already counts keeps that row; a crew clear
+       at the tick end but exposed on the way gets ONE crew_overrun row
+       with transit: true — its worst sample (burned before imminent, then
+       the least margin): at_s (the moment it left the cell or spot),
+       position, the mode and status it was in, the arrivals, margin_min
+       (eroded P10 − at_s − buffer; negative = inside the band) — and
+       exposed_s, the seconds of the step it spent on exposed cells (each
+       from the moment the front or the 10c line reached it). Counted in
+       scoreboard.violations and crew_overruns like every row. INBOUND
+       crews are off the tile; a crew that left the map during the step is
+       judged on the path it drove before it left (on the map then).
+   (c) EVERY FIRE AT THE DOOR. The serviced-stop departure audit reads the
+       pessimistic arrival at the home from EVERY fire (the ember /
+       adjacency fallback as everywhere), not only the stop's own — the
+       law 23a already holds a crew to; the audit row names the bounding
+       fire (worst_incident_id) when it is not the stop's own.
+   It REPORTS; it never moves a crew. With one fire and no crew exposed
+   on the way it is byte-identical to the tick-end audit (a strict
+   superset, like the 10c audit itself). What it found in the existing
+   choreographies: the seconds a crew spends driving out of a stop's own
+   cell after a departure judged lawful at the departure INSTANT (23a and
+   27b test the stop's cell then, the walk judges the cell when the crew
+   leaves it: 12 s inside the line in the rug-pull control); the least-
+   exposure egress of a crew a slider-raised buffer withdrew with no road
+   on the audit's side of that line (19-90 min inside it; in the homes-
+   mode demo 5 min before the eroded P10, inside the original 10-min line
+   too); and four egress drives through the band in the extended Camp-
+   Fire-scale run (up to 15 h past the line). Knob OFF = the
+   tick-end audit, byte-identical (pinned in tests/test_crew_path_audit.py
+   against goldens computed on commit 7bebc7a, before the rule, on worlds
+   where it bites); the SIMULATOR arms it (explicit override wins).
+26. A COMMITTED NEAR-TERM STOP STAYS COMMITTED (2026-10-21; the Eagle River
+   valley review; cfg.dispatch_keep_frozen — dispatch.plan, and the
+   simulator's job pool). plan()'s warm start repairs the incumbent with
+   only the stops it finds in the job pool, keyed (client_id,
+   incident_id), and the simulator kept an eligible crew's FROZEN stops
+   (service start inside commitment_horizon_min) OUT of its pool — so the
+   commitment freeze dispatch keeps for them never engaged: whenever any
+   crew idled (the simulator re-plans every such tick) an en-route crew
+   about to arrive lost its head stop, was sent elsewhere, and the stop
+   went back to the pool. Measured on the valley harness: 39 en-route head
+   swaps (261 km driven for them); a crew 17 m from sim-c8's driveway sent
+   4.7 km to sim-c33 and back the next tick, both homes unprotected; one
+   crew shuttled between two homes for 3 h (~100 km) while two idled. With
+   the knob on: (a) an eligible crew's frozen stops stay in the job pool;
+   (b) plan() matches each incumbent stop to its client's surviving job by
+   client_id (step 0 keeps one job per client, keyed by its worst-case
+   fire — a second fire may have changed it since the stop was planned),
+   so the repaired incumbent holds it in the frozen prefix, still dropped
+   one at a time when it is no longer feasible (safety trumps commitment).
+   Measured with the review's runtime prototype (33 runs): head swaps 39 ->
+   0, homes served 1,023 -> 1,047, reached-but-unprotected 20 -> 15, km
+   driven -6 %, the path audit's band samples -47 %, no new tick-end or
+   departure row. WHAT IT CANNOT DO: it keeps commitments — a frozen stop
+   another crew could now reach sooner stays put (the freeze's purpose);
+   the coating-hold probes see frozen stops as ordinary jobs. Knob OFF =
+   byte-identical (pinned in tests/test_keep_frozen.py against goldens
+   computed on commit 7bebc7a on a world where it bites); the SIMULATOR
+   arms it; the live engine's pool never excluded a stop, so there only
+   (b) applies, if armed.
+27. THE PLANNER JUDGES THE ROAD THE CREW DRIVES, AND EVERY INGRESS LEG IS
+   JUDGED AS IT STARTS (2026-10-21; the Eagle River valley review).
+   (a) cfg.plan_route_exact (read only by the simulator's plan-on-roads
+       provider). The provider cached routes on ~110 m position buckets
+       (3-decimal rounding), so dispatch judged a crew's leg on the route
+       from whichever point of its bucket was routed first (a client's
+       location, the crew's own position a tick earlier), while the crew
+       drove the route from its exact position. Measured (Beaver Creek,
+       northwest high fire, t+8.25 h): from 17 m away, planned 10.7 km and
+       +58.6 min clear; the crew's own leg 9.6 km and 51 min past the 10c
+       line, 113 s inside the band. With the knob on the cache is keyed on
+       the EXACT endpoints, so the planner's leg for a crew is the route
+       its leg resolves (_leg_route: the same roads.route call from the
+       same point).
+   (b) cfg.crew_ingress_judged (read only by the simulator). SEMANTICS 23a
+       judges an ingress leg as it starts only when the fields changed
+       since its stop was planned; a leg dispatch judged from another
+       point, at another time (a crew that arrives late), or on another
+       road (the bucket; tier-0 chords when plan-on-roads is off) was
+       driven unjudged. With the knob on EVERY ingress leg is judged by the
+       23a law as it starts — setting out from rest, leaving a stop for the
+       next, and a fresh leg begun while en route after a re-plan changed
+       or reset it — whatever generation its stop carries: the road the
+       crew will drive at the 10c line at every pass time, the stop still
+       workable; a stop that fails is released to the job pool with a loud
+       note (once per crew, client and field generation) and the next is
+       judged from here; a crew left with nothing leaves as after its last
+       stop (20b judges that egress).
+   Measured with the review's runtime prototype of (a) (33 runs): the
+   valley's one ingress band episode gone, +2 homes, 32 runs unchanged; on
+   the 12 one-click scenarios (3 h, each knob alone) (a) changed one
+   (Malibu, from 2.75 h) and (b) none with plan-on-roads, while with
+   tier-0 chord planning (b) released stops in 6 (1-10 each). WHAT IT
+   CANNOT DO: a crew whose plan is unchanged keeps its live leg (judged
+   when it started), not the planner's fresh route from where it now is;
+   with plan-on-roads off the planner still judges chords, so a released
+   stop may be re-offered to the same crew while the planner's law and
+   the crew's road disagree (it is never driven); the planner's road margin
+   (route_margin_roads_min) is the 10c line only while it equals
+   egress_buffer_min. Both knobs OFF = byte-identical (pinned in
+   tests/test_ingress_exact.py against goldens computed on commit 7bebc7a
+   on worlds where each bites); the SIMULATOR arms both.
+28. A CREW NEVER WAITS IN A POCKET (2026-10-21; the Eagle River valley
+   review's iteration 2 — docs/SIMULATOR_DESIGN.md "A crew never waits in a
+   pocket"; cfg.egress_durable_min_h, escape_last_exit_lead_min,
+   escape_pocket_exit; read only by the simulator — the live engine moves no
+   crew). A crew leaving its last stop kept the plan's zone — the nearest
+   lawful one — and every later move keyed on its own cell, never on whether
+   its escape route still existed. Measured with iteration 1's path audit on
+   the valley harness (33 runs, 12 h): 10 transit rows in 8 runs, 1,554 s in
+   the band, the deepest 434 min past the 10c line — crews egressed to an
+   I-70 zone with 1.2 h of life whose last lawful exit closed 15 min after
+   they arrived, or sat 4-6 h in a zone no lawful road left, then fled
+   through the band. With egress_durable_min_h = H > 0:
+   (a) DURABLE EGRESS. When a crew turns onto an egress leg (20b) its target
+       must also stay clear of the 10c line H hours after it arrives; else
+       the NEAREST zone (drive time) with a lawful leg that does, else a
+       lawful road refuge that does (the SEM-10d search, lawful only, its
+       path pinned), else the lawful zone that outlives the target by at
+       least an hour, else the 20b law as before (loud note). The coating-
+       hold prepositioning prefers such zones.
+   (b) THE LAST-EXIT TRIGGER (escape_last_exit_lead_min = L > 0). An idle
+       crew whose own cell the line reaches within H leaves while a lawful
+       way to such a refuge is still open: when every lawful leg to a
+       catalog zone that stays clear H after arrival closes within L plus
+       one step (the fields are static between world changes: waiting only
+       shifts every pass time) it moves now to the nearest; with none open,
+       and once its own margin is under H/2 (no refuge-to-refuge treadmill),
+       to a lawful road refuge that stays clear H (searched at most once per
+       field generation, position and hour). LCES: the escape route, not
+       the crew's cell, sets the trigger.
+   (c) A crew a re-plan strips of every stop where the line arrives within H
+       leaves at once, as after its last stop, instead of stopping mid-road.
+   (d) THE POCKET EXIT (escape_pocket_exit; folded in from the independent
+       review of iteration 1). An idle crew whose own cell the line reaches
+       within H and from which NO lawful leg leads to a refuge that stays
+       clear H — no zone (b's exits), no road refuge: a POCKET — leaves NOW
+       for the durable refuge (a zone whose leg is not burned through, or
+       the SEM-10d search's least-exposure node) with the least exposure,
+       then the shallowest worst sample, then the shortest drive: every way
+       out only gets deeper while it waits. Only while the pocket is YOUNG:
+       a way out more than egress_buffer_min past the line is not taken by
+       this law (unbounded, it drove two Beaver Creek crews through a band
+       334 min old at 10.5 h that waiting never made them cross).
+   Measured with the whole iteration (28-33) on the valley harness: transit
+   rows 10 -> 2, episodes 10 -> 2, seconds in the band 1,554 -> 2, the
+   deepest 434 -> 24 min past the line, rows deeper than 30 min 6 -> 0;
+   relocations 31 -> 14; crews off the map 2 -> 0; reached-unprotected
+   15 -> 14; homes served 1,047 -> 1,040. The two rows left are the pocket
+   exits: Beaver Creek's northwest fire pockets a crew 1.4 km from the
+   ignition at its first field — every leg to a zone that stays clear 8 h
+   runs inside the band — and it now leaves at once, 21 / 24 min past the
+   line for 1 s, where the sweep moved it 4 / 5 h later 262 / 328 min past
+   it. WHAT IT CANNOT DO: a pocket the first field forms cannot be left
+   lawfully (only a staging choice made before the fire could avoid it);
+   the last-exit trigger watches only crews within H of their own line, so
+   a crew parked at a long-lived dead-end refuge whose last exit closes
+   earlier is caught by the pocket exit only while that exit is young (the
+   extended Camp-Fire-scale Paradise run keeps two of its four drives, 496
+   and 909 min past the line — a wider watch was measured worse there:
+   restaging (30b) returned the crews to the dead end). Knobs OFF = byte-
+   identical (pinned in tests/test_crew_pocket.py against goldens computed
+   on commit 0109ad3 on worlds where each bites); the SIMULATOR arms all
+   three (8 h, 30 min, on; explicit override wins).
+29. A STOP IS WORKABLE ONLY IF ITS CREW CAN STILL LEAVE — ONE PREDICATE
+   (2026-10-21; cfg.egress_corridor_guard; read only by the simulator).
+   The workability law (23a / 27b) and the deploy guards tested a stop's
+   departure against the home's deadline and the stop's own cell at the
+   departure INSTANT, never the road out, and the road-egress departure
+   guard timed the egress to the plan's ROUTE-level zone (the last
+   stop's). Measured: a stop re-judged and kept after Beaver Creek's late
+   fire was worked until every egress from it was 5.6-86 min past the 10c
+   line; the rug-pull control's crew left a stop 12 s after the line
+   reached the stop's cell; and (the independent review) dispatch sent a
+   crew with 17.7 min of planned margin to a stop the road-egress guard
+   timed at 22.1 min of egress to the route-level zone — withdrawn on
+   arrival, the home and the crew's 16-stop queue dropped (Vail's south
+   fire at extreme, t6; Park City's windstorm alike). With the knob on ONE
+   predicate (_stop_exit_verdict): leaving the stop at its projected
+   departure, a leg to some catalog zone is lawful at every pass time (the
+   stop's own cell judged as the crew LEAVES it; the egress line:
+   egress_buffer_min, or route_margin_egress_roads_min when larger and
+   armed) AND reaches that zone by the stop's latest departure (departure
+   + max(tier-0, road) egress <= the home's P10 less its rule, every fire
+   counted: the road-egress guard's law, to a zone the crew can lawfully
+   reach — it supersedes that guard). It is judged (i) as the crew sets
+   out (23a / 27b), (ii) EVERY STEP while it drives there — the head stop
+   of every en-route crew, a kept (frozen) stop included, which no re-plan
+   re-judges: a stop that fails is released before the crew gets there
+   (note "released ... en route (SEMANTICS 29)", once per crew, client and
+   field generation), (iii) at arrival and (iv) every step of the work: a
+   deploying crew withdraws now (cause 'egress_guard': no lawful leg;
+   'road_egress': none in time); and the workability bound counts the
+   seconds the crew needs to drive out of the stop's cell. Measured: the
+   Vail stop is worked at tick 7, nothing withdrawn; the rug-pull row gone;
+   no withdrawal in the 33 valley runs. WHAT IT CANNOT DO: a leg the planner
+   judged lawful on its sampled T* may still fail the cell-exact predicate
+   — the stop is then released, and may be re-offered while the two
+   disagree (never driven; said once per field generation). Knob OFF =
+   byte-identical (pinned in tests/test_egress_guard.py against goldens
+   computed on commit 0109ad3); the SIMULATOR arms it.
+30. CREWS STAGE WHERE THE WORK IS (2026-10-21; cfg.reinforce_stage_by_need,
+   idle_restage; read only by the simulator). A reinforcement was placed,
+   on arrival, at its round-robin zone — on vail_co zone 3, Minturn, a
+   single-access refuge 3 km up US-24 where it idled 32-40 of 44 ticks in
+   the northwest and south runs — with no judged way in (its way in never
+   driven: INBOUND crews are skipped by the sweep and the audits), and an
+   idle crew the plan gave nothing stayed where it stopped (421 idle crew-
+   ticks parked away from any zone). (a) reinforce_stage_by_need: a
+   reinforcement arrives at its region's ROAD ENTRY on the tile edge (the
+   on-map node of the highest road class there: reg_1h from the east edge,
+   reg_3h from the west — I-70 in every valley preset), turning from
+   INBOUND there (from then on swept and audited like any crew), only when
+   that spot is clear and a lawful leg leads from it to a currently safe
+   zone — else it holds, loudly, once, and tries again each step — and is
+   dispatchable from there; with no work it stages toward the open work as
+   (b). (b) idle_restage: an idle crew the plan gave no work drives on a
+   lawful leg to the currently safe zone nearest the homes still waiting
+   for a crew (durable — 28a's H, else RESTAGE_MIN_LIFE_H), when that zone
+   is at least RESTAGE_GAIN_M nearer the work than where it stands (the
+   coating hold's prepositioning owns staging while the hold holds).
+   Knobs OFF = byte-identical (pinned in tests/test_stage_by_need.py
+   against goldens computed on commit 0109ad3); the SIMULATOR arms both.
+31. ROAD EGRESS CARRIES TRAFFIC SLACK (2026-10-21; cfg.route_margin_egress_
+   roads_min; dispatch's per-stop zone test and the 29 predicate). route_
+   margin_roads_min equals egress_buffer_min, so a road egress the planner
+   judged lawful passed cells exactly at the 10c line: the first minute of
+   delay (an I-70 queue, a closure, smoke) was a violation — measured by
+   the independent review, a 25 % slower drive than planned turned
+   iteration 1's 10 transit rows into 16. When > 0 a stop's EGRESS legs on
+   roads need max(route_margin_roads_min, this) minutes between every
+   sample's eroded P10 and its pass time (dispatch judges the zone legs as
+   egress legs); ingress legs, chord legs and the escape laws are
+   unchanged. Sized from data (the valley harness, every crew driving 25 %
+   slower than planned, the whole iteration armed): at 30 (off) 7 rows —
+   the two pocket exits (28d), 3 egress drives up to 26.8 min past the line
+   and 2 ingress legs; at 45 5 rows — the two pocket exits and one ingress
+   leg 0.5 min past the line (one geometry, in three runs): no egress
+   drive. Off = byte-identical; the SIMULATOR arms 45.
+32. A STOP'S EGRESS FITS ITS DEADLINE (2026-10-21; cfg.plan_egress_time_
+   deadline; read by dispatch). The planner required a stop's departure to
+   carry slack_min before the home's latest departure and SOME zone leg
+   lawful at it; the simulator's guard requires the crew to REACH a zone by
+   then (29). When True a stop departing at d needs a zone whose egress leg
+   is lawful at d (d <= T*) AND that it reaches by the job's latest
+   departure (d + max(tier-0, road) egress <= latest_depart_s) — in the
+   route chain, the insertion probe, the late-shift polish and the unserved
+   diagnosis ('no_safe_egress'): the planner's margin covers the stop's
+   road-egress minutes, so it never offers a stop the guard would withdraw
+   for time. Off = byte-identical (tests/test_egress_margin.py); the
+   SIMULATOR arms it.
+33. THE PAGE SAYS WHAT THE AUDIT SAW (2026-10-21; cfg.crew_overrun_ledger;
+   read only by the simulator; console/simulator.html). state()'s
+   crew_overruns rows are the emitted tick's only, and the page showed
+   every row as "CAUGHT IN FIRE": a transit row (25b — a crew that drove
+   through the band between tick ends) read as a crew standing in the fire
+   for one tick, then "0 - SAFE". When True the scoreboard also carries the
+   run's totals (crew_overruns_total, transit_overruns_total) and its
+   latest OVERRUN_LEDGER_N rows (overrun_ledger: tick, crew, transit,
+   reason, mode, at_s, margin_min); the page labels a transit row "drove
+   through the band at hh:mm, N min past the line" (tooltip, card, banner)
+   and the violations box reads "0 now — N this run" (amber) after a row.
+   Reporting only — no crew moves differently. Off = byte-identical (tests/
+   test_overrun_ledger.py); the SIMULATOR arms it.
+34. FAR-SIDE REFUGES (2026-10-21; the Eagle River valley review's iteration
+   3 — docs/SIMULATOR_DESIGN.md "Far-side refuges, ember ETAs and afternoon
+   starts"; cfg.sim_far_side_zones, reinforce_entry_by_need; read only by the
+   simulator). The valley tiles' zones were I-70 interchanges on the fire
+   runs' line: Beaver Creek's three sit at or east of a west-northwest
+   ignition and its Edwards one stands on grass, the corridor tile's Edwards
+   one on timber, and the valley's north side had none — measured (iteration
+   2, the valley harness, 33 runs): 869 idle crew-ticks while homes
+   waited behind a blocked road (dispatch's no_safe_corridor / no_safe_egress
+   with at least 1 h to the pessimistic front), 1,552 such home-ticks.
+   (a) sim_far_side_zones: each location's far_zones (SimLocation) join its
+       zone catalog after its own zones — non-burnable ground chosen from the
+       committed tile's fuel (connected non-burnable patches, each cell's
+       distance from burnable fuel) and road graph (a node within 50 m), on
+       the other side of the likely runs or where the interchange is fuel,
+       each named for what it is: Beaver Creek z4 Cordillera west (Club House
+       Dr; a developed cluster — the tile has no open non-burnable ground on
+       its west side) and z5 Edwards' Freedom Park / Battle Mountain HS; the
+       corridor tile z7 Edwards' Freedom Park / Battle Mountain HS and z8
+       Wolcott (US-6 / SH-131). Vail gets none: its largest non-burnable
+       ground (the Vail Village core, 345 m from fuel) is in every Vail fire's
+       P10 within 4-10 h, and Red Cliff and Vail Pass lie off the tile.
+       Every law that reads the catalog sees them (dispatch's egress zones,
+       the sweep, the egress and pocket laws, staging); the round-robin
+       staging of the first zones is unchanged.
+   (b) reinforce_entry_by_need: a reinforcement (with reinforce_stage_by_
+       need) enters by whichever road entry on the tile's east and west edges
+       is open (30a) and has the most homes waiting for a crew on a lawful
+       road from it, then the shortest drive to the nearest of them, then its
+       region's side — said when it is the other side. Iteration 3 left it
+       unarmed (it acted in 5 of 33 runs — the Vail 1 h crew entering from
+       the west — for -1 home); ARMED BY FOUNDER DECISION 2026-10-22 ("Either
+       end of I-70"), after the independent review measured it on 24 fresh
+       fires: +18 homes, reached-unprotected 42 -> 37 (Vail's east entry lay
+       behind the fire).
+   (a') THE PER-ZONE SWITCH (iteration 4; cfg.sim_far_zones_off): comma-
+       separated far-zone ids left OUT of the catalog — the founder's keep-
+       or-drop call on Cordillera west (beaver_creek_co-z4: 13 ha of
+       developed streets, 127 m from fuel, 49 % timber within 300 m, not
+       ground-verified; the independent review measured it carrying all of
+       iteration 3's Beaver Creek gain). An id no location's far_zones carry
+       is an error at session start; "" = every far zone, byte-identical.
+       THE FOUNDER'S TWO CALLS, one line each, measured both ways
+       (docs/SIMULATOR_DESIGN.md "Pre-ship fixes") and DECIDED 2026-10-22:
+       Cordillera west DROPPED — not a credible safety zone without a ground
+       check (simui.SIM_FAR_ZONES_OFF = "beaver_creek_co-z4", the
+       simulator's value of this knob; its definition stays in the catalog
+       for the record) — and (b) ARMED (simui.SIM_ARMS_REINFORCE_ENTRY_BY_
+       NEED = True).
+   Measured with (a) and 35 armed (33 runs): homes served 1,040 -> 1,071 (Beaver Creek's canonical high, pair
+   and late runs +6, +6, +5 and its northwest high +6 — the refuges, law by
+   law on its two worst runs; the ember ETA alone +1 there — the corridor
+   tile's northwest runs +1 each), idle crew-ticks while homes waited behind
+   a blocked road 869 -> 616, such home-ticks 1,552 -> 934; reached-
+   unprotected 14, transit rows 2 (the pocket exits, 21-24 min, 1 s) and
+   crews off the map 0, unchanged. Knobs OFF = byte-
+   identical (pinned in tests/test_far_side_refuges.py against goldens
+   computed on commit b9e3b68 on the four harness runs where they bite); the
+   SIMULATOR arms (a) — without Cordillera west since 2026-10-22 — and,
+   since 2026-10-22, (b).
+35. EMBER ETA FOR DEVELOPED HOMES (2026-10-21; the propagation review's R4;
+   cfg.ember_eta_landings; read by spread and the simulator). A home on a
+   developed or water cell — which the surface model never reaches — took
+   its ETA from the earliest BURNABLE arrival within ember_threat_radius_m
+   (law 6); an ember landing next to it ahead of the front gave it nothing,
+   since the spread records only embers that land on burnable cells. When
+   True: (i) the nominal member records EVERY ember it lands inside the
+   horizon, developed and water cells included (spread.compute_arrival
+   land_log; the arrival raster, the ROS memo and every label unchanged —
+   pinned bit for bit); (ii) the simulator keeps the landings across
+   re-anchors — the embers thrown before a re-anchor stay history (they flew
+   in the field they were thrown in), the new field's own follow — and
+   attaches their first landing per cell to the field
+   (spread.attach_ember_landings); (iii) eta_at's law-6 fallback takes the
+   earlier of the front within the radius and the first landing within it,
+   one time for every quantile (p10 <= p50 <= p90 kept). Measured: the
+   Vail northwest fire at extreme gives four developed homes an earlier ETA
+   at its first field (2.4, 0.6 and 7.8 h sooner; one — never near the front
+   in the horizon — an ETA at all), Beaver Creek's canonical fire one; most
+   valley homes' pessimistic front within 200 m still comes before any
+   ember lands within it. Off = byte-identical (no landing
+   raster attached; tests/test_ember_eta.py); the SIMULATOR arms it.
+36. A REFUGE OFF THE MAP IS THE LAST EXIT (2026-10-21; the Eagle River
+   valley review's iteration 4, the pre-ship fixes — docs/SIMULATOR_DESIGN.md
+   "Pre-ship fixes"; cfg.escape_refuge_on_map; read only by the simulator).
+   The road-refuge branches of the voluntary moves — the durable egress
+   (28a), the last-exit trigger (28b), the SEM-10e proactive decamp — took
+   the SEM-10d search's best node, and a node beyond the tile edge has no
+   fire field: its "unbounded horizon" is the edge of the data, and reaching
+   it takes the crew out of the simulation (left_map_out). Measured (the
+   independent review of iterations 2-3, 24 fresh valley fires): crews off
+   the map 5 -> 10 — Beaver Creek's b340 fire re-pointed sim-g2's egress at
+   2.25 h to a road refuge 0.1 km past the edge; at a 13:13 start Beaver
+   Creek's canonical extreme fire took two crews off with 4.35 h of life.
+   When True: (a) 28a and 10e choose on-map nodes only (_on_map; a node
+   beyond the edge may still be driven through); (b) an off-map refuge is
+   the LAST exit — 28b takes the search's lawful refuge that stays clear H
+   only when it lies off the map, no on-map node does, and the lawful way to
+   it closes within L plus one step (it stays open min(its transit margin
+   after the start, its arrival margin less the step's lead): the zone
+   exits' law); until then the crew stays on the map (said once), and it is
+   not in a pocket (28d defers to that way). The pocket exit (28d) and the
+   emergency flight (SEM-10 / 10d) are unchanged: they may still leave the
+   map. Measured (36 alone, against iteration 3) on the 24 fresh fires:
+   crews off the map 10 -> 4 — three
+   last exits 0.25-3.25 h later than iteration 3 took them (the crews' own
+   spots 0.4-2.4 h from the line then) and one pocket exit at 12 h, as
+   before — homes served (647), unprotected (42) and transit rows (3, the
+   deepest 22 min) unchanged, relocations 8 -> 12; the 33-run matrix
+   unchanged; at 13:13 Beaver Creek's canonical extreme fire keeps both
+   crews on the map (2 -> 0). Forbidding every off-map refuge instead
+   (measured) took the count to 0 but left crews in on-map dead ends that
+   the sweep moved hours later through band 345 and 368 min old. Knob OFF =
+   byte-identical (pinned in tests/test_preship_fixes.py against goldens
+   computed on commit 1963df2 on worlds where it bites); the SIMULATOR arms
+   it.
+37. THE EGRESS SLACK GROWS WITH THE DRIVE — A RESCUE, NOT A NEW PREFERENCE
+   (2026-10-21; the Eagle River valley review's iteration 4; cfg.route_
+   margin_egress_ramp; read by dispatch and the simulator's 29 predicate,
+   with route_margin_egress_roads_min). The egress margin (31) asked a road
+   egress for its 15 min of slack at the first sample as at the last,
+   though a delay costs time in proportion to the road already driven —
+   measured: on the public Eagle / Gypsum preset it refused sim-c5 (P10 2.6
+   h out at its first field), whose roads out pass 36-37 min ahead of the
+   10c line within their first 2.4 min, a home iteration 1 coated with that
+   minute to spare (reached-unprotected 0 -> 1). When > 0 the RAMPED margin
+   at a sample tau seconds into an egress leg on roads is route_margin_
+   roads_min + min(route_margin_egress_roads_min - route_margin_roads_min,
+   this * tau), the leg's END (the zone, where the crew waits after it
+   arrives: the 20b destination lead) keeping the flat margin (safety.
+   leg_tstar margin_ramp); 1/3 covers a drive at 75 % of the planned speed
+   (the review's traffic test: tau / 0.75 - tau) for the first 45 min of an
+   egress. Dispatch keeps the flat margin's zone order and choice and takes
+   a zone under the ramped margin only for a stop NO zone serves at the
+   flat one; the 29 predicate's egress line is the ramped one (the stops
+   the planner may now take are workable). Measured against iteration 4
+   without it (before the founder's 2026-10-22 calls): the Eagle / Gypsum
+   home coated (its preset's reached-unprotected 1 -> 0) but Park City's
+   windstorm loses one (0 -> 1) and 7 coatings — the 13 presets 475 -> 468
+   served, reached-unprotected 7 -> 7; the 33-run matrix 1,071 -> 1,076
+   served, reached-unprotected 14 -> 14, one new transit row (5.9 min, 16
+   s) and two crews off the map; the 24 fresh fires 647 -> 635 served,
+   unprotected 42 -> 43 (on Vail's b110 fire it rescues three homes 0.9-2.1
+   h from the P10, the planner re-routes both crews toward them and the
+   fire then cuts that side off); every crew driving 25 % slower: 988 ->
+   994 served and three new rows of at most 1.6 min. No row deeper than 30
+   min anywhere. Without
+   the end's flat margin (measured) a Vail crew worked a stop whose zone 20b
+   then refused at departure: a pocket exit 23 min past the line. 0 = the
+   flat margin, byte-identical (tests/test_preship_fixes.py). Left off in
+   iteration 4; ARMED by the simulator by founder decision 2026-10-23
+   ("Switch it on"): simui.SIM_ROUTE_MARGIN_EGRESS_RAMP = 1/3, the measured
+   value — with SEMANTICS 38 (which refuses the rescues whose way out
+   leads into a dead end) the valley harness's five sets keep every
+   acceptance criterion of iteration 5 (docs/SIMULATOR_DESIGN.md "A way out
+   leads somewhere that lasts", "The founder's call (2026-10-23)").
+38. A WAY OUT LEADS SOMEWHERE THAT LASTS — THE DURABLE-DESTINATION
+   WORKABILITY LAW (2026-10-22; the Eagle River valley review's iteration
+   5 — docs/SIMULATOR_DESIGN.md "A way out leads somewhere that lasts";
+   cfg.egress_dest_durable_h; read by dispatch and the simulator's 29
+   predicate). The way-out predicate (29) and the planner's egress test
+   (32) accepted a stop whose lawful way out led to SOME zone, however
+   short-lived. Measured (iteration 4, the founder's calls applied): on a
+   Beaver Creek fresh fire (bearing 250, 7 km, wind 235, high) a crew's
+   last homes near Edwards had one lawful way out — Freedom Park, 3.4 h from
+   the line on arrival and without a lawful exit by then — and the sweep
+   moved it at 7.75 h through band 337 min past the line; with every crew
+   driving 25 % slower, Vail's late fire sent the west-entry crew to an
+   East Vail zone 0.9 h from the line, and it fled 46.6 min past it. With
+   egress_dest_durable_h = H > 0 a zone counts as a stop's way out (29's
+   ways, 32's zone T*) only while (a) the crew reaches it by its KEEP-UNTIL
+   (_dest_keep_until) — the latest arrival for which it is not a DEAD END,
+   the latest of (i) its own 10c line less H (it stays clear H after the
+   arrival), (ii) for each other zone the latest departure on a lawful leg
+   there (the 29 law) that still reaches it H before its own line (28b's
+   exits), (iii) the latest departure for which 28a's road search (lawful
+   only; a refuge whose eroded P10 lies H plus the egress buffer past the
+   departure; on-map nodes only while 36 is armed) still finds a refuge,
+   (ii) and (iii) less one step (a waiting crew is moved at a step) — or
+   (b) the crew leaves the stop while that same search from the stop
+   itself still finds such a refuge (_road_refuge_until; 28a re-points
+   that egress there). Every term is an absolute time fixed while the
+   fields are: the values live one field generation, and a road refuge's
+   window is found by bisecting 28a's search over the departure time (5
+   min, at most 24 h). The simulator hands the planner both
+   (dispatch.plan(zone_keep=, stop_refuge=), the oracle asked only when a
+   zone's keep-until binds), so the plan, the leg start, every step of a
+   kept head, the arrival and every step of the work judge one law;
+   without them dispatch computes (i)-(ii) on its own rasters. A pure
+   restriction: every way it keeps is a lawful way of the law off. The
+   simulator arms 28a's horizon, 8 h. Measured on the valley harness's
+   five sets against iteration 4 (homes; reached-uncoated; deepest row;
+   crews off the map): the 33-run matrix 1,050 -> 1,051, 14 -> 15, 24 ->
+   24, 0 -> 0; the 13:13 start 1,034 -> 1,035, 20 -> 20, 24 -> 24, 0 -> 0;
+   the 24 fresh fires 647 -> 641, 39 -> 40, 337 -> 22, 8 -> 4; the 13
+   presets 473 -> 473, 7 -> 7, no rows, 0 -> 0; every crew 25 % slower 998
+   -> 998, 46.6 -> 24.8 min, 2 -> 1 (withdrawals 2 -> 4); the live-P10
+   posture's two Vail rows (185.3 min) gone. Both deep rows gone — the
+   Beaver Creek fire at no cost (36 homes, 1 uncoated, as before). With
+   37's ramp armed too, reached homes left uncoated are 14 / 15 / 39 / 7 on
+   the matrix, 13:13, the fresh fires and the presets (iteration 4: 14 /
+   20 / 39 / 7) and 24 more homes are coated: the law changes 37's
+   trade-off (37 armed by founder decision 2026-10-23). Shaped
+   from data: judged step by step the values drifted (the search's best
+   node changes with the clock; a Vail crew sent to East Vail on a 2.48 h
+   keep-until arrived after it fell to 1.53 h and left the map), costing
+   reached homes and off-map crews on both sets; zones alone cost 23 homes
+   on the matrix; an onward refuge allowed off the map gives the matrix
+   iteration 4's 14 but the fresh fires 41 and 8 crews off the map — not
+   shipped: a refuge beyond the map cannot be vouched for. The Paradise
+   Camp-Fire-scale dead end is not this law's (its zone has 24 h of life
+   on arrival; the crew waits while its exits close: a waiting-crew law).
+   Knob OFF = byte-identical (pinned in tests/test_dest_durable.py
+   against goldens computed on commit 8d0fbdf).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -2792,6 +3298,207 @@ class ResponseConfig:
     # False = byte-identical; with unchanged fields it is byte-identical
     # too. The SIMULATOR arms it.
     crew_work_judged: bool = False
+    # THE AUDIT SEES THE WHOLE DRIVE (2026-10-21, the Eagle River valley
+    # review; SAFETY SEMANTICS 25; read only by the simulator — the live
+    # engine audits no crew position). The 10c audit judged each crew at its
+    # tick-end position only: measured with the review's path probe on the
+    # valley's 33 runs (12 h), crews drove through the eroded-P10 band in 12
+    # episodes in 8 runs (1,029 path samples, the worst 433 min past the 10c
+    # line) and the scoreboard read 0. When True the audit ALSO judges every
+    # crew's driven path since the last audit — every field cell it passed
+    # through at the moment it left the cell, every stop it stood at at the
+    # moment it left — by the tick-end law (burned, or eroded P10 within
+    # egress_buffer_min; old black as the tick-end audit honours it); a crew
+    # clear at the tick end but exposed on the way gets ONE row
+    # (transit: true, the worst sample's time, place and margin, the seconds
+    # exposed), counted in scoreboard.violations / crew_overruns like every
+    # row; and the serviced-stop departure audit reads EVERY fire's
+    # pessimistic arrival at the home, not the stop's own fire only. It
+    # reports; it never moves a crew. False = the tick-end audit, byte-
+    # identical (and with one fire and nothing exposed on the way, so is
+    # True). The SIMULATOR arms it.
+    crew_path_audit: bool = False
+    # EVERY INGRESS LEG IS JUDGED AS IT STARTS (2026-10-21; SAFETY SEMANTICS
+    # 27b; read only by the simulator). SEMANTICS 23a judges an ingress leg
+    # at its start only when the fields changed since the stop was planned:
+    # a leg dispatch judged from another point (the plan-route cache's
+    # ~110 m buckets — measured: planned +58.6 min clear from 17 m away, the
+    # road the crew drove 51 min past the 10c line) or at another time was
+    # driven unjudged. When True every ingress leg — setting out from rest,
+    # leaving a stop for the next, or a fresh leg after a re-plan mid-drive
+    # — is judged from where the crew is, as it starts (the 23a law: the
+    # road it will drive at the 10c line, the stop still workable); a stop
+    # that fails is released to the job pool (loud note) and the next one
+    # is judged. False = byte-identical. The SIMULATOR arms it.
+    crew_ingress_judged: bool = False
+    # A CREW NEVER WAITS IN A POCKET (2026-10-21, the Eagle River valley
+    # review's iteration 2; SAFETY SEMANTICS 28; read only by the simulator —
+    # the live engine moves no crew). A crew leaving its last stop (or
+    # withdrawn) kept the plan's zone — the NEAREST lawful one — and every
+    # later move keyed on its own cell, never on whether its escape route
+    # still existed: measured on the valley harness, crews egressed to an
+    # I-70 zone with 1.2 h of life whose last lawful exit closed 15 min after
+    # they arrived, or sat 4-6 h in a zone no lawful road left, then fled
+    # through the band (7 of the 12 path-audit episodes). (a)
+    # egress_durable_min_h > 0: when a crew turns onto an egress leg (20b),
+    # its target must also stay clear of the 10c line for this many hours
+    # after it arrives; else the NEAREST zone with a lawful leg that does,
+    # else a lawful road refuge that does (the SEM-10d search, lawful only),
+    # else the lawful zone that outlives the target by at least an hour,
+    # else the 20b law as before. The coating-hold prepositioning prefers
+    # such zones too; and (c) a crew a re-plan strips of every stop where
+    # the 10c line arrives within this horizon leaves at once (as after its
+    # last stop) instead of stopping mid-road. 0 = off, byte-identical.
+    egress_durable_min_h: float = 0.0
+    # ... (b) escape_last_exit_lead_min > 0 (read only with
+    # egress_durable_min_h > 0): the LAST-EXIT TRIGGER — an idle crew whose
+    # own cell the 10c line reaches within egress_durable_min_h leaves while
+    # an escape route is still open: when every lawful leg from it to a
+    # refuge that stays clear for egress_durable_min_h after arrival closes
+    # within this many minutes plus one step (or only a lawful road refuge is
+    # left), it moves now to the nearest such refuge on a fully lawful leg —
+    # instead of waiting for its own cell's margin (LCES: the escape route,
+    # not the crew's cell, sets the trigger). 0 = off, byte-identical.
+    escape_last_exit_lead_min: float = 0.0
+    # ... (d) escape_pocket_exit (read only with egress_durable_min_h > 0):
+    # THE POCKET EXIT — an idle crew whose own cell the 10c line reaches
+    # within egress_durable_min_h and from which NO lawful leg leads to a
+    # refuge that stays clear that long (no catalog zone, no road refuge:
+    # a pocket) leaves NOW for the durable refuge with the least exposure
+    # (seconds inside the band), then the shallowest worst sample, then
+    # the shortest drive — the fields are static between world changes,
+    # so every way out only gets deeper while it waits (measured: Beaver
+    # Creek's northwest fire pocketed a crew at its first field, 21 min
+    # past the line then, 262 min when the sweep moved it 4 h later).
+    # False = byte-identical.
+    escape_pocket_exit: bool = False
+    # A STOP IS WORKABLE ONLY IF ITS CREW CAN STILL LEAVE (2026-10-21;
+    # SAFETY SEMANTICS 29; read only by the simulator). The workability law
+    # (23a / 27b) and the deploy guards tested a stop's departure against the
+    # home's deadline and the stop's own cell at the departure INSTANT, never
+    # the road out: measured (Beaver Creek late fire), a stop re-judged and
+    # kept after the late fire was worked until every egress from it was
+    # 5.6-86 min past the 10c line; and a crew left a stop 12 s after the
+    # line reached the stop's cell (the path audit judges the cell when the
+    # crew leaves it). When True — ONE PREDICATE, judged as the crew sets
+    # out (23a / 27b), every step while it drives to the stop (a kept,
+    # frozen stop included: the planner never re-judges it), at its arrival
+    # and every step of the work — a stop is workable only if, departing at
+    # its projected departure, a leg from it to some catalog zone is lawful
+    # at every pass time (the stop's own cell judged as the crew LEAVES it;
+    # at the egress line: egress_buffer_min, or route_margin_egress_roads_
+    # min when larger and armed) AND reaches that zone by the stop's latest
+    # departure (departure + max(tier-0, road) egress <= the home's P10 less
+    # the stop's rule, every fire counted: the road-egress departure guard's
+    # law, to a zone the crew can lawfully reach — it supersedes that guard,
+    # whose zone was the plan's route-level one). A stop that fails is
+    # released before the crew gets there; a deploying crew withdraws now
+    # (cause 'egress_guard': no lawful leg; 'road_egress': none in time).
+    # False = byte-identical.
+    egress_corridor_guard: bool = False
+    # CREWS STAGE WHERE THE WORK IS (2026-10-21; SAFETY SEMANTICS 30; read
+    # only by the simulator). (a) reinforce_stage_by_need: a reinforcement
+    # arrives at its region's road entry on the tile edge (the highest-class
+    # road node there — I-70 in the valley) instead of being placed at its
+    # round-robin zone (zone 3: Minturn on vail_co), enters only when that
+    # spot is clear and a lawful leg leads from it to a currently safe zone
+    # (else it holds, loudly, and tries again next step), and is then
+    # dispatchable from there; with no work it restages as (b). False =
+    # byte-identical.
+    reinforce_stage_by_need: bool = False
+    # ... (b) idle_restage: an idle crew the plan gave no work — parked
+    # mid-road after a re-plan dropped it, at an escape road point, or at a
+    # zone far from the remaining threatened homes — drives on a lawful leg
+    # to the currently safe zone nearest those homes (durable when
+    # egress_durable_min_h is armed), when that zone is at least 2 km nearer
+    # the work than where it stands. False = byte-identical.
+    idle_restage: bool = False
+    # THE PAGE SAYS WHAT THE AUDIT SAW (2026-10-21; SAFETY SEMANTICS 33; read
+    # only by the simulator). state()'s crew_overruns rows are this tick's
+    # only, so the page showed a transit row (a crew that drove through the
+    # band between tick ends) as "CAUGHT IN FIRE" for one tick and "0 -
+    # SAFE" the next. When True the scoreboard also carries the run's
+    # totals (crew_overruns_total, transit_overruns_total) and its latest
+    # rows (overrun_ledger: tick, crew, transit, reason, mode, at_s,
+    # margin_min); the page labels a transit row "drove through the band at
+    # hh:mm". Reporting only — no crew moves differently. False = byte-
+    # identical.
+    crew_overrun_ledger: bool = False
+    # FAR-SIDE REFUGES (2026-10-21, the Eagle River valley review's
+    # iteration 3; SAFETY SEMANTICS 34; read only by the simulator). The
+    # valley tiles' zones were I-70 interchanges on the fire runs' line —
+    # Beaver Creek's three sit at or east of a northwest-wind ignition,
+    # Vail's Minturn is 3 km up single-access US-24, and two of them stand on
+    # burnable cells (the Edwards and Dowd interchanges). When True a
+    # location's far_zones (SimLocation: large non-burnable open ground —
+    # parks, fields, town cores — on the other side of the likely runs,
+    # chosen from the committed tile's fuel and road graph, each named for
+    # what it is) are appended to its zone catalog: every law that reads the
+    # catalog (dispatch's egress zones, the sweep, the egress and pocket
+    # laws, staging) sees them. False = byte-identical.
+    sim_far_side_zones: bool = False
+    # ... (b) REINFORCEMENTS ENTER WHERE THE WORK IS (SAFETY SEMANTICS 34b;
+    # read only by the simulator, with reinforce_stage_by_need): a
+    # reinforcement entered at its region's fixed edge (the 1 h crew from the
+    # east), so the work cut off on the other side of a fire stayed blocked
+    # — measured (iteration 2, the valley harness): Beaver Creek's northwest
+    # fire left 7 homes west of it at no_safe_corridor all run while three
+    # crews idled east of it, the corridor tile's canonical fire 2 homes at
+    # Eagle while all three idled at Avon. When True it enters by whichever
+    # of the two road entries (east, west edge) is open and has the most
+    # homes waiting for a crew on a lawful road from it, then the shortest
+    # drive to the nearest of them, then its region's side — said loudly when
+    # it is the other side. False = byte-identical. NOT armed by the
+    # simulator: measured on the valley harness it acted in 5 of 33 runs
+    # (the Vail 1 h crew entering from the west) for -1 home; in the runs
+    # where work is cut off it lies beyond the fire from both entries. ARMED
+    # by the simulator by founder decision 2026-10-22 ("Either end of I-70";
+    # simui.SIM_ARMS_REINFORCE_ENTRY_BY_NEED): on the independent review's 24
+    # fresh fires it coats 18 more homes (Vail's east entry lay behind the
+    # fire). An explicit override still wins.
+    reinforce_entry_by_need: bool = False
+    # ... (a') THE PER-ZONE SWITCH (2026-10-21, iteration 4; read only by the
+    # simulator, with sim_far_side_zones): comma-separated far-zone ids
+    # (SimLocation.far_zones, e.g. "beaver_creek_co-z4") left OUT of the
+    # catalog — the founder's keep-or-drop call on a refuge nobody has
+    # ground-verified. An id no location's far_zones carry is an error at
+    # session start. "" = every far zone, byte-identical. The simulator's
+    # value is simui.SIM_FAR_ZONES_OFF = "beaver_creek_co-z4": Cordillera
+    # west DROPPED by founder decision 2026-10-22 — not a credible safety
+    # zone without a ground check.
+    sim_far_zones_off: str = ""
+    # EMBER ETA FOR DEVELOPED HOMES (2026-10-21, the Eagle River valley
+    # review's iteration 3 — the propagation review's R4; SAFETY SEMANTICS
+    # 35; read by spread and the simulator). A home on a developed or water
+    # cell gets its ETA from the earliest BURNABLE arrival within
+    # ember_threat_radius_m (law 6); an ember landing next to it, ahead of
+    # the front, gave it nothing — measured: 2-13 homes per fire get an
+    # ember within 300 m before the front, 0-5 of them never reached by the
+    # front in 12 h. When True the nominal member records every ember it
+    # lands inside the horizon (spread.compute_arrival land_log: developed
+    # and water cells included; the spread itself, the ROS memo and every
+    # label unchanged), the simulator keeps the landings across re-anchors
+    # (the embers thrown before a re-anchor stay history: continuous) and
+    # attaches their first landing per cell to the field
+    # (spread.attach_ember_landings); eta_at's law-6 fallback then takes the
+    # earlier of the front within the radius and the first landing within
+    # it. False = byte-identical.
+    ember_eta_landings: bool = False
+    # A VOLUNTARY REFUGE IS ON THE MAP (2026-10-21, the Eagle River valley
+    # review's iteration 4; SAFETY SEMANTICS 36; read only by the simulator).
+    # The road-refuge branches of the voluntary moves — the durable egress
+    # (28a), the last-exit trigger (28b), the pocket exit (28d) and the
+    # SEM-10e proactive decamp — took the SEM-10d search's best node, and a
+    # node beyond the tile edge has no fire field: its "unbounded horizon" is
+    # the edge of the data, and reaching it takes the crew out of the
+    # simulation (left_map_out). Measured (the independent review's 24 fresh
+    # valley fires): iteration 2-3's laws sent crews off the map 5 -> 10 times,
+    # crews with 2-5 h of work left. When True those searches return on-map
+    # nodes only (_on_map; a node beyond the edge may still be driven
+    # through). The emergency flight (the sweep's SEM-10 / 10d escape) is
+    # unchanged: it may still leave the map when that is strictly safer.
+    # False = byte-identical.
+    escape_refuge_on_map: bool = False
     # --- gel product parameters (UNVERIFIED — pending supplier data) ---
     gel_window_h: float = 72.0         # operational window after application (outer weathering/wash-off horizon still UNVERIFIED)
     gel_full_strength_h: float = 72.0  # == gel_window_h: GraphGel is Class A at 1/8" DRY — flat effectiveness, no decay ramp (product data 2026-07-11)
@@ -2955,6 +3662,21 @@ class ResponseConfig:
     # --- dispatch ---
     replan_period_s: float = 900.0
     commitment_horizon_min: float = 20.0
+    # A COMMITTED NEAR-TERM STOP STAYS COMMITTED (2026-10-21, the Eagle River
+    # valley review; SAFETY SEMANTICS 26). plan() repairs the incumbent with
+    # only the stops whose (client, incident) key is in the job pool, and the
+    # simulator kept an eligible crew's FROZEN stops (service start inside
+    # commitment_horizon_min) out of its pool — so whenever any crew idled
+    # (a re-plan every tick) an en-route crew about to arrive lost its head
+    # stop: measured 39 en-route head swaps / 261 km on the valley's 33 runs,
+    # a crew 17 m from a driveway sent 4.7 km away and back, both homes
+    # unprotected. When True, plan() matches each incumbent stop to the
+    # client's surviving job by client_id (the worst-case fire may have
+    # changed), so the commitment freeze holds it (still dropped when it is
+    # no longer feasible: safety trumps commitment), and the simulator's job
+    # pool keeps an eligible crew's frozen stops. False = byte-identical.
+    # The SIMULATOR arms it; the live engine's pool never excluded them.
+    dispatch_keep_frozen: bool = False
     churn_penalty_frac: float = 0.05
     adoption_threshold_frac: float = 0.03
     solver_budget_s: float = 5.0
@@ -3035,6 +3757,18 @@ class ResponseConfig:
     # the simulator server turns it on per session (like spotting); the live
     # engine flips only after live road graphs + validation.
     dispatch_plan_on_roads: bool = False
+    # THE PLANNER JUDGES THE ROAD THE CREW DRIVES (2026-10-21, the Eagle
+    # River valley review; SAFETY SEMANTICS 27a; read only by the
+    # simulator's plan-on-roads provider). The provider cached routes on
+    # ~110 m position buckets (3-decimal rounding), so dispatch judged a
+    # crew's leg on the route from whichever point of the bucket was routed
+    # first while the crew drove the route from its exact position —
+    # measured: planned 10.7 km and +58.6 min clear, driven 9.6 km and 51
+    # min past the 10c line (113 s inside the band). When True the cache is
+    # keyed on the EXACT endpoints, so the planner's route for (crew, stop)
+    # is the one the crew's leg resolves. False = byte-identical. The
+    # SIMULATOR arms it (read only with dispatch_plan_on_roads).
+    plan_route_exact: bool = False
     # Corridor margin for ROAD-sampled legs (plan-on-roads only). The chord
     # margin (route_margin_min — 60 before the 2026-08-02 pair calibration)
     # was calibrated to ALSO absorb the flat travel model's -21..-33%
@@ -3047,6 +3781,74 @@ class ResponseConfig:
     # 56, paired with measured circuity 1.7 — the optimism it absorbed is
     # priced in the multiplier instead).
     route_margin_roads_min: float = 30.0
+    # ROAD EGRESS CARRIES TRAFFIC SLACK (2026-10-21, the Eagle River valley
+    # review's iteration 2; SAFETY SEMANTICS 31). route_margin_roads_min
+    # equals egress_buffer_min, so a road egress the planner judged lawful
+    # passes every cell exactly at the 10c line: the first minute of delay
+    # (an I-70 queue, a closure, smoke) is a violation. When > 0 a stop's
+    # EGRESS legs on roads (dispatch's per-stop zone test, `_ezones_k`, and
+    # the simulator's SEMANTICS 29 guard) need max(route_margin_roads_min,
+    # this) minutes between every sample's eroded P10 and its pass time;
+    # ingress legs, chord legs (route_margin_min) and the escape laws are
+    # unchanged. 0 = off (route_margin_roads_min for egress too), byte-
+    # identical. The SIMULATOR arms it (45).
+    route_margin_egress_roads_min: float = 0.0
+    # THE EGRESS SLACK GROWS WITH THE DRIVE (2026-10-21, the Eagle River
+    # valley review's iteration 4; SAFETY SEMANTICS 37; read by dispatch and
+    # the simulator, with route_margin_egress_roads_min). The flat egress
+    # margin asks a road egress for 15 min of slack at its first sample as
+    # at its last — measured: on the public Eagle / Gypsum preset it refuses
+    # a home (sim-c5; P10 2.6 h out) whose only roads out pass 36-37 min
+    # ahead of the line within the first 2.4 min of the drive, a home
+    # iteration 1 coated with that minute to spare. When > 0 a RAMPED margin
+    # grows the slack over route_margin_roads_min with the time on the
+    # road: at a sample tau into the leg route_margin_roads_min + min(route_
+    # margin_egress_roads_min - route_margin_roads_min, this * tau), the
+    # leg's end (the zone) keeping the flat margin — 1/3 is a drive at 75 %
+    # of the planned speed, the review's traffic test (tau / 0.75 - tau).
+    # Dispatch keeps the flat margin's zone order and choice and uses the
+    # ramped margin only for a stop no zone serves at the flat one (a
+    # rescue); the simulator's 29 predicate judges with the ramped margin.
+    # 0 = the flat margin, byte-identical. The SIMULATOR arms 1/3 (founder
+    # decision 2026-10-23, "Switch it on"; with SAFETY SEMANTICS 38).
+    route_margin_egress_ramp: float = 0.0
+    # THE DURABLE-DESTINATION WORKABILITY LAW (2026-10-22, the Eagle River
+    # valley review's iteration 5; SAFETY SEMANTICS 38; read by dispatch and
+    # the simulator's SEMANTICS 29 predicate). The way-out predicate (29)
+    # and the planner's egress test (32) accepted a stop whose lawful way
+    # out led to SOME zone, however short-lived — measured (iteration 4, the
+    # founder's calls applied): on a Beaver Creek fresh fire a crew's last
+    # homes near Edwards had one lawful way out, to Freedom Park with 3.4 h
+    # of life and no lawful exit by the time it arrived, and the sweep moved
+    # it hours later through band 337 min past the line; with every crew
+    # 25 % slower, a Vail crew egressed to an East Vail zone 0.9 h from the
+    # line and fled it 46.6 min past it. When > 0 (hours, H) a zone counts
+    # as a stop's way out only while the crew reaches it before it is a
+    # DEAD END — the zone stays clear of the 10c line H after the arrival,
+    # or a lawful leg from it to another zone, or 28a's road search from it
+    # to a road refuge, that stays clear H is still open a step after the
+    # arrival — or while the crew leaves the stop with 28a's road search
+    # from the stop itself still finding such a refuge; on-map refuges only
+    # while escape_refuge_on_map (36) is armed. At the plan (dispatch's zone
+    # T*, bounded by the simulator's own numbers: dispatch.plan(zone_keep=,
+    # stop_refuge=)), the leg start, every step for a kept head, the arrival
+    # and every step of the work (the 29 predicate). 0 = off, byte-
+    # identical. The SIMULATOR arms 8 (28a's horizon).
+    egress_dest_durable_h: float = 0.0
+    # A STOP'S EGRESS FITS ITS DEADLINE (2026-10-21, the Eagle River valley
+    # review's iteration 2; SAFETY SEMANTICS 32; read by dispatch). The
+    # planner required a stop's departure to carry slack_min before the
+    # home's latest departure and SOME zone leg lawful at it; the
+    # simulator's road-egress guard requires the crew to REACH a zone by
+    # then — measured: Vail's south fire at extreme planned a stop with a
+    # 17.7-min margin against a 22.1-min road egress, the guard withdrew the
+    # crew on arrival and the home was lost (Park City's windstorm alike).
+    # When True a stop departing at d needs a zone whose egress leg is
+    # lawful at d (d <= T*) AND that it reaches by the job's latest departure
+    # (d + max(tier-0, road) egress <= latest_depart_s) — in the route chain,
+    # the late-shift polish and the unserved diagnosis. False = byte-
+    # identical. The SIMULATOR arms it.
+    plan_egress_time_deadline: bool = False
     # FOUNDER ROUND 5 — COATING HOLD (2026-07-12): "if fire is more than 24
     # hours away, do not coat homes; place crews on alert and preposition as
     # required — AS LONG AS all homes can be coated based on the current fire
@@ -3392,6 +4194,20 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("escape_road_snap_m must be >= 0")
     if not cfg.escape_road_horizon_cap_h > 0:
         problems.append("escape_road_horizon_cap_h must be > 0")
+    # SAFETY SEMANTICS 28 / 31 (2026-10-21): hours / minutes, 0 = off
+    if not (0.0 <= cfg.egress_durable_min_h <= 168.0):
+        problems.append("egress_durable_min_h must be within [0, 168] hours")
+    if not (0.0 <= cfg.escape_last_exit_lead_min <= MAX_MARGIN_MIN):
+        problems.append(f"escape_last_exit_lead_min must be within [0, {MAX_MARGIN_MIN:g}] minutes")
+    if (cfg.route_margin_egress_roads_min < 0
+            or cfg.route_margin_egress_roads_min > MAX_MARGIN_MIN):
+        problems.append(f"route_margin_egress_roads_min must be within [0, {MAX_MARGIN_MIN:g}] minutes")
+    # SAFETY SEMANTICS 37 (2026-10-21): seconds of slack per second driven
+    if not (0.0 <= cfg.route_margin_egress_ramp <= 1.0):
+        problems.append("route_margin_egress_ramp must be within [0, 1]")
+    # SAFETY SEMANTICS 38 (2026-10-22): hours, 0 = off
+    if not (0.0 <= cfg.egress_dest_durable_h <= 168.0):
+        problems.append("egress_dest_durable_h must be within [0, 168] hours")
 
     # --- corridor erosion / sampling ---
     if cfg.corridor_erosion_m < 0:
@@ -3694,6 +4510,10 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
                         "incident_stale_h]")
     if cfg.sim_weather_profile not in ("generic", "city"):
         problems.append("sim_weather_profile must be 'generic' or 'city'")
+    # SAFETY SEMANTICS 34a' (2026-10-21): comma-separated far-zone ids
+    if not isinstance(cfg.sim_far_zones_off, str):
+        problems.append("sim_far_zones_off must be a string of comma-"
+                        "separated far-zone ids")
 
     # --- type discipline: bool-typed fields must hold bool, int-typed fields
     # must hold int (and not bool -- bool is an int subclass in Python) ---
