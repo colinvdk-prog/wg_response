@@ -1,10 +1,12 @@
-# Eagle River valley: crew management review and three improvement iterations (2026-10-21)
+# Eagle River valley: crew management review and five improvement iterations (2026-10-21 to 23)
 
 Founder, 2026-10-20: *"review the response crew management for the eagle river, avon,
 vail minturn area only. run the simulation. analyze it using an opus and sonnet agents for
 safety, propagation speed etc. recommend improvements and perform at least two new
 iterations"*; then *"run iteration 1 as soon as it lands"*, *"then start iteration 2 straight
-after"*, *"run iteration 3 after iteration 2 lands"*.
+after"*, *"run iteration 3 after iteration 2 lands"*, *"continue"*. Founder decisions on 2026-10-22
+(reinforcements may enter from either end of I-70; the Cordillera west refuge is dropped) and
+2026-10-23 (arm the escape-margin ramp).
 
 ## Summary for the founder
 
@@ -38,39 +40,54 @@ fire spread; a second Sonnet model checked iteration 1 independently).
 
 **What changed** (all simulator-only; the live watcher is untouched):
 
-| | Iteration 0 (as deployed) | Iteration 1 | Iteration 2 | Iteration 3 |
-|---|---|---|---|---|
-| Homes coated (of 1,320) | 1,023 | 1,047 | 1,040 | 1,071 |
-| Homes the fire reached that were coated in time (of 125) | 105 | 110 | 111 | 111 |
-| Homes the fire reached uncoated | 20 | 15 | 14 | 14 |
-| Crew passes through the danger band | 12 (unseen) | 10 | 2 | 2 |
-| Deepest pass past the safety line | 434 min | 434 min | 24 min | 24 min |
-| Time crews spent in the band | 41 min | 26 min | 2 s | 2 s |
-| Crews driven off the map | 2 | 2 | 0 | 0 |
-| Relocations | 37 | 31 | 14 | 15 |
-| Median closest call | 0.82 h | 1.03 h | 1.36 h | 1.36 h |
+| | Iteration 0 (as deployed) | Iteration 1 | Iteration 2 | Iteration 3 | Iteration 4 | Iteration 5 (final) |
+|---|---|---|---|---|---|---|
+| Homes coated (of 1,320) | 1,023 | 1,047 | 1,040 | 1,071 | 1,050 | 1,057 |
+| Homes the fire reached that were coated in time (of 125) | 105 | 110 | 111 | 111 | 111 | 111 |
+| Homes the fire reached uncoated | 20 | 15 | 14 | 14 | 14 | 14 |
+| Crew passes through the danger band | 12 (unseen) | 10 | 2 | 2 | 2 | 3 |
+| Deepest pass past the safety line | 434 min | 434 min | 24 min | 24 min | 24 min | 24 min |
+| Time crews spent in the band | 41 min | 26 min | 2 s | 2 s | 2 s | 18 s |
+| Crews driven off the map | 2 | 2 | 0 | 0 | 0 | 0 |
+| Relocations | 37 | 31 | 14 | 15 | 15 | 18 |
+| Kilometres driven | 6,027 | 5,624 | 5,700 | 5,741 | 5,749 | 5,569 |
+| Median closest call | 0.82 h | 1.03 h | 1.36 h | 1.36 h | 1.69 h | 1.35 h |
 
-The two passes left are crews leaving a pocket the north-west fire forms around them in its
-first half hour at Beaver Creek: 21-24 minutes past the safety line for about a second, three
-hours before any forecast fire reaches the spot (waiting, as before, cost 262-328 minutes).
-"Coated" counts every home a crew gelled; of the 125 homes the fire actually reached in 12 hours,
-105 were coated in time before this work and 111 after it — iteration 3's extra coatings are homes
-the fire never reached.
+(The 33 fires at 07:13. Iteration 3 still had the Cordillera west refuge, which the founder dropped
+in iteration 4; iteration 4's lower coating count is that decision. Iteration 5's third pass is a
+6-minute corridor pass the escape-margin ramp brings; its lower median closest call is the ramp's
+shorter margin on short drives.)
 
-**It holds beyond the 33 fires it was tuned on.** On 24 fresh ignitions (8 per map, high, chosen
-after the fact by the independent reviewer) passes fell 13 → 3 and the deepest 345 → 22 minutes;
-with every fire lit at 13:13 instead of 07:13, passes fell 14 → 2 and the deepest 612 → 24 minutes.
+The passes left are crews leaving a pocket the north-west fire forms around them in its first half
+hour at Beaver Creek — 21-24 minutes past the safety line for about a second, three hours before any
+forecast fire reaches the spot (waiting, as before, cost 262-328 minutes) — and one 6-minute corridor
+pass. "Coated" counts every home a crew gelled; of the 125 homes the fire actually reached in 12 hours,
+105 were coated in time before this work and 111 after it.
 
-**Founder decisions (2026-10-22).** The 1-hour reinforcement crew may enter from either end of
-I-70, whichever reaches the most threatened homes on a lawful road (it no longer waits 12 hours
-behind a fire on the east side). The Cordillera west refuge is dropped: 13 hectares of subdivision
-streets with half timber within 300 m is not a credible safety zone without a ground check (it
-carried all of iteration 3's Beaver Creek gain, which therefore does not count).
+**It holds beyond the 33 fires it was tuned on.** The final code against iteration 4, on five test sets:
 
-**Before anything ships** (iteration 4, in progress): keep every refuge on the map (the road-refuge
-rule could send crews off the edge: 5 → 10 on the fresh fires), make the page stop saying "caught in
-fire" for a pass through the band, and stop the 45-minute escape margin costing a home on the public
-Eagle / Gypsum demo.
+| Set | Homes coated | Reached homes uncoated | Deepest pass past the line | Passes > 30 min | Crews off the map |
+|---|---|---|---|---|---|
+| 33 fires, 07:13 | 1,050 → 1,057 | 14 → 14 | 24 → 24 min | 0 → 0 | 0 → 0 |
+| 33 fires, 13:13 | 1,034 → 1,046 | 20 → 15 | 24 → 24 min | 0 → 0 | 0 → 0 |
+| 24 fresh fires (chosen afterwards by the independent reviewer) | 647 → 649 | 39 → 39 | 337 → 22 min | 1 → 0 | 8 → 4 |
+| 13 one-click demos (6 h) | 473 → 469 | 7 → 7 | none | 0 | 0 → 0 |
+| Every crew driving 25 % slower than planned | 998 → 1,005 | — | 46.6 → 24.8 min | 1 → 0 | 2 → 0 |
+
+Against the code as deployed, the fresh fires fell from 13 passes (deepest 345 min) to 2 (22 min), and
+the 13:13 fires from 14 (deepest 612 min) to 3 (24 min).
+
+**Founder decisions.** 2026-10-22: the 1-hour reinforcement crew may enter from either end of I-70,
+whichever reaches the most threatened homes on a lawful road; the Cordillera west refuge is dropped
+(13 hectares of subdivision streets with half timber within 300 m is not a credible safety zone
+without a ground check). 2026-10-23: the escape-margin ramp is armed (30 minutes plus a third of the
+drive, up to 45, instead of a flat 45).
+
+**Recommendation.** Ship iterations 1-5 to the public simulator: every crew-safety measure is better
+or equal on all five test sets, no pass goes more than 25 minutes past the safety line anywhere, and
+no crew is driven off the map in the 33 fires. Known costs: Park City's windstorm demo leaves one
+reached home uncoated (Eagle / Gypsum's demo gains one); the extended Paradise map still has one
+dead-end refuge defect (below). The live watcher is not changed by any of this.
 
 ## Method
 
@@ -154,19 +171,48 @@ min), crews off the map 0, idle crew-time while homes waited behind a blocked ro
 east by a road refuge past the map edge — fixed in iteration 4). Independent review:
 `scratch_review/eagle_valley/review_iter23_sonnet.md`.
 
+## Iteration 4 — pre-ship fixes and the founder's calls (SAFETY SEMANTICS 36-37; commit 8d0fbdf)
+
+- `escape_refuge_on_map` (36): a refuge off the map is the last exit, never an early one (the
+  road-refuge rule had sent crews off the edge: 5 → 10 on the fresh fires; now 4).
+- The page: a pass reads "drove through the band at hh:mm, N min past the line" in the feed (stamped
+  with its pass time), the banner, the crew card and the tooltip; the run's ledger is shown; the
+  marker glows orange instead of the red "caught in fire" flash; a test renders the real page in a
+  headless browser and reads it.
+- The founder's crown-fire Paradise repro un-pinned (it passes with every law on).
+- `route_margin_egress_ramp` (37): the escape margin grows with the drive — built, measured, left off
+  (it then cost homes elsewhere); armed in iteration 5.
+- The founder's calls applied: reinforcement entry by need armed; Cordillera west dropped by a
+  per-zone switch.
+
+The calls exposed one deep pass each — 337 minutes on a fresh Beaver Creek fire (dropping
+Cordillera) and 46.6 minutes in the slower-drive test (reinforcement entry) — from one remaining
+flaw: a home counted as workable if its way out led to any zone, however short-lived.
+
+## Iteration 5 — a way out leads somewhere that lasts (SAFETY SEMANTICS 38; commits 03dd325, 960c9d6)
+
+- `egress_dest_durable_h` (38, 8 h): a home is workable only if the crew's way out leads to a zone
+  or on-map road refuge that stays safe long enough to be left again lawfully, judged with the same
+  rule at planning, at setting out, every step of a kept job, on arrival and every step of work.
+  Both deep passes are gone; the Vail live-posture passes (185 min) and a 1,346-minute pass in the
+  founder's Paradise crown repro go with them.
+- 960c9d6 arms the escape-margin ramp (founder decision 2026-10-23): with the new law it keeps every
+  acceptance criterion and coats more homes (13:13: 20 → 15 reached homes uncoated).
+
+Suite on 960c9d6: 2,705 passed, 14 skipped, 1 expected failure (the Paradise dead end below).
+
 ## Open items
 
-- **Iteration 4 (pre-ship fixes, in progress):** refuges on the map, the page's "caught in fire"
-  strings and run ledger (with a rendered-page test), the Paradise crown repro un-pinned, the
-  45-minute margin's cost on the Eagle / Gypsum demo, and the two founder decisions applied; then the
-  33 runs, 13:13, the 24 fresh fires and the 13 one-click presets re-run.
-- **A dead-end refuge on the extended Paradise map** (strict xfail): a crew waits at a refuge whose only
-  road out closes while the refuge itself stays safe for more than 8 hours; it then drives out 496 / 909
-  minutes past the line. Needs a rule that a staging target keeps a durable way out.
-- **Homes beyond the fire** still cannot be reached; the far-side refuges help only where they make a
-  home's way out lawful.
+- **A dead-end refuge on the extended Paradise map** (an expected-failure test): a crew waits at a
+  refuge with 24 hours of life whose roads out close while it waits; it later drives out 496 / 909
+  minutes past the line. Needs a waiting-crew law (watch the exits of the refuge, refuse restaging
+  past its keep-until).
+- **Homes beyond the fire** still cannot be reached; far-side refuges help only where they make a
+  home's way out lawful. Vail has none on its map (Red Cliff and Vail Pass are off it).
+- **Ember warnings** use one forecast member's landing, not a pessimistic bound.
 - **The live watcher is unchanged** by this review; its safety margin (P10 posture) was measured here
-  only as a simulator arm.
-- **Merging and deploying:** the work is on branches review/eagle-valley-2026-10-20 → iter2 → iter3 (→
-  iter4); main also carries an uncommitted feed-fusion change (SAFETY SEMANTICS 24) from 2026-10-15 that
-  must be committed or set aside before these merge.
+  only as a simulator arm (and is not like for like: it also speeds the simulated fire).
+- **Refuges are map choices**, named from OpenStreetMap; no site has been checked on the ground.
+- **Merging and deploying:** all five iterations are merged on branch review/eagle-valley-2026-10-20.
+  Main also carries an uncommitted feed-fusion change (SAFETY SEMANTICS 24) from 2026-10-15, which has
+  to be committed or set aside before this branch merges into main and the simulator is rebuilt.
