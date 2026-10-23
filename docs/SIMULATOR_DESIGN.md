@@ -2214,7 +2214,7 @@ the Paradise repro un-pinned, the record corrected.
 | Change | Where | Armed | What it changes |
 |---|---|---|---|
 | `escape_refuge_on_map` | SEMANTICS 36 | yes | a refuge off the map is the last exit, never an early one |
-| `route_margin_egress_ramp` (1/3 measured) | SEMANTICS 37 | no — `simui.SIM_ROUTE_MARGIN_EGRESS_RAMP` = 0.0 | the road-egress slack grows with the time on the road (a rescue) |
+| `route_margin_egress_ramp` (1/3 measured) | SEMANTICS 37 | no — `simui.SIM_ROUTE_MARGIN_EGRESS_RAMP` = 0.0 (armed at 1/3 by founder decision 2026-10-23: "A way out leads somewhere that lasts") | the road-egress slack grows with the time on the road (a rescue) |
 | `reinforce_entry_by_need` | SEMANTICS 34b | yes, by founder decision 2026-10-22 ("Either end of I-70") | a reinforcement enters by the edge entry with the most reachable waiting homes |
 | `sim_far_zones_off` | SEMANTICS 34a' | "beaver_creek_co-z4", by founder decision 2026-10-22 ("Drop it") | Cordillera west leaves the simulator's catalog |
 | the page | `console/simulator.html` | — | a transit row reads as a drive through the band everywhere; the run's ledger is shown |
@@ -2537,6 +2537,7 @@ two calls of 2026-10-22 stand (reinforcements enter by need; Cordillera west dro
 | Change | Where | Armed | What it changes |
 |---|---|---|---|
 | `egress_dest_durable_h` | SEMANTICS 38 | yes, 8 h (`simui.SIM_EGRESS_DEST_DURABLE_H`, 28a's horizon) | a stop's way out must not lead into a dead end — judged at the plan, the leg start, every step of a kept head, the arrival and every step of the work |
+| `route_margin_egress_ramp` (iteration 4) | SEMANTICS 37 | yes, 1/3, by founder decision 2026-10-23 ("Switch it on"; `simui.SIM_ROUTE_MARGIN_EGRESS_RAMP`) | the road-egress slack grows with the time on the road (a rescue) — with 38, every acceptance criterion holds (below) |
 
 Code: `simui` `_egress_ways` (the 29 predicate's ways out, now under the law), `_way_metrics`
 (one leg's margin, split out of it unchanged), `_dest_keep_until`, `_road_refuge_until`,
@@ -2582,7 +2583,8 @@ safe when it arrives, while the roads out of it close — that needs a rule for 
 more finding for your switch: the traffic-allowance ramp you left off in iteration 4, because its
 rescues cost homes on the fresh fires, now gains there — with this rule and the ramp both on, every
 acceptance criterion holds on all five sets (at the afternoon start 15 reached homes uncoated against
-iteration 4's 20) and 24 more homes are coated. It stays off until you say.
+iteration 4's 20) and 24 more homes are coated. (You switched it on on 2026-10-23 — the last part
+of this section.)
 
 **What was measured** — the five validation sets on this commit's defaults ("iteration 5")
 against iteration 1 / 3 (the integrator's matrices on 0109ad3 / 1963df2, the review's fresh-fire,
@@ -2797,7 +2799,7 @@ band at tick 130, 1,346 min past the line — a row that test does not read; wit
 is ever idle on burned ground and none drives through the band (25 homes against 26). The test now
 pins the law off to keep exercising old black; its armed twin pins the new run.
 
-**The ramp (37) — the law changes its trade-off; still the founder's switch, still off.** Iteration 4
+**The ramp (37) — the law changes its trade-off (armed by founder decision 2026-10-23, below).** Iteration 4
 built the ramp and left it off: it kept the Eagle / Gypsum home (sim-c5) and coated more on the
 matrix, but on the fresh fires its rescues re-routed crews toward homes the fire then cut off (Vail's
 b110 fire 32 → 24 homes) — 12 homes and 4 reached ones lost there — and Park City's windstorm lost a
@@ -2820,8 +2822,8 @@ fires (40), 7 on the presets (Eagle / Gypsum keeps sim-c5, Park City's windstorm
 reached home and 7 coatings); no row deeper than 30 min anywhere (the slower drive's deepest 24.8);
 crews off the map 0 / 0 / 4 / 0 / 0; and 24 more homes than iteration 4 over the five sets. The ramp
 adds back a 5.8-min row on Eagle-Vail's south extreme fire (the matrix and 13:13; as in iteration 4).
-It is not switched on here: `simui.SIM_ROUTE_MARGIN_EGRESS_RAMP` (0.0) is the founder's one-line
-call, and `tests/test_preship_fixes.py` pins it off by that call.
+These were measured on commit 03dd325 with the ramp set by override — the configuration the
+founder's call of 2026-10-23 makes the simulator's default (below).
 
 **Byte-identity.** With the law off (`{"egress_dest_durable_h": 0.0}`) the simulator replays commit
 8d0fbdf byte for byte — per-tick sha256 of `state()` minus `cmd_log` on three worlds where the law
@@ -2854,3 +2856,102 @@ crew's speed for the planner and at each crew's own for the guard; a crew slower
 (the traffic test) can still be withdrawn mid-work when its way out closes under it — safe, but a
 coating lost. The road search's budget and its old-black windows make the bisected window a lower
 bound (a refuge reachable later only through old black is not counted).
+
+**The founder's call (2026-10-23): the ramp armed.** Shown the numbers above, the founder said
+"Switch it on": `simui.SIM_ROUTE_MARGIN_EGRESS_RAMP` = `ROUTE_MARGIN_EGRESS_RAMP_MEASURED` (1/3) —
+an explicit `route_margin_egress_ramp` of 0.0 still restores the flat margin, and the switch is one
+line both ways. Re-pinned with twins (none weakened): `tests/test_preship_fixes.py`'s arming test
+(37 armed; the explicit 0.0 still wins), a one-line test of the switch, and its Eagle / Gypsum
+control (the flat margin now set by override; the twin: the simulator's defaults coat sim-c5 at tick
+2, as iteration 1 did); in `tests/test_dest_durable.py` the law-off dict pins the ramp off too (the
+sessions of 8d0fbdf), and the two tests that measure the law alone pin it off (`LAW_ALONE`, as
+03dd325 armed it) with twins on the defaults — Beaver Creek's b250 fire (no row; 35 homes in its 33
+ticks against 36) and the Paradise crown-fire repro (no crew idle on burned ground, no row; 24 homes
+against 25). The five sets with the simulator's defaults since this call (the law and the ramp;
+measured on 03dd325 with the ramp set by override, `R_*` / `iter5_ramp`) against iteration 4 and
+the law alone:
+
+#### The 33-run matrix (07:13 start, 12 h)
+
+| | iteration 4 | iteration 5, the law alone (03dd325) | iteration 5 + 37 (the defaults since 2026-10-23) |
+|---|---|---|---|
+| runs | 33 | 33 | 33 |
+| homes served | 1050 | 1051 | 1057 |
+| reached / unprotected | 125 / 14 | 125 / 15 | 125 / 14 |
+| transit rows | 2 | 2 | 3 |
+| deepest (min past the line) | 24 | 24 | 24 |
+| rows deeper than 30 min | 0 | 0 | 0 |
+| seconds in the band | 2 | 2 | 18 |
+| withdrawals | 0 | 0 | 0 |
+| relocations | 15 | 14 | 18 |
+| crews off the map | 0 | 0 | 0 |
+| idle crew-ticks while homes waited behind a blocked road | 866 | 866 | 886 |
+
+#### 13:13 start (33 runs, 12 h)
+
+| | iteration 4 | iteration 5, the law alone (03dd325) | iteration 5 + 37 (the defaults since 2026-10-23) |
+|---|---|---|---|
+| runs | 33 | 33 | 33 |
+| homes served | 1034 | 1035 | 1046 |
+| reached / unprotected | 104 / 20 | 104 / 20 | 104 / 15 |
+| transit rows | 2 | 2 | 3 |
+| deepest (min past the line) | 24 | 24 | 24 |
+| rows deeper than 30 min | 0 | 0 | 0 |
+| seconds in the band | 2 | 2 | 18 |
+| withdrawals | 0 | 0 | 0 |
+| relocations | 7 | 7 | 6 |
+| crews off the map | 0 | 0 | 0 |
+| idle crew-ticks while homes waited behind a blocked road | 1043 | 1043 | 948 |
+
+#### The 24 fresh fires (07:13, high, 12 h)
+
+| | iteration 4 | iteration 5, the law alone (03dd325) | iteration 5 + 37 (the defaults since 2026-10-23) |
+|---|---|---|---|
+| runs | 24 | 24 | 24 |
+| homes served | 647 | 641 | 649 |
+| reached / unprotected | 114 / 39 | 114 / 40 | 114 / 39 |
+| transit rows | 3 | 2 | 2 |
+| deepest (min past the line) | 337 | 22 | 22 |
+| rows deeper than 30 min | 1 | 0 | 0 |
+| seconds in the band | 278 | 78 | 78 |
+| withdrawals | 0 | 0 | 0 |
+| relocations | 17 | 9 | 10 |
+| crews off the map | 8 | 4 | 4 |
+| idle crew-ticks while homes waited behind a blocked road | 842 | 1019 | 1069 |
+
+#### The 13 one-click presets (24 ticks = 6 h)
+
+| | iteration 4 | iteration 5, the law alone (03dd325) | iteration 5 + 37 (the defaults since 2026-10-23) |
+|---|---|---|---|
+| homes served | 473 | 473 | 469 |
+| reached / unprotected | 20 / 7 | 20 / 7 | 20 / 7 |
+| transit + tick-end rows | 0 | 0 | 0 |
+| withdrawals | 0 | 0 | 0 |
+| relocations | 1 | 1 | 3 |
+| crews off the map | 0 | 0 | 0 |
+
+Per preset, where the ramp changes it (the law alone → with the ramp): basalt_carbondale_southwesterly 36 · 4 / 0 → 37 · 4 / 0; boulder_chinook 24 · 0 / 0 → 23 · 0 / 0; eagle_gypsum_westerly 28 · 2 / 1 → 29 · 2 / 0; glenwood_springs_westerly 30 · 0 / 0 → 32 · 0 / 0; malibu_santa_ana 29 · 5 / 5 → 30 · 5 / 5; park_city_windstorm 34 · 1 / 0 → 27 · 1 / 1; vail_westerly 40 · 0 / 0 → 39 · 0 / 0.
+
+#### Every crew driving 25 % slower than planned (the 33 runs, the review's dense 20-m audit)
+
+| | iteration 4 | iteration 5, the law alone (03dd325) | iteration 5 + 37 (the defaults since 2026-10-23) |
+|---|---|---|---|
+| runs | 33 | 33 | 33 |
+| homes served | 998 | 998 | 1005 |
+| withdrawals | 2 | 4 | 1 |
+| independent 20-m audit: crew-steps in the band | 3 | 2 | 4 |
+| of which engine rows | 3 | 2 | 4 |
+| deepest (min past the line) | 46.6 | 24.8 | 24.8 |
+| deeper than 30 min | 1 | 0 | 0 |
+| crews off the map | 2 | 1 | 0 |
+
+Against iteration 4 every acceptance criterion of this iteration holds: no row deeper than 30 min in
+any set (the deepest 24 / 24 / 22 / — / 24.8); crews off the map 0 / 0 / 4 / 0 / 0 (iteration 4:
+0 / 0 / 8 / 0 / 2); reached homes left uncoated 14 / 15 / 39 / 7 (iteration 4: 14 / 20 / 39 / 7;
+the slower drive counts none); and 4,226 homes coated against 4,202. What the ramp costs: a
+5.8-min row on Eagle-Vail's south extreme fire (16 s in the band, the matrix and 13:13, as the ramp
+gave in iteration 4); on the presets 4 homes and Park City's windstorm's one reached home (34 → 27
+homes), offset by Eagle / Gypsum's (sim-c5); on the slower drive 4 crew-steps in the band against
+the law alone's 2 (the deepest 24.8 either way). Its gains: the afternoon start's Beaver Creek runs
+(canonical, late and pair high, 3 → 1 uncoated each) and the fresh fires' Vail b110 (32 → 35
+homes, 3 → 2 uncoated) and Beaver Creek b340 (10 → 12 homes, 11 → 9 uncoated).

@@ -1498,9 +1498,13 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    min anywhere. Without
    the end's flat margin (measured) a Vail crew worked a stop whose zone 20b
    then refused at departure: a pocket exit 23 min past the line. 0 = the
-   flat margin, byte-identical (tests/test_preship_fixes.py). NOT armed by
-   the simulator: simui.SIM_ROUTE_MARGIN_EGRESS_RAMP (0.0) is the founder's
-   one-line call, measured both ways.
+   flat margin, byte-identical (tests/test_preship_fixes.py). Left off in
+   iteration 4; ARMED by the simulator by founder decision 2026-10-23
+   ("Switch it on"): simui.SIM_ROUTE_MARGIN_EGRESS_RAMP = 1/3, the measured
+   value — with SEMANTICS 38 (which refuses the rescues whose way out
+   leads into a dead end) the valley harness's five sets keep every
+   acceptance criterion of iteration 5 (docs/SIMULATOR_DESIGN.md "A way out
+   leads somewhere that lasts", "The founder's call (2026-10-23)").
 38. A WAY OUT LEADS SOMEWHERE THAT LASTS — THE DURABLE-DESTINATION
    WORKABILITY LAW (2026-10-22; the Eagle River valley review's iteration
    5 — docs/SIMULATOR_DESIGN.md "A way out leads somewhere that lasts";
@@ -1547,7 +1551,7 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    37's ramp armed too, reached homes left uncoated are 14 / 15 / 39 / 7 on
    the matrix, 13:13, the fresh fires and the presets (iteration 4: 14 /
    20 / 39 / 7) and 24 more homes are coated: the law changes 37's
-   trade-off (still the founder's switch, off). Shaped
+   trade-off (37 armed by founder decision 2026-10-23). Shaped
    from data: judged step by step the values drifted (the search's best
    node changes with the clock; a Vail crew sent to East Vail on a 2.48 h
    keep-until arrived after it fell to 1.53 h and left the map), costing
@@ -3736,7 +3740,8 @@ class ResponseConfig:
     # Dispatch keeps the flat margin's zone order and choice and uses the
     # ramped margin only for a stop no zone serves at the flat one (a
     # rescue); the simulator's 29 predicate judges with the ramped margin.
-    # 0 = the flat margin, byte-identical.
+    # 0 = the flat margin, byte-identical. The SIMULATOR arms 1/3 (founder
+    # decision 2026-10-23, "Switch it on"; with SAFETY SEMANTICS 38).
     route_margin_egress_ramp: float = 0.0
     # THE DURABLE-DESTINATION WORKABILITY LAW (2026-10-22, the Eagle River
     # valley review's iteration 5; SAFETY SEMANTICS 38; read by dispatch and

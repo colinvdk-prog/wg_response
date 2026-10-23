@@ -674,15 +674,18 @@ SIM_ROUTE_MARGIN_EGRESS_ROADS_MIN = 45.0
 #: a ramped margin whose slack grows with the time on the road — RAMP of it,
 #: up to the 15 min (the zone keeps them); a rescue: dispatch keeps the flat
 #: margin's zone choice and takes the ramped one only for a stop no zone
-#: serves at the flat one. NOT ARMED — a one-line call for the founder:
-#: measured both ways (docs/SIMULATOR_DESIGN.md "Pre-ship fixes"), 1/3 (a
-#: drive at 75 % of the planned speed covered for the first 45 min of every
-#: egress) keeps the public Eagle / Gypsum home and 5 more matrix homes but
-#: costs 12 on the 24 fresh fires and 7 on the presets (Park City's
-#: windstorm loses a reached home). 0.0 = the flat margin.
-SIM_ROUTE_MARGIN_EGRESS_RAMP = 0.0
-#: the ramp the founder's switch would arm (tests; the measured value)
+#: serves at the flat one. ARMED BY FOUNDER DECISION 2026-10-23 ("Switch it
+#: on") at the measured 1/3 (a drive at 75 % of the planned speed covered for
+#: the first 45 min of every egress). Iteration 4 built it and left it off
+#: (docs/SIMULATOR_DESIGN.md "Pre-ship fixes": it kept the public Eagle /
+#: Gypsum home and 5 more matrix homes but cost 12 on the 24 fresh fires and
+#: 7 on the presets); iteration 5's law (SEMANTICS 38) refuses the rescues
+#: whose way out leads into a dead end, and with both every acceptance
+#: criterion of the valley review holds on its five sets (docs/
+#: SIMULATOR_DESIGN.md "A way out leads somewhere that lasts"). 0.0 = the
+#: flat margin.
 ROUTE_MARGIN_EGRESS_RAMP_MEASURED = 1.0 / 3.0
+SIM_ROUTE_MARGIN_EGRESS_RAMP = ROUTE_MARGIN_EGRESS_RAMP_MEASURED
 #: THE EAGLE RIVER VALLEY CREW-SAFETY ITERATION 5 sim default (2026-10-22;
 #: contracts egress_dest_durable_h, SAFETY SEMANTICS 38): a stop's way out
 #: must not lead into a dead end — the zone stays clear of the 10c line this
@@ -3261,9 +3264,9 @@ class SimSession:
         # voluntary refuge laws choose on-map refuges, and an off-map one
         # only by the last lawful way to it (escape_refuge_on_map); (37) the
         # road-egress slack that grows with the time on the road
-        # (route_margin_egress_ramp) is NOT armed — SIM_ROUTE_MARGIN_EGRESS_
-        # RAMP, the founder's one-line call. Explicit override wins; defaults
-        # OFF.
+        # (route_margin_egress_ramp), armed by founder decision 2026-10-23 at
+        # the measured 1/3 (SIM_ROUTE_MARGIN_EGRESS_RAMP). Explicit override
+        # wins; defaults OFF.
         if "escape_refuge_on_map" not in overrides:
             cfg.escape_refuge_on_map = True
         if "route_margin_egress_ramp" not in overrides:

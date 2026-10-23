@@ -52,8 +52,11 @@ ITER4_OFF = {"escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0,
              "reinforce_entry_by_need": False, "sim_far_zones_off": "",
              # ... and the iteration-5 law (SAFETY SEMANTICS 38)
              "egress_dest_durable_h": 0.0}
-#: 37 as the founder's switch would arm it (the measured value)
+#: 37 as the founder's switch arms it (the measured value; armed by founder
+#: decision 2026-10-23)
 RAMP_ON = {"route_margin_egress_ramp": simui.ROUTE_MARGIN_EGRESS_RAMP_MEASURED}
+#: 37 off: the flat margin, the simulator's default until 2026-10-23
+RAMP_OFF = {"route_margin_egress_ramp": 0.0}
 
 
 def _hash(st):
@@ -107,11 +110,13 @@ def _preset(key, cfg):
 # the knobs and the switches
 # ---------------------------------------------------------------------------
 
-def test_knobs_are_off_by_default_and_the_simulator_arms_36_not_37():
-    """36 is armed by the simulator; 37 is built and measured but NOT armed
-    (simui.SIM_ROUTE_MARGIN_EGRESS_RAMP = 0.0, the founder's one-line call:
-    it keeps the Eagle / Gypsum home and costs homes on the fresh fires) —
-    an explicit override arms it."""
+def test_knobs_are_off_by_default_and_the_simulator_arms_36_and_37():
+    """36 is armed by the simulator; 37 — built and measured in iteration 4
+    and left off as the founder's one-line call — is armed at the measured
+    1/3 by founder decision 2026-10-23 ("Switch it on"; re-pinned from 0.0:
+    with SEMANTICS 38 it keeps every acceptance criterion of the valley
+    review). An explicit override still disarms it (the twin: 0.0, the
+    flat margin)."""
     cfg = ResponseConfig()
     assert cfg.escape_refuge_on_map is False
     assert cfg.route_margin_egress_ramp == 0.0
@@ -119,7 +124,11 @@ def test_knobs_are_off_by_default_and_the_simulator_arms_36_not_37():
     s = simui.SimSession("boulder_co", 2, 1, seed="pf", roads_module=None)
     assert s._cfg.escape_refuge_on_map is True
     assert s._cfg.route_margin_egress_ramp == simui.SIM_ROUTE_MARGIN_EGRESS_RAMP
-    assert simui.SIM_ROUTE_MARGIN_EGRESS_RAMP == 0.0
+    assert simui.SIM_ROUTE_MARGIN_EGRESS_RAMP == \
+        simui.ROUTE_MARGIN_EGRESS_RAMP_MEASURED == 1.0 / 3.0
+    s = simui.SimSession("boulder_co", 2, 1, seed="pf", roads_module=None,
+                         cfg_overrides=RAMP_OFF)
+    assert s._cfg.route_margin_egress_ramp == 0.0
     s = simui.SimSession("boulder_co", 2, 1, seed="pf", roads_module=None,
                          cfg_overrides=RAMP_ON)
     assert s._cfg.route_margin_egress_ramp == 1.0 / 3.0
@@ -147,6 +156,21 @@ def test_the_founder_switches_carry_his_2026_10_22_calls():
     # the refuge stays in the catalog's record, restorable explicitly
     assert "beaver_creek_co-z4" in [
         z.zone_id for z in simui.LOCATIONS["beaver_creek_co"].far_zones]
+
+
+def test_one_line_arms_the_ramp(monkeypatch):
+    """The founder's 2026-10-23 call is one line both ways
+    (simui.SIM_ROUTE_MARGIN_EGRESS_RAMP); an explicit override still wins."""
+    monkeypatch.setattr(simui, "SIM_ROUTE_MARGIN_EGRESS_RAMP", 0.0)
+    s = simui.SimSession("vail_co", 4, 2, seed="pf", roads_module=None)
+    assert s._cfg.route_margin_egress_ramp == 0.0
+    monkeypatch.setattr(simui, "SIM_ROUTE_MARGIN_EGRESS_RAMP",
+                        simui.ROUTE_MARGIN_EGRESS_RAMP_MEASURED)
+    s = simui.SimSession("vail_co", 4, 2, seed="pf", roads_module=None)
+    assert s._cfg.route_margin_egress_ramp == 1.0 / 3.0
+    s = simui.SimSession("vail_co", 4, 2, seed="pf", roads_module=None,
+                         cfg_overrides=RAMP_OFF)
+    assert s._cfg.route_margin_egress_ramp == 0.0
 
 
 def test_one_line_arms_reinforce_entry_by_need(monkeypatch):
@@ -467,14 +491,32 @@ def test_the_ramp_keeps_the_eagle_gypsum_home():
         if gelled is None and cl.get("gelled_at_s"):
             gelled = k + 1
     assert gelled == 2
-    # the simulator's default: the flat margin (37 not armed)
-    s = _preset("eagle_gypsum_westerly", {})
+    # the flat margin (37 off — the simulator's default until the founder's
+    # call of 2026-10-23; re-pinned from {} with the twin below)
+    s = _preset("eagle_gypsum_westerly", RAMP_OFF)
     for _ in range(4):
         st = s.tick()
     cl = next(c for c in st["clients"] if c["client_id"] == "sim-c5")
     assert not cl.get("gelled_at_s")
     un = {u["client_id"]: u.get("reason") for u in st.get("unserved") or []}
     assert un.get("sim-c5") == "no_safe_egress"
+
+
+def test_armed_the_simulator_keeps_the_eagle_gypsum_home():
+    """The twin of the flat-margin control above: since the founder's call of
+    2026-10-23 the simulator's own defaults ramp the margin, and the public
+    Eagle / Gypsum preset coats sim-c5 at tick 2, as iteration 1 did."""
+    if not simui.tile_file("eagle_co").exists():
+        pytest.skip("LOUD SKIP: eagle_co tile not cached")
+    s = _preset("eagle_gypsum_westerly", {})
+    assert s._cfg.route_margin_egress_ramp == 1.0 / 3.0
+    gelled = None
+    for k in range(4):
+        st = s.tick()
+        cl = next(c for c in st["clients"] if c["client_id"] == "sim-c5")
+        if gelled is None and cl.get("gelled_at_s"):
+            gelled = k + 1
+    assert gelled == 2
 
 
 # ---------------------------------------------------------------------------

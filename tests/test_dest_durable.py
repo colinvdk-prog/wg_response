@@ -42,8 +42,14 @@ from wgresponse.contracts import (UNREACHED, Raster, ResponseConfig, SafeZone,
 from tests.test_dispatch import NOW, cc, make_crew, make_ens, make_job, spec20
 from tests.test_egress_margin import SPEED, _provider
 
-#: the iteration-5 law off: the sessions of commit 8d0fbdf
-ITER5_OFF = {"egress_dest_durable_h": 0.0}
+#: the iteration-5 law off: the sessions of commit 8d0fbdf (whose simulator
+#: did not arm SEMANTICS 37's ramp either: armed by founder decision
+#: 2026-10-23)
+ITER5_OFF = {"egress_dest_durable_h": 0.0, "route_margin_egress_ramp": 0.0}
+#: the law as commit 03dd325 armed it — 37's ramp not yet armed (founder
+#: decision 2026-10-23): the tests that measure the law alone pin this, their
+#: twins run the simulator's defaults
+LAW_ALONE = {"route_margin_egress_ramp": 0.0}
 
 
 def _hash(st):
@@ -268,7 +274,9 @@ def b250_off():
 
 @pytest.fixture(scope="module")
 def b250_armed():
-    s, tick, n = _sim_world(B250, {})
+    # the law alone (37's ramp off, as commit 03dd325 armed it; the twin
+    # with the simulator's defaults is test_armed_with_the_ramp_...)
+    s, tick, n = _sim_world(B250, LAW_ALONE)
     assert s._cfg.egress_dest_durable_h == 8.0
     hashes, rows = [], []
     st = None
@@ -303,6 +311,24 @@ def test_armed_no_crew_drives_into_the_band_and_no_home_is_lost(
     assert rows == []
     assert hashes != b250_off[1]                 # the law bites here
     assert st["scoreboard"]["served"] >= st_off["scoreboard"]["served"]
+
+
+def test_armed_with_the_ramp_no_crew_drives_into_the_band():
+    """The twin of the test above with the simulator's defaults since the
+    founder's call of 2026-10-23 (the law and 37's ramp): no crew drives
+    through the band in the 33 ticks; the ramp's rescues cost this fire a
+    home (ratchet: measured 35 in the 33 ticks, 35 at 12 h, 1 reached home
+    uncoated as before)."""
+    s, tick, n = _sim_world(B250, {})
+    assert s._cfg.egress_dest_durable_h == 8.0
+    assert s._cfg.route_margin_egress_ramp == 1.0 / 3.0
+    rows = []
+    st = None
+    for _ in range(n):
+        st = tick()
+        rows += st["crew_overruns"]
+    assert rows == []
+    assert st["scoreboard"]["served"] >= 35
 
 
 def _slow_begin(monkeypatch, factor):
@@ -349,8 +375,8 @@ def test_armed_the_b340_crews_stay_on_the_map():
     crew works the homes whose way out ends in the dead end 36's last exit
     leaves — none leaves the map and none drives through the band in its 14
     ticks (with the law off all three crews leave the map at 2.75 h; the
-    fresh-fire set, 12 h: 3 -> 0 crews off the map, 12 -> 11 reached homes
-    uncoated)."""
+    fresh-fire set, 12 h: 3 -> 0 crews off the map, and 12 -> 11 reached
+    homes uncoated with the law alone, 12 -> 9 with the ramp armed too)."""
     s = _hold("beaver_creek_co", 340.0, 5000.0, 340.0, "high", {})
     assert s._cfg.egress_dest_durable_h == 8.0
     rows = []
@@ -361,19 +387,24 @@ def test_armed_the_b340_crews_stay_on_the_map():
     assert rows == []
 
 
-def test_armed_the_paradise_crown_fire_repro():
+@pytest.mark.parametrize("ramp", ["off", "armed"])
+def test_armed_the_paradise_crown_fire_repro(ramp):
     """tests/test_simui.py's founder repro under the crown fire (extended
-    Paradise, 64 homes, 5 crews, 180 ticks) with the simulator's defaults:
-    no crew is ever idle on burned ground — hot or old black — none drives
-    through the band, no violation, none off the map (measured: 25 homes;
-    with the law off, 26 homes, the crown fire drives crews onto old black
-    for 51 idle crew-ticks — the legacy test's control — and sim-g3 through
-    the band at tick 130, 1,346 min past the line)."""
+    Paradise, 64 homes, 5 crews, 180 ticks) with the law armed — alone (37's
+    ramp off, as commit 03dd325 armed it) and with the simulator's defaults
+    since the founder's call of 2026-10-23 (the ramp armed too): no crew is
+    ever idle on burned ground — hot or old black — none drives through
+    the band, no violation, none off the map (ratchets: measured 25 homes
+    alone, 24 with the ramp; with the law off, 26 homes, the crown fire
+    drives crews onto old black for 51 idle crew-ticks — the legacy test's
+    control — and sim-g3 through the band at tick 130, 1,346 min past the
+    line)."""
     from tests.test_simui import LEGACY_WX, _idle_crews_in_burn
     if not (simui.DEFAULT_TILE_DIR / "paradise_ca_ext.wgt").exists():
         pytest.skip("LOUD SKIP: no data/tiles/paradise_ca_ext.wgt")
+    cfg = dict(LEGACY_WX, **(LAW_ALONE if ramp == "off" else {}))
     s = simui.SimSession("paradise_ca", 64, 5, seed="caught-1",
-                         fire_zone="extended", cfg_overrides=dict(LEGACY_WX))
+                         fire_zone="extended", cfg_overrides=cfg)
     assert s._cfg.egress_dest_durable_h == 8.0
     s.ignite(39.83, -121.52, intensity="extreme")
     st = None
@@ -383,17 +414,20 @@ def test_armed_the_paradise_crown_fire_repro():
         assert st["crew_overruns"] == [], st["tick"]
     assert st["scoreboard"]["violations"] == 0
     assert not s._left_map
-    assert st["scoreboard"]["served"] >= 25          # ratchet (measured 25)
+    assert st["scoreboard"]["served"] >= (25 if ramp == "off" else 24)
 
 
 def test_armed_glenwood_needs_no_area_escape():
     """tests/test_sim_escape_roads.py's Glenwood scenario (40 homes, 6
     in-zone crews and two reinforcements, HIGH 7 km upwind, its physics and
     dispatch pins) with the simulator's defaults: in its 8 ticks no crew
-    needs an area escape (with the law off three crews flee on road escapes
-    at tick 2), none relocates and none drives through the band — the law
-    skips the homes whose crews would have had to flee (measured: 7 homes
-    in the 8 ticks, 11 with the law off)."""
+    needs an area escape, none relocates and none drives through the band —
+    the law skips the homes whose crews would have had to flee (measured: 7
+    homes in the 8 ticks, with 37's ramp armed or not; with the law off,
+    three crews flee on road escapes at tick 2 and 11 homes are coated —
+    the ramp off — or four at ticks 2-3, two of them then 1.1 min inside
+    the band, and 9 homes — the ramp armed, the legacy test's world since
+    the founder's call of 2026-10-23)."""
     key = "glenwood_springs_co"
     if not (simui.DEFAULT_TILE_DIR / f"{key}.wgt").exists() or not (
             simui.DEFAULT_TILE_DIR.parent / "roads" / f"{key}.wgr").exists():
