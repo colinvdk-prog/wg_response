@@ -311,8 +311,11 @@ def test_a_withdrawal_egress_is_judged_from_the_stop(tmp_path, armed):
     """A safety withdrawal mid-route: the adopted zone (east) lies across the
     band. Armed: the leg from the stop, now, is not lawful, so the crew is
     sent to the lawful west zone — said loudly. Off: it drives east, into the
-    band (the legacy behaviour the Malibu overruns came from)."""
-    s = _judged_session(tmp_path, crew_egress_judged=armed)
+    band (the legacy behaviour the Malibu overruns came from). SEMANTICS 28
+    (2026-10-21) pinned off: its durable-egress rule settles the target
+    first (west too, its own note) — the subject here is the 20b law."""
+    s = _judged_session(tmp_path, crew_egress_judged=armed,
+                        egress_durable_min_h=0.0)
     _band_toward_za(s)
     cs = _deploying_at_centre(s)
     lead = s._judge_lead_s()
@@ -471,7 +474,22 @@ OFF = {"corridor_cell_exact": False, "crew_egress_judged": False,
        # goldens: tests/test_crew_path_audit.py, tests/test_keep_frozen.py,
        # tests/test_ingress_exact.py)
        "crew_path_audit": False, "dispatch_keep_frozen": False,
-       "plan_route_exact": False, "crew_ingress_judged": False}
+       "plan_route_exact": False, "crew_ingress_judged": False,
+       # ... and the iteration-2 knobs (SAFETY SEMANTICS 28-33, 2026-10-21):
+       # the goldens predate them too (their own: tests/test_crew_pocket.py,
+       # test_egress_guard.py, test_stage_by_need.py, test_egress_margin.py)
+       "egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
+       "egress_corridor_guard": False, "reinforce_stage_by_need": False,
+       "idle_restage": False, "route_margin_egress_roads_min": 0.0,
+       "escape_pocket_exit": False, "plan_egress_time_deadline": False,
+       "crew_overrun_ledger": False,
+       # ... and the iteration-3 knobs (SAFETY SEMANTICS 34-35)
+       "sim_far_side_zones": False, "reinforce_entry_by_need": False,
+       "ember_eta_landings": False,
+       # ... and the iteration-4 laws (SAFETY SEMANTICS 36-37)
+       "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0,
+       # ... and the iteration-5 law (SAFETY SEMANTICS 38)
+       "egress_dest_durable_h": 0.0}
 
 #: sha256(state minus cmd_log)[:16] per tick, computed on 8973cd9
 GOLDEN_MALIBU = ["9ef10b49b9e37515", "00776b4a801c205d", "ae4d5f0d648277d2",
@@ -583,7 +601,14 @@ REPRODUCED = [
 
 @pytest.mark.parametrize("key,intensity,profile,grass_only,ticks", REPRODUCED)
 def test_reproduced_overrun_is_gone(key, intensity, profile, grass_only, ticks):
-    s = _one_click(key, intensity, profile, grass_only)
+    # SEMANTICS 28d (the pocket exit, 2026-10-21) pinned off: in the Glenwood
+    # extreme generic world it takes sim-g2 out of its pocket at once — a row
+    # at tick 2, 17.9 min past the line, for the 92.9-min one at tick 7 this
+    # window never reaches (tests/test_crew_pocket.py::test_glenwood_pocket_
+    # exit_trades_a_deep_late_row_for_a_shallow_early_one); the law here is
+    # 20a / 20b's
+    s = _one_click(key, intensity, profile, grass_only,
+                   escape_pocket_exit=False)
     assert s._cfg.corridor_cell_exact and s._cfg.crew_egress_judged
     for _ in range(ticks):
         st = s.tick()

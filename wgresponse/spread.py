@@ -589,7 +589,8 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     spot_trace: list = None,
                     kept_anchor: dict = None,
                     anchor_log: dict = None,
-                    crown_trace: dict = None) -> Raster:
+                    crown_trace: dict = None,
+                    land_log: list = None) -> Raster:
     """Fire arrival-time raster (absolute unix SECONDS per cell; UNREACHED=inf).
 
     CROWN FIRE (cfg.crown_fire, contracts SAFETY SEMANTICS 22; default OFF
@@ -740,6 +741,14 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     burnable, non-final cell inside the horizon (recorded,
                     never read — the next re-anchor picks the ones in flight
                     out of it). Inert with spotting off.
+
+    land_log (EMBER ETA, contracts ember_eta_landings, SAFETY SEMANTICS 35;
+    default None => byte-identical): a list receiving (landing index, thrown
+    unix s, landing unix s) for EVERY ember this solve lands inside the
+    horizon — on a developed or water cell too, where nothing ignites (the
+    ember_log keeps only burnable landings). Recorded, never read: the
+    arrival raster, the ROS memo and every label are unchanged. Inert with
+    spotting off.
 
     seed_spotting (RE-ANCHOR SEAM, simulator wind-dial finding 2026-09-25):
     True (default) = every burning cell, ignition seeds included, owns its one
@@ -1951,6 +1960,14 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     if spot_trace is not None:
                         land_rec = nidx
                         t_rec = t_v
+                    if land_log is not None and t_v <= horizon_end_s:
+                        # EMBER ETA (contracts ember_eta_landings, SAFETY
+                        # SEMANTICS 35): EVERY landing inside the horizon —
+                        # a developed or water cell included, where nothing
+                        # ignites — is recorded (landing index, thrown s,
+                        # landing s); recorded, never read here: the
+                        # spread is unchanged
+                        land_log.append((nidx, t_u, t_v))
                     if ember_log is not None and fuel_of[nidx] is not None \
                             and t_v <= horizon_end_s \
                             and not (final is not None and final[nidx]):
@@ -2163,7 +2180,8 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                      member_hour_scale=None,
                      weather_field=None,
                      kept_anchor: dict = None,
-                     anchor_log: dict = None) -> EnsembleArrival:
+                     anchor_log: dict = None,
+                     land_log: list = None) -> EnsembleArrival:
     """Ensemble v2 (Sprint 2 ticket A4, Council-1 model F2+F6): nominal member
     (k=0, unperturbed) + (cfg.ensemble_n - 1) perturbed members, plus per-cell
     p10/p50/p90 quantile rasters (unix seconds; p10 = EARLIEST/pessimistic).
@@ -2243,6 +2261,11 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     own weather), anchor_log to the NOMINAL member only (like ember_log —
     the truth's anchors are what a later re-anchor carries).
 
+    land_log (EMBER ETA, contracts ember_eta_landings, SAFETY SEMANTICS 35;
+    default None = byte-identical) goes to the NOMINAL member only: every
+    ember the truth lands inside the horizon (compute_arrival). The caller
+    turns it into the field's first-landing raster (attach_ember_landings).
+
     NOTE: ensemble_n counts TOTAL members (nominal + n-1 perturbed), so
     ensemble_n=1 is nominal-only, matching the v1 convention the suite pins;
     contracts' config comment reads it as perturbed-count — the discrepancy
@@ -2271,6 +2294,10 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     nom_kw = dict(aa_kw)
     if anchor_log is not None:
         nom_kw["anchor_log"] = anchor_log
+    if land_log is not None:
+        # EMBER ETA (SAFETY SEMANTICS 35): the NOMINAL member's landings —
+        # the truth's embers, like ember_log (absent => no keyword)
+        nom_kw["land_log"] = land_log
     nom_args = dict(perimeter=perimeter, perimeter_at_s=perimeter_at_s,
                     incident_id=incident_id, member_k=0,
                     seed_spotting=seed_spotting, kept=kept,
@@ -2380,6 +2407,53 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
 # the EnsembleArrival instance (a plain dataclass, no __slots__): the eroded
 # quantile rasters for a given radius, computed once per (ensemble, radius).
 _EMBER_ERODE_ATTR = "_ember_erode_cache"
+# EMBER ETA (contracts ember_eta_landings, SAFETY SEMANTICS 35): the field's
+# FIRST EMBER LANDING per cell (a Raster, unix s; UNREACHED where none lands)
+# attached to the EnsembleArrival by attach_ember_landings, and its eroded
+# copies per radius. Absent (the default) = eta_at byte-identical.
+_LANDING_ATTR = "_ember_landings"
+_LANDING_ERODE_ATTR = "_ember_landing_erode_cache"
+
+
+def attach_ember_landings(ens: EnsembleArrival, landings: Raster) -> None:
+    """EMBER ETA (contracts ember_eta_landings, SAFETY SEMANTICS 35): attach
+    the field's first-ember-landing raster (unix s per cell, UNREACHED where
+    no ember lands within the horizon) to `ens`, so eta_at's law-6 fallback
+    takes the earlier of the front within the radius and the first landing
+    within it. The arrival rasters are untouched."""
+    if landings.spec != ens.spec:
+        raise ValueError("ember landing raster is not the ensemble's grid")
+    setattr(ens, _LANDING_ATTR, landings)
+    setattr(ens, _LANDING_ERODE_ATTR, {})
+
+
+def ember_landing_raster(spec, landings) -> Raster:
+    """EMBER ETA: the first-landing Raster of (index, thrown s, landing s)
+    triples — per cell the earliest landing; UNREACHED elsewhere."""
+    data = [UNREACHED] * (spec.nrows * spec.ncols)
+    for idx, _thrown, t in landings:
+        i = int(idx)
+        if t < data[i]:
+            data[i] = t
+    return Raster(spec, data)
+
+
+def _landing_eroded(ens: EnsembleArrival, radius_m: float):
+    """EMBER ETA: the attached first-landing raster through geo.erode_min at
+    `radius_m` (the earliest landing within the radius), memoised on `ens`
+    per radius; None when no landing raster is attached."""
+    land = getattr(ens, _LANDING_ATTR, None)
+    if land is None:
+        return None
+    cache = getattr(ens, _LANDING_ERODE_ATTR, None)
+    if cache is None:
+        cache = {}
+        setattr(ens, _LANDING_ERODE_ATTR, cache)
+    er = cache.get(radius_m)
+    if er is None:
+        er = geo.erode_min(land, radius_m)
+        cache[radius_m] = er
+    return er
 
 
 def tiered_eroded_p10(p10, fuel, cfg, canopy=None):
@@ -2532,7 +2606,14 @@ def eta_at(ens: EnsembleArrival, loc: LatLon,
     wins (the fallback fires only when the own cell is UNREACHED), so burnable
     clients are byte-identical with or without the fallback. The eroded rasters
     are memoised on `ens` per radius (see _ember_eroded), which also preserves
-    p10 <= p50 <= p90."""
+    p10 <= p50 <= p90.
+
+    EMBER ETA (contracts ember_eta_landings, SAFETY SEMANTICS 35): when the
+    caller attached the field's first-ember-landing raster
+    (attach_ember_landings), the fallback takes the EARLIER of the front
+    within the radius and the first ember landing within it — one time for
+    every quantile (a min with a common value keeps the ordering). Nothing
+    attached (the default, the live path) = byte-identical."""
     def _sample(raster: Raster) -> float:
         v = geo.raster_sample(raster, loc)
         return UNREACHED if v is None else v
@@ -2549,5 +2630,20 @@ def eta_at(ens: EnsembleArrival, loc: LatLon,
         p10 = _sample(er10)
         p50 = _sample(er50)
         p90 = _sample(er90)
+        # EMBER ETA (contracts ember_eta_landings, SAFETY SEMANTICS 35): the
+        # first ember landing within the radius, when it comes before the
+        # front — a developed home an ember lands next to is threatened
+        # then (attached only with the knob on: absent = byte-identical).
+        # One time for every quantile: min with a common value keeps
+        # p10 <= p50 <= p90.
+        land = _landing_eroded(ens, fallback_radius_m)
+        if land is not None:
+            t_land = _sample(land)
+            if t_land < p10:
+                p10 = t_land
+            if t_land < p50:
+                p50 = t_land
+            if t_land < p90:
+                p90 = t_land
 
     return ThreatEta(eta_p10_s=p10, eta_p50_s=p50, eta_p90_s=p90)

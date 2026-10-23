@@ -509,6 +509,32 @@ def test_real_session_where_crews_leave_replays_from_its_command_log():
                                   # tick 10, not 27 — and none flees off
                                   # the map)
                                   "dispatch_keep_frozen": False,
+                                  # ... and the iteration-2 crew-safety law
+                                  # (SAFETY SEMANTICS 28-33, 2026-10-21:
+                                  # durable egress, the last-exit trigger and
+                                  # restaging keep these crews on the map)
+                                  "egress_durable_min_h": 0.0,
+                                  "escape_last_exit_lead_min": 0.0,
+                                  "egress_corridor_guard": False,
+                                  "reinforce_stage_by_need": False,
+                                  "idle_restage": False,
+                                  "route_margin_egress_roads_min": 0.0,
+                                  "escape_pocket_exit": False,
+                                  "plan_egress_time_deadline": False,
+                                  "crew_overrun_ledger": False,
+                                  "sim_far_side_zones": False,
+                                  "reinforce_entry_by_need": False,
+                                  "ember_eta_landings": False,
+                                  # ... and the iteration-4 law (SAFETY
+                                  # SEMANTICS 36-37, 2026-10-21: a refuge off
+                                  # the map is the last exit — no crew
+                                  # decamps beyond the edge, the situation
+                                  # under test)
+                                  "escape_refuge_on_map": False,
+                                  "route_margin_egress_ramp": 0.0,
+                                  # ... and the iteration-5 law
+                                  # (SAFETY SEMANTICS 38)
+                                  "egress_dest_durable_h": 0.0,
                                   "dispatch_late_shift": True,
                                   "dispatch_plan_on_roads": True,
                                   "dispatch_hold_h": 24.0, "deploy_min": 15.0,

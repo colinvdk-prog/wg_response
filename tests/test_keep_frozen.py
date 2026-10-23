@@ -34,8 +34,26 @@ from wgresponse.contracts import (CrewPlan, DispatchPlan, PlannedStop,
 from tests.test_dispatch import (NOW, _dup_client_jobs, _fingerprint, cc,
                                  make_crew, spec20)
 
+#: ... and the iteration-2 knobs (SAFETY SEMANTICS 28-33, 2026-10-21), armed
+#: by the simulator since: this file's goldens and derivations predate
+#: them too (their own goldens and armed behaviour: tests/test_crew_pocket.
+#: py, test_egress_guard.py, test_stage_by_need.py, test_egress_margin.py)
+ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
+             "egress_corridor_guard": False,
+             "reinforce_stage_by_need": False, "idle_restage": False,
+             "route_margin_egress_roads_min": 0.0,
+             "escape_pocket_exit": False, "plan_egress_time_deadline": False,
+             "crew_overrun_ledger": False,
+             # ... and the iteration-3 knobs (SAFETY SEMANTICS 34-35)
+             "sim_far_side_zones": False, "reinforce_entry_by_need": False,
+             "ember_eta_landings": False,
+             # ... and the iteration-4 laws (SAFETY SEMANTICS 36-37)
+             "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0,
+             # ... and the iteration-5 law (SAFETY SEMANTICS 38)
+             "egress_dest_durable_h": 0.0}
 ITER1_OFF = {"crew_path_audit": False, "dispatch_keep_frozen": False,
-             "plan_route_exact": False, "crew_ingress_judged": False}
+             "plan_route_exact": False, "crew_ingress_judged": False,
+             **ITER2_OFF}
 FROZEN_ONLY = dict(ITER1_OFF, dispatch_keep_frozen=True)
 
 
