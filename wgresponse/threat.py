@@ -381,6 +381,21 @@ def _acres_by_source(inc: FireIncident) -> dict:
     return out
 
 
+def _colocated_note(merges: list) -> str:
+    """The cycle note for the unions co-located fusion made this cycle
+    (SAFETY SEMANTICS 24d: nothing merges silently) — every union's
+    surviving id and name, the incidents it merged and the evidence."""
+    parts = []
+    for m in merges:
+        merged = ", ".join(f"{iid} ({name})" for iid, name
+                           in zip(m["merged"], m["names"]))
+        parts.append(f"{m['incident_id']} '{m['name']}' <- {merged} "
+                     f"[{'+'.join(m['evidence'])}]")
+    return (f"co-located fusion merged {len(merges)} duplicate incident "
+            f"group(s) into one fire each (SAFETY SEMANTICS 24): "
+            + "; ".join(parts))
+
+
 class _ProviderFailure(RuntimeError):
     """A tagged external-provider failure inside one incident assessment.
 
@@ -1045,6 +1060,12 @@ class ThreatMonitor:
         Fusion uses wgresponse.feeds.fuse_incidents (lazy import — the sibling
         may be mid-build); on any fusion failure it degrades to keeping the
         freshest incident per incident_id and notes the degradation.
+
+        CO-LOCATED FUSION (cfg.fuse_colocated_incidents, contracts SAFETY
+        SEMANTICS 24): the call carries the config and this cycle's clock
+        (the pass only joins groups the staleness gate keeps) and every
+        union it makes is one cycle note. Knob off = the legacy one-argument
+        call, byte-identical.
         """
         batches = []
         healthy = True
@@ -1081,6 +1102,13 @@ class ThreatMonitor:
             return [], healthy
         try:
             from wgresponse.feeds import fuse_incidents
+            if getattr(self._cfg, "fuse_colocated_incidents", False):
+                merges: list = []
+                fused = list(fuse_incidents(batches, cfg=self._cfg,
+                                            now_s=now_s, merges=merges))
+                if merges:
+                    notes.append(_colocated_note(merges))
+                return fused, healthy
             return list(fuse_incidents(batches)), healthy
         except Exception as exc:
             notes.append(f"incident fusion degraded to id-dedupe ({exc})")

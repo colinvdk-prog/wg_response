@@ -178,6 +178,18 @@ py -3 -m wgresponse.cli watch --aoi data/aoi_conus.json --registry mock-presets 
 #                               fire's last plausible one (remembered 72 h,
 #                               in-process). Measured in
 #                               docs/review/feed_sanity_2026-09-27.md.
+# 5d''. ONE FIRE, ONE INCIDENT ACROSS FEEDS (SAFETY SEMANTICS 24, 2026-10-15;
+#     default OFF, add to either command above):
+#       --fuse-colocated        a FIRIS row named only by its mission
+#                               designator ('CA-LAC-BIKE-N50X') joins the fire
+#                               of that name within 5 km, and two feeds'
+#                               incidents within 2 km reporting the same size
+#                               (within 10 %, both >= 10 acres) join — only
+#                               when their times overlap (24 h) and the
+#                               staleness gate keeps both. One domain, one
+#                               alert stream, every source listed; each merge
+#                               is a cycle note. Measured with
+#                               scratch_review/colocated/count_live.py.
 # 5e. SPREAD READS THE LOCAL WEATHER FORECAST (SAFETY SEMANTICS 17, founder
 #     2026-09-27: "ensure that fire spread includes local weather forecast";
 #     default OFF, add to either command above):
@@ -243,7 +255,7 @@ py -3 -m pip install -r requirements.txt   # tifffile + numpy + imagecodecs (+ b
 | `wgresponse.fuels` | FBFM40 fuel-model table (Scott & Burgan RMRS-GTR-153), burnability, Simard dead-fuel moisture, live-moisture season defaults. |
 | `wgresponse.rothermel` | Rothermel/Albini surface ROS, wind adjustment factor, Anderson (1983) ellipse L/B, directional ROS. Imperial units internal only. |
 | `wgresponse.spread` | Time-dependent 16-neighbor MTT Dijkstra arrival grids, ensemble perturbation, per-location `ThreatEta` lookup. |
-| `wgresponse.feeds` | WFIGS / FIRIS / CAL FIRE / FIRMS adapters + Watch Duty Enterprise stub + deterministic mock; IRWIN-id fusion. |
+| `wgresponse.feeds` | WFIGS / FIRIS / CAL FIRE / FIRMS adapters + Watch Duty Enterprise stub + deterministic mock; IRWIN-id fusion (+ co-located fusion under `fuse_colocated_incidents`, SAFETY SEMANTICS 24). |
 | `wgresponse.weather` | NWS gridpoint + Open-Meteo adapters + mock (`WeatherProvider` protocol). |
 | `wgresponse.terrain` | LANDFIRE LFPS job-API tiles + synthetic terrain; dependency-free ASCII tile cache. |
 | `wgresponse.clients` | `DynamoClientRegistry` (wg-consumer-profiles) + mock registry + `preset_client_registry` (the watch daemon's `--registry mock-presets`: N demo homes on every simulator preset via the simulator's own WUI placement). |
@@ -492,6 +504,18 @@ The 2026-09-27 audit of the live feed path the belief learns from (`wgresponse.f
 | `feed_sanity_restamp_frac` | 0.001 | A polygon within this fraction of the last observed polygon's area is the same capture re-issued: 216 of the 295 history windows with an unchanged `poly_PolygonDateTime` changed by less than 0.1 %. |
 | `feed_sanity_drop_z` | 3.0 | A size (either series; and the seed vs its memory) this many sd of the difference below the last one is a drop, not a re-measurement, under the belief's own area error (`fire_belief_area_rel_err` / `_abs_err_acres`). History: genuine IncidentSize drops ≤ 6.4 % (≤ 1.6 sd); resets −43 % to −96 % (≥ 12 sd). |
 | `feed_sanity_memory_h` | 72.0 | How long the seed side remembers a fire's last plausible polygon after last seeing it (the longest measured collapse lasted ~48 h). In-process: a restart forgets it. |
+
+### One fire, one incident across feeds (SAFETY SEMANTICS 24 — `scratch_review/colocated/`)
+
+The live watcher (world13, 2026-10-14) solved the Bike Fire twice: FIRIS row 1504 `CA-LAC-BIKE-N50X` (171.497 acres) and WFIGS IRWIN `aa44e04e…` "Bike Fire" (171.5 acres, 819 m away) fused as two incidents — two domains, two spread solves a cycle (348 s and 265 s), two alert streams per client. Cause: the FIRIS layer has no IRWIN field, and a row without `incident_name` (132 of 477 rows on 2026-10-15) is named by its mission designator, STATE-UNIT-NAME[-AIRCRAFT], which the name join never reduces to the fire's name — both joins miss by design, not by threshold. On the recorded CONUS pulls the knob merges 4 duplicate pairs among the 207 incidents the staleness gate keeps on 2026-10-15 (Bike, Marshall, Surgone, Cyrus) and 5 among 252 on 2026-09-27 (Timber, Dome, Juniper) — every one a FIRIS designator row of a fire another record reports — and nothing else (`scratch_review/colocated/count_live.py`). Every knob OFF = byte-identical engine; the watch daemon arms it with `--fuse-colocated`.
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `fuse_colocated_incidents` | False | ONE FIRE IS ONE INCIDENT ACROSS FEEDS. True = after the legacy IRWIN / name joins (untouched) a second pass unions the legacy groups that are one fire: (a) a FIRIS member's designator name (`CA-LAC-BIKE-N50X` → BIKE) is a member name of the other group, the two within the name join's 5 km; or (b) the two groups' fused incidents lie within `fuse_colocated_max_m`, report the same size within `fuse_colocated_size_tol_frac` (both at least `fuse_colocated_min_acres`) and no feed reports both (a feed's own two records are two fires). Both need the records' time windows ([discovered, else updated; updated]) to overlap within `fuse_colocated_time_tol_h` (a polygon older than the other fire's discovery is another fire: FIRIS keeps rows for months), and only active, unseeded groups the SEMANTICS 9 gate keeps take part (a merge never revives a gated polygon). A union is merged exactly as one legacy group (newest record per field, the perimeter owner's own time); its id is the legacy canonical id over its non-designator groups, so a designator-only flight never renames the fire it joins; every union is a cycle note. Default OFF = byte-identical; watch `--fuse-colocated`. |
+| `fuse_colocated_max_m` | 2000.0 | (b) The two incidents' representative points at most this far apart (m). Within (0, 5000]. The reported pair: 819 m on 2026-10-14. |
+| `fuse_colocated_size_tol_frac` | 0.1 | (b) "Same size": \|a − b\| <= this × the larger. The reported pair: 171.5 vs 171.497 acres. Within [0, 0.5]. |
+| `fuse_colocated_min_acres` | 10.0 | (b) Both sizes at least this: WFIGS's 0.01 / 0.1-acre placeholders say nothing about identity (two distinct WFIGS starts 174 m apart read 0.13 / 0.14 acres). |
+| `fuse_colocated_time_tol_h` | 24.0 | (a) + (b) The two records' time windows overlap within this many hours (reporting delays, time-zone slips). Within [0, `incident_stale_h`]. |
 
 ### Simulator city weather (2026-10-09)
 

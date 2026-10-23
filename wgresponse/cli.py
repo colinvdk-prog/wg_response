@@ -306,6 +306,16 @@ def _build_parser() -> argparse.ArgumentParser:
                          "that report instead of being spread forward from "
                          "its own age; a growing fire (record larger) keeps "
                          "the legacy seeding")
+    # SAFETY SEMANTICS 24 (2026-10-15): default-OFF knob.
+    pw.add_argument("--fuse-colocated", action="store_true",
+                    help="cfg.fuse_colocated_incidents: one fire is one "
+                         "incident across feeds — a FIRIS row named only by "
+                         "its mission designator ('CA-LAC-BIKE-N50X') joins "
+                         "the fire of that name within 5 km, and two feeds' "
+                         "incidents within 2 km reporting the same size "
+                         "(within 10%%, both >= 10 acres) join, when their "
+                         "times overlap (24 h) and the staleness gate keeps "
+                         "both; every merge is a cycle note")
     # SAFETY SEMANTICS 15 (founder rule 2026-09-27): default-OFF knob.
     pw.add_argument("--offmap-per-fire", action="store_true",
                     help="cfg.corridor_offraster_per_fire + "
@@ -929,6 +939,32 @@ def _fire_belief_notes(args) -> list:
             "perimeter's growth beyond its measured re-mapping noise and "
             "flags two consecutive rapid windows (docs/FIRE_BELIEF.md 'v2')")
     return notes
+
+
+def _fuse_colocated_cfg(cfg, args):
+    """cfg with --fuse-colocated applied (SAFETY SEMANTICS 24); unchanged
+    without the flag."""
+    if getattr(args, "fuse_colocated", False):
+        return dataclasses.replace(cfg, fuse_colocated_incidents=True)
+    return cfg
+
+
+def _fuse_colocated_notes(cfg) -> list:
+    """The startup note for cfg.fuse_colocated_incidents (SAFETY SEMANTICS
+    24); [] when off."""
+    if not getattr(cfg, "fuse_colocated_incidents", False):
+        return []
+    return [
+        "ONE FIRE, ONE INCIDENT ACROSS FEEDS: after the IRWIN / name joins, "
+        "a FIRIS row named only by its mission designator ('CA-LAC-BIKE-"
+        "N50X' -> BIKE) joins the fire of that name within 5 km, and two "
+        "feeds' incidents within "
+        f"{cfg.fuse_colocated_max_m:g} m reporting the same size (within "
+        f"{cfg.fuse_colocated_size_tol_frac:.0%}, both >= "
+        f"{cfg.fuse_colocated_min_acres:g} acres) join — only when their "
+        f"times overlap (within {cfg.fuse_colocated_time_tol_h:g} h) and the "
+        f"staleness gate ({cfg.incident_stale_h:g} h) keeps both; each merge "
+        "is a cycle note — SAFETY SEMANTICS 24"]
 
 
 def _feed_sanity_cfg(cfg, args):
@@ -1825,6 +1861,8 @@ def _cmd_watch(args) -> int:
     cfg = _fire_belief_cfg(cfg, args)       # SEMANTICS 14 (apply => track)
     cfg = _feed_sanity_cfg(cfg, args)       # SEMANTICS 18
     startup_notes_fix += _feed_sanity_notes(cfg)
+    cfg = _fuse_colocated_cfg(cfg, args)    # SEMANTICS 24
+    startup_notes_fix += _fuse_colocated_notes(cfg)
     if getattr(args, "weather_grid_km", 0.0):
         cfg = dataclasses.replace(
             cfg, weather_grid_km=float(args.weather_grid_km))

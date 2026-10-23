@@ -1057,6 +1057,68 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    (pinned in tests/test_crew_work_judged.py against goldens computed on
    commit 3dd341a, before this rule, on worlds where it bites); the
    SIMULATOR arms it (explicit override wins).
+24. ONE FIRE IS ONE INCIDENT ACROSS FEEDS (2026-10-15; the integrator's
+   live-watcher finding of 2026-10-14; cfg.fuse_colocated_incidents,
+   default OFF; watch --fuse-colocated; scratch_review/colocated/). The
+   live watcher (world13) solved the Bike Fire twice: FIRIS row 1504
+   "CA-LAC-BIKE-N50X" (171.497 acres) and WFIGS IRWIN aa44e04e "Bike Fire"
+   (171.5 acres, 819 m away) fused as two incidents — two domains, two
+   spread solves a cycle (348 s and 265 s), two alert streams per client.
+   CAUSE (the FIRIS id scheme, not a threshold): the FIRIS layer carries no
+   IRWIN field at all, and a row without incident_name (132 of 477 rows on
+   2026-10-15) is named by its mission designator, STATE-UNIT-NAME[-
+   AIRCRAFT N-number], which the name join's normalization never reduces
+   to the fire's name — the IRWIN join and the name join both miss. On the
+   recorded CONUS pulls the rule below merges 4 duplicate pairs among the
+   207 incidents the SEMANTICS 9 gate keeps on 2026-10-15 (Bike, Marshall,
+   Surgone, Cyrus) and 5 among 252 on 2026-09-27 (Timber and Dome twice
+   each, Juniper) — every one a FIRIS designator row of a fire another
+   record already reports — and nothing else. With the knob on, AFTER the
+   legacy grouping (IRWIN, then a shared name within 5 km — untouched), a
+   second pass unions the legacy groups that are one fire:
+   (a) NAME: a FIRIS member's designator name ('CA-LAC-BIKE-N50X' ->
+       'BIKE'; feeds._firis_designator_name) equals a member's name of the
+       other group under the name join's normalization, the two members'
+       points within the name join's 5 km;
+   (b) SIZE: the two groups' fused incidents lie within
+       fuse_colocated_max_m of each other, report the same size within
+       fuse_colocated_size_tol_frac of the larger, both at least
+       fuse_colocated_min_acres (a 0.1-acre placeholder identifies
+       nothing), and no feed reports both (a feed's own two records are two
+       fires: WFIGS "Schultz Wagon 1" / "2", 174 m apart);
+   and, for (a) and (b) alike, the two records' time windows ([discovered,
+   else updated; updated]) overlap within fuse_colocated_time_tol_h: a
+   polygon from before the other fire was discovered is another fire
+   (FIRIS keeps rows for months — a 100-day-old "CA-ANF-MARTINS-N50X" lies
+   1.1 km from a new start).
+   (c) NEVER A RECORD THE GATE DROPS: only groups whose fused record is
+       active, not seeded (SEMANTICS 12a) and inside cfg.incident_stale_h
+       of the cycle clock (SEMANTICS 9) take part — a merge can never bring
+       a gated polygon back to life.
+   (d) THE MERGE IS THE LEGACY MERGE: a union is merged exactly as one
+       legacy group would be (newest record per field, the perimeter
+       owner's own time, per-source evidence); the pass decides membership
+       only, never splits a legacy group, and a group that joins nothing is
+       its legacy record. The union's id is the legacy canonical id over
+       its ANCHOR members — every group that is not designator-only — so a
+       designator-only flight neither renames the fire it joins nor renames
+       it back when it ages out (arming the knob renames a fire once only
+       where two anchored groups merge; IRWIN wins as always). Nothing is
+       silent: every union goes to fuse_incidents(merges=[...]) and a cycle
+       note.
+   WHAT IT CANNOT DO: a designator spelled unlike its fire ('PANARAMA' for
+   PANORAMA, 'MILEPOST18' for MP18), or a FIRIS-only fire whose flights lie
+   more than the tolerance apart, stays split; the unsized WFIGS "Marshall
+   1" 626 m from CAL FIRE's "Marshall Fire" stays apart (ambiguity keeps
+   both); a big fire whose FIRIS ring-0 centroid lies beyond 5 km of the
+   other records stays split as before (OBS-3) — a duplicate is over-
+   alerting, never silence. The FIRIS adapter's origin is the vertex mean
+   of ring 0, which can be a small outlying ring (the Bike row's ring 0 has
+   14 of its 390 vertices, 1.36 km from WFIGS's point of origin). Knob OFF
+   = byte-identical fusion, cycles, /api/state and persisted state (pinned
+   in tests/test_fuse_colocated.py against goldens computed on commit
+   bf2a868, before this rule, on the recorded payloads and a world where it
+   bites); NOT armed live (the integrator decides).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -1152,6 +1214,13 @@ wgresponse.spread
 wgresponse.feeds
     class WfigsFeed / FirisFeed / CalFireFeed / FirmsFeed / WatchDutyEnterpriseFeed(stub) / MockFireFeed
     fuse_incidents(batches: list[list[FireIncident]]) -> list[FireIncident]   # join on IRWIN id
+    # SAFETY SEMANTICS 24 (2026-10-15): optional cfg / now_s / merges kwargs
+    # (fuse_incidents(batches, cfg=None, now_s=None, merges=None)): with
+    # cfg.fuse_colocated_incidents a second pass unions the legacy groups
+    # that are one fire; now_s (the cycle clock) limits it to groups the
+    # SEMANTICS 9 gate keeps (None = no clock, no group is stale); merges (a
+    # list) receives one dict per union {incident_id, name, merged, names,
+    # evidence}. cfg None or the knob off = byte-identical legacy fusion.
     # Health convention (Sprint 2): every adapter maintains `last_fetch_ok: bool`
     # after each fetch_active call — True iff HTTP + parse succeeded (an empty
     # result with last_fetch_ok=True means genuinely zero incidents; False means
@@ -3199,6 +3268,26 @@ class ResponseConfig:
     feed_sanity_restamp_frac: float = 0.001  # a polygon within this fraction of the last observed one's area is a re-stamp
     feed_sanity_drop_z: float = 3.0          # a size more than z x sd(difference) below the last one is held
     feed_sanity_memory_h: float = 72.0       # the seed remembers a fire's last plausible polygon this long
+    # ONE FIRE, ONE INCIDENT ACROSS FEEDS (SAFETY SEMANTICS 24; the live
+    # watcher on 2026-10-14 fused FIRIS "CA-LAC-BIKE-N50X" and WFIGS "Bike
+    # Fire" — one 171.5-acre fire, 816 m apart — as TWO incidents: two
+    # domains, two spread solves a cycle, two alert streams per client). The
+    # FIRIS layer has no IRWIN field and names a row without incident_name
+    # by its mission designator (STATE-UNIT-NAME-AIRCRAFT), which no name
+    # join matches. True = a second fusion pass unions legacy groups that are
+    # one fire: (a) a FIRIS designator's NAME is the other group's (within
+    # the name join's 5 km), or (b) the two incidents lie within
+    # fuse_colocated_max_m, are the same size within
+    # fuse_colocated_size_tol_frac (both at least fuse_colocated_min_acres)
+    # and no feed reports both — each with time windows overlapping within
+    # fuse_colocated_time_tol_h, each group kept by the SEMANTICS 9 gate.
+    # False = legacy fusion, byte-identical; the watch daemon arms it via
+    # --fuse-colocated.
+    fuse_colocated_incidents: bool = False
+    fuse_colocated_max_m: float = 2000.0         # (b) the two incidents' points at most this far apart
+    fuse_colocated_size_tol_frac: float = 0.10   # (b) |a - b| <= this x the larger size
+    fuse_colocated_min_acres: float = 10.0       # (b) both sizes at least this (placeholder sizes identify nothing)
+    fuse_colocated_time_tol_h: float = 24.0      # (a) + (b) the two records' time windows overlap within this
     # SIMULATOR CITY WEATHER (founder 2026-10-09, verbatim: "change the
     # weather conditions for each city specific"; docs/review/
     # city_weather_2026-10-09.md). Read ONLY by wgresponse.simui (the
@@ -3586,6 +3675,23 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
     if not (math.isfinite(cfg.feed_sanity_memory_h)
             and cfg.feed_sanity_memory_h > 0):
         problems.append("feed_sanity_memory_h must be a finite value > 0")
+    # --- co-located fusion (SAFETY SEMANTICS 24) ---
+    if not (math.isfinite(cfg.fuse_colocated_max_m)
+            and 0.0 < cfg.fuse_colocated_max_m <= 5000.0):
+        problems.append("fuse_colocated_max_m must be within (0, 5000] m "
+                        "(beyond the name join's 5 km two fires are not "
+                        "co-located)")
+    if not (0.0 <= cfg.fuse_colocated_size_tol_frac <= 0.5):
+        problems.append("fuse_colocated_size_tol_frac must be within [0, 0.5] "
+                        "(a wider band calls different fires the same size)")
+    if not (math.isfinite(cfg.fuse_colocated_min_acres)
+            and cfg.fuse_colocated_min_acres >= 0):
+        problems.append("fuse_colocated_min_acres must be a finite value >= 0")
+    if not (math.isfinite(cfg.fuse_colocated_time_tol_h)
+            and 0.0 <= cfg.fuse_colocated_time_tol_h
+            <= cfg.incident_stale_h):
+        problems.append("fuse_colocated_time_tol_h must be within [0, "
+                        "incident_stale_h]")
     if cfg.sim_weather_profile not in ("generic", "city"):
         problems.append("sim_weather_profile must be 'generic' or 'city'")
 

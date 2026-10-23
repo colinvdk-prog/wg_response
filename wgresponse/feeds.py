@@ -24,6 +24,15 @@ Fusion:
         keeps ONE incident_id across cycles even as sources phase in/out or
         their relative freshness shuffles (alert pairs key on incident_id; an
         id flip is a client-visible rename).
+    fuse_incidents(batches, cfg=cfg, now_s=now_s, merges=[])
+        CO-LOCATED FUSION (contracts SAFETY SEMANTICS 24, default OFF:
+        cfg.fuse_colocated_incidents). The FIRIS layer has no IRWIN field
+        and names a row without incident_name by its mission designator
+        ('CA-LAC-BIKE-N50X'), so the live watcher solved FIRIS's and
+        WFIGS's records of one fire as two incidents. A second pass unions
+        the legacy groups that are one fire — a FIRIS designator's name
+        matches (5 km), or two feeds' incidents within ~2 km report the same
+        size — when their times overlap and the staleness gate keeps both.
 
 Endpoint URLs, field names, and payload shapes are encoded exactly per
 docs/research/fire_feeds.md (live-verified 2026-07-06).
@@ -79,6 +88,7 @@ import io
 import json
 import logging
 import math
+import re
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -903,7 +913,9 @@ _CANONICAL_SOURCE_RANK = {
 }
 
 
-def fuse_incidents(batches: "list[list[FireIncident]]") -> "list[FireIncident]":
+def fuse_incidents(batches: "list[list[FireIncident]]", cfg=None,
+                   now_s: Optional[float] = None,
+                   merges: Optional[list] = None) -> "list[FireIncident]":
     """Fuse per-feed incident batches into one deduplicated list.
 
     Join key: IRWIN id (case-insensitive, brace-stripped); fallback join:
@@ -932,7 +944,14 @@ def fuse_incidents(batches: "list[list[FireIncident]]") -> "list[FireIncident]":
     group — it joins nothing and nothing joins it (no IRWIN key, no name
     key), whatever its name or position. The watch monitor unions seeds
     AFTER fusion anyway; this guard keeps any caller that batches them
-    honest. No seeded input = byte-identical fusion."""
+    honest. No seeded input = byte-identical fusion.
+
+    CO-LOCATED FUSION (contracts SAFETY SEMANTICS 24): with a ``cfg`` whose
+    fuse_colocated_incidents is True, the legacy groups above are the
+    input of a second pass (_fuse_colocated) that unions the groups that
+    are one fire; ``now_s`` (the cycle clock) limits it to groups the
+    staleness gate keeps, and ``merges`` (a list) receives one record per
+    union. cfg None or the knob off = the legacy fusion, byte-identical."""
     incidents = [inc for batch in batches for inc in batch]
     groups: "list[list[FireIncident]]" = []
     group_norms: "list[list[str]]" = []      # parallel: normalized member names
@@ -964,9 +983,211 @@ def fuse_incidents(batches: "list[list[FireIncident]]") -> "list[FireIncident]":
             group_norms[gi].append(nm)
         if key is not None:
             by_irwin.setdefault(key, gi)
+    if cfg is not None and getattr(cfg, "fuse_colocated_incidents", False):
+        return _fuse_colocated(incidents, groups, cfg, now_s, merges)
     fused = [_merge_group(g) for g in groups]
     fused.sort(key=lambda i: i.incident_id)
     return fused
+
+
+# ---------------------------------------------------------------------------
+# Co-located fusion (contracts SAFETY SEMANTICS 24)
+# ---------------------------------------------------------------------------
+
+#: A FIRIS mission designator: STATE-UNIT-NAME, optionally -AIRCRAFT (an FAA
+#: N-number). Live FIRIS rows without incident_name carry only this
+#: ('CA-LAC-BIKE-N50X', 'CA-SQF-CYRUS-N5852K', 'CA-KRN-WYLY'); a WFIGS unique
+#: fire id ('2026-CABEU-004557') or a CAL FIRE intel mission ('SANTA-ROSA')
+#: does not match.
+_FIRIS_DESIGNATOR = re.compile(
+    r"^[A-Za-z]{2}-[A-Za-z0-9]{2,5}-(?P<name>.+?)(?:-N[0-9][0-9A-Za-z]{0,4})?$")
+
+
+def _firis_designator_name(inc: FireIncident) -> Optional[str]:
+    """The fire name a FIRIS record's mission designator carries, or None.
+
+    'CA-LAC-BIKE-N50X' -> 'BIKE' (state, unit, name, aircraft); 'CA-KRN-WYLY'
+    -> 'WYLY' (no aircraft). Only FIRIS records, only names of that shape
+    (SAFETY SEMANTICS 24a): a FIRIS row WITH incident_name is named by it
+    ('CYRUS') and is no designator."""
+    if inc.source is not IncidentSource.FIRIS:
+        return None
+    m = _FIRIS_DESIGNATOR.match(str(inc.name or "").strip())
+    return m.group("name") if m else None
+
+
+def _pos_time(v) -> bool:
+    return (isinstance(v, (int, float)) and not isinstance(v, bool)
+            and math.isfinite(v) and v > 0)
+
+
+def _time_window(inc: FireIncident) -> "Optional[tuple]":
+    """(first, last) evidence time of a record, unix s; None without a
+    usable updated_at_s. last = updated_at_s; first = discovered_at_s when
+    it is a positive time no later than last, else last."""
+    last = inc.updated_at_s
+    if not _pos_time(last):
+        return None
+    first = inc.discovered_at_s
+    if not _pos_time(first) or first > last:
+        first = last
+    return float(first), float(last)
+
+
+def _windows_overlap(a: FireIncident, b: FireIncident, tol_s: float) -> bool:
+    """SAFETY SEMANTICS 24: the two records' time windows overlap within
+    tol_s — neither record ends more than tol_s before the other begins (a
+    polygon from before the other fire was discovered is another fire). A
+    record without a usable time is no evidence."""
+    wa, wb = _time_window(a), _time_window(b)
+    if wa is None or wb is None:
+        return False
+    return wa[1] + tol_s >= wb[0] and wb[1] + tol_s >= wa[0]
+
+
+def _same_size(a: FireIncident, b: FireIncident, cfg) -> bool:
+    """SAFETY SEMANTICS 24b: both sizes finite, at least
+    fuse_colocated_min_acres (and positive), within
+    fuse_colocated_size_tol_frac of the larger."""
+    x, y = _maybe_float(a.acreage), _maybe_float(b.acreage)
+    if x is None or y is None or not (math.isfinite(x) and math.isfinite(y)):
+        return False
+    floor = float(cfg.fuse_colocated_min_acres)
+    if x <= 0 or y <= 0 or x < floor or y < floor:
+        return False
+    return abs(x - y) <= float(cfg.fuse_colocated_size_tol_frac) * max(x, y)
+
+
+def _designator_only(group: "list[FireIncident]") -> bool:
+    """A legacy group of FIRIS rows named only by mission designators and
+    carrying no IRWIN id — a mapping product, never the fire's anchor."""
+    return all(_firis_designator_name(m) is not None
+               and _norm_irwin(m.irwin_id) is None for m in group)
+
+
+def _fuse_colocated(incidents: list, groups: list, cfg,
+                    now_s: Optional[float],
+                    merges: Optional[list]) -> "list[FireIncident]":
+    """SAFETY SEMANTICS 24: union the legacy groups that are one fire.
+
+    Eligible groups: the fused (legacy) record is active, no member is
+    seeded (SEMANTICS 12a) and — with a clock — the record is within
+    cfg.incident_stale_h of now_s (the SEMANTICS 9 gate keeps it). Two
+    eligible groups are one fire when, with time windows overlapping within
+    cfg.fuse_colocated_time_tol_h, either
+      (a) NAME: a FIRIS member's designator name normalizes (_norm_name)
+          to the name of a member of the other group, the two members'
+          points within _NAME_JOIN_DIST_M; or
+      (b) SIZE: no feed reports both groups, and their fused records lie
+          within cfg.fuse_colocated_max_m and report the same size
+          (_same_size).
+    Unions are transitive (union-find over the evidence pairs, independent
+    of input order). Each union is merged exactly as one legacy group
+    (_merge_group over its members in input order); its id is the legacy
+    canonical id over its ANCHOR members (the groups that are not
+    _designator_only; all members when every group is). Every other group
+    is its legacy record, untouched. Output sorted by incident_id."""
+    legacy = [_merge_group(g) for g in groups]
+    stale_s = float(cfg.incident_stale_h) * 3600.0
+    tol_s = float(cfg.fuse_colocated_time_tol_h) * 3600.0
+
+    def eligible(gi: int) -> bool:
+        rec = legacy[gi]
+        if not rec.active:
+            return False
+        if any(m.source is IncidentSource.SEEDED
+               or str(m.incident_id).startswith(SEEDED_ID_PREFIX)
+               for m in groups[gi]):
+            return False
+        if now_s is not None and (not _pos_time(rec.updated_at_s)
+                                  or now_s - rec.updated_at_s > stale_s):
+            return False
+        return True
+
+    elig = [gi for gi in range(len(groups)) if eligible(gi)]
+    edges: list = []                         # (gi, gj, 'name' | 'size')
+    # (a) NAME: designator names against member names, bucketed by key
+    by_key: dict = {}
+    for gi in elig:
+        for m in groups[gi]:
+            dn = _firis_designator_name(m)
+            key = _norm_name(dn if dn is not None else m.name)
+            if key:
+                by_key.setdefault(key, []).append((gi, m, dn is not None))
+    for members in by_key.values():
+        for x, (gi, a, a_dn) in enumerate(members):
+            for gj, b, b_dn in members[x + 1:]:
+                if gi == gj or not (a_dn or b_dn):
+                    continue
+                if (_haversine_m(a.origin, b.origin) < _NAME_JOIN_DIST_M
+                        and _windows_overlap(a, b, tol_s)):
+                    edges.append((gi, gj, "name"))
+    # (b) SIZE: the fused records, never two of one feed's own
+    srcs = {gi: frozenset(_source_key(m) for m in groups[gi]) for gi in elig}
+    for x, gi in enumerate(elig):
+        ra = legacy[gi]
+        for gj in elig[x + 1:]:
+            rb = legacy[gj]
+            if srcs[gi] & srcs[gj] or not _same_size(ra, rb, cfg):
+                continue
+            if (_haversine_m(ra.origin, rb.origin) <= cfg.fuse_colocated_max_m
+                    and _windows_overlap(ra, rb, tol_s)):
+                edges.append((gi, gj, "size"))
+
+    parent = {gi: gi for gi in elig}
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for gi, gj, _kind in edges:
+        ri, rj = find(gi), find(gj)
+        if ri != rj:
+            parent[max(ri, rj)] = min(ri, rj)
+    unions: dict = {}
+    for gi in elig:
+        unions.setdefault(find(gi), []).append(gi)
+    root_of = {gi: r for r, gis in unions.items() if len(gis) > 1 for gi in gis}
+    if not root_of:
+        out = list(legacy)
+        out.sort(key=lambda i: i.incident_id)
+        return out
+
+    pos: dict = {}
+    for i, inc in enumerate(incidents):
+        pos.setdefault(id(inc), i)
+    out = []
+    done: set = set()
+    for gi in range(len(groups)):
+        root = root_of.get(gi)
+        if root is None:
+            out.append(legacy[gi])
+            continue
+        if root in done:
+            continue
+        done.add(root)
+        gis = sorted(unions[root])
+        members = sorted((m for j in gis for m in groups[j]),
+                         key=lambda m: pos.get(id(m), 0))
+        fused = _merge_group(members)
+        anchors = [m for j in gis if not _designator_only(groups[j])
+                   for m in groups[j]]
+        fused.incident_id = _canonical_group_id(anchors or members,
+                                                fused.irwin_id)
+        out.append(fused)
+        if merges is not None:
+            merges.append({
+                "incident_id": fused.incident_id,
+                "name": fused.name,
+                "merged": [legacy[j].incident_id for j in gis],
+                "names": [legacy[j].name for j in gis],
+                "evidence": sorted({k for a, _b, k in edges
+                                    if find(a) == root}),
+            })
+    out.sort(key=lambda i: i.incident_id)
+    return out
 
 
 def _canonical_group_id(group: "list[FireIncident]",
