@@ -64,6 +64,7 @@ from typing import Callable, Optional
 
 from .contracts import (BBox, CanopyLayers, GridSpec, Raster, TerrainTile,
                         seeded_rng)
+from . import geo
 from .persist import S3Mirror, mirror_off_status
 
 log = logging.getLogger(__name__)
@@ -425,6 +426,86 @@ def probe_live_decode_deps(import_module: Optional[Callable] = None) -> None:
     if missing:
         raise RuntimeError(
             _LIVE_DECODE_HINT.format(missing="missing: " + ", ".join(missing)))
+
+
+class BundledFallbackTerrain:
+    """TERRAIN FALLBACK (watch --terrain-fallback, 2026-10-28): the live
+    provider first; when it raises, the FINEST bundled tile in tiles_dir
+    (the simulator's cached LFPS tiles, data/tiles/*.wgt — the same LANDFIRE
+    2024 fuel and canopy layers, cached) that covers the whole requested
+    bbox is served instead, at its own grid. Measured 2026-10-28: LFPS
+    answered "Failure determining region from outline map service" for a new
+    fire north of Chico, CA, every cycle, so the fire had no forecast while
+    the bundled Paradise wide tile covered its domain. No covering tile: the
+    live provider's error is raised, as before (fail closed). Each
+    substitution is kept for pop_fallbacks() — the cycle's note. Only each
+    tile's header line is read to index them; at most two tiles are held."""
+
+    def __init__(self, primary, tiles_dir) -> None:
+        self._primary = primary
+        self._dir = str(tiles_dir)
+        self._index = None
+        self._held: dict = {}
+        self._fallbacks: list = []
+
+    def _tiles(self) -> list:
+        """[(cell_m, name, path, nrows, ncols, north, west)], finest first."""
+        if self._index is None:
+            idx = []
+            names = (sorted(os.listdir(self._dir))
+                     if os.path.isdir(self._dir) else [])
+            for name in names:
+                if not name.endswith(".wgt"):
+                    continue
+                path = os.path.join(self._dir, name)
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        head = f.readline().split()
+                    idx.append((float(head[2]), name, path, int(head[0]),
+                                int(head[1]), float(head[3]), float(head[4])))
+                except (OSError, ValueError, IndexError):
+                    continue
+            self._index = sorted(idx)
+        return self._index
+
+    def covering(self, bbox: BBox):
+        """The finest bundled tile covering all of bbox: (name, path) or
+        None. A tile's east edge moves with latitude (GridSpec), so it is
+        checked at both of the bbox's latitudes."""
+        for cell_m, name, path, nrows, ncols, north, west in self._tiles():
+            south = north - nrows * cell_m / geo.M_PER_DEG_LAT
+            if not (bbox.north <= north and bbox.south >= south
+                    and bbox.west >= west):
+                continue
+            east = min(west + ncols * cell_m / geo.m_per_deg_lon(lat)
+                       for lat in (bbox.north, bbox.south))
+            if bbox.east <= east:
+                return name, path
+        return None
+
+    def tile(self, bbox: BBox, cell_m: float) -> TerrainTile:
+        try:
+            return self._primary.tile(bbox, cell_m)
+        except Exception as exc:
+            hit = self.covering(bbox)
+            if hit is None:
+                raise
+            name, path = hit
+            t = self._held.get(path)
+            if t is None:
+                t = load_ascii_tile(path)
+                if len(self._held) >= 2:
+                    self._held.clear()
+                self._held[path] = t
+            log.warning("terrain fallback: %s for %s (live provider: %s)",
+                        name, bbox, exc)
+            self._fallbacks.append((name, str(exc)))
+            return t
+
+    def pop_fallbacks(self) -> list:
+        """[(tile name, live provider error)] since the last call."""
+        out, self._fallbacks = self._fallbacks, []
+        return out
 
 
 class LfpsTerrain:

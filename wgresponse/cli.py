@@ -277,6 +277,21 @@ def _build_parser() -> argparse.ArgumentParser:
                          "tile also fetches the LANDFIRE canopy layers "
                          "(LF2024 CBH;CBD;CC;CH, one more LFPS job per "
                          "domain; docs/review/crown_fire_model_2026-10-12.md)")
+    pw.add_argument("--forecast-tiers", action="store_true",
+                    help="cfg.forecast_tiers (founder 2026-10-28: a "
+                         "graduated level of stale): keep each fire's "
+                         "forecast between cycles and refresh it by tier — "
+                         "clients at watch or above 15 min, growing 60 min, "
+                         "under control (>= 90%% contained, not growing) 6 "
+                         "h — or at once when its geometry or the homes in "
+                         "range change; refreshes of a kept forecast run on "
+                         "a background worker so a slow fire never holds "
+                         "the map")
+    pw.add_argument("--terrain-fallback", action="store_true",
+                    help="when the live LANDFIRE service fails for a domain, "
+                         "use the finest bundled LANDFIRE tile (data/tiles) "
+                         "covering it, noted per fire; no covering tile = "
+                         "the failure stands (fail closed)")
     pw.add_argument("--solver-evals", type=int, default=0,
                     help="cfg.solver_budget_evals: deterministic dispatch "
                          "budget as a consult COUNT (0 = wall clock); the "
@@ -824,12 +839,24 @@ def _watch_terrain(args, state_dir):
     provider = terrain_mod.LfpsTerrain(cache_dir=cache_dir, email=email,
                                        s3_uri=s3_uri,
                                        canopy_layer_list=canopy)
-    return provider, [
+    notes = [
         f"terrain: live LANDFIRE via LFPS (zip+tile cache: {cache_dir}"
         + (f", mirrored to {s3_uri}/terrain/" if s3_uri else "")
         + f"; job email {email} — override with env {_LFPS_EMAIL_ENV})"
         + (f"; canopy layers {canopy} for the crown-fire model"
            if canopy else "")]
+    if getattr(args, "terrain_fallback", False):
+        # TERRAIN FALLBACK (2026-10-28): a domain LANDFIRE fails on spreads
+        # on the finest bundled tile covering it (noted per fire)
+        tiles_dir = Path(__file__).resolve().parent.parent / "data" / "tiles"
+        provider = terrain_mod.BundledFallbackTerrain(provider, tiles_dir)
+        n = len(provider._tiles())
+        notes.append(
+            f"TERRAIN FALLBACK: when the live LANDFIRE service fails for a "
+            f"domain, the finest of {n} bundled LANDFIRE tiles ({tiles_dir}) "
+            f"covering it is used, noted per fire; no covering tile = the "
+            f"failure stands")
+    return provider, notes
 
 
 def _watch_registry(args, aoi, notes=None):
@@ -1408,6 +1435,24 @@ class _WatchDaemon:
                 fld = fields.get(row["incident_id"])
                 row["weather"] = (wxfield.field_row(fld, res.t_s)
                                   if fld is not None else None)
+        if getattr(self._cfg, "forecast_tiers", False):
+            # FORECAST FRESHNESS TIERS (founder 2026-10-28): the rule, each
+            # domain fire's forecast freshness as of NOW (null = no domain
+            # this cycle) and the fires past their tier's limit — additive
+            # keys, present only with the knob armed.
+            from wgresponse import worldview
+            fresh = getattr(res, "freshness", None) or {}
+            out["forecast_tiers"] = worldview.forecast_tiers_rule(self._cfg)
+            stale = []
+            for row in out["incidents"]:
+                f = fresh.get(row["incident_id"])
+                row["forecast"] = (worldview.freshness_row(f, now)
+                                   if f is not None else None)
+                if row["forecast"] and row["forecast"]["stale"]:
+                    stale.append({"incident_id": row["incident_id"],
+                                  "name": row.get("name"),
+                                  **row["forecast"]})
+            out["stale_fires"] = stale
         return out
 
     @classmethod
@@ -1863,6 +1908,20 @@ def _cmd_watch(args) -> int:
     startup_notes_fix += _feed_sanity_notes(cfg)
     cfg = _fuse_colocated_cfg(cfg, args)    # SEMANTICS 24
     startup_notes_fix += _fuse_colocated_notes(cfg)
+    if getattr(args, "forecast_tiers", False):
+        cfg = dataclasses.replace(cfg, forecast_tiers=True)
+        startup_notes_fix.append(
+            f"FORECAST FRESHNESS TIERS (founder 2026-10-28): each fire's "
+            f"forecast is kept between cycles and refreshed by tier — clients "
+            f"at watch or above every {cfg.forecast_stale_threat_min:g} min, "
+            f"growing every {cfg.forecast_stale_growing_min:g} min, under "
+            f"control (>= {cfg.forecast_controlled_containment_pct:g}% "
+            f"contained, not growing) every "
+            f"{cfg.forecast_stale_controlled_min:g} min (each less "
+            f"{cfg.forecast_refresh_margin_min:g} min) — at once when its "
+            f"geometry or the homes in range change; a kept forecast "
+            f"refreshes on a background worker and is served meanwhile, and "
+            f"a fire past its limit is marked stale")
     if getattr(args, "weather_grid_km", 0.0):
         cfg = dataclasses.replace(
             cfg, weather_grid_km=float(args.weather_grid_km))

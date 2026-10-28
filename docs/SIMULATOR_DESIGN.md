@@ -3071,3 +3071,140 @@ since world14. In a later step the page's fire shading (`_fire_visuals`, ~40 ms,
 world14) is now the largest part. The way-out predicate's remaining cost is mostly each new
 stop's first trace to every zone. Memory: geometry only, +4.8 MB a session over 24 ticks at
 Rancho Santa Fe (tracemalloc 29.6 → 34.4 MB).
+
+## The run report (2026-10-27)
+
+The founder, 2026-10-27: *"after simulation create a report - number of homes coated, number
+of homes exposed to fire, number of homes not coated exposed to fire, nearest time between crew
+and fire"*.
+
+**On the page.** A **Report** button sits beside Run / Pause / Step / Reset, and **Pause** on a
+running simulation opens the same dialog once a fire has burned (a checkbox in the dialog turns
+that off, remembered per browser). Four numbers: homes coated (of the homes on the map), homes
+the fire reached, reached homes not coated, and the nearest time between a crew and the fire.
+Under them, one line names the crew, the moment it left the spot (or got there) and the moment
+the fire got there, with **show on map** (rings the spot); then the crews in the fire with the
+safety ledger's counts, and a table of the homes the fire reached (when the fire got there, when
+the home was coated, coated in time or not). The dialog follows the state on screen, so a
+scrubbed tick shows that tick's report. **Download** saves it as one HTML page: the four
+numbers, the details, the reached homes, every coated home with its time, and the definitions.
+
+**Definitions** (`state.report`, `SimSession._report_state`; display only, never read by the
+engine):
+
+- *Coated*: a home in the serviced ledger (a crew finished gelling it); *in time*: gelled
+  before the fire got there.
+- *Reached*: the **actual** fire (each fire's nominal member, the fire the page shades) got to
+  the home's cell. For a home on a cell the fire never reaches (developed or other ground that
+  cannot burn), the earliest arrival within the ember-threat radius (200 m) counts: the window
+  the alerts already use for such homes (FOUNDER ROUND 4 law 6), read on the actual fire. This
+  is not the outcome tags' "impacted", which is the median forecast's arrival.
+- *Nearest time*: after each step's audit, every crew's path that step is read against the
+  actual fire. These are the samples the path audit (SAFETY SEMANTICS 25) judges: each cell the
+  crew drove through, with the moments it entered and left, and each spot it stood at. A spot
+  the fire reached after the crew left gives *ahead* = the fire's arrival minus the crew's last
+  moment there. A spot the fire had reached before the crew got there gives *behind* = the
+  crew's arrival minus the fire's. A spot the fire reached while the crew was there (including
+  a fire lit under it) is *caught*: 0 min, counted, and the safety ledger reports the same crew.
+  The nearest time is 0 if any crew was caught, else the smaller of the closest ahead and the
+  closest behind. A spot still waiting for the fire is re-read when a fire field is replaced (a
+  re-anchor moves only unburned cells).
+
+**Measured.** The founder's run of 2026-10-26 (sim-8: Eagle → Vail corridor tile, a high
+fire south of Beaver Creek, wind from 240°, 83 ticks), replayed from its command log: every
+tick's state minus `report` is byte-identical to the deployed engine's (4bcb7a4) replay. Its
+report: 37 homes, 13 coated, 5 reached by the fire (all 5 coated in time), 0 reached uncoated,
+no crew caught. Nearest time: 48.8 min. GraphGel 1, egressing north on US-24 between Red Cliff
+and Minturn, left the spot at T+ 1h 51m, and the fire got there at T+ 2h 40m. That is the pass
+the founder saw on the map as "a crew crossing the flame"; it was the crew's earlier trail drawn
+over the later fire. The corridor one-click run sim-4 (75 ticks): 40 homes, 26 coated, 7
+reached (all coated in time), nearest time 90.5 min. Cost: 0.7 ms (sim-8) and 1.4 ms (sim-4)
+per later step, about 1 % of a step; 2-6 ms in the first step; about 1,200 spots waiting for
+the fire at the end of each run.
+
+**Tests** (`tests/test_sim_run_report.py`):
+
+- The counts match an independent recomputation (`geo.erode_min` for the ember window, with a
+  developed home among the reached).
+- The nearest time matches a brute-force pass over every spot every crew was at.
+- A fire lit on a placed crew is *caught* (0 min, the crew named, and the safety ledger names
+  the same crew), and the crew then resting on old black is the closest entry behind the fire.
+- `_rpt_settle` classifies each kind of spot.
+- With the bookkeeping switched off, no tick changes.
+- A command-log replay reproduces the report byte for byte.
+- The real page, rendered in headless Chromium, shows the dialog's numbers and table, and Pause
+  on a running simulation opens it.
+
+The golden full-state hashes of the knob-off pins strip the new display-only key, as
+`crew_placement`'s did; every pre-existing key stays pinned byte for byte.
+
+## Coating window and proximity first (2026-10-27)
+
+The founder, 2026-10-27, after the run sim-2 (Eagle → Vail tile, a high fire at East Vail, wind
+from 93°): *"the recent simulator it seems that coating would have occured faster if at least two
+crews continued with the properties in the north east quandrant instead of only one. find the
+rationale"*, then *"in the engine, I do not want homes coated more than 12 hours in advance, as long
+as there is sufficient crew capacity to coat every home. I want ranking based on proximity as a
+priority in case weather conditions change."* On 2026-10-28: *"go ahead with both"*.
+
+**The rationale for sim-2.** The 24-hour coating hold released at T+0.25 h, because holding four Vail
+homes would have cost them (their earliest likely arrival was 5–19 h away). The release was global
+and latched, so all 36 homes became jobs at once, including about 25 near Edwards, Eagle and Gypsum
+that the fire was 26–60 h from. The gel holds full strength for 72 h, so the "coat as late as
+possible" pass delayed none of them. The planner maximises homes protected and is deliberately blind
+to urgency (retired 2026-07-10 after it cost homes). When every home can be coated, ties go first to
+an even split of stops across crews, then to the least driving. So each crew took one geographic
+cluster of about 9 homes, and the 8 Vail homes became one crew's share (GraphGel 2, T+1.0 → 3.2 h)
+while three crews coated far-west homes.
+
+**What changed** (contracts `dispatch_hold_per_home`, `dispatch_proximity_rank`,
+`dispatch_proximity_band_m`; the page asks for `hold_h: 12, hold_per_home: true,
+proximity_first: true`, and a request without them keeps the 24-hour global hold):
+
+- *Coating window.* A home waits until the fire could reach it within 12 h. The clock is the
+  earliest likely arrival (P10); measured on the median, homes with a wide forecast spread were
+  released at once. The release is per home: when holding them would cost homes, only the held homes
+  the deferred plan loses are released, or, in a capacity crunch, as many held homes as were lost,
+  earliest P10 first. Each release is re-checked, up to 4 rounds, and latched per home. Every other
+  home keeps waiting. A home whose window opens (or that the gate releases) re-plans the fleet even
+  with no crew idle, so a travelling crew can take it. Without that, a busy fleet left three opened
+  Vail homes unplanned until the fire had closed their road. The scoreboard shows "waiting for the
+  12-h coating window".
+- *Proximity first.* After the planner fixes the homes it can save, they are re-scheduled nearest
+  the fire's current extent first (each fire's P10 arrival ≤ now, distance in metres, 1 km bands).
+  Each goes to the crew that can finish it soonest, under the full per-stop safety chain, with frozen
+  commitments kept. The schedule is adopted only when it serves every home the plan serves;
+  otherwise each crew's own stops are reordered by proximity. Distance, not forecast arrival: a wind
+  change can turn the fire toward any home near it.
+
+**sim-2 under the new rules.** All four crews went to the Vail homes first: 7 coated between
+T+0.5 and 1.4 h, the other 2 at their windows (T+3.1, 4.6 h, about 11.5 h before the fire could
+arrive). Early coats (more than 12 h ahead of the earliest likely arrival) fell from 30 to 4. There
+were no violations, overruns or transits, and every reached home was coated.
+
+**Measured on the valley set** (33 fires, 24 h each,
+`scratch_review/eagle_valley/coat_window_2026-10-27/`):
+
+| | Before | Proximity only | Window only | Both (shipped) |
+|---|---|---|---|---|
+| Homes the fire reached (of 405), not coated | 40 | 38 | 43 | 42 |
+| Coated more than 12 h before the earliest likely arrival | 651 | 645 | 395 | 409 |
+| Crew passes through the band | 17 | 16 | 16 | 17 |
+| Crews caught by the fire | 0 | 0 | 0 | 0 |
+| Relocations | 50 | 48 | 34 | 39 |
+
+Proximity alone protects 2 more homes. The window removes about 37 % of the early coats. The
+remaining early coats are homes the planner showed must be coated early to be served. The window
+costs 2–3 reached homes, likely because its schedule does not reserve crew time for homes still
+waiting. The founder shipped both on 2026-10-28; reserving that time is the open follow-up.
+
+**A finding in every arm, the old rules included.** Late in the 24-h runs (T+18–22 h), all three
+crews of a run are flagged together, 5–11 h past the line, while egressing. The likely cause is the
+horizon re-anchor around hour 19 making crews beside long-burned ground read as inside the band. The
+12-h review runs never reached it, and it needs its own investigation.
+
+**Tests:** `tests/test_coating_window.py`. The gate is checked against a stand-in planner (a
+per-home release, a capacity crunch, the round cap, the P10 clock, the off switch). A real scenario
+coats no home more than 12 h ahead unless released. The proximity distance matches brute force. The
+fleet schedule serves the same homes nearest first. The server defaults are checked, and so is the
+page.

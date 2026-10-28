@@ -56,6 +56,7 @@ POCKET_ONLY = dict(ITER2_OFF, egress_durable_min_h=8.0,
 def _hash(st):
     st = dict(st)
     st.pop("cmd_log", None)            # echoes the override keys themselves
+    st.pop("report", None)   # run report: display only (2026-10-27)
     return hashlib.sha256(json.dumps(st, sort_keys=True, allow_nan=False)
                           .encode()).hexdigest()[:16]
 

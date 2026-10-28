@@ -62,6 +62,7 @@ RAMP_OFF = {"route_margin_egress_ramp": 0.0}
 def _hash(st):
     st = dict(st)
     st.pop("cmd_log", None)
+    st.pop("report", None)   # run report: display only (2026-10-27)
     return hashlib.sha256(json.dumps(st, sort_keys=True, allow_nan=False)
                           .encode()).hexdigest()[:16]
 

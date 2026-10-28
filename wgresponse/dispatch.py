@@ -97,7 +97,7 @@ import logging
 import math
 import time
 
-from wgresponse import safety
+from wgresponse import geo, safety
 from wgresponse.contracts import (
     UNREACHED,
     Crew,
@@ -2236,6 +2236,183 @@ def _urgency_reorder(ctx: _Ctx, crew_id: str, keys, frozen_n: int):
 
 
 # ---------------------------------------------------------------------------
+# PROXIMITY FIRST (contracts dispatch_proximity_rank; founder 2026-10-27, "I
+# want ranking based on proximity as a priority in case weather conditions
+# change")
+# ---------------------------------------------------------------------------
+
+_FRONT_ATTR = "_wg_proximity_front"
+_FRONT_BUCKET = 8            # cells per side of a front-search bucket
+
+
+def _fire_front(ens, now_s: float):
+    """The fire's current extent for PROXIMITY FIRST: the cells of the
+    incident's P10 (earliest, pessimistic) arrival raster reached by now_s,
+    as (spec, set of reached flat indices, {bucket: [(row, col), ...]} of
+    its EDGE cells — reached cells with an unreached or off-grid
+    4-neighbour). Memoised on `ens` for the last now_s asked, so a cycle's
+    probe plans and its plan share one pass."""
+    memo = getattr(ens, _FRONT_ATTR, None)
+    if memo is not None and memo[0] == now_s:
+        return memo[1]
+    spec = ens.p10.spec
+    nr, nc = spec.nrows, spec.ncols
+    reached = {i for i, v in enumerate(ens.p10.data) if v <= now_s}
+    buckets = {}
+    for i in reached:
+        row, col = divmod(i, nc)
+        if (row == 0 or col == 0 or row == nr - 1 or col == nc - 1
+                or (i - nc) not in reached or (i + nc) not in reached
+                or (i - 1) not in reached or (i + 1) not in reached):
+            buckets.setdefault((row // _FRONT_BUCKET, col // _FRONT_BUCKET),
+                               []).append((row, col))
+    front = (spec, reached, buckets)
+    setattr(ens, _FRONT_ATTR, (now_s, front))
+    return front
+
+
+def _proximity_m(ens: dict, now_s: float, loc) -> float:
+    """PROXIMITY FIRST: metres from `loc` to the nearest current fire
+    (_fire_front) over every incident — 0 inside it, inf with no fire. The
+    edge search walks rings of buckets outward and stops once a ring cannot
+    hold anything nearer than the best found."""
+    best = math.inf
+    for iid in sorted(ens):
+        e = ens[iid]
+        if e is None:
+            continue
+        spec, reached, buckets = _fire_front(e, now_s)
+        if not reached:
+            continue
+        nr, nc = spec.nrows, spec.ncols
+        fr = (spec.north_lat - loc.lat) * geo.M_PER_DEG_LAT / spec.cell_m
+        fc = ((loc.lon - spec.west_lon) * geo.m_per_deg_lon(loc.lat)
+              / spec.cell_m)
+        r0, c0 = math.floor(fr), math.floor(fc)
+        if 0 <= r0 < nr and 0 <= c0 < nc and r0 * nc + c0 in reached:
+            return 0.0
+        b = _FRONT_BUCKET
+        br, bc = r0 // b, c0 // b
+        kmax = (max(abs(br), abs(br - nr // b), abs(bc), abs(bc - nc // b))
+                + 2)
+        d2 = math.inf
+        k = 0
+        while k <= kmax:
+            if k > 0 and ((k - 1) * b) ** 2 > d2:
+                break
+            if k == 0:
+                ring = ((br, bc),)
+            else:
+                ring = ([(br - k, j) for j in range(bc - k, bc + k + 1)]
+                        + [(br + k, j) for j in range(bc - k, bc + k + 1)]
+                        + [(i, bc - k) for i in range(br - k + 1, br + k)]
+                        + [(i, bc + k) for i in range(br - k + 1, br + k)])
+            for key in ring:
+                for row, col in buckets.get(key, ()):
+                    dd = (fr - row - 0.5) ** 2 + (fc - col - 0.5) ** 2
+                    if dd < d2:
+                        d2 = dd
+            k += 1
+        if d2 < math.inf:
+            best = min(best, math.sqrt(d2) * spec.cell_m)
+    return best
+
+
+def _proximity_band(prox: dict, key, band_m: float):
+    d = prox.get(key, math.inf)
+    return math.inf if math.isinf(d) else math.floor(d / band_m)
+
+
+def _proximity_schedule(ctx: _Ctx, state: _State, prox: dict,
+                        band_m: float):
+    """PROXIMITY FIRST across the fleet: the homes `state` (the count-
+    maximal plan) serves beyond its frozen commitments, re-scheduled nearest
+    the fire first — band by band (dispatch_proximity_band_m), inside a band
+    the (home, crew) pair with the EARLIEST feasible departure next (the
+    greedy-EDF append, _extend's full per-stop safety chain). Returns the new
+    state when it serves EVERY home `state` serves (count-safe per call),
+    else None. Bounded work (no solver budget): at most homes^2 x crews
+    O(1) extensions."""
+    jrec = ctx._jrec
+    out = _State({cid: state.assign[cid][:state.frozen[cid]]
+                  for cid in ctx.crew_ids}, dict(state.frozen))
+    pool = state.assigned() - out.assigned()
+    if not pool:
+        return None
+    ends = {}
+    for cid in ctx.crew_ids:
+        keys = tuple(out.assign[cid])
+        if keys:
+            stops, _fail = ctx.eval_route(cid, keys)
+            if stops is None:
+                return None
+            ends[cid] = (jrec[keys[-1]][2], stops[-1].depart_s)
+        else:
+            ends[cid] = (ctx._cstart[cid][2], ctx.now_s)
+    bands = {}
+    for k in pool:
+        bands.setdefault(_proximity_band(prox, k, band_m), []).append(k)
+    for band in sorted(bands):
+        left = sorted(bands[band])
+        while left:
+            best = None
+            for k in left:
+                for cid in ctx.crew_ids:
+                    pa, t = ends[cid]
+                    ext = ctx.extend_p(pa, t, k)
+                    if ext is None:
+                        continue
+                    cand = (ext[2], prox.get(k, math.inf), k, cid)
+                    if best is None or cand < best:
+                        best = cand
+            if best is None:
+                return None
+            depart, _d, k, cid = best
+            out.assign[cid].append(k)
+            ends[cid] = (jrec[k][2], depart)
+            left.remove(k)
+    for cid in ctx.crew_ids:
+        if out.assign[cid] and ctx.eval_route(
+                cid, tuple(out.assign[cid]))[0] is None:
+            return None
+    return out
+
+
+def _proximity_reorder(ctx: _Ctx, crew_id: str, keys, frozen_n: int,
+                       prox: dict, band_m: float):
+    """PROXIMITY FIRST within one crew's route (the fallback when the fleet
+    schedule cannot serve every home): its non-frozen stops nearest the fire
+    first, band by band, chained nearest-neighbour inside a band; adopted
+    only when the whole route stays feasible (count-safe per call, the
+    _fire_first_reorder guarantee)."""
+    suffix = list(keys[frozen_n:])
+    if len(suffix) < 2:
+        return keys
+    bands = {}
+    for k in suffix:
+        bands.setdefault(_proximity_band(prox, k, band_m), []).append(k)
+    crew = ctx.crew_by_id[crew_id]
+    prev_loc = (ctx.jobmap[keys[frozen_n - 1]].client.loc if frozen_n > 0
+                else crew.loc())
+    ordered = []
+    for band in sorted(bands):
+        pool = bands[band]
+        while pool:
+            nxt = min(pool, key=lambda k: (
+                ctx.travel(prev_loc, ctx.jobmap[k].client.loc), k))
+            pool.remove(nxt)
+            ordered.append(nxt)
+            prev_loc = ctx.jobmap[nxt].client.loc
+    if ordered == suffix:
+        return keys
+    cand = list(keys[:frozen_n]) + ordered
+    stops, _fail = ctx.eval_route(crew_id, tuple(cand))
+    if stops is not None:
+        return cand
+    return keys
+
+
+# ---------------------------------------------------------------------------
 # plan() — the contract seam
 # ---------------------------------------------------------------------------
 
@@ -2594,6 +2771,22 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
         elif _state_value(ctx, greedy) > _state_value(ctx, final) + _EPS:
             final, tag, final_j, guardrail = greedy, "greedy_edf", greedy_j, "value"
 
+    # PROXIMITY FIRST (contracts dispatch_proximity_rank): the count-maximal
+    # plan's homes re-scheduled nearest-the-fire first across the fleet when
+    # that serves every one of them; else each crew's own stops re-ordered
+    # (count-safe per call either way). Off: untouched.
+    prox = None
+    prox_tag = ""
+    if getattr(cfg, "dispatch_proximity_rank", False) and ctx.homes_mode:
+        prox = {k: _proximity_m(ens, now_s, j.client.loc)
+                for k, j in ctx.jobmap.items()}
+        sched = _proximity_schedule(ctx, final, prox,
+                                    cfg.dispatch_proximity_band_m)
+        if sched is not None:
+            final, prox_tag = sched, "fleet"
+        else:
+            prox_tag = "route"
+
     # -- step 6: emit (with late-shift freshness polish) -----------------------
     plans = {}
     served = set()
@@ -2613,7 +2806,13 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
         # FOUNDER ROUND 6 within-route sequence (default 'auto' = untouched):
         # 'fire_first' = closest-to-fire-first in 30-min bands w/ travel
         # chaining; 'urgency' = raw deadline sort. Both count-safe per call.
-        if cfg.dispatch_sequence == "fire_first":
+        # PROXIMITY FIRST replaces them when on (the fleet schedule already
+        # ordered every route, or each route is re-ordered here).
+        if prox is not None:
+            if prox_tag == "route":
+                keys = _proximity_reorder(ctx, cid, keys, final.frozen[cid],
+                                          prox, cfg.dispatch_proximity_band_m)
+        elif cfg.dispatch_sequence == "fire_first":
             keys = _fire_first_reorder(ctx, cid, keys, final.frozen[cid])
         elif cfg.dispatch_sequence == "urgency":
             keys = _urgency_reorder(ctx, cid, keys, final.frozen[cid])
@@ -2670,6 +2869,8 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
     }
     if getattr(cfg, "dispatch_ils_skip_all_served", False):
         breakdown["ils_skipped"] = ils_skipped    # knob on only (off: same keys)
+    if prox is not None:
+        breakdown["proximity"] = prox_tag         # knob on only: fleet|route
     return DispatchPlan(computed_at_s=now_s, plans=plans, unserved=unserved,
                         objective=objective, objective_breakdown=breakdown,
                         churn_from_incumbent=churn_w)

@@ -228,6 +228,7 @@ def test_rugpull_control_knob_off_is_byte_identical(tmp_path):
     def _h(st):
         st = dict(st)
         st.pop("cmd_log", None)
+        st.pop("report", None)   # run report: display only (2026-10-27)
         return hashlib.sha256(json.dumps(st, sort_keys=True, allow_nan=False)
                               .encode()).hexdigest()[:16]
 
@@ -380,6 +381,7 @@ def _vail_south(cfg):
             st = s.tick()
             d = dict(st)
             d.pop("cmd_log", None)
+            d.pop("report", None)   # run report: display only (2026-10-27)
             hashes.append(hashlib.sha256(json.dumps(
                 d, sort_keys=True, allow_nan=False).encode()).hexdigest()[:16])
             states.append(st)

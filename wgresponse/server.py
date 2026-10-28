@@ -518,18 +518,48 @@ class SimSessionManager:
         # instead of coating, gated on the every-cycle full-coverage probe.
         # ON by default in the simulator; optional bool to compare.
         hold_24h = payload.get("hold_24h", True)
+        # COATING WINDOW + PROXIMITY FIRST (founder 2026-10-27: "in the
+        # engine, I do not want homes coated more than 12 hours in advance,
+        # as long as there is sufficient crew capacity to coat every home.
+        # I want ranking based on proximity as a priority in case weather
+        # conditions change"): hold_h = the hold's hours (hold_24h stays the
+        # on/off switch), hold_per_home = contracts dispatch_hold_per_home,
+        # proximity_first = contracts dispatch_proximity_rank. The page sends
+        # all three; absent = the legacy 24 h global hold and no proximity
+        # order, so a param-less POST stays byte-identical. An explicit
+        # cfg dispatch_hold_h is kept when hold_h is absent.
+        hold_per_home = payload.get("hold_per_home", False)
+        proximity_first = payload.get("proximity_first", False)
         if (not isinstance(spotting, bool) or not isinstance(grass_realism, bool)
                 or not isinstance(coat_early, bool)
                 or not isinstance(plan_on_roads, bool)
-                or not isinstance(hold_24h, bool)):
+                or not isinstance(hold_24h, bool)
+                or not isinstance(hold_per_home, bool)
+                or not isinstance(proximity_first, bool)):
             return 400, {"error": "spotting, grass_realism, coat_early, "
-                                  "plan_on_roads, hold_24h must be booleans"}
+                                  "plan_on_roads, hold_24h, hold_per_home, "
+                                  "proximity_first must be booleans"}
+        hold_h = payload.get("hold_h")
+        if hold_h is not None:
+            if isinstance(hold_h, bool) or not isinstance(hold_h, (int, float)):
+                return 400, {"error": "hold_h must be a number of hours"}
+            if not (0.0 < float(hold_h) <= 72.0):
+                return 400, {"error": "hold_h must be in (0, 72] hours"}
         cfg = dict(cfg)
         cfg["spotting_enabled"] = spotting
         cfg["grass_ros_floor_frac"] = 0.10 if grass_realism else 0.0
         cfg["dispatch_late_shift"] = not coat_early
         cfg["dispatch_plan_on_roads"] = plan_on_roads
-        cfg["dispatch_hold_h"] = 24.0 if hold_24h else 0.0
+        if not hold_24h:
+            cfg["dispatch_hold_h"] = 0.0
+        elif hold_h is not None:
+            cfg["dispatch_hold_h"] = float(hold_h)
+        elif "dispatch_hold_h" not in cfg:
+            cfg["dispatch_hold_h"] = 24.0
+        if hold_per_home:
+            cfg["dispatch_hold_per_home"] = True
+        if proximity_first:
+            cfg["dispatch_proximity_rank"] = True
         # FOUNDER ROUND 6: coat time per home (minutes). Default 15 = the
         # adopted 3-person crew model (one member preps the next site); the
         # UI slider (POST /config deploy_min) changes it live mid-run.
@@ -1101,6 +1131,11 @@ class _Handler(BaseHTTPRequestHandler):
         events = state.get("operator_events")
         if isinstance(events, (list, tuple)):
             info["operator_event_count"] = len(events)
+        stale_fires = state.get("stale_fires")
+        if isinstance(stale_fires, (list, tuple)):
+            # FORECAST FRESHNESS TIERS: fires past their tier's limit (only
+            # when the daemon armed the tiers)
+            info["fires_stale"] = len(stale_fires)
         return info
 
     # -- routes -----------------------------------------------------------

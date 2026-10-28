@@ -172,8 +172,23 @@ def crowned_acres(s, fid, hours):
 def run_one(args):
     run_id, loc, ign, inten, hours, extra_cfg, out_dir = args[:7]
     start_hour = args[7] if len(args) > 7 else None
-    from wgresponse import geo
+    from wgresponse import geo, dispatch as _dispatch
     t_wall = time.time()
+    # COATING WINDOW + PROXIMITY FIRST review (2026-10-27): which proximity
+    # path each plan call took (fleet | route), counted on the planner itself
+    prox_tags = {}
+    if not getattr(_dispatch, "_wg_counted", False):
+        _orig_plan = _dispatch.plan
+
+        def _counted(*a, **kw):
+            pl = _orig_plan(*a, **kw)
+            tag = pl.objective_breakdown.get("proximity")
+            if tag:
+                _dispatch._wg_tags[tag] = _dispatch._wg_tags.get(tag, 0) + 1
+            return pl
+        _dispatch.plan = _counted
+        _dispatch._wg_counted = True
+    _dispatch._wg_tags = prox_tags
     try:
         mgr, s = build(loc, ign, inten, extra_cfg, start_hour)
     except Exception as exc:                       # pragma: no cover - probe
@@ -187,6 +202,7 @@ def run_one(args):
     dep_viol_max = 0
     viol_max = 0
     first_gel_s = None
+    coat_eta = {}
     t0 = s._now_s
     log = []
     late_fired = False
@@ -236,6 +252,9 @@ def run_one(args):
         for cl in st["clients"]:
             if cl.get("gelled_at_s") and (first_gel_s is None or cl["gelled_at_s"] < first_gel_s):
                 first_gel_s = cl["gelled_at_s"]
+            if cl.get("gel_applied") and cl["client_id"] not in coat_eta:
+                coat_eta[cl["client_id"]] = (cl["gelled_at_s"], cl.get("eta_p10_s"),
+                                             cl.get("eta_p50_s"))
         # iteration 3: homes WAITING behind a blocked road (dispatch's
         # no_safe_corridor / no_safe_egress) with at least 1 h before the
         # pessimistic front, and the crews idle meanwhile (on the map, no
@@ -326,6 +345,24 @@ def run_one(args):
                            "edge_reach": bool(edge_reach)}},
         "wall_s": round(time.time() - t_wall, 1),
     }
+    rep_ = st.get("report") or {}
+    nr = rep_.get("nearest") or {}
+    res["report"] = {k3: rep_.get(k3) for k3 in (
+        "homes", "coated", "reached", "reached_coated", "reached_uncoated",
+        "caught")}
+    res["report"]["nearest_min"] = nr.get("minutes")
+    res["report"]["nearest_kind"] = nr.get("kind")
+    adv10 = sorted(round((e10 - g) / 3600.0, 2) for g, e10, _e50 in coat_eta.values()
+                   if g is not None and e10 is not None)
+    adv50 = sorted(round((e50 - g) / 3600.0, 2) for g, _e10, e50 in coat_eta.values()
+                   if g is not None and e50 is not None)
+    res["coat_window"] = {
+        "coated": len(coat_eta),
+        "over_12h_vs_p10": sum(1 for a in adv10 if a > 12.05),
+        "over_12h_vs_p50": sum(1 for a in adv50 if a > 12.05),
+        "advance_p10_h": adv10}
+    res["proximity_tags"] = dict(sorted(prox_tags.items()))
+    res["step_s_mean"] = round(sum(r3["step_s"] for r3 in log[1:]) / max(1, len(log) - 1), 3)
     if start_hour is not None:
         res["start_local_hour"] = start_hour
     os.makedirs(os.path.join(out_dir, "ticks"), exist_ok=True)

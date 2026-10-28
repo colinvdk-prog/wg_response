@@ -153,6 +153,13 @@ crew's queued legs on roads, the road leg a just-relocated crew drives
 next, and a one-line reason for every straight spur / chord (see the
 section above SimSession.state).
 
+RUN REPORT (founder 2026-10-27, "after simulation create a report"):
+state.report — display-only, additive, never read by the engine — counts
+the homes coated, the homes the ACTUAL fire has reached and those it
+reached uncoated, and gives the nearest time between a crew and the fire
+over every spot every crew was at (_rpt_step after each step's audit,
+_report_state; contracts RUN REPORT).
+
 REGIONAL / MUTUAL-AID CREWS (contracts FOUNDER ROUND 5 SEMANTICS 9): the
 session takes n_crews (IN-ZONE, staged at local safe zones, available now)
 plus n_crews_1h / n_crews_3h out-of-region reinforcements. Each state.crews[i]
@@ -719,6 +726,11 @@ RESTAGE_MIN_LIFE_H = 8.0
 #: SAFETY SEMANTICS 33 (contracts crew_overrun_ledger): the latest crew-
 #: overrun rows state()'s scoreboard carries (the totals count every row)
 OVERRUN_LEDGER_N = 20
+
+#: COATING WINDOW (contracts dispatch_hold_per_home): how many release rounds
+#: one cycle's gate may run (each round = one more deferred probe plan) before
+#: it releases every home still held, loudly
+DISPATCH_HOLD_ROUNDS = 4
 #: THE FOUNDER'S TWO CALLS (2026-10-21, the Eagle River valley review's
 #: iteration 4; docs/SIMULATOR_DESIGN.md "Pre-ship fixes"), each a one-line
 #: switch here, built and measured both ways — DECIDED BY THE FOUNDER
@@ -3680,6 +3692,19 @@ class SimSession:
         self._overrun_ledger = []
         self._n_overrun_rows = 0
         self._n_transit_rows = 0
+        # RUN REPORT (founder 2026-10-27; display only, never read by the
+        # engine — see _report_state): the spots crews were at that the
+        # actual fire has not reached yet ((crew_id, lat, lon) -> [left_s,
+        # status, the fire's arrival there]) and the fields those arrivals
+        # were read from, the closest call ahead of the fire, the closest
+        # entry behind it, and the spots the fire reached while a crew was
+        # there
+        self._rpt_pending = {}
+        self._rpt_gen = ()
+        self._rpt_ahead = None
+        self._rpt_behind = None
+        self._rpt_caught = None
+        self._rpt_n_caught = 0
         self._n_restaged = 0
         self._last_exit_none = {}
         # SAFETY SEMANTICS 36 (contracts escape_refuge_on_map): crew_id ->
@@ -3754,6 +3779,14 @@ class SimSession:
         self._hold_noted = False
         self._hold_active_n = 0
         self._preposition_target = {}
+        # COATING WINDOW (contracts dispatch_hold_per_home): the homes the
+        # gate released one by one (latched per home), the homes it held at
+        # its last run, and the homes whose window opened (or that it
+        # released) still waiting for a crew — they re-plan the fleet even
+        # with no crew idle. All empty when off.
+        self._hold_released_ids = set()
+        self._hold_held_ids = set()
+        self._hold_opened = set()
         # CREW SHIFTS (ROUND 6b): duty_start = unix s this crew's current
         # shift began (armed at first ignition / reinforcement arrival);
         # shift_budget = seconds of this shift (first cycle halved for odd
@@ -7749,13 +7782,26 @@ class SimSession:
         served(NOW) ⊆ served(HOLD) keeps the hold; any home the deferral
         would sacrifice RELEASES it — latched (self._hold_released), so
         coating never stop-starts. The probe-HOLD plan is also the
-        prepositioning source (each crew's deferred first stop)."""
+        prepositioning source (each crew's deferred first stop).
+
+        COATING WINDOW (contracts dispatch_hold_per_home): the release is
+        PER HOME — _hold_release_rounds releases only the homes the deferral
+        would cost (latched per home in _hold_released_ids) and re-probes;
+        every other home stays held. Off: the global latch above."""
         cfg = self._cfg
         hold_s = cfg.dispatch_hold_h * 3600.0
         if hold_s <= 0.0 or self._hold_released or not jobs:
             self._hold_active_n = 0
             return jobs, None, set()
-        held = [j for j in jobs if (j.eta.eta_p50_s - now) > hold_s]
+        released = self._hold_released_ids       # empty unless per home
+        # COATING WINDOW: the hold's clock is the fire's EARLIEST likely
+        # arrival (P10) — a home waits until the fire could reach it within
+        # dispatch_hold_h; legacy: the median (P50)
+        per_home = bool(getattr(cfg, "dispatch_hold_per_home", False))
+        held = [j for j in jobs
+                if ((j.eta.eta_p10_s if per_home else j.eta.eta_p50_s)
+                    - now) > hold_s
+                and j.client.client_id not in released]
         if not held:
             self._hold_active_n = 0
             return jobs, None, set()
@@ -7782,28 +7828,50 @@ class SimSession:
         # offset is approximate; that model is default-OFF and inapplicable
         # to GraphGel's dried-film mechanism per contracts block 5.)
         p50_shift = (cfg.gel_window_h - cfg.dispatch_hold_h) * 3600.0
-        deferred = []
-        for j in jobs:
-            if j.client.client_id in held_ids:
-                e = j.eta
-                deferred.append(replace(j, eta=replace(
-                    e,
-                    eta_p10_s=e.eta_p10_s - buf_s,
-                    eta_p50_s=e.eta_p50_s + p50_shift,
-                    eta_p90_s=e.eta_p90_s + p50_shift)))
-            else:
-                deferred.append(j)
-        probe_hold = dispatch.plan(crew_args, deferred, ens_map, plan_zones,
-                                   cfg, now, None, forecasts=forecasts,
-                                   road_provider=self._plan_road_provider(),
-                                   eroded_rasters=self._plan_eroded_rasters(),
-                                   leg_memo=self._plan_leg_memo,
-                                   **self._plan_keep_kw())
+
+        def probe_deferred(ids):
+            deferred = []
+            for j in jobs:
+                if j.client.client_id in ids:
+                    e = j.eta
+                    # COATING WINDOW: released at P10 - hold_h (the same
+                    # p50' encoding on the P10 clock); legacy: P50 - hold_h
+                    if per_home:
+                        p50n = e.eta_p10_s + p50_shift
+                        p90n = e.eta_p90_s + (p50n - e.eta_p50_s)
+                    else:
+                        p50n = e.eta_p50_s + p50_shift
+                        p90n = e.eta_p90_s + p50_shift
+                    deferred.append(replace(j, eta=replace(
+                        e,
+                        eta_p10_s=e.eta_p10_s - buf_s,
+                        eta_p50_s=p50n,
+                        eta_p90_s=p90n)))
+                else:
+                    deferred.append(j)
+            return dispatch.plan(crew_args, deferred, ens_map, plan_zones,
+                                 cfg, now, None, forecasts=forecasts,
+                                 road_provider=self._plan_road_provider(),
+                                 eroded_rasters=self._plan_eroded_rasters(),
+                                 leg_memo=self._plan_leg_memo,
+                                 **self._plan_keep_kw())
+
+        probe_hold = probe_deferred(held_ids)
+
         def served_ids(p):
             return {s.client_id for cp in p.plans.values() for s in cp.stops}
         s_now = served_ids(probe_now)
         s_hold = served_ids(probe_hold)
-        if not (s_now <= s_hold):
+        if (not (s_now <= s_hold)
+                and getattr(cfg, "dispatch_hold_per_home", False)):
+            # COATING WINDOW: release only the homes the deferral costs
+            probe_hold, held_ids = self._hold_release_rounds(
+                jobs, held_ids, probe_hold, s_now, served_ids,
+                probe_deferred)
+            if not held_ids:
+                self._hold_active_n = 0
+                return jobs, None, set()
+        elif not (s_now <= s_hold):
             # deferral would sacrifice a coatable home -> release, forever
             self._hold_released = True
             self._hold_active_n = 0
@@ -7819,18 +7887,74 @@ class SimSession:
                 f"{'…' if len(lost) > 4 else ''}) — coating begins now")
             return jobs, None, set()
         if not self._hold_noted:
-            self._notes.append(
-                f"COATING HOLD active (FOUNDER ROUND 5): fire > "
-                f"{cfg.dispatch_hold_h:g}h out for {len(held_ids)} home(s) — "
-                f"crews on alert and prepositioning; full coverage verified "
-                f"each cycle with a "
-                f"{cfg.dispatch_hold_weather_buffer_h:g}h weather buffer")
+            if per_home:
+                self._notes.append(
+                    f"COATING WINDOW active (founder 2026-10-27): "
+                    f"{len(held_ids)} home(s) wait until the fire could reach "
+                    f"them within {cfg.dispatch_hold_h:g}h (earliest likely "
+                    f"arrival) — crews on alert and prepositioning; every "
+                    f"cycle checks that waiting costs no home, with a "
+                    f"{cfg.dispatch_hold_weather_buffer_h:g}h weather buffer")
+            else:
+                self._notes.append(
+                    f"COATING HOLD active (FOUNDER ROUND 5): fire > "
+                    f"{cfg.dispatch_hold_h:g}h out for {len(held_ids)} "
+                    f"home(s) — crews on alert and prepositioning; full "
+                    f"coverage verified each cycle with a "
+                    f"{cfg.dispatch_hold_weather_buffer_h:g}h weather buffer")
             self._hold_noted = True
         self._hold_active_n = len(held_ids)
         for cid in held_ids:
             self._unserved_reason[cid] = "held"
+        if per_home:
+            self._hold_held_ids = set(held_ids)
         active = [j for j in jobs if j.client.client_id not in held_ids]
         return active, probe_hold, held_ids
+
+    def _hold_release_rounds(self, jobs, held_ids, probe_hold, s_now,
+                             served_ids, probe_deferred):
+        """COATING WINDOW (contracts dispatch_hold_per_home): the deferred
+        probe lost homes the coat-now probe serves, so release only what the
+        deferral costs — the lost homes that are held or, when none of them
+        is (a capacity crunch), as many held homes as were lost, earliest
+        pessimistic arrival first — latch them per home and re-probe; after
+        DISPATCH_HOLD_ROUNDS rounds every home still held is released,
+        loudly. Returns (the last deferred probe, None when nothing stays
+        held; the homes still held)."""
+        cfg = self._cfg
+        by_id = {j.client.client_id: j for j in jobs}
+        held = set(held_ids)
+        s_hold = served_ids(probe_hold)
+        out = []
+        rounds = 0
+        while held and not (s_now <= s_hold):
+            lost = s_now - s_hold
+            rel = lost & held
+            if not rel:
+                rel = set(sorted(held, key=lambda c: (
+                    by_id[c].eta.eta_p10_s, by_id[c].eta.eta_p50_s,
+                    len(c), c))[:len(lost)])
+            rounds += 1
+            if rounds > DISPATCH_HOLD_ROUNDS:
+                rel = set(held)
+            held -= rel
+            self._hold_released_ids |= rel
+            self._hold_opened |= rel             # planned until a crew holds it
+            out.extend(_idsort(rel))
+            if not held:
+                probe_hold = None
+                break
+            probe_hold = probe_deferred(held)
+            s_hold = served_ids(probe_hold)
+        self._notes.append(
+            f"COATING WINDOW — released {len(out)} home(s) to coat now "
+            f"({', '.join(out[:4])}{'…' if len(out) > 4 else ''}): holding "
+            f"them to the {cfg.dispatch_hold_h:g}h line (with the "
+            f"{cfg.dispatch_hold_weather_buffer_h:g}h weather buffer) would "
+            f"sacrifice a home; {len(held)} home(s) stay held"
+            + (f" (after {DISPATCH_HOLD_ROUNDS} rounds every remaining home "
+               f"was released)" if rounds > DISPATCH_HOLD_ROUNDS else ""))
+        return probe_hold, held
 
     def _preposition_crews(self, probe_hold, eligible_ids, now, step):
         """Move IDLE crews toward their deferred work while a COATING HOLD is
@@ -8217,6 +8341,228 @@ class SimSession:
                 "at_s": o.get("at_s", self._now_s),
                 "margin_min": (None if m is None else round(m, 2))})
 
+    # -- run report (display only) --------------------------------------------
+
+    def _rpt_fire_at(self, p) -> float:
+        """RUN REPORT: when the ACTUAL fire (each fire's nominal member — the
+        shaded fire) reaches point p: its own field cell, or, for a cell it
+        never reaches (developed / non-burnable ground), the earliest
+        arrival within cfg.ember_threat_radius_m (the square window
+        geo.erode_min uses) — the simulator's home-threat rule (FOUNDER
+        ROUND 4 law 6) read on the actual fire. inf when it never does."""
+        r_m = float(getattr(self._cfg, "ember_threat_radius_m", 0.0) or 0.0)
+        best = UNREACHED
+        for fid in self._fire_order:
+            f = self._fires[fid]
+            if f.ens is None:
+                continue
+            nr = f.ens.members[0]
+            spec = nr.spec
+            i = self._cell_of(spec, p)
+            if i < 0:
+                continue
+            data = nr.data
+            v = data[i]
+            if math.isinf(v) and r_m > 0.0:
+                k = int(math.ceil(r_m / spec.cell_m))
+                r0, c0 = divmod(i, spec.ncols)
+                c_lo, c_hi = max(0, c0 - k), min(spec.ncols, c0 + k + 1)
+                for r in range(max(0, r0 - k), min(spec.nrows, r0 + k + 1)):
+                    base = r * spec.ncols
+                    for c in range(c_lo, c_hi):
+                        w = data[base + c]
+                        if w < v:
+                            v = w
+            if v < best:
+                best = v
+        return best
+
+    def _rpt_step(self, t_since: float) -> None:
+        """RUN REPORT bookkeeping (display only, never read by the engine),
+        after each step's audit: every crew's path this step (_SimCrew.
+        path_track, sampled exactly as the path audit samples it — each
+        field cell it drove through with the moments it entered and left
+        it, each spot it stood at) is read against the ACTUAL fire
+        (_rpt_fire_at). A spot the fire had reached before the crew got
+        there is an entry BEHIND the fire; one it reached while the crew was
+        there, a crew CAUGHT; one it has not reached waits, with the crew's
+        last moment there, until it does — the fire's arrival minus that
+        moment is how far AHEAD of the fire the crew was. A waiting spot's
+        arrival is re-read whenever a field is replaced (a re-anchor moves
+        only unburned cells). With crew_path_audit off only the spot each
+        crew ends the step at is read."""
+        if not any(self._fires[fid].ens is not None
+                   for fid in self._fire_order):
+            return
+        now = self._now_s
+        spec = None
+        for fid in self._fire_order:
+            f = self._fires[fid]
+            if f.ens is None:
+                continue
+            sp = f.ens.members[0].spec
+            if spec is None:
+                spec = sp
+            elif sp != spec:
+                spec = None
+                break
+        pending = self._rpt_pending
+        gen = tuple(self._fires[fid].ens for fid in self._fire_order)
+        if (len(gen) != len(self._rpt_gen)
+                or any(a is not b for a, b in zip(gen, self._rpt_gen))):
+            self._rpt_gen = gen
+            for key, rec in pending.items():
+                rec[2] = self._rpt_fire_at(LatLon(key[1], key[2]))
+        for cid in _idsort(self._crew_sims):
+            cs = self._crew_sims[cid]
+            if cs.status == CrewStatus.INBOUND:
+                continue
+            trk = getattr(cs, "path_track", None)
+            if trk is None:
+                if cid in self._left_map:
+                    continue
+                trk = [(t_since, cs.pos, cs._mode, cs.status.value),
+                       (now, cs.pos, cs._mode, cs.status.value)]
+            for i in range(1, len(trk)):
+                ta, pa, _mode, status = trk[i - 1]
+                tb, pb = trk[i][0], trk[i][1]
+                if (pa.lat, pa.lon) == (pb.lat, pb.lon):
+                    if tb <= ta:
+                        continue
+                    samples = [(max(ta, t_since), tb, pa)]
+                else:
+                    samples = self._path_cell_samples(pa, pb, ta, tb, spec)
+                for t_in, t_out, q in samples:
+                    a = self._rpt_fire_at(q)
+                    if a <= now:
+                        self._rpt_settle(cid, status, q, t_in, t_out, a)
+                        continue
+                    key = (cid, q.lat, q.lon)
+                    rec = pending.get(key)
+                    if rec is None:
+                        pending[key] = [t_out, status, a]
+                    elif t_out >= rec[0]:
+                        rec[0] = t_out
+                        rec[1] = status
+        done = [key for key, rec in pending.items() if rec[2] <= now]
+        for key in done:
+            rec = pending.pop(key)
+            self._rpt_settle(key[0], rec[1], LatLon(key[1], key[2]),
+                             None, rec[0], rec[2])
+
+    def _rpt_settle(self, cid, status, q, t_in, t_out, a) -> None:
+        """RUN REPORT: one crew spot the actual fire has reached at `a`,
+        classified (_rpt_step) and kept when it is the closest of its kind
+        (ties: the earlier moment, then crew id and place). t_in None = a
+        spot that waited: the crew had left it at t_out before the fire."""
+        row = {"crew_id": cid, "status": status,
+               "lat": round(q.lat, 6), "lon": round(q.lon, 6), "fire_s": a}
+        if t_in is None or a > t_out:              # it had left: ahead
+            row.update(left_s=t_out, minutes=round((a - t_out) / 60.0, 1))
+            key = (a - t_out, t_out, cid, row["lat"], row["lon"])
+            if self._rpt_ahead is None or key < self._rpt_ahead[0]:
+                self._rpt_ahead = (key, row)
+        elif a >= t_in:                            # there when it arrived
+            self._rpt_n_caught += 1
+            row.update(entered_s=t_in, left_s=t_out, minutes=0.0)
+            if self._rpt_caught is None:
+                self._rpt_caught = row
+        else:                                      # it got there after
+            row.update(entered_s=t_in, minutes=round((t_in - a) / 60.0, 1))
+            key = (t_in - a, t_in, cid, row["lat"], row["lon"])
+            if self._rpt_behind is None or key < self._rpt_behind[0]:
+                self._rpt_behind = (key, row)
+
+    def _report_state(self) -> dict:
+        """RUN REPORT (founder 2026-10-27, verbatim: "after simulation
+        create a report - number of homes coated, number of homes exposed
+        to fire, number of homes not coated exposed to fire, nearest time
+        between crew and fire"): state.report, a pure projection of the run
+        so far — display only, never read by the engine.
+          homes             the homes on the map
+          coated            homes a crew gelled (the serviced ledger)
+          reached           homes the ACTUAL fire has reached (_rpt_fire_at:
+                            the home's own cell, or within the ember-threat
+                            radius for a home on ground that cannot burn)
+          reached_coated    ... gelled before the fire got there
+          reached_uncoated  ... the rest (never gelled, or gelled after)
+          homes_reached     one row per reached home, in arrival order
+          nearest           the nearest time between a crew and the fire:
+                            the first spot the fire reached while a crew was
+                            there (kind 'caught', 0 min), else the smaller
+                            of closest_ahead (the fire's arrival at a spot
+                            minus the moment a crew left it) and
+                            closest_behind (a crew's arrival at a spot minus
+                            the fire's); null until a spot a crew was at has
+                            burned
+          caught            spots the fire reached while a crew was there
+          cell_m            the fire grid's cell (a "spot" is one cell)
+          ember_radius_m    the radius read for ground that cannot burn
+        Each crew row: crew_id, crew_name, status, lat, lon, fire_s, left_s
+        and/or entered_s (absolute sim seconds), minutes (0.1)."""
+        now = self._now_s
+        cell_m = self._tile.spec.cell_m
+        for fid in self._fire_order:
+            if self._fires[fid].ens is not None:
+                cell_m = self._fires[fid].ens.members[0].spec.cell_m
+                break
+        gel_at = {}
+        for s in self._serviced:
+            gel_at.setdefault(s.client_id, s.depart_s)
+        rows = []
+        n_in_time = 0
+        for cl in self._clients:
+            a = self._rpt_fire_at(cl.loc)
+            if a > now:
+                continue
+            g = gel_at.get(cl.client_id)
+            in_time = g is not None and g <= a
+            n_in_time += int(in_time)
+            rows.append({"client_id": cl.client_id, "name": cl.name,
+                         "fire_s": a, "coated_s": g,
+                         "coated_in_time": in_time})
+        rows.sort(key=lambda r: (r["fire_s"], len(r["client_id"]),
+                                 r["client_id"]))
+
+        def named(row, kind=None):
+            if row is None:
+                return None
+            out = dict(row)
+            cs = self._crew_sims.get(row["crew_id"])
+            out["crew_name"] = cs.crew.name if cs is not None else None
+            if kind is not None:
+                out["kind"] = kind
+            return out
+
+        ahead = named(self._rpt_ahead[1] if self._rpt_ahead else None)
+        behind = named(self._rpt_behind[1] if self._rpt_behind else None)
+        if self._rpt_caught is not None:
+            nearest = named(self._rpt_caught, "caught")
+        else:
+            cands = [(r["minutes"], k, r) for k, r in (("ahead", ahead),
+                                                       ("behind", behind))
+                     if r is not None]
+            nearest = None
+            if cands:
+                _m, kind, row = min(cands, key=lambda c: (c[0], c[1]))
+                nearest = dict(row, kind=kind)
+        return {
+            "at_s": now,
+            "homes": len(self._clients),
+            "coated": len(gel_at),
+            "reached": len(rows),
+            "reached_coated": n_in_time,
+            "reached_uncoated": len(rows) - n_in_time,
+            "homes_reached": rows,
+            "nearest": nearest,
+            "closest_ahead": ahead,
+            "closest_behind": behind,
+            "caught": self._rpt_n_caught,
+            "cell_m": cell_m,
+            "ember_radius_m": float(
+                getattr(self._cfg, "ember_threat_radius_m", 0.0) or 0.0),
+        }
+
     def _tick_step(self, step: float, *, emit: bool = True,
                    count: bool = True):
         """One engine cycle advancing the clock by `step` seconds (the body
@@ -8583,7 +8929,29 @@ class SimSession:
         # its committed plan (no churn), which keeps single-busy-crew scenarios
         # byte-identical to the pre-LAW-3 behaviour.
         idle_exists = any(self._crew_sims[cid].idle() for cid in eligible_ids)
-        if jobs and eligible_ids and idle_exists:
+        # COATING WINDOW (contracts dispatch_hold_per_home): a home whose
+        # window opened since the gate last ran — or that the gate released —
+        # re-plans the fleet until a crew holds it, even with no crew idle (a
+        # travelling crew's non-frozen stops are open to it): measured, a
+        # busy fleet otherwise left three opened Vail homes unplanned until
+        # the fire had closed their road. Off: nothing here (byte-identical).
+        window_due = False
+        if (getattr(cfg, "dispatch_hold_per_home", False)
+                and cfg.dispatch_hold_h > 0.0):
+            hold_s = cfg.dispatch_hold_h * 3600.0
+            p10_of = {j.client.client_id: j.eta.eta_p10_s for j in jobs}
+            for cid in _idsort(self._hold_held_ids):
+                if cid in p10_of and p10_of[cid] - now <= hold_s:
+                    self._hold_held_ids.discard(cid)
+                    self._hold_opened.add(cid)
+            coated = {sv.client_id for sv in self._serviced}
+            self._hold_opened = {
+                cid for cid in self._hold_opened
+                if cid in p10_of and cid not in self._assigned
+                and cid not in coated
+                and self._unserved_reason.get(cid) not in _UNSAVABLE_REASONS}
+            window_due = bool(self._hold_opened)
+        if jobs and eligible_ids and (idle_exists or window_due):
             crew_args = []
             for cid in eligible_ids:
                 cs = self._crew_sims[cid]
@@ -8772,6 +9140,7 @@ class SimSession:
         self._run_audit()
         self._audit_paths = False
         self._audit_since_s = None
+        self._rpt_step(now)          # RUN REPORT (display only)
 
         if not emit:
             return None
@@ -10266,14 +10635,18 @@ class SimSession:
             # FOUNDER ROUND 5 COATING HOLD observability: enabled (knob > 0),
             # released (gate failed once — latched), held (homes currently
             # deferred), prepositioned crew->zone map.
-            "hold": {
+            # COATING WINDOW (contracts dispatch_hold_per_home; additive):
+            # per_home and the homes released early, one by one
+            "hold": dict({
                 "enabled": cfg.dispatch_hold_h > 0.0,
                 "hold_h": cfg.dispatch_hold_h,
                 "weather_buffer_h": cfg.dispatch_hold_weather_buffer_h,
                 "released": self._hold_released,
                 "held": self._hold_active_n,
                 "prepositioned": dict(sorted(self._preposition_target.items())),
-            },
+            }, **({"per_home": True,
+                   "released_homes": _idsort(self._hold_released_ids)}
+                  if getattr(cfg, "dispatch_hold_per_home", False) else {})),
             "terrain": terrain,
             "fires": fires,
             # STATE VISUAL CONTRACT ("shade the fire", 2026-09-26): burned =
@@ -10297,6 +10670,11 @@ class SimSession:
             # backstop the founder's "crews in the fire, violations=0" bug needed.
             "crew_overruns": [dict(o) for o in self._crew_overruns],
             "scoreboard": scoreboard,
+            # RUN REPORT (founder 2026-10-27; one additive, display-only
+            # key): homes coated / reached by the actual fire / reached
+            # uncoated, and the nearest time between a crew and the fire
+            # (see _report_state)
+            "report": self._report_state(),
             "safe_zones": [{"zone_id": z.zone_id, "name": z.name,
                             "lat": round(z.loc.lat, 6),
                             "lon": round(z.loc.lon, 6)}

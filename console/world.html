@@ -78,6 +78,9 @@
              font-weight: 600; background: var(--navy3); color: var(--text);
              border: 1px solid var(--orange); white-space: nowrap; }
   #agechip.stale { background: #b3121f; color: #fff; border-color: #ff5252; }
+  /* FORECAST FRESHNESS TIERS (founder 2026-10-28): each fire's forecast age
+     against its own limit; red once past it */
+  .fresh.stale { color: #ff6b6b; font-weight: 700; }
   #srclegend { display: flex; gap: 9px; flex-wrap: wrap; }
   #srclegend span { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }
   .sdot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #0008;
@@ -731,6 +734,17 @@ function fmtAge(s) {
   if (s < 5400) return (s / 60).toFixed(0) + "m";
   return (s / 3600).toFixed(1) + "h";
 }
+// FORECAST FRESHNESS TIERS: " · forecast 12m old (limit 15m)", live — its age
+// counted from when the forecast was made, red past the fire's own limit
+function freshChip(r) {
+  const f = r && r.forecast;
+  if (!f || f.computed_at_s == null) return "";
+  const age = Math.max(0, Date.now() / 1000 - f.computed_at_s);
+  const lim = (f.limit_min || 0) * 60;
+  const st = lim > 0 && age > lim;
+  return ` · <span class="fresh${st ? " stale" : ""}" title="${esc(f.tier + " — " + (f.why || ""))}">` +
+    `forecast ${fmtAge(age)} old (limit ${fmtAge(lim)})${f.refreshing ? ", refreshing" : ""}</span>`;
+}
 function hoursAfter(t_s, ref_s) {
   if (t_s == null || ref_s == null) return null;
   return (t_s - ref_s) / 3600.0;
@@ -903,17 +917,55 @@ function renderHeader() {
   const degraded = !!d.degraded || opEvents.some(e =>
     e && (e.kind === "degraded" || e.kind === "feed_blind" || e.kind === "provider_error"));
   const stale = !!d.cycle_stale;
+  // FORECAST FRESHNESS TIERS (founder 2026-10-28): the fires past their own
+  // limit (clients at watch+ 15 min, growing 1 h, under control 6 h)
+  const staleFires = Array.isArray(d.stale_fires) ? d.stale_fires : [];
   const bar = $("degradedbar");
-  bar.style.display = (degraded || stale) ? "block" : "none";
+  bar.style.display = (degraded || stale || staleFires.length) ? "block" : "none";
+  // one short line: each failing provider step with the fires it hit (the
+  // services' own words on hover), the fires past their freshness limit,
+  // and a stalled loop
+  const nameOf = iid => {
+    const r = ((SUMMARY && SUMMARY.incidents) || []).find(x => x.incident_id === iid);
+    return (r && r.name) || String(iid || "?").slice(0, 8);
+  };
+  const parts = [], detail = [];
   if (degraded) {
-    const lastOp = opEvents.length ? opEvents[opEvents.length - 1] : null;
-    bar.textContent = "DEGRADED — forecasts may be stale" +
-      (lastOp && lastOp.message ? " · " + lastOp.message : "") + (stale ? " · STALE" : "");
-  } else if (stale) {
-    const ageMin = typeof d.last_cycle_age_s === "number" ? Math.round(d.last_cycle_age_s / 60) : null;
-    bar.textContent = "STALE — last cycle " + (ageMin != null ? ageMin + " min ago" : "too old") +
-      " (loop slow or stalled)";
+    const bySteps = {};
+    let other = 0;
+    for (const e of opEvents) {
+      if (!e) continue;
+      if (e.message) detail.push(e.message);
+      if (e.kind === "provider_error") {
+        const step = (e.detail && e.detail.step) || "provider";
+        (bySteps[step] = bySteps[step] || []).push(nameOf(e.incident_id));
+      } else if (e.kind === "degraded" || e.kind === "feed_blind") {
+        other++;
+      }
+    }
+    const steps = Object.keys(bySteps).map(st => {
+      const n = bySteps[st];
+      return `${st} unavailable for ${n.length} fire${n.length > 1 ? "s" : ""} (` +
+        n.slice(0, 3).join(", ") + (n.length > 3 ? "…" : "") + ")";
+    });
+    if (other) steps.push(`${other} feed or provider warning${other > 1 ? "s" : ""}`);
+    parts.push("DEGRADED — " + (steps.length ? steps.join(" · ") : "forecasts may be stale"));
   }
+  if (staleFires.length) {
+    parts.push("STALE — " + staleFires.length + " fire forecast" +
+      (staleFires.length > 1 ? "s" : "") + " past " + (staleFires.length > 1 ? "their" : "its") +
+      " limit: " + staleFires.slice(0, 3).map(f =>
+        `${f.name || nameOf(f.incident_id)} (${fmtAge(f.age_min * 60)} old, limit ` +
+        `${fmtAge(f.limit_min * 60)}${f.refreshing ? ", refreshing" : ""})`).join(", ") +
+      (staleFires.length > 3 ? "…" : ""));
+  }
+  if (stale) {
+    const ageMin = typeof d.last_cycle_age_s === "number" ? Math.round(d.last_cycle_age_s / 60) : null;
+    parts.push("STALE — last cycle " + (ageMin != null ? ageMin + " min ago" : "too old") +
+      " (loop slow or stalled)");
+  }
+  bar.textContent = parts.join(" · ");
+  bar.title = detail.join("\n");
   lastCycleT = typeof d.last_cycle_t_s === "number" ? d.last_cycle_t_s : null;
   pollPeriod = typeof d.poll_period_s === "number" ? d.poll_period_s : null;
   renderAgeChip();
@@ -1332,6 +1384,7 @@ function renderRankList() {
     ` · ${esc(srcLabel(r.source))}` +
     (r.offmap && r.offmap.kind !== "no_bound"
       ? ` · off-domain ${Number(r.offmap.ros_kmh).toFixed(1)} km/h` : "") +
+    freshChip(r) +
     (WORLD === "test" ? (r.source === "seeded" ? " · DRILL" : " · live, read-only") : "") +
     // TEST map only: a seeded (drill) fire carries its retire button
     (WORLD === "test" && r.source === "seeded"

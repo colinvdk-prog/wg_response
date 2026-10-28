@@ -348,6 +348,44 @@
            transform: translateX(-50%); background: rgba(14,32,56,.96); color: var(--text);
            border: 1px solid var(--orange); font-size: 12px; padding: 5px 12px;
            border-radius: 8px; max-width: 70%; }
+  /* RUN REPORT (founder 2026-10-27 "after simulation create a report"):
+     state.report as a dialog over the page — the Report button, or Pause
+     once a fire has burned */
+  #reportdlg { display: none; position: fixed; inset: 0; z-index: 3000;
+               background: rgba(4,12,24,.62); align-items: center;
+               justify-content: center; padding: 16px; }
+  #reportdlg.open { display: flex; }
+  #reportdlg .box { background: var(--navy2); border: 2px solid var(--orange);
+               border-radius: 10px; width: min(720px, 100%);
+               max-height: calc(100vh - 32px); overflow-y: auto; padding: 14px 16px; }
+  #reportdlg .rhead { display: flex; justify-content: space-between;
+               align-items: baseline; gap: 10px; }
+  #reportdlg h2 { margin: 0; font-size: 15px; color: var(--orange);
+               letter-spacing: 1px; text-transform: uppercase; }
+  #reportdlg .rsub { color: var(--dim); font-size: 11px; margin: 3px 0 10px; }
+  #reportdlg .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+               gap: 8px; }
+  @media (max-width: 640px) {
+    #reportdlg .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  #reportdlg .tile { background: var(--navy3); border-radius: 8px; padding: 8px 10px; }
+  #reportdlg .tile .n { font-size: 26px; font-weight: 800; line-height: 1.15; }
+  #reportdlg .tile .k { font-size: 11px; color: var(--dim); margin-top: 2px; }
+  #reportdlg .tile.bad .n { color: #ff6b6b; }
+  #reportdlg .tile.good .n { color: var(--cleared); }
+  #reportdlg .detail { margin: 10px 0 0; line-height: 1.5; }
+  #reportdlg .detail p { margin: 4px 0; }
+  #reportdlg table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+  #reportdlg th, #reportdlg td { text-align: left; padding: 3px 6px;
+               border-bottom: 1px solid var(--navy3); }
+  #reportdlg th { color: var(--dim); font-weight: 600; }
+  #reportdlg td.ok { color: var(--cleared); }
+  #reportdlg td.no { color: #ff6b6b; font-weight: 700; }
+  #reportdlg .defs { color: var(--dim); font-size: 11px; margin-top: 10px; line-height: 1.4; }
+  #reportdlg .acts { display: flex; gap: 8px; align-items: center;
+               justify-content: flex-end; margin-top: 12px; flex-wrap: wrap; }
+  #reportdlg label.auto { margin-right: auto; color: var(--dim); font-size: 11px;
+               display: flex; align-items: center; gap: 5px; }
   /* Draggable, collapsible legend window (founder UX 2026-07-10: the fixed
      bottom-left legend overlapped the controls — grab the title bar to move it,
      ▾ to collapse; position + collapsed state persist in localStorage). */
@@ -644,6 +682,7 @@
         <button id="pause">&#10074;&#10074; Pause</button>
         <button id="step" class="small">Step</button>
         <button id="reset" class="small">Reset</button>
+        <button id="report" class="small" title="Run report: homes coated, homes the fire reached, reached homes not coated, and the nearest time between a crew and the fire">Report</button>
       </div>
       <div class="row">speed <span class="val" id="speedval">300</span>&times; wall clock</div>
       <input type="range" id="speed" min="1" max="600" value="300">
@@ -685,6 +724,9 @@
     <div id="scoreboard" class="section">
       <h2>Safety scoreboard</h2>
       <div class="sbrow"><span class="k">served (gel applied)</span><span class="val" id="sb_served">0</span></div>
+      <!-- COATING WINDOW (founder 2026-10-27): homes waiting until the fire
+           could reach them within the window (state.hold, per home) -->
+      <div class="sbrow" id="sb_window_row" style="display:none"><span class="k" id="sb_window_k">waiting for the coating window</span><span id="sb_window">0</span></div>
       <div class="sbrow"><span class="k">withdrawn (deploy aborted)</span><span id="sb_withdrawn">0</span></div>
       <div class="sbrow"><span class="k">unserved by reason</span><span id="sb_unserved">–</span></div>
       <!-- LAW 4 TRIAGE: unserved_by_reason.triaged — homes the objective chose to ABANDON so more homes survive (count-maximizing). -->
@@ -788,6 +830,31 @@
 <div id="ignitehint">click the map to ignite (burnable fuel only)</div>
 <div id="placemaphint"></div>
 <div id="toast"></div>
+<!-- RUN REPORT (founder 2026-10-27): state.report as a dialog; it follows
+     the state on screen (a scrubbed tick shows that tick's report) -->
+<div id="reportdlg" role="dialog" aria-modal="true" aria-labelledby="rpt_title">
+  <div class="box">
+    <div class="rhead">
+      <h2 id="rpt_title">Run report</h2>
+      <button id="rpt_x" class="small" aria-label="Close the report">&times;</button>
+    </div>
+    <div class="rsub" id="rpt_sub"></div>
+    <div class="tiles">
+      <div class="tile" id="rpt_t_coated"><div class="n" id="rpt_coated">–</div><div class="k">homes coated</div></div>
+      <div class="tile" id="rpt_t_reached"><div class="n" id="rpt_reached">–</div><div class="k">homes the fire reached</div></div>
+      <div class="tile" id="rpt_t_uncoated"><div class="n" id="rpt_uncoated">–</div><div class="k">reached, not coated</div></div>
+      <div class="tile" id="rpt_t_nearest"><div class="n" id="rpt_nearest">–</div><div class="k">nearest time, crew to fire</div></div>
+    </div>
+    <div class="detail" id="rpt_detail"></div>
+    <div id="rpt_table"></div>
+    <div class="defs" id="rpt_defs"></div>
+    <div class="acts">
+      <label class="auto"><input type="checkbox" id="rpt_auto" checked> open the report when I pause</label>
+      <button id="rpt_download" class="small">Download</button>
+      <button id="rpt_close" class="small">Close</button>
+    </div>
+  </div>
+</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <!-- Air-gapped fallback: a dependency-free SVG map shim exposing the subset of
@@ -1216,7 +1283,8 @@ const layers = {
   band1: L.layerGroup().addTo(map), safety: L.layerGroup().addTo(map),
   fire: L.layerGroup().addTo(map), clients: L.layerGroup().addTo(map),
   crews: L.layerGroup().addTo(map), routes: L.layerGroup().addTo(map),
-  zones: L.layerGroup().addTo(map)
+  zones: L.layerGroup().addTo(map),
+  reportPin: L.layerGroup().addTo(map)     // RUN REPORT "show on map" ring
 };
 // The fire-raster group is not in the switcher: which of its classes paint
 // follows these toggles (fire = burned + burning now, and the three bands).
@@ -1611,7 +1679,11 @@ async function newSession() {
                  crews: +$("crews").value, fire_zone: $("firezone").value,
                  crews_1h: +$("crews_1h").value, crews_3h: +$("crews_3h").value,
                  spotting: $("spotting").checked,
-                 grass_realism: $("grass_realism").checked };
+                 grass_realism: $("grass_realism").checked,
+                 // COATING WINDOW + PROXIMITY FIRST (founder 2026-10-27): no
+                 // home coated more than 12 h ahead while every home can
+                 // still be coated; the homes nearest the fire first
+                 hold_h: 12, hold_per_home: true, proximity_first: true };
   // ONE-CLICK SCENARIOS: /simulator?scenario=KEY builds the preset (server
   // fills location/crews AND ignites the preset fire), then auto-runs. Only
   // the FIRST session honors the URL so later control changes behave normally.
@@ -1961,9 +2033,208 @@ $("speed").addEventListener("input", () => { $("speedval").textContent = $("spee
 $("speed").addEventListener("change", () => sendConfig({ speed: +$("speed").value }));
 
 $("run").addEventListener("click", () => ctl("run"));
-$("pause").addEventListener("click", () => ctl("pause"));
+$("pause").addEventListener("click", () => {
+  // RUN REPORT: stopping a running simulation that has a fire opens the
+  // report (unless switched off in the dialog — a per-browser preference)
+  const stopping = running;
+  ctl("pause");
+  if (stopping && rptAutoOn() && rptHasFire(lastState)) openReport();
+});
 $("step").addEventListener("click", () => ctl("step"));
 $("reset").addEventListener("click", () => ctl("reset"));
+
+// --- RUN REPORT (founder 2026-10-27: "after simulation create a report -
+// number of homes coated, number of homes exposed to fire, number of homes
+// not coated exposed to fire, nearest time between crew and fire") ---------
+// state.report (engine, display only) as a dialog: the Report button opens
+// it at any time, Pause opens it once a fire has burned, it follows the
+// state on screen (a scrubbed tick shows that tick's report), "show on map"
+// rings the nearest-time spot, and Download saves it as one HTML page.
+let reportOpen = false;
+const RPT_AUTO_KEY = "wgsim.reportOnPause";
+function rptAutoOn() {
+  try { return localStorage.getItem(RPT_AUTO_KEY) !== "0"; } catch (e) { return true; }
+}
+function rptEsc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
+function rptHasFire(st) {
+  return !!(st && (st.fires || []).length && st.tick > 0);
+}
+function rptIgnition(st) {
+  const fires = (st && st.fires) || [];
+  return fires.length ? Math.min(...fires.map(f => +f.t_ignite_s)) : null;
+}
+// a moment as the page's clock reads it: fire age, T+ since the first ignition
+function rptT(st, t_s) {
+  const t0 = rptIgnition(st);
+  if (t_s == null || t0 == null) return "–";
+  return t_s < t0 ? "before ignition" : "T+ " + fmtDur(t_s - t0);
+}
+function rptMin(m) {
+  if (m == null) return "–";
+  const r = Math.round(m);
+  return r >= 120 ? `${Math.floor(r / 60)} h ${String(r % 60).padStart(2, "0")} min` : `${r} min`;
+}
+function rptCrew(n) {
+  return `<b>${rptEsc(n.crew_name || n.crew_id)}</b>` +
+         (n.status ? ` (${rptEsc(String(n.status).replace(/_/g, " "))})` : "");
+}
+function rptNearestLine(st, n, label) {
+  if (!n) return "";
+  const show = `<button class="small rpt-show" data-lat="${+n.lat}" data-lon="${+n.lon}">show on map</button>`;
+  if (n.kind === "caught" || (n.entered_s != null && n.left_s != null))
+    return `<p><b>${label}:</b> the fire reached the spot where ${rptCrew(n)} was, at ` +
+           `${rptT(st, n.fire_s)} — the crew was in the fire. ${show}</p>`;
+  if (n.left_s != null && n.entered_s == null)
+    return `<p><b>${label}:</b> ${rptMin(n.minutes)} — ${rptCrew(n)} left the spot at ` +
+           `${rptT(st, n.left_s)}; the fire got there at ${rptT(st, n.fire_s)}. ${show}</p>`;
+  return `<p><b>${label}:</b> ${rptMin(n.minutes)} — the fire reached the spot at ` +
+         `${rptT(st, n.fire_s)}; ${rptCrew(n)} got there at ${rptT(st, n.entered_s)}, ` +
+         `behind the fire. ${show}</p>`;
+}
+function rptTableHtml(st, r) {
+  const rows = r.homes_reached || [];
+  if (!rows.length) return `<p class="sub">The fire has not reached any home yet.</p>`;
+  const body = rows.map(h => {
+    const res = h.coated_in_time ? `<td class="ok">coated in time</td>`
+      : (h.coated_s != null ? `<td class="no">coated after the fire</td>`
+                            : `<td class="no">not coated</td>`);
+    return `<tr><td>${rptEsc(h.name || h.client_id)}</td><td>${rptT(st, h.fire_s)}</td>` +
+           `<td>${h.coated_s != null ? rptT(st, h.coated_s) : "–"}</td>${res}</tr>`;
+  }).join("");
+  return `<table><thead><tr><th>Home the fire reached</th><th>Fire got there</th>` +
+         `<th>Coated</th><th>Result</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+function rptDefsHtml(r) {
+  const cell = r && r.cell_m ? `${Math.round(r.cell_m)} m` : "map";
+  const rad = r && r.ember_radius_m ? `${Math.round(r.ember_radius_m)} m` : null;
+  return `<b>Reached</b>: the simulated fire (the shaded fire) got to the home's ${cell} ` +
+    `map cell` + (rad ? `, or, for a home on ground that cannot burn, burned within ${rad} of it` : "") +
+    `. <b>Coated</b>: a crew finished gelling the home; "in time" means before the fire got ` +
+    `there. <b>Nearest time</b>: the closest any crew came, in time, to the fire at the same ` +
+    `spot (one ${cell} cell${rad ? `, or within ${rad} of a spot that cannot burn` : ""}): how long ` +
+    `before the fire arrived the crew left it, or how long after the fire the crew got there.`;
+}
+function renderReport(st) {
+  const r = st && st.report;
+  $("rpt_sub").textContent = st
+    ? `${st.location_name || st.location || ""} · ${rptHasFire(st) ? rptT(st, st.sim_now_s) : "no fire yet"}` +
+      ` · tick ${st.tick}` + (scrubbing ? " · replaying a past tick" : "") +
+      ` · session ${st.session_id || "–"}`
+    : "";
+  if (!r) {
+    for (const id of ["rpt_coated", "rpt_reached", "rpt_uncoated", "rpt_nearest"]) $(id).textContent = "–";
+    $("rpt_detail").innerHTML = `<p>This simulator server does not produce a run report.</p>`;
+    $("rpt_table").innerHTML = ""; $("rpt_defs").innerHTML = "";
+    return;
+  }
+  $("rpt_coated").textContent = `${r.coated}`;
+  $("rpt_t_coated").querySelector(".k").textContent = `homes coated (of ${r.homes})`;
+  $("rpt_reached").textContent = `${r.reached}`;
+  $("rpt_uncoated").textContent = `${r.reached_uncoated}`;
+  $("rpt_t_uncoated").classList.toggle("bad", r.reached_uncoated > 0);
+  $("rpt_t_uncoated").classList.toggle("good", r.reached > 0 && r.reached_uncoated === 0);
+  const n = r.nearest;
+  $("rpt_nearest").textContent = n ? rptMin(n.minutes) : "–";
+  $("rpt_t_nearest").classList.toggle("bad", !!(n && n.kind === "caught"));
+  let det = "";
+  if (!rptHasFire(st)) det += `<p>No fire has burned yet — light one and run the simulation.</p>`;
+  det += `<p>The fire reached ${r.reached} of ${r.homes} homes: ${r.reached_coated} coated ` +
+         `in time, ${r.reached_uncoated} not coated.</p>`;
+  if (n) det += rptNearestLine(st, n, "Nearest time between a crew and the fire");
+  else if (rptHasFire(st))
+    det += `<p><b>Nearest time between a crew and the fire:</b> none yet — the fire has not ` +
+           `reached any spot a crew has been.</p>`;
+  const a = r.closest_ahead, b = r.closest_behind;
+  if (n && n.kind !== "ahead" && a) det += rptNearestLine(st, a, "Closest ahead of the fire");
+  if (n && n.kind !== "behind" && b) det += rptNearestLine(st, b, "Closest behind the fire");
+  det += `<p>Crews in the fire: <b>${r.caught}</b>` +
+         (st.scoreboard && st.scoreboard.crew_overruns_total != null
+           ? ` · safety ledger: ${st.scoreboard.crew_overruns_total} overrun row(s), ` +
+             `${st.scoreboard.transit_overruns_total} drove through the band` : "") + `</p>`;
+  $("rpt_detail").innerHTML = det;
+  $("rpt_table").innerHTML = rptTableHtml(st, r);
+  $("rpt_defs").innerHTML = rptDefsHtml(r);
+}
+function openReport() {
+  reportOpen = true;
+  $("rpt_auto").checked = rptAutoOn();
+  $("reportdlg").classList.add("open");
+  renderReport(lastState);
+}
+function closeReport() {
+  reportOpen = false;
+  $("reportdlg").classList.remove("open");
+}
+function rptShowOnMap(lat, lon) {
+  closeReport();
+  layers.reportPin.clearLayers();
+  L.circleMarker([lat, lon], { radius: 16, color: "#4dd0e1", weight: 3,
+                               fill: false, opacity: 0.95 }).addTo(layers.reportPin);
+  const z = (map.getZoom && map.getZoom()) || 13;
+  map.setView([lat, lon], Math.max(z, 13));
+}
+function rptDownload() {
+  const st = lastState;
+  if (!st || !st.report) { toast("no run report to download yet"); return; }
+  renderReport(st);                   // the details below are the dialog's
+  const r = st.report;
+  const coated = (st.clients || []).filter(c => c.gel_applied)
+    .sort((x, y) => (x.gelled_at_s || 0) - (y.gelled_at_s || 0));
+  const coatedRows = coated.map(c => `<tr><td>${rptEsc(c.name || c.client_id)}</td>` +
+    `<td>${rptT(st, c.gelled_at_s)}</td></tr>`).join("");
+  const page = `<!doctype html><html lang="en"><head><meta charset="utf-8">` +
+    `<meta name="viewport" content="width=device-width, initial-scale=1">` +
+    `<title>Run report — ${rptEsc(st.location_name || st.location)}</title><style>` +
+    `body{font-family:"Segoe UI",system-ui,sans-serif;margin:24px;color:#14202e;background:#fff;max-width:860px}` +
+    `h1{font-size:20px;margin:0 0 4px}.sub{color:#5a6b80;font-size:12px;margin-bottom:14px}` +
+    `.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}` +
+    `.tile{border:1px solid #d5dde8;border-radius:8px;padding:10px}.n{font-size:28px;font-weight:800}` +
+    `.k{font-size:12px;color:#5a6b80}table{border-collapse:collapse;width:100%;margin:8px 0 16px;font-size:13px}` +
+    `th,td{text-align:left;padding:4px 8px;border-bottom:1px solid #e3e8ef}th{color:#5a6b80}` +
+    `.no{color:#c62828;font-weight:700}.ok{color:#2e7d32}h2{font-size:15px;margin:18px 0 4px}` +
+    `.defs{color:#5a6b80;font-size:12px;line-height:1.45}button{display:none}` +
+    `@media (max-width:600px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}</style></head><body>` +
+    `<h1>Run report — ${rptEsc(st.location_name || st.location)}</h1>` +
+    `<div class="sub">${rptHasFire(st) ? rptT(st, st.sim_now_s) : "no fire yet"} · tick ${st.tick} · ` +
+    `seed ${rptEsc(st.seed)} · session ${rptEsc(st.session_id || "–")} · ` +
+    `intensity ${rptEsc(st.intensity || "–")} · wind from ${Math.round(+st.wind_dir_deg || 0)}°</div>` +
+    `<div class="tiles"><div class="tile"><div class="n">${r.coated}</div><div class="k">homes coated (of ${r.homes})</div></div>` +
+    `<div class="tile"><div class="n">${r.reached}</div><div class="k">homes the fire reached</div></div>` +
+    `<div class="tile"><div class="n">${r.reached_uncoated}</div><div class="k">reached, not coated</div></div>` +
+    `<div class="tile"><div class="n">${r.nearest ? rptMin(r.nearest.minutes) : "–"}</div>` +
+    `<div class="k">nearest time, crew to fire</div></div></div>` +
+    `<h2>Details</h2>${$("rpt_detail").innerHTML}` +
+    `<h2>Homes the fire reached</h2>${rptTableHtml(st, r)}` +
+    `<h2>Homes coated</h2>` + (coatedRows
+      ? `<table><thead><tr><th>Home</th><th>Coated</th></tr></thead><tbody>${coatedRows}</tbody></table>`
+      : `<p>None.</p>`) +
+    `<div class="defs">${rptDefsHtml(r)}</div></body></html>`;
+  const blob = new Blob([page], { type: "text/html" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `wg-sim-report-${st.location || "sim"}-${st.session_id || "session"}-tick${st.tick}.html`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+}
+$("report").addEventListener("click", openReport);
+$("rpt_x").addEventListener("click", closeReport);
+$("rpt_close").addEventListener("click", closeReport);
+$("rpt_download").addEventListener("click", rptDownload);
+$("rpt_auto").addEventListener("change", () => {
+  try { localStorage.setItem(RPT_AUTO_KEY, $("rpt_auto").checked ? "1" : "0"); } catch (e) { /* private mode */ }
+});
+$("reportdlg").addEventListener("click", ev => {
+  if (ev.target === $("reportdlg")) { closeReport(); return; }
+  const btn = ev.target.closest && ev.target.closest(".rpt-show");
+  if (btn) rptShowOnMap(+btn.dataset.lat, +btn.dataset.lon);
+});
+document.addEventListener("keydown", ev => {
+  if (ev.key === "Escape" && reportOpen) closeReport();
+});
 // LAW 1 TIME-SCRUB: grabbing the slider pauses the live poll and replays that
 // recorded tick READ-ONLY; the ● LIVE button snaps back to now and re-enables
 // every scenario control. (Keyboard arrows on the focused slider fire 'input'
@@ -2204,7 +2475,7 @@ function resetPersistentLayers() {
   layers.band5.clearLayers(); layers.band24.clearLayers();
   layers.crews.clearLayers(); layers.routes.clearLayers();
   layers.fire.clearLayers(); layers.extent.clearLayers();
-  layers.zones.clearLayers();
+  layers.zones.clearLayers(); layers.reportPin.clearLayers();
   for (const k in crewReg) delete crewReg[k];
   for (const k in fireReg) delete fireReg[k];
   burnedMode = null;
@@ -2497,6 +2768,7 @@ function styleCrewMarker(R, c, caught, transit) {
 // --- render -------------------------------------------------------------------
 function render(st) {
   lastState = st;
+  if (reportOpen) renderReport(st);   // RUN REPORT follows the state on screen
   running = !!st.running;
   $("run").classList.toggle("active", running);
   $("pause").classList.toggle("active", !running);
@@ -2567,6 +2839,19 @@ function render(st) {
 
   // scoreboard — "violations" stays the loudest element on the page
   $("sb_served").textContent = sb.served ?? 0;
+  // COATING WINDOW: homes not coated yet because the fire could not reach
+  // them within the window (released early ones are counted in the tooltip)
+  const hd = st.hold || {};
+  $("sb_window_row").style.display = (hd.enabled && hd.per_home) ? "" : "none";
+  if (hd.enabled && hd.per_home) {
+    $("sb_window_k").textContent =
+      `waiting for the ${hd.hold_h}-h coating window`;
+    $("sb_window").textContent = hd.held ?? 0;
+    const rel = (hd.released_homes || []).length;
+    $("sb_window_row").title = `homes are coated once the fire could reach ` +
+      `them within ${hd.hold_h} h (earliest likely arrival); ${rel} released ` +
+      `early because waiting would have cost a home`;
+  }
   const wd = sb.withdrawn ?? 0;      // mid-deploy safety pull-offs (loud)
   $("sb_withdrawn").textContent = wd;
   $("sb_withdrawn").classList.toggle("hot", wd > 0);

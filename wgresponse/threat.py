@@ -200,6 +200,7 @@ import dataclasses
 import logging
 import math
 import time
+from types import SimpleNamespace
 from typing import Optional
 
 from wgresponse import feedsanity
@@ -233,6 +234,46 @@ _DOMAIN_PAD_M = 2_000.0             # spread-domain padding beyond ignitions+cli
 _DISPATCH_STATES = frozenset({
     AlertState.NOTICE_72H, AlertState.WATCH, AlertState.EXTREME_24H,
 })
+
+# FORECAST FRESHNESS TIERS (contracts forecast_tiers): a client pair at one of
+# these states puts its incident in the THREAT tier — the ladder's medium rung
+# and up, the fire has clients in its path
+_THREAT_TIER_STATES = frozenset({
+    AlertState.WATCH, AlertState.EXTREME_24H, AlertState.IMPACTED,
+})
+
+
+def _fire_key(perimeter, provenance_s, seeds) -> tuple:
+    """FORECAST FRESHNESS TIERS: the fire geometry a kept forecast was made
+    from — its perimeter rings, the perimeter's own time, its seeds."""
+    def pts(ps):
+        return tuple((round(p.lat, 6), round(p.lon, 6)) for p in ps)
+    return (tuple(pts(r) for r in (perimeter or ())), provenance_s,
+            pts(seeds))
+
+
+class _KeptForecast:
+    """FORECAST FRESHNESS TIERS: one incident's forecast kept between
+    cycles — the domain it covers (clients_key), the geometry it was made
+    from (fire_key), when (at_s), what the cycle registers from it (inputs:
+    the centroid forecast, the weather field, the regime flag), the ensemble,
+    the tiered eroded P10, each source's acreage then — and the background
+    refresh in flight (pending future + its inputs)."""
+    __slots__ = ("clients_key", "fire_key", "at_s", "inputs", "ens",
+                 "eroded", "acres", "pending", "pending_meta")
+
+    def __init__(self, clients_key, fire_key, at_s, inputs, ens, eroded,
+                 acres):
+        self.clients_key = clients_key
+        self.fire_key = fire_key
+        self.at_s = at_s
+        self.inputs = inputs
+        self.ens = ens
+        self.eroded = eroded
+        self.acres = acres
+        self.pending = None
+        self.pending_meta = None
+
 
 # Perimeter rings are subsampled to this many vertices before being handed to
 # spread (contracts: "rings subsampled <= 200 verts upstream") — bounds the
@@ -486,6 +527,14 @@ class ThreatMonitor:
         self._sanity_now: set = set()
         self._sanity_prev: set = set()
         self._sanity_events: list = []
+        # FORECAST FRESHNESS TIERS (cfg.forecast_tiers only): incident_id ->
+        # _KeptForecast, the one background refresh worker (made on first
+        # use), the alert states this cycle's tiers read, and the refreshes
+        # whose inputs failed this cycle (drained into operator events).
+        self._kept: dict = {}
+        self._refresher = None
+        self._tier_states: dict = {}
+        self._kept_failures: list = []
 
     @property
     def fire_beliefs(self):
@@ -644,13 +693,26 @@ class ThreatMonitor:
             # SAFETY SEMANTICS 18: this cycle's implausible-perimeter findings
             self._sanity_now = set()
             self._sanity_events = []
+        freshness: dict = {}            # incident_id -> forecast freshness
+        if self._cfg.forecast_tiers:
+            # FORECAST FRESHNESS TIERS: the tiers read the states the cycle
+            # starts from (a client at WATCH or above = THREAT)
+            try:
+                self._tier_states = dict(self._alert_engine.states())
+            except Exception as exc:
+                self._tier_states = {}
+                notes.append(f"forecast tiers: alert states unavailable "
+                             f"({exc}) — no incident is in the threat tier "
+                             f"this cycle")
+            self._kept_failures = []
         for inc in active:
             try:
                 self._assess_incident(inc, now_s, assessments, ensembles,
                                       clients_seen, etas, notes, roster_seen,
                                       forecasts, extreme_flags, eroded_map,
                                       timings=timings,
-                                      weather_fields=weather_fields)
+                                      weather_fields=weather_fields,
+                                      freshness=freshness)
             except _ProviderFailure as pf:
                 failed_incidents.add(inc.incident_id)
                 notes.append(
@@ -669,6 +731,21 @@ class ThreatMonitor:
                     message=(f"assessment failed for incident "
                              f"{inc.incident_id}: {exc}"),
                     incident_id=inc.incident_id, detail={"step": "assess"}))
+        if self._cfg.forecast_tiers:
+            # FORECAST FRESHNESS TIERS: a refresh that could not get its
+            # inputs is a provider error (the kept forecast stays served);
+            # forecasts of incidents gone from the active set are dropped
+            for iid, step, cause in self._kept_failures:
+                operator_events.append(OperatorEvent(
+                    t_s=now_s, kind="provider_error",
+                    message=(f"{step} provider failed refreshing incident "
+                             f"{iid}'s forecast: {cause} — its previous "
+                             f"forecast stays served"),
+                    incident_id=iid, detail={"step": step, "kept": True}))
+            self._kept_failures = []
+            live = {inc.incident_id for inc in active}
+            for iid in [k for k in self._kept if k not in live]:
+                del self._kept[iid]
         if self._cfg.feed_sanity:
             # SAFETY SEMANTICS 18c: first findings are operator events (never
             # a degradation); the memory forgets polygons past its window
@@ -838,6 +915,8 @@ class ThreatMonitor:
         if belief_status is not None:
             # SAFETY SEMANTICS 14: the per-fire status (off-map rule seam)
             res.fire_status = belief_status
+        if self._cfg.forecast_tiers:
+            res.freshness = freshness   # FORECAST FRESHNESS TIERS
         return res
 
     # ------------------------------------------------ fire belief (SEM 14)
@@ -1292,7 +1371,8 @@ class ThreatMonitor:
                          extreme_flags: Optional[dict] = None,
                          eroded_map: Optional[dict] = None,
                          timings: Optional[dict] = None,
-                         weather_fields: Optional[dict] = None) -> None:
+                         weather_fields: Optional[dict] = None,
+                         freshness: Optional[dict] = None) -> None:
         """Spread one incident and append per-client ThreatAssessments.
 
         Domain = bbox around (ignition geometry + protected clients within the
@@ -1412,13 +1492,66 @@ class ThreatMonitor:
         domain = geo.bbox_around(geom_pts + [c.loc for c in near],
                                  _DOMAIN_PAD_M)
         cell_m = self._pick_cell_m(domain)
+        if self._cfg.forecast_tiers:
+            # FORECAST FRESHNESS TIERS: the kept forecast, refreshed by tier
+            self._assess_kept(inc, now_s, near, domain, cell_m, ign,
+                              perimeter, perimeter_at_s, provenance_s, seeds,
+                              assessments, ensembles, clients_seen, etas,
+                              notes, forecasts, extreme_flags, eroded_map,
+                              timings, weather_fields, freshness)
+            return
         _tm = {}
+        b = self._forecast_inputs(inc, now_s, domain, cell_m, ign, perimeter,
+                                  perimeter_at_s, provenance_s, notes, _tm,
+                                  forecasts, extreme_flags, weather_fields)
+        ens = self._forecast_spread(inc, b, seeds, perimeter, now_s)
+        if self._belief_on():
+            self._belief_after_spread(
+                inc, ens, now_s, b.spread_cfg,
+                b.perimeter_at_s if perimeter is not None else now_s,
+                perimeter is None, notes)
+        _tm["spread_s"] = time.monotonic() - b.t_spread
+        _tm["cells"] = b.tile.spec.nrows * b.tile.spec.ncols
+        _tm["clients"] = len(near)
+        if timings is not None:
+            timings.setdefault("incidents", {})[inc.incident_id] = _tm
+        if (eroded_map is not None
+                and getattr(self._cfg, "corridor_erosion_tiered", False)):
+            # FUEL-TIERED EROSION: built here because this is where the fuel
+            # tile lives; dispatch consumes it via the eroded_rasters seam.
+            eroded_map[inc.incident_id] = spread.tiered_eroded_p10(
+                ens.p10, b.tile.fuel, self._cfg,
+                canopy=getattr(b.tile, "canopy", None))
+        self._register_forecast(inc, ens, near, now_s, assessments,
+                                ensembles, clients_seen, etas)
+
+    def _forecast_inputs(self, inc: FireIncident, now_s: float, domain,
+                         cell_m: float, ign: list, perimeter,
+                         perimeter_at_s, provenance_s, notes: list, _tm: dict,
+                         forecasts: Optional[dict] = None,
+                         extreme_flags: Optional[dict] = None,
+                         weather_fields: Optional[dict] = None):
+        """Everything one incident's spread needs, in _assess_incident's
+        order: terrain tile, fire-centroid forecast (+ the local weather
+        field), the extreme-regime posture, the confirmed perimeter time and
+        the belief's member multipliers; each given map is filled at its
+        step. Returns a namespace (tile, wxf, wfield, spread_cfg, flag,
+        perimeter_at_s, zoned, mhs, t_spread)."""
         _t = time.monotonic()
         try:
             tile = self._terrain.tile(domain, cell_m)
         except Exception as exc:
             raise _ProviderFailure("terrain", exc)
         _tm["terrain_s"] = time.monotonic() - _t
+        pop = getattr(self._terrain, "pop_fallbacks", None)
+        if pop is not None:
+            # TERRAIN FALLBACK (watch --terrain-fallback): said per fire
+            for name, err in pop():
+                notes.append(
+                    f"incident {inc.incident_id}: terrain from the bundled "
+                    f"LANDFIRE tile {name} — the live terrain service failed "
+                    f"({err[:160]})")
+                _tm["terrain_fallback"] = name
         if inc.source is IncidentSource.SEEDED:
             self._note_seed_fuel(inc, tile, notes)
         _t = time.monotonic()
@@ -1442,7 +1575,7 @@ class ThreatMonitor:
                 if weather_fields is not None:
                     weather_fields[inc.incident_id] = wfield
         _tm["weather_s"] = time.monotonic() - _t
-        _t = time.monotonic()
+        t_spread = time.monotonic()
         if forecasts is not None:
             # Sprint 2 C5 (Council-1 dispatch F5): the SAME fire-centroid
             # forecast that drives spread is threaded to dispatch.plan(
@@ -1451,6 +1584,7 @@ class ThreatMonitor:
             forecasts[inc.incident_id] = wxf
 
         spread_cfg = self._cfg
+        flag = None
         if self._cfg.extreme_regime_enabled:
             # EXTREME SPREAD REGIME (contracts knob block): computed per
             # incident from the SAME tile + fire-centroid forecast that drive
@@ -1479,35 +1613,34 @@ class ThreatMonitor:
             # unchanged legacy call below)
             mhs = self._belief_before_spread(inc, tile, wxf, now_s,
                                              spread_cfg, notes)
-        if mhs is not None:
+        return SimpleNamespace(tile=tile, wxf=wxf, wfield=wfield,
+                               spread_cfg=spread_cfg, flag=flag,
+                               perimeter_at_s=perimeter_at_s, zoned=zoned,
+                               mhs=mhs, t_spread=t_spread)
+
+    @staticmethod
+    def _forecast_spread(inc: FireIncident, b, seeds: list, perimeter,
+                         now_s: float):
+        """The ensemble itself from _forecast_inputs' namespace — a pure
+        function of its arguments (FORECAST FRESHNESS TIERS run it on the
+        background worker)."""
+        if b.mhs is not None:
             # the belief drives the members; P10 guarded unless
             # fire_belief_apply_p10 (fire_belief.applied_ensemble)
-            ens = fire_belief_mod.applied_ensemble(
-                tile, seeds, wxf, now_s, spread_cfg, inc.incident_id,
-                perimeter, perimeter_at_s, mhs, **zoned)
-        else:
-            ens = spread.ensemble_arrival(tile, seeds, wxf, now_s, spread_cfg,
-                                          incident_id=inc.incident_id,
-                                          perimeter=perimeter,
-                                          perimeter_at_s=perimeter_at_s,
-                                          **zoned)
-        if self._belief_on():
-            self._belief_after_spread(
-                inc, ens, now_s, spread_cfg,
-                perimeter_at_s if perimeter is not None else now_s,
-                perimeter is None, notes)
-        _tm["spread_s"] = time.monotonic() - _t
-        _tm["cells"] = tile.spec.nrows * tile.spec.ncols
-        _tm["clients"] = len(near)
-        if timings is not None:
-            timings.setdefault("incidents", {})[inc.incident_id] = _tm
-        if (eroded_map is not None
-                and getattr(self._cfg, "corridor_erosion_tiered", False)):
-            # FUEL-TIERED EROSION: built here because this is where the fuel
-            # tile lives; dispatch consumes it via the eroded_rasters seam.
-            eroded_map[inc.incident_id] = spread.tiered_eroded_p10(
-                ens.p10, tile.fuel, self._cfg,
-                canopy=getattr(tile, "canopy", None))
+            return fire_belief_mod.applied_ensemble(
+                b.tile, seeds, b.wxf, now_s, b.spread_cfg, inc.incident_id,
+                perimeter, b.perimeter_at_s, b.mhs, **b.zoned)
+        return spread.ensemble_arrival(b.tile, seeds, b.wxf, now_s,
+                                       b.spread_cfg,
+                                       incident_id=inc.incident_id,
+                                       perimeter=perimeter,
+                                       perimeter_at_s=b.perimeter_at_s,
+                                       **b.zoned)
+
+    def _register_forecast(self, inc: FireIncident, ens, near: list,
+                           now_s: float, assessments: list, ensembles: dict,
+                           clients_seen: dict, etas: dict) -> None:
+        """The incident's ensemble and every in-range client's ETA."""
         ens.incident_id = inc.incident_id
         ensembles[inc.incident_id] = ens
         for client in near:
@@ -1517,6 +1650,188 @@ class ThreatMonitor:
                 eta=eta, computed_at_s=now_s))
             clients_seen[client.client_id] = client
             etas[(client.client_id, inc.incident_id)] = eta
+
+    # ------------------------------------- forecast freshness tiers
+
+    def _forecast_tier(self, inc: FireIncident, kept) -> tuple:
+        """FORECAST FRESHNESS TIERS (contracts forecast_tiers): (tier,
+        limit_s, why) for one incident. THREAT — a client pair of it at
+        WATCH or above in the alert states the cycle started from; else
+        CONTROLLED — every source reporting at least
+        forecast_controlled_containment_pct and no source's acreage above
+        the size its kept forecast was made at; else GROWING."""
+        cfg = self._cfg
+        iid = inc.incident_id
+        hot = sorted({cid for (cid, pid), rec in self._tier_states.items()
+                      if pid == iid
+                      and getattr(rec, "state", rec) in _THREAT_TIER_STATES})
+        if hot:
+            return ("threat", cfg.forecast_stale_threat_min * 60.0,
+                    f"{len(hot)} client(s) at watch or above")
+        by_src = (inc.meta or {}).get("containment_by_source")
+        if not isinstance(by_src, dict) or not by_src:
+            by_src = ({_source_name(inc): inc.containment_pct}
+                      if inc.containment_pct is not None else {})
+        pcts = [p for p in (_finite_num(v) for v in by_src.values())
+                if p is not None]
+        if not pcts:
+            return ("growing", cfg.forecast_stale_growing_min * 60.0,
+                    "containment not reported")
+        low = min(pcts)
+        if low < cfg.forecast_controlled_containment_pct:
+            return ("growing", cfg.forecast_stale_growing_min * 60.0,
+                    f"{low:g}% contained")
+        grew = []
+        if kept is not None:
+            for src, a in sorted(_acres_by_source(inc).items()):
+                base = kept.acres.get(src)
+                if base is not None and a > base + 1e-9 * max(1.0, abs(base)):
+                    grew.append(f"{src} {base:,.0f} -> {a:,.0f} ac")
+        if grew:
+            return ("growing", cfg.forecast_stale_growing_min * 60.0,
+                    f"{low:g}% contained but grew ({'; '.join(grew)})")
+        return ("controlled", cfg.forecast_stale_controlled_min * 60.0,
+                f"{low:g}% contained, not growing")
+
+    def _refresh_pool(self):
+        """The ONE background worker kept forecasts refresh on."""
+        if self._refresher is None:
+            from concurrent.futures import ThreadPoolExecutor
+            self._refresher = ThreadPoolExecutor(
+                max_workers=1, thread_name_prefix="wg-forecast-refresh")
+        return self._refresher
+
+    def _forecast_post(self, inc: FireIncident, ens, b, perimeter, at_s: float,
+                       notes: list):
+        """After a kept forecast's spread (in the cycle): the belief's
+        after-spread step and the tiered eroded P10 (None when that knob is
+        off)."""
+        if self._belief_on():
+            self._belief_after_spread(
+                inc, ens, at_s, b.spread_cfg,
+                b.perimeter_at_s if perimeter is not None else at_s,
+                perimeter is None, notes)
+        if getattr(self._cfg, "corridor_erosion_tiered", False):
+            return spread.tiered_eroded_p10(
+                ens.p10, b.tile.fuel, self._cfg,
+                canopy=getattr(b.tile, "canopy", None))
+        return None
+
+    def _collect_refresh(self, inc: FireIncident, kept, notes: list) -> None:
+        """A finished background refresh becomes the kept forecast (its
+        after-spread steps run here, in the cycle); a failed one is noted and
+        the previous forecast stays."""
+        fut, meta = kept.pending, kept.pending_meta
+        kept.pending = kept.pending_meta = None
+        at_s, b, perimeter, fire_key, acres, clients_key = meta
+        try:
+            ens = fut.result()
+        except Exception as exc:
+            notes.append(f"incident {inc.incident_id}: forecast refresh "
+                         f"failed ({exc}) — the forecast made "
+                         f"{(at_s - kept.at_s) / 60.0:.0f} min before it "
+                         f"stays")
+            self._kept_failures.append((inc.incident_id, "spread", exc))
+            return
+        kept.eroded = self._forecast_post(inc, ens, b, perimeter, at_s, notes)
+        kept.ens = ens
+        kept.inputs = SimpleNamespace(wxf=b.wxf, wfield=b.wfield, flag=b.flag)
+        kept.at_s = at_s
+        kept.fire_key = fire_key
+        kept.acres = acres
+        kept.clients_key = clients_key
+
+    def _assess_kept(self, inc: FireIncident, now_s: float, near: list,
+                     domain, cell_m: float, ign: list, perimeter,
+                     perimeter_at_s, provenance_s, seeds: list,
+                     assessments: list, ensembles: dict, clients_seen: dict,
+                     etas: dict, notes: list, forecasts, extreme_flags,
+                     eroded_map, timings, weather_fields, freshness) -> None:
+        """FORECAST FRESHNESS TIERS (contracts forecast_tiers): serve the
+        incident's kept forecast, refreshing it — (a) in the cycle when there
+        is none or its domain no longer fits (the protected homes in range
+        changed, or one lies off its grid); (b)/(c) on the background worker
+        when the fire's geometry changed or the forecast's age reaches its
+        tier's limit less forecast_refresh_margin_min (the previous forecast
+        is served until the new one lands). A refresh whose inputs fail is a
+        provider error (drained by cycle()); the kept forecast stays served.
+        Fills freshness[iid] with tier, limit_s, age_s, computed_at_s,
+        refreshing, stale (age past the limit) and why."""
+        cfg = self._cfg
+        iid = inc.incident_id
+        clients_key = (tuple(sorted(c.client_id for c in near)),
+                       float(cell_m))
+        fire_key = _fire_key(perimeter, provenance_s, seeds)
+        kept = self._kept.get(iid)
+        if (kept is not None and kept.pending is not None
+                and kept.pending.done()):
+            self._collect_refresh(inc, kept, notes)
+        tier, limit_s, why = self._forecast_tier(inc, kept)
+        _tm = {"tier": tier}
+        fits = (kept is not None and kept.clients_key == clients_key
+                and all(geo.latlon_to_rc(kept.ens.spec, c.loc) is not None
+                        for c in near))
+        if not fits:
+            b = self._forecast_inputs(inc, now_s, domain, cell_m, ign,
+                                      perimeter, perimeter_at_s,
+                                      provenance_s, notes, _tm)
+            ens = self._forecast_spread(inc, b, seeds, perimeter, now_s)
+            eroded = self._forecast_post(inc, ens, b, perimeter, now_s, notes)
+            _tm["spread_s"] = time.monotonic() - b.t_spread
+            _tm["cells"] = b.tile.spec.nrows * b.tile.spec.ncols
+            kept = _KeptForecast(
+                clients_key, fire_key, now_s,
+                SimpleNamespace(wxf=b.wxf, wfield=b.wfield, flag=b.flag),
+                ens, eroded, _acres_by_source(inc))
+            self._kept[iid] = kept
+            _tm["forecast"] = "computed"
+        else:
+            age = now_s - kept.at_s
+            due = []
+            if kept.fire_key != fire_key:
+                due.append("the fire's geometry changed")
+            if age >= limit_s - cfg.forecast_refresh_margin_min * 60.0:
+                due.append(f"{age / 60.0:.0f} min old (limit "
+                           f"{limit_s / 60.0:g} min)")
+            if due and kept.pending is None:
+                try:
+                    b = self._forecast_inputs(inc, now_s, domain, cell_m, ign,
+                                              perimeter, perimeter_at_s,
+                                              provenance_s, notes, _tm)
+                except _ProviderFailure as pf:
+                    self._kept_failures.append((iid, pf.step, pf.cause))
+                    _tm["forecast"] = f"kept — refresh failed ({pf.step})"
+                else:
+                    kept.pending = self._refresh_pool().submit(
+                        self._forecast_spread, inc, b, seeds, perimeter, now_s)
+                    kept.pending_meta = (now_s, b, perimeter, fire_key,
+                                         _acres_by_source(inc), clients_key)
+                    _tm["forecast"] = "refreshing (" + "; ".join(due) + ")"
+            else:
+                _tm["forecast"] = ("refreshing" if kept.pending is not None
+                                   else "kept")
+        k = kept.inputs
+        if k.wfield is not None and weather_fields is not None:
+            weather_fields[iid] = k.wfield
+        if forecasts is not None:
+            forecasts[iid] = k.wxf
+        if k.flag is not None and extreme_flags is not None:
+            extreme_flags[iid] = k.flag
+        if kept.eroded is not None and eroded_map is not None:
+            eroded_map[iid] = kept.eroded
+        self._register_forecast(inc, kept.ens, near, now_s, assessments,
+                                ensembles, clients_seen, etas)
+        age = max(0.0, now_s - kept.at_s)
+        if freshness is not None:
+            freshness[iid] = {
+                "tier": tier, "limit_s": limit_s, "age_s": age,
+                "computed_at_s": kept.at_s,
+                "refreshing": kept.pending is not None,
+                "stale": age > limit_s, "why": why}
+        _tm["age_s"] = round(age, 1)
+        _tm["clients"] = len(near)
+        if timings is not None:
+            timings.setdefault("incidents", {})[iid] = _tm
 
     def _local_weather_field(self, inc: FireIncident, wxf, centroid: LatLon,
                              tile, notes: list):

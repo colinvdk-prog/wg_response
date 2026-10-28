@@ -334,6 +334,30 @@ def _counts(state: dict, rows: list, notes) -> dict:
     return out
 
 
+def forecast_tiers_rule(cfg) -> dict:
+    """FORECAST FRESHNESS TIERS (contracts forecast_tiers): the rule the
+    daemon armed, minutes."""
+    return {"threat_min": cfg.forecast_stale_threat_min,
+            "growing_min": cfg.forecast_stale_growing_min,
+            "controlled_min": cfg.forecast_stale_controlled_min,
+            "controlled_containment_pct":
+                cfg.forecast_controlled_containment_pct,
+            "margin_min": cfg.forecast_refresh_margin_min}
+
+
+def freshness_row(f: dict, now_s: float) -> dict:
+    """One fire's forecast freshness as of now_s (its age and staleness
+    recomputed from when the forecast was made, so a served state stays
+    true between cycles)."""
+    age = max(0.0, float(now_s) - float(f["computed_at_s"]))
+    return {"tier": f["tier"], "why": f["why"],
+            "limit_min": round(f["limit_s"] / 60.0, 1),
+            "age_min": round(age / 60.0, 1),
+            "computed_at_s": f["computed_at_s"],
+            "refreshing": bool(f["refreshing"]),
+            "stale": age > f["limit_s"]}
+
+
 def build_summary(state: dict, result, geometry: bool = True) -> dict:
     """The /api/world/summary payload for one completed cycle.
 
@@ -353,6 +377,9 @@ def build_summary(state: dict, result, geometry: bool = True) -> dict:
     # daemon armed it (its /api/state carries weather_grid)
     local_wx = isinstance(state.get("weather_grid"), dict)
     wx_fields = getattr(result, "weather_fields", None) or {}
+    # FORECAST FRESHNESS TIERS: present only when the daemon armed them
+    tiers_on = isinstance(state.get("forecast_tiers"), dict)
+    fresh = getattr(result, "freshness", None) or {}
     rows = []
     for inc in incs:
         iid = inc.incident_id
@@ -400,6 +427,9 @@ def build_summary(state: dict, result, geometry: bool = True) -> dict:
             from wgresponse.wxfield import field_row
             fld = wx_fields.get(iid)
             row["weather"] = field_row(fld, t_s) if fld is not None else None
+        if tiers_on:
+            f = fresh.get(iid)
+            row["forecast"] = freshness_row(f, t_s) if f is not None else None
         rows.append(row)
     rows = rank_incidents(rows)
     out = {
@@ -419,6 +449,8 @@ def build_summary(state: dict, result, geometry: bool = True) -> dict:
         out["offmap_rule"] = dict(state["offmap_rule"])
     if local_wx:
         out["weather_grid"] = dict(state["weather_grid"])
+    if tiers_on:
+        out["forecast_tiers"] = dict(state["forecast_tiers"])
     return out
 
 

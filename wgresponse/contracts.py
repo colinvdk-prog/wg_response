@@ -2065,6 +2065,23 @@ wgresponse.simui   (founder request 2026-07-09; docs/SIMULATOR_DESIGN.md is the 
     replayed by reset() and the client re-roll; no placement = byte-identical
     sessions (state gains one additive key, crew_placement). Server:
     POST /api/sim/<id>/crew {crew_id, lat, lon} | {action: "reset_crews"}.
+    RUN REPORT (founder request 2026-10-27 "after simulation create a report -
+    number of homes coated, number of homes exposed to fire, number of homes
+    not coated exposed to fire, nearest time between crew and fire"): state
+    gains ONE additive, DISPLAY-ONLY key, report (never read by the engine;
+    every other key byte-identical): homes, coated (homes in the serviced
+    ledger), reached (homes the ACTUAL fire — each fire's nominal member — has
+    reached: the home's cell, or for a cell it never reaches the earliest
+    arrival within cfg.ember_threat_radius_m, the FOUNDER ROUND 4 law 6 window
+    read on the actual fire), reached_coated / reached_uncoated (gelled before
+    the fire got there, or not), homes_reached rows, and the NEAREST TIME
+    between a crew and the fire — over every spot every crew was at (the path
+    audit's samples of each step's path_track, the same reading): 0 min
+    ('caught') when the fire reached a spot while a crew was there, else the
+    least of closest_ahead (the fire's arrival minus the moment a crew left)
+    and closest_behind (a crew's arrival minus the fire's); caught counts.
+    The page shows it as the Report dialog (Pause on a running simulation
+    opens it) and downloads it as one HTML page.
     .ignite(loc, intensity) / .set_wind(dir_deg) / .set_buffer(egress_buffer_min)
     .tick() -> state dict for the UI   (deterministic given seed + command script)
     Five real-location tiles cached dep-free under data/tiles/ (LFPS-sourced).
@@ -2943,6 +2960,7 @@ class CycleResult:
     offmap: dict = field(default_factory=dict)  # incident_id -> OffDomainHorizon per domain incident (SAFETY SEMANTICS 15; {} unless cfg.corridor_offraster_per_fire)
     fire_status: dict = field(default_factory=dict)  # incident_id -> FireStatus (SAFETY SEMANTICS 14; populated only with cfg.fire_belief_track)
     weather_fields: dict = field(default_factory=dict)  # incident_id -> WeatherField per domain incident that spread on one (SAFETY SEMANTICS 17; {} unless cfg.weather_grid_km > 0)
+    freshness: dict = field(default_factory=dict)  # incident_id -> {tier, limit_s, age_s, computed_at_s, refreshing, stale, why} per domain incident (FORECAST FRESHNESS TIERS; {} unless cfg.forecast_tiers)
 
 
 @dataclass(frozen=True)
@@ -3867,6 +3885,40 @@ class ResponseConfig:
     # 24 h; the release boundary equals the EXTREME_24H alert rung.
     dispatch_hold_h: float = 0.0
     dispatch_hold_weather_buffer_h: float = 6.0
+    # COATING WINDOW (founder 2026-10-27, verbatim: "in the engine, I do not
+    # want homes coated more than 12 hours in advance, as long as there is
+    # sufficient crew capacity to coat every home"). The hold above releases
+    # EVERY held home the first cycle deferral would cost any one of them
+    # (latched): measured on the founder's run sim-2 (Eagle -> Vail tile,
+    # fire at East Vail, wind 93): four Vail homes with a 5-19 h pessimistic
+    # arrival released all 36 at T+0.25 h, and three of four crews spent the
+    # first five hours coating homes 26-60 h from the fire. When True the
+    # release is PER HOME: each cycle the probes run as before, and when the
+    # deferred plan loses a home only the held homes it loses are released
+    # (or, when the lost homes are not held themselves — a capacity crunch —
+    # the held homes with the earliest pessimistic arrival, as many as were
+    # lost), the probe re-run, at most DISPATCH_HOLD_ROUNDS times; each
+    # released home stays released (latched per home). Every other home stays
+    # held until it is within dispatch_hold_h of the fire. Still: deferral
+    # never costs a home the coat-now plan serves. False = byte-identical.
+    # The simulator page arms it with dispatch_hold_h = 12.
+    dispatch_hold_per_home: bool = False
+    # PROXIMITY FIRST (founder 2026-10-27, verbatim: "I want ranking based on
+    # proximity as a priority in case weather conditions change"). When True
+    # (homes mode) the count-maximal plan's served homes are re-scheduled in
+    # PROXIMITY order — the home nearest the fire's current extent first (each
+    # incident's P10 arrival <= now; distance in metres, bands of
+    # dispatch_proximity_band_m), each to the crew whose route end serves it
+    # with the earliest feasible departure (the greedy-EDF mechanics, the
+    # same per-stop safety chain); frozen commitments kept. Adopted only when
+    # it serves EVERY home the count-maximal plan serves (count-safe per plan
+    # call); otherwise each crew's own stops are re-ordered by proximity when
+    # its whole route stays feasible. Distance, not forecast arrival: a
+    # wind change can turn the fire toward any home near it. Replaces the
+    # dispatch_sequence re-order when on. False = byte-identical. The
+    # simulator page arms it.
+    dispatch_proximity_rank: bool = False
+    dispatch_proximity_band_m: float = 1000.0
     # FOUNDER ROUND 6 (2026-07-12): within-route stop SEQUENCE. 'auto' (default,
     # byte-identical) = the count-max emit order. 'fire_first' = each crew's
     # non-frozen stops re-ordered CLOSEST-TO-FIRE-FIRST (earliest p50 arrival)
@@ -3961,6 +4013,35 @@ class ResponseConfig:
     # (also the SEMANTICS 13a regrowth window: a removed contained fire seen
     # growing stays on the map until this many hours pass without growth)
     containment_no_growth_h: float = 48.0
+    # FORECAST FRESHNESS TIERS (founder 2026-10-28, verbatim: "for the live
+    # map, have a graduated level of stale. for a fire under control, stale
+    # is 6 hours, for a fire that is growing stale is 1 hour, for a fire that
+    # has at least medium risk that has clients in its path, stale is 15
+    # minutes"). Measured 2026-10-28: the national watcher's cycle took 40
+    # min, 35 of them re-forecasting two fires 92-95 % contained whose feed
+    # records had not changed in 2-5 days, so the whole map read STALE. When
+    # True, ThreatMonitor keeps each incident's forecast between cycles and
+    # re-forecasts it only when (a) its domain changed (the protected homes in
+    # range or the grid: at once, in the cycle — the domain must cover them),
+    # (b) the fire's geometry changed (perimeter, its time, seeds), or (c) the
+    # forecast's age reaches its tier's limit less
+    # forecast_refresh_margin_min. Tiers: THREAT — a client pair of the
+    # incident at WATCH or above (the ladder's medium rung and up: clients in
+    # its path) — forecast_stale_threat_min; CONTROLLED — every source at
+    # forecast_controlled_containment_pct or more and no acreage growth since
+    # its last forecast — forecast_stale_controlled_min; otherwise GROWING —
+    # forecast_stale_growing_min. (b) and (c) run in ONE background worker
+    # when a forecast exists: the cycle serves the previous forecast until
+    # the new one lands, so a slow fire never holds the map. Each incident
+    # reports its forecast's age, tier, limit, refreshing and stale (past its
+    # limit) in CycleResult.freshness. False = byte-identical (every cycle
+    # re-forecasts every incident).
+    forecast_tiers: bool = False
+    forecast_stale_threat_min: float = 15.0
+    forecast_stale_growing_min: float = 60.0
+    forecast_stale_controlled_min: float = 360.0
+    forecast_controlled_containment_pct: float = 90.0
+    forecast_refresh_margin_min: float = 5.0
     # CONTAINED FIRES LEAVE THE MAP (founder ruling 2026-09-27: "a fire that
     # is contained and no longer spreading is removed from the map"; SAFETY
     # SEMANTICS 13a-d). When True, a feed incident the feed declares contained
@@ -4333,6 +4414,17 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("dispatch_objective must be 'homes' or 'value'")
     if cfg.dispatch_sequence not in ("auto", "fire_first", "urgency"):
         problems.append("dispatch_sequence must be 'auto', 'fire_first', or 'urgency'")
+    if not cfg.dispatch_proximity_band_m > 0:
+        problems.append("dispatch_proximity_band_m must be > 0")
+    for name in ("forecast_stale_threat_min", "forecast_stale_growing_min",
+                 "forecast_stale_controlled_min"):
+        if not getattr(cfg, name) > 0:
+            problems.append(f"{name} must be > 0")
+    if not cfg.forecast_refresh_margin_min >= 0:
+        problems.append("forecast_refresh_margin_min must be >= 0")
+    if not 0.0 <= cfg.forecast_controlled_containment_pct <= 100.0:
+        problems.append("forecast_controlled_containment_pct must be within "
+                        "[0, 100]")
     if cfg.dispatch_urgency_weight < 0:
         problems.append("dispatch_urgency_weight must be >= 0")
     if cfg.dispatch_value_weight < 0:

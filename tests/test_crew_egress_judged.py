@@ -501,6 +501,7 @@ GOLDEN_TRIAGE = ["a0ce1f1bdbbaddb6", "b8c9c01c1a45c9f4", "4dbf779ab30e1bea",
 def _hash(st):
     st = dict(st)
     st.pop("cmd_log", None)            # echoes the override keys themselves
+    st.pop("report", None)   # run report: display only (2026-10-27)
     return hashlib.sha256(json.dumps(st, sort_keys=True, allow_nan=False)
                           .encode()).hexdigest()[:16]
 
