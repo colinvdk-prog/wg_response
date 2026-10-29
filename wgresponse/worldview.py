@@ -345,6 +345,41 @@ def forecast_tiers_rule(cfg) -> dict:
             "margin_min": cfg.forecast_refresh_margin_min}
 
 
+def hotspot_rule(cfg, firms_feed=None) -> dict:
+    """HOTSPOT ATTACHMENT (contracts SAFETY SEMANTICS 39): the rule the
+    daemon armed and what its FIRMS adapter asks for (firms None = no
+    FIRMS adapter in the stack: no FIRMS_MAP_KEY)."""
+    desc = getattr(firms_feed, "describe", None)
+    return {"firms": desc() if callable(desc) else None,
+            "perimeter_m": cfg.fuse_hotspots_perimeter_m,
+            "point_min_m": cfg.fuse_hotspots_point_min_m,
+            "point_max_m": cfg.fuse_hotspots_point_max_m,
+            "screening": None}
+
+
+def hotspot_row(inc, now_s: float):
+    """One fire's satellite heat as of now_s, or None without any: a FIRMS
+    fire's own detections ("cluster"), or the detections that joined a
+    reported fire this cycle ("attached")."""
+    hs = list(getattr(inc, "hotspots", None) or [])
+    if not hs:
+        return None
+    meta = getattr(inc, "meta", None) or {}
+    if _source_of(inc) == "firms":
+        ts = [t for t in (meta.get("hotspot_t_s") or [inc.updated_at_s])
+              if _finite(t) is not None]
+        n, newest, kind = len(hs), (max(ts) if ts else None), "cluster"
+    else:
+        att = meta.get("hotspots_attached") or {}
+        n = int(att.get("n", len(hs)))
+        newest, kind = _finite(att.get("newest_s")), "attached"
+    return {"n": n, "kind": kind, "newest_s": newest,
+            "newest_age_h": (round(max(0.0, float(now_s) - newest) / 3600.0, 2)
+                             if newest is not None else None),
+            "satellites": list(meta.get("satellites") or []),
+            "max_frp": _finite(meta.get("max_frp"))}
+
+
 def freshness_row(f: dict, now_s: float) -> dict:
     """One fire's forecast freshness as of now_s (its age and staleness
     recomputed from when the forecast was made, so a served state stays
@@ -380,6 +415,8 @@ def build_summary(state: dict, result, geometry: bool = True) -> dict:
     # FORECAST FRESHNESS TIERS: present only when the daemon armed them
     tiers_on = isinstance(state.get("forecast_tiers"), dict)
     fresh = getattr(result, "freshness", None) or {}
+    # SAFETY SEMANTICS 39: satellite heat, present only when armed
+    heat_on = isinstance(state.get("hotspot_rule"), dict)
     rows = []
     for inc in incs:
         iid = inc.incident_id
@@ -430,6 +467,8 @@ def build_summary(state: dict, result, geometry: bool = True) -> dict:
         if tiers_on:
             f = fresh.get(iid)
             row["forecast"] = freshness_row(f, t_s) if f is not None else None
+        if heat_on:
+            row["hotspots"] = hotspot_row(inc, t_s)
         rows.append(row)
     rows = rank_incidents(rows)
     out = {
@@ -451,6 +490,8 @@ def build_summary(state: dict, result, geometry: bool = True) -> dict:
         out["weather_grid"] = dict(state["weather_grid"])
     if tiers_on:
         out["forecast_tiers"] = dict(state["forecast_tiers"])
+    if heat_on:
+        out["hotspot_rule"] = dict(state["hotspot_rule"])
     return out
 
 

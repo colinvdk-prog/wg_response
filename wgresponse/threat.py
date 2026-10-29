@@ -674,6 +674,11 @@ class ThreatMonitor:
             # silently; their pairs then take the absence law below.
             active, removed = self._drop_contained_incidents(active, now_s,
                                                              notes)
+        if self._cfg.fuse_hotspots:
+            # SAFETY SEMANTICS 39: satellite detections on a reported fire
+            # join it (after 9 and 13: a removed fire takes only its own
+            # interior heat); the rest stay FIRMS fires
+            active, removed = self._attach_hotspots(active, removed, notes)
         if self._belief_on():
             # SAFETY SEMANTICS 14: this cycle's growth observations (the
             # belief learns BEFORE the spread it may inform)
@@ -1343,6 +1348,38 @@ class ThreatMonitor:
                     f"while any is blind; IMPACTED stays terminal): {listed}")
             notes.append(note)
             log.info("%s", note)
+        return kept, removed
+
+    def _attach_hotspots(self, active: list, removed: list,
+                         notes: list) -> "tuple[list, list]":
+        """HOTSPOT ATTACHMENT (contracts SAFETY SEMANTICS 39) over this
+        cycle's kept set and its removed contained fires; one note when any
+        detection joined a fire. A failure keeps both lists as they were (a
+        note — the FIRMS clusters stay fires: nothing is hidden)."""
+        try:
+            from wgresponse.feeds import attach_hotspots
+            kept, cont, st = attach_hotspots(
+                active, [r.incident for r in removed], self._cfg)
+        except Exception as exc:
+            notes.append(f"hotspot attachment failed ({exc}) — every FIRMS "
+                         f"cluster stays its own fire this cycle")
+            return active, removed
+        removed = [dataclasses.replace(r, incident=inc)
+                   for r, inc in zip(removed, cont)]
+        if st["attached"]:
+            note = (f"hotspots: {st['attached']} of {st['detections']} FIRMS "
+                    f"detection(s) joined {len(st['fires'])} reported "
+                    f"fire(s) ({', '.join(st['fires'])})")
+            if st["inside_contained"]:
+                note += (f"; {st['inside_contained']} inside fires removed as "
+                         f"contained (their own interior heat)")
+            if st["clusters_absorbed"]:
+                note += (f"; {len(st['clusters_absorbed'])} FIRMS cluster(s) "
+                         f"wholly absorbed")
+            if st["clusters_split"]:
+                note += (f"; {len(st['clusters_split'])} split (the rest "
+                         f"stays a FIRMS fire)")
+            notes.append(note + " — SAFETY SEMANTICS 39")
         return kept, removed
 
     def _threat_radius_m(self) -> float:

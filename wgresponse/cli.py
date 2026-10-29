@@ -321,6 +321,15 @@ def _build_parser() -> argparse.ArgumentParser:
                          "that report instead of being spread forward from "
                          "its own age; a growing fire (record larger) keeps "
                          "the legacy seeding")
+    # SAFETY SEMANTICS 39 (2026-10-29): default-OFF knob.
+    pw.add_argument("--fuse-hotspots", action="store_true",
+                    help="cfg.fuse_hotspots + the FIRMS live mode (with env "
+                         "FIRMS_MAP_KEY): the three VIIRS satellites, a "
+                         "rolling 24 h window, cluster ids kept across "
+                         "fetches; a detection inside or within 1 km of a "
+                         "reported fire's perimeter (or near a point-only "
+                         "fire's point) joins that fire, and the rest of "
+                         "each cluster stays a FIRMS fire")
     # SAFETY SEMANTICS 24 (2026-10-15): default-OFF knob.
     pw.add_argument("--fuse-colocated", action="store_true",
                     help="cfg.fuse_colocated_incidents: one fire is one "
@@ -611,11 +620,13 @@ def _parse_bbox(text: str):
     return BBox(west=parts[0], south=parts[1], east=parts[2], north=parts[3])
 
 
-def _live_feed_stack(map_key):
+def _live_feed_stack(map_key, live: bool = False):
     """Build the live feed adapters: WFIGS + FIRIS + CAL FIRE always, FIRMS
     only when a MAP_KEY is provided (Sprint 2 C3d/C1: a keyless FirmsFeed is
     BLIND by design — [] with last_fetch_ok=False — and would mark EVERY watch
     cycle degraded, so the CLI skips it gracefully with a note instead).
+    live (watch --fuse-hotspots, SAFETY SEMANTICS 39): FIRMS in its live
+    mode (FirmsFeed.live — three VIIRS satellites, rolling 24 h, kept ids).
 
     Returns (feeds, notes): the adapter list and human-readable notes (the
     FIRMS skip line, when applicable)."""
@@ -623,7 +634,8 @@ def _live_feed_stack(map_key):
     stack = [feeds.WfigsFeed(), feeds.FirisFeed(), feeds.CalFireFeed()]
     notes = []
     if map_key:
-        stack.append(feeds.FirmsFeed(map_key=map_key))
+        stack.append(feeds.FirmsFeed.live(map_key) if live
+                     else feeds.FirmsFeed(map_key=map_key))
     else:
         notes.append(
             "FirmsFeed skipped — no FIRMS_MAP_KEY in the environment "
@@ -651,11 +663,24 @@ def _firms_scale_notes(feeds_stack, aoi) -> list:
     near clients can build several domains. Said once, at startup; [] when
     FIRMS is off or the AOI is regional."""
     from wgresponse import feeds as feeds_mod
-    if not any(isinstance(f, feeds_mod.FirmsFeed) for f in feeds_stack):
+    firms = [f for f in feeds_stack if isinstance(f, feeds_mod.FirmsFeed)]
+    if not firms:
         return []
     area = (aoi.east - aoi.west) * (aoi.north - aoi.south)
     if area <= _FIRMS_NATIONAL_DEG2:
         return []
+    if getattr(firms[0], "live_mode", False):
+        d = firms[0].describe()
+        return [f"FIRMS over a NATIONAL AOI ({area:,.0f} deg²), live mode: "
+                f"{len(d['sources'])} area request(s) per cycle "
+                f"({', '.join(d['sources'])}; DAY_RANGE {d['day_range']}, "
+                f"kept to the last {d['window_h']:g} h), cluster ids kept "
+                f"across fetches. Detections on reported fires join them "
+                f"(SAFETY SEMANTICS 39); every other 2 km cluster is a fire "
+                f"assessed each cycle — nationally mostly agricultural, "
+                f"prescribed and industrial heat (2026-10-29: 1,312 "
+                f"clusters, 26 within 60 km of the demo homes); no hotspot "
+                f"screening is armed"]
     return [f"FIRMS over a NATIONAL AOI ({area:,.0f} deg²): one area request "
             f"per cycle (the FIRMS area API accepts any bbox up to the world "
             f"— docs checked 2026-09-26; a large request may count as several "
@@ -1453,6 +1478,21 @@ class _WatchDaemon:
                                   "name": row.get("name"),
                                   **row["forecast"]})
             out["stale_fires"] = stale
+        if getattr(self._cfg, "fuse_hotspots", False):
+            # SAFETY SEMANTICS 39: the rule (and the FIRMS adapter's mode)
+            # + each fire's satellite heat (null = none) — additive keys,
+            # present only with the knob armed.
+            from wgresponse import worldview
+            from wgresponse.feeds import FirmsFeed
+            firms = next((f for f in (getattr(self._monitor, "_feeds", None)
+                                      or []) if isinstance(f, FirmsFeed)),
+                         None)
+            out["hotspot_rule"] = worldview.hotspot_rule(self._cfg, firms)
+            by_id = {i.incident_id: i for i in res.incidents}
+            for row in out["incidents"]:
+                inc = by_id.get(row["incident_id"])
+                row["hotspots"] = (worldview.hotspot_row(inc, now)
+                                   if inc is not None else None)
         return out
 
     @classmethod
@@ -1908,6 +1948,20 @@ def _cmd_watch(args) -> int:
     startup_notes_fix += _feed_sanity_notes(cfg)
     cfg = _fuse_colocated_cfg(cfg, args)    # SEMANTICS 24
     startup_notes_fix += _fuse_colocated_notes(cfg)
+    if getattr(args, "fuse_hotspots", False):
+        cfg = dataclasses.replace(cfg, fuse_hotspots=True)   # SEMANTICS 39
+        startup_notes_fix.append(
+            f"HOTSPOT ATTACHMENT (founder 2026-10-29): a NASA FIRMS detection "
+            f"inside a reported fire's perimeter or within "
+            f"{cfg.fuse_hotspots_perimeter_m:g} m of it — or within "
+            f"{cfg.fuse_hotspots_point_min_m:g}-"
+            f"{cfg.fuse_hotspots_point_max_m:g} m (by its size) + "
+            f"{cfg.fuse_hotspots_perimeter_m:g} m of a point-only fire's "
+            f"point — joins that fire as a hotspot; a fire removed as "
+            f"contained takes only the heat inside its perimeter; the rest "
+            f"of each cluster stays a FIRMS fire — SAFETY SEMANTICS 39"
+            + ("" if os.environ.get("FIRMS_MAP_KEY") else
+               " [INERT: no FIRMS_MAP_KEY in the environment]"))
     if getattr(args, "forecast_tiers", False):
         cfg = dataclasses.replace(cfg, forecast_tiers=True)
         startup_notes_fix.append(
@@ -1964,7 +2018,11 @@ def _cmd_watch(args) -> int:
     if startup_note_regime:
         startup_notes.append(startup_note_regime)
     startup_notes += startup_notes_fix
-    feeds_stack, feed_notes = _live_feed_stack(os.environ.get("FIRMS_MAP_KEY"))
+    firms_key = os.environ.get("FIRMS_MAP_KEY")
+    feeds_stack, feed_notes = (
+        _live_feed_stack(firms_key, live=True)      # SEMANTICS 39's live mode
+        if getattr(args, "fuse_hotspots", False) else
+        _live_feed_stack(firms_key))
     startup_notes += feed_notes
     terrain, terrain_notes = _watch_terrain(args, state_dir)
     startup_notes += terrain_notes

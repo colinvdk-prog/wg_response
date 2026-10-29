@@ -1065,6 +1065,19 @@ function weatherPointTip(r, p) {
     (p.ok ? "" : `<br><span class="bad">fetch failed — this zone spreads on the centroid forecast</span>`) +
     `<br>${hrs.map(esc).join("<br>")}`;
 }
+// SAFETY SEMANTICS 39 (watch --fuse-hotspots): NASA FIRMS satellite heat —
+// a FIRMS fire's own detections, or the ones that joined a reported fire.
+// Present only when the daemon armed the rule.
+function hotspotLine(r) {
+  const h = r && r.hotspots;
+  if (!h || !h.n) return "";
+  const age = h.newest_age_h == null ? "" : `, newest ${Number(h.newest_age_h).toFixed(1)} h ago`;
+  const sats = (h.satellites || []).map(s => String(s).replace(/^VIIRS_|_NRT$/g, "")
+    .replace("NOAA", "NOAA-").replace("SNPP", "S-NPP")).join(", ");
+  return `<i>satellite heat</i> (NASA FIRMS): ${h.n} detection${h.n === 1 ? "" : "s"} in 24 h${age}` +
+    (h.kind === "attached" ? " on this fire" : "") + (sats ? ` · ${esc(sats)}` : "") +
+    (h.max_frp != null ? ` · peak ${Number(h.max_frp).toFixed(1)} MW` : "");
+}
 function incidentTip(r) {
   const t = SUMMARY && SUMMARY.t_s;
   const lines = [`<b>${esc(r.name || r.incident_id)}</b> · ${esc(srcLabel(r.source))}` +
@@ -1091,6 +1104,8 @@ function incidentTip(r) {
   if (om) lines.push(om);
   const bt = beliefText(r.belief);
   if (bt) lines.push(`<i>belief</i>: ${esc(bt)}`);
+  const hl = hotspotLine(r);
+  if (hl) lines.push(hl);
   const wl = weatherLine(r);
   if (wl) lines.push(wl);
   const extra = (r.notes || []).filter(n => n !== r.why_no_domain &&

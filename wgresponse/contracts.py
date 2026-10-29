@@ -1626,6 +1626,40 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    Knob OFF = byte-identical (pinned in tests/test_dest_durable.py
    against goldens computed on commit 8d0fbdf).
 
+39. A HOTSPOT ON A REPORTED FIRE IS THAT FIRE'S — HOTSPOT ATTACHMENT
+   (2026-10-29; founder: "get the FIRMS key added and redeploy";
+   docs/review/firms_live_2026-10-29.md; cfg.fuse_hotspots and
+   fuse_hotspots_perimeter_m / _point_min_m / _point_max_m; watch
+   --fuse-hotspots, which also arms the FIRMS live mode: the three VIIRS
+   satellites, a rolling 24 h window, cluster ids kept across fetches —
+   feeds.FirmsFeed). A FIRMS cluster has no IRWIN id and a synthetic name,
+   so no join put a satellite detection on the reported fire it sits on,
+   and one fire near clients built a domain per 2 km cluster
+   (docs/LIVE_WORLD_PLAN.md W6 item 5: "spatial fusion ... is the
+   prerequisite for national FIRMS"). With fuse_hotspots, after the 9 gate
+   and the 13 removal (feeds.attach_hotspots), each FIRMS detection joins
+   the reported fire whose footprint holds it: (a) inside a kept fire's
+   perimeter or within fuse_hotspots_perimeter_m of it; (b) within
+   min(_point_max_m, max(_point_min_m, 2 x the equivalent-circle radius of
+   its acreage)) + _perimeter_m of a kept point-only fire's point (a
+   reported point is often the origin, at the fire's edge); (c) strictly
+   inside the perimeter of a fire 13 removed as contained — its own
+   interior heat leaves with it, and heat outside its perimeter stays on
+   the map as a FIRMS fire, assessed like any other. The nearest
+   footprint wins (inside = 0 m; ties by incident id); a seeded fire, a
+   FIRMS fire and an inactive record are never footprints. A joined
+   detection becomes one of the fire's hotspots (t0 seeds at the cycle
+   time, the path FIRMS hotspots already had) and "firms" joins its
+   source_ids; the rest of each cluster stays a FIRMS incident under its
+   own id (its point the mean of what remains, its time the newest
+   remaining detection); a cluster left empty leaves the set. One cycle
+   note counts the joins. Measured on the 2026-10-29 CONUS day (3 VIIRS,
+   24 h): 4,763 detections in 1,312 clusters; 27 of the detections lie on
+   5 of the 217 fresh reported fires — national FIRMS is mostly agricultural,
+   prescribed and industrial heat, which no rule here screens (a hotspot
+   screening protocol is an open owner decision). Knob OFF =
+   byte-identical (tests/test_hotspots.py).
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -4171,6 +4205,19 @@ class ResponseConfig:
     fuse_colocated_size_tol_frac: float = 0.10   # (b) |a - b| <= this x the larger size
     fuse_colocated_min_acres: float = 10.0       # (b) both sizes at least this (placeholder sizes identify nothing)
     fuse_colocated_time_tol_h: float = 24.0      # (a) + (b) the two records' time windows overlap within this
+    # HOTSPOT ATTACHMENT (founder 2026-10-29, "get the FIRMS key added and
+    # redeploy"; SAFETY SEMANTICS 39): a NASA FIRMS detection on a reported
+    # fire joins it — inside a kept fire's perimeter or within
+    # fuse_hotspots_perimeter_m of it; within min(fuse_hotspots_point_max_m,
+    # max(fuse_hotspots_point_min_m, 2 x the acreage's equivalent-circle
+    # radius)) + fuse_hotspots_perimeter_m of a point-only fire's point;
+    # strictly inside a removed contained fire's perimeter. The rest of each
+    # cluster stays a FIRMS fire. False = byte-identical; the watch daemon
+    # arms it via --fuse-hotspots (with the FIRMS live mode).
+    fuse_hotspots: bool = False
+    fuse_hotspots_perimeter_m: float = 1000.0    # beyond a perimeter / point footprint (VIIRS 375 m pixel + perimeter error)
+    fuse_hotspots_point_min_m: float = 2000.0    # a point-only fire's footprint radius, at least
+    fuse_hotspots_point_max_m: float = 10000.0   # ... and at most (2 x the acreage's equivalent radius between)
     # SIMULATOR CITY WEATHER (founder 2026-10-09, verbatim: "change the
     # weather conditions for each city specific"; docs/review/
     # city_weather_2026-10-09.md). Read ONLY by wgresponse.simui (the
@@ -4583,6 +4630,19 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
     if not (math.isfinite(cfg.feed_sanity_memory_h)
             and cfg.feed_sanity_memory_h > 0):
         problems.append("feed_sanity_memory_h must be a finite value > 0")
+    # --- hotspot attachment (SAFETY SEMANTICS 39) ---
+    if not (math.isfinite(cfg.fuse_hotspots_perimeter_m)
+            and 0.0 <= cfg.fuse_hotspots_perimeter_m <= 5000.0):
+        problems.append("fuse_hotspots_perimeter_m must be within [0, 5000] "
+                        "m (wider would take a neighbouring fire's heat)")
+    if not (math.isfinite(cfg.fuse_hotspots_point_min_m)
+            and cfg.fuse_hotspots_point_min_m > 0.0):
+        problems.append("fuse_hotspots_point_min_m must be a finite value > 0")
+    if not (math.isfinite(cfg.fuse_hotspots_point_max_m)
+            and cfg.fuse_hotspots_point_min_m
+            <= cfg.fuse_hotspots_point_max_m <= 50000.0):
+        problems.append("fuse_hotspots_point_max_m must be within "
+                        "[fuse_hotspots_point_min_m, 50000] m")
     # --- co-located fusion (SAFETY SEMANTICS 24) ---
     if not (math.isfinite(cfg.fuse_colocated_max_m)
             and 0.0 < cfg.fuse_colocated_max_m <= 5000.0):

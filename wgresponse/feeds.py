@@ -33,6 +33,14 @@ Fusion:
         the legacy groups that are one fire — a FIRIS designator's name
         matches (5 km), or two feeds' incidents within ~2 km report the same
         size — when their times overlap and the staleness gate keeps both.
+    attach_hotspots(kept, contained, cfg) -> (kept, contained, stats)
+        HOTSPOT ATTACHMENT (contracts SAFETY SEMANTICS 39, default OFF:
+        cfg.fuse_hotspots). A FIRMS cluster has no IRWIN id and a synthetic
+        name, so no join puts a satellite detection on the reported fire it
+        sits on. Run by the monitor after the staleness gate and the
+        contained removal: each detection inside (or near) a reported fire's
+        footprint becomes that fire's hotspot; the rest of its cluster stays
+        a FIRMS incident under its own id.
 
 Endpoint URLs, field names, and payload shapes are encoded exactly per
 docs/research/fire_feeds.md (live-verified 2026-07-06).
@@ -89,8 +97,10 @@ import json
 import logging
 import math
 import re
+import time
 import urllib.parse
 import urllib.request
+from dataclasses import replace as _replace
 from datetime import datetime, timezone
 from typing import Callable, Optional
 
@@ -699,6 +709,80 @@ class CalFireFeed:
         )
 
 
+def _centroid_id(lat: float, lon: float) -> str:
+    return f"firms:{lat:.3f},{lon:.3f}"
+
+
+def _det_key(det) -> tuple:
+    """A detection's identity across fetches: time, place, instrument."""
+    src = det[3] if len(det) > 3 else ""
+    return (int(round(det[0])), round(det[1].lat, 5), round(det[1].lon, 5),
+            src)
+
+
+def _cluster_detections(detections: list, cluster_m: float) -> list:
+    """Greedy centroid clustering, the FirmsFeed law: each detection, in
+    order, joins the FIRST cluster (in creation order) whose running centroid
+    lies within cluster_m, else starts one. Returns [{"pts", "lat", "lon"}].
+
+    A grid over the centroids finds the candidates; they are tried in
+    creation order, so the result is exactly the plain scan's (a cell spans
+    at least cluster_m at the data's highest latitude: |dlat| <= d / R and
+    sin(|dlon| / 2) <= sin(d / 2R) / cos(lat_max) for any pair within d).
+    Data beyond 85 degrees or within a degree of the antimeridian takes the
+    plain scan. The plain scan was O(detections x clusters): 1.5 s on the
+    2026-10-29 CONUS day (4,763 detections), tens of seconds at the
+    synthetic 6,000-detection day's 5,170 clusters."""
+    clusters: list = []
+    if not detections:
+        return clusters
+    lat_max = max(abs(d[1].lat) for d in detections)
+    lons = [d[1].lon for d in detections]
+    s = math.sin(cluster_m / (2.0 * _EARTH_R_M))
+    grid = (lat_max <= 85.0 and min(lons) > -179.0 and max(lons) < 179.0
+            and s < math.cos(math.radians(lat_max)))
+    cells: dict = {}
+    if grid:
+        dlat = math.degrees(cluster_m / _EARTH_R_M) * 1.001
+        dlon = math.degrees(2.0 * math.asin(
+            s / math.cos(math.radians(lat_max)))) * 1.001
+
+        def cell(lat: float, lon: float) -> tuple:
+            return (math.floor(lat / dlat), math.floor(lon / dlon))
+    for det in detections:
+        p = det[1]
+        if grid:
+            cy, cx = cell(p.lat, p.lon)
+            cand = sorted(i for dy in (-1, 0, 1) for dx in (-1, 0, 1)
+                          for i in cells.get((cy + dy, cx + dx), ()))
+        else:
+            cand = range(len(clusters))
+        placed = None
+        for i in cand:
+            cl = clusters[i]
+            if _haversine_m(p, LatLon(cl["lat"], cl["lon"])) <= cluster_m:
+                placed = i
+                break
+        if placed is None:
+            clusters.append({"pts": [det], "lat": p.lat, "lon": p.lon})
+            if grid:
+                cells.setdefault(cell(p.lat, p.lon), set()).add(
+                    len(clusters) - 1)
+            continue
+        cl = clusters[placed]
+        old = cell(cl["lat"], cl["lon"]) if grid else None
+        cl["pts"].append(det)
+        n = len(cl["pts"])
+        cl["lat"] += (p.lat - cl["lat"]) / n
+        cl["lon"] += (p.lon - cl["lon"]) / n
+        if grid:
+            new = cell(cl["lat"], cl["lon"])
+            if new != old:
+                cells[old].discard(placed)
+                cells.setdefault(new, set()).add(placed)
+    return clusters
+
+
 class FirmsFeed:
     """NASA FIRMS area API — satellite hotspot CSV, clustered into incidents.
 
@@ -715,15 +799,40 @@ class FirmsFeed:
     key — construction never raises — but every keyless fetch_active is BLIND:
     it returns [] with last_fetch_ok=False (consumers must apply SAFETY
     SEMANTICS 6 — absence is not clearance) and logs ONE loud warning naming
-    the signup URL (once per adapter instance, not per poll)."""
+    the signup URL (once per adapter instance, not per poll).
+
+    LIVE MODE (2026-10-29, the watch flag --fuse-hotspots; FirmsFeed.live):
+    the defaults above see one satellite (2 passes a day), and DAY_RANGE is
+    whole UTC days — "1" is TODAY only (FIRMS area-API docs, checked
+    2026-10-29: "from TODAY to TODAY - (DAY_RANGE-1)"), so the layer emptied
+    at 00:00 UTC every day. ``sources`` asks each instrument in turn (the live
+    mode: the three VIIRS satellites, ~6 passes a day, URT+NRT); a source that
+    fails is a blind fetch (last_fetch_ok=False) but the others' detections
+    are kept. ``window_h`` keeps the detections of the last window_h hours by
+    ``clock`` (asking DAY_RANGE ceil(window_h / 24) + 1, at most 5). Each
+    cluster's meta then carries hotspot_t_s (each hotspot's time, aligned
+    with .hotspots) and satellites. ``track_ids`` keeps a cluster's id from
+    fetch to fetch: a cluster takes the id of the previous fetch's cluster it
+    shares the most detections with, else of an unclaimed previous cluster
+    within cluster_km, else a new centroid id — so a fire's alert pairs and
+    kept forecast do not restart each time a pass lands or an old detection
+    ages out (measured on the 2026-10-29 CONUS day: 27 % of the plain
+    centroid ids changed in 3 h). Legacy construction = byte-identical."""
 
     BASE_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
     SIGNUP_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/"
+    #: the live mode's instruments: VIIRS on S-NPP, NOAA-20 and NOAA-21
+    LIVE_SOURCES = ("VIIRS_SNPP_NRT", "VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT")
+    LIVE_WINDOW_H = 24.0
 
     def __init__(self, map_key: Optional[str] = None,
                  source: str = "VIIRS_NOAA20_NRT",
                  day_range: int = 1, cluster_km: float = 2.0,
-                 http_get: Optional[HttpGet] = None):
+                 http_get: Optional[HttpGet] = None, *,
+                 sources: Optional[tuple] = None,
+                 window_h: Optional[float] = None,
+                 clock: Optional[Callable[[], float]] = None,
+                 track_ids: bool = False):
         self._map_key = map_key or None      # '' and None both mean "no key"
         self._source = source
         self._day_range = max(1, min(5, int(day_range)))
@@ -731,6 +840,38 @@ class FirmsFeed:
         self._http_get = http_get or _default_http_get
         self._warned_no_key = False
         self.last_fetch_ok = True
+        self._sources = tuple(sources) if sources else None
+        self._window_h = None if window_h is None else float(window_h)
+        if self._window_h is not None:
+            if not (math.isfinite(self._window_h) and self._window_h > 0):
+                raise ValueError("window_h must be a finite value > 0")
+            self._day_range = max(self._day_range, min(
+                5, int(math.ceil(self._window_h / 24.0)) + 1))
+        self._clock = clock or time.time
+        self._track = bool(track_ids)
+        self._tracks: dict = {}   # id -> (detection keys, lat, lon), last fetch
+
+    @classmethod
+    def live(cls, map_key: Optional[str],
+             http_get: Optional[HttpGet] = None,
+             clock: Optional[Callable[[], float]] = None) -> "FirmsFeed":
+        """The live mode: three VIIRS satellites, a rolling 24 h window,
+        cluster ids kept across fetches."""
+        return cls(map_key=map_key, http_get=http_get,
+                   sources=cls.LIVE_SOURCES, window_h=cls.LIVE_WINDOW_H,
+                   clock=clock, track_ids=True)
+
+    @property
+    def live_mode(self) -> bool:
+        return (self._sources is not None or self._window_h is not None
+                or self._track)
+
+    def describe(self) -> dict:
+        """What this adapter asks for (the watch daemon's hotspot rule)."""
+        return {"sources": list(self._sources or (self._source,)),
+                "window_h": self._window_h, "day_range": self._day_range,
+                "cluster_km": self._cluster_m / 1000.0,
+                "stable_ids": self._track}
 
     def fetch_active(self, bbox: Optional[BBox] = None) -> "list[FireIncident]":
         """Hotspot-cluster incidents in bbox (or 'world'); never raises.
@@ -749,6 +890,8 @@ class FirmsFeed:
             return []
         area = ("world" if bbox is None else
                 f"{bbox.west},{bbox.south},{bbox.east},{bbox.north}")
+        if self.live_mode:
+            return self._fetch_live(area)
         url = f"{self.BASE_URL}/{self._map_key}/{self._source}/{area}/{self._day_range}"
         try:
             status, body = self._http_get(url, {"Accept": "text/csv"})
@@ -782,21 +925,117 @@ class FirmsFeed:
         out.sort(key=lambda x: (-x[0], x[1].lat, x[1].lon))
         return out
 
+    def _fetch_live(self, area: str) -> "list[FireIncident]":
+        """LIVE MODE fetch (class docstring): every source in turn, the
+        window, the clusters, the kept ids. Never raises."""
+        detections: list = []          # (t_s, LatLon, frp, source)
+        ok = True
+        for src in (self._sources or (self._source,)):
+            url = f"{self.BASE_URL}/{self._map_key}/{src}/{area}/{self._day_range}"
+            try:
+                status, body = self._http_get(url, {"Accept": "text/csv"})
+                if status != 200:
+                    raise RuntimeError(f"HTTP {status} from FIRMS ({src})")
+                rows = self._parse_csv(body.decode("utf-8", errors="replace"))
+            except Exception:
+                log.warning("FIRMS fetch failed (%s)", src, exc_info=True)
+                ok = False
+                continue
+            detections += [(t, p, f, src) for t, p, f in rows]
+        try:
+            if self._window_h is not None:
+                cut = float(self._clock()) - self._window_h * 3600.0
+                detections = [d for d in detections if d[0] >= cut]
+            detections.sort(key=lambda x: (-x[0], x[1].lat, x[1].lon, x[3]))
+            clusters = _cluster_detections(detections, self._cluster_m)
+            ids = (self._assign_ids(clusters, carry=not ok) if self._track
+                   else [_centroid_id(cl["lat"], cl["lon"]) for cl in clusters])
+            out = [self._live_incident(cl, cid) for cl, cid in zip(clusters, ids)]
+        except Exception:
+            log.warning("FIRMS clustering failed", exc_info=True)
+            self.last_fetch_ok = False
+            return []
+        out.sort(key=lambda i: i.incident_id)
+        self.last_fetch_ok = ok
+        return out
+
+    def _live_incident(self, cl: dict, cid: str) -> FireIncident:
+        pts = cl["pts"]                           # newest first
+        frp_max = max((d[2] for d in pts if d[2] is not None), default=None)
+        return FireIncident(
+            incident_id=cid,
+            name="FIRMS cluster " + cid[len("firms:"):],
+            source=IncidentSource.FIRMS,
+            origin=LatLon(cl["lat"], cl["lon"]),
+            updated_at_s=max(d[0] for d in pts),
+            hotspots=[d[1] for d in pts],
+            active=True,
+            source_ids={"firms": cid},
+            meta={"n_detections": len(pts), "max_frp": frp_max,
+                  "satellite_source": ",".join(self._sources
+                                               or (self._source,)),
+                  "satellites": sorted({d[3] for d in pts}),
+                  "hotspot_t_s": [d[0] for d in pts]})
+
+    def _assign_ids(self, clusters: list, carry: bool = False) -> list:
+        """Stable cluster ids (class docstring, track_ids). Deterministic:
+        overlaps are claimed most-shared first (ties: previous id, cluster
+        order); proximity nearest first (ties: previous id). carry: a fetch
+        with a blind source keeps the previous clusters nobody claimed."""
+        prev = self._tracks
+        keysets = [frozenset(_det_key(d) for d in cl["pts"]) for cl in clusters]
+        owner = {k: pid for pid, (ks, _, _) in prev.items() for k in ks}
+        pairs = []
+        for i, ks in enumerate(keysets):
+            shared: dict = {}
+            for k in ks:
+                pid = owner.get(k)
+                if pid is not None:
+                    shared[pid] = shared.get(pid, 0) + 1
+            pairs += [(-n, pid, i) for pid, n in shared.items()]
+        pairs.sort()
+        ids: list = [None] * len(clusters)
+        used: set = set()
+        for _, pid, i in pairs:
+            if ids[i] is None and pid not in used:
+                ids[i] = pid
+                used.add(pid)
+        lat_tol = math.degrees(self._cluster_m / _EARTH_R_M) * 1.01
+        for i, cl in enumerate(clusters):
+            if ids[i] is not None:
+                continue
+            here = LatLon(cl["lat"], cl["lon"])
+            best = None
+            for pid, (_, la, lo) in prev.items():
+                if pid in used or abs(la - here.lat) > lat_tol:
+                    continue
+                d = _haversine_m(here, LatLon(la, lo))
+                if d <= self._cluster_m and (best is None or (d, pid) < best):
+                    best = (d, pid)
+            if best is not None:
+                ids[i] = best[1]
+                used.add(best[1])
+        taken = {x for x in ids if x is not None}
+        for i, cl in enumerate(clusters):
+            if ids[i] is None:
+                base = _centroid_id(cl["lat"], cl["lon"])
+                cid, n = base, 2
+                while cid in taken:
+                    cid = f"{base}#{n}"
+                    n += 1
+                ids[i] = cid
+                taken.add(cid)
+        tracks = {ids[i]: (keysets[i], cl["lat"], cl["lon"])
+                  for i, cl in enumerate(clusters)}
+        if carry:
+            for pid, tr in prev.items():
+                if pid not in used and pid not in tracks:
+                    tracks[pid] = tr
+        self._tracks = tracks
+        return ids
+
     def _cluster(self, detections: list) -> "list[FireIncident]":
-        clusters: list = []   # each: {"pts": [(t, LatLon, frp)], "lat": ..., "lon": ...}
-        for det in detections:
-            _, p, _ = det
-            placed = False
-            for cl in clusters:
-                if _haversine_m(p, LatLon(cl["lat"], cl["lon"])) <= self._cluster_m:
-                    cl["pts"].append(det)
-                    n = len(cl["pts"])
-                    cl["lat"] += (p.lat - cl["lat"]) / n
-                    cl["lon"] += (p.lon - cl["lon"]) / n
-                    placed = True
-                    break
-            if not placed:
-                clusters.append({"pts": [det], "lat": p.lat, "lon": p.lon})
+        clusters = _cluster_detections(detections, self._cluster_m)
         out = []
         for cl in clusters:
             pts = cl["pts"]                       # already newest first
@@ -1188,6 +1427,224 @@ def _fuse_colocated(incidents: list, groups: list, cfg,
             })
     out.sort(key=lambda i: i.incident_id)
     return out
+
+
+# ---------------------------------------------------------------------------
+# Hotspot attachment (contracts SAFETY SEMANTICS 39)
+# ---------------------------------------------------------------------------
+
+_ACRE_M2 = 4046.8564224
+
+
+def _is_seeded(inc: FireIncident) -> bool:
+    return (inc.source is IncidentSource.SEEDED
+            or str(inc.incident_id).startswith(SEEDED_ID_PREFIX))
+
+
+class _Footprint:
+    """Where a reported fire's own heat can show (SEMANTICS 39 a-c).
+    distance(p) -> meters outside the fire (0.0 inside it), or None when p
+    is beyond the footprint."""
+
+    def __init__(self, inc: FireIncident, margin_m: float, point_min_m: float,
+                 point_max_m: float, interior_only: bool) -> None:
+        self.rings = [list(r) for r in (inc.perimeter or []) if len(r) >= 3]
+        self.margin = 0.0 if interior_only else float(margin_m)
+        self.interior_only = interior_only
+        if self.rings:
+            pts = [q for r in self.rings for q in r]
+            lat0 = sum(q.lat for q in pts) / len(pts)
+            reach = self.margin
+            self.center = None
+            self.radius = None
+        else:
+            acres = _maybe_float(inc.acreage)
+            r_eq = (math.sqrt(acres * _ACRE_M2 / math.pi)
+                    if acres is not None and math.isfinite(acres)
+                    and acres > 0 else 0.0)
+            self.center = inc.origin
+            self.radius = (min(point_max_m, max(point_min_m, 2.0 * r_eq))
+                           + self.margin)
+            pts = [inc.origin]
+            lat0 = inc.origin.lat
+            reach = self.radius
+        dlat = math.degrees(reach / _EARTH_R_M) * 1.01
+        dlon = dlat / max(0.01, math.cos(math.radians(min(85.0, abs(lat0)
+                                                          + dlat + 0.5))))
+        self.box = (min(q.lat for q in pts) - dlat, max(q.lat for q in pts) + dlat,
+                    min(q.lon for q in pts) - dlon, max(q.lon for q in pts) + dlon)
+
+    def distance(self, p: LatLon) -> Optional[float]:
+        s, n, w, e = self.box
+        if not (s <= p.lat <= n and w <= p.lon <= e):
+            return None
+        if self.center is not None:
+            d = _haversine_m(p, self.center)
+            return d if d <= self.radius else None
+        depth = 0
+        for ring in self.rings:
+            if _point_in_ring(p, ring):
+                depth += 1
+        if depth % 2 == 1:
+            return 0.0                    # inside (holes by even-odd depth)
+        if self.interior_only or self.margin <= 0.0:
+            return None
+        best = math.inf
+        for ring in self.rings:
+            for a, b in zip(ring, ring[1:] + ring[:1]):
+                best = min(best, _seg_dist_m(p, a, b))
+                if best == 0.0:
+                    break
+        return best if best <= self.margin else None
+
+
+def _point_in_ring(p: LatLon, ring: list) -> bool:
+    """Even-odd ray cast in lat/lon (geo.point_in_poly's law; local copy:
+    feeds stays free of the geo module)."""
+    inside = False
+    j = len(ring) - 1
+    for i in range(len(ring)):
+        yi, xi = ring[i].lat, ring[i].lon
+        yj, xj = ring[j].lat, ring[j].lon
+        if ((yi > p.lat) != (yj > p.lat)) and (
+                p.lon < (xj - xi) * (p.lat - yi) / (yj - yi) + xi):
+            inside = not inside
+        j = i
+    return inside
+
+
+def _seg_dist_m(p: LatLon, a: LatLon, b: LatLon) -> float:
+    """Meters from p to segment ab (local equirectangular frame at p — km
+    scale, well inside its error)."""
+    kx = (math.pi / 180.0) * _EARTH_R_M * math.cos(math.radians(p.lat))
+    ky = (math.pi / 180.0) * _EARTH_R_M
+    ax, ay = (a.lon - p.lon) * kx, (a.lat - p.lat) * ky
+    bx, by = (b.lon - p.lon) * kx, (b.lat - p.lat) * ky
+    dx, dy = bx - ax, by - ay
+    ll = dx * dx + dy * dy
+    u = 0.0 if ll == 0.0 else max(0.0, min(1.0, -(ax * dx + ay * dy) / ll))
+    return math.hypot(ax + u * dx, ay + u * dy)
+
+
+def attach_hotspots(kept: list, contained: list, cfg) -> tuple:
+    """HOTSPOT ATTACHMENT (contracts SAFETY SEMANTICS 39).
+
+    kept: this cycle's incident set after the staleness gate and the
+    contained removal; contained: the incidents SEMANTICS 13 removed (their
+    FireIncidents). Each FIRMS detection (a FIRMS incident's hotspot; its
+    time from meta hotspot_t_s when aligned, else the cluster's time) joins
+    the reported fire whose footprint holds it — (a) inside a kept fire's
+    perimeter or within cfg.fuse_hotspots_perimeter_m of it; (b) within
+    min(point_max_m, max(point_min_m, 2 x the acreage's equivalent-circle
+    radius)) + perimeter_m of a kept point-only fire's point; (c) strictly
+    inside a contained fire's perimeter — the nearest footprint (inside =
+    0 m; ties by incident id). A seeded fire, a FIRMS fire and an inactive
+    record are never footprints.
+
+    Returns (kept', contained', stats). A fire that gained detections gets
+    them as hotspots (newest first, after any it had), "firms" in its
+    source_ids (the contributing cluster ids) and meta hotspots_attached
+    {n, newest_s, clusters}. A FIRMS incident that lost detections keeps its
+    id with the rest (its point their mean, its time their newest, meta
+    n_detections / hotspot_t_s re-aligned, attached_elsewhere); one left
+    empty leaves the set. Order is kept; nothing else changes."""
+    perim_m = float(cfg.fuse_hotspots_perimeter_m)
+    pmin = float(cfg.fuse_hotspots_point_min_m)
+    pmax = float(cfg.fuse_hotspots_point_max_m)
+    stats = {"detections": 0, "attached": 0, "inside_contained": 0,
+             "fires": [], "clusters_absorbed": [], "clusters_split": []}
+    anchors = []                      # (kind, index, incident, footprint)
+    for i, inc in enumerate(kept):
+        if (inc.source is IncidentSource.FIRMS or _is_seeded(inc)
+                or not inc.active):
+            continue
+        anchors.append(("kept", i, inc,
+                        _Footprint(inc, perim_m, pmin, pmax, False)))
+    for i, inc in enumerate(contained):
+        if (inc.perimeter and inc.source is not IncidentSource.FIRMS
+                and not _is_seeded(inc)):
+            anchors.append(("contained", i, inc,
+                            _Footprint(inc, perim_m, pmin, pmax, True)))
+    firms = [(i, inc) for i, inc in enumerate(kept)
+             if inc.source is IncidentSource.FIRMS and inc.hotspots]
+    for _, inc in firms:
+        stats["detections"] += len(inc.hotspots)
+    if not anchors or not firms:
+        return list(kept), list(contained), stats
+    gains: dict = {}                  # (kind, index) -> [(t, LatLon, cluster id)]
+    rest: dict = {}                   # kept index -> [(t, LatLon)] left in the cluster
+    for fi, finc in firms:
+        ts = (finc.meta or {}).get("hotspot_t_s")
+        if not (isinstance(ts, list) and len(ts) == len(finc.hotspots)):
+            ts = [finc.updated_at_s] * len(finc.hotspots)
+        left = []
+        for p, t in zip(finc.hotspots, ts):
+            best = None
+            for kind, ai, ainc, fp in anchors:
+                d = fp.distance(p)
+                if d is None:
+                    continue
+                key = (d, str(ainc.incident_id))
+                if best is None or key < best[0]:
+                    best = (key, (kind, ai))
+            if best is None:
+                left.append((t, p))
+            else:
+                gains.setdefault(best[1], []).append((t, p, finc.incident_id))
+        rest[fi] = left
+    if not gains:
+        return list(kept), list(contained), stats
+
+    def gained(inc: FireIncident, got: list) -> FireIncident:
+        got = sorted(got, key=lambda g: (-g[0], g[1].lat, g[1].lon))
+        clusters = sorted({g[2] for g in got})
+        src_ids = dict(inc.source_ids or {})
+        mine = [x for x in str(src_ids.get("firms", "")).split(",") if x]
+        src_ids["firms"] = ",".join(sorted(set(mine) | set(clusters)))
+        meta = dict(inc.meta or {})
+        meta["hotspots_attached"] = {"n": len(got), "newest_s": got[0][0],
+                                     "clusters": clusters}
+        return _replace(inc, hotspots=list(inc.hotspots or [])
+                        + [g[1] for g in got],
+                        source_ids=src_ids, meta=meta)
+
+    kept_out = []
+    for i, inc in enumerate(kept):
+        if ("kept", i) in gains:
+            got = gains[("kept", i)]
+            kept_out.append(gained(inc, got))
+            stats["attached"] += len(got)
+            stats["fires"].append(inc.incident_id)
+            continue
+        if i not in rest or len(rest[i]) == len(inc.hotspots):
+            kept_out.append(inc)
+            continue
+        left = rest[i]
+        if not left:
+            stats["clusters_absorbed"].append(inc.incident_id)
+            continue
+        stats["clusters_split"].append(inc.incident_id)
+        meta = dict(inc.meta or {})
+        meta["n_detections"] = len(left)
+        meta["hotspot_t_s"] = [t for t, _ in left]
+        meta["attached_elsewhere"] = len(inc.hotspots) - len(left)
+        kept_out.append(_replace(
+            inc, hotspots=[p for _, p in left],
+            origin=LatLon(sum(p.lat for _, p in left) / len(left),
+                          sum(p.lon for _, p in left) / len(left)),
+            updated_at_s=max(t for t, _ in left), meta=meta))
+    contained_out = []
+    for i, inc in enumerate(contained):
+        got = gains.get(("contained", i))
+        if got:
+            contained_out.append(gained(inc, got))
+            stats["attached"] += len(got)
+            stats["inside_contained"] += len(got)
+            stats["fires"].append(inc.incident_id)
+        else:
+            contained_out.append(inc)
+    stats["fires"] = sorted(stats["fires"])
+    return kept_out, contained_out, stats
 
 
 def _canonical_group_id(group: "list[FireIncident]",
