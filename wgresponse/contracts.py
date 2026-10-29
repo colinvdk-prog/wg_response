@@ -1660,6 +1660,29 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    screening protocol is an open owner decision). Knob OFF =
    byte-identical (tests/test_hotspots.py).
 
+40. A FIRE LEARNS WITHOUT CLIENTS — LEARNING FORECASTS (2026-10-29;
+   founder: "perform fix 1"; cfg.fire_belief_learn, fire_belief_learn_
+   pad_m, fire_belief_learn_snap_deg; watch --fire-belief-learn). The
+   belief (14) learns a fire's rate from the forecast made at each growth
+   window's start, and the engine forecast only fires with a protected
+   client within the threat radius: on the 2026-10-29 live map 13 of 197
+   fires had a domain and 2 had learned. With fire_belief_learn (and
+   tracking) a feed fire that built no domain this cycle, and whose newest
+   observation of a series has no curve (seen <= the belief's 6 h pin lag),
+   gets a LEARNING FORECAST: the nominal member alone, on the cycle's own
+   input law (_forecast_inputs: the terrain, the fire-centroid forecast,
+   the regime posture, the confirmed anchor, the belief's weather log),
+   over the fire's geometry padded fire_belief_learn_pad_m and snapped
+   outward to fire_belief_learn_snap_deg (the terrain cache key: one fire
+   asks one tile), on ONE background worker — a cold LANDFIRE fetch never
+   holds a cycle. The next cycle, BEFORE its own observations, pins the
+   curve to the observation it was made for; a newer observation first, or
+   a curve pinned meanwhile, drops it. A learning forecast is never an ETA,
+   an alert, a dispatch job, a domain on the map or a provider error (a
+   failure is a note); FIRMS and seeded fires never learn this way. With
+   fire_belief_apply off (the live posture) a learned rate is reported, not
+   applied. Knob OFF = byte-identical (tests/test_belief_learning.py).
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -4166,6 +4189,21 @@ class ResponseConfig:
     # Rapid persistence: N >= 2 consecutive perimeter windows each growing at
     # a rapid rate RAW make the fire rapid (0 = off, legacy).
     fire_belief_rapid_persist_windows: int = 0
+    # LEARNING FORECASTS (founder 2026-10-29, "perform fix 1"; SAFETY
+    # SEMANTICS 40): the belief learns only where the engine forecast the
+    # fire, and the engine forecasts only fires with a protected client in
+    # range (2026-10-29: 13 of 197 live fires had a domain, 2 had learned).
+    # True (with fire_belief_track) = a feed fire without a client domain
+    # whose newest observation has no curve gets a learning forecast — the
+    # nominal member only, over its own geometry padded
+    # fire_belief_learn_pad_m and snapped outward to
+    # fire_belief_learn_snap_deg — on one background worker, pinned by the
+    # next cycle to the observation it was made for. Never an ETA, an alert,
+    # a dispatch job, a domain on the map or a provider error. False =
+    # byte-identical; watch --fire-belief-learn.
+    fire_belief_learn: bool = False
+    fire_belief_learn_pad_m: float = 10_000.0   # the learning domain: the fire's geometry padded this far
+    fire_belief_learn_snap_deg: float = 0.05    # ... snapped outward to this grid (the terrain cache key); 0 = none
     # FEED SANITY (SAFETY SEMANTICS 18; the 2026-09-27 audit of the live feed
     # path the belief learns from, docs/review/feed_sanity_2026-09-27.md;
     # wgresponse.feedsanity). True = the belief takes no observation from a
@@ -4583,6 +4621,14 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
         problems.append("fire_belief_rapid_lookback_h must be > 0")
     if not (0.0 <= cfg.fire_belief_rapid_noise_z <= 5.0):
         problems.append("fire_belief_rapid_noise_z must be within [0, 5]")
+    # --- learning forecasts (SAFETY SEMANTICS 40) ---
+    if not (math.isfinite(cfg.fire_belief_learn_pad_m)
+            and 0.0 < cfg.fire_belief_learn_pad_m <= 100_000.0):
+        problems.append("fire_belief_learn_pad_m must be within (0, 100000] m")
+    if not (math.isfinite(cfg.fire_belief_learn_snap_deg)
+            and 0.0 <= cfg.fire_belief_learn_snap_deg <= 1.0):
+        problems.append("fire_belief_learn_snap_deg must be within [0, 1] "
+                        "degrees")
     # --- fire belief v2 (2026-09-28) ---
     if cfg.fire_belief_novelty not in ("hourly", "daily"):
         problems.append("fire_belief_novelty must be 'hourly' or 'daily'")

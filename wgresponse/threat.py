@@ -275,6 +275,20 @@ class _KeptForecast:
         self.pending_meta = None
 
 
+class _LearnJob:
+    """LEARNING FORECASTS (SAFETY SEMANTICS 40): one fire's learning
+    forecast in flight — the future, the observations it is for (the
+    belief's curve_token when it was asked), the incident as the cycle saw
+    it, and the cycle time it was made at."""
+    __slots__ = ("future", "token", "inc", "at_s")
+
+    def __init__(self, future, token, inc, at_s):
+        self.future = future
+        self.token = token
+        self.inc = inc
+        self.at_s = at_s
+
+
 # Perimeter rings are subsampled to this many vertices before being handed to
 # spread (contracts: "rings subsampled <= 200 verts upstream") — bounds the
 # per-row scanline cost of interior rasterization on pathological rings.
@@ -535,6 +549,11 @@ class ThreatMonitor:
         self._refresher = None
         self._tier_states: dict = {}
         self._kept_failures: list = []
+        # LEARNING FORECASTS (cfg.fire_belief_learn only; SAFETY SEMANTICS
+        # 40): incident_id -> _LearnJob in flight, and their ONE background
+        # worker (made on first use).
+        self._learning: dict = {}
+        self._learner = None
 
     @property
     def fire_beliefs(self):
@@ -679,6 +698,11 @@ class ThreatMonitor:
             # join it (after 9 and 13: a removed fire takes only its own
             # interior heat); the rest stay FIRMS fires
             active, removed = self._attach_hotspots(active, removed, notes)
+        learn = None
+        if self._learn_on():
+            # SAFETY SEMANTICS 40: finished learning forecasts are pinned
+            # BEFORE this cycle's observations — to the ones they were for
+            learn = self._learn_collect(notes)
         if self._belief_on():
             # SAFETY SEMANTICS 14: this cycle's growth observations (the
             # belief learns BEFORE the spread it may inform)
@@ -710,6 +734,7 @@ class ThreatMonitor:
                              f"({exc}) — no incident is in the threat tier "
                              f"this cycle")
             self._kept_failures = []
+        no_domain = [] if learn is not None else None
         for inc in active:
             try:
                 self._assess_incident(inc, now_s, assessments, ensembles,
@@ -717,7 +742,8 @@ class ThreatMonitor:
                                       forecasts, extreme_flags, eroded_map,
                                       timings=timings,
                                       weather_fields=weather_fields,
-                                      freshness=freshness)
+                                      freshness=freshness,
+                                      no_domain=no_domain)
             except _ProviderFailure as pf:
                 failed_incidents.add(inc.incident_id)
                 notes.append(
@@ -751,6 +777,11 @@ class ThreatMonitor:
             live = {inc.incident_id for inc in active}
             for iid in [k for k in self._kept if k not in live]:
                 del self._kept[iid]
+        if learn is not None:
+            # SAFETY SEMANTICS 40: fires that built no domain and hold an
+            # observation without a curve get a learning forecast
+            self._learn_enqueue(no_domain, ensembles, now_s, learn)
+            self._learn_note(learn, notes, timings)
         if self._cfg.feed_sanity:
             # SAFETY SEMANTICS 18c: first findings are operator events (never
             # a degradation); the memory forgets polygons past its window
@@ -1350,6 +1381,137 @@ class ThreatMonitor:
             log.info("%s", note)
         return kept, removed
 
+    # ------------------------------------------- learning forecasts (SEM 40)
+
+    def _learn_on(self) -> bool:
+        return (self._belief_on()
+                and bool(getattr(self._cfg, "fire_belief_learn", False)))
+
+    def learning_status(self) -> Optional[dict]:
+        """LEARNING FORECASTS (SAFETY SEMANTICS 40): the rule and how many
+        are in flight; None when the knob is off."""
+        if not self._learn_on():
+            return None
+        return {"pad_m": float(self._cfg.fire_belief_learn_pad_m),
+                "snap_deg": float(self._cfg.fire_belief_learn_snap_deg),
+                "in_flight": len(self._learning)}
+
+    def _learn_pool(self):
+        """The ONE background worker learning forecasts run on (never the
+        kept-forecast refresher's: a cold terrain fetch here must not delay
+        a client's refresh)."""
+        if self._learner is None:
+            from concurrent.futures import ThreadPoolExecutor
+            self._learner = ThreadPoolExecutor(
+                max_workers=1, thread_name_prefix="wg-belief-learn")
+        return self._learner
+
+    def _learn_candidate(self, inc: FireIncident, ensembles: dict) -> bool:
+        """A feed fire that built no domain this cycle; never a FIRMS
+        cluster (no size reports to learn from) or a seeded fire."""
+        return (inc.source not in (IncidentSource.FIRMS,
+                                   IncidentSource.SEEDED)
+                and not is_seeded_id(inc.incident_id)
+                and inc.incident_id not in ensembles)
+
+    def _learn_domain(self, geom_pts: list) -> BBox:
+        """The fire's geometry padded fire_belief_learn_pad_m, snapped
+        outward to fire_belief_learn_snap_deg (the terrain cache key)."""
+        cfg = self._cfg
+        bb = geo.bbox_around(geom_pts, float(cfg.fire_belief_learn_pad_m))
+        s = float(cfg.fire_belief_learn_snap_deg)
+        if s <= 0.0:
+            return bb
+        return BBox(west=round(math.floor(bb.west / s) * s, 6),
+                    south=round(math.floor(bb.south / s) * s, 6),
+                    east=round(math.ceil(bb.east / s) * s, 6),
+                    north=round(math.ceil(bb.north / s) * s, 6))
+
+    def _learn_forecast(self, inc: FireIncident, now_s: float, ign: list,
+                        perimeter, perimeter_at_s, provenance_s, seeds: list,
+                        geom_pts: list):
+        """ON THE LEARNING WORKER: the nominal member alone over the
+        learning domain, on the cycle's own input law. Returns (ensemble,
+        spread cfg, curve anchor, point start)."""
+        domain = self._learn_domain(geom_pts)
+        b = self._forecast_inputs(inc, now_s, domain, self._pick_cell_m(domain),
+                                  ign, perimeter, perimeter_at_s, provenance_s,
+                                  [], {})
+        b.spread_cfg = dataclasses.replace(b.spread_cfg, ensemble_n=1)
+        ens = self._forecast_spread(inc, b, seeds, perimeter, now_s)
+        anchor = b.perimeter_at_s if perimeter is not None else now_s
+        return ens, b.spread_cfg, anchor, perimeter is None
+
+    def _learn_collect(self, notes: list) -> dict:
+        """Pin each finished learning forecast to the observations it was
+        made for — only while they are still the newest without a curve
+        (a newer observation, or a curve pinned meanwhile, drops it). A
+        failure is counted for the cycle note: never a provider error."""
+        stats = {"kept": [], "dropped": [], "failed": [], "queued": []}
+        for iid in sorted(self._learning):
+            job = self._learning[iid]
+            if not job.future.done():
+                continue
+            del self._learning[iid]
+            try:
+                ens, spread_cfg, anchor, point = job.future.result()
+            except _ProviderFailure as pf:
+                stats["failed"].append(f"{iid} ({pf.step}: {pf.cause})")
+                continue
+            except Exception as exc:
+                stats["failed"].append(f"{iid} ({exc})")
+                continue
+            if self._fire_beliefs.curve_token(iid, job.at_s) != job.token:
+                stats["dropped"].append(iid)
+                continue
+            self._belief_after_spread(job.inc, ens, job.at_s, spread_cfg,
+                                      anchor, point, notes)
+            stats["kept"].append(iid)
+        return stats
+
+    def _learn_enqueue(self, no_domain: list, ensembles: dict, now_s: float,
+                       stats: dict) -> None:
+        """Queue a learning forecast for each fire without a domain whose
+        newest observation has no curve (one in flight per fire)."""
+        for inc, ign, perimeter, pat, prov, seeds, geom_pts in no_domain:
+            iid = inc.incident_id
+            if iid in self._learning or not self._learn_candidate(
+                    inc, ensembles):
+                continue
+            token = self._fire_beliefs.curve_token(iid, now_s)
+            if token is None:
+                continue
+            fut = self._learn_pool().submit(
+                self._learn_forecast, inc, now_s, ign, perimeter, pat, prov,
+                seeds, geom_pts)
+            self._learning[iid] = _LearnJob(fut, token, inc, now_s)
+            stats["queued"].append(iid)
+
+    def _learn_note(self, stats: dict, notes: list, timings: dict) -> None:
+        """One cycle note when anything happened; counts in timings."""
+        timings["learning"] = {k: len(v) for k, v in stats.items()}
+        timings["learning"]["in_flight"] = len(self._learning)
+        parts = []
+        if stats["kept"]:
+            shown = ", ".join(stats["kept"][:8])
+            more = (f" +{len(stats['kept']) - 8} more"
+                    if len(stats["kept"]) > 8 else "")
+            parts.append(f"kept {len(stats['kept'])} ({shown}{more})")
+        if stats["dropped"]:
+            parts.append(f"dropped {len(stats['dropped'])} (a newer "
+                         f"observation arrived first)")
+        if stats["failed"]:
+            parts.append(f"failed {len(stats['failed'])} "
+                         f"({'; '.join(stats['failed'][:3])})")
+        if stats["queued"]:
+            parts.append(f"queued {len(stats['queued'])}")
+        if parts:
+            notes.append(
+                "fire belief learning: " + ", ".join(parts)
+                + f"; {len(self._learning)} in flight — learning forecasts "
+                  f"for fires without a protected client in range (the "
+                  f"nominal member, its own area; SAFETY SEMANTICS 40)")
+
     def _attach_hotspots(self, active: list, removed: list,
                          notes: list) -> "tuple[list, list]":
         """HOTSPOT ATTACHMENT (contracts SAFETY SEMANTICS 39) over this
@@ -1409,8 +1571,16 @@ class ThreatMonitor:
                          eroded_map: Optional[dict] = None,
                          timings: Optional[dict] = None,
                          weather_fields: Optional[dict] = None,
-                         freshness: Optional[dict] = None) -> None:
+                         freshness: Optional[dict] = None,
+                         no_domain: Optional[list] = None) -> None:
         """Spread one incident and append per-client ThreatAssessments.
+
+        ``no_domain`` (LEARNING FORECASTS, SAFETY SEMANTICS 40; a list when
+        cfg.fire_belief_learn is armed): an incident with no protected
+        client in range is appended with its seed geometry, (inc, ign,
+        perimeter, perimeter_at_s, provenance_s, seeds, geom_pts) — after
+        the feed-sanity step, so a learning forecast seeds what a domain
+        forecast would have.
 
         Domain = bbox around (ignition geometry + protected clients within the
         threat radius) padded _DOMAIN_PAD_M; incidents with no client in range
@@ -1524,6 +1694,9 @@ class ThreatMonitor:
                 note += (" — a seeded fire follows the live law: listed, but "
                          "no domain without a protected client in range")
             notes.append(note)
+            if no_domain is not None:
+                no_domain.append((inc, ign, perimeter, perimeter_at_s,
+                                  provenance_s, seeds, geom_pts))
             return
 
         domain = geo.bbox_around(geom_pts + [c.loc for c in near],

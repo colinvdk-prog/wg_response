@@ -367,6 +367,14 @@ def _build_parser() -> argparse.ArgumentParser:
                          "than physics (cfg.fire_belief_apply_p10 lifts the "
                          "guard: config only, measured unsafe for contained "
                          "fires, docs/FIRE_BELIEF.md)")
+    pw.add_argument("--fire-belief-learn", action="store_true",
+                    help="cfg.fire_belief_learn (implies --fire-belief; "
+                         "SAFETY SEMANTICS 40): a fire with no protected "
+                         "client in range gets a learning forecast — the "
+                         "nominal member over its own area, on a background "
+                         "worker — whenever the belief holds a report no "
+                         "forecast was pinned to, so every fire learns its "
+                         "spread rate; never an ETA, alert or dispatch job")
     pw.add_argument("--fire-belief-v2", action="store_true",
                     help="the fire belief's v2 rules (implies --fire-belief; "
                          "measured on 11 real 2026 fires, docs/FIRE_BELIEF.md "
@@ -940,15 +948,18 @@ def _watch_notifier(args, state_dir):
 
 
 def _fire_belief_cfg(cfg, args):
-    """cfg with the --fire-belief / --fire-belief-apply / --fire-belief-v2
-    flags applied (SAFETY SEMANTICS 14; apply and v2 imply track). No flag =
-    cfg unchanged."""
+    """cfg with the --fire-belief / --fire-belief-apply / --fire-belief-v2 /
+    --fire-belief-learn flags applied (SAFETY SEMANTICS 14 / 40; apply, v2
+    and learn imply track). No flag = cfg unchanged."""
     if getattr(args, "fire_belief", False) or \
             getattr(args, "fire_belief_apply", False) or \
-            getattr(args, "fire_belief_v2", False):
+            getattr(args, "fire_belief_v2", False) or \
+            getattr(args, "fire_belief_learn", False):
         cfg = dataclasses.replace(
             cfg, fire_belief_track=True,
             fire_belief_apply=bool(getattr(args, "fire_belief_apply", False)))
+    if getattr(args, "fire_belief_learn", False):
+        cfg = dataclasses.replace(cfg, fire_belief_learn=True)  # SEMANTICS 40
     if getattr(args, "fire_belief_v2", False):
         # the v2 rules (2026-09-28; docs/FIRE_BELIEF.md "v2")
         cfg = dataclasses.replace(
@@ -979,10 +990,21 @@ def _fire_belief_notes(args) -> list:
                  "weather, surprises and rapid fires; P10 GUARDED = never "
                  "later than physics (docs/FIRE_BELIEF.md)"]
     elif getattr(args, "fire_belief", False) or \
-            getattr(args, "fire_belief_v2", False):
+            getattr(args, "fire_belief_v2", False) or \
+            getattr(args, "fire_belief_learn", False):
         notes = ["fire belief TRACKING: per-fire spread-rate belief learned "
                  "and published (status, world summary, fire_beliefs.json); "
                  "physics, alerts and dispatch unchanged"]
+    if getattr(args, "fire_belief_learn", False):
+        notes.append(
+            "LEARNING FORECASTS (founder 2026-10-29): a fire with no protected "
+            "client in range gets a learning forecast whenever the belief "
+            "holds a report no forecast was pinned to — the nominal member "
+            "over the fire's own area (padded 10 km, snapped to 0.05 deg), on "
+            "one background worker, pinned by the next cycle to the report it "
+            "was made for — so every reporting fire learns its spread rate; "
+            "never an ETA, alert, dispatch job or provider error — SAFETY "
+            "SEMANTICS 40")
     if getattr(args, "fire_belief_v2", False):
         notes.append(
             "fire belief v2 RULES: a new weather pattern is a forecast DAY "
@@ -1448,6 +1470,12 @@ class _WatchDaemon:
             out["fire_status"] = {
                 iid: status_row(st) for iid, st in
                 sorted((getattr(res, "fire_status", None) or {}).items())}
+            # LEARNING FORECASTS (SEMANTICS 40): the rule + in flight,
+            # present only with the knob armed
+            learning = getattr(self._monitor, "learning_status", None)
+            ls = learning() if callable(learning) else None
+            if ls is not None:
+                out["belief_learning"] = ls
         if getattr(self._cfg, "weather_grid_km", 0.0) > 0.0:
             # SAFETY SEMANTICS 17f: the rule + each incident's forecast
             # points and their next hours (null = no field this cycle: no

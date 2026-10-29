@@ -1499,6 +1499,22 @@ class FireBeliefStore:
             bel.pending_nominal = fn(0, 0.5, 1.0)
             return fn
 
+    def curve_token(self, incident_id: str, now_s: float) -> Optional[tuple]:
+        """LEARNING FORECASTS (SAFETY SEMANTICS 40): ((kind, observation
+        time), ...) of each series whose newest observation has no curve
+        and was seen <= PIN_MAX_LAG_S before now_s — exactly what a forecast
+        made at now_s would be pinned to — or None."""
+        now_s = float(now_s)
+        with self._lock:
+            bel = self._beliefs.get(incident_id)
+            if bel is None:
+                return None
+            out = tuple(
+                (kind, float(bel.obs[kind][-1]["t"])) for kind in KINDS
+                if bel.obs[kind] and bel.obs[kind][-1].get("curve") is None
+                and now_s - bel.obs[kind][-1]["seen"] <= PIN_MAX_LAG_S)
+            return out or None
+
     def after_spread(self, inc, ens, now_s: float, cfg, anchor_s: float,
                      point: bool) -> None:
         """Keep the NOMINAL member's growth curve and pin it to the newest

@@ -701,3 +701,44 @@ generic afternoon cut.
   learn slowly.
 - **11 fires, mostly timber; one hindcast weather point per fire; whole-fire multiplier.** All
   the first study's limits apply.
+
+## 8. Learning forecasts: every reporting fire learns (2026-10-29)
+
+Founder, 2026-10-29: *"perform fix 1"* (a light learning-only forecast for every active fire).
+Contracts SAFETY SEMANTICS 40 · knobs `fire_belief_learn`, `fire_belief_learn_pad_m`,
+`fire_belief_learn_snap_deg` · watch flag `--fire-belief-learn` · tests
+`tests/test_belief_learning.py`.
+
+**Why.** A growth window is learned only when its starting observation has a pinned curve, and
+a curve came only from a domain forecast, which the engine runs only for a fire with a protected
+client within the threat radius. On the 2026-10-29 live map 13 of 197 fires had a domain; 2 had
+learned (Willow, 13 windows), and the other 195 read "physics (nothing learned yet)". 184 of
+them could never learn.
+
+**What runs.** In a cycle where a feed fire builds no domain and the belief holds an observation
+with no curve (seen within the 6 h pin lag), that fire gets a learning forecast:
+
+- the **nominal member alone** (`ensemble_n = 1`), on the cycle's own input law
+  (`_forecast_inputs`: the terrain, the fire-centroid forecast, the regime posture, the
+  confirmed anchor, and the belief's weather log, so the new-weather rule has days to compare);
+- over the fire's geometry padded `fire_belief_learn_pad_m` (10 km), snapped outward to
+  `fire_belief_learn_snap_deg` (0.05°). The snapped box is the LANDFIRE cache key, so a fire asks
+  one tile until it outgrows it: the first forecast pays the LFPS job (1–3 min with canopy), and
+  the later ones take seconds;
+- on **one background worker** of its own, so a cold LANDFIRE fetch never holds a cycle or a
+  client's refresh.
+
+The next cycle pins the curve **before its own observations**, and only to the observations it
+was made for (the belief's `curve_token`). A newer observation first, or a curve pinned meanwhile
+by a domain forecast, drops it, and the newer observation gets its own forecast. One forecast is
+in flight per fire.
+
+**What it never does.** It never makes an ETA, an alert, a dispatch job, a domain on the map or a
+provider error (a failure is counted in the cycle note `fire belief learning: ...`). FIRMS
+clusters (no size reports) and seeded fires never learn this way. With `fire_belief_apply` off,
+the live posture, a learned rate is reported on the fire's card and changes no forecast.
+
+**When it shows.** A fire needs two observations: the first gets a curve, and the second
+completes the window. Reported sizes change several times a day on growing fires; an unchanged
+size counts as zero growth after `fire_belief_static_h` (24 h) of record modifications. So most
+reporting fires read "learned" within one to two days.

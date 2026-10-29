@@ -56,6 +56,7 @@ import json
 import logging
 import math
 import os
+import threading
 import time
 import urllib.parse
 import urllib.request
@@ -438,15 +439,23 @@ class BundledFallbackTerrain:
     fire north of Chico, CA, every cycle, so the fire had no forecast while
     the bundled Paradise wide tile covered its domain. No covering tile: the
     live provider's error is raised, as before (fail closed). Each
-    substitution is kept for pop_fallbacks() — the cycle's note. Only each
-    tile's header line is read to index them; at most two tiles are held."""
+    substitution is kept for pop_fallbacks() — the cycle's note — per
+    THREAD: a background learning forecast (SAFETY SEMANTICS 40) pops its
+    own, never the cycle's. Only each tile's header line is read to index
+    them; at most two tiles are held."""
 
     def __init__(self, primary, tiles_dir) -> None:
         self._primary = primary
         self._dir = str(tiles_dir)
         self._index = None
         self._held: dict = {}
-        self._fallbacks: list = []
+        self._local = threading.local()
+
+    def _fallbacks(self) -> list:
+        fb = getattr(self._local, "fallbacks", None)
+        if fb is None:
+            fb = self._local.fallbacks = []
+        return fb
 
     def _tiles(self) -> list:
         """[(cell_m, name, path, nrows, ncols, north, west)], finest first."""
@@ -499,12 +508,14 @@ class BundledFallbackTerrain:
                 self._held[path] = t
             log.warning("terrain fallback: %s for %s (live provider: %s)",
                         name, bbox, exc)
-            self._fallbacks.append((name, str(exc)))
+            self._fallbacks().append((name, str(exc)))
             return t
 
     def pop_fallbacks(self) -> list:
-        """[(tile name, live provider error)] since the last call."""
-        out, self._fallbacks = self._fallbacks, []
+        """[(tile name, live provider error)] since the last call on this
+        thread."""
+        out = self._fallbacks()
+        self._local.fallbacks = []
         return out
 
 
