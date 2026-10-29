@@ -1630,8 +1630,8 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    (2026-10-29; founder: "get the FIRMS key added and redeploy";
    docs/review/firms_live_2026-10-29.md; cfg.fuse_hotspots and
    fuse_hotspots_perimeter_m / _point_min_m / _point_max_m; watch
-   --fuse-hotspots, which also arms the FIRMS live mode: the three VIIRS
-   satellites, a rolling 24 h window, cluster ids kept across fetches —
+   --fuse-hotspots, which also arms the FIRMS live mode: the NOAA-20 and
+   NOAA-21 VIIRS, a rolling 24 h window, cluster ids kept across fetches —
    feeds.FirmsFeed). A FIRMS cluster has no IRWIN id and a synthetic name,
    so no join put a satellite detection on the reported fire it sits on,
    and one fire near clients built a domain per 2 km cluster

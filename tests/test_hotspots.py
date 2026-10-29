@@ -2,7 +2,8 @@
 (founder 2026-10-29, "get the FIRMS key added and redeploy"; contracts
 SAFETY SEMANTICS 39; cfg.fuse_hotspots; watch --fuse-hotspots).
 
-  LIVE MODE  three VIIRS satellites, DAY_RANGE 2 kept to the last 24 h by
+  LIVE MODE  the NOAA-20 and NOAA-21 VIIRS (never S-NPP: its data ends
+             2026-11-02), DAY_RANGE 2 kept to the last 24 h by
              the clock (DAY_RANGE 1 is TODAY in UTC only), each hotspot's
              time in meta, a failed source is a blind fetch that keeps the
              others' detections, cluster ids kept across fetches; legacy
@@ -102,12 +103,14 @@ def test_legacy_construction_is_unchanged():
     assert out[0].meta["satellite_source"] == "VIIRS_NOAA20_NRT"
 
 
-def test_live_mode_asks_three_satellites_for_two_utc_days():
+def test_live_mode_asks_both_noaa_satellites_for_two_utc_days():
     f, http = _live({})
     f.fetch_active(CONUS)
     assert [u.split("/")[7] for u in http.urls] == list(
         feeds.FirmsFeed.LIVE_SOURCES)
     assert all(u.endswith("/-125,24,-66,50/2") for u in http.urls)
+    assert feeds.FirmsFeed.LIVE_SOURCES == ("VIIRS_NOAA20_NRT",
+                                            "VIIRS_NOAA21_NRT")
     assert f.describe() == {"sources": list(feeds.FirmsFeed.LIVE_SOURCES),
                             "window_h": 24.0, "day_range": 2,
                             "cluster_km": 2.0, "stable_ids": True}
@@ -118,7 +121,8 @@ def test_live_mode_asks_three_satellites_for_two_utc_days():
 def test_the_window_keeps_the_last_24_hours_and_each_hotspot_time():
     near = geo.destination(ORIGIN, 90.0, 400.0)
     f, _ = _live({
-        "VIIRS_SNPP_NRT": _csv((ORIGIN, NOW - 3600.0), (near, NOW - 25 * 3600.0)),
+        "VIIRS_NOAA20_NRT": _csv((ORIGIN, NOW - 3600.0),
+                                  (near, NOW - 25 * 3600.0)),
         "VIIRS_NOAA21_NRT": _csv((near, NOW - 23 * 3600.0)),
     })
     out = f.fetch_active(CONUS)
@@ -129,12 +133,12 @@ def test_the_window_keeps_the_last_24_hours_and_each_hotspot_time():
     t = inc.meta["hotspot_t_s"]
     assert t == sorted(t, reverse=True) and len(t) == 2
     assert inc.updated_at_s == pytest.approx(NOW - 3600.0, abs=60.0)
-    assert inc.meta["satellites"] == ["VIIRS_NOAA21_NRT", "VIIRS_SNPP_NRT"]
+    assert inc.meta["satellites"] == ["VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT"]
     assert inc.name == "FIRMS cluster " + inc.incident_id[len("firms:"):]
 
 
 def test_a_failed_source_is_blind_but_the_others_are_kept():
-    f, _ = _live({"VIIRS_SNPP_NRT": 500,
+    f, _ = _live({"VIIRS_NOAA21_NRT": 500,
                   "VIIRS_NOAA20_NRT": _csv((ORIGIN, NOW - 600.0))})
     out = f.fetch_active(CONUS)
     assert f.last_fetch_ok is False

@@ -22,7 +22,7 @@ environment (`FIRMS_MAP_KEY`, App Runner); the watcher runs `--fuse-hotspots`.
 | Finding | Live mode (`FirmsFeed.live`, armed by `--fuse-hotspots`) |
 |---|---|
 | `DAY_RANGE 1` is **today in UTC** only (API docs: "from TODAY to TODAY - (DAY_RANGE-1)"): the layer emptied at 00:00 UTC (17:00 PDT) every day. | DAY_RANGE 2, kept to the last 24 h by the clock. |
-| One satellite (NOAA-20): 2 passes a day. | S-NPP, NOAA-20 and NOAA-21 (URT+NRT): about 6. A failed satellite is a blind fetch (`last_fetch_ok=False`) that keeps the others' detections. |
+| One satellite (NOAA-20): one look per window. | NOAA-20 and NOAA-21 (URT+NRT). They share one orbit about 50 min apart, so a place still gets two windows a day (early afternoon and about 01:30 local), each looked at twice. S-NPP is not asked: NASA ends its data on 2026-11-02 (Earthdata FIRMS notice). A failed satellite is a blind fetch (`last_fetch_ok=False`) that keeps the other's detections. |
 | Ids from centroids (27 % changed in 3 h). | A cluster keeps the id of the previous fetch's cluster it shares the most detections with, else of an unclaimed previous cluster within 2 km; a fetch with a blind satellite forgets no id. |
 | Clustering scanned every cluster for every detection (2.8 s on two days of CONUS; tens of seconds at the synthetic 6,000-detection day). | A grid over the centroids: the same clusters exactly (pinned against the plain scan on random data, every fallback), 0.02 s. |
 

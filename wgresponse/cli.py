@@ -324,7 +324,7 @@ def _build_parser() -> argparse.ArgumentParser:
     # SAFETY SEMANTICS 39 (2026-10-29): default-OFF knob.
     pw.add_argument("--fuse-hotspots", action="store_true",
                     help="cfg.fuse_hotspots + the FIRMS live mode (with env "
-                         "FIRMS_MAP_KEY): the three VIIRS satellites, a "
+                         "FIRMS_MAP_KEY): the NOAA-20 and NOAA-21 VIIRS, a "
                          "rolling 24 h window, cluster ids kept across "
                          "fetches; a detection inside or within 1 km of a "
                          "reported fire's perimeter (or near a point-only "
@@ -634,7 +634,7 @@ def _live_feed_stack(map_key, live: bool = False):
     BLIND by design — [] with last_fetch_ok=False — and would mark EVERY watch
     cycle degraded, so the CLI skips it gracefully with a note instead).
     live (watch --fuse-hotspots, SAFETY SEMANTICS 39): FIRMS in its live
-    mode (FirmsFeed.live — three VIIRS satellites, rolling 24 h, kept ids).
+    mode (FirmsFeed.live — NOAA-20 + NOAA-21 VIIRS, rolling 24 h, kept ids).
 
     Returns (feeds, notes): the adapter list and human-readable notes (the
     FIRMS skip line, when applicable)."""

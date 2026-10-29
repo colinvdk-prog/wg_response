@@ -806,7 +806,10 @@ class FirmsFeed:
     whole UTC days — "1" is TODAY only (FIRMS area-API docs, checked
     2026-10-29: "from TODAY to TODAY - (DAY_RANGE-1)"), so the layer emptied
     at 00:00 UTC every day. ``sources`` asks each instrument in turn (the live
-    mode: the three VIIRS satellites, ~6 passes a day, URT+NRT); a source that
+    mode: VIIRS on NOAA-20 and NOAA-21, URT+NRT — one orbit ~50 min apart,
+    so a place gets two windows a day, early afternoon and ~01:30 local,
+    each looked at twice; S-NPP is not asked: NASA ends its data on
+    2026-11-02, Earthdata's FIRMS notice); a source that
     fails is a blind fetch (last_fetch_ok=False) but the others' detections
     are kept. ``window_h`` keeps the detections of the last window_h hours by
     ``clock`` (asking DAY_RANGE ceil(window_h / 24) + 1, at most 5). Each
@@ -821,8 +824,9 @@ class FirmsFeed:
 
     BASE_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
     SIGNUP_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/"
-    #: the live mode's instruments: VIIRS on S-NPP, NOAA-20 and NOAA-21
-    LIVE_SOURCES = ("VIIRS_SNPP_NRT", "VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT")
+    #: the live mode's instruments: VIIRS on NOAA-20 and NOAA-21 (S-NPP's
+    #: data ends 2026-11-02)
+    LIVE_SOURCES = ("VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT")
     LIVE_WINDOW_H = 24.0
 
     def __init__(self, map_key: Optional[str] = None,
@@ -855,7 +859,7 @@ class FirmsFeed:
     def live(cls, map_key: Optional[str],
              http_get: Optional[HttpGet] = None,
              clock: Optional[Callable[[], float]] = None) -> "FirmsFeed":
-        """The live mode: three VIIRS satellites, a rolling 24 h window,
+        """The live mode: the NOAA-20 and NOAA-21 VIIRS, a rolling 24 h window,
         cluster ids kept across fetches."""
         return cls(map_key=map_key, http_get=http_get,
                    sources=cls.LIVE_SOURCES, window_h=cls.LIVE_WINDOW_H,
