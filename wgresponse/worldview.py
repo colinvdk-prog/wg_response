@@ -350,11 +350,19 @@ def hotspot_rule(cfg, firms_feed=None) -> dict:
     daemon armed and what its FIRMS adapter asks for (firms None = no
     FIRMS adapter in the stack: no FIRMS_MAP_KEY)."""
     desc = getattr(firms_feed, "describe", None)
+    screening = None
+    if getattr(cfg, "hotspot_heat_only", False):
+        # SAFETY SEMANTICS 41: the interim rule (founder 2026-10-30)
+        screening = {"rule": "heat_only",
+                     "note_m": cfg.hotspot_heat_note_m,
+                     "why": "satellite-only fires get no forecast or alerts "
+                            "until the hotspot screening protocol is "
+                            "decided (founder 2026-10-30)"}
     return {"firms": desc() if callable(desc) else None,
             "perimeter_m": cfg.fuse_hotspots_perimeter_m,
             "point_min_m": cfg.fuse_hotspots_point_min_m,
             "point_max_m": cfg.fuse_hotspots_point_max_m,
-            "screening": None}
+            "screening": screening}
 
 
 def hotspot_row(inc, now_s: float):

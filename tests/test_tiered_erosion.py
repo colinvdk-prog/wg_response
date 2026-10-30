@@ -142,9 +142,14 @@ def test_dispatch_uses_provided_rasters(monkeypatch):
     ens.p50 = flat
     ens.p90 = flat
     cfg = ResponseConfig()
-    plan = dispatch_mod.plan([], [], {"f1": ens}, [], cfg, 0.0,
+    # a crew on duty: with none eligible the planner erodes nothing at all
+    # (no leg is ever checked — tests/test_speed_fixes.py)
+    from wgresponse.contracts import Crew, CrewStatus, LatLon
+    crew = Crew(crew_id="A", name="A", status=CrewStatus.AVAILABLE,
+                home_base=LatLon(34.199, -118.299))
+    plan = dispatch_mod.plan([crew], [], {"f1": ens}, [], cfg, 0.0,
                              eroded_rasters={"f1": flat})
     assert calls == []                # provided raster used, no re-erosion
-    plan2 = dispatch_mod.plan([], [], {"f1": ens}, [], cfg, 0.0)
+    plan2 = dispatch_mod.plan([crew], [], {"f1": ens}, [], cfg, 0.0)
     assert calls == [cfg.corridor_erosion_m]   # legacy path erodes
     assert plan is not None and plan2 is not None

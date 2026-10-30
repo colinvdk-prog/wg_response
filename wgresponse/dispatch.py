@@ -2518,12 +2518,17 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
     _shape = ("euclidean"
               if getattr(cfg, "corridor_erosion_euclidean", False)
               else "chebyshev")
-    rasters = [(iid,
-                (eroded_rasters[iid]
-                 if eroded_rasters is not None and iid in eroded_rasters
-                 else safety._erode(ens[iid].p10, cfg.corridor_erosion_m,
-                                    shape=_shape)))
-               for iid in sorted(ens)]
+    # NO ELIGIBLE CREW, NO EROSION (live 2026-10-30: 393 s eroding 27
+    # domains for 11 homes no crew could take): every job below is then
+    # unserved for capacity and no leg is ever checked, so the rasters would
+    # go unread — the same plan, without the wait.
+    rasters = ([(iid,
+                 (eroded_rasters[iid]
+                  if eroded_rasters is not None and iid in eroded_rasters
+                  else safety._erode(ens[iid].p10, cfg.corridor_erosion_m,
+                                     shape=_shape)))
+                for iid in sorted(ens)]
+               if eligible else [])
 
     # -- step 0: ONE job per client (Sprint 2 A7, Council-1 dispatch F4) ------
     # A property is a single gel target no matter how many incidents threaten

@@ -330,6 +330,19 @@ def _build_parser() -> argparse.ArgumentParser:
                          "reported fire's perimeter (or near a point-only "
                          "fire's point) joins that fire, and the rest of "
                          "each cluster stays a FIRMS fire")
+    # SAFETY SEMANTICS 41 / 42 (2026-10-30): default-OFF knobs.
+    pw.add_argument("--hotspot-heat-only", action="store_true",
+                    help="cfg.hotspot_heat_only (founder 2026-10-30, the "
+                         "interim rule until the hotspot screening protocol "
+                         "is decided): a fire only the satellite reports "
+                         "stays on the map as heat — no forecast, alert or "
+                         "dispatch; heat within 8 km of a protected home is "
+                         "listed for the operator")
+    pw.add_argument("--snap-domains", action="store_true",
+                    help="cfg.forecast_domain_snap_deg = 0.05: each forecast "
+                         "domain snapped outward to a 0.05-degree grid, so a "
+                         "fire whose shape moves a little keeps its domain "
+                         "and its cached LANDFIRE tile")
     # SAFETY SEMANTICS 24 (2026-10-15): default-OFF knob.
     pw.add_argument("--fuse-colocated", action="store_true",
                     help="cfg.fuse_colocated_incidents: one fire is one "
@@ -969,6 +982,34 @@ def _fire_belief_cfg(cfg, args):
     return cfg
 
 
+def _heat_snap_cfg(cfg, args):
+    """(cfg, startup notes) with --hotspot-heat-only (SAFETY SEMANTICS 41)
+    and --snap-domains (42) applied (founder 2026-10-30). No flag = cfg
+    unchanged, no note."""
+    notes = []
+    if getattr(args, "hotspot_heat_only", False):
+        cfg = dataclasses.replace(cfg, hotspot_heat_only=True)
+        notes.append(
+            f"SATELLITE HEAT ONLY (founder 2026-10-30, until the hotspot "
+            f"screening protocol is decided): a fire only the satellite "
+            f"reports stays on the map as heat — no forecast, ETA, alert, "
+            f"dispatch or learning; heat within "
+            f"{cfg.hotspot_heat_note_m / 1000.0:g} km of a protected home is "
+            f"listed for the operator and is one operator event while it "
+            f"stays in range; detections on a reported fire still join it "
+            f"— SAFETY SEMANTICS 41"
+            + ("" if os.environ.get("FIRMS_MAP_KEY") else
+               " [INERT: no FIRMS_MAP_KEY in the environment]"))
+    if getattr(args, "snap_domains", False):
+        cfg = dataclasses.replace(cfg, forecast_domain_snap_deg=0.05)
+        notes.append(
+            f"DOMAIN SNAP: each forecast domain is snapped outward to a "
+            f"{cfg.forecast_domain_snap_deg:g}-degree grid, so a fire whose "
+            f"shape moves a little keeps its domain and its cached LANDFIRE "
+            f"tile — SAFETY SEMANTICS 42")
+    return cfg, notes
+
+
 def _fire_belief_file(cfg, state_dir, s3_uri=None):
     """The watch daemon's fire-belief file: <state-dir>/fire_beliefs.json,
     S3-mirrored under the state's prefix (object fire_beliefs.json) — or
@@ -1521,6 +1562,13 @@ class _WatchDaemon:
                 inc = by_id.get(row["incident_id"])
                 row["hotspots"] = (worldview.hotspot_row(inc, now)
                                    if inc is not None else None)
+        if getattr(self._cfg, "hotspot_heat_only", False):
+            # SATELLITE HEAT ONLY (SEMANTICS 41): heat near protected homes,
+            # for the operator — an additive key, present only when armed
+            heat = getattr(self._monitor, "heat_status", None)
+            hs = heat() if callable(heat) else None
+            if hs is not None:
+                out["heat_near_homes"] = hs
         return out
 
     @classmethod
@@ -1990,6 +2038,8 @@ def _cmd_watch(args) -> int:
             f"of each cluster stays a FIRMS fire — SAFETY SEMANTICS 39"
             + ("" if os.environ.get("FIRMS_MAP_KEY") else
                " [INERT: no FIRMS_MAP_KEY in the environment]"))
+    cfg, _notes = _heat_snap_cfg(cfg, args)  # SEMANTICS 41 / 42
+    startup_notes_fix += _notes
     if getattr(args, "forecast_tiers", False):
         cfg = dataclasses.replace(cfg, forecast_tiers=True)
         startup_notes_fix.append(

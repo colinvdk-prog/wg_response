@@ -1674,14 +1674,62 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    the regime posture, the confirmed anchor, the belief's weather log),
    over the fire's geometry padded fire_belief_learn_pad_m and snapped
    outward to fire_belief_learn_snap_deg (the terrain cache key: one fire
-   asks one tile), on ONE background worker — a cold LANDFIRE fetch never
-   holds a cycle. The next cycle, BEFORE its own observations, pins the
+   asks one tile), on ONE background worker that starts a forecast only
+   while the cycle is not assessing (the TERRAIN TURN, 2026-10-30: the live
+   LANDFIRE service ran one job at a time — about 3 min each, two per
+   domain — so the 29 learning domains the first live cycle queued held
+   the cycle's own fetches behind them; one already started runs on). The
+   next cycle, BEFORE its own observations, pins the
    curve to the observation it was made for; a newer observation first, or
    a curve pinned meanwhile, drops it. A learning forecast is never an ETA,
    an alert, a dispatch job, a domain on the map or a provider error (a
    failure is a note); FIRMS and seeded fires never learn this way. With
    fire_belief_apply off (the live posture) a learned rate is reported, not
    applied. Knob OFF = byte-identical (tests/test_belief_learning.py).
+
+41. WHAT ONLY A SATELLITE SEES IS HEAT — SATELLITE HEAT ONLY (2026-10-30;
+   founder: "heat only" as the interim rule until the hotspot screening
+   protocol is decided; docs/review/heat_only_2026-10-30.md;
+   cfg.hotspot_heat_only, hotspot_heat_note_m; watch --hotspot-heat-only).
+   The first live day of 39 forecast 14 FIRMS clusters near demo homes —
+   Sacramento Valley farmland, the Chiquita Canyon landfill, single
+   pixels — and one 2-pixel cluster from a single NOAA-21 pass, with no
+   fire reported, put 12 Santa Rosa demo homes on the ladder (3 EXTREME);
+   the clusters' moving shapes re-fetched LANDFIRE and cycles ran 26-113
+   min (world16: 12.5). With hotspot_heat_only, right after 39, an incident
+   only the satellite reports (source FIRMS, "firms" its only source id,
+   not seeded) leaves the forecast set: no domain, ETA, alert, dispatch
+   job, belief observation or learning forecast. It stays in
+   CycleResult.incidents after the forecast fires (the map lists it as
+   heat; its note says why it has no domain) and never enters the
+   WorldSnapshot (the TEST world builds on the forecast fires only). A pair
+   a cluster raised before takes the absence law, not the blind one — the
+   cluster left the forecast set by rule, not by a failed provider — so it
+   clears after clear_cycles while the feeds are healthy. Heat within
+   hotspot_heat_note_m of a protected home (any detection of the cluster;
+   the registry's own roster) is listed every cycle for the operator
+   (ThreatMonitor.heat_status: the nearest home, its distance, the
+   detections) and is ONE OperatorEvent('satellite_heat') while it stays
+   in range — never a client message, never a degradation; a registry
+   failure there is a note. Detections on a reported fire still join it
+   (39) and seed its forecast. Absence is not clearance: heat that only a
+   satellite sees near a home is the operator's to watch, not the
+   ladder's, until the screening protocol says otherwise. Knob OFF =
+   byte-identical (tests/test_heat_only.py).
+
+42. A DOMAIN KEEPS ITS GRID — DOMAIN SNAP (2026-10-30; founder: the live
+   speed fixes, "build and redeploy"; cfg.forecast_domain_snap_deg; watch
+   --snap-domains). A domain is the bbox of the fire's geometry and its
+   protected homes, padded, and the terrain cache is keyed on that exact
+   bbox — so each move of a fire's shape fetched LANDFIRE again (two jobs
+   of ~3 min, one at a time: 13 of the third live cycle's 15 terrain
+   minutes went to three moving clusters). With forecast_domain_snap_deg >
+   0 the padded bbox is snapped outward to that grid before the cell size
+   is picked: the whole fire and every home stay inside, the domain grows
+   by less than one grid step a side (0.05 deg = 5.6 km north-south), and
+   a shape that stays inside the same snapped box asks the same tile. A
+   learning domain (40) uses the same snap. Knob 0 = byte-identical
+   (tests/test_speed_fixes.py).
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -4256,6 +4304,22 @@ class ResponseConfig:
     fuse_hotspots_perimeter_m: float = 1000.0    # beyond a perimeter / point footprint (VIIRS 375 m pixel + perimeter error)
     fuse_hotspots_point_min_m: float = 2000.0    # a point-only fire's footprint radius, at least
     fuse_hotspots_point_max_m: float = 10000.0   # ... and at most (2 x the acreage's equivalent radius between)
+    # SATELLITE HEAT ONLY (founder 2026-10-30, the interim rule until the
+    # hotspot screening protocol is decided; SAFETY SEMANTICS 41): an
+    # incident only the satellite reports (a FIRMS cluster no reported fire
+    # took) stays on the map as heat — no domain, ETA, alert, dispatch or
+    # learning; heat within hotspot_heat_note_m of a protected home is
+    # listed for the operator and is one operator event while it stays in
+    # range. False = byte-identical; the watch daemon arms it via
+    # --hotspot-heat-only.
+    hotspot_heat_only: bool = False
+    hotspot_heat_note_m: float = 8000.0          # heat this close to a protected home is the operator's (m); 0 = no listing
+    # DOMAIN SNAP (founder 2026-10-30, the live speed fixes; SAFETY
+    # SEMANTICS 42): a forecast domain snapped outward to this grid
+    # (degrees), so a fire whose shape moves a little keeps its domain and
+    # the LANDFIRE tile cached for it. 0 = the exact padded bbox
+    # (byte-identical); the watch daemon arms 0.05 via --snap-domains.
+    forecast_domain_snap_deg: float = 0.0
     # SIMULATOR CITY WEATHER (founder 2026-10-09, verbatim: "change the
     # weather conditions for each city specific"; docs/review/
     # city_weather_2026-10-09.md). Read ONLY by wgresponse.simui (the
@@ -4689,6 +4753,15 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
             <= cfg.fuse_hotspots_point_max_m <= 50000.0):
         problems.append("fuse_hotspots_point_max_m must be within "
                         "[fuse_hotspots_point_min_m, 50000] m")
+    # --- satellite heat only (SAFETY SEMANTICS 41) ---
+    if not (math.isfinite(cfg.hotspot_heat_note_m)
+            and 0.0 <= cfg.hotspot_heat_note_m <= 60000.0):
+        problems.append("hotspot_heat_note_m must be within [0, 60000] m")
+    # --- domain snap (SAFETY SEMANTICS 42) ---
+    if not (math.isfinite(cfg.forecast_domain_snap_deg)
+            and 0.0 <= cfg.forecast_domain_snap_deg <= 1.0):
+        problems.append("forecast_domain_snap_deg must be within [0, 1] "
+                        "degrees")
     # --- co-located fusion (SAFETY SEMANTICS 24) ---
     if not (math.isfinite(cfg.fuse_colocated_max_m)
             and 0.0 < cfg.fuse_colocated_max_m <= 5000.0):

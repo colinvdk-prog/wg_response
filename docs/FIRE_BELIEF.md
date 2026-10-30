@@ -725,8 +725,10 @@ with no curve (seen within the 6 h pin lag), that fire gets a learning forecast:
   `fire_belief_learn_snap_deg` (0.05°). The snapped box is the LANDFIRE cache key, so a fire asks
   one tile until it outgrows it: the first forecast pays the LFPS job (1–3 min with canopy), and
   the later ones take seconds;
-- on **one background worker** of its own, so a cold LANDFIRE fetch never holds a cycle or a
-  client's refresh.
+- on **one background worker** of its own, which starts a forecast only while the cycle is not
+  assessing (the **terrain turn**, 2026-10-30). The live LANDFIRE service ran one job at a time,
+  about 3 min each and two per domain, so the 29 learning domains the first live cycle queued
+  held the cycle's own fetches behind them. A forecast already started runs on.
 
 The next cycle pins the curve **before its own observations**, and only to the observations it
 was made for (the belief's `curve_token`). A newer observation first, or a curve pinned meanwhile

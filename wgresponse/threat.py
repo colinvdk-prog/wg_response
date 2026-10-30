@@ -199,6 +199,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 import math
+import threading
 import time
 from types import SimpleNamespace
 from typing import Optional
@@ -287,6 +288,53 @@ class _LearnJob:
         self.token = token
         self.inc = inc
         self.at_s = at_s
+
+
+class _TerrainTurn:
+    """THE TERRAIN TURN (SAFETY SEMANTICS 40): the cycle holds it while it
+    assesses — its own LANDFIRE fetches run then — and a learning forecast
+    starts only once it is free. The live LANDFIRE service ran one job at a
+    time (2026-10-30: ~3 min each, two per domain), so a learning fetch in
+    front of the cycle's held every domain behind it."""
+
+    def __init__(self):
+        self._free = threading.Event()
+        self._free.set()
+
+    def hold(self) -> None:
+        self._free.clear()
+
+    def release(self) -> None:
+        self._free.set()
+
+    @property
+    def held(self) -> bool:
+        return not self._free.is_set()
+
+    def wait(self) -> None:
+        """Block until the cycle is not assessing."""
+        self._free.wait()
+
+
+def _snap_bbox(bb: BBox, deg: float) -> BBox:
+    """bb snapped outward to a `deg`-degree grid (the terrain cache key: a
+    shape that stays inside one snapped box asks one tile); deg <= 0 = bb."""
+    if deg <= 0.0:
+        return bb
+    return BBox(west=round(math.floor(bb.west / deg) * deg, 6),
+                south=round(math.floor(bb.south / deg) * deg, 6),
+                east=round(math.ceil(bb.east / deg) * deg, 6),
+                north=round(math.ceil(bb.north / deg) * deg, 6))
+
+
+def _satellite_only(inc: FireIncident) -> bool:
+    """SATELLITE HEAT ONLY (SAFETY SEMANTICS 41): an incident only the
+    satellite reports — a FIRMS incident no reported feed contributed to
+    (39 puts "firms" into a reported fire's source ids, never the reverse),
+    never a seeded fire."""
+    return (inc.source is IncidentSource.FIRMS
+            and not is_seeded_id(inc.incident_id)
+            and set((inc.source_ids or {}).keys()) <= {"firms"})
 
 
 # Perimeter rings are subsampled to this many vertices before being handed to
@@ -551,9 +599,16 @@ class ThreatMonitor:
         self._kept_failures: list = []
         # LEARNING FORECASTS (cfg.fire_belief_learn only; SAFETY SEMANTICS
         # 40): incident_id -> _LearnJob in flight, and their ONE background
-        # worker (made on first use).
+        # worker (made on first use), and the terrain turn the cycle holds
+        # while it assesses.
         self._learning: dict = {}
         self._learner = None
+        self._terrain_turn = _TerrainTurn()
+        # SATELLITE HEAT ONLY (cfg.hotspot_heat_only only; SAFETY SEMANTICS
+        # 41): this cycle's heat near protected homes (rows for the
+        # operator) and the clusters already announced while in range.
+        self._heat_near: list = []
+        self._heat_noted: set = set()
 
     @property
     def fire_beliefs(self):
@@ -698,6 +753,13 @@ class ThreatMonitor:
             # join it (after 9 and 13: a removed fire takes only its own
             # interior heat); the rest stay FIRMS fires
             active, removed = self._attach_hotspots(active, removed, notes)
+        heat: list = []
+        if self._cfg.hotspot_heat_only:
+            # SAFETY SEMANTICS 41: what only a satellite sees is heat on the
+            # map — no domain, alert or crew; a pair it raised before takes
+            # the absence law (never the blind one)
+            active, heat = self._split_heat(active, now_s, notes,
+                                            operator_events)
         learn = None
         if self._learn_on():
             # SAFETY SEMANTICS 40: finished learning forecasts are pinned
@@ -735,33 +797,43 @@ class ThreatMonitor:
                              f"this cycle")
             self._kept_failures = []
         no_domain = [] if learn is not None else None
-        for inc in active:
-            try:
-                self._assess_incident(inc, now_s, assessments, ensembles,
-                                      clients_seen, etas, notes, roster_seen,
-                                      forecasts, extreme_flags, eroded_map,
-                                      timings=timings,
-                                      weather_fields=weather_fields,
-                                      freshness=freshness,
-                                      no_domain=no_domain)
-            except _ProviderFailure as pf:
-                failed_incidents.add(inc.incident_id)
-                notes.append(
-                    f"incident {inc.incident_id}: assessment skipped ({pf})")
-                operator_events.append(OperatorEvent(
-                    t_s=now_s, kind="provider_error",
-                    message=(f"{pf.step} provider failed for incident "
-                             f"{inc.incident_id}: {pf.cause}"),
-                    incident_id=inc.incident_id, detail={"step": pf.step}))
-            except Exception as exc:  # degrade, never raise out of cycle()
-                failed_incidents.add(inc.incident_id)
-                notes.append(
-                    f"incident {inc.incident_id}: assessment skipped ({exc})")
-                operator_events.append(OperatorEvent(
-                    t_s=now_s, kind="provider_error",
-                    message=(f"assessment failed for incident "
-                             f"{inc.incident_id}: {exc}"),
-                    incident_id=inc.incident_id, detail={"step": "assess"}))
+        if learn is not None:
+            # SAFETY SEMANTICS 40: the TERRAIN TURN — no learning forecast
+            # starts while the cycle fetches its own domains' terrain
+            self._terrain_turn.hold()
+        try:
+            for inc in active:
+                try:
+                    self._assess_incident(inc, now_s, assessments, ensembles,
+                                          clients_seen, etas, notes,
+                                          roster_seen, forecasts,
+                                          extreme_flags, eroded_map,
+                                          timings=timings,
+                                          weather_fields=weather_fields,
+                                          freshness=freshness,
+                                          no_domain=no_domain)
+                except _ProviderFailure as pf:
+                    failed_incidents.add(inc.incident_id)
+                    notes.append(f"incident {inc.incident_id}: assessment "
+                                 f"skipped ({pf})")
+                    operator_events.append(OperatorEvent(
+                        t_s=now_s, kind="provider_error",
+                        message=(f"{pf.step} provider failed for incident "
+                                 f"{inc.incident_id}: {pf.cause}"),
+                        incident_id=inc.incident_id,
+                        detail={"step": pf.step}))
+                except Exception as exc:  # degrade, never raise out of cycle()
+                    failed_incidents.add(inc.incident_id)
+                    notes.append(f"incident {inc.incident_id}: assessment "
+                                 f"skipped ({exc})")
+                    operator_events.append(OperatorEvent(
+                        t_s=now_s, kind="provider_error",
+                        message=(f"assessment failed for incident "
+                                 f"{inc.incident_id}: {exc}"),
+                        incident_id=inc.incident_id,
+                        detail={"step": "assess"}))
+        finally:
+            self._terrain_turn.release()
         if self._cfg.forecast_tiers:
             # FORECAST FRESHNESS TIERS: a refresh that could not get its
             # inputs is a provider error (the kept forecast stays served);
@@ -942,7 +1014,9 @@ class ThreatMonitor:
         degraded = (not feeds_healthy) or bool(failed_incidents) or any(
             ev.kind in ("degraded", "feed_blind", "provider_error")
             for ev in operator_events)
-        res = CycleResult(t_s=now_s, incidents=active, assessments=assessments,
+        # SAFETY SEMANTICS 41: the heat is listed after the forecast fires
+        res = CycleResult(t_s=now_s, incidents=active + heat,
+                          assessments=assessments,
                           events=events, plan=plan, ensembles=ensembles,
                           notes=notes, operator_events=operator_events,
                           degraded=degraded, timings=timings,
@@ -1419,20 +1493,16 @@ class ThreatMonitor:
         outward to fire_belief_learn_snap_deg (the terrain cache key)."""
         cfg = self._cfg
         bb = geo.bbox_around(geom_pts, float(cfg.fire_belief_learn_pad_m))
-        s = float(cfg.fire_belief_learn_snap_deg)
-        if s <= 0.0:
-            return bb
-        return BBox(west=round(math.floor(bb.west / s) * s, 6),
-                    south=round(math.floor(bb.south / s) * s, 6),
-                    east=round(math.ceil(bb.east / s) * s, 6),
-                    north=round(math.ceil(bb.north / s) * s, 6))
+        return _snap_bbox(bb, float(cfg.fire_belief_learn_snap_deg))
 
     def _learn_forecast(self, inc: FireIncident, now_s: float, ign: list,
                         perimeter, perimeter_at_s, provenance_s, seeds: list,
                         geom_pts: list):
         """ON THE LEARNING WORKER: the nominal member alone over the
-        learning domain, on the cycle's own input law. Returns (ensemble,
+        learning domain, on the cycle's own input law — started only once
+        the cycle is not assessing (the terrain turn). Returns (ensemble,
         spread cfg, curve anchor, point start)."""
+        self._terrain_turn.wait()
         domain = self._learn_domain(geom_pts)
         b = self._forecast_inputs(inc, now_s, domain, self._pick_cell_m(domain),
                                   ign, perimeter, perimeter_at_s, provenance_s,
@@ -1543,6 +1613,94 @@ class ThreatMonitor:
                          f"stays a FIRMS fire)")
             notes.append(note + " — SAFETY SEMANTICS 39")
         return kept, removed
+
+    # ------------------------------------- satellite heat only (SEM 41)
+
+    def heat_status(self) -> Optional[dict]:
+        """SATELLITE HEAT ONLY (SAFETY SEMANTICS 41): the rule and this
+        cycle's heat near protected homes, nearest first; None when the
+        knob is off."""
+        if not self._cfg.hotspot_heat_only:
+            return None
+        return {"note_m": float(self._cfg.hotspot_heat_note_m),
+                "near": [dict(r) for r in self._heat_near]}
+
+    def _split_heat(self, active: list, now_s: float, notes: list,
+                    operator_events: list) -> "tuple[list, list]":
+        """SATELLITE HEAT ONLY (contracts SAFETY SEMANTICS 41): the
+        incidents only the satellite reports leave the forecast set — the
+        heat, each with a note saying why it has no domain. Heat within
+        hotspot_heat_note_m of a protected home is this cycle's operator
+        list, and one OperatorEvent('satellite_heat') when a cluster comes
+        into range. Returns (the forecast set, the heat)."""
+        keep, heat = [], []
+        for inc in active:
+            (heat if _satellite_only(inc) else keep).append(inc)
+        radius = float(self._cfg.hotspot_heat_note_m)
+        rows = []
+        for inc in heat:
+            notes.append(f"incident {inc.incident_id}: satellite heat only "
+                         f"— no forecast or alerts until screened; spread "
+                         f"skipped (SAFETY SEMANTICS 41)")
+            if radius <= 0.0:
+                continue
+            pts = list(inc.hotspots or []) or [inc.origin]
+            try:
+                cands = list(self._registry.protected_clients(
+                    geo.bbox_around(pts, radius)))
+            except Exception as exc:
+                notes.append(f"incident {inc.incident_id}: heat near homes "
+                             f"not checked (registry: {exc})")
+                continue
+            near = sorted(((min(geo.haversine_m(c.loc, p) for p in pts), c)
+                           for c in cands),
+                          key=lambda dc: (dc[0], dc[1].client_id))
+            near = [(d, c) for d, c in near if d <= radius]
+            if not near:
+                continue
+            d0, c0 = near[0]
+            meta = inc.meta or {}
+            ts = [t for t in (meta.get("hotspot_t_s") or [inc.updated_at_s])
+                  if isinstance(t, (int, float)) and math.isfinite(t)]
+            rows.append({
+                "incident_id": inc.incident_id, "name": inc.name,
+                "lat": round(inc.origin.lat, 5),
+                "lon": round(inc.origin.lon, 5),
+                "nearest_client_id": c0.client_id,
+                "nearest_client": c0.name or c0.client_id,
+                "nearest_m": round(d0),
+                "homes_in_range": len(near),
+                "n_detections": len(pts),
+                "newest_s": max(ts) if ts else float(inc.updated_at_s),
+                "satellites": list(meta.get("satellites") or []),
+                "max_frp": meta.get("max_frp")})
+        rows.sort(key=lambda r: (r["nearest_m"], r["incident_id"]))
+        for r in rows:
+            if r["incident_id"] in self._heat_noted:
+                continue
+            more = r["homes_in_range"] - 1
+            operator_events.append(OperatorEvent(
+                t_s=now_s, kind="satellite_heat",
+                message=(f"satellite heat {r['nearest_m'] / 1000.0:.1f} km "
+                         f"from {r['nearest_client']}"
+                         + (f" (+{more} more home(s) within "
+                            f"{radius / 1000.0:g} km)" if more else "")
+                         + f" — {r['name']}: {r['n_detections']} "
+                           f"detection(s), newest "
+                           f"{max(0.0, now_s - r['newest_s']) / 3600.0:.1f} h "
+                           f"ago; unscreened, no forecast or alerts (SAFETY "
+                           f"SEMANTICS 41)"),
+                incident_id=r["incident_id"], detail=dict(r)))
+        self._heat_noted = {r["incident_id"] for r in rows}
+        self._heat_near = rows
+        if heat:
+            notes.append(
+                f"satellite heat only: {len(heat)} FIRMS cluster(s) on the "
+                f"map without a forecast or alerts (unscreened)"
+                + (f"; {len(rows)} within {radius / 1000.0:g} km of a "
+                   f"protected home" if radius > 0.0 else "")
+                + " — SAFETY SEMANTICS 41")
+        return keep, heat
 
     def _threat_radius_m(self) -> float:
         """Client-search radius, meters: how far a fire could plausibly run
@@ -1701,6 +1859,10 @@ class ThreatMonitor:
 
         domain = geo.bbox_around(geom_pts + [c.loc for c in near],
                                  _DOMAIN_PAD_M)
+        if self._cfg.forecast_domain_snap_deg > 0.0:
+            # SAFETY SEMANTICS 42: snapped outward, so a shape that moves a
+            # little keeps its domain and the terrain tile cached for it
+            domain = _snap_bbox(domain, self._cfg.forecast_domain_snap_deg)
         cell_m = self._pick_cell_m(domain)
         if self._cfg.forecast_tiers:
             # FORECAST FRESHNESS TIERS: the kept forecast, refreshed by tier
