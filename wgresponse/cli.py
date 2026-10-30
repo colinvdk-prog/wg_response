@@ -670,7 +670,7 @@ def _live_feed_stack(map_key, live: bool = False):
 _FIRMS_NATIONAL_DEG2 = 100.0
 
 
-def _firms_scale_notes(feeds_stack, aoi) -> list:
+def _firms_scale_notes(feeds_stack, aoi, heat_only: bool = False) -> list:
     """LOUD startup notes for FIRMS over a national AOI (W6 CONUS check).
 
     Checked against the live FIRMS area-API docs on 2026-09-26: the area
@@ -682,7 +682,8 @@ def _firms_scale_notes(feeds_stack, aoi) -> list:
     clusters)) becomes an incident assessed each cycle, and a FIRMS cluster
     never name-joins a WFIGS fire (synthetic names, no IRWIN id), so a fire
     near clients can build several domains. Said once, at startup; [] when
-    FIRMS is off or the AOI is regional."""
+    FIRMS is off or the AOI is regional. heat_only (cfg.hotspot_heat_only,
+    SAFETY SEMANTICS 41): the live-mode note says the rest stays heat."""
     from wgresponse import feeds as feeds_mod
     firms = [f for f in feeds_stack if isinstance(f, feeds_mod.FirmsFeed)]
     if not firms:
@@ -697,11 +698,15 @@ def _firms_scale_notes(feeds_stack, aoi) -> list:
                 f"({', '.join(d['sources'])}; DAY_RANGE {d['day_range']}, "
                 f"kept to the last {d['window_h']:g} h), cluster ids kept "
                 f"across fetches. Detections on reported fires join them "
-                f"(SAFETY SEMANTICS 39); every other 2 km cluster is a fire "
-                f"assessed each cycle — nationally mostly agricultural, "
-                f"prescribed and industrial heat (2026-10-29: 1,312 "
-                f"clusters, 26 within 60 km of the demo homes); no hotspot "
-                f"screening is armed"]
+                f"(SAFETY SEMANTICS 39); "
+                + ("every other 2 km cluster stays on the map as satellite "
+                   "heat — no forecast or alerts until screened (SAFETY "
+                   "SEMANTICS 41)" if heat_only else
+                   "every other 2 km cluster is a fire assessed each cycle")
+                + " — nationally mostly agricultural, prescribed and "
+                  "industrial heat (2026-10-29: 1,312 clusters, 26 within 60 "
+                  "km of the demo homes)"
+                + ("" if heat_only else "; no hotspot screening is armed")]
     return [f"FIRMS over a NATIONAL AOI ({area:,.0f} deg²): one area request "
             f"per cycle (the FIRMS area API accepts any bbox up to the world "
             f"— docs checked 2026-09-26; a large request may count as several "
@@ -2115,7 +2120,8 @@ def _cmd_watch(args) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 2
     # W6 CONUS check: FIRMS at national scale is said out loud, once.
-    startup_notes += _firms_scale_notes(feeds_stack, aoi)
+    startup_notes += _firms_scale_notes(
+        feeds_stack, aoi, heat_only=getattr(cfg, "hotspot_heat_only", False))
     notifier, notifier_desc = _watch_notifier(args, state_dir)
     # W1 SEEDED INCIDENTS (SAFETY SEMANTICS 12g): a seeded (drill) fire's
     # notifications go to the drill log, never to a client channel. Since

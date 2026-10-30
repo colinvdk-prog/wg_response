@@ -277,3 +277,17 @@ def test_config_defaults_and_validation():
     for v in (-1.0, 60_001.0, float("inf"), float("nan")):
         probs = validate_config(dataclasses.replace(cfg, hotspot_heat_note_m=v))
         assert any("hotspot_heat_note_m" in p for p in probs), v
+
+
+def test_the_firms_startup_note_says_the_rest_stays_heat():
+    from wgresponse import feeds
+    from wgresponse.contracts import BBox
+    conus = BBox(west=-125, south=24, east=-66, north=50)
+    live = [feeds.FirmsFeed.live("k" * 32)]
+    (note,) = cli._firms_scale_notes(live, conus, heat_only=True)
+    assert "stays on the map as satellite heat" in note
+    assert "SAFETY SEMANTICS 41" in note and "SAFETY SEMANTICS 39" in note
+    assert "no hotspot screening is armed" not in note
+    (legacy,) = cli._firms_scale_notes(live, conus)
+    assert "is a fire assessed each cycle" in legacy
+    assert legacy.endswith("no hotspot screening is armed")
