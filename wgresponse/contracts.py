@@ -1730,6 +1730,14 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    a shape that stays inside the same snapped box asks the same tile. A
    learning domain (40) uses the same snap. Knob 0 = byte-identical
    (tests/test_speed_fixes.py).
+   THE TRADE (measured live 2026-10-30, docs/review/heat_only_2026-10-30.md):
+   a domain already at grid_max_cells pays for the bigger box with a
+   coarser cell (Willow 129.5 -> 136.4 m; 4 of the 13 live domains, 2-8 %)
+   and every snapped grid has a new origin. Same weather, same now_s: 6 of
+   Willow's 204 homes changed ladder stage (5 Vail-area homes newly reached
+   at 47-55 h, 1 no longer reached) — homes behind terrain the spread only
+   just crosses flip with any grid change. The founder kept the snap
+   (2026-10-30): the grid then holds while the fire stays in its box.
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
