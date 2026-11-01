@@ -358,11 +358,30 @@ def hotspot_rule(cfg, firms_feed=None) -> dict:
                      "why": "satellite-only fires get no forecast or alerts "
                             "until the hotspot screening protocol is "
                             "decided (founder 2026-10-30)"}
-    return {"firms": desc() if callable(desc) else None,
-            "perimeter_m": cfg.fuse_hotspots_perimeter_m,
-            "point_min_m": cfg.fuse_hotspots_point_min_m,
-            "point_max_m": cfg.fuse_hotspots_point_max_m,
-            "screening": screening}
+    out = {"firms": desc() if callable(desc) else None,
+           "perimeter_m": cfg.fuse_hotspots_perimeter_m,
+           "point_min_m": cfg.fuse_hotspots_point_min_m,
+           "point_max_m": cfg.fuse_hotspots_point_max_m,
+           "screening": screening}
+    if getattr(cfg, "screen_labels", False):
+        # SAFETY SEMANTICS 43: the shadow labels' rule (additive)
+        from wgresponse import screening as sc
+        out["labels"] = {
+            "rule": "shadow",
+            "why": "labels for the operator only — nothing is paged, "
+                   "forecast or changed (founder 2026-11-01, step 0)",
+            "heat_site": {"site_m": sc.SITE_M, "days": sc.SITE_DAYS,
+                          "min_dates": sc.SITE_MIN_DATES,
+                          "night_frac": sc.SITE_NIGHT_FRAC,
+                          "max_frp_mw": sc.SITE_MAX_FRP_MW,
+                          "max_per_day": sc.SITE_MAX_PER_DAY},
+            "rx_burn": {"radius_m": cfg.screen_rx_radius_m,
+                        "max_age_d": cfg.screen_rx_max_age_d,
+                        "perimeter_m": cfg.fuse_hotspots_perimeter_m},
+            "growth": {"look_gap_min": sc.LOOK_GAP_S / 60.0,
+                       "footprint_m": sc.GROW_FOOTPRINT_M,
+                       "frp_factor": sc.GROW_FRP_FACTOR}}
+    return out
 
 
 def hotspot_row(inc, now_s: float):
@@ -381,11 +400,14 @@ def hotspot_row(inc, now_s: float):
         att = meta.get("hotspots_attached") or {}
         n = int(att.get("n", len(hs)))
         newest, kind = _finite(att.get("newest_s")), "attached"
-    return {"n": n, "kind": kind, "newest_s": newest,
-            "newest_age_h": (round(max(0.0, float(now_s) - newest) / 3600.0, 2)
-                             if newest is not None else None),
-            "satellites": list(meta.get("satellites") or []),
-            "max_frp": _finite(meta.get("max_frp"))}
+    row = {"n": n, "kind": kind, "newest_s": newest,
+           "newest_age_h": (round(max(0.0, float(now_s) - newest) / 3600.0, 2)
+                            if newest is not None else None),
+           "satellites": list(meta.get("satellites") or []),
+           "max_frp": _finite(meta.get("max_frp"))}
+    if isinstance(meta.get("screen"), dict):
+        row["screen"] = meta["screen"]        # SAFETY SEMANTICS 43 (shadow)
+    return row
 
 
 def freshness_row(f: dict, now_s: float) -> dict:

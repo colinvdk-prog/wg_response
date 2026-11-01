@@ -1747,6 +1747,46 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    just crosses flip with any grid change. The founder kept the snap
    (2026-10-30): the grid then holds while the fire stays in its box.
 
+43. A LABEL IS NOT A VERDICT — HOTSPOT SCREENING STEP 0, SHADOW LABELS AND
+   THE RAW FIRMS LOG (2026-11-01; the founder's screening decisions,
+   docs/review/hotspot_screening_2026-11-01.md; cfg.screen_labels,
+   screen_rx_radius_m, screen_rx_max_age_d; watch --screen-labels and
+   --firms-log; wgresponse.screening). Each incident only the satellite
+   reports (41's test) is labelled right after the hotspot attachment
+   (39): a KNOWN HEAT SITE when every detection lies in a 750 m site hot on
+   >= 3 of the last 5 UTC dates, >= 80 % at night, peak <= 5 MW, <= 8
+   detections a date, and none of the cluster's own detections is by day
+   (report B §3.4: 11 % of clusters, 0 of 10 known fires and 0 of 86
+   prescribed burns lost); a REGISTERED PRESCRIBED BURN when a detection
+   lies within screen_rx_radius_m of an open WFIGS RX point discovered
+   within screen_rx_max_age_d days, or inside / within
+   fuse_hotspots_perimeter_m of an open RX perimeter (report A, C10); and
+   its LOOKS (one satellite within 15 min) with GROWTH on the newest
+   (twice the pixels and 2 more, twice the peak and 2 MW more, or heat
+   more than 1 km from all earlier heat). The labels ride in meta
+   "screen", the heat rows, /api/state "screen" and the map. They change
+   NOTHING: no incident, forecast, alert, dispatch job, heat-only listing
+   or operator event. MISSING DATA NEVER DEMOTES: a label that cannot be
+   checked — the five-day history not yet answered by every source, WFIGS
+   blind or partial, a detection the history never saw — reads None,
+   never "not a fire"; one look reads grew None (quiet is not seen, never
+   out). The WFIGS adapter keeps the RX records (keep_rx): an RX point is
+   dropped as always, and an RX POLYGON IS NOW A LABEL, NEVER A FIRE — the
+   one change to the fire list (founder 2026-11-01, decision 3: the
+   perimeter layer was never filtered by type, so a burn with a polygon
+   entered as a fire; one did on 2026-11-01). A polygon whose id belongs
+   to a record of another type still joins it (an escaped burn re-typed
+   WF keeps its polygon). THE RAW LOG (--firms-log, no knob: it reads nothing back into
+   the engine): every FIRMS row once, at the poll that first returned it
+   (prev_s bounds when it became available), again when it changes or
+   when it vanishes inside the asked window (withdrawn; never within 15
+   min of 00:00 UTC, never without an earlier poll, never when a poll
+   loses > 20 % of the window at once); day files mirrored to S3 under the
+   state prefix; a restart replays the last two days (a day it cannot read
+   back is written beside the mirror's object, never over it). NASA keeps neither
+   delivery time nor withdrawals, so this record cannot be rebuilt later.
+   Knob OFF and no --firms-log = byte-identical (tests/test_screen_shadow.py).
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -1920,6 +1960,17 @@ wgresponse.offmap   (2026-09-27; SAFETY SEMANTICS 15 — the per-fire off-domain
         # world's monitor (seeds refused: seeded.LiveWorldRefused; none ever
         # unioned); .last_snapshot -> WorldSnapshot | None, the read-only
         # record of the last completed cycle the TEST world builds on.
+
+wgresponse.screening   (2026-11-01; SAFETY SEMANTICS 43 — hotspot screening step 0)
+    class FirmsPollLog(dir_path, s3_uri=None, s3_client=None)
+        .poll(src, rows, t_s, day_range) -> dict   # one answer: new / changed / gone
+        .blind(src, t_s, error); .flush(t_s); .status() -> dict
+    class HeatSiteMemory(sources, days=5)
+        .wants_history(src, now_s); .add(src, rows, now_s, history=False)
+        .history_failed(src, now_s, error); .ready(); .detail(t, p); .site_of(t, p)
+    prepare_rx(rx_records, now_s, cfg) -> list[(record, footprint, kind)] | None
+    label(inc, memory, rx_index) -> dict      # {labels, site, rx, looks, grew, growth}
+    summary(labels, memory, rx_index) -> dict; summary_note(summary) -> str
 
 wgresponse.wxfield   (2026-09-27; SAFETY SEMANTICS 17 — local weather across a domain)
     level_spacing_km(grid_km, level) -> float  # x sqrt 2 per level, x2 per two
@@ -4336,6 +4387,21 @@ class ResponseConfig:
     # the LANDFIRE tile cached for it. 0 = the exact padded bbox
     # (byte-identical); the watch daemon arms 0.05 via --snap-domains.
     forecast_domain_snap_deg: float = 0.0
+    # HOTSPOT SCREENING STEP 0 — SHADOW LABELS (founder 2026-11-01,
+    # docs/review/hotspot_screening_2026-11-01.md; SAFETY SEMANTICS 43):
+    # each incident only the satellite reports is labelled for the operator
+    # — a known heat site (report B's industrial signature over the last
+    # five UTC dates of detections), a registered prescribed burn (an open
+    # WFIGS RX point within screen_rx_radius_m, discovered within
+    # screen_rx_max_age_d days, or an open RX perimeter within
+    # fuse_hotspots_perimeter_m), and its looks and growth between them.
+    # A label changes no forecast, alert, crew or listing; the one change
+    # to the fire list: a WFIGS prescribed-burn polygon becomes a label,
+    # never a fire (founder 2026-11-01). False = byte-identical; the watch
+    # daemon arms it via --screen-labels.
+    screen_labels: bool = False
+    screen_rx_radius_m: float = 3000.0           # an RX point labels heat this close (m; report A, C10)
+    screen_rx_max_age_d: float = 21.0            # ... when discovered this recently (days)
     # SIMULATOR CITY WEATHER (founder 2026-10-09, verbatim: "change the
     # weather conditions for each city specific"; docs/review/
     # city_weather_2026-10-09.md). Read ONLY by wgresponse.simui (the
@@ -4778,6 +4844,13 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
             and 0.0 <= cfg.forecast_domain_snap_deg <= 1.0):
         problems.append("forecast_domain_snap_deg must be within [0, 1] "
                         "degrees")
+    # --- screening shadow labels (SAFETY SEMANTICS 43) ---
+    if not (math.isfinite(cfg.screen_rx_radius_m)
+            and 0.0 <= cfg.screen_rx_radius_m <= 20000.0):
+        problems.append("screen_rx_radius_m must be within [0, 20000] m")
+    if not (math.isfinite(cfg.screen_rx_max_age_d)
+            and 0.0 <= cfg.screen_rx_max_age_d <= 365.0):
+        problems.append("screen_rx_max_age_d must be within [0, 365] days")
     # --- co-located fusion (SAFETY SEMANTICS 24) ---
     if not (math.isfinite(cfg.fuse_colocated_max_m)
             and 0.0 < cfg.fuse_colocated_max_m <= 5000.0):

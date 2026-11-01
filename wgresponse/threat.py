@@ -609,6 +609,9 @@ class ThreatMonitor:
         # operator) and the clusters already announced while in range.
         self._heat_near: list = []
         self._heat_noted: set = set()
+        # HOTSPOT SCREENING STEP 0 (cfg.screen_labels only; SAFETY SEMANTICS
+        # 43): this cycle's shadow-label counts.
+        self._screen_last: Optional[dict] = None
 
     @property
     def fire_beliefs(self):
@@ -753,6 +756,11 @@ class ThreatMonitor:
             # join it (after 9 and 13: a removed fire takes only its own
             # interior heat); the rest stay FIRMS fires
             active, removed = self._attach_hotspots(active, removed, notes)
+        if self._cfg.screen_labels:
+            # SAFETY SEMANTICS 43: shadow labels on what only a satellite
+            # sees — a known heat site, a registered burn, its looks and
+            # growth; nothing they touch changes
+            active = self._screen_label(active, now_s, notes)
         heat: list = []
         if self._cfg.hotspot_heat_only:
             # SAFETY SEMANTICS 41: what only a satellite sees is heat on the
@@ -1614,6 +1622,62 @@ class ThreatMonitor:
             notes.append(note + " — SAFETY SEMANTICS 39")
         return kept, removed
 
+    # ------------------------------------- screening shadow labels (SEM 43)
+
+    def screen_status(self) -> Optional[dict]:
+        """HOTSPOT SCREENING STEP 0 (SAFETY SEMANTICS 43): the last cycle's
+        shadow-label counts and the five-day memory; None when the knob is
+        off (or before the first cycle)."""
+        if not self._cfg.screen_labels or self._screen_last is None:
+            return None
+        return dict(self._screen_last)
+
+    def _screen_sources(self) -> tuple:
+        """(the prescribed-burn records, the heat-site memory) the feeds
+        hold this cycle: records None unless every adapter that keeps them
+        (WfigsFeed keep_rx) answered whole; memory None without one."""
+        holders = [f for f in self._feeds if getattr(f, "keeps_rx", False)]
+        rx = None
+        if holders and all(f.rx_records is not None for f in holders):
+            rx = [r for f in holders for r in f.rx_records]
+        memory = next((m for m in (getattr(f, "site_memory", None)
+                                   for f in self._feeds) if m is not None),
+                      None)
+        return rx, memory
+
+    def _screen_label(self, active: list, now_s: float, notes: list) -> list:
+        """SAFETY SEMANTICS 43: the incident set with each satellite-only
+        incident replaced by a copy whose meta carries "screen" (the feed's
+        own record is never written: an adapter may hand the same object
+        back next cycle), and one note with the counts. Same incidents,
+        same order."""
+        from wgresponse import screening
+        rx, memory = self._screen_sources()
+        try:
+            rx_index = screening.prepare_rx(rx, now_s, self._cfg)
+        except Exception as exc:              # noqa: BLE001 — noted
+            rx_index = None
+            notes.append(f"screening: prescribed-burn records unusable "
+                         f"({exc}) — labelled unknown")
+        labels, out = [], []
+        for inc in active:
+            if not _satellite_only(inc):
+                out.append(inc)
+                continue
+            try:
+                lab = screening.label(inc, memory, rx_index)
+            except Exception as exc:          # noqa: BLE001 — noted
+                notes.append(f"incident {inc.incident_id}: screening labels "
+                             f"failed ({exc})")
+                out.append(inc)
+                continue
+            out.append(dataclasses.replace(
+                inc, meta={**(inc.meta or {}), "screen": lab}))
+            labels.append(lab)
+        self._screen_last = screening.summary(labels, memory, rx_index)
+        notes.append(screening.summary_note(self._screen_last))
+        return out
+
     # ------------------------------------- satellite heat only (SEM 41)
 
     def heat_status(self) -> Optional[dict]:
@@ -1674,6 +1738,9 @@ class ThreatMonitor:
                 "newest_s": max(ts) if ts else float(inc.updated_at_s),
                 "satellites": list(meta.get("satellites") or []),
                 "max_frp": meta.get("max_frp")})
+            if "screen" in meta:
+                # SAFETY SEMANTICS 43: the shadow labels ride along
+                rows[-1]["screen"] = meta["screen"]
         rows.sort(key=lambda r: (r["nearest_m"], r["incident_id"]))
         for r in rows:
             if r["incident_id"] in self._heat_noted:

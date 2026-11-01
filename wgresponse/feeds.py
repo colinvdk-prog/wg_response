@@ -355,7 +355,18 @@ class WfigsFeed(_ArcGisFeedBase):
     attr_IncidentSize (perimeters) ride in meta (module docstring).
     SAFETY SEMANTICS 15 (2026-09-27): FireBehaviorGeneral + 1-3 (points) ride
     in meta as fire_behavior / fire_behavior_descriptors / fire_behavior_at_s.
-    """
+
+    keep_rx (SCREENING STEP 0, SAFETY SEMANTICS 43; founder 2026-11-01:
+    registered prescribed burns are labels, never fires): the RX records of
+    the last fetch, built like any record, are kept in ``rx_records`` —
+    None when the fetch was blind or partial (an unknown set labels
+    nothing). An RX point is dropped, as always. The perimeter layer is
+    then also asked attr_IncidentTypeCategory: an RX polygon is kept as a
+    label and no longer becomes an incident on its own (this adapter never
+    filtered that layer by type, so a burn with a polygon entered as a
+    fire; the founder closed the gap 2026-11-01). A polygon whose id
+    belongs to a record of another type still joins it (an escaped burn
+    re-typed WF keeps its polygon). keep_rx off = byte-identical."""
 
     PERIMETERS_URL = ("https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/"
                       "WFIGS_Interagency_Perimeters_Current/FeatureServer/0/query")
@@ -374,10 +385,20 @@ class WfigsFeed(_ArcGisFeedBase):
                         "attr_FireOutDateTime,attr_IncidentSize")
 
     def __init__(self, http_get: Optional[HttpGet] = None,
-                 max_ring_vertices: int = 200, include_rx: bool = False):
+                 max_ring_vertices: int = 200, include_rx: bool = False,
+                 keep_rx: bool = False):
         super().__init__(http_get)
         self._max_ring_vertices = max_ring_vertices
         self._include_rx = include_rx
+        self._keep_rx = bool(keep_rx)
+        self._rx_seen: Optional[list] = None
+        #: the prescribed burns of the last fetch (keep_rx; SEMANTICS 43)
+        self.rx_records: Optional[list] = None
+
+    @property
+    def keeps_rx(self) -> bool:
+        """keep_rx (SEMANTICS 43): this adapter holds rx_records."""
+        return self._keep_rx
 
     def fetch_active(self, bbox: Optional[BBox] = None) -> "list[FireIncident]":
         """Active incidents (optionally bbox-filtered). Never raises: transport or
@@ -389,13 +410,17 @@ class WfigsFeed(_ArcGisFeedBase):
         points: list = []
         perims: list = []
         self.last_fetch_truncated = False
+        self._rx_seen = [] if self._keep_rx else None
+        self.rx_records = None
+        perim_fields = self.PERIM_OUT_FIELDS + (
+            ",attr_IncidentTypeCategory" if self._keep_rx else "")
         try:
             points = self._query(self.POINTS_URL, self.POINT_OUT_FIELDS, bbox)
         except Exception:
             ok = False
             log.warning("WFIGS incident-locations query failed", exc_info=True)
         try:
-            perims = self._query(self.PERIMETERS_URL, self.PERIM_OUT_FIELDS, bbox)
+            perims = self._query(self.PERIMETERS_URL, perim_fields, bbox)
         except Exception:
             ok = False
             log.warning("WFIGS perimeters query failed", exc_info=True)
@@ -408,6 +433,8 @@ class WfigsFeed(_ArcGisFeedBase):
         # a page-capped (truncated) layer is a partial fetch: keep the data,
         # but it must not read as 'genuinely clear' (class docstring)
         self.last_fetch_ok = ok and not self.last_fetch_truncated
+        if self._keep_rx and self.last_fetch_ok:
+            self.rx_records = list(self._rx_seen or [])
         return out
 
     # -- parsing ------------------------------------------------------------
@@ -440,6 +467,10 @@ class WfigsFeed(_ArcGisFeedBase):
             inc, key = item
             base = incidents.get(key)
             if base is None:
+                if self._rx_label_only(feat):
+                    # keep_rx (SEMANTICS 43, founder 2026-11-01): an RX
+                    # polygon with no record of another type is a label
+                    continue
                 incidents[key] = inc
                 order.append(key)
                 continue
@@ -477,7 +508,10 @@ class WfigsFeed(_ArcGisFeedBase):
         geom = feat.get("geometry") or {}
         if geom.get("x") is None or geom.get("y") is None:
             return None
-        if not self._include_rx and attrs.get("IncidentTypeCategory") == "RX":
+        rx = (not self._include_rx
+              and attrs.get("IncidentTypeCategory") == "RX")
+        rx_seen = getattr(self, "_rx_seen", None)
+        if rx and rx_seen is None:
             return None
         irwin = _norm_irwin(attrs.get("IrwinID"))
         name = attrs.get("IncidentName") or ""
@@ -489,7 +523,7 @@ class WfigsFeed(_ArcGisFeedBase):
         meta.update(_reported_meta(attrs.get("IncidentSize"), updated))
         # SAFETY SEMANTICS 15: the record's fire-behaviour report
         meta.update(_behavior_meta(attrs, updated))
-        return FireIncident(
+        inc = FireIncident(
             incident_id=irwin or f"wfigs:{native if native is not None else name.lower()}",
             name=name,
             source=IncidentSource.WFIGS,
@@ -503,6 +537,11 @@ class WfigsFeed(_ArcGisFeedBase):
             source_ids={"wfigs": irwin or str(native)},
             meta=meta,
         )
+        if rx:
+            # keep_rx (SEMANTICS 43): a label for satellite heat, not a fire
+            rx_seen.append(inc)
+            return None
+        return inc
 
     def _from_perimeter(self, feat: dict):
         attrs = feat.get("attributes") or {}
@@ -557,7 +596,19 @@ class WfigsFeed(_ArcGisFeedBase):
             source_ids={"wfigs": irwin or str(native)},
             meta=meta,
         )
+        if self._rx_label_only(feat):
+            # keep_rx (SEMANTICS 43): the polygon labels satellite heat
+            self._rx_seen.append(_replace(inc, meta=dict(meta)))
         return inc, key
+
+    def _rx_label_only(self, feat: dict) -> bool:
+        """keep_rx (SEMANTICS 43): an RX-typed perimeter feature, kept as a
+        label. _build still joins it to a record of another type under its
+        id (an escaped burn re-typed WF keeps its polygon)."""
+        return (getattr(self, "_rx_seen", None) is not None
+                and not self._include_rx
+                and (feat.get("attributes") or {}).get(
+                    "attr_IncidentTypeCategory") == "RX")
 
 
 class FirisFeed(_ArcGisFeedBase):
@@ -820,7 +871,14 @@ class FirmsFeed:
     within cluster_km, else a new centroid id — so a fire's alert pairs and
     kept forecast do not restart each time a pass lands or an old detection
     ages out (measured on the 2026-10-29 CONUS day: 27 % of the plain
-    centroid ids changed in 3 h). Legacy construction = byte-identical."""
+    centroid ids changed in 3 h). Legacy construction = byte-identical.
+
+    SCREENING STEP 0 (2026-11-01, SAFETY SEMANTICS 43; live mode only):
+    ``recorder`` (screening.FirmsPollLog) gets every answer's rows, every
+    column, and every failed ask; ``memory`` (screening.HeatSiteMemory) gets
+    every answer's rows plus a five-day ask per source when it wants one
+    (at start, then daily). Neither changes an incident: None = byte-
+    identical, and a failure in either is a warning, never a blind fetch."""
 
     BASE_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
     SIGNUP_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/"
@@ -836,7 +894,7 @@ class FirmsFeed:
                  sources: Optional[tuple] = None,
                  window_h: Optional[float] = None,
                  clock: Optional[Callable[[], float]] = None,
-                 track_ids: bool = False):
+                 track_ids: bool = False, recorder=None, memory=None):
         self._map_key = map_key or None      # '' and None both mean "no key"
         self._source = source
         self._day_range = max(1, min(5, int(day_range)))
@@ -854,16 +912,31 @@ class FirmsFeed:
         self._clock = clock or time.time
         self._track = bool(track_ids)
         self._tracks: dict = {}   # id -> (detection keys, lat, lon), last fetch
+        self._recorder = recorder
+        self._memory = memory
 
     @classmethod
     def live(cls, map_key: Optional[str],
              http_get: Optional[HttpGet] = None,
-             clock: Optional[Callable[[], float]] = None) -> "FirmsFeed":
+             clock: Optional[Callable[[], float]] = None,
+             recorder=None, memory=None) -> "FirmsFeed":
         """The live mode: the NOAA-20 and NOAA-21 VIIRS, a rolling 24 h window,
-        cluster ids kept across fetches."""
+        cluster ids kept across fetches (recorder / memory: SEMANTICS 43)."""
         return cls(map_key=map_key, http_get=http_get,
                    sources=cls.LIVE_SOURCES, window_h=cls.LIVE_WINDOW_H,
-                   clock=clock, track_ids=True)
+                   clock=clock, track_ids=True, recorder=recorder,
+                   memory=memory)
+
+    @property
+    def poll_log(self):
+        """The raw poll log (screening.FirmsPollLog) or None (SEMANTICS 43)."""
+        return self._recorder
+
+    @property
+    def site_memory(self):
+        """The five-day heat-site memory (screening.HeatSiteMemory) or None
+        (SEMANTICS 43)."""
+        return self._memory
 
     @property
     def live_mode(self) -> bool:
@@ -934,18 +1007,27 @@ class FirmsFeed:
         window, the clusters, the kept ids. Never raises."""
         detections: list = []          # (t_s, LatLon, frp, source)
         ok = True
+        shadow = self._recorder is not None or self._memory is not None
+        t_poll = float(self._clock()) if shadow else None
         for src in (self._sources or (self._source,)):
             url = f"{self.BASE_URL}/{self._map_key}/{src}/{area}/{self._day_range}"
             try:
                 status, body = self._http_get(url, {"Accept": "text/csv"})
                 if status != 200:
                     raise RuntimeError(f"HTTP {status} from FIRMS ({src})")
-                rows = self._parse_csv(body.decode("utf-8", errors="replace"))
-            except Exception:
+                text = body.decode("utf-8", errors="replace")
+                rows = self._parse_csv(text)
+            except Exception as exc:
                 log.warning("FIRMS fetch failed (%s)", src, exc_info=True)
                 ok = False
+                if shadow:
+                    self._shadow(src, None, t_poll, exc)
                 continue
             detections += [(t, p, f, src) for t, p, f in rows]
+            if shadow:
+                self._shadow(src, text, t_poll, None)
+        if shadow:
+            self._shadow_end(area, t_poll)
         try:
             if self._window_h is not None:
                 cut = float(self._clock()) - self._window_h * 3600.0
@@ -962,6 +1044,53 @@ class FirmsFeed:
         out.sort(key=lambda i: i.incident_id)
         self.last_fetch_ok = ok
         return out
+
+    def _shadow(self, src: str, text: Optional[str], t_poll: float,
+                error) -> None:
+        """SCREENING STEP 0 (SEMANTICS 43): one answer — or a failed ask
+        (text None) — to the log and the memory. Never raises."""
+        try:
+            rows = (None if text is None else
+                    [dict(r) for r in csv.DictReader(io.StringIO(text))])
+            if self._recorder is not None:
+                if rows is None:
+                    self._recorder.blind(src, t_poll, error)
+                else:
+                    self._recorder.poll(src, rows, t_poll, self._day_range)
+            if self._memory is not None and rows is not None:
+                self._memory.add(src, rows, t_poll)
+        except Exception:
+            log.warning("FIRMS screening shadow failed (%s)", src,
+                        exc_info=True)
+
+    def _shadow_end(self, area: str, t_poll: float) -> None:
+        """SCREENING STEP 0 (SEMANTICS 43): the memory's five-day ask per
+        source when it wants one, then the log's flush. Never raises."""
+        if self._memory is not None:
+            for src in (self._sources or (self._source,)):
+                try:
+                    if not self._memory.wants_history(src, t_poll):
+                        continue
+                    url = f"{self.BASE_URL}/{self._map_key}/{src}/{area}/5"
+                    status, body = self._http_get(url, {"Accept": "text/csv"})
+                    if status != 200:
+                        raise RuntimeError(
+                            f"HTTP {status} from FIRMS ({src}, five days)")
+                    rows = [dict(r) for r in csv.DictReader(io.StringIO(
+                        body.decode("utf-8", errors="replace")))]
+                    self._memory.add(src, rows, t_poll, history=True)
+                except Exception as exc:
+                    log.warning("FIRMS five-day ask failed (%s)", src,
+                                exc_info=True)
+                    try:
+                        self._memory.history_failed(src, t_poll, exc)
+                    except Exception:
+                        pass
+        if self._recorder is not None:
+            try:
+                self._recorder.flush(t_poll)
+            except Exception:
+                log.warning("FIRMS poll log flush failed", exc_info=True)
 
     def _live_incident(self, cl: dict, cid: str) -> FireIncident:
         pts = cl["pts"]                           # newest first

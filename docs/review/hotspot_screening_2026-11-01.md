@@ -132,8 +132,59 @@ A client message or automatic dispatch for a satellite-only fire needs new evide
 decision. The evidence is the season replay in report C §7: zero danger misses on at least 150
 threatening fires, with false-alarm and page budgets the founder sets.
 
+## Step 0, built (2026-11-01)
+
+The founder said to start step 0 the same day. It is SAFETY SEMANTICS 43 (`wgresponse/screening.py`,
+`tests/test_screen_shadow.py`), armed by watch `--screen-labels` and `--firms-log`. It changes no
+forecast, alert, crew or heat-only listing. The one change to the fire list is the prescribed-burn
+polygon below.
+
+- **Labels.** Each satellite-only cluster gets three checks:
+  - *known heat site*: report B's industrial signature over the last five UTC dates. The FIRMS
+    adapter asks for five days per source at start and daily, and merges every poll in between.
+  - *registered prescribed burn*: from the WFIGS RX records the adapter now keeps.
+  - *looks and growth*: how many passes saw it, and whether it grew between them.
+
+  A check that cannot be made reads unknown, never "not a fire". The labels appear on the heat
+  rows, in `/api/state` `screen` and on the map (a "heat labels" chip and a line on each cluster).
+- **Raw log.** Every FIRMS row is recorded at the poll that first returned it, then again if it
+  changes or is withdrawn while still inside the asked window. Day files are mirrored gzipped to
+  the state's S3 prefix, and a restart replays the last two days.
+- **Growth threshold.** New heat must be more than 1 km from every earlier look, not 500 m. A VIIRS
+  pixel is 375 m at nadir and about 800 m at the swath edge. On the live day most 0.5–0.6 km
+  "moves" were one pixel shifting between the two satellites.
+
+**Dry run on the live data, 2026-11-01 00:20 UTC** (local only, nothing written to S3):
+
+| | Count |
+|---|---|
+| Satellite-only clusters | 313 |
+| Known heat sites | 53 (17 %; 104 of 2,767 five-day sites qualify) |
+| On a registered prescribed burn | 4 (174 of 381 WFIGS RX records usable: open, recent, or a perimeter) |
+| Grew between looks | 12 |
+| One look so far | 197 (63 %) |
+
+The four burns are real: 130 South RX (Georgia), and RX D7 Second Skinny plus two landing-pile
+burns (Montana). The commonest reasons a cluster is not a known site are a daytime detection (107)
+and heat on only one or two of the last five dates (137). The first poll logged 754 rows for the
+two satellites. Just after 00:00 UTC, FIRMS's two-day answer holds only the day that just ended.
+
+**Found while building:** the WFIGS adapter drops prescribed-burn *points* but never filtered the
+*perimeter* layer by type. So a prescribed burn with a polygon enters as a fire: 5 RX polygons
+nationally on 2026-11-01, one not stale-gated (RX BUFFALO WOMAN, Oklahoma, 40 acres, no homes near).
+Decision 3 says burns are labels, never fires. The founder closed the gap the same day: with
+`--screen-labels` a burn polygon is a label only. That is the one change step 0 makes to the fire
+list. A polygon whose id belongs to a record of another type still joins it, so a burn that escaped
+and was re-typed as a wildfire keeps its polygon.
+
 ## Still open
 
 - **The rota (O-7):** names, the fire-season dates and the phone channel (O-1).
+- **Growth in the page step (proposed 2026-11-01):**
+  - a follow-up page when a potential fire grows between looks;
+  - the time the next satellite look is due, on every page. VIIRS sees a place in two windows a
+    day, about 1–2 pm and 1–2 am local, so "no growth" means nothing until it has looked again.
+
+  Inside 8 km the first page never waits for growth.
 - **GOES:** the build effort, step 3.
 - **The replay and its budgets:** needed only if client messages or automatic dispatch come back.

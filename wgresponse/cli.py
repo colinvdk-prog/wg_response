@@ -343,6 +343,19 @@ def _build_parser() -> argparse.ArgumentParser:
                          "domain snapped outward to a 0.05-degree grid, so a "
                          "fire whose shape moves a little keeps its domain "
                          "and its cached LANDFIRE tile")
+    # SAFETY SEMANTICS 43 (2026-11-01): screening step 0, shadow only.
+    pw.add_argument("--screen-labels", action="store_true",
+                    help="cfg.screen_labels (founder 2026-11-01, screening "
+                         "step 0): each satellite-only cluster is labelled "
+                         "for the operator — a known heat site (five days of "
+                         "FIRMS history), a registered prescribed burn (WFIGS "
+                         "RX records kept), its looks and growth; nothing is "
+                         "paged, forecast or changed")
+    pw.add_argument("--firms-log", action="store_true",
+                    help="log every FIRMS poll's rows with the time first "
+                         "seen, and the rows later changed or withdrawn, to "
+                         "<state-dir>/firms_log (mirrored to the state S3 "
+                         "prefix when set) — NASA keeps neither")
     # SAFETY SEMANTICS 24 (2026-10-15): default-OFF knob.
     pw.add_argument("--fuse-colocated", action="store_true",
                     help="cfg.fuse_colocated_incidents: one fire is one "
@@ -641,21 +654,32 @@ def _parse_bbox(text: str):
     return BBox(west=parts[0], south=parts[1], east=parts[2], north=parts[3])
 
 
-def _live_feed_stack(map_key, live: bool = False):
+def _live_feed_stack(map_key, live: bool = False, screen: bool = False,
+                     recorder=None):
     """Build the live feed adapters: WFIGS + FIRIS + CAL FIRE always, FIRMS
     only when a MAP_KEY is provided (Sprint 2 C3d/C1: a keyless FirmsFeed is
     BLIND by design — [] with last_fetch_ok=False — and would mark EVERY watch
     cycle degraded, so the CLI skips it gracefully with a note instead).
     live (watch --fuse-hotspots, SAFETY SEMANTICS 39): FIRMS in its live
     mode (FirmsFeed.live — NOAA-20 + NOAA-21 VIIRS, rolling 24 h, kept ids).
+    screen (watch --screen-labels, SAFETY SEMANTICS 43): WFIGS keeps its
+    prescribed-burn records and the live FIRMS adapter a five-day heat-site
+    memory; recorder (watch --firms-log): the live FIRMS adapter's raw poll
+    log. Neither applies to the legacy FIRMS mode.
 
     Returns (feeds, notes): the adapter list and human-readable notes (the
     FIRMS skip line, when applicable)."""
     from wgresponse import feeds
-    stack = [feeds.WfigsFeed(), feeds.FirisFeed(), feeds.CalFireFeed()]
+    stack = [feeds.WfigsFeed(keep_rx=True) if screen else feeds.WfigsFeed(),
+             feeds.FirisFeed(), feeds.CalFireFeed()]
     notes = []
     if map_key:
-        stack.append(feeds.FirmsFeed.live(map_key) if live
+        memory = None
+        if live and screen:
+            from wgresponse.screening import HeatSiteMemory
+            memory = HeatSiteMemory(feeds.FirmsFeed.LIVE_SOURCES)
+        stack.append(feeds.FirmsFeed.live(map_key, recorder=recorder,
+                                          memory=memory) if live
                      else feeds.FirmsFeed(map_key=map_key))
     else:
         notes.append(
@@ -985,6 +1009,39 @@ def _fire_belief_cfg(cfg, args):
             fire_belief_rapid_noise="calibrated",
             fire_belief_rapid_persist_windows=2)
     return cfg
+
+
+def _screen_cfg(cfg, args):
+    """(cfg, startup notes) with --screen-labels (SAFETY SEMANTICS 43,
+    founder 2026-11-01) applied, and the --firms-log note. No flag = cfg
+    unchanged, no note."""
+    notes = []
+    firms = bool(os.environ.get("FIRMS_MAP_KEY"))
+    live = bool(getattr(args, "fuse_hotspots", False))
+    if getattr(args, "screen_labels", False):
+        cfg = dataclasses.replace(cfg, screen_labels=True)
+        notes.append(
+            "SCREENING STEP 0 — SHADOW LABELS (founder 2026-11-01): each "
+            "satellite-only cluster is labelled for the operator — a known "
+            "heat site (hot on 3+ of the last 5 UTC dates, mostly at night, "
+            "<= 5 MW), a registered prescribed burn (WFIGS RX records kept "
+            f"as labels: a point within {cfg.screen_rx_radius_m / 1000.0:g} "
+            f"km, discovered within {cfg.screen_rx_max_age_d:g} days, or a "
+            "perimeter), its looks and growth between them; nothing is "
+            "paged, forecast or changed, except that a prescribed-burn "
+            "perimeter is now a label, never a fire — SAFETY SEMANTICS 43"
+            + ("" if firms and live else
+               " [heat-site history INERT: needs FIRMS_MAP_KEY and "
+               "--fuse-hotspots]"))
+    if getattr(args, "firms_log", False):
+        notes.append(
+            "FIRMS RAW LOG: every poll's rows with the time first seen, and "
+            "the rows later changed or withdrawn, in <state-dir>/firms_log "
+            "(day files; mirrored with the durable state when "
+            "WGRESP_STATE_S3 is set) — SAFETY SEMANTICS 43"
+            + ("" if firms and live else
+               " [INERT: needs FIRMS_MAP_KEY and --fuse-hotspots]"))
+    return cfg, notes
 
 
 def _heat_snap_cfg(cfg, args):
@@ -1574,6 +1631,19 @@ class _WatchDaemon:
             hs = heat() if callable(heat) else None
             if hs is not None:
                 out["heat_near_homes"] = hs
+        if getattr(self._cfg, "screen_labels", False):
+            # SCREENING STEP 0 (SEMANTICS 43): the shadow labels' counts and
+            # the five-day memory — an additive key, present only when armed
+            sc = getattr(self._monitor, "screen_status", None)
+            ss = sc() if callable(sc) else None
+            if ss is not None:
+                out["screen"] = ss
+        log_ = next((f.poll_log for f in (getattr(self._monitor, "_feeds",
+                                                  None) or [])
+                     if getattr(f, "poll_log", None) is not None), None)
+        if log_ is not None:
+            # SEMANTICS 43: the raw FIRMS log's health (watch --firms-log)
+            out["firms_log"] = log_.status()
         return out
 
     @classmethod
@@ -2045,6 +2115,8 @@ def _cmd_watch(args) -> int:
                " [INERT: no FIRMS_MAP_KEY in the environment]"))
     cfg, _notes = _heat_snap_cfg(cfg, args)  # SEMANTICS 41 / 42
     startup_notes_fix += _notes
+    cfg, _notes = _screen_cfg(cfg, args)     # SEMANTICS 43
+    startup_notes_fix += _notes
     if getattr(args, "forecast_tiers", False):
         cfg = dataclasses.replace(cfg, forecast_tiers=True)
         startup_notes_fix.append(
@@ -2102,10 +2174,22 @@ def _cmd_watch(args) -> int:
         startup_notes.append(startup_note_regime)
     startup_notes += startup_notes_fix
     firms_key = os.environ.get("FIRMS_MAP_KEY")
+    recorder = None
+    if getattr(args, "firms_log", False) and getattr(args, "fuse_hotspots",
+                                                     False):
+        # SAFETY SEMANTICS 43: the raw FIRMS log, mirrored with the state
+        from wgresponse.screening import FirmsPollLog
+        recorder = FirmsPollLog(state_dir / "firms_log",
+                                s3_uri=os.environ.get(_STATE_S3_ENV) or None)
+    stack_kw: dict = {}                     # SEMANTICS 43; {} = the legacy call
+    if cfg.screen_labels:
+        stack_kw["screen"] = True
+    if recorder is not None:
+        stack_kw["recorder"] = recorder
     feeds_stack, feed_notes = (
-        _live_feed_stack(firms_key, live=True)      # SEMANTICS 39's live mode
+        _live_feed_stack(firms_key, live=True, **stack_kw)  # 39's live mode
         if getattr(args, "fuse_hotspots", False) else
-        _live_feed_stack(firms_key))
+        _live_feed_stack(firms_key, **stack_kw))
     startup_notes += feed_notes
     terrain, terrain_notes = _watch_terrain(args, state_dir)
     startup_notes += terrain_notes

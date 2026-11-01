@@ -983,7 +983,7 @@ function renderHeader() {
     (c && c.excluded_stale ? `<span class="lbl" title="incidents the staleness gate ` +
       `excluded this cycle (updated_at older than 7 days — SAFETY SEMANTICS 9)">` +
       `stale-gated</span><b>${c.excluded_stale}</b>` : "") +
-    removedContainedChip(c, d) + offmapChip(c) + heatNearChip(d);
+    removedContainedChip(c, d) + offmapChip(c) + heatNearChip(d) + screenChip(d);
   const tier = tierFor(map.getZoom());
   $("tierchip").textContent = tier + " · z" + map.getZoom();
   $("legendtier").textContent = {
@@ -1039,13 +1039,53 @@ function heatNearChip(d) {
     `${r.name}: ${(r.nearest_m / 1000).toFixed(1)} km from ${r.nearest_client}` +
     (r.homes_in_range > 1 ? ` (+${r.homes_in_range - 1} more)` : "") +
     ` · ${r.n_detections} detection${r.n_detections > 1 ? "s" : ""}` +
-    (r.satellites && r.satellites.length ? ` · ${r.satellites.join(", ")}` : ""));
+    (r.satellites && r.satellites.length ? ` · ${r.satellites.join(", ")}` : "") +
+    (r.screen ? ` · ${screenWords(r.screen)}` : ""));
   const more = h.near.length > lines.length ? "\n…" : "";
   return `<span class="lbl" title="${esc("satellite heat within " + km + " km of a " +
     "protected home — unscreened: no forecast or alerts until the hotspot screening " +
     "protocol is decided (founder 2026-10-30 — SAFETY SEMANTICS 41)" +
     (lines.length ? ":\n" + lines.join("\n") + more : ""))}">heat near homes</span>` +
     `<b${h.near.length ? ' style="color:#ffb74d"' : ""}>${h.near.length}</b>`;
+}
+// SAFETY SEMANTICS 43 (watch --screen-labels, founder 2026-11-01, screening
+// step 0): shadow labels on what only a satellite sees — a known heat site,
+// a registered prescribed burn, its looks and growth between them. For the
+// operator only: nothing is paged, forecast or changed.
+function screenWords(s) {
+  if (!s) return "";
+  const w = [];
+  if (s.site && s.site.static === true) w.push("known heat site");
+  if (s.rx && s.rx.match === true) w.push("registered burn " + (s.rx.name || ""));
+  if (s.grew === true) w.push("grew");
+  else if (s.grew === null) w.push("one look");
+  return w.join(" · ");
+}
+function screenLine(s) {
+  if (!s) return "";
+  const site = !s.site ? "" : (s.site.static === true ? "known heat site — "
+    : s.site.static === false ? "not a known heat site — " : "heat site unchecked — ") + s.site.why;
+  const rx = !s.rx ? "" : (s.rx.match === true ? s.rx.why
+    : s.rx.match === false ? "no registered burn in reach" : "registered burns unchecked — " + s.rx.why);
+  const looks = (s.looks || []).map(l => `${l.src || "?"} ${l.n} px` +
+    (l.frp != null ? ` ${Number(l.frp).toFixed(1)} MW` : "")).join(" → ");
+  return `<br><i>screening (shadow, nothing paged)</i>: ${esc(site)}<br>${esc(rx)}` +
+    (looks ? `<br>looks: ${esc(looks)} — ${esc(s.growth || "")}` : "");
+}
+function screenChip(d) {
+  const s = d && d.screen;
+  if (!s) return "";
+  const m = s.memory;
+  const t = ["satellite-only clusters labelled for the operator — shadow only: nothing is " +
+      "paged, forecast or changed (founder 2026-11-01, screening step 0 — SAFETY SEMANTICS 43)",
+    `${s.clusters} clusters: ${s.heat_site} known heat sites, ${s.rx_burn} on registered ` +
+      `prescribed burns, ${s.grew} grew between looks, ${s.one_look} seen on one look`,
+    m ? `five-day history: ${m.ready ? "ready" : "loading"} (${m.detections} detections, ` +
+      `${m.known_sites} known sites)` : "five-day history: none",
+    s.rx_records == null ? "prescribed-burn records: unavailable this cycle"
+      : `prescribed-burn records: ${s.rx_records}`];
+  return `<span class="lbl" title="${esc(t.join("\n"))}">heat labels</span>` +
+    `<b>${s.heat_site} site · ${s.rx_burn} burn · ${s.grew} grew</b>`;
 }
 function offmapChip(c) {
   if (!c || !c.offmap) return "";
@@ -1096,7 +1136,8 @@ function hotspotLine(r) {
     .replace("NOAA", "NOAA-").replace("SNPP", "S-NPP")).join(", ");
   return `<i>satellite heat</i> (NASA FIRMS): ${h.n} detection${h.n === 1 ? "" : "s"} in 24 h${age}` +
     (h.kind === "attached" ? " on this fire" : "") + (sats ? ` · ${esc(sats)}` : "") +
-    (h.max_frp != null ? ` · peak ${Number(h.max_frp).toFixed(1)} MW` : "");
+    (h.max_frp != null ? ` · peak ${Number(h.max_frp).toFixed(1)} MW` : "") +
+    screenLine(h.screen);
 }
 function incidentTip(r) {
   const t = SUMMARY && SUMMARY.t_s;
