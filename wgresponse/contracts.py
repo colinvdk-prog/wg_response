@@ -1783,7 +1783,10 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    min of 00:00 UTC, never without an earlier poll, never when a poll
    loses > 20 % of the window at once); day files mirrored to S3 under the
    state prefix; a restart replays the last two days (a day it cannot read
-   back is written beside the mirror's object, never over it). NASA keeps neither
+   back is written beside the mirror's object, never over it; during a
+   deploy's overlap the old and the new instance both write the day's
+   object and the new one's later upload wins — the old one's last polls
+   can be lost, every prev_s bound stays true). NASA keeps neither
    delivery time nor withdrawals, so this record cannot be rebuilt later.
    Knob OFF and no --firms-log = byte-identical (tests/test_screen_shadow.py).
 

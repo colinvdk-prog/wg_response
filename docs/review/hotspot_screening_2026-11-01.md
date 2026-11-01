@@ -211,7 +211,21 @@ terrain's default GET tries once more after 3 s in two cases:
   duplicate.
 
 An HTTP answer or a timeout is never retried, and a second failure is the same blind fetch as
-before. Willow's 745 s spread is a separate question (CPU shared with 8 in-flight learning
+before. Shipped as world21 (main 9449f05; full suite 2,897 passed on Python 3.13).
+
+**What the raw log has already caught (2026-11-01, 01:20–02:56 UTC).** FIRMS withdrew 8 early-release
+(URT) detections with no replacement so far. Six were NOAA-20 at 01:57: two in Texas, one off
+Vancouver Island and three in Ontario at 14–17 MW. Two were NOAA-21 at 02:38: Vancouver Island at
+24 MW and southeast BC. All were daytime detections from the 10-31 afternoon passes. This is report
+A's C20 risk seen live: a URT-only detection can vanish, which is why it should not raise an alert
+on its own.
+
+**Deploy overlap.** world21 restored world20's file at its first poll (02:38, 748 rows known, none
+logged again). The old instance kept running until App Runner retired it, polled once more (02:45)
+and uploaded. world21's next upload (02:56) replaced that version, so the old instance's last poll
+is lost. It saw the same rows, and every first-seen bound (prev_s) stays true.
+
+Willow's 745 s spread is a separate question (CPU shared with 8 in-flight learning
 forecasts is the suspect) and is not addressed here.
 
 ## Still open
