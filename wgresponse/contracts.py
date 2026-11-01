@@ -1961,6 +1961,14 @@ wgresponse.offmap   (2026-09-27; SAFETY SEMANTICS 15 — the per-fire off-domain
         # unioned); .last_snapshot -> WorldSnapshot | None, the read-only
         # record of the last completed cycle the TEST world builds on.
 
+wgresponse.net   (2026-11-01 — the live adapters' GET: one retry when the network failed)
+    get(url, headers=None, timeout_s=30.0, *, retry_dropped=True) -> (status, body)
+        # a name that did not resolve / a refused connection: retried once after
+        # RETRY_PAUSE_S (3 s); a reset or cut-off answer only with retry_dropped
+        # (terrain: False — the LFPS submit is a GET that creates a job); never
+        # an HTTP answer or a timeout; the second failure raises as the first
+    failure_kind(exc) -> "unsent" | "dropped" | None
+
 wgresponse.screening   (2026-11-01; SAFETY SEMANTICS 43 — hotspot screening step 0)
     class FirmsPollLog(dir_path, s3_uri=None, s3_client=None)
         .poll(src, rows, t_s, day_range) -> dict   # one answer: new / changed / gone

@@ -177,6 +177,43 @@ Decision 3 says burns are labels, never fires. The founder closed the gap the sa
 list. A polygon whose id belongs to a record of another type still joins it, so a burn that escaped
 and was re-typed as a wildfire keeps its polygon.
 
+## world20 live (2026-11-01, 01:07 UTC on)
+
+Main cc28265, watch `--screen-labels --firms-log` on top of world19b's flags.
+
+| Cycle | Minutes | Notes |
+|---|---|---|
+| 1 | 12.7 | restart: all 10 forecasts computed (Willow's spread 282 s; one new terrain tile 200 s); not degraded |
+| 3 | 18.6 | **degraded**: WFIGS and FIRMS NOAA-20 blind; Willow recomputed (homes in range 204 → 187), spread 745 s |
+
+- **Labels, cycle 1:** 312 clusters — 53 known heat sites, 4 registered burns, 12 grew, 197 one
+  look, none unchecked. The five-day history loaded for both satellites (8,335 detections, 104 known
+  sites).
+- **Cycle 3:** WFIGS was blind, so every burn label read unknown, as designed. One satellite was
+  blind, so 211 clusters were shown.
+- **RX BUFFALO WOMAN** left the fire list.
+- **The raw log** is at `watch-conus/firms_log/firms_2026-11-01.jsonl.gz` (754 rows, poll records,
+  and every upload succeeded).
+- **Step 0's own cost**, measured locally on the same data: 0.07 s to label 311 clusters. The log and
+  the memory add nothing measurable to a poll.
+
+**Why cycle 3 went blind.** The raw log's blind event for NOAA-20 reads "<urlopen error [Errno -3]
+Temporary failure in name resolution>": the App Runner instance briefly lost DNS, and WFIGS failed in
+the same cycle. That is almost certainly the 2026-10-31 blind cycle too. Each blind cycle freezes
+every pair of the blind feed (13,222 operator events this time). The next cycle rebuilds forecasts,
+which accounts for most of the slow cycles seen since 2026-10-31.
+
+The fix, same day (founder: "add the DNS retry fix"): `wgresponse/net.py`. The feeds', weather's and
+terrain's default GET tries once more after 3 s in two cases:
+- the request never left: the name did not resolve, or the connection was refused;
+- feeds and weather only: the connection was reset or cut off mid-answer. Terrain is excluded
+  because the LFPS job submission is a GET that creates a job, so repeating it could queue a
+  duplicate.
+
+An HTTP answer or a timeout is never retried, and a second failure is the same blind fetch as
+before. Willow's 745 s spread is a separate question (CPU shared with 8 in-flight learning
+forecasts is the suspect) and is not addressed here.
+
 ## Still open
 
 - **The rota (O-7):** names, the fire-season dates and the phone channel (O-1).

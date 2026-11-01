@@ -59,13 +59,12 @@ import os
 import threading
 import time
 import urllib.parse
-import urllib.request
 import zipfile
 from typing import Callable, Optional
 
 from .contracts import (BBox, CanopyLayers, GridSpec, Raster, TerrainTile,
                         seeded_rng)
-from . import geo
+from . import geo, net
 from .persist import S3Mirror, mirror_off_status
 
 log = logging.getLogger(__name__)
@@ -83,10 +82,10 @@ S3_TERRAIN_PREFIX = "terrain"
 
 def _default_http_get(url: str, headers: Optional[dict] = None,
                       timeout_s: float = 120.0) -> "tuple[int, bytes]":
-    """Stdlib urllib GET -> (HTTP status, body bytes)."""
-    req = urllib.request.Request(url, headers=headers or {})
-    with urllib.request.urlopen(req, timeout=timeout_s) as resp:
-        return resp.getcode(), resp.read()
+    """Stdlib urllib GET -> (HTTP status, body bytes); retried once when
+    the request never left (wgresponse.net) — never after a dropped
+    connection: the LFPS job submission is a GET that creates a job."""
+    return net.get(url, headers, timeout_s, retry_dropped=False)
 
 
 def _m_per_deg_lon(lat_deg: float) -> float:

@@ -99,11 +99,11 @@ import math
 import re
 import time
 import urllib.parse
-import urllib.request
 from dataclasses import replace as _replace
 from datetime import datetime, timezone
 from typing import Callable, Optional
 
+from . import net
 from .contracts import (SEEDED_ID_PREFIX, BBox, FireIncident, IncidentSource,
                         LatLon, seeded_rng)
 
@@ -117,10 +117,9 @@ _EARTH_R_M = 6_371_000.0
 
 def _default_http_get(url: str, headers: Optional[dict] = None,
                       timeout_s: float = 30.0) -> "tuple[int, bytes]":
-    """Stdlib urllib GET. Returns (HTTP status code, raw body bytes)."""
-    req = urllib.request.Request(url, headers=headers or {})
-    with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # nosec: fixed feed URLs
-        return resp.getcode(), resp.read()
+    """Stdlib urllib GET. Returns (HTTP status code, raw body bytes);
+    retried once when the network failed (wgresponse.net)."""
+    return net.get(url, headers, timeout_s)
 
 
 def _haversine_m(a: LatLon, b: LatLon) -> float:

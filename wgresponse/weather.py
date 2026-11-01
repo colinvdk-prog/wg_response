@@ -44,11 +44,11 @@ import math
 import re
 import threading
 import time
-import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Callable, Optional
 
+from . import net
 from .contracts import (LatLon, ResponseConfig, WeatherForecast, WeatherSample,
                         seeded_rng)
 
@@ -59,10 +59,9 @@ HttpGet = Callable[[str, dict], "tuple[int, bytes]"]
 
 def _default_http_get(url: str, headers: Optional[dict] = None,
                       timeout_s: float = 30.0) -> "tuple[int, bytes]":
-    """Stdlib urllib GET -> (HTTP status, body bytes)."""
-    req = urllib.request.Request(url, headers=headers or {})
-    with urllib.request.urlopen(req, timeout=timeout_s) as resp:
-        return resp.getcode(), resp.read()
+    """Stdlib urllib GET -> (HTTP status, body bytes); retried once when
+    the network failed (wgresponse.net)."""
+    return net.get(url, headers, timeout_s)
 
 
 # ---------------------------------------------------------------------------
