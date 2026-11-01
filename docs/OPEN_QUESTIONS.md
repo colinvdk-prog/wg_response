@@ -180,3 +180,12 @@ need a policy mapping from profile fields (`protection_level`, home-value estima
 This directly orders who gets served when not everyone can be.
 **Unblocks:** a written mapping table (business decision, not engineering); default
 until then: weight 1.0 for all enrolled clients, ZIP-prefix value estimate.
+
+### O-7 — Satellite-heat on-call rota — Colin / ops
+The founder decided (2026-11-01, `docs/review/hotspot_screening_2026-11-01.md`) that a
+potential fire within 8 km of a protected home pages an operator who is on call 24/7 in
+fire season and acknowledges within 15 minutes, with a second person paged if there is
+no answer; the 8 km tripwire follows from those 15 minutes. Who is on the rota, the
+fire-season dates and the phone channel (O-1) are not set.
+**Unblocks:** names and season dates (Colin / ops) + O-1's provider; then the page step
+of the screening build.

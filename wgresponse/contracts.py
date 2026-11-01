@@ -1716,6 +1716,14 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    satellite sees near a home is the operator's to watch, not the
    ladder's, until the screening protocol says otherwise. Knob OFF =
    byte-identical (tests/test_heat_only.py).
+   THE PROTOCOL (founder 2026-11-01, docs/review/hotspot_screening_
+   2026-11-01.md): three tiers (heat / potential fire / confirmed); a
+   potential fire is the operator's only — forecast, shadow ladder, page
+   within the tripwire, never a client message; crews only after an
+   operator Confirm or an agency report; registered prescribed burns kept
+   as labels, never fires; an operator on call 24/7 in fire season
+   acknowledges within 15 min, so the tripwire is 1.7 m/s x (15 + 30 + 30)
+   min = 7.65 km -> 8 km. Not built yet: this rule holds until it is.
 
 42. A DOMAIN KEEPS ITS GRID — DOMAIN SNAP (2026-10-30; founder: the live
    speed fixes, "build and redeploy"; cfg.forecast_domain_snap_deg; watch

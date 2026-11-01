@@ -51,7 +51,10 @@ On the 2026-10-29 data: 27 detections join 5 fires, and 5 clusters are wholly ab
 - **Screening.** Every cluster not on a reported fire is still a fire the engine forecasts and
   alerts on. A hotspot screening protocol (which heat counts as a potential fire) is an open owner
   decision: the candidate criteria, with their risks and benefits, went to the founder on
-  2026-10-29.
+  2026-10-29. Since then, heat only (2026-10-30, SAFETY SEMANTICS 41) has taken satellite-only
+  clusters off the ladder, and the founder decided the protocol on 2026-11-01
+  (`docs/review/hotspot_screening_2026-11-01.md`; the three reports are in
+  `docs/research/hotspot_screening/`).
 - **The fire belief.** It learns only from perimeters and reported sizes. Hotspots as a third
   growth series would need calibrating against perimeters first.
 
