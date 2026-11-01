@@ -585,7 +585,10 @@ def test_seed_side_untouched_with_the_knob_off():
 
 def test_cli_flag_arms_the_knob():
     p = cli._build_parser()
-    a = p.parse_args(["watch", "--aoi", "-121,38,-120,39", "--feed-sanity"])
+    # parsed as cli.main parses (_normalize_argv: a bbox starting with
+    # "-" reads as an option on argparse < 3.14)
+    a = p.parse_args(cli._normalize_argv(
+        ["watch", "--aoi", "-121,38,-120,39", "--feed-sanity"]))
     cfg = cli._feed_sanity_cfg(ResponseConfig(), a)
     assert cfg == ResponseConfig(feed_sanity=True)
     (note,) = cli._feed_sanity_notes(cfg)
@@ -593,7 +596,8 @@ def test_cli_flag_arms_the_knob():
     tracked = cli._feed_sanity_notes(ResponseConfig(feed_sanity=True,
                                                     fire_belief_track=True))
     assert "INERT" not in tracked[0]
-    n = p.parse_args(["watch", "--aoi", "-121,38,-120,39"])
+    n = p.parse_args(cli._normalize_argv(
+        ["watch", "--aoi", "-121,38,-120,39"]))
     assert cli._feed_sanity_cfg(ResponseConfig(), n) == ResponseConfig()
     assert cli._feed_sanity_notes(ResponseConfig()) == []
 

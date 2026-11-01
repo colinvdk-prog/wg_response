@@ -954,14 +954,19 @@ def test_a_drill_world_copy_never_changes_the_live_belief(tmp_path):
 
 def test_cli_flags_apply_implies_track():
     p = cli._build_parser()
-    a = p.parse_args(["watch", "--aoi", "-121,38,-120,39", "--fire-belief-apply"])
+    # parsed as cli.main parses (_normalize_argv: a bbox starting with
+    # "-" reads as an option on argparse < 3.14)
+    a = p.parse_args(cli._normalize_argv(
+        ["watch", "--aoi", "-121,38,-120,39", "--fire-belief-apply"]))
     cfg = cli._fire_belief_cfg(ResponseConfig(), a)
     assert cfg.fire_belief_track and cfg.fire_belief_apply
     assert "P10 GUARDED" in cli._fire_belief_notes(a)[0]
-    t = p.parse_args(["watch", "--aoi", "-121,38,-120,39", "--fire-belief"])
+    t = p.parse_args(cli._normalize_argv(
+        ["watch", "--aoi", "-121,38,-120,39", "--fire-belief"]))
     cfg = cli._fire_belief_cfg(ResponseConfig(), t)
     assert cfg.fire_belief_track and not cfg.fire_belief_apply
-    n = p.parse_args(["watch", "--aoi", "-121,38,-120,39"])
+    n = p.parse_args(cli._normalize_argv(
+        ["watch", "--aoi", "-121,38,-120,39"]))
     assert cli._fire_belief_cfg(ResponseConfig(), n) == ResponseConfig()
     assert cli._fire_belief_notes(n) == []
 

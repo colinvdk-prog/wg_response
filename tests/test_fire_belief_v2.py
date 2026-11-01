@@ -371,7 +371,10 @@ def test_v2_apply_keeps_physics_for_the_pinned_rapid_fire(tmp_path):
 
 def test_cli_v2_flag_arms_the_three_rules_and_implies_track():
     p = cli._build_parser()
-    a = p.parse_args(["watch", "--aoi", "-121,38,-120,39", "--fire-belief-v2"])
+    # parsed as cli.main parses (_normalize_argv: a bbox starting with
+    # "-" reads as an option on argparse < 3.14)
+    a = p.parse_args(cli._normalize_argv(
+        ["watch", "--aoi", "-121,38,-120,39", "--fire-belief-v2"]))
     cfg = cli._fire_belief_cfg(ResponseConfig(), a)
     assert cfg.fire_belief_track and not cfg.fire_belief_apply
     assert (cfg.fire_belief_novelty, cfg.fire_belief_rapid_noise,
@@ -379,13 +382,15 @@ def test_cli_v2_flag_arms_the_three_rules_and_implies_track():
     notes = cli._fire_belief_notes(a)
     assert notes[0].startswith("fire belief TRACKING")
     assert notes[1].startswith("fire belief v2 RULES")
-    b = p.parse_args(["watch", "--aoi", "-121,38,-120,39",
-                      "--fire-belief-apply", "--fire-belief-v2"])
+    b = p.parse_args(cli._normalize_argv(
+        ["watch", "--aoi", "-121,38,-120,39", "--fire-belief-apply",
+         "--fire-belief-v2"]))
     cfg = cli._fire_belief_cfg(ResponseConfig(), b)
     assert cfg.fire_belief_apply and cfg.fire_belief_novelty == "daily"
     assert "P10 GUARDED" in cli._fire_belief_notes(b)[0]
     assert validate_config(cfg) == []
-    n = p.parse_args(["watch", "--aoi", "-121,38,-120,39", "--fire-belief"])
+    n = p.parse_args(cli._normalize_argv(
+        ["watch", "--aoi", "-121,38,-120,39", "--fire-belief"]))
     cfg = cli._fire_belief_cfg(ResponseConfig(), n)
     assert cfg == dataclasses.replace(ResponseConfig(), fire_belief_track=True)
     assert len(cli._fire_belief_notes(n)) == 1
