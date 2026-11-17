@@ -569,8 +569,12 @@ class ThreatMonitor:
     def __init__(self, feeds: list, weather_provider, terrain_provider,
                  registry, alert_engine, cfg: ResponseConfig, safe_zones: list,
                  crew_tracker=None, dispatcher=None, aoi=None,
-                 fire_beliefs=None) -> None:
+                 fire_beliefs=None, road_provider=None) -> None:
         self._feeds = list(feeds)
+        # LIVE ROADS (watch --live-roads, wgresponse.liveroads): the service
+        # areas' road provider for dispatch.plan and the crew watch's way
+        # out; None = straight chords (tier 0), byte-identical
+        self._road_provider = road_provider
         self._weather = weather_provider
         self._terrain = terrain_provider
         self._registry = registry
@@ -2619,7 +2623,8 @@ class ThreatMonitor:
                 safe_zones=self._safe_zones, offmap=(offmap or None),
                 etas=etas, clients=clients_seen, failed=failed,
                 threat_radius_m=self._threat_radius_m(),
-                has_forecast=bool(ensembles))
+                has_forecast=bool(ensembles),
+                road_provider=self._road_provider)
         except Exception as exc:       # fail closed: unjudged, never clear
             log.exception("crew watch failed")
             out["error"] = str(exc)
@@ -2811,6 +2816,9 @@ class ThreatMonitor:
             return None
 
         crews: list = self._eligible_crews(now_s, notes)
+        # LIVE ROADS: legs inside a service area are planned on its roads
+        roads_kw = ({"road_provider": self._road_provider}
+                    if self._road_provider is not None else {})
 
         def _call_plan():
             # ALL assessed ensembles (dispatch F1) — never filter to job ids.
@@ -2825,7 +2833,8 @@ class ThreatMonitor:
                         crews, jobs, dict(ensembles), list(self._safe_zones),
                         self._cfg, now_s, incumbent=self._incumbent,
                         forecasts=dict(forecasts or {}),
-                        eroded_rasters=eroded_map, offmap=dict(offmap))
+                        eroded_rasters=eroded_map, offmap=dict(offmap),
+                        **roads_kw)
                 except TypeError as exc:
                     if "offmap" not in str(exc):
                         raise
@@ -2837,7 +2846,8 @@ class ThreatMonitor:
                                              list(self._safe_zones), self._cfg,
                                              now_s, incumbent=self._incumbent,
                                              forecasts=dict(forecasts or {}),
-                                             eroded_rasters=eroded_map)
+                                             eroded_rasters=eroded_map,
+                                             **roads_kw)
             except TypeError as exc:
                 if "eroded_rasters" not in str(exc):
                     if "forecasts" not in str(exc):

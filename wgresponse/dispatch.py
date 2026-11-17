@@ -2437,7 +2437,8 @@ def corridor_rasters(ens: dict, cfg: ResponseConfig,
 
 
 def egress_table(loc, rasters: list, safe_zones: list, cfg: ResponseConfig,
-                 now_s: float, offmap: "dict | None" = None) -> list:
+                 now_s: float, offmap: "dict | None" = None,
+                 road_provider=None) -> list:
     """SAFETY SEMANTICS 45c: the planner's egress law from `loc` — [(zone_id,
     T*)] in the order a stop's egress tries the zones (travel time and zone
     id; descending T* under route_alternatives > 1), where T* is the latest
@@ -2448,9 +2449,11 @@ def egress_table(loc, rasters: list, safe_zones: list, cfg: ResponseConfig,
     durable-destination keep-until where 38 is armed — the same _Ctx code a
     planned stop's egress runs (tier-0 chords: the live planner has no
     roads). A departure at d has a lawful way out iff d <= some T*. No
-    zones -> [] (fail closed: no way out)."""
+    zones -> [] (fail closed: no way out). road_provider (the live service-
+    area roads, wgresponse.liveroads): the legs plan() would drive on roads
+    are judged on those roads, exactly as plan() judges them."""
     ctx = _Ctx([], {}, rasters, list(safe_zones), cfg, now_s, {}, set(),
-               offmap=offmap)
+               road_provider=road_provider, offmap=offmap)
     k = ctx._lkey(loc)
     zl = ctx._ezones_k(loc, k)
     if ctx._ramp:

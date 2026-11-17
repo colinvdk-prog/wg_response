@@ -175,7 +175,7 @@ def _spot(loc, now_s, rasters, cfg, offmap):
 
 def judge_crew(crew, now_s: float, cfg, *, rasters, safe_zones, offmap=None,
                etas=None, clients=None, failed=(), threat_radius_m=0.0,
-               has_forecast=True) -> dict:
+               has_forecast=True, road_provider=None) -> dict:
     """One crew's watch row (see the module docstring). Raises only on a
     programming error; judge() turns any exception into an unjudged row."""
     b = crew.last_beacon
@@ -262,7 +262,7 @@ def judge_crew(crew, now_s: float, cfg, *, rasters, safe_zones, offmap=None,
 
     # WAY OUT (SEMANTICS 3 / 4 / 45c) — the planner's egress law, now
     table = dispatch.egress_table(b.loc, rasters, safe_zones, cfg, now_s,
-                                  offmap=offmap)
+                                  offmap=offmap, road_provider=road_provider)
     lawful = [(z, t) for z, t in table if now_s <= t]
     best = max(table, key=lambda r: (r[1], r[0])) if table else None
     way_margin = ((best[1] - now_s) if best is not None else -math.inf)
@@ -311,7 +311,7 @@ def judge_crew(crew, now_s: float, cfg, *, rasters, safe_zones, offmap=None,
 
 def judge(crews, now_s: float, cfg, *, rasters, safe_zones, offmap=None,
           etas=None, clients=None, failed=(), threat_radius_m=0.0,
-          has_forecast=True) -> list:
+          has_forecast=True, road_provider=None) -> list:
     """Every watched crew's row (watched(crews, now_s)), crew id order. A
     crew whose judgement raised is listed UNJUDGED with the error."""
     rows = []
@@ -320,7 +320,8 @@ def judge(crews, now_s: float, cfg, *, rasters, safe_zones, offmap=None,
             rows.append(judge_crew(
                 c, now_s, cfg, rasters=rasters, safe_zones=safe_zones,
                 offmap=offmap, etas=etas, clients=clients, failed=failed,
-                threat_radius_m=threat_radius_m, has_forecast=has_forecast))
+                threat_radius_m=threat_radius_m, has_forecast=has_forecast,
+                road_provider=road_provider))
         except Exception as exc:     # fail closed: never listed as safe
             b = c.last_beacon
             rows.append({"crew_id": c.crew_id,

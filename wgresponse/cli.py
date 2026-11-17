@@ -365,6 +365,13 @@ def _build_parser() -> argparse.ArgumentParser:
                          "the one enrolled home within crew_work_radius_m) "
                          "is held for it — never offered to a second crew; "
                          "unserved reason in_progress_by:<crew>")
+    pw.add_argument("--live-roads", action="store_true",
+                    help="plan crews on the live service areas' roads "
+                         "(data/roads/live: the Eagle River valley and "
+                         "Aspen / Roaring Fork, cut from OpenStreetMap); a "
+                         "leg outside every area keeps its straight chord; "
+                         "arms the 45-min traffic slack on road egress "
+                         "(SAFETY SEMANTICS 31)")
     pw.add_argument("--crew-laws", action="store_true",
                     help="arm the October planning laws the simulator arms "
                          "that mean something without roads: cell-exact "
@@ -1153,6 +1160,32 @@ def _crew_program_cfg(cfg, args):
     return cfg, notes
 
 
+def _live_roads(cfg, args):
+    """(cfg, ServiceAreaRoads | None, startup notes) for --live-roads (the
+    founder, 2026-11-17: "start with the Eagle valley and Aspen"). Arms
+    SAFETY SEMANTICS 31 at the simulator's value: road egress then carries
+    a traffic slack over the 30-min line. 37's ramp stays off (it shortens
+    the margin on short drives; the founder's err-pessimistic rule). No
+    flag = (cfg, None, [])."""
+    if not getattr(args, "live_roads", False):
+        return cfg, None, []
+    from wgresponse import liveroads, simui
+    cfg = dataclasses.replace(
+        cfg, route_margin_egress_roads_min=float(
+            simui.SIM_ROUTE_MARGIN_EGRESS_ROADS_MIN))
+    sar = liveroads.ServiceAreaRoads(cfg)
+    areas = sar.describe()
+    return cfg, sar, [
+        "LIVE ROADS: crews are planned on the roads of "
+        + ", ".join(f"{d['name']} ({d['nodes']:,} nodes)"
+                    for d in areas.values())
+        + " — road data (c) OpenStreetMap contributors, ODbL; a leg with an "
+        "end outside every area keeps its straight chord; road egress "
+        f"carries {cfg.route_margin_egress_roads_min:g} min of traffic slack "
+        "(SAFETY SEMANTICS 31); the crew watch judges a way out on the same "
+        "roads"]
+
+
 def _watch_roster():
     """(CrewRoster | None, startup notes) from env WGRESP_CREW_ROSTER
     (SAFETY SEMANTICS 45f). Unset = (None, []). A roster that cannot be
@@ -1685,6 +1718,13 @@ class _WatchDaemon:
             # — an additive key, present only with a roster
             out["crew_roster"] = roster.status()
         res = self.last_result
+        lr = getattr(self._monitor, "live_roads", None)
+        if lr is not None:
+            # LIVE ROADS: the service areas the planner drives (additive)
+            out["live_roads"] = {
+                "areas": lr.describe(),
+                "egress_slack_min": self._cfg.route_margin_egress_roads_min,
+                "attribution": "(c) OpenStreetMap contributors, ODbL"}
         if getattr(self._cfg, "crew_watch", False):
             # SAFETY SEMANTICS 45a-c: every watched crew with its margins —
             # an additive key, present only when armed
@@ -2297,6 +2337,8 @@ def _cmd_watch(args) -> int:
             "SEMANTICS 44")
     cfg, _notes = _crew_program_cfg(cfg, args)   # SEMANTICS 45
     startup_notes_fix += _notes
+    cfg, live_roads, _notes = _live_roads(cfg, args)
+    startup_notes_fix += _notes
     if getattr(args, "forecast_tiers", False):
         cfg = dataclasses.replace(cfg, forecast_tiers=True)
         startup_notes_fix.append(
@@ -2423,7 +2465,10 @@ def _cmd_watch(args) -> int:
         feeds=feeds_stack, weather_provider=NwsWeather(cfg=cfg),
         terrain_provider=terrain, registry=registry, alert_engine=engine,
         cfg=cfg, safe_zones=safe_zones, crew_tracker=tracker,
-        dispatcher=dispatch_mod, aoi=aoi)
+        dispatcher=dispatch_mod, aoi=aoi,
+        road_provider=(live_roads.provider() if live_roads is not None
+                       else None))
+    monitor.live_roads = live_roads          # /api/state "live_roads"
     # DURABLE STATE (fix program 2026-09-11): env WGRESP_STATE_S3 mirrors
     # the alert ladder / notified ledger / incumbent plan to S3 and restores
     # them into a fresh container before the first cycle. A configured but

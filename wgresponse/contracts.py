@@ -1956,6 +1956,29 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    rasters leave every plan unchanged; tests/test_crew_roster.py,
    tests/test_live_crew_laws.py, tests/test_console_itinerary.py).
 
+48. THE LIVE PLANNER DRIVES THE SERVICE AREAS' ROADS (2026-11-17; founder:
+   "start with the Eagle valley and Aspen, download Colorado"; watch
+   --live-roads; wgresponse.liveroads; data/roads/live). The live planner
+   judged every leg on a straight chord; the crew-program review measured
+   that optimism. With --live-roads each leg whose two ends lie in one
+   service area (the Eagle River valley; Aspen / Snowmass down Highway 82
+   to Glenwood — boxes = the simulator's extended tiles; OpenStreetMap,
+   Geofabrik colorado-latest 2026-11-16) is planned on that area's road
+   graph by the same corridor law (SAFETY SEMANTICS 3 / 20 / 27), and the
+   crew watch (45) judges a crew's way out on the same roads; a leg with an
+   end outside every area keeps its chord, so a world outside every area
+   plans byte-identically. The flag arms 31 at the simulator's 45 min: road
+   egress carries traffic slack over the 30-min line. 37's ramp stays off
+   (it shortens the margin on short drives; the founder's err-pessimistic
+   rule). Measured on the valley test world (tests/test_live_roads_watch.py):
+   a fire north of I-70 — 5 of 6 East Vail homes on roads as on chords; a
+   fire that starts ON I-70 between the crew (Avon) and the homes — the chord
+   skirted it 1.2 km north and served all 6, the road (the only way
+   through) runs through the start and serves none (no_safe_corridor). All
+   279 demo homes in the areas snap within 300 m; two unverified safe-zone
+   points sit 734 / 889 m off the network (the founder's ground check).
+   No flag = byte-identical.
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -2151,6 +2174,12 @@ wgresponse.net   (2026-11-01 — the live adapters' GET: one retry when the netw
         # (terrain: False — the LFPS submit is a GET that creates a job); never
         # an HTTP answer or a timeout; the second failure raises as the first
     failure_kind(exc) -> "unsent" | "dropped" | None
+
+wgresponse.liveroads   (2026-11-17; SAFETY SEMANTICS 48 — the live service areas' roads)
+    class ServiceAreaRoads(cfg, road_dir=None)   # data/roads/live/areas.json + <key>.wgr
+        .area_for(a, b) -> key | None; .route(a, b) -> RoadRoute | None
+        .provider() -> (a, b, mode="ingress") -> RoadRoute | None   # dispatch.plan road_provider
+        .describe() -> dict
 
 wgresponse.screening   (2026-11-01; SAFETY SEMANTICS 43 — hotspot screening step 0)
     class FirmsPollLog(dir_path, s3_uri=None, s3_client=None)
