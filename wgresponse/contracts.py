@@ -1812,8 +1812,9 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
        within L plus one step leaves now: by a lawful leg (20b) to the
        nearest zone that stays clear H after the arrival, else a lawful road
        refuge that does (28a's search; on the map while 36 is armed), else
-       36's off-map last exit (it stays while that way stays open), else
-       the pocket exit (28d) as before — 28b's own choices, in 28b's order;
+       36's off-map last exit (it stays while that way stays open) — 28b's
+       own choices, in 28b's order; with none, 28b and the pocket exit (28d)
+       as before;
        a fruitless search is not repeated in the same field generation,
        position and hour.
    (b) A REFUGE KEEPS A WAY OUT (refuge_keeps_exit; with 28a's and 38's H):
@@ -1821,18 +1822,21 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
        38 (b) counts as the stop's way out (the planner's stop_refuge, the
        29 predicate) and that 28a then re-points the egress to, 28a's choice
        as an egress starts, and 30b's restaging zone — must keep a lawful
-       way out until the crew would have to leave it: unless the fire never
-       reaches it within the fields' horizon, 38's exit term ((ii)/(iii):
-       the latest lawful departure, less one step, to a zone or a road
-       refuge that stays clear H) must be no earlier than NEED — its own
-       durable time (38 (i)) less L when that lies more than L plus one step
-       past the arrival, else the arrival plus L plus one step (a refuge 46a
-       would leave at once). 28a takes such a refuge first (its target, the
-       nearest durable zone, a road refuge: the search refuses the ones
-       without, judging at most REFUGE_EXIT_MAX_PROBES), and one without only
-       when none keeps one (the law as before); 38 (b) counts only such a
-       road refuge; restaging takes none without. One level: an exit's own
-       refuge is not asked in turn.
+       way out: unless the fire never reaches it within the fields'
+       horizon, 38's exit term ((ii)/(iii): the latest lawful departure,
+       less one step, to a zone or a road refuge that stays clear H) must
+       lie at least L plus one step past the arrival — a way out the waiting
+       crew could still take when (a) would first move it (a refuge without
+       one is due to be left the moment it is reached, with nowhere to go).
+       28a takes such a refuge first (its target, the nearest durable zone,
+       a road refuge: the search refuses the ones without, judging at most
+       REFUGE_EXIT_MAX_PROBES), and one without only when none keeps one
+       (the law as before); 38 (b) counts only such a road refuge;
+       restaging takes none without. One level: an exit's own refuge is not
+       asked in turn. Measured and not taken: requiring the way out to stay
+       open until the crew would have to leave (the refuge's own durable
+       time less L; simui.REFUGE_EXIT_UNTIL_LEAVE) cost Beaver Creek's
+       canonical high fire 6 of 37 homes in 12 h and changed no row.
    Measured (docs/SIMULATOR_DESIGN.md "Crew program review fixes
    (2026-11-17)"): Vail 24 h rows 2 -> 0, crews off the map 2 -> 0, homes
    40 -> 40; Beaver Creek 24 h rows 1 -> 0, homes 34 -> 31 (the planner no
@@ -4142,22 +4146,24 @@ class ResponseConfig:
     # one step leaves now — by a lawful leg to the nearest zone that stays
     # clear egress_durable_min_h after arrival, else to a lawful road refuge
     # that does (on the map while 36 is armed), else the 36 last exit off the
-    # map, else the pocket exit (28d) as before. False = byte-identical.
+    # map; with none, 28b and the pocket exit (28d) as before. False =
+    # byte-identical.
     escape_wait_watch: bool = False
     # A REFUGE KEEPS A WAY OUT (SAFETY SEMANTICS 46b; read only with
-    # egress_durable_min_h and egress_dest_durable_h > 0). The voluntary
-    # refuge laws (28a durable egress, 28b last exit, 46a, 30b restaging)
-    # judged a refuge by its own cell's life only: measured, a Beaver Creek
+    # egress_durable_min_h and egress_dest_durable_h > 0). The refuge laws
+    # (28a durable egress, 38 (b)'s stop refuge, 30b restaging) judged a
+    # refuge by its own cell's life only: measured, a Beaver Creek
     # crew (24-h canonical fire, extreme) was sent at T+5.75 h to a road
     # refuge 3.7 km out with 12.7 h of life and no lawful exit from the
     # moment it arrived; it waited 12 h and was moved through a band 682.5
     # min past the line. When True a refuge such a law sends a crew to wait
-    # at must also keep a lawful way out (a leg to a zone, or 28a's road
+    # at — and the stop's own road refuge SEMANTICS 38 (b) counts as its way
+    # out — must also keep a lawful way out (a leg to a zone, or 28a's road
     # search to a road refuge, that stays clear egress_dest_durable_h — the
-    # 38 exits) open until the crew would have to leave it (see SAFETY
-    # SEMANTICS 46b), unless the fire never reaches it in the fields'
-    # horizon; a refuge without one is taken only when no candidate of the
-    # law keeps one. False = byte-identical.
+    # 38 exits) open past the arrival plus escape_last_exit_lead_min and one
+    # step, unless the fire never reaches it in the fields' horizon; 28a
+    # takes a refuge without one only when no candidate keeps one,
+    # restaging never. False = byte-identical.
     refuge_keeps_exit: bool = False
     # THE AUDIT KEEPS THE DEEPER ROW (SAFETY SEMANTICS 47a; read only by the
     # simulator with crew_path_audit). One crew-overrun row per crew per

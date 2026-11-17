@@ -1068,8 +1068,9 @@ def _client_outcome(gelled: bool, impacted: bool, threatened: bool,
 
 #: DISPLAY ONLY (contracts outcome_lost_capacity, 2026-11-17): the outcome
 #: vocabulary with the lost-home split — 'lost_capacity' (some crew could once
-#: have served the home: it was planned, held by the coating window, or
-#: unserved for capacity / triage, and no crew reached it before the fire)
+#: have served the home: it was planned, served by the coating window's
+#: deferred plan, or unserved for capacity / triage, and no crew reached it
+#: before the fire)
 #: beside 'abandoned_unsavable' (never feasible for any crew). The scoreboard
 #: carries every tag of this tuple while the knob is on.
 OUTCOME_TAGS_SPLIT = ("saved", "protected_then_impacted", "lost_capacity",
@@ -3860,7 +3861,8 @@ class SimSession:
         # of a fruitless search (crew -> (field generation, position,
         # hour)); 46b (contracts refuge_keeps_exit): refuges refused for
         # want of a way out, and each refuge's verdict per field generation
-        # (_refuge_exit_memo: (lat, lon, speed, need time) -> bool).
+        # (_refuge_exit_memo: (lat, lon, zone, speed, step, arrival) ->
+        # bool).
         self._n_wait_watch = 0
         self._wait_watch_none = {}
         self._n_refuge_no_exit = 0
@@ -3872,8 +3874,9 @@ class SimSession:
         self._release_opened = set()
         # DISPLAY ONLY (contracts outcome_lost_capacity, unserved_reason_
         # refresh; never read by any plan): the homes some crew could once
-        # have served (planned, held by the coating window, or unserved for
-        # capacity / triage), and the page's refreshed reason per home
+        # have served (planned, served by the coating window's deferred
+        # plan, or unserved for capacity / triage), and the page's refreshed
+        # reason per home
         # ('released_en_route' until the next plan labels or assigns it;
         # 'fire_arrived' once the fire's median has reached it).
         self._ever_feasible = set()
@@ -5407,8 +5410,9 @@ class SimSession:
         full search makes before that point waits on a best, so it finds one
         exactly when this does — else None.
 
-        accept (SAFETY SEMANTICS 46b, contracts refuge_keeps_exit — the
-        voluntary refuge laws pass it while armed): a callable (node loc,
+        accept (SAFETY SEMANTICS 46b, contracts refuge_keeps_exit — 28a's
+        choice and 38 (b)'s stop-refuge window pass it while armed): a
+        callable (node loc,
         drive seconds) -> bool asked of a candidate only when it would
         become the best; a node it refuses is no candidate (and does not
         stop the search). None = every candidate, byte-identical.
@@ -5858,9 +5862,9 @@ class SimSession:
         cur_lawful = (not b) and worst >= 0.0 and dm >= lead_s
         # A REFUGE KEEPS A WAY OUT (contracts refuge_keeps_exit, SAFETY
         # SEMANTICS 46b): among this law's refuges one that keeps a lawful
-        # way out until the crew would have to leave it comes first; one
-        # that does not is taken only when none does (off: every refuge
-        # "keeps" one — the legacy order, byte-identical)
+        # way out past the waiting window comes first; one that does not is
+        # taken only when none does (off: every refuge "keeps" one — the
+        # legacy order, byte-identical)
         armed = self._refuge_exit_armed()
         cur_ok = cur_lawful and dm >= dur_s
         if cur_ok and (not armed or self._refuge_keeps_exit(
@@ -6377,9 +6381,9 @@ class SimSession:
         after the arrival (28b's exits: here every exit still durable, not
         only those that close within the window), else a lawful road refuge
         that stays clear dur_s (28a's search, on the map while 36 is armed),
-        else, while 36 is armed, the off-map last exit (36), else the pocket
-        exit (28d) when armed and its own cell is within dur_s — 28b's own
-        choices, in 28b's order (46b does not re-rank this move: measured on
+        else, while 36 is armed, the off-map last exit (36) — 28b's own
+        choices, in 28b's order; with none, the sweep goes on to 28b and the
+        pocket exit (28d) as before (46b does not re-rank this move: measured on
         the extended Camp-Fire-scale run, a one-level "keeps a way out"
         preference here and in 28b walked a crew from refuge to refuge into
         a dead end, 1,473 min past the line). The 28b trigger watched
@@ -6437,10 +6441,8 @@ class SimSession:
                 return off[0], f"{head}; {off[1]}", "last_exit"
             if _state == "off_map":
                 return None, None, None          # 36: its last way stays open
-        if getattr(self._cfg, "escape_pocket_exit", False):
-            z, why = self._pocket_exit_choice(cid, cs, now, lead_s, dur_s)
-            if z is not None:
-                return z, f"{head}; {why}", "pocket_exit"
+        # nothing lawful and durable is left: the sweep goes on to 28b and
+        # the pocket exit (28d) as before (they watch a crew within dur_s)
         self._wait_watch_none[cid] = key
         return None, None, None
 
