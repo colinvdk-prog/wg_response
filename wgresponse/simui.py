@@ -752,8 +752,16 @@ SIM_FAR_ZONES_OFF = "beaver_creek_co-z4"
 #: fixes (2026-11-17)"): the boolean knobs the simulator arms (True) unless a
 #: caller overrides them explicitly. The live watcher arms none of them.
 SIM_REVIEW_FIXES_2026_11_17 = (
-    "escape_wait_watch", "refuge_keeps_exit", "crew_overrun_worst_row",
-    "replan_on_release", "outcome_lost_capacity", "unserved_reason_refresh")
+    "escape_wait_watch", "crew_overrun_worst_row", "replan_on_release",
+    "outcome_lost_capacity", "unserved_reason_refresh")
+#: ... and SAFETY SEMANTICS 46b (contracts refuge_keeps_exit), built and
+#: measured but NOT armed: it removes Beaver Creek's 24-h dead-end row, but on
+#: tests/test_dest_durable.py's Paradise crown-fire repro it sent a crew to a
+#: refuge from which it was later driven through a band 1,019 min past the
+#: line (the law off: no row), and it cost Beaver Creek's canonical extreme
+#: fire three reached homes in 12 h. The orchestrator's call; an explicit
+#: cfg override arms it.
+SIM_ARMS_REFUGE_KEEPS_EXIT = False
 #: SAFETY SEMANTICS 46b (contracts refuge_keeps_exit): a road search judges
 #: at most this many candidate refuges for a way out (each judgement is a
 #: keep-until: the zone legs and a bisected road search from the node); the
@@ -3354,8 +3362,8 @@ class SimSession:
         # THE CREW-PROGRAM REVIEW FIXES (2026-11-17; contracts SAFETY
         # SEMANTICS 46-47; docs/SIMULATOR_DESIGN.md "Crew program review
         # fixes (2026-11-17)"): (46a) a waiting crew leaves before its refuge
-        # is a dead end (escape_wait_watch); (46b) a refuge a crew is sent to
-        # wait at keeps a way out (refuge_keeps_exit); (47a) the audit keeps
+        # is a dead end (escape_wait_watch); (46b, refuge_keeps_exit, a refuge
+        # keeps a way out: built and measured, not armed); (47a) the audit keeps
         # the deeper row per crew and step (crew_overrun_worst_row); (47b) a
         # stop released en route re-plans at once (replan_on_release); and
         # two display-only fixes — a lost home that was once savable reads
@@ -3365,6 +3373,10 @@ class SimSession:
         for _k in SIM_REVIEW_FIXES_2026_11_17:
             if _k not in overrides:
                 setattr(cfg, _k, True)
+        # (46b refuge_keeps_exit: built, measured, NOT armed —
+        # SIM_ARMS_REFUGE_KEEPS_EXIT; an explicit override arms it)
+        if "refuge_keeps_exit" not in overrides:
+            cfg.refuge_keeps_exit = bool(SIM_ARMS_REFUGE_KEEPS_EXIT)
         far_off = _far_zones_off(getattr(cfg, "sim_far_zones_off", ""))
         if (getattr(cfg, "sim_far_side_zones", False)
                 and self._loc.far_zones):

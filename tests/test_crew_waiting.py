@@ -14,15 +14,19 @@ ASSESSMENT.md; docs/SIMULATOR_DESIGN.md "Crew program review fixes
       waited 12 h at a road refuge with no lawful exit from its arrival
       (682.5 min past the line). The stop's own road refuge (38 b, which the
       planner counts and 28a re-points the egress to), 28a's choice and
-      restaging (30b) take a refuge that keeps a lawful way out until the
-      crew would have to leave it.
+      restaging (30b) take a refuge that keeps a lawful way out past the
+      waiting window. BUILT AND MEASURED, NOT ARMED (simui.SIM_ARMS_REFUGE_
+      KEEPS_EXIT): it removes the Beaver Creek row, but on tests/test_dest_
+      durable.py's Paradise crown-fire repro it led a crew into a band 1,019
+      min past the line; the Beaver Creek row stays a known defect (xfail).
   47a crew_overrun_worst_row — THE AUDIT KEEPS THE DEEPER ROW.
   47b replan_on_release — a stop released en route re-plans at once.
   display only: outcome_lost_capacity (a lost home some crew could once
       have served reads "lost — capacity", not "unsavable") and
       unserved_reason_refresh (released_en_route / fire_arrived).
 
-Pinned: the knobs (off by default, armed by the simulator), byte-identity
+Pinned: the knobs (off by default, armed by the simulator but 46b),
+byte-identity
 with them off on the worlds where they bite (goldens computed on commit
 e43c24e, before the rules: scratch_review/crew_fixes_2026-11-17/goldens.py),
 each mechanism armed, and that the display knobs change no plan."""
@@ -44,6 +48,10 @@ FIXES = ("escape_wait_watch", "refuge_keeps_exit", "crew_overrun_worst_row",
          "replan_on_release", "outcome_lost_capacity",
          "unserved_reason_refresh")
 FIXES_OFF = {k: False for k in FIXES}
+#: the knobs the simulator arms (46b is built, not armed)
+ARMED = tuple(k for k in FIXES if k != "refuge_keeps_exit")
+#: 46b armed explicitly (the measured candidate)
+WITH_46B = {"refuge_keeps_exit": True}
 #: the page's payload (the lane-A harness, scratch_review/crew_program_
 #: review_2026-11-11/A_safety/matrix.py)
 PAGE = {"hold_h": 12, "hold_per_home": True, "proximity_first": True,
@@ -69,16 +77,18 @@ def _chain(hashes):
 def test_knobs_are_off_by_default_and_the_simulator_arms_them():
     cfg = ResponseConfig()
     assert all(getattr(cfg, k) is False for k in FIXES)
-    assert simui.SIM_REVIEW_FIXES_2026_11_17 == FIXES
+    assert simui.SIM_REVIEW_FIXES_2026_11_17 == ARMED
+    assert simui.SIM_ARMS_REFUGE_KEEPS_EXIT is False
     s = simui.SimSession("boulder_co", 2, 1, seed="cw", roads_module=None)
-    assert all(getattr(s._cfg, k) is True for k in FIXES)
+    assert all(getattr(s._cfg, k) is True for k in ARMED)
+    assert s._cfg.refuge_keeps_exit is False          # built, not armed
     s = simui.SimSession("boulder_co", 2, 1, seed="cw", roads_module=None,
                          cfg_overrides=FIXES_OFF)
     assert all(getattr(s._cfg, k) is False for k in FIXES)
     # one explicit override wins alone
     s = simui.SimSession("boulder_co", 2, 1, seed="cw", roads_module=None,
-                         cfg_overrides={"refuge_keeps_exit": False})
-    assert s._cfg.refuge_keeps_exit is False and s._cfg.escape_wait_watch
+                         cfg_overrides=WITH_46B)
+    assert s._cfg.refuge_keeps_exit is True and s._cfg.escape_wait_watch
     assert validate_config(ResponseConfig(**{k: True for k in FIXES})) == []
     assert any("escape_wait_watch" in p for p in validate_config(
         ResponseConfig(escape_wait_watch=1)))
@@ -128,20 +138,19 @@ def test_a_refuge_keeps_a_way_out_past_the_waiting_window(tmp_path):
              (8.5, 40 / 60.0, False))
     for own_h, band_h, want in cases:
         if own_h is None:
-            s = _judged_session(tmp_path)
+            s = _judged_session(tmp_path, **WITH_46B)
             za = s._zone_by_id["zA"]
             _paint(s)
             spd = next(iter(s._crew_sims.values())).speed
         else:
-            s, cs, za = _waiting_world(tmp_path, own_h, band_h)
+            s, cs, za = _waiting_world(tmp_path, own_h, band_h, **WITH_46B)
             spd = cs.speed
         assert s._refuge_keeps_exit(za.loc, s._now_s, spd,
                                     zone_id="zA") is want, (own_h, band_h)
-    s, cs, za = _waiting_world(tmp_path, 20.0, 40 / 60.0,
-                               refuge_keeps_exit=False)
+    s, cs, za = _waiting_world(tmp_path, 20.0, 40 / 60.0)    # not armed
     assert s._refuge_keeps_exit(za.loc, s._now_s, cs.speed, zone_id="zA")
     assert simui.REFUGE_EXIT_UNTIL_LEAVE is False
-    s, cs, za = _waiting_world(tmp_path, 20.0, 2.0)
+    s, cs, za = _waiting_world(tmp_path, 20.0, 2.0, **WITH_46B)
     try:
         simui.REFUGE_EXIT_UNTIL_LEAVE = True
         assert not s._refuge_keeps_exit(za.loc, s._now_s, cs.speed,
@@ -282,6 +291,11 @@ def bc_on():
     return _run("bc24", {})
 
 
+@pytest.fixture(scope="module")
+def bc_46b():
+    return _run("bc24", WITH_46B)
+
+
 def _brief(rows):
     return [(r["tick"], r["crew_id"], bool(r.get("transit")),
              r.get("margin_min")) for r in rows]
@@ -317,19 +331,41 @@ def test_beaver_creek_24h_off_is_byte_identical(bc_off):
     assert _brief(bc_off["rows"]) == [(73, "sim-g1", True, -682.53)]
 
 
-def test_beaver_creek_24h_no_crew_is_sent_into_the_pocket(bc_on):
-    """Armed: the planner no longer counts a dead-end road refuge as a
-    stop's way out (46b in SEMANTICS 38 b) — the last homes in the Eagle-
-    Vail pocket are left to the fire (34 -> 31 served, the measured cost)
-    and 28a sends the egressing crews to refuges that keep a way out. No
-    row; one crew leaves the map by its last lawful way (36) at T+11.5 h
-    (ratchets)."""
-    st = bc_on["st"]
-    assert bc_on["rows"] == []
+@pytest.mark.xfail(strict=True, reason=(
+    "known defect (2026-11-17): Beaver Creek's Eagle-Vail pocket closes while "
+    "sim-g1 still works its last homes — at the 28a decision (T+5.68 h) none "
+    "of the 23 road refuges it can reach and none of the four zones keeps a "
+    "lawful way on (scratch_review/crew_fixes_2026-11-17/diag_bc.py), so no "
+    "waiting rule can help; the planner-side test that avoids it (46b, "
+    "refuge_keeps_exit) is built but not armed: on the Paradise crown-fire "
+    "repro it led a crew through a band 1,019 min past the line"))
+def test_beaver_creek_24h_no_crew_waits_in_the_dead_end(bc_on):
+    """Armed (the simulator's defaults): no row deeper than 30 min."""
+    assert all((r.get("margin_min") or 0.0) >= -30.0 for r in bc_on["rows"])
+
+
+def test_beaver_creek_24h_defaults_report_the_old_row_with_its_depth(bc_on):
+    """The simulator's defaults: the same one row as e43c24e (46a cannot
+    reach a pocket that closed while the crew worked) — ratchet: no more,
+    none deeper."""
+    rows = _brief(bc_on["rows"])
+    assert len(rows) <= 1
+    assert all(m is not None and m >= -682.53 - 0.5 for _t, _c, _tr, m in rows)
+
+
+def test_beaver_creek_24h_46b_keeps_the_crews_out_of_the_pocket(bc_46b):
+    """46b armed explicitly (the measured candidate): the planner no longer
+    counts a dead-end road refuge as a stop's way out (SEMANTICS 38 b) —
+    the last homes in the Eagle-Vail pocket are left to the fire (34 -> 31
+    served, its cost) and 28a sends the egressing crews to refuges that
+    keep a way out. No row; one crew leaves the map by its last lawful way
+    (36) at T+11.5 h (ratchets)."""
+    st = bc_46b["st"]
+    assert bc_46b["rows"] == []
     assert st["scoreboard"]["served"] >= 31
     assert st["scoreboard"]["crews_left_map"] <= 1
     assert any("keeps a way out" in n and "(SEMANTICS 46b)" in n
-               for _t, n in bc_on["notes"])
+               for _t, n in bc_46b["notes"])
 
 
 def test_park_city_side_row_carries_its_depth():

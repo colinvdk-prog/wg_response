@@ -1814,9 +1814,8 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
        refuge that does (28a's search; on the map while 36 is armed), else
        36's off-map last exit (it stays while that way stays open) — 28b's
        own choices, in 28b's order; with none, 28b and the pocket exit (28d)
-       as before;
-       a fruitless search is not repeated in the same field generation,
-       position and hour.
+       as before; a fruitless search is not repeated in the same field
+       generation, position and hour.
    (b) A REFUGE KEEPS A WAY OUT (refuge_keeps_exit; with 28a's and 38's H):
        a refuge a crew is sent to wait at — the stop's own road refuge that
        38 (b) counts as the stop's way out (the planner's stop_refuge, the

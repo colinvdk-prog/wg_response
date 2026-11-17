@@ -163,10 +163,14 @@ def test_knob_on_the_same_worlds_have_no_overrun(tmp_path, world):
     the sessions agree with the pre-rule ones up to the world change. The
     run ledger (SAFETY SEMANTICS 33, 2026-10-21, reporting only) is pinned
     off: it adds the run's totals to every tick's scoreboard, so no state
-    matches a pre-rule one (its own test: tests/test_overrun_ledger.py)."""
+    matches a pre-rule one (its own test: tests/test_overrun_ledger.py);
+    so is the lost-home split (2026-11-17, display only: it adds the
+    'lost_capacity' tag to every tick's outcomes; tests/
+    test_crew_waiting.py)."""
     any_angle, spot_d, nth, ticks, golden, _rows = GOLDENS[world]
     hashes, rows, s = _golden_world(tmp_path, any_angle, spot_d, nth, ticks,
-                                    {"crew_overrun_ledger": False})
+                                    {"crew_overrun_ledger": False,
+                                     "outcome_lost_capacity": False})
     assert s._cfg.crew_work_judged
     assert rows == [0] * len(rows)
     first = len(golden) - ticks              # the first tick after the change
