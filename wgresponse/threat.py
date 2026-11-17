@@ -191,6 +191,18 @@ curve; with cfg.fire_belief_apply the per-hour member multipliers), and
 statuses() into CycleResult.fire_status. Any belief failure is a note and
 the legacy physics. Track off = byte-identical cycles.
 
+THE LIVE CREW WATCH (contracts SAFETY SEMANTICS 45; wgresponse.crewwatch):
+with cfg.crew_watch, when some crew's report puts it in the field, the
+dispatcher's corridor rasters are eroded once before the planner (and handed
+to it as eroded_rasters: the same plan) and, after it, every crew in the
+field is judged — its spot, a working crew's home, its lawful way out — one
+OperatorEvent per crew per crossing, a note per crew above clear, and
+CycleResult.crew_watch ({rule, crews}) for /api/state; it fails closed
+(unjudged) and never raises. With cfg.crew_hold_worked a home a crew's fresh
+deploying report says it is working leaves the job list as
+UnservedJob(..., "in_progress_by:<crew>") with a note (45d). Both off =
+byte-identical cycles.
+
 Units: times unix seconds, distances meters, config durations hours/minutes
 per contracts.
 """
@@ -211,8 +223,10 @@ from wgresponse import seeded as seeded_mod
 from wgresponse.contracts import (
     AlertState,
     BBox,
+    CrewStatus,
     CycleResult,
     DispatchJob,
+    DispatchPlan,
     FireIncident,
     IncidentSource,
     LatLon,
@@ -220,6 +234,7 @@ from wgresponse.contracts import (
     RemovedIncident,
     ResponseConfig,
     ThreatAssessment,
+    UnservedJob,
     is_seeded_id,
 )
 
@@ -612,6 +627,10 @@ class ThreatMonitor:
         # HOTSPOT SCREENING STEP 0 (cfg.screen_labels only; SAFETY SEMANTICS
         # 43): this cycle's shadow-label counts.
         self._screen_last: Optional[dict] = None
+        # THE LIVE CREW WATCH (cfg.crew_watch only; SAFETY SEMANTICS 45):
+        # each watched crew's level last cycle (an event per crossing), in
+        # process.
+        self._crew_watch_prev: dict = {}
 
     @property
     def fire_beliefs(self):
@@ -995,11 +1014,29 @@ class ThreatMonitor:
             # SAFETY SEMANTICS 15: each domain fire's off-domain horizon
             offmap = self._offmap_horizons(active, ensembles, now_s, notes,
                                            status=belief_status)
+        crew_rasters = None
+        if self._cfg.crew_watch:
+            # SAFETY SEMANTICS 45: the dispatcher's corridor rasters, eroded
+            # ONCE for the watch and handed to the planner (the same rasters
+            # it would erode itself: the same plan)
+            crew_rasters = self._crew_watch_rasters(now_s, ensembles,
+                                                    eroded_map, notes)
         plan = self._maybe_dispatch(now_s, ensembles, clients_seen, etas,
                                     notes, forecasts,
-                                    eroded_map=(eroded_map or None),
+                                    eroded_map=(dict(crew_rasters)
+                                                if crew_rasters
+                                                else (eroded_map or None)),
                                     offmap=(offmap or None))
         timings["dispatch_s"] = time.monotonic() - _t
+        crew_watch = None
+        if self._cfg.crew_watch:
+            # SAFETY SEMANTICS 45a-c: every crew in the field, judged
+            _t = time.monotonic()
+            crew_watch = self._run_crew_watch(
+                now_s, ensembles, crew_rasters, eroded_map, offmap, etas,
+                clients_seen, active, failed_incidents, notes,
+                operator_events)
+            timings["crew_watch_s"] = time.monotonic() - _t
         # TWO WORLDS (SAFETY SEMANTICS 16b): the read-only record the TEST
         # world builds on — shallow container copies around this cycle's own
         # objects (the rasters are shared, never copied). Nothing on the
@@ -1037,6 +1074,8 @@ class ThreatMonitor:
         if belief_status is not None:
             # SAFETY SEMANTICS 14: the per-fire status (off-map rule seam)
             res.fire_status = belief_status
+        if crew_watch is not None:
+            res.crew_watch = crew_watch   # SAFETY SEMANTICS 45 (armed only)
         if self._cfg.forecast_tiers:
             res.freshness = freshness   # FORECAST FRESHNESS TIERS
         return res
@@ -1216,6 +1255,12 @@ class ThreatMonitor:
         for cp in (getattr(plan, "plans", None) or {}).values():
             for stop in getattr(cp, "stops", None) or ():
                 planned.add(stop.client_id)
+        if self._cfg.crew_hold_worked:
+            # SAFETY SEMANTICS 45d: a home a crew is working is served
+            for uj in getattr(plan, "unserved", None) or ():
+                if str(getattr(uj, "reason", "")).startswith(
+                        "in_progress_by:"):
+                    planned.add(uj.client_id)
         setter(on_duty, planned)
 
     def _evaluate_alerts(self, assessments: list, now_s: float,
@@ -2510,6 +2555,146 @@ class ThreatMonitor:
                          f"planning with 0 crews")
             return []
 
+    # --------------------------------------- the live crew watch (SEM 45)
+
+    def _tracker_crews(self) -> list:
+        """Every tracked crew (the watch / hold read the REPORTS, never the
+        dispatch-eligible subset). Raises what the tracker raises."""
+        if self._crew_tracker is None:
+            return []
+        return list(self._crew_tracker.crews())
+
+    def _crew_watch_rasters(self, now_s: float, ensembles: dict,
+                            eroded_map: dict, notes: list):
+        """SAFETY SEMANTICS 45: dispatch.corridor_rasters for this cycle
+        when some crew is in the field (else None: nothing eroded beyond
+        what the planner does). A failure is None and a note (the watch
+        then tries again itself and fails closed)."""
+        from wgresponse import crewwatch
+        from wgresponse import dispatch as dispatch_mod
+        if not ensembles:
+            return None
+        try:
+            if not crewwatch.watched(self._tracker_crews(), now_s):
+                return None
+            return dispatch_mod.corridor_rasters(ensembles, self._cfg,
+                                                 eroded_map or None)
+        except Exception as exc:
+            notes.append(f"crew watch: corridor rasters failed ({exc})")
+            return None
+
+    def _run_crew_watch(self, now_s: float, ensembles: dict, rasters,
+                        eroded_map: dict, offmap: dict, etas: dict,
+                        clients_seen: dict, active: list,
+                        failed_incidents: set, notes: list,
+                        operator_events: list) -> dict:
+        """SAFETY SEMANTICS 45a-c (wgresponse.crewwatch): judge every crew in
+        the field; an operator event per crew per crossing, a note per crew
+        above clear. Never raises: a failure lists every watched crew
+        UNJUDGED (with an event), never clear. Returns the /api/state
+        crew_watch block {rule, crews}."""
+        from wgresponse import crewwatch
+        from wgresponse import dispatch as dispatch_mod
+        out = {"rule": crewwatch.rule_summary(self._cfg), "crews": []}
+        try:
+            crews = self._tracker_crews()
+        except Exception as exc:
+            msg = (f"crew watch: the crew tracker failed ({exc}) — no crew "
+                   f"is judged this cycle (SAFETY SEMANTICS 45)")
+            notes.append(msg)
+            operator_events.append(OperatorEvent(
+                t_s=now_s, kind="crew_unjudged", message=msg,
+                detail={"step": "crew_tracker"}))
+            out["error"] = str(exc)
+            return out
+        try:
+            if rasters is None and ensembles and crewwatch.watched(crews,
+                                                                   now_s):
+                rasters = dispatch_mod.corridor_rasters(
+                    ensembles, self._cfg, eroded_map or None)
+            failed = [inc for inc in active
+                      if inc.incident_id in failed_incidents]
+            rows = crewwatch.judge(
+                crews, now_s, self._cfg, rasters=list(rasters or []),
+                safe_zones=self._safe_zones, offmap=(offmap or None),
+                etas=etas, clients=clients_seen, failed=failed,
+                threat_radius_m=self._threat_radius_m(),
+                has_forecast=bool(ensembles))
+        except Exception as exc:       # fail closed: unjudged, never clear
+            log.exception("crew watch failed")
+            out["error"] = str(exc)
+            rows = []
+            for c in crewwatch.watched(crews, now_s):
+                b = c.last_beacon
+                rows.append({"crew_id": c.crew_id,
+                             "name": c.name or c.crew_id,
+                             "status": getattr(b.status, "value",
+                                               str(b.status)),
+                             "report_t_s": b.t_s, "lat": b.loc.lat,
+                             "lon": b.loc.lon, "level": "unjudged",
+                             "unjudged": [f"the crew watch failed ({exc})"],
+                             "reasons": [], "margin_min": None})
+        events, wnotes, memory = crewwatch.events_and_notes(
+            rows, self._crew_watch_prev, now_s)
+        gone = sorted(set(self._crew_watch_prev) - set(memory))
+        if gone:
+            notes.append(f"crew watch: {', '.join(gone)} left the watch "
+                         f"(reported available / off duty, or silent more "
+                         f"than {crewwatch.SILENT_WATCH_S / 3600.0:g} h)")
+        self._crew_watch_prev = memory
+        notes.extend(wnotes)
+        operator_events.extend(events)
+        out["crews"] = rows
+        return out
+
+    def _worked_homes(self, now_s: float, clients_seen: dict,
+                      notes: list) -> dict:
+        """SAFETY SEMANTICS 45d (cfg.crew_hold_worked): {client_id: crew_id}
+        — the homes crews' FRESH deploying reports say they are working:
+        the report's client_id, else the one enrolled home within
+        crew_work_radius_m (+ the fix's accuracy); two or more that close =
+        ambiguous, nothing held (a note asks for client_id). A home two
+        crews report goes to the first by crew id (noted). A tracker
+        failure holds nothing (noted)."""
+        from wgresponse import crewwatch
+        try:
+            crews = self._tracker_crews()
+        except Exception as exc:
+            notes.append(f"worked-home hold: crew tracker unavailable "
+                         f"({exc}); no home is held this cycle")
+            return {}
+        held: dict = {}
+        for c in crews:
+            b = getattr(c, "last_beacon", None)
+            if b is None or crewwatch._status(b) is not CrewStatus.DEPLOYING:
+                continue
+            if now_s - b.t_s > self._cfg.beacon_stale_s:
+                continue
+            homes = crewwatch.homes_of(b, clients_seen, self._cfg)
+            said = [cid for cid, src in homes if src == "report"]
+            near = [cid for cid, src in homes if src == "nearby"]
+            if said:
+                home = said[0]
+            elif len(near) == 1:
+                home = near[0]
+            elif near:
+                notes.append(
+                    f"worked-home hold: crew {c.crew_id} reports deploying "
+                    f"within {self._cfg.crew_work_radius_m:g} m (+ its "
+                    f"{b.accuracy_m:g} m fix) of {', '.join(near)} — "
+                    f"ambiguous, no home held (the report's client_id names "
+                    f"it; SAFETY SEMANTICS 45d)")
+                continue
+            else:
+                continue
+            if home in held:
+                notes.append(f"worked-home hold: {home} is reported worked "
+                             f"by {held[home]} and {c.crew_id}; held for "
+                             f"{held[home]}")
+                continue
+            held[home] = c.crew_id
+        return held
+
     def _offmap_horizons(self, active: list, ensembles: dict, now_s: float,
                          notes: list, status: Optional[dict] = None) -> dict:
         """SAFETY SEMANTICS 15 (cfg.corridor_offraster_per_fire): the per-
@@ -2580,6 +2765,48 @@ class ThreatMonitor:
         except Exception as exc:
             notes.append(f"dispatch skipped: alert states unusable ({exc})")
             return None
+        held_rows: list = []
+        if self._cfg.crew_hold_worked and jobs:
+            # SAFETY SEMANTICS 45d: a home a crew reports working leaves the
+            # job list — never offered to a second crew — and is listed
+            # with the honest reason (one row per home: its worst job)
+            held = self._worked_homes(now_s, clients_seen, notes)
+            if held:
+                keep, worst = [], {}
+                for job in jobs:
+                    cid = job.client.client_id
+                    if cid not in held:
+                        keep.append(job)
+                        continue
+                    k = (job.eta.eta_p10_s, job.eta.eta_p50_s,
+                         job.incident_id)
+                    if cid not in worst or k < worst[cid][0]:
+                        worst[cid] = (k, job)
+                jobs = keep
+                for cid in sorted(worst):
+                    job = worst[cid][1]
+                    held_rows.append(UnservedJob(
+                        cid, job.incident_id, f"in_progress_by:{held[cid]}"))
+                    notes.append(
+                        f"dispatch: {cid} held for crew {held[cid]}, which "
+                        f"reports working it (deploying) — not offered to "
+                        f"another crew (SAFETY SEMANTICS 45d)")
+                if not jobs:
+                    # every job is being worked: the plan is the holds (and
+                    # every dispatchable crew, idle — as plan() lists them)
+                    from wgresponse.contracts import CrewPlan
+                    idle = sorted(c.crew_id for c in
+                                  self._eligible_crews(now_s, notes)
+                                  if c.loc() is not None)
+                    plan = DispatchPlan(
+                        computed_at_s=now_s,
+                        plans={cid: CrewPlan(
+                            crew_id=cid, committed_until_s=(
+                                now_s + self._cfg.commitment_horizon_min
+                                * 60.0)) for cid in idle},
+                        unserved=list(held_rows))
+                    self._incumbent = plan
+                    return plan
         if not jobs:
             return None
 
@@ -2638,5 +2865,7 @@ class ThreatMonitor:
         except Exception as exc:
             notes.append(f"dispatch planning failed ({exc})")
             return None
+        if held_rows and plan is not None:
+            plan.unserved = list(plan.unserved) + held_rows   # SEMANTICS 45d
         self._incumbent = plan
         return plan

@@ -1,7 +1,13 @@
 """wgresponse.server — stdlib HTTP app: beacon ingest + ops-console state API.
 
 Endpoints:
-    POST /api/beacon   JSON body -> CrewBeacon -> beacon sink (auth required)
+    POST /api/beacon   JSON body -> CrewBeacon -> beacon sink (auth required:
+                       SAFETY SEMANTICS 44's keys; with a crew roster —
+                       app.crew_roster, else env WGRESP_CREW_ROSTER, SAFETY
+                       SEMANTICS 45f — only the reporting crew's own
+                       X-Beacon-Key, 401 otherwise, 503 while the roster
+                       cannot be read; optional "client_id" = the home the
+                       crew is working, 45d)
     GET  /api/state    full ops state JSON from the injected state_provider (auth)
     GET  /api/plan     latest dispatch plan JSON (auth)
     GET  /console      serves console/index.html (open: it is the key-prompt UI
@@ -338,8 +344,17 @@ def parse_beacon(payload: object, now_s: Optional[float] = None) -> CrewBeacon:
         raise ValueError("accuracy_m/speed_mps must be finite")
     if accuracy_m < 0.0 or speed_mps < 0.0:
         raise ValueError("accuracy_m/speed_mps must be >= 0")
+    # SAFETY SEMANTICS 45d (2026-11-17): optional — the home the crew says
+    # it is working (a client id); absent / null / "" = not said
+    client_id = payload.get("client_id")
+    if client_id is None:
+        client_id = ""
+    if not isinstance(client_id, str) or len(client_id.strip()) > 128:
+        raise ValueError("client_id must be a string (at most 128 "
+                         "characters)")
     return CrewBeacon(crew_id=crew_id.strip(), loc=LatLon(lat, lon), t_s=t_s,
-                      status=status, accuracy_m=accuracy_m, speed_mps=speed_mps)
+                      status=status, accuracy_m=accuracy_m, speed_mps=speed_mps,
+                      client_id=client_id.strip())
 
 
 def _parse_tick(raw) -> Optional[int]:
@@ -1052,6 +1067,11 @@ class _App:
     #: None = derive a domain-less summary from state_provider.
     world_path = _DEFAULT_WORLD
     world_provider: Optional[Callable] = None
+    #: SAFETY SEMANTICS 45f: the crew roster (wgresponse.crews.CrewRoster)
+    #: the beacon endpoint checks a crew's own key against. The watch daemon
+    #: attaches the one its tracker holds; None = read WGRESP_CREW_ROSTER
+    #: per request (unset = the shared-key law of SEMANTICS 44).
+    crew_roster = None
 
     def __init__(self, state_provider: Optional[Callable] = None,
                  beacon_sink=None, plan_provider: Optional[Callable] = None,
@@ -1083,6 +1103,22 @@ class _App:
         if callable(sink):
             return sink(beacon)
         return None
+
+    def roster_now(self):
+        """SAFETY SEMANTICS 45f: the crew roster in force — the attached one,
+        else the file WGRESP_CREW_ROSTER names (read per request, like the
+        keys; one CrewRoster per path), else None (no roster)."""
+        if self.crew_roster is not None:
+            return self.crew_roster
+        from wgresponse.crews import CrewRoster
+        path = (os.environ.get("WGRESP_CREW_ROSTER") or "").strip()
+        if not path:
+            return None
+        cached = getattr(self, "_env_roster", None)
+        if cached is None or str(cached.path) != str(Path(path)):
+            cached = CrewRoster(path)
+            self._env_roster = cached
+        return cached
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -1441,15 +1477,52 @@ class _Handler(BaseHTTPRequestHandler):
             code, out = 500, {"error": f"seed api: {e}"}
         self._send_json(code, out)
 
-    def _post_beacon(self):
-        if not self._beacon_auth_ok():
-            # SAFETY SEMANTICS 44: never opened by WGRESP_DEV_OPEN
-            self._send_json(401, {"error": "unauthorized: a crew report needs "
-                                           "X-Beacon-Key"})
-            return
-        payload, ok = self._read_json_body()
+    def _roster_auth(self, payload) -> bool:
+        """SAFETY SEMANTICS 45f: with a crew roster a report must name a
+        rostered crew and carry THAT crew's key (X-Beacon-Key, its sha256
+        compared in constant time); the shared WGRESP_BEACON_KEY and the
+        ops key report for no crew. SENDS the refusal and returns False;
+        True = authorised. One answer for an unknown crew and a wrong key
+        (the roster is not enumerable); no key is ever logged or echoed."""
+        from wgresponse.crews import RosterError
+        roster = self.app.roster_now()
+        crew_id = payload.get("crew_id") if isinstance(payload, dict) else None
+        crew_id = crew_id.strip() if isinstance(crew_id, str) else ""
+        try:
+            ok = bool(crew_id) and roster.verify(
+                crew_id, self.headers.get("X-Beacon-Key", ""))
+        except RosterError:
+            _LOG.error("beacon: the crew roster is unusable — report "
+                       "refused (fix the file WGRESP_CREW_ROSTER names)")
+            self._send_json(503, {"error": "crew roster unusable: every crew "
+                                           "report is refused until it is "
+                                           "fixed"})
+            return False
         if not ok:
-            return
+            _LOG.warning("beacon: refused a report for crew %r (not on the "
+                         "roster or not its key)", crew_id[:64])
+            self._send_json(401, {"error": "unauthorized: a crew report needs "
+                                           "a rostered crew_id and that "
+                                           "crew's own X-Beacon-Key"})
+            return False
+        return True
+
+    def _post_beacon(self):
+        if self.app.roster_now() is not None:
+            # SAFETY SEMANTICS 45f: per-crew identity — the body names the
+            # crew whose own key the report must carry
+            payload, ok = self._read_json_body()
+            if not ok or not self._roster_auth(payload):
+                return
+        else:
+            if not self._beacon_auth_ok():
+                # SAFETY SEMANTICS 44: never opened by WGRESP_DEV_OPEN
+                self._send_json(401, {"error": "unauthorized: a crew report "
+                                               "needs X-Beacon-Key"})
+                return
+            payload, ok = self._read_json_body()
+            if not ok:
+                return
         try:
             beacon = parse_beacon(payload, now_s=time.time())
         except ValueError as e:

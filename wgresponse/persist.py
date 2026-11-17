@@ -105,6 +105,12 @@ Payload shapes (all times unix seconds, per contracts):
                   Both ADDITIVE like seeded_incidents: written only when the
                   caller passes them (only the test world, in its own
                   namespace <state-dir>/test_world/), [] when absent on load.
+  crew_reports    [row, ...] — SAFETY SEMANTICS 45g (2026-11-17): the LIVE
+                  crew tracker's last report per crew (crews.CrewTracker.
+                  rows()), stored verbatim; written only when the watch
+                  daemon runs with cfg.crew_state_persist (absent = the
+                  byte-identical file), [] when absent on load; decoded
+                  tolerantly by CrewTracker.restore_rows.
 
 Stdlib only.
 """
@@ -517,7 +523,8 @@ class StateStore:
              now_s: Optional[float] = None,
              seeded_incidents: Optional[list] = None,
              virtual_crews: Optional[list] = None,
-             drill_log: Optional[list] = None) -> str:
+             drill_log: Optional[list] = None,
+             crew_reports: Optional[list] = None) -> str:
         """Atomically persist one cycle's durable state; returns the file path.
 
         ``seeded_incidents`` (W1, SAFETY SEMANTICS 12h): JSON-able seed rows
@@ -557,6 +564,10 @@ class StateStore:
             payload["virtual_crews"] = [dict(r) for r in virtual_crews]
         if drill_log is not None:
             payload["drill_log"] = [dict(r) for r in drill_log]
+        if crew_reports is not None:
+            # SAFETY SEMANTICS 45g: the live crews' last reports (additive;
+            # written only when cfg.crew_state_persist hands them over)
+            payload["crew_reports"] = [dict(r) for r in crew_reports]
         body = json.dumps(payload, sort_keys=True, indent=1)
         self._dir.mkdir(parents=True, exist_ok=True)
         tmp = Path(str(self._path) + ".tmp")
@@ -723,6 +734,10 @@ class StateStore:
                 payload, "virtual_crews") if isinstance(r, dict)],
             "drill_log": [r for r in self._list_field(
                 payload, "drill_log") if isinstance(r, dict)],
+            # SAFETY SEMANTICS 45g: the live crews' last reports, verbatim;
+            # CrewTracker.restore_rows decodes them tolerantly
+            "crew_reports": [r for r in self._list_field(
+                payload, "crew_reports") if isinstance(r, dict)],
         }
 
     # ------------------------------------------------------------ S3 mirror

@@ -2416,6 +2416,51 @@ def _proximity_reorder(ctx: _Ctx, crew_id: str, keys, frozen_n: int,
 # plan() — the contract seam
 # ---------------------------------------------------------------------------
 
+def corridor_rasters(ens: dict, cfg: ResponseConfig,
+                     eroded_rasters: "dict | None" = None) -> list:
+    """[(incident_id, eroded P10 raster)] sorted by incident id — EXACTLY
+    the rasters plan() judges every leg against: the caller's pre-eroded
+    raster where it handed one (FUEL-TIERED EROSION), else the incident's
+    P10 eroded by cfg.corridor_erosion_m (square, or the euclidean disc
+    under corridor_erosion_euclidean). SAFETY SEMANTICS 45: the live crew
+    watch judges crews on these very rasters (and hands them back to plan()
+    as eroded_rasters, so a cycle erodes each fire once)."""
+    shape = ("euclidean"
+             if getattr(cfg, "corridor_erosion_euclidean", False)
+             else "chebyshev")
+    return [(iid,
+             (eroded_rasters[iid]
+              if eroded_rasters is not None and iid in eroded_rasters
+              else safety._erode(ens[iid].p10, cfg.corridor_erosion_m,
+                                 shape=shape)))
+            for iid in sorted(ens)]
+
+
+def egress_table(loc, rasters: list, safe_zones: list, cfg: ResponseConfig,
+                 now_s: float, offmap: "dict | None" = None) -> list:
+    """SAFETY SEMANTICS 45c: the planner's egress law from `loc` — [(zone_id,
+    T*)] in the order a stop's egress tries the zones (travel time and zone
+    id; descending T* under route_alternatives > 1), where T* is the latest
+    lawful departure from loc on that zone's leg: the corridor law against
+    every incident's eroded raster (rasters as corridor_rasters returns
+    them; the per-fire off-domain horizon with offmap, SEMANTICS 15; cell-
+    exact with 20a), the ramped margin where 37 makes it larger, and the
+    durable-destination keep-until where 38 is armed — the same _Ctx code a
+    planned stop's egress runs (tier-0 chords: the live planner has no
+    roads). A departure at d has a lawful way out iff d <= some T*. No
+    zones -> [] (fail closed: no way out)."""
+    ctx = _Ctx([], {}, rasters, list(safe_zones), cfg, now_s, {}, set(),
+               offmap=offmap)
+    k = ctx._lkey(loc)
+    zl = ctx._ezones_k(loc, k)
+    if ctx._ramp:
+        # SAFETY SEMANTICS 37: a zone is lawful at d when d <= its flat T*
+        # or its ramped one (egress() tries both passes, same order)
+        zr = dict(ctx._ezones_r[k])
+        return [(zid, max(ts, zr.get(zid, ts))) for zid, ts in zl]
+    return list(zl)
+
+
 def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
          cfg: ResponseConfig, now_s: float,
          incumbent: "DispatchPlan | None" = None,
@@ -2515,20 +2560,11 @@ def plan(crews: list, jobs: list, ens: dict, safe_zones: list,
     # planner itself stays fuel-blind. None = legacy internal erosion,
     # byte-identical. Incidents missing from the provided map fall back to
     # the internal erosion (never an unshielded corridor).
-    _shape = ("euclidean"
-              if getattr(cfg, "corridor_erosion_euclidean", False)
-              else "chebyshev")
     # NO ELIGIBLE CREW, NO EROSION (live 2026-10-30: 393 s eroding 27
     # domains for 11 homes no crew could take): every job below is then
     # unserved for capacity and no leg is ever checked, so the rasters would
     # go unread — the same plan, without the wait.
-    rasters = ([(iid,
-                 (eroded_rasters[iid]
-                  if eroded_rasters is not None and iid in eroded_rasters
-                  else safety._erode(ens[iid].p10, cfg.corridor_erosion_m,
-                                     shape=_shape)))
-                for iid in sorted(ens)]
-               if eligible else [])
+    rasters = corridor_rasters(ens, cfg, eroded_rasters) if eligible else []
 
     # -- step 0: ONE job per client (Sprint 2 A7, Council-1 dispatch F4) ------
     # A property is a single gel target no matter how many incidents threaten
