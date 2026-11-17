@@ -4162,7 +4162,9 @@ class ResponseConfig:
     # 38 exits) open past the arrival plus escape_last_exit_lead_min and one
     # step, unless the fire never reaches it in the fields' horizon; 28a
     # takes a refuge without one only when no candidate keeps one,
-    # restaging never. False = byte-identical.
+    # restaging never. False = byte-identical. Built and NOT armed by the
+    # simulator (simui.SIM_ARMS_REFUGE_KEEPS_EXIT): on the Paradise crown-
+    # fire repro it led a crew through a band 1,019 min past the line.
     refuge_keeps_exit: bool = False
     # THE AUDIT KEEPS THE DEEPER ROW (SAFETY SEMANTICS 47a; read only by the
     # simulator with crew_path_audit). One crew-overrun row per crew per
