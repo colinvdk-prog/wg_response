@@ -349,6 +349,34 @@ def _build_parser() -> argparse.ArgumentParser:
                          "a crew is scheduled only when the current plan "
                          "serves the home, and say so plainly when no "
                          "response crew is on duty")
+    # SAFETY SEMANTICS 45 (2026-11-17): the crew program's live groundwork,
+    # shadow only (operator-facing; nothing reaches a crew or a client).
+    pw.add_argument("--crew-watch", action="store_true",
+                    help="cfg.crew_watch: every cycle each crew reporting en "
+                         "route, deploying or egressing is judged against "
+                         "every fire's eroded P10 — its spot, a working "
+                         "crew's home deadline and its lawful way out to a "
+                         "safe zone; an operator event per crossing, a note, "
+                         "/api/state crew_watch; a crew it cannot judge is "
+                         "listed unjudged, never safe")
+    pw.add_argument("--hold-worked-homes", action="store_true",
+                    help="cfg.crew_hold_worked: a home a crew reports "
+                         "working (deploying; the report's client_id, else "
+                         "the one enrolled home within crew_work_radius_m) "
+                         "is held for it — never offered to a second crew; "
+                         "unserved reason in_progress_by:<crew>")
+    pw.add_argument("--crew-laws", action="store_true",
+                    help="arm the October planning laws the simulator arms "
+                         "that mean something without roads: cell-exact "
+                         "corridors (SAFETY SEMANTICS 20a), committed stops "
+                         "kept (26), egress inside the deadline (32), a way "
+                         "out that lasts 8 h (38); 37's ramp is road-only "
+                         "and stays off")
+    pw.add_argument("--persist-crews", action="store_true",
+                    help="cfg.crew_state_persist: the crews' last reports "
+                         "survive a restart (in the state file and its "
+                         "mirror; a restored report keeps its own time, so "
+                         "staleness applies)")
     # SAFETY SEMANTICS 43 (2026-11-01): screening step 0, shadow only.
     pw.add_argument("--screen-labels", action="store_true",
                     help="cfg.screen_labels (founder 2026-11-01, screening "
@@ -1050,6 +1078,101 @@ def _screen_cfg(cfg, args):
     return cfg, notes
 
 
+#: SAFETY SEMANTICS 45e: the October planning laws `watch --crew-laws` arms,
+#: each with the simulator's value (simui.SessionConfig arming, 3183-3290),
+#: and why each means something on the live planner's straight chords.
+CREW_LAWS_ARMED = (
+    ("corridor_cell_exact", "20a: every grid cell a chord passes through is "
+                            "judged, not one sample in three"),
+    ("dispatch_keep_frozen", "26b: a committed near-term stop is matched to "
+                             "its client's job by client id, so a second "
+                             "fire does not unfreeze it"),
+    ("plan_egress_time_deadline", "32: a stop's way out must reach its zone "
+                                  "by the home's latest departure (tier-0 "
+                                  "egress time)"),
+    ("egress_dest_durable_h", "38: a way out leads to a zone that is not a "
+                              "dead end for 8 h (keep-until on the planner's "
+                              "own rasters; no road refuge)"),
+)
+#: ... and the ones it leaves out, with the reason.
+CREW_LAWS_LEFT_OUT = (
+    ("route_margin_egress_ramp", "37 ramps the ROAD egress margin of 31 "
+                                 "(route_margin_egress_roads_min): it reads "
+                                 "only road legs, and the live planner "
+                                 "drives chords"),
+    ("ember_eta_landings", "35 gives developed homes an ember-landing ETA "
+                           "the lane C review read as less pessimistic: the "
+                           "founder's err-pessimistic rule keeps it off"),
+)
+
+
+def _crew_program_cfg(cfg, args):
+    """(cfg, startup notes) with the SAFETY SEMANTICS 45 flags applied:
+    --crew-watch, --hold-worked-homes, --crew-laws, --persist-crews. No flag
+    = cfg unchanged, no note."""
+    notes = []
+    if getattr(args, "crew_watch", False):
+        cfg = dataclasses.replace(cfg, crew_watch=True)
+        notes.append(
+            "LIVE CREW WATCH (shadow; operator-facing only): every cycle each "
+            "crew reporting en route, deploying or egressing is judged "
+            "against every fire's eroded P10 — its spot (the "
+            f"{cfg.egress_buffer_min:g}-min line), a working crew's home "
+            "(its latest lawful departure) and its way out (a lawful leg to "
+            "a safe zone now, the planner's law); an operator event per "
+            "crew per crossing, a cycle note, /api/state crew_watch; a crew "
+            "it cannot judge is listed unjudged, never safe — SAFETY "
+            "SEMANTICS 45")
+    if getattr(args, "hold_worked_homes", False):
+        cfg = dataclasses.replace(cfg, crew_hold_worked=True)
+        notes.append(
+            "WORKED HOMES HELD: a home a crew's fresh deploying report says "
+            "it is working (its client_id, else the one enrolled home within "
+            f"{cfg.crew_work_radius_m:g} m + the fix's accuracy) leaves the "
+            "job list with the reason in_progress_by:<crew> — never offered "
+            "to a second crew — SAFETY SEMANTICS 45d")
+    if getattr(args, "crew_laws", False):
+        from wgresponse import simui
+        cfg = dataclasses.replace(
+            cfg, corridor_cell_exact=True, dispatch_keep_frozen=True,
+            plan_egress_time_deadline=True,
+            egress_dest_durable_h=float(simui.SIM_EGRESS_DEST_DURABLE_H))
+        notes.append(
+            "OCTOBER PLANNING LAWS (the simulator's values): "
+            + "; ".join(f"{k} ({why})" for k, why in CREW_LAWS_ARMED)
+            + ". Left out: "
+            + "; ".join(f"{k} ({why})" for k, why in CREW_LAWS_LEFT_OUT)
+            + " — SAFETY SEMANTICS 45e")
+    if getattr(args, "persist_crews", False):
+        cfg = dataclasses.replace(cfg, crew_state_persist=True)
+        notes.append(
+            "CREW STATE PERSISTED: each crew's last report rides in the "
+            "state file (and its S3 mirror) and is restored at startup with "
+            "its own time — a crew silent across the restart is stale at "
+            "once — SAFETY SEMANTICS 45g")
+    return cfg, notes
+
+
+def _watch_roster():
+    """(CrewRoster | None, startup notes) from env WGRESP_CREW_ROSTER
+    (SAFETY SEMANTICS 45f). Unset = (None, []). A roster that cannot be
+    read at startup raises crews.RosterError — `watch` then refuses to start
+    (a configured identity law never silently falls back to the shared
+    key)."""
+    from wgresponse import crews as crews_mod
+    roster = crews_mod.CrewRoster.from_env()
+    if roster is None:
+        return None, []
+    n = len(roster.entries())          # raises RosterError
+    return roster, [
+        f"CREW ROSTER: {n} crew(s) from {crews_mod.ROSTER_ENV} — a report "
+        f"must name a rostered crew and carry that crew's own X-Beacon-Key "
+        f"(its sha256 in the roster); the shared beacon key and the ops key "
+        f"report for no crew; the roster's crews are listed before their "
+        f"first report; the file is re-read when it changes (unreadable = "
+        f"every report refused) — SAFETY SEMANTICS 45f"]
+
+
 def _heat_snap_cfg(cfg, args):
     """(cfg, startup notes) with --hotspot-heat-only (SAFETY SEMANTICS 41)
     and --snap-domains (42) applied (founder 2026-10-30). No flag = cfg
@@ -1292,12 +1415,34 @@ class _WatchDaemon:
             return False
         from wgresponse import worlds
         loaded, legacy = worlds.split_legacy_seeds(loaded)
+        if getattr(self._cfg, "crew_state_persist", False):
+            self._restore_crews(loaded)        # SAFETY SEMANTICS 45g
         try:
             ok = self._restore_live(loaded)
         finally:
             if legacy is not None:
                 self._migrate_legacy(legacy)
         return ok
+
+    def _restore_crews(self, loaded) -> int:
+        """SAFETY SEMANTICS 45g: the crews' last reports back into the
+        tracker, each with its own time (staleness applies). Never raises
+        (a failure: the crews start empty, loudly)."""
+        restore = getattr(self._tracker, "restore_rows", None)
+        if not callable(restore):
+            return 0
+        try:
+            rows = (loaded or {}).get("crew_reports") or []
+            n = int(restore(rows))
+        except Exception:
+            log.exception("watch: crew reports could not be restored; the "
+                          "crews start empty (each reappears with its next "
+                          "report)")
+            return 0
+        if rows:
+            log.info("watch: restored the last report of %d of %d crew(s)",
+                     n, len(rows))
+        return n
 
     def _migrate_legacy(self, legacy) -> None:
         """SAFETY SEMANTICS 16a: pre-two-worlds drill artifacts go to the
@@ -1472,12 +1617,19 @@ class _WatchDaemon:
                                    if self.last_result else None),
                 "final": bool(final),
             }
+            extra = {}
+            rows_fn = getattr(self._tracker, "rows", None)
+            if getattr(self._cfg, "crew_state_persist", False) and \
+                    callable(rows_fn):
+                # SAFETY SEMANTICS 45g: an additive key, armed only
+                extra["crew_reports"] = rows_fn()
             self._store.save(states,
                              ledger_fn() if callable(ledger_fn) else {},
                              getattr(self._monitor, "incumbent", None),
                              meta,
                              incident_growth=(growth_fn()
-                                              if callable(growth_fn) else None))
+                                              if callable(growth_fn) else None),
+                             **extra)
             return True
         except Exception:
             log.exception("watch: persist FAILED — state not saved this "
@@ -1527,7 +1679,20 @@ class _WatchDaemon:
         # (TWO WORLDS, SAFETY SEMANTICS 16a: the live world holds no seed, so
         # the W1 `seeds` key never appears here — the TEST world's seeds are
         # on /api/test/state.)
+        roster = getattr(self._tracker, "roster", None)
+        if roster is not None:
+            # SAFETY SEMANTICS 45f: the roster's health (no path, no hashes)
+            # — an additive key, present only with a roster
+            out["crew_roster"] = roster.status()
         res = self.last_result
+        if getattr(self._cfg, "crew_watch", False):
+            # SAFETY SEMANTICS 45a-c: every watched crew with its margins —
+            # an additive key, present only when armed
+            from wgresponse import crewwatch
+            cw = getattr(res, "crew_watch", None) if res is not None else None
+            out["crew_watch"] = (cw if cw is not None else
+                                 {"rule": crewwatch.rule_summary(self._cfg),
+                                  "crews": []})
         if res is None:
             out.update({"degraded": False, "operator_events": [],
                         "notes": ["no cycle has completed yet"],
@@ -2130,6 +2295,8 @@ def _cmd_watch(args) -> int:
             "is scheduled only when the current plan serves the home, and "
             "say so plainly when no response crew is on duty — SAFETY "
             "SEMANTICS 44")
+    cfg, _notes = _crew_program_cfg(cfg, args)   # SEMANTICS 45
+    startup_notes_fix += _notes
     if getattr(args, "forecast_tiers", False):
         cfg = dataclasses.replace(cfg, forecast_tiers=True)
         startup_notes_fix.append(
@@ -2241,7 +2408,17 @@ def _cmd_watch(args) -> int:
         startup_notes.append(f"registry preload failed ({e}); client names "
                              f"resolve as ids until it recovers")
     engine = AlertEngine(cfg, notifier=notifier, clients_by_id=clients_by_id)
-    tracker = crews_mod.CrewTracker(cfg)
+    # PER-CREW IDENTITY (SAFETY SEMANTICS 45f): env WGRESP_CREW_ROSTER names
+    # the roster; one that cannot be read at startup stops the daemon (a
+    # configured identity law must never silently fall back to the shared
+    # key). Unset = the shared-key law of SEMANTICS 44.
+    try:
+        roster, roster_notes = _watch_roster()
+    except crews_mod.RosterError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    startup_notes += roster_notes
+    tracker = crews_mod.CrewTracker(cfg, roster=roster)
     monitor = ThreatMonitor(
         feeds=feeds_stack, weather_provider=NwsWeather(cfg=cfg),
         terrain_provider=terrain, registry=registry, alert_engine=engine,
@@ -2289,6 +2466,8 @@ def _cmd_watch(args) -> int:
     httpd = server_mod.serve(port=args.port, host=args.host,
                              state_provider=daemon.state, beacon_sink=tracker,
                              plan_provider=daemon.plan)
+    if roster is not None:
+        httpd.app.crew_roster = roster       # SEMANTICS 45f: the same roster
     if os.environ.get("WGRESP_DEV_OPEN") == "1":
         auth = "DEV-OPEN (no auth!)"
     elif os.environ.get("WGRESP_API_KEY"):

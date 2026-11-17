@@ -1820,6 +1820,142 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    withdrawing" and "Crews are clear" only for a planned client. "fixed" =
    byte-identical (tests/test_crew_reports.py).
 
+45. THE LIVE WATCHER WATCHES ITS CREWS — IN SHADOW (2026-11-17; the
+   founder-approved crew-program review, scratch_review/crew_program_review_
+   2026-11-11, step 3, the parts that need no founder decision; lane C's
+   findings F1, F3, F4, F5, F7, F9, verified by the orchestrator;
+   docs/review/live_crew_groundwork_2026-11-17.md). Measured on a local
+   stack before this rule: the live watcher planned for a crew and never
+   checked it again — a crew reporting DEPLOYING at a home whose P10 lead
+   had fallen to 24 min (law: 30) got no withdrawal, no operator event and
+   no note, and the plan dropped it; a second crew was sent to the home it
+   was working; laws 20a/26/32/37/38 were never armed live; one shared key
+   spoke for every crew; a restart emptied the crew tracker; the console's
+   itinerary pane read a key the live state never carries. Everything here
+   is OPERATOR-facing: no message reaches a crew or a client (no SMS
+   provider is chosen, docs/OPEN_QUESTIONS.md O-1), no crew is moved.
+   (a) THE WATCH (cfg.crew_watch; wgresponse.crewwatch; watch --crew-watch).
+       Every cycle, every crew whose LAST REPORT says EN_ROUTE, DEPLOYING or
+       EGRESSING — fresh, or silent for under crewwatch.SILENT_WATCH_S (12
+       h: a crew that went quiet in the field is the one the operator most
+       needs) — is judged against EVERY forecast fire this cycle on the
+       dispatcher's own corridor rasters (dispatch.corridor_rasters: each
+       P10 eroded by corridor_erosion_m, the fuel-tiered rasters where the
+       cycle built them; eroded ONCE and handed to dispatch.plan as
+       eroded_rasters, so plans are unchanged):
+         SPOT     its reported position against the 10a line: the corridor
+                  law's T* of the zero-length leg at that spot with margin
+                  egress_buffer_min (a bounded off-domain sample, under the
+                  fail-closed law, takes max(that, its 15c crossing margin));
+                  spot margin = that line - now.
+         HOME     a DEPLOYING crew's home — the report's client_id (d), and
+                  every enrolled home assessed this cycle within
+                  crew_work_radius_m + the fix's accuracy_m — against its
+                  latest lawful departure (SEMANTICS 2: P10 less the egress
+                  and ember buffers, over every fire threatening it; the
+                  earliest of several homes); home margin = that - now.
+         WAY OUT  a lawful egress leg to a safe zone NOW by the planner's
+                  own law (dispatch.egress_table: the per-zone T* the same
+                  _Ctx code gives a planned stop — the chord corridor law
+                  with route_margin_min, 15, 20a and 38 wherever armed; 37's
+                  ramp where it is larger); way-out margin = the latest T*
+                  over the zones - now; no zone = no way out (fail closed).
+       LEVELS, ascending urgency: clear < at_risk (the tightest margin under
+       slack_min, SEMANTICS 7's floor: no plan would leave a crew this
+       little) < unjudged < must_leave (the spot or home margin negative:
+       past the law's line) < no_way_out (no zone's leg is lawful now: by
+       the planner's law the crew should already have left — THE MOST
+       URGENT). On chords the route margin (56 min) is wider than the egress
+       buffer (30), so a crew's way out closes before its spot crosses its
+       line: in practice the watch goes clear -> at_risk -> no_way_out, and
+       every finding (spot, home, way out, the least exposed zone) is in the
+       row and the message whatever the level.
+   (b) FAIL CLOSED: a crew the watch cannot judge is UNJUDGED, never clear —
+       silent (its last report older than beacon_stale_s: judged at its last
+       spot, unjudged at least); a fix coarser than corridor_erosion_m; no
+       forecast fire this cycle; a spot no forecast raster covers and no
+       fail-closed bound reaches; a fire whose assessment failed this cycle
+       within the plausible threat radius; an exception in its judgement or
+       in the whole watch (every watched crew unjudged, the error kept); a
+       failing tracker (an operator event, no crew judged).
+   (c) ONE EVENT PER CROSSING: an OperatorEvent (kind crew_at_risk /
+       crew_unjudged / crew_must_leave / crew_no_way_out; detail crew,
+       status, place, client, margin, binding margin, fire, way out, the
+       least exposed zone) when a crew's level RISES above the level it held
+       last cycle (memory in process: a restart re-raises once, the
+       pessimistic side; a crew whose level falls and rises again is told
+       again); a cycle note per crew above clear every cycle; a note when a
+       crew leaves the watch; /api/state crew_watch {rule, crews: [row]}
+       (additive, present only when armed); the console lists the rows. The
+       crew kinds never mark a cycle degraded.
+   (d) A HOME BEING WORKED IS NOT REASSIGNED (cfg.crew_hold_worked; watch
+       --hold-worked-homes). A crew report may carry client_id (CrewBeacon
+       .client_id, POST /api/beacon "client_id"; optional, a string of at
+       most 128 characters). A home a crew's FRESH deploying report says it
+       is working — its client_id, else the ONE enrolled home within
+       crew_work_radius_m + accuracy_m (two or more that close: ambiguous,
+       nothing held, a note asking for client_id; the radius is justified
+       by the shadow phones, which send no client_id today, and the watch
+       errs the other way: it judges EVERY home that close) — leaves the
+       job list before planning, listed as UnservedJob(client, its worst
+       fire, "in_progress_by:<crew>") with a note: never offered to a
+       second crew. Every job held = a plan of the holds (eligible crews
+       idle). A silent crew's hold lapses (the watch lists it unjudged). The
+       SEMANTICS 44 wording counts a held home as served. The working
+       crew's own deadline is (a)'s.
+   (e) THE OCTOBER PLANNING LAWS, LIVE (watch --crew-laws): the simulator's
+       values for the dispatch laws that mean something on the live
+       planner's straight chords — 20a corridor_cell_exact, 26
+       dispatch_keep_frozen (its (b): incumbent stops matched by client
+       id), 32 plan_egress_time_deadline (tier-0 egress time), 38
+       egress_dest_durable_h = 8 h (keep-until on the planner's own rasters;
+       no road refuge). LEFT OUT: 37 route_margin_egress_ramp (it ramps 31's
+       ROAD egress margin and reads only road legs — measured to change no
+       chord plan) and 35 ember_eta_landings (read by the review as less
+       pessimistic ETAs: the founder's err-pessimistic rule). Measured on
+       the watch stacks (tests/test_live_crew_laws.py): every plan stays
+       lawful stop by stop; the seeded and off-domain stacks plan byte for
+       byte the same; on a dense world (eight homes downwind, a zone among
+       them the fire reaches within 8 h) 38 moves a crew's way out off that
+       dead-end zone, the same homes served.
+   (f) PER-CREW IDENTITY — THE ROSTER (env WGRESP_CREW_ROSTER; wgresponse.
+       crews.CrewRoster). A JSON roster of {crew_id, name, members,
+       key_sha256 (hex sha256 of the crew's key)}, re-read when the file
+       changes. With it: a report must name a rostered crew and carry THAT
+       crew's own X-Beacon-Key (sha256 compared in constant time; an unknown
+       crew compared against a dummy) — the shared WGRESP_BEACON_KEY and the
+       ops key report for no crew; one 401 answer for an unknown crew and a
+       wrong key; a roster that cannot be read refuses every report (503)
+       and stops `watch` at startup (a configured identity law never falls
+       back to the shared key); the tracker lists every roster crew from
+       the start (status unknown, no position, never eligible, never
+       "stale") and refuses a report for a crew not on it; /api/state
+       crew_roster {crews, usable, error}. No key is logged or echoed; only
+       hashes live in the roster. Unset = (44a), byte-identical.
+   (g) CREW STATE SURVIVES A RESTART (cfg.crew_state_persist; watch
+       --persist-crews): the tracker's last report per crew (roster-free
+       auto-registered crews included; the REPORTED status) rides in the
+       persisted state (additive key crew_reports, mirrored with it) and is
+       restored at startup with its OWN time — staleness applies; a newer
+       report is never rewound; a crew not on the roster is not restored;
+       restore never raises (a malformed row is skipped, loudly).
+   (h) THE CONSOLE'S ITINERARY PANE (console/index.html) builds its routes
+       from the live plan when the state carries no `routes` (the offline
+       sim file still does): each crew's stops with their margins, its
+       egress zone, the chords the planner judged, a held home under its
+       crew; the crew watch above (rendered in a headless browser by
+       tests/test_console_itinerary.py).
+   WHAT IT CANNOT DO: it reads the forecast fields, so a crew is judged only
+   as pessimistically as the eroded P10 is; it judges straight chords, not
+   the roads a crew drives (the live planner has no road graph); it moves
+   no crew and tells no crew; idle (AVAILABLE) crews are not watched; a
+   home a crew finished is offered again (no coating record live); shifts,
+   fatigue, gel inventory, acknowledgement and operator approve / hold are
+   not here. Knobs OFF and no roster = byte-identical (tests/test_live_
+   crew_watch.py reruns the pinned pre-W1 goldens; the watch's shared
+   rasters leave every plan unchanged; tests/test_crew_roster.py,
+   tests/test_live_crew_laws.py, tests/test_console_itinerary.py).
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -1963,6 +2099,20 @@ wgresponse.clients
 
 wgresponse.crews
     class CrewTracker   .ingest(beacon) .crews() .crew(id) .stale(now_s) -> list[str]
+    # SAFETY SEMANTICS 45f/g (2026-11-17): CrewTracker(cfg, roster=None)
+    # .roster .rows() -> [row] .restore_rows(rows) -> int (never raises);
+    # class CrewRoster(path) .from_env() .entries() .get(id) .verify(id,
+    # key) .status(); RosterError; parse_roster(text); key_sha256(key)
+
+wgresponse.crewwatch   (2026-11-17; SAFETY SEMANTICS 45a-c — the live crew watch)
+    watched(crews, now_s) -> list[Crew]
+    homes_of(beacon, clients, cfg) -> [(client_id, "report" | "nearby")]
+    judge_crew(crew, now_s, cfg, *, rasters, safe_zones, offmap=None,
+               etas=None, clients=None, failed=(), threat_radius_m=0.0,
+               has_forecast=True) -> dict        # one watch row
+    judge(crews, now_s, cfg, **same) -> [row]    # an exception = unjudged row
+    events_and_notes(rows, prev_levels, now_s) -> (events, notes, levels)
+    describe(row) -> str ; rule_summary(cfg) -> dict
 
 wgresponse.alerts
     class AlertEngine   .evaluate(pairs: list[ThreatAssessment], now_s) -> list[AlertEvent]
@@ -2095,6 +2245,11 @@ wgresponse.dispatch
         # = byte-identical): no ILS when the best plan already serves every
         # job in the pool — its shakes search for MORE protected homes and
         # could only re-polish tie-break terms (freshness, drive, spread).
+    # SAFETY SEMANTICS 45 (2026-11-17): corridor_rasters(ens, cfg,
+    # eroded_rasters=None) -> [(incident_id, eroded P10)] — exactly the
+    # rasters plan() judges legs on; egress_table(loc, rasters, safe_zones,
+    # cfg, now_s, offmap=None) -> [(zone_id, T*)] — the planner's egress law
+    # from loc (the live crew watch's way out).
 
 wgresponse.travel
     travel_time_s(a: LatLon, b: LatLon, cfg: ResponseConfig) -> float
@@ -2109,6 +2264,9 @@ wgresponse.sim
 wgresponse.server
     stdlib http server: POST /api/beacon, GET /api/state, GET /api/plan, GET /console
     auth: X-Internal-API-Key (fail closed unless WGRESP_DEV_OPEN=1)
+    POST /api/beacon: SAFETY SEMANTICS 44a keys; with a crew roster (45f:
+    app.crew_roster, else env WGRESP_CREW_ROSTER) the crew's own key only;
+    parse_beacon reads the optional "client_id" (45d)
     W1: /api/seed routes (GET/POST/DELETE) to the injected app.seed_api (the
     watch daemon); 404 when no seed API is wired.
     TWO WORLDS (SAFETY SEMANTICS 16): /api/test/state, /api/test/seed[/<id>]
@@ -2131,6 +2289,9 @@ wgresponse.persist   (Sprint 2, Council-1 OPS-4)
     # <state-dir>/test_world/); load() returns them ([] when absent). Since
     # 13 the LIVE world never writes seeded_incidents; a live file that
     # carries it (pre-two-worlds build) is migrated to the test world.
+    # SAFETY SEMANTICS 45g: save(..., crew_reports=rows) — the live crews'
+    # last reports, an ADDITIVE key written only with cfg.crew_state_persist;
+    # load()["crew_reports"] ([] when absent or type-corrupt).
 
 wgresponse.roads   (founder UX request 2026-07-10 — crews travel on real roads)
     class RoadGraph — nodes {id: LatLon}, edges (u, v, highway_class, length_m,
@@ -2897,6 +3058,11 @@ class CrewBeacon:
     status: CrewStatus = CrewStatus.AVAILABLE
     accuracy_m: float = 30.0
     speed_mps: float = 0.0
+    # SAFETY SEMANTICS 45d (2026-11-17): the home the crew reports it is
+    # working (a ClientProperty.client_id; "" = not said). Optional on the
+    # wire (POST /api/beacon "client_id"); read only by the live crew watch
+    # and the worked-home hold, never by the simulator.
+    client_id: str = ""
 
 
 @dataclass
@@ -3944,6 +4110,37 @@ class ResponseConfig:
     # the crews on duty and the current plan support. The watch daemon arms
     # "plan" via --crew-text-from-plan.
     alert_crew_wording: str = "fixed"
+    # THE LIVE CREW WATCH (2026-11-17, the crew-program review step 3;
+    # SAFETY SEMANTICS 45a-c). True = every cycle, every crew whose report
+    # says en route, deploying or egressing (and one gone silent in those
+    # states) is judged against every forecast fire's eroded P10 (the
+    # dispatcher's corridor rasters): its spot against the 10a line, a
+    # working crew's home against its latest lawful departure (SEMANTICS 2),
+    # and its way out (a lawful egress leg to a safe zone now, the planner's
+    # own law). An operator event per crew per crossing, a cycle note, and
+    # /api/state crew_watch; a crew it cannot judge is listed unjudged,
+    # never safe. Operator-facing only: nothing reaches a crew or a client.
+    # False = byte-identical; the watch daemon arms it via --crew-watch.
+    crew_watch: bool = False
+    # A HOME BEING WORKED IS NOT REASSIGNED (SAFETY SEMANTICS 45d). True =
+    # a home a crew's fresh DEPLOYING report says it is working (the
+    # report's client_id, else the one enrolled home within
+    # crew_work_radius_m) leaves the job list with the unserved reason
+    # "in_progress_by:<crew>" and a note — never offered to a second crew.
+    # False = byte-identical; watch --hold-worked-homes.
+    crew_hold_worked: bool = False
+    # ... the home a DEPLOYING report with no client_id is working: the
+    # enrolled homes within this many metres (plus the report's accuracy_m).
+    # The hold takes it only when exactly one home is that close; the watch
+    # judges every one (the earliest deadline). 0 = only a report's
+    # client_id names the home. Read only with crew_watch / crew_hold_worked.
+    crew_work_radius_m: float = 150.0
+    # CREW STATE SURVIVES A RESTART (SAFETY SEMANTICS 45g). True = the crew
+    # tracker's last report per crew rides in the persisted state (key
+    # crew_reports, mirrored with it) and is restored at startup with its
+    # own time (staleness applies). False = byte-identical state file;
+    # watch --persist-crews.
+    crew_state_persist: bool = False
     # --- feeds ---
     poll_period_s: float = 300.0
     user_agent: str = "wg-response/0.1 (ops@thewildfireguardian.com)"
@@ -4895,6 +5092,11 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
     # --- crew wording (SAFETY SEMANTICS 44) ---
     if cfg.alert_crew_wording not in ("fixed", "plan"):
         problems.append('alert_crew_wording must be "fixed" or "plan"')
+    # --- the live crew watch / worked-home hold (SAFETY SEMANTICS 45) ---
+    if not (math.isfinite(cfg.crew_work_radius_m)
+            and 0.0 <= cfg.crew_work_radius_m <= 1000.0):
+        problems.append("crew_work_radius_m must be within [0, 1000] m (a "
+                        "crew farther from a home is not working it)")
     # --- screening shadow labels (SAFETY SEMANTICS 43) ---
     if not (math.isfinite(cfg.screen_rx_radius_m)
             and 0.0 <= cfg.screen_rx_radius_m <= 20000.0):

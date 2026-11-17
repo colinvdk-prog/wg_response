@@ -64,6 +64,13 @@
           color: var(--text); }
   .stop .m { color: var(--dim); }
   .stop .m.tight { color: var(--extreme); }
+  /* SAFETY SEMANTICS 45: the live crew watch rows + held (worked) homes */
+  .watch-block { margin-bottom: 10px; font-size: 12px; }
+  .watch-row { display: flex; gap: 6px; align-items: baseline; padding: 2px 0; }
+  .watch-row .cid { color: var(--orange); font-weight: 600; }
+  .watch-row .t, .watch-block .t { color: var(--dim); font-size: 10px; }
+  .watch-row .m { margin-left: auto; color: var(--dim); }
+  .stop.held { color: var(--dim); font-style: italic; }
   /* SAFETY SEMANTICS 6: operator-facing degradation banner. Plain DOM —
      independent of Leaflet and of the offline SVG shim, so it renders in
      every mode (live, demo, sim file, air-gapped). */
@@ -391,6 +398,77 @@ async function fetchState() {
   return r.json();
 }
 
+// LIVE ITINERARIES (2026-11-17; SAFETY SEMANTICS 45h): the offline sim file
+// carries `routes`; the live /api/state carries the dispatch plan and never
+// `routes`, so the pane said "no active itineraries" whatever the plan held.
+// Live, the routes are built from the plan: each crew's stops in plan order
+// with their margins, its egress zone, and the straight chords the live
+// planner judges (crew -> stops -> zone); a home held for a crew that reports
+// working it (unserved reason in_progress_by:<crew>) is listed under it.
+const HELD_PREFIX = "in_progress_by:";
+function routesFromPlan(d) {
+  const plan = d && d.plan;
+  if (!plan || !plan.plans) return [];
+  const at = rows => {
+    const m = {};
+    (rows || []).forEach(r => {
+      const id = r.crew_id || r.client_id || r.zone_id;
+      if (id != null && r.lat != null && r.lon != null) m[id] = { lat: r.lat, lon: r.lon };
+    });
+    return m;
+  };
+  const crewAt = at(d.crews), homeAt = at(d.clients), zoneAt = at(d.safe_zones);
+  const held = {};
+  (plan.unserved || []).forEach(u => {
+    const r = String(u.reason || "");
+    if (r.indexOf(HELD_PREFIX) === 0) {
+      const cid = r.slice(HELD_PREFIX.length);
+      (held[cid] = held[cid] || []).push(u.client_id);
+    }
+  });
+  const out = [];
+  Object.keys(plan.plans).sort().forEach(cid => {
+    const cp = plan.plans[cid] || {};
+    const stops = (cp.stops || []).map(s => ({ client_id: s.client_id, margin_h: s.margin_h }));
+    if (!stops.length && !held[cid]) return;          // an idle crew: no itinerary
+    const pts = [];
+    if (crewAt[cid]) pts.push(crewAt[cid]);
+    stops.forEach(s => { if (homeAt[s.client_id]) pts.push(homeAt[s.client_id]); });
+    if (stops.length && zoneAt[cp.egress_zone_id]) pts.push(zoneAt[cp.egress_zone_id]);
+    out.push({ crew_id: cid, egress_zone_id: stops.length ? (cp.egress_zone_id || "") : "",
+               stops: stops, points: pts, held: held[cid] || [] });
+  });
+  Object.keys(held).sort().forEach(cid => {
+    if (!out.some(r => r.crew_id === cid)) {
+      out.push({ crew_id: cid, egress_zone_id: "", stops: [], points: [], held: held[cid] });
+    }
+  });
+  return out;
+}
+
+// THE LIVE CREW WATCH (SAFETY SEMANTICS 45; watch --crew-watch): one line per
+// crew in the field — its level and its tightest margin, the reasons in the
+// tooltip. Absent key (not armed, or the sim file) = nothing drawn.
+const WATCH_COLORS = { clear: "#4caf50", at_risk: "#f2b04c", unjudged: "#9db0c9",
+                       must_leave: "#e53935", no_way_out: "#b3121f" };
+function crewWatchHtml(d) {
+  const cw = d && d.crew_watch;
+  if (!cw || !Array.isArray(cw.crews)) return "";
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const rows = cw.crews.map(r => {
+    const lv = r.level || "unjudged";
+    const m = (typeof r.margin_min === "number") ? r.margin_min.toFixed(1) + " min" : "–";
+    const why = [].concat(r.reasons || [], (r.unjudged || []).map(u => "unjudged: " + u)).join("; ");
+    const home = r.home && r.home.client_id ? " at " + esc(r.home.client_id) : "";
+    return `<div class="watch-row" data-level="${esc(lv)}" title="${esc(why)}">` +
+      `<span class="chip" style="background:${WATCH_COLORS[lv] || "#9db0c9"}">${esc(lv.replace(/_/g, " "))}</span>` +
+      `<span class="cid">${esc(r.crew_id)}</span><span class="t">${esc(r.status || "?")}${home}</span>` +
+      `<span class="m">margin ${m}</span></div>`;
+  }).join("");
+  return `<div class="watch-block"><div class="t">crew watch</div>` +
+    (rows || `<div class="t">no crew in the field</div>`) + `</div>`;
+}
+
 function render(d) {
   const now = d.now_s ?? d.t0_s ?? null;
   // SAFETY SEMANTICS 6: a degraded cycle (provider blind/failed) must be
@@ -493,7 +571,9 @@ function render(d) {
         .addTo(layers.crews);
     }
   });
-  (d.routes || []).forEach(rt => {
+  const routes = Array.isArray(d.routes) ? d.routes : routesFromPlan(d);
+  routes.forEach(rt => {
+    if ((rt.points || []).length < 2) return;
     L.polyline((rt.points || []).map(p => [p.lat, p.lon]), { color: "#ff7a1a",
       weight: 3, opacity: 0.75, dashArray: "8 5" })
       .bindTooltip(`${rt.crew_id} plan → egress ${rt.egress_zone_id || "?"}`)
@@ -510,8 +590,8 @@ function render(d) {
   }).join("") || `<div class="evt"><span class="t">no alerts yet</span></div>`;
 
   const byCrew = {};
-  (d.routes || []).forEach(rt => { byCrew[rt.crew_id] = rt; });
-  $("itinlist").innerHTML = Object.keys(byCrew).sort().map(cid => {
+  routes.forEach(rt => { byCrew[rt.crew_id] = rt; });
+  $("itinlist").innerHTML = crewWatchHtml(d) + (Object.keys(byCrew).sort().map(cid => {
     const rt = byCrew[cid];
     const stops = (rt.stops || []).map(s => {
       const m = s.margin_h;
@@ -519,9 +599,12 @@ function render(d) {
       return `<div class="stop"><span>${s.client_id}</span>` +
         `<span class="${cls}">margin ${m != null ? m.toFixed(2) : "?"} h</span></div>`;
     }).join("");
+    const held = (rt.held || []).map(c =>
+      `<div class="stop held"><span>${c}</span><span class="m">in progress (held)</span></div>`).join("");
+    const egress = (rt.stops || []).length ? ` → egress ${rt.egress_zone_id || "?"}` : " working";
     return `<div class="crew-block"><span class="cid">${cid}</span>` +
-      ` → egress ${rt.egress_zone_id || "?"}${stops}</div>`;
-  }).join("") || `<div class="evt"><span class="t">no active itineraries</span></div>`;
+      `${egress}${held}${stops}</div>`;
+  }).join("") || `<div class="evt"><span class="t">no active itineraries</span></div>`);
 
   if (!fitted && d.bbox && d.bbox.south != null) {
     map.fitBounds([[d.bbox.south, d.bbox.west], [d.bbox.north, d.bbox.east]]);
