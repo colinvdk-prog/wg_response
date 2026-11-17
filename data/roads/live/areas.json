@@ -1,0 +1,34 @@
+{
+  "_comment": "The live watcher's road graphs, one per service area (wgresponse.liveroads; founder 2026-11-17: \"start with the Eagle valley and Aspen, download Colorado\"). Each box is the union of the simulator's extended tiles for that valley (data/roads/provenance_ext.json). Cut with tools/fetch_roads_pbf.py (the simulator's highway classes and simplification; only the largest connected network is kept). Every one of the 279 demo homes in these boxes snaps to its graph within 300 m (median ~100 m). A leg is routed on the first area (by key) whose box holds both ends; any other leg keeps the planner's straight chord. Road data (c) OpenStreetMap contributors, ODbL 1.0 (https://www.openstreetmap.org/copyright).",
+  "extract": {
+    "file": "colorado-latest.osm.pbf",
+    "url": "https://download.geofabrik.de/north-america/us/colorado-latest.osm.pbf",
+    "osm_timestamp": "2026-11-16T21:22:36Z",
+    "md5": "ba1950528e7c7adc5653df7d80c345cc",
+    "bytes": 388727274,
+    "downloaded_utc": "2026-11-17",
+    "tool": "tools/fetch_roads_pbf.py (osmium 4.3.1)"
+  },
+  "areas": {
+    "aspen_roaring_fork": {
+      "name": "Aspen / Snowmass / Roaring Fork valley to Glenwood Springs, CO",
+      "bbox_wsen": [-107.599899, 38.994163, -106.591441, 39.760837],
+      "box_from": ["aspen_co_ext", "basalt_carbondale_co_ext", "glenwood_springs_co_ext"],
+      "nodes": 16336,
+      "edges": 19473,
+      "largest_component_pct_before_pruning": 96.83,
+      "source": "OpenStreetMap via Geofabrik colorado-latest.osm.pbf (2026-11-16T21:22:36Z)",
+      "extract": "colorado-latest.osm.pbf"
+    },
+    "eagle_valley": {
+      "name": "Eagle River valley: Gypsum / Eagle / Edwards / Avon / Vail / Minturn, CO",
+      "bbox_wsen": [-107.170323, 39.409163, -106.079737, 39.865837],
+      "box_from": ["eagle_co_ext", "beaver_creek_co_ext", "vail_co_ext"],
+      "nodes": 9549,
+      "edges": 11709,
+      "largest_component_pct_before_pruning": 87.53,
+      "source": "OpenStreetMap via Geofabrik colorado-latest.osm.pbf (2026-11-16T21:22:36Z)",
+      "extract": "colorado-latest.osm.pbf"
+    }
+  }
+}
