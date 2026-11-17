@@ -4036,6 +4036,80 @@ class ResponseConfig:
     # and every step of the work (the 29 predicate). 0 = off, byte-
     # identical. The SIMULATOR arms 8 (28a's horizon).
     egress_dest_durable_h: float = 0.0
+    # THE CREW-PROGRAM REVIEW FIXES (2026-11-17; the founder-approved crew-
+    # program review of 2026-11-11, step 2; read only by the simulator — the
+    # live engine moves no crew and audits no crew position).
+    # A WAITING CREW LEAVES BEFORE ITS REFUGE IS A DEAD END (SAFETY
+    # SEMANTICS 46a; read only with egress_durable_min_h,
+    # escape_last_exit_lead_min and egress_dest_durable_h > 0). The last-exit
+    # trigger (28b) watched only crews whose own cell the 10c line reaches
+    # within egress_durable_min_h: measured on 24-h fires (the review's lane
+    # A), two Vail crews idled at a zone from T+5.5 h to T+21.75 h while its
+    # roads out closed, then fled 339.9 min past the line and off the map;
+    # the extended Camp-Fire-scale Paradise run's crew drove 496 and 909
+    # min past it. When True an idle crew at a zone or a parked spot whose
+    # KEEP-UNTIL (SEMANTICS 38, _dest_keep_until: the latest arrival for
+    # which it is not a dead end) falls within escape_last_exit_lead_min plus
+    # one step leaves now — by a lawful leg to the nearest zone that stays
+    # clear egress_durable_min_h after arrival, else to a lawful road refuge
+    # that does (on the map while 36 is armed), else the 36 last exit off the
+    # map, else the pocket exit (28d) as before. False = byte-identical.
+    escape_wait_watch: bool = False
+    # A REFUGE KEEPS A WAY OUT (SAFETY SEMANTICS 46b; read only with
+    # egress_durable_min_h and egress_dest_durable_h > 0). The voluntary
+    # refuge laws (28a durable egress, 28b last exit, 46a, 30b restaging)
+    # judged a refuge by its own cell's life only: measured, a Beaver Creek
+    # crew (24-h canonical fire, extreme) was sent at T+5.75 h to a road
+    # refuge 3.7 km out with 12.7 h of life and no lawful exit from the
+    # moment it arrived; it waited 12 h and was moved through a band 682.5
+    # min past the line. When True a refuge such a law sends a crew to wait
+    # at must also keep a lawful way out (a leg to a zone, or 28a's road
+    # search to a road refuge, that stays clear egress_dest_durable_h — the
+    # 38 exits) open until the crew would have to leave it (see SAFETY
+    # SEMANTICS 46b), unless the fire never reaches it in the fields'
+    # horizon; a refuge without one is taken only when no candidate of the
+    # law keeps one. False = byte-identical.
+    refuge_keeps_exit: bool = False
+    # THE AUDIT KEEPS THE DEEPER ROW (SAFETY SEMANTICS 47a; read only by the
+    # simulator with crew_path_audit). One crew-overrun row per crew per
+    # step, and the tick-end row (which carried no margin_min) won over a
+    # deeper transit row: measured on Park City's side fire at extreme, a
+    # row 145 min past the line with 607 s in the band was reported without
+    # either number. When True the WORST row per crew per step is kept
+    # (burned before imminent, then the least margin; a tie keeps the
+    # tick-end / world-change row), tick-end and world-change rows carry
+    # margin_min (and exposed_s from the path audit), a transit row that
+    # wins over a crew still in the band at the tick end says so
+    # (caught_at_end), and a sub-stepped jump keeps the worst row per crew,
+    # reason and mode. Reporting only — no crew moves differently. False =
+    # byte-identical.
+    crew_overrun_worst_row: bool = False
+    # A STOP RELEASED EN ROUTE IS RE-PLANNED AT ONCE (SAFETY SEMANTICS 47b;
+    # read only by the simulator with egress_corridor_guard). A head stop the
+    # 29 predicate released en route went back to the job pool, but nothing
+    # re-planned the fleet until some crew idled — measured (Malibu, the
+    # review's lane B): ~45 min. When True a released stop re-plans the
+    # fleet in the same step, as an opened coating window does (even with no
+    # crew idle). False = byte-identical.
+    replan_on_release: bool = False
+    # DISPLAY ONLY (2026-11-17; read only by the simulator's state(); no plan
+    # changes). outcome_lost_capacity: every home the fire reached uncoated
+    # read "abandoned — unsavable (fire beat every feasible crew)", though
+    # the review's lane B found 37 of 58 such homes had been feasible for
+    # some crew earlier (and a 4x fleet coated all 37). When True each home
+    # latches whether it was ever feasible for some crew (planned for a crew,
+    # held by the coating window, or unserved for 'capacity', 'dropped_by_
+    # optimizer' or 'triaged'), and such a lost home reads 'lost_capacity'
+    # instead of 'abandoned_unsavable' (the scoreboard, the map and the run
+    # report). False = byte-identical.
+    outcome_lost_capacity: bool = False
+    # ... unserved_reason_refresh: a stop released en route for safety (29)
+    # kept its old reason ('held') and a home the fire reached kept its old
+    # one ('capacity'). When True the page's reason is refreshed:
+    # 'released_en_route' at the release (until the next plan labels or
+    # assigns it), 'fire_arrived' once the fire's median has reached the
+    # home. False = byte-identical.
+    unserved_reason_refresh: bool = False
     # A STOP'S EGRESS FITS ITS DEADLINE (2026-10-21, the Eagle River valley
     # review's iteration 2; SAFETY SEMANTICS 32; read by dispatch). The
     # planner required a stop's departure to carry slack_min before the

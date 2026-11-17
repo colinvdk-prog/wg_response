@@ -747,6 +747,18 @@ SIM_ARMS_REINFORCE_ENTRY_BY_NEED = True
 #:     record; an explicit cfg.sim_far_zones_off ("" = every far zone)
 #:     restores it, to reproduce iteration 3.
 SIM_FAR_ZONES_OFF = "beaver_creek_co-z4"
+#: THE CREW-PROGRAM REVIEW FIXES (2026-11-17; contracts SAFETY SEMANTICS 46-47
+#: and two display-only knobs; docs/SIMULATOR_DESIGN.md "Crew program review
+#: fixes (2026-11-17)"): the boolean knobs the simulator arms (True) unless a
+#: caller overrides them explicitly. The live watcher arms none of them.
+SIM_REVIEW_FIXES_2026_11_17 = (
+    "escape_wait_watch", "refuge_keeps_exit", "crew_overrun_worst_row",
+    "replan_on_release", "outcome_lost_capacity", "unserved_reason_refresh")
+#: SAFETY SEMANTICS 46b (contracts refuge_keeps_exit): a road search judges
+#: at most this many candidate refuges for a way out (each judgement is a
+#: keep-until: the zone legs and a bisected road search from the node); the
+#: rest are refused unjudged — deterministic, never a wall clock
+REFUGE_EXIT_MAX_PROBES = 6
 
 #: SEM-10 escape-path sample spacing (m): _route_points_with_times subdivides
 #: every polyline span into pieces of at most this length so the front cannot
@@ -1044,6 +1056,38 @@ def _client_outcome(gelled: bool, impacted: bool, threatened: bool,
     if reason == "triaged":
         return "triaged"
     return "pending"                        # jobbed + feasible, awaiting a crew
+
+
+#: DISPLAY ONLY (contracts outcome_lost_capacity, 2026-11-17): the outcome
+#: vocabulary with the lost-home split — 'lost_capacity' (some crew could once
+#: have served the home: it was planned, held by the coating window, or
+#: unserved for capacity / triage, and no crew reached it before the fire)
+#: beside 'abandoned_unsavable' (never feasible for any crew). The scoreboard
+#: carries every tag of this tuple while the knob is on.
+OUTCOME_TAGS_SPLIT = ("saved", "protected_then_impacted", "lost_capacity",
+                      "abandoned_unsavable", "triaged", "in_progress",
+                      "pending", "monitoring", "not_threatened")
+#: ... the unserved reasons that say the planner found the home feasible for
+#: some crew (dispatch diagnose: solo-feasible for a crew, not served)
+_FEASIBLE_REASONS = frozenset({"capacity", "dropped_by_optimizer", "triaged"})
+
+
+def _overrun_margin_min(p10: float, t: float, buffer_s: float):
+    """SAFETY SEMANTICS 47a: a crew-overrun row's depth at time t — eroded
+    P10 − t − egress buffer, minutes (negative = inside the band), rounded as
+    the path audit rounds it; None when the eroded P10 is unbounded."""
+    if math.isinf(p10):
+        return None
+    return round((p10 - t - buffer_s) / 60.0, 2)
+
+
+def _overrun_row_key(o: dict) -> tuple:
+    """SAFETY SEMANTICS 47a: the order in which crew-overrun rows are worse —
+    the path audit's own (burned before imminent, then the least margin; a
+    row with no margin last)."""
+    m = o.get("margin_min")
+    return (0 if o.get("reason") == "burned" else 1,
+            math.inf if m is None else m)
 
 
 # ---------------------------------------------------------------------------
@@ -3298,6 +3342,20 @@ class SimSession:
         # default OFF.
         if "egress_dest_durable_h" not in overrides:
             cfg.egress_dest_durable_h = SIM_EGRESS_DEST_DURABLE_H
+        # THE CREW-PROGRAM REVIEW FIXES (2026-11-17; contracts SAFETY
+        # SEMANTICS 46-47; docs/SIMULATOR_DESIGN.md "Crew program review
+        # fixes (2026-11-17)"): (46a) a waiting crew leaves before its refuge
+        # is a dead end (escape_wait_watch); (46b) a refuge a crew is sent to
+        # wait at keeps a way out (refuge_keeps_exit); (47a) the audit keeps
+        # the deeper row per crew and step (crew_overrun_worst_row); (47b) a
+        # stop released en route re-plans at once (replan_on_release); and
+        # two display-only fixes — a lost home that was once savable reads
+        # "lost to capacity" (outcome_lost_capacity) and the page's unserved
+        # reasons are refreshed (unserved_reason_refresh). Explicit override
+        # wins for every key; the ResponseConfig defaults stay OFF.
+        for _k in SIM_REVIEW_FIXES_2026_11_17:
+            if _k not in overrides:
+                setattr(cfg, _k, True)
         far_off = _far_zones_off(getattr(cfg, "sim_far_zones_off", ""))
         if (getattr(cfg, "sim_far_side_zones", False)
                 and self._loc.far_zones):
@@ -3787,6 +3845,31 @@ class SimSession:
         self._hold_released_ids = set()
         self._hold_held_ids = set()
         self._hold_opened = set()
+        # THE CREW-PROGRAM REVIEW FIXES (2026-11-17; all empty / zero and
+        # never read while their knobs are off — byte-identical):
+        # SAFETY SEMANTICS 46a (contracts escape_wait_watch): crews moved by
+        # the waiting rule (internal count, said in the notes) and the memo
+        # of a fruitless search (crew -> (field generation, position,
+        # hour)); 46b (contracts refuge_keeps_exit): refuges refused for
+        # want of a way out, and each refuge's verdict per field generation
+        # (_refuge_exit_memo: (lat, lon, speed, need time) -> bool).
+        self._n_wait_watch = 0
+        self._wait_watch_none = {}
+        self._n_refuge_no_exit = 0
+        self._refuge_exit_memo = {}
+        self._refuge_exit_key = None
+        # SAFETY SEMANTICS 47b (contracts replan_on_release): the stops the
+        # 29 predicate released en route that wait for a plan — they re-plan
+        # the fleet in the same step, as an opened coating window does.
+        self._release_opened = set()
+        # DISPLAY ONLY (contracts outcome_lost_capacity, unserved_reason_
+        # refresh; never read by any plan): the homes some crew could once
+        # have served (planned, held by the coating window, or unserved for
+        # capacity / triage), and the page's refreshed reason per home
+        # ('released_en_route' until the next plan labels or assigns it;
+        # 'fire_arrived' once the fire's median has reached it).
+        self._ever_feasible = set()
+        self._reason_shown = {}
         # CREW SHIFTS (ROUND 6b): duty_start = unix s this crew's current
         # shift began (armed at first ignition / reinforcement arrival);
         # shift_budget = seconds of this shift (first cycle halved for odd
@@ -5266,7 +5349,8 @@ class SimSession:
                             lawful_only: bool = False,
                             min_p10_s: float = -math.inf,
                             on_map_only: bool = False,
-                            exists_only: bool = False):
+                            exists_only: bool = False,
+                            accept=None):
         """SEM-10d ROAD-NETWORK ESCAPE search (contracts escape_road_network).
 
         A time-dependent Dijkstra over the loaded road graph from the crew's
@@ -5314,6 +5398,12 @@ class SimSession:
         candidate the full search would take as its best — every stop the
         full search makes before that point waits on a best, so it finds one
         exactly when this does — else None.
+
+        accept (SAFETY SEMANTICS 46b, contracts refuge_keeps_exit — the
+        voluntary refuge laws pass it while armed): a callable (node loc,
+        drive seconds) -> bool asked of a candidate only when it would
+        become the best; a node it refuses is no candidate (and does not
+        stop the search). None = every candidate, byte-identical.
 
         Returns None when there is NO passable road escape (the crew is
         beyond the spur cap from every node, the only way onto the network
@@ -5430,13 +5520,18 @@ class SimSession:
                 off = prefer_on_map and not self._on_map(g.nodes[u])
                 key = self._esc_net_key(e, t, dm, lead_s, 1, u, off_map=off,
                                         voluntary=lawful_only)
+                refused = False
                 if (not lawful_only or key[0] == 0) and (
                         best is None or key < best[0]):
-                    if exists_only:
-                        return True
-                    best = (key, u, t, e, dm, qz(e), off)
-                if (dm >= 0.0 and not off and -self._esc_horizon_step(
-                        dm + buffer_s + lead_s) == top_step):
+                    if accept is not None and not accept(g.nodes[u], t):
+                        refused = True       # SEMANTICS 46b: no way out
+                    else:
+                        if exists_only:
+                            return True
+                        best = (key, u, t, e, dm, qz(e), off)
+                if (not refused and dm >= 0.0 and not off
+                        and -self._esc_horizon_step(
+                            dm + buffer_s + lead_s) == top_step):
                     # lawful, full-cap horizon (and on the map when the
                     # on-map tie-break is armed): unbeatable
                     break
@@ -5753,7 +5848,15 @@ class SimSession:
         target, zid = cs.egress_loc, cs.egress_zone_id
         b, worst, _d, dm, _tr = self._leg_verdict(cs, target, t_s)
         cur_lawful = (not b) and worst >= 0.0 and dm >= lead_s
-        if cur_lawful and dm >= dur_s:
+        # A REFUGE KEEPS A WAY OUT (contracts refuge_keeps_exit, SAFETY
+        # SEMANTICS 46b): among this law's refuges one that keeps a lawful
+        # way out until the crew would have to leave it comes first; one
+        # that does not is taken only when none does (off: every refuge
+        # "keeps" one — the legacy order, byte-identical)
+        armed = self._refuge_exit_armed()
+        cur_ok = cur_lawful and dm >= dur_s
+        if cur_ok and (not armed or self._refuge_keeps_exit(
+                target, t_s + _d, cs.speed, zone_id=zid)):
             return True
         best = None
         longest = None
@@ -5765,6 +5868,11 @@ class SimSession:
                 continue                         # not lawful
             if zdm >= dur_s:
                 key = (zdrive, z.zone_id)
+                if armed:
+                    keeps = self._refuge_keeps_exit(z.loc, t_s + zdrive,
+                                                    cs.speed,
+                                                    zone_id=z.zone_id)
+                    key = (0 if keeps else 1,) + key
                 if best is None or key < best[0]:
                     best = (key, z)
             elif longest is None or (zdm, -zdrive, z.zone_id) > (
@@ -5773,6 +5881,41 @@ class SimSession:
         old = zid or "its target"
         cur = ("its leg is not lawful" if not cur_lawful else
                f"it stays clear only {dm / 3600.0:.1f} h after arrival")
+        if armed:
+            if cur_ok:
+                cur = (f"it stays clear {dm / 3600.0:.1f} h after arrival "
+                       f"but keeps no lawful way out that long "
+                       f"(SEMANTICS 46b)")
+            if best is not None and best[0][0] == 0:
+                z = best[1]
+                self._durable_retarget(
+                    cs, z.loc, z.zone_id,
+                    f"{old}: {cur}; {z.zone_id} stays clear at least "
+                    f"{dur_s / 3600.0:g} h on a lawful leg and keeps a way "
+                    f"out (SEMANTICS 46b)")
+                return True
+            if self._net_escape_capable():
+                buffer_s = self._cfg.egress_buffer_min * 60.0
+                found = self._kept_refuge_search(
+                    cs.pos, t_s, cs.speed, lead_s, lawful_only=True,
+                    min_p10_s=t_s + dur_s + buffer_s,
+                    on_map_only=self._refuge_on_map(),
+                    accept=self._refuge_exit_filter(lambda t: t_s + t,
+                                                    cs.speed))
+                if found is not None:
+                    loc = found["loc"]
+                    self._escape_pins[(cs.pos.lat, cs.pos.lon, loc.lat,
+                                       loc.lon)] = found["route"]
+                    self._durable_retarget(
+                        cs, loc, "escape",
+                        f"{old}: {cur}; no zone stays clear "
+                        f"{dur_s / 3600.0:g} h on a lawful leg and keeps a "
+                        f"way out, a road refuge "
+                        f"{geo.haversine_m(cs.pos, loc) / 1000.0:.1f} km out "
+                        f"does (SEMANTICS 46b)")
+                    return True
+            if cur_ok:
+                return True          # no refuge keeps a way out: as before
         if best is not None:
             z = best[1]
             self._durable_retarget(
@@ -6075,6 +6218,230 @@ class SimSession:
         return z, (f"no lawful way to a refuge that stays clear "
                    f"{dur_s / 3600.0:g} h is left and every way out only "
                    f"gets deeper — {how}")
+
+    # -- THE CREW-PROGRAM REVIEW FIXES (2026-11-17; contracts SAFETY
+    # -- SEMANTICS 46: escape_wait_watch, refuge_keeps_exit) ---------------
+
+    def _refuge_exit_armed(self) -> bool:
+        """SAFETY SEMANTICS 46b is armed: refuge_keeps_exit with the
+        durable horizons it reads (28a's and 38's)."""
+        cfg = self._cfg
+        return bool(getattr(cfg, "refuge_keeps_exit", False)
+                    and getattr(cfg, "egress_durable_min_h", 0.0) > 0.0
+                    and getattr(cfg, "egress_dest_durable_h", 0.0) > 0.0)
+
+    def _spot_zone(self, loc, zone_id: Optional[str] = None):
+        """The catalog zone `zone_id` (or the one within 250 m of loc, the
+        laws' "where it stands"), else a pseudo-zone for the spot itself
+        (a road refuge, a parked crew) — what SEMANTICS 38's keep-until and
+        46's tests take."""
+        if zone_id is not None and zone_id != "escape":
+            z = self._zone_by_id.get(zone_id)
+            if z is not None:
+                return z
+        for z in sorted(self._loc.safe_zones, key=lambda q: q.zone_id):
+            if geo.haversine_m(loc, z.loc) <= 250.0:
+                return z
+        return SafeZone(zone_id=f"pos:{loc.lat:.6f},{loc.lon:.6f}", loc=loc,
+                        name="parked spot")
+
+    def _refuge_keeps_exit(self, loc, arrive_s: float, speed_mps: float,
+                           zone_id: Optional[str] = None) -> bool:
+        """A REFUGE KEEPS A WAY OUT (contracts refuge_keeps_exit, SAFETY
+        SEMANTICS 46b): True when a crew that reaches the refuge at `loc` (a
+        catalog zone, or a road refuge) at arrive_s may wait there and still
+        leave it lawfully when it must. The fire never reaches it within
+        the fields' horizon (an unbounded keep-until), or both:
+          (a) it is not already due to be left: its keep-until (SEMANTICS
+              38) lies more than the last-exit lead plus one step past the
+              arrival (46a would move the crew on at once);
+          (b) its exits — 38's (ii)/(iii): a lawful way to a zone, or 28a's
+              road search to a road refuge, that stays clear H — stay open
+              until the waiting crew must leave: their latest departure
+              (less one step) no earlier than the refuge's own durable time
+              (38 (i): its 10c line less H) less the last-exit lead — the
+              moment 46a moves a crew whose keep-until its own cell sets.
+        Both reduce to ONE time, NEED: the refuge's own durable time less
+        the last-exit lead when that lies more than the lead plus one step
+        past the arrival, else the arrival plus the lead and one step; the
+        refuge keeps a way out iff its exit term (38's (ii)/(iii), the
+        latest lawful departure less one step) is at least NEED — for a
+        catalog zone its cached _dest_exit_until, for a road refuge whether
+        a way out is open at NEED plus one step (_exit_open_at: the same
+        terms judged at that departure, one road search instead of a
+        bisection; the fields are static, so a way open then was open
+        before). A refuge whose own cell outlasts its ways out is a dead
+        end the crew would wait in until the sweep forced it out through
+        old band (measured: Beaver Creek's 24-h canonical fire, a road
+        refuge with 12.7 h of life and no exit from the arrival — 12 h
+        later, 682.5 min past the line). One level: the exits' own refuges
+        are not asked in turn. True whenever the law is off. Memoised per
+        field generation."""
+        if not self._refuge_exit_armed():
+            return True
+        if self._refuge_exit_key != self._field_gen:
+            self._refuge_exit_key = self._field_gen
+            self._refuge_exit_memo = {}
+        lead_s = self._judge_lead_s()
+        mkey = (loc.lat, loc.lon, zone_id, speed_mps, lead_s,
+                round(arrive_s, 3))
+        v = self._refuge_exit_memo.get(mkey)
+        if v is not None:
+            return v
+        z = self._spot_zone(loc, zone_id)
+        own = self._dest_durable_until(z.loc)
+        if math.isinf(own):
+            v = own > 0.0                    # never reached: it lasts
+        else:
+            le_s = self._cfg.escape_last_exit_lead_min * 60.0
+            need = (own - le_s if own > arrive_s + le_s + lead_s
+                    else arrive_s + le_s + lead_s)
+            if z.zone_id.startswith("pos:"):
+                v = self._exit_open_at(z, need + lead_s, speed_mps)
+            else:
+                v = self._dest_exit_until(z, speed_mps) >= need
+        self._refuge_exit_memo[mkey] = v
+        return v
+
+    def _exit_open_at(self, z, depart_s: float, speed_mps: float) -> bool:
+        """SAFETY SEMANTICS 46b: True when a crew leaving refuge z at
+        depart_s has a way out by SAFETY SEMANTICS 38's exit terms — a
+        LAWFUL leg (the 29 law, _way_metrics) to another catalog zone that
+        it reaches H before that zone's own line, or 28a's road search
+        (lawful only, a refuge whose eroded P10 lies H plus the egress
+        buffer past the departure; on the map while 36 is armed) — the
+        terms _dest_exit_until bounds, judged at one departure."""
+        cfg = self._cfg
+        for z2 in sorted(self._loc.safe_zones, key=lambda q: q.zone_id):
+            if z2.zone_id == z.zone_id:
+                continue
+            worst, tot = self._way_metrics(z.loc, z2.loc, depart_s,
+                                           speed_mps)
+            if (worst >= 0.0
+                    and depart_s + tot <= self._dest_durable_until(z2.loc)):
+                return True
+        if not self._net_escape_capable():
+            return False
+        h_s = cfg.egress_dest_durable_h * 3600.0
+        buf_s = cfg.egress_buffer_min * 60.0
+        kw = ({} if "_road_escape_search" in self.__dict__
+              else {"exists_only": True})
+        return self._road_escape_search(
+            z.loc, depart_s, speed_mps, self._judge_lead_s(),
+            lawful_only=True, min_p10_s=depart_s + h_s + buf_s,
+            on_map_only=self._refuge_on_map(), **kw) is not None
+
+    def _refuge_exit_filter(self, arrive_of, speed_mps: float):
+        """SAFETY SEMANTICS 46b: the accept-callback the road search takes
+        (node loc, its drive seconds) -> bool, or None when the law is off
+        (the legacy search, byte-identical). arrive_of(total_s) is the
+        arrival time."""
+        if not self._refuge_exit_armed():
+            return None
+        asked = [0]
+
+        def accept(loc, total_s):
+            # a deterministic budget: the first REFUGE_EXIT_MAX_PROBES nodes
+            # that would become the search's best are judged, later ones
+            # refused unjudged (each judgement is a keep-until: the zone
+            # legs and a bisected road search from the node)
+            if asked[0] >= REFUGE_EXIT_MAX_PROBES:
+                return False
+            asked[0] += 1
+            ok = self._refuge_keeps_exit(loc, arrive_of(total_s), speed_mps)
+            if not ok:
+                self._n_refuge_no_exit += 1
+            return ok
+        return accept
+
+    def _kept_refuge_search(self, *args, accept=None, **kw):
+        """_road_escape_search with SAFETY SEMANTICS 46b's accept-callback
+        passed only when there is one (None: the legacy call, exactly — a
+        search a test replaced on the instance is asked as it always was)."""
+        if accept is not None:
+            kw["accept"] = accept
+        return self._road_escape_search(*args, **kw)
+
+    def _wait_watch_choice(self, cid, cs, now: float, lead_s: float,
+                           dur_s: float, le_s: float):
+        """A WAITING CREW LEAVES BEFORE ITS REFUGE IS A DEAD END (contracts
+        escape_wait_watch, SAFETY SEMANTICS 46a), for an idle crew whatever
+        its own cell's margin: (the refuge it leaves for NOW, why, tag) or
+        (None, None, None) — stay. Its spot (the catalog zone it stands at,
+        else the spot itself) is a dead end for an arrival later than its
+        KEEP-UNTIL (SEMANTICS 38, _dest_keep_until: it can no longer stay H
+        there nor leave lawfully for a refuge that lasts); when that
+        keep-until falls within le_s plus one step it leaves now — by a
+        lawful leg (20b) to the nearest catalog zone that stays clear dur_s
+        after the arrival (28b's exits: here every exit still durable, not
+        only those that close within the window), else a lawful road refuge
+        that stays clear dur_s (28a's search, on the map while 36 is armed),
+        else, while 36 is armed, the off-map last exit (36), else the pocket
+        exit (28d) when armed and its own cell is within dur_s — 28b's own
+        choices, in 28b's order (46b does not re-rank this move: measured on
+        the extended Camp-Fire-scale run, a one-level "keeps a way out"
+        preference here and in 28b walked a crew from refuge to refuge into
+        a dead end, 1,473 min past the line). The 28b trigger watched
+        only crews within dur_s of their own line, so a crew parked at a
+        long-lived refuge whose ways out closed first waited until the sweep
+        forced it out through old band (measured: Vail's 24-h canonical
+        fire, 339.9 min past the line and off the map; the extended Camp-
+        Fire-scale Paradise run, 496 and 909 min). A search that finds
+        nothing is not repeated in the same field generation, position and
+        hour."""
+        here = cs.pos
+        z0 = self._spot_zone(here)
+        ku = self._dest_keep_until(z0, cs.speed)
+        if math.isinf(ku) or ku - now > le_s + lead_s:
+            return None, None, None
+        key = (self._field_gen, here.lat, here.lon, int(now // 3600.0))
+        if self._wait_watch_none.get(cid) == key:
+            return None, None, None
+        ku_min = (ku - now) / 60.0
+        head = (f"its spot ({z0.zone_id if not z0.zone_id.startswith('pos:') else 'a parked spot'}) "
+                f"is a dead end for an arrival "
+                + (f"{ku_min:.0f} min from now" if ku_min >= 0.0
+                   else f"since {-ku_min:.0f} min ago"))
+        exits = []
+        for z in sorted(self._loc.safe_zones, key=lambda z: z.zone_id):
+            if geo.haversine_m(here, z.loc) <= 250.0:
+                continue                         # where it stands
+            b, worst, drive, dest, _tr = self._leg_verdict(cs, z.loc, now)
+            if b or worst < 0.0 or dest < lead_s or dest < dur_s:
+                continue                         # not a lawful, durable exit
+            exits.append(((drive, z.zone_id), z))
+        if exits:
+            z = min(exits, key=lambda e: e[0])[1]
+            return z, (f"{head}; {z.zone_id} stays clear "
+                       f"{dur_s / 3600.0:g} h on a lawful leg"), "wait_watch"
+        if self._net_escape_capable():
+            found = self._road_escape_search(
+                here, now, cs.speed, lead_s, lawful_only=True,
+                min_p10_s=now + dur_s + self._cfg.egress_buffer_min * 60.0,
+                on_map_only=self._refuge_on_map())
+            if found is not None:
+                loc = found["loc"]
+                self._escape_pins[(here.lat, here.lon, loc.lat, loc.lon)] = (
+                    found["route"])
+                return (SafeZone(zone_id="escape", loc=loc,
+                                 name="road escape point"),
+                        f"{head}; a road refuge "
+                        f"{geo.haversine_m(here, loc) / 1000.0:.1f} km out "
+                        f"stays clear {dur_s / 3600.0:g} h on a fully lawful "
+                        f"path", "wait_watch")
+        if self._refuge_on_map():
+            off, _state = self._off_map_last_exit(cid, cs, now, lead_s,
+                                                  dur_s, le_s)
+            if off is not None:
+                return off[0], f"{head}; {off[1]}", "last_exit"
+            if _state == "off_map":
+                return None, None, None          # 36: its last way stays open
+        if getattr(self._cfg, "escape_pocket_exit", False):
+            z, why = self._pocket_exit_choice(cid, cs, now, lead_s, dur_s)
+            if z is not None:
+                return z, f"{head}; {why}", "pocket_exit"
+        self._wait_watch_none[cid] = key
+        return None, None, None
 
     def _judge_egress_start(self, cs, t_s: float) -> None:
         """EVERY EGRESS IS JUDGED (contracts crew_egress_judged, SAFETY
@@ -6490,7 +6857,10 @@ class SimSession:
                 bound = self._dest_keep_until(z, speed_mps) - tot
                 if bound < cand or (ok and depart_s > bound):
                     if direct is None:
-                        direct = self._road_refuge_until(loc, speed_mps)
+                        # (SAFETY SEMANTICS 46b: a refuge that keeps a way
+                        # out, while armed — 28a re-points the egress there)
+                        direct = self._road_refuge_until(loc, speed_mps,
+                                                         kept=True)
                     bound = max(bound, direct)
                     ok = ok and depart_s <= bound
                     cand = min(cand, bound)
@@ -6675,33 +7045,57 @@ class SimSession:
         v = self._dest_keep.get(key)
         if v is not None:
             return v
-        now = self._now_s
-        cfg = self._cfg
-        h_s = cfg.egress_dest_durable_h * 3600.0
-        buf_s = cfg.egress_buffer_min * 60.0
-
-        def durable_until(zz):
-            # the latest arrival at zz that it stays clear H after
-            _nom, p10 = self._exposure_at(zz.loc, now)
-            return math.inf if math.isinf(p10) else p10 - buf_s - h_s
-        best = durable_until(z)
+        best = self._dest_durable_until(z.loc)
         if not math.isinf(best):
-            for z2 in sorted(self._loc.safe_zones, key=lambda q: q.zone_id):
-                if z2.zone_id == z.zone_id:
-                    continue
-                worst, tot = self._way_metrics(z.loc, z2.loc, now, speed_mps)
-                if math.isinf(worst) and worst < 0.0:
-                    continue                   # burned through now
-                cand = min(now + worst, durable_until(z2) - tot) - lead_s
-                if cand > best:
-                    best = cand
-            cand = self._road_refuge_until(z.loc, speed_mps) - lead_s
-            if cand > best:
-                best = cand
+            best = max(best, self._dest_exit_until(z, speed_mps))
         self._dest_keep[key] = best
         return best
 
-    def _road_refuge_until(self, loc, speed_mps: float) -> float:
+    def _dest_durable_until(self, loc) -> float:
+        """SAFETY SEMANTICS 38 (i): the latest arrival at `loc` that it
+        stays clear of the 10c line H (egress_dest_durable_h) after — its
+        eroded P10 less the egress buffer less H; +inf when unreached."""
+        cfg = self._cfg
+        _nom, p10 = self._exposure_at(loc, self._now_s)
+        return (math.inf if math.isinf(p10)
+                else p10 - cfg.egress_buffer_min * 60.0
+                - cfg.egress_dest_durable_h * 3600.0)
+
+    def _dest_exit_until(self, z, speed_mps: float) -> float:
+        """SAFETY SEMANTICS 38 (ii)-(iii), the EXIT part of a keep-until
+        (_dest_keep_until = the later of (i) and this): the latest departure
+        from z, less one step, on a LAWFUL leg to another catalog zone that
+        still reaches it H before its own line (the 29 law, _way_metrics),
+        or on 28a's road search to a road refuge that stays clear H
+        (_road_refuge_until); -inf when none. Read alone by SAFETY SEMANTICS
+        46b (a refuge keeps a way out). Cached per field generation, speed
+        and step."""
+        self._dest_cache_check()
+        lead_s = self._judge_lead_s()
+        key = ("exit", z.zone_id, speed_mps, lead_s)
+        v = self._dest_keep.get(key)
+        if v is not None:
+            return v
+        now = self._now_s
+        best = -math.inf
+        for z2 in sorted(self._loc.safe_zones, key=lambda q: q.zone_id):
+            if z2.zone_id == z.zone_id:
+                continue
+            worst, tot = self._way_metrics(z.loc, z2.loc, now, speed_mps)
+            if math.isinf(worst) and worst < 0.0:
+                continue                   # burned through now
+            cand = min(now + worst,
+                       self._dest_durable_until(z2.loc) - tot) - lead_s
+            if cand > best:
+                best = cand
+        cand = self._road_refuge_until(z.loc, speed_mps) - lead_s
+        if cand > best:
+            best = cand
+        self._dest_keep[key] = best
+        return best
+
+    def _road_refuge_until(self, loc, speed_mps: float,
+                           kept: bool = False) -> float:
         """SAFETY SEMANTICS 38: the latest departure from `loc` for which
         28a's search (the SEM-10d search, lawful only, its refuge's eroded
         P10 at least H + egress_buffer_min past the departure; on-map nodes
@@ -6709,10 +7103,19 @@ class SimSession:
         the departure time to DEST_ROAD_RES_S (a way only closes as the
         departure grows: the fields are static between world changes);
         -inf with no road graph or none even now. Cached per field
-        generation, position, speed and step."""
+        generation, position, speed and step.
+
+        kept (SAFETY SEMANTICS 46b, contracts refuge_keeps_exit — the
+        STOP's own refuge, 38 (b), which 28a then re-points the egress to):
+        the refuge must also keep a way out for a crew arriving at it
+        (_refuge_keeps_exit; a refuge only loses it as the arrival grows,
+        so the bisection still holds). Ignored while 46b is off."""
+        kept = kept and self._refuge_exit_armed()
         self._dest_cache_check()
         lead_s = self._judge_lead_s()
         key = ("road", loc.lat, loc.lon, speed_mps, lead_s)
+        if kept:
+            key = ("road_kept",) + key[1:]
         v = self._dest_keep.get(key)
         if v is not None:
             return v
@@ -6729,6 +7132,13 @@ class SimSession:
                   else {"exists_only": True})
 
             def found(d):
+                if kept:
+                    # SAFETY SEMANTICS 46b: a refuge that keeps a way out
+                    return self._kept_refuge_search(
+                        loc, d, speed_mps, lead_s, lawful_only=True,
+                        min_p10_s=d + h_s + buf_s, on_map_only=on_map,
+                        accept=self._refuge_exit_filter(
+                            lambda t: d + t, speed_mps), **kw) is not None
                 return self._road_escape_search(
                     loc, d, speed_mps, lead_s, lawful_only=True,
                     min_p10_s=d + h_s + buf_s,
@@ -6765,8 +7175,11 @@ class SimSession:
         if keep is None:
             return {}
         spd = self._plan_keep_speed()
+        # (SAFETY SEMANTICS 46b: the stop's refuge keeps a way out, while
+        # armed — the very refuge 28a re-points the egress to)
         return {"zone_keep": keep,
-                "stop_refuge": lambda loc: self._road_refuge_until(loc, spd)}
+                "stop_refuge": lambda loc: self._road_refuge_until(
+                    loc, spd, kept=True)}
 
     def _plan_keep_speed(self) -> float:
         """The slowest crew's speed (the planner's one keep-until)."""
@@ -6923,6 +7336,12 @@ class SimSession:
         self._superseded.discard(c)
         self._stop_rule.pop(c, None)
         self._n_en_route_released += 1
+        if getattr(self._cfg, "replan_on_release", False):
+            # SAFETY SEMANTICS 47b: back to the planner in this very step
+            self._release_opened.add(c)
+        if getattr(self._cfg, "unserved_reason_refresh", False):
+            # DISPLAY ONLY: the page's reason until a plan labels it again
+            self._reason_shown[c] = "released_en_route"
         key = (cid, c, self._field_gen)
         if key not in self._en_route_released_noted:
             self._en_route_released_noted.add(key)
@@ -7028,6 +7447,10 @@ class SimSession:
             "eroded_p10_s": (None if math.isinf(p10) else p10),
             "world_change": True,
         }
+        if getattr(self._cfg, "crew_overrun_worst_row", False):
+            # SAFETY SEMANTICS 47a: its depth at the instant
+            self._instant_overruns[cid]["margin_min"] = _overrun_margin_min(
+                p10, now, self._cfg.egress_buffer_min * 60.0)
 
     def _best_escape(self, pos, now, speed_mps: float, lead_s: float):
         """(target_loc, target_id) for a crew that must move (SEM-10d) — the
@@ -7434,6 +7857,12 @@ class SimSession:
         # SAFETY SEMANTICS 28d (contracts escape_pocket_exit)
         pocket = bool(getattr(self._cfg, "escape_pocket_exit", False))
         dur_s = getattr(self._cfg, "egress_durable_min_h", 0.0) * 3600.0
+        # SAFETY SEMANTICS 46a (contracts escape_wait_watch, with 28's
+        # horizon and window and 38's keep-until)
+        wait_watch = (bool(getattr(self._cfg, "escape_wait_watch", False))
+                      and dur_s > 0.0 and le_s > 0.0
+                      and getattr(self._cfg, "egress_dest_durable_h",
+                                  0.0) > 0.0)
         # SAFETY SEMANTICS 20b: egresses in flight are re-judged as legs
         judged = bool(getattr(self._cfg, "crew_egress_judged", False))
         if self._escape_pins:
@@ -7508,6 +7937,31 @@ class SimSession:
             # the buffer + one tick of proactive lead so it leaves ahead of the
             # zero-lead audit line).
             if not (burned or imminent):
+                # A WAITING CREW LEAVES BEFORE ITS REFUGE IS A DEAD END
+                # (contracts escape_wait_watch, SAFETY SEMANTICS 46a): an idle
+                # crew — whatever its own cell's margin — whose spot's keep-
+                # until (38) falls within the last-exit window leaves now
+                if (wait_watch and not emergency_only and cs.idle()
+                        and not math.isinf(p10)):
+                    z, why, tag = self._wait_watch_choice(cid, cs, now,
+                                                          lead_s, dur_s, le_s)
+                    if z is not None and cs.pos != z.loc:
+                        for d in cs.relocate_to(z.loc, z.zone_id):
+                            self._assigned.discard(d)
+                            self._superseded.discard(d)
+                            self._stop_rule.pop(d, None)
+                        self._n_relocations += 1
+                        if z.zone_id == "escape":
+                            self._net_escape[cid] = z.loc
+                        else:
+                            self._net_escape.pop(cid, None)
+                        self._n_wait_watch += 1
+                        self._notes.append(
+                            f"crew {cid} leaves before its refuge is a dead "
+                            f"end (SEMANTICS 46a) — {why} (relocating to "
+                            f"{z.zone_id})")
+                        self._relocating[cid] = tag
+                        continue
                 # A CREW NEVER WAITS IN A POCKET (contracts escape_last_exit_
                 # lead_min, SAFETY SEMANTICS 28b): a crew parked where the 10c
                 # line arrives within egress_durable_min_h leaves while a
@@ -8220,6 +8674,12 @@ class SimSession:
                     continue                     # not lawful (20b)
                 if dest < dur_s:
                     continue                     # not durable (28a)
+                if not self._refuge_keeps_exit(z.loc, now + drive, cs.speed,
+                                               zone_id=z.zone_id):
+                    # SAFETY SEMANTICS 46b (contracts refuge_keeps_exit):
+                    # staging never parks a crew where it would have to
+                    # leave at once, or where its ways out close first
+                    continue
                 key = (zwork[z.zone_id], drive, z.zone_id)
                 if best is None or key < best[0]:
                     best = (key, z)
@@ -8309,13 +8769,21 @@ class SimSession:
             return self._tick_step(total)
         n_sub = int(math.ceil(total / SIM_MAX_SUBSTEP_S - 1e-9))
         seen, keys = [], set()
+        # SAFETY SEMANTICS 47a (contracts crew_overrun_worst_row): per crew,
+        # reason and mode the WORST row of the jump (off: the first)
+        worst_row = bool(getattr(self._cfg, "crew_overrun_worst_row", False))
+        at = {}
         for i in range(n_sub):
             self._tick_step(total / n_sub, emit=False, count=(i == 0))
             for o in self._crew_overruns:
                 k = (o.get("crew_id"), o.get("reason"), o.get("mode"))
                 if k not in keys:
                     keys.add(k)
+                    at[k] = len(seen)
                     seen.append(o)
+                elif worst_row and (_overrun_row_key(o)
+                                    < _overrun_row_key(seen[at[k]])):
+                    seen[at[k]] = o
         self._crew_overruns = seen
         self._ledger_tick()          # SAFETY SEMANTICS 33 (knob off: no-op)
         st = self.state()
@@ -8340,6 +8808,10 @@ class SimSession:
                 "mode": o.get("mode"),
                 "at_s": o.get("at_s", self._now_s),
                 "margin_min": (None if m is None else round(m, 2))})
+            if o.get("caught_at_end"):
+                # SAFETY SEMANTICS 47a: the deeper transit row of a crew
+                # still in the band at the tick end (only with the knob)
+                self._overrun_ledger[-1]["caught_at_end"] = True
 
     # -- run report (display only) --------------------------------------------
 
@@ -8511,6 +8983,10 @@ class SimSession:
             gel_at.setdefault(s.client_id, s.depart_s)
         rows = []
         n_in_time = 0
+        # DISPLAY ONLY (contracts outcome_lost_capacity): each reached home
+        # not coated in time says whether some crew could once have served it
+        split_lost = bool(getattr(self._cfg, "outcome_lost_capacity", False))
+        n_lost_cap = 0
         for cl in self._clients:
             a = self._rpt_fire_at(cl.loc)
             if a > now:
@@ -8521,6 +8997,10 @@ class SimSession:
             rows.append({"client_id": cl.client_id, "name": cl.name,
                          "fire_s": a, "coated_s": g,
                          "coated_in_time": in_time})
+            if split_lost and not in_time:
+                cap = cl.client_id in self._ever_feasible
+                n_lost_cap += int(cap)
+                rows[-1]["lost"] = "capacity" if cap else "unsavable"
         rows.sort(key=lambda r: (r["fire_s"], len(r["client_id"]),
                                  r["client_id"]))
 
@@ -8546,7 +9026,7 @@ class SimSession:
             if cands:
                 _m, kind, row = min(cands, key=lambda c: (c[0], c[1]))
                 nearest = dict(row, kind=kind)
-        return {
+        out = {
             "at_s": now,
             "homes": len(self._clients),
             "coated": len(gel_at),
@@ -8562,6 +9042,14 @@ class SimSession:
             "ember_radius_m": float(
                 getattr(self._cfg, "ember_threat_radius_m", 0.0) or 0.0),
         }
+        if split_lost:
+            # DISPLAY ONLY (contracts outcome_lost_capacity): the reached
+            # homes not coated in time, split — once savable by some crew
+            # (lost to capacity) or never (unsavable)
+            out["reached_uncoated_capacity"] = n_lost_cap
+            out["reached_uncoated_unsavable"] = (len(rows) - n_in_time
+                                                 - n_lost_cap)
+        return out
 
     def _tick_step(self, step: float, *, emit: bool = True,
                    count: bool = True):
@@ -8888,6 +9376,9 @@ class SimSession:
         # out of the pool, every re-plan stripped an en-route crew's head
         # stop. Knob off: frozen stops are protected (legacy), byte-identical.
         keep_frozen = bool(getattr(cfg, "dispatch_keep_frozen", False))
+        # DISPLAY ONLY (contracts unserved_reason_refresh): the page's
+        # refreshed reasons — never read by any plan
+        reason_refresh = bool(getattr(cfg, "unserved_reason_refresh", False))
         serviced_ids = {s.client_id for s in self._serviced}
         eligible_ids = self._eligible_replan_ids()
         eligible_set = set(eligible_ids)
@@ -8915,6 +9406,9 @@ class SimSession:
                 self._jobbed.setdefault(cl.client_id, inc.incident_id)
                 if eta.eta_p50_s <= now:
                     self._unserved_reason.setdefault(cl.client_id, "fire_arrived")
+                    if reason_refresh:
+                        # DISPLAY ONLY: the fire is there — that is why now
+                        self._reason_shown[cl.client_id] = "fire_arrived"
                     continue
                 latest_depart = safety.latest_departure_s(eta.eta_p10_s, cfg)
                 jobs.append(DispatchJob(
@@ -8951,7 +9445,21 @@ class SimSession:
                 and cid not in coated
                 and self._unserved_reason.get(cid) not in _UNSAVABLE_REASONS}
             window_due = bool(self._hold_opened)
-        if jobs and eligible_ids and (idle_exists or window_due):
+        # A STOP RELEASED EN ROUTE IS RE-PLANNED AT ONCE (contracts
+        # replan_on_release, SAFETY SEMANTICS 47b): a stop the 29 predicate
+        # released this step — back in the job pool, not coated, not taken
+        # by a crew — re-plans the fleet now, as an opened coating window
+        # does (even with no crew idle). Off: nothing here (byte-identical).
+        release_due = False
+        if self._release_opened:
+            pool = {j.client.client_id for j in jobs}
+            coated = {sv.client_id for sv in self._serviced}
+            self._release_opened = {
+                c for c in self._release_opened
+                if c in pool and c not in self._assigned and c not in coated}
+            release_due = bool(self._release_opened)
+        if jobs and eligible_ids and (idle_exists or window_due
+                                      or release_due):
             crew_args = []
             for cid in eligible_ids:
                 cs = self._crew_sims[cid]
@@ -9004,6 +9512,28 @@ class SimSession:
                 self._adopt(plan, plan_jobs, now, eligible_ids)
                 for uj in plan.unserved:
                     self._unserved_reason[uj.client_id] = uj.reason
+                if reason_refresh:
+                    # DISPLAY ONLY: the plan's own label is fresh again
+                    for uj in plan.unserved:
+                        self._reason_shown.pop(uj.client_id, None)
+                    for c in self._assigned:
+                        self._reason_shown.pop(c, None)
+                if getattr(cfg, "outcome_lost_capacity", False):
+                    # DISPLAY ONLY: a home some crew could serve at this plan
+                    # (planned, or unserved for capacity / triage) was savable
+                    self._ever_feasible |= self._assigned
+                    self._ever_feasible.update(
+                        uj.client_id for uj in plan.unserved
+                        if uj.reason in _FEASIBLE_REASONS)
+            if (getattr(cfg, "outcome_lost_capacity", False)
+                    and probe_hold is not None):
+                # DISPLAY ONLY: a home the coating window's deferred plan
+                # serves (held or not) was savable
+                self._ever_feasible.update(
+                    s.client_id for cp in probe_hold.plans.values()
+                    for s in cp.stops)
+            # SAFETY SEMANTICS 47b: the plan has seen the released stops
+            self._release_opened.clear()
             if probe_hold is not None:
                 self._preposition_crews(probe_hold, eligible_ids, now, step)
         # 4b. CREWS STAGE WHERE THE WORK IS (contracts idle_restage /
@@ -9465,6 +9995,10 @@ class SimSession:
         # Direct calls outside a tick judge the instant. A crew that LEFT
         # THE MAP (contracts left_map_out) is out of the simulation: no rows.
         old_black = bool(getattr(cfg, "old_black_refuge", False))
+        # THE AUDIT KEEPS THE DEEPER ROW (contracts crew_overrun_worst_row,
+        # SAFETY SEMANTICS 47a): every row carries its depth and the worst
+        # row per crew per step is kept. Off: the legacy rows, byte-identical.
+        worst_row = bool(getattr(cfg, "crew_overrun_worst_row", False))
         if since_s is None:                    # tick(): the step start
             since_s = getattr(self, "_audit_since_s", None)
         t_since = now if since_s is None else since_s
@@ -9482,14 +10016,18 @@ class SimSession:
             imminent = (not math.isinf(p10)) and p10 < now + buffer_s
             if not (burned or imminent):
                 continue
-            overruns.append({
+            row = {
                 "crew_id": cid, "kind": "crew_overrun",
                 "reason": "burned" if burned else "imminent",
                 "status": cs.status.value, "mode": cs._mode,
                 "lat": round(cs.pos.lat, 6), "lon": round(cs.pos.lon, 6),
                 "nominal_arrival_s": (None if math.isinf(nom) else nom),
                 "eroded_p10_s": (None if math.isinf(p10) else p10),
-            })
+            }
+            if worst_row:
+                # SAFETY SEMANTICS 47a: a tick-end row carries its depth
+                row["margin_min"] = _overrun_margin_min(p10, now, buffer_s)
+            overruns.append(row)
         if self._instant_overruns:
             # SAFETY SEMANTICS 23b, NEVER SILENT (contracts crew_work_judged):
             # a crew whose work was pulled out of a band this step's world
@@ -9498,26 +10036,69 @@ class SimSession:
             # step: the audit's own row when it is still exposed now)
             pending = self._instant_overruns
             self._instant_overruns = {}
-            have = {o["crew_id"] for o in overruns}
-            extra = [pending[c] for c in _idsort(pending)
-                     if c not in have and c not in self._left_map]
-            if extra:
-                rank = {c: i for i, c in enumerate(_idsort(self._crew_sims))}
-                overruns = sorted(overruns + extra,
-                                  key=lambda o: rank[o["crew_id"]])
+            if worst_row:
+                # SAFETY SEMANTICS 47a: ... the deeper of the two
+                overruns = self._merge_worst_rows(
+                    overruns, [pending[c] for c in _idsort(pending)
+                               if c not in self._left_map])
+            else:
+                have = {o["crew_id"] for o in overruns}
+                extra = [pending[c] for c in _idsort(pending)
+                         if c not in have and c not in self._left_map]
+                if extra:
+                    rank = {c: i for i, c in
+                            enumerate(_idsort(self._crew_sims))}
+                    overruns = sorted(overruns + extra,
+                                      key=lambda o: rank[o["crew_id"]])
         if path_audit and self._audit_paths:
             # SAFETY SEMANTICS 25 (contracts crew_path_audit): a crew clear at
             # this audit but exposed on the way since the last one — its
             # driven path, every sample at its own pass time — gets ONE row
             # (transit: true); still one row per crew per step
-            have = {o["crew_id"] for o in overruns}
-            extra = [o for o in self._path_overruns(t_since)
-                     if o["crew_id"] not in have]
-            if extra:
-                rank = {c: i for i, c in enumerate(_idsort(self._crew_sims))}
-                overruns = sorted(overruns + extra,
-                                  key=lambda o: rank[o["crew_id"]])
+            if worst_row:
+                # SAFETY SEMANTICS 47a (contracts crew_overrun_worst_row):
+                # still one row per crew per step — the WORST of them
+                overruns = self._merge_worst_rows(
+                    overruns, self._path_overruns(t_since), path=True)
+            else:
+                have = {o["crew_id"] for o in overruns}
+                extra = [o for o in self._path_overruns(t_since)
+                         if o["crew_id"] not in have]
+                if extra:
+                    rank = {c: i for i, c in
+                            enumerate(_idsort(self._crew_sims))}
+                    overruns = sorted(overruns + extra,
+                                      key=lambda o: rank[o["crew_id"]])
         self._crew_overruns = overruns
+
+    def _merge_worst_rows(self, rows: list, extra: list,
+                          path: bool = False) -> list:
+        """THE AUDIT KEEPS THE DEEPER ROW (contracts crew_overrun_worst_row,
+        SAFETY SEMANTICS 47a): `rows` (at most one per crew) merged with
+        `extra` (at most one per crew) keeping ONE row per crew — the worst
+        (_overrun_row_key: burned before imminent, then the least margin; a
+        tie keeps the row already there: the tick-end or world-change row,
+        the crew's state when the audit looked). path=True (`extra` are the
+        path audit's transit rows): a kept tick-end / world-change row takes
+        the step's exposed seconds from the crew's path row, and a transit
+        row that wins over a crew still in the band at the tick end says so
+        (caught_at_end: True — the page reads it as caught, not as a crew
+        that drove out). In crew id order."""
+        by = {o["crew_id"]: o for o in rows}
+        for e in extra:
+            cid = e["crew_id"]
+            cur = by.get(cid)
+            if cur is None:
+                by[cid] = e
+                continue
+            if _overrun_row_key(e) < _overrun_row_key(cur):
+                if path and not cur.get("transit"):
+                    e = dict(e, caught_at_end=True)
+                by[cid] = e
+            elif path and e.get("exposed_s") is not None:
+                by[cid] = dict(cur, exposed_s=e["exposed_s"])
+        rank = {c: i for i, c in enumerate(_idsort(self._crew_sims))}
+        return sorted(by.values(), key=lambda o: rank[o["crew_id"]])
 
     def _path_cell_samples(self, pa, pb, ta: float, tb: float, spec):
         """SAFETY SEMANTICS 25: the samples of one DRIVEN span pa -> pb
@@ -10334,6 +10915,12 @@ class SimSession:
                 in_progress_ids.add(cs.itinerary[0]["client_id"])
         outcome_counts = {}
         clients = []
+        # DISPLAY ONLY (contracts outcome_lost_capacity, unserved_reason_
+        # refresh; 2026-11-17): a lost home some crew could once have served
+        # reads 'lost_capacity', and the page's reasons are the refreshed
+        # ones. Off: the legacy tags and reasons, byte-identical.
+        split_lost = bool(getattr(cfg, "outcome_lost_capacity", False))
+        reason_refresh = bool(getattr(cfg, "unserved_reason_refresh", False))
         for cl in self._clients:
             eta = self._client_etas.get(cl.client_id)
             gelled = gel_at.get(cl.client_id)
@@ -10350,18 +10937,24 @@ class SimSession:
             p50 = eta.eta_p50_s if eta is not None else UNREACHED
             impacted = (astate is AlertState.IMPACTED
                         or (not math.isinf(p50) and p50 <= now))
+            reason = self._unserved_reason.get(cl.client_id)
+            if reason_refresh:
+                reason = self._reason_shown.get(cl.client_id, reason)
             outcome = _client_outcome(
                 gelled=gelled is not None,
                 impacted=impacted,
                 threatened=cl.client_id in self._jobbed,
                 in_progress=cl.client_id in in_progress_ids,
                 assigned=cl.client_id in self._assigned,
-                reason=self._unserved_reason.get(cl.client_id),
+                reason=reason,
                 # finite projected arrival (eta_p50) -> a not-yet-jobbed home is
                 # 'monitoring', not 'not_threatened' (round-4 verifier fix): the
                 # payload below shows this same finite eta_p50_s, so the tag must
                 # agree with it. UNREACHED/None -> not_threatened.
                 has_eta=not math.isinf(p50))
+            if (split_lost and outcome == "abandoned_unsavable"
+                    and cl.client_id in self._ever_feasible):
+                outcome = "lost_capacity"
             outcome_counts[outcome] = outcome_counts.get(outcome, 0) + 1
             clients.append({
                 "client_id": cl.client_id, "name": cl.name,
@@ -10520,6 +11113,8 @@ class SimSession:
                 reason = "in_progress"
             else:
                 reason = self._unserved_reason.get(cid, "capacity")
+                if reason_refresh:
+                    reason = self._reason_shown.get(cid, reason)
             unserved.append({"client_id": cid,
                              "incident_id": self._jobbed[cid],
                              "reason": reason})
@@ -10556,7 +11151,8 @@ class SimSession:
             # occurs) so the UI block is stable; the counts sum to len(clients)
             # (every home gets exactly one outcome). Snapshotted with state(),
             # so a scrub replay shows the tick's breakdown too.
-            "outcomes": {t: outcome_counts.get(t, 0) for t in OUTCOME_TAGS},
+            "outcomes": {t: outcome_counts.get(t, 0) for t in (
+                OUTCOME_TAGS_SPLIT if split_lost else OUTCOME_TAGS)},
         }
         if getattr(cfg, "crew_overrun_ledger", False):
             # SAFETY SEMANTICS 33 (contracts crew_overrun_ledger; additive):

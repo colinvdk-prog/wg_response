@@ -279,6 +279,11 @@
   #outcomes #oc_abandoned_row.hot .oc-abandoned,
   #outcomes #oc_abandoned_row.hot #oc_abandoned { color: #ff5252; font-weight: 700; }
   #outcomes .oc-triaged { color: #c792ea; }
+  /* 2026-11-17 (contracts outcome_lost_capacity): a lost home some crew could
+     once have served — amber, distinct from the never-savable grey */
+  #outcomes .oc-lost { color: #ffb74d; }
+  #outcomes #oc_lost_row.hot .oc-lost,
+  #outcomes #oc_lost_row.hot #oc_lost { color: #ff5252; font-weight: 700; }
   /* the monitoring outcome (beyond the 72 h notice horizon but with a projected
      ETA — distinct from not_threatened, which is truly no-ETA): a calm slate. */
   #outcomes .oc-monitoring { color: #78909c; }
@@ -757,14 +762,18 @@
       <h2>Outcomes — why homes are / aren't protected</h2>
       <div class="sbrow"><span class="k oc-saved">saved (gelled, fire not yet here)</span><span id="oc_saved">0</span></div>
       <div class="sbrow"><span class="k oc-protected">protected then burned (gelled)</span><span id="oc_protected">0</span></div>
-      <div class="sbrow" id="oc_abandoned_row"><span class="k oc-abandoned">abandoned — unsavable</span><span id="oc_abandoned">0</span></div>
+      <!-- 2026-11-17 (contracts outcome_lost_capacity): shown when the server
+           splits the lost homes — "lost — capacity" (some crew could once have
+           served it, none reached it in time) vs "unsavable" (never feasible) -->
+      <div class="sbrow" id="oc_lost_row" style="display:none" title="some crew could once have served this home lawfully, but no crew reached it before the fire"><span class="k oc-lost">lost — capacity (was savable, no crew in time)</span><span id="oc_lost">0</span></div>
+      <div class="sbrow" id="oc_abandoned_row"><span class="k oc-abandoned" id="oc_abandoned_k">abandoned — unsavable</span><span id="oc_abandoned">0</span></div>
       <div class="sbrow"><span class="k oc-triaged">triaged (skipped to save more)</span><span id="oc_triaged">0</span></div>
       <div class="sbrow"><span class="k">in progress / pending</span><span id="oc_inflight">0</span></div>
       <!-- 'monitoring' = beyond the 72 h notice horizon but with a PROJECTED
            ETA; distinct from not_threatened (truly no ETA). -->
       <div class="sbrow"><span class="k oc-monitoring">monitoring (beyond 72 h, ETA projected)</span><span id="oc_monitoring">0</span></div>
       <div class="sbrow"><span class="k">not threatened</span><span id="oc_notthreat">0</span></div>
-      <div id="oc_legend">blue ring = gel applied (protected) · grey dashed ring = abandoned, fire beat every feasible crew · violet dashed ring = triaged, deprioritized so crews could save more homes · slate dotted ring = monitoring, beyond 72 h but an ETA exists.</div>
+      <div id="oc_legend">blue ring = gel applied (protected) · amber dashed ring = lost to capacity, some crew could once have served it but none reached it in time · grey dashed ring = unsavable, no crew could ever lawfully reach it in time · violet dashed ring = triaged, deprioritized so crews could save more homes · slate dotted ring = monitoring, beyond 72 h but an ETA exists.</div>
     </div>
     <div id="alerts" class="section"><h2>Alert feed (live ladder)</h2><div id="alertlist"></div></div>
     <div id="itins" class="section"><h2>Crew itineraries</h2><div id="itinlist"></div></div>
@@ -809,7 +818,8 @@
   <div class="row"><span class="dot" style="background:#3a3f47;border:2px dotted #9aa4b2"></span> crew left the map — out of the simulation (last position)</div>
   <div class="row"><span class="dot" style="background:transparent;border:2px solid #2196f3"></span> gel applied (protected)</div>
   <!-- LAW 8 OUTCOME TAG: the two "why unprotected" affordance rings -->
-  <div class="row"><span class="dot" style="background:transparent;border:2px dashed #9aa4b2"></span> abandoned — unsavable (fire beat crews)</div>
+  <div class="row"><span class="dot" style="background:transparent;border:2px dashed #ffb74d"></span> lost — capacity (was savable, no crew in time)</div>
+  <div class="row"><span class="dot" style="background:transparent;border:2px dashed #9aa4b2"></span> unsavable (no crew could ever reach it in time)</div>
   <div class="row"><span class="dot" style="background:transparent;border:2px dashed #c792ea"></span> triaged — saved more homes instead</div>
   <div class="row"><span class="dot" style="background:transparent;border:2px dotted #78909c"></span> monitoring — beyond 72 h, ETA projected</div>
   <div class="row"><span class="dot" style="background:#8b93a1"></span> none</div>
@@ -1201,7 +1211,11 @@ const colorFor = s => COLORS[s] || COLORS.none;
 const OUTCOME_LABEL = {
   saved: "SAVED (gelled, fire not yet arrived)",
   protected_then_impacted: "PROTECTED then impacted (gelled, fire arrived)",
-  abandoned_unsavable: "ABANDONED — unsavable (fire beat every feasible crew)",
+  abandoned_unsavable: "UNSAVABLE (no crew could lawfully reach it in time)",
+  // 2026-11-17 (contracts outcome_lost_capacity): some crew could once have
+  // served it (planned, in the coating window's plan, or left for capacity /
+  // triage), but no crew reached it before the fire
+  lost_capacity: "LOST — capacity (some crew could once have served it; none reached it in time)",
   triaged: "TRIAGED (deprioritized to save more homes)",
   in_progress: "in progress (crew en route / deploying)",
   pending: "pending (a crew will be assigned)",
@@ -1216,7 +1230,9 @@ const REGION_LABEL = { in_zone: "in-zone", reg_1h: "1h away", reg_3h: "3h away" 
 // SAFETY SEMANTICS 28 / 30 (2026-10-21): the moves the iteration-2 laws make,
 // named for what they are (the SEM-10 reasons keep their labels below)
 const RELOC_LABEL = { restage: "staging toward the work",
-  last_exit: "leaving by its last exit", pocket_exit: "leaving its pocket" };
+  last_exit: "leaving by its last exit", pocket_exit: "leaving its pocket",
+  // SAFETY SEMANTICS 46a (2026-11-17): the waiting rule
+  wait_watch: "leaving before its refuge is a dead end" };
 // FIRE PROJECTION BANDS (founder UX contract): the fire the crowd can read.
 // state.fire_bands = {h1, h5, h24} rings — RED = reached in <1 h, ORANGE =
 // <5 h, YELLOW = <24 h. Solid borders, faint fills; replaces the old
@@ -1364,7 +1380,19 @@ function fmtClock(t_s) {
 // path audit: the crew drove through the pessimistic front's band between two
 // tick ends — it is not standing in the fire now) reads "drove through the
 // band at hh:mm"; a tick-end row is a crew caught where it stands.
+// SAFETY SEMANTICS 47a (2026-11-17): a transit row with caught_at_end is a
+// crew still in the band at the tick end — read as caught, not as one that
+// drove out
+const isTransitRow = o => !!(o && o.transit && !o.caught_at_end);
 function overrunLabel(o) {
+  if (o && o.transit && o.caught_at_end) {
+    // SAFETY SEMANTICS 47a (2026-11-17): the crew is still in the band at the
+    // tick end, and its deepest moment of the step came earlier on its path
+    const hhmm = o.at_s != null ? new Date(o.at_s * 1000).toISOString().slice(11, 16) + "Z" : "–";
+    const past = (o.margin_min != null && isFinite(o.margin_min) && o.margin_min < 0)
+      ? `, ${(-o.margin_min).toFixed(0)} min past the line` : "";
+    return `CAUGHT IN FIRE (${o.reason || ""}) — deepest at ${hhmm}${past}`;
+  }
   if (o && o.transit) {
     const hhmm = o.at_s != null ? new Date(o.at_s * 1000).toISOString().slice(11, 16) + "Z" : "–";
     const past = (o.margin_min != null && isFinite(o.margin_min) && o.margin_min < 0)
@@ -1378,14 +1406,14 @@ function overrunLabel(o) {
 // tick-end row "caught in fire (imminent)"
 function overrunPhrase(o) {
   const lab = overrunLabel(o);
-  if (o && o.transit) return "drove through the band" + lab.slice("DROVE THROUGH THE BAND".length);
+  if (isTransitRow(o)) return "drove through the band" + lab.slice("DROVE THROUGH THE BAND".length);
   return "caught in fire" + lab.slice("CAUGHT IN FIRE".length);
 }
 // SAFETY SEMANTICS 33: one overrun row as an alert-feed entry — stamped with
 // ITS time (a transit row's pass time at_s, never the tick end; a tick-end row
 // its tick's end) and said for what it is
 function overrunFeedRow(o, now) {
-  const transit = !!(o && o.transit);
+  const transit = isTransitRow(o);
   const at = (o && o.at_s != null) ? o.at_s : now;
   return `<div class="evt ${transit ? "transit" : "over"}"><span class="t">${fmtClock(at)}</span>` +
     (transit ? `<span class="chip transit">band transit</span>`
@@ -2098,9 +2126,12 @@ function rptTableHtml(st, r) {
   const rows = r.homes_reached || [];
   if (!rows.length) return `<p class="sub">The fire has not reached any home yet.</p>`;
   const body = rows.map(h => {
+    // 2026-11-17 (contracts outcome_lost_capacity): why, when the server says
+    const why = h.lost === "capacity" ? " — lost to capacity (a crew could once have served it)"
+      : (h.lost === "unsavable" ? " — unsavable (no crew could reach it in time)" : "");
     const res = h.coated_in_time ? `<td class="ok">coated in time</td>`
-      : (h.coated_s != null ? `<td class="no">coated after the fire</td>`
-                            : `<td class="no">not coated</td>`);
+      : (h.coated_s != null ? `<td class="no">coated after the fire${why}</td>`
+                            : `<td class="no">not coated${why}</td>`);
     return `<tr><td>${rptEsc(h.name || h.client_id)}</td><td>${rptT(st, h.fire_s)}</td>` +
            `<td>${h.coated_s != null ? rptT(st, h.coated_s) : "–"}</td>${res}</tr>`;
   }).join("");
@@ -2142,7 +2173,12 @@ function renderReport(st) {
   let det = "";
   if (!rptHasFire(st)) det += `<p>No fire has burned yet — light one and run the simulation.</p>`;
   det += `<p>The fire reached ${r.reached} of ${r.homes} homes: ${r.reached_coated} coated ` +
-         `in time, ${r.reached_uncoated} not coated.</p>`;
+         `in time, ${r.reached_uncoated} not coated` +
+         // 2026-11-17 (contracts outcome_lost_capacity): the split, when sent
+         (r.reached_uncoated_capacity != null && r.reached_uncoated > 0
+           ? ` — ${r.reached_uncoated_capacity} lost to capacity (some crew could once have ` +
+             `served them), ${r.reached_uncoated_unsavable} unsavable (no crew could reach ` +
+             `them in time)` : "") + `.</p>`;
   if (n) det += rptNearestLine(st, n, "Nearest time between a crew and the fire");
   else if (rptHasFire(st))
     det += `<p><b>Nearest time between a crew and the fire:</b> none yet — the fire has not ` +
@@ -2889,8 +2925,8 @@ function render(st) {
   // first — tick, crew and what happened, each at its own time
   const ledgerRows = Array.isArray(sb.overrun_ledger) ? sb.overrun_ledger : [];
   $("sb_ledger").innerHTML = ledgerRows.slice().reverse().map(o =>
-    `<div class="lrow ${o.transit ? "transit" : "caught"}">tick ${o.tick} · ` +
-    `${o.crew_id} ${overrunPhrase(o)}${o.transit ? "" : " at " + fmtClock(o.at_s)}</div>`).join("");
+    `<div class="lrow ${isTransitRow(o) ? "transit" : "caught"}">tick ${o.tick} · ` +
+    `${o.crew_id} ${overrunPhrase(o)}${isTransitRow(o) ? "" : " at " + fmtClock(o.at_s)}</div>`).join("");
   $("sb_ledger").classList.toggle("on", ledgerRows.length > 0);
   // A CREW THAT LEAVES THE MAP IS OUT (founder ruling 2026-09-26)
   const nLeft = sb.crews_left_map ?? 0;
@@ -2913,6 +2949,14 @@ function render(st) {
   $("oc_monitoring").textContent = oc.monitoring || 0;
   $("oc_notthreat").textContent = oc.not_threatened || 0;
   $("oc_abandoned_row").classList.toggle("hot", (oc.abandoned_unsavable || 0) > 0);
+  // 2026-11-17 (contracts outcome_lost_capacity): the lost-home split, when
+  // the server sends it (the key is present only then)
+  const split = Object.prototype.hasOwnProperty.call(oc, "lost_capacity");
+  $("oc_lost_row").style.display = split ? "" : "none";
+  $("oc_lost").textContent = oc.lost_capacity || 0;
+  $("oc_lost_row").classList.toggle("hot", (oc.lost_capacity || 0) > 0);
+  $("oc_abandoned_k").textContent = split ? "unsavable (no crew could reach it in time)"
+                                          : "abandoned — unsavable";
 
   // "SAFETY WITHDRAWAL ..." session notes -> loud transient banner on each
   // NEW one (evidence persists in the scoreboard count + amber feed entries;
@@ -2940,8 +2984,8 @@ function render(st) {
   if (nOverruns > 0) {
     // SAFETY SEMANTICS 25 / 33: a transit row is a crew that DROVE THROUGH the
     // band between tick ends, not one standing in the fire — said as such
-    const caughtRows = overrunRows.filter(o => o && !o.transit);
-    const transitRows = overrunRows.filter(o => o && o.transit);
+    const caughtRows = overrunRows.filter(o => o && !isTransitRow(o));
+    const transitRows = overrunRows.filter(o => isTransitRow(o));
     const parts = [];
     if (caughtRows.length)
       parts.push(`${caughtRows.length} crew${caughtRows.length === 1 ? "" : "s"} caught in fire (` +
@@ -3132,7 +3176,13 @@ function render(st) {
     if (c.outcome === "abandoned_unsavable") {
       L.circleMarker([c.lat, c.lon], { radius: 10.5, color: "#9aa4b2",
         weight: 2.5, opacity: 0.95, fill: false, fillOpacity: 0, dashArray: "2 3" })
-        .bindTooltip(`${c.client_id} — ABANDONED (unsavable): fire beat every feasible crew`)
+        .bindTooltip(`${c.client_id} — UNSAVABLE: no crew could lawfully reach it in time`)
+        .addTo(layers.clients);
+    } else if (c.outcome === "lost_capacity") {
+      // 2026-11-17 (contracts outcome_lost_capacity): amber dashed ring
+      L.circleMarker([c.lat, c.lon], { radius: 10.5, color: "#ffb74d",
+        weight: 2.5, opacity: 0.95, fill: false, fillOpacity: 0, dashArray: "2 3" })
+        .bindTooltip(`${c.client_id} — LOST to capacity: some crew could once have served it; none reached it in time`)
         .addTo(layers.clients);
     } else if (c.outcome === "triaged") {
       L.circleMarker([c.lat, c.lon], { radius: 10.5, color: "#c792ea",
@@ -3264,7 +3314,7 @@ function render(st) {
     // overrun red flash / transit orange glow). No-op in the offline shim (no
     // per-marker element).
     const ovr = overrunIds[c.crew_id];
-    styleCrewMarker(R, c, !!(ovr && !ovr.transit), !!(ovr && ovr.transit));
+    styleCrewMarker(R, c, !!(ovr && !isTransitRow(ovr)), isTransitRow(ovr));
 
     // DRIVEN TRAIL: the road path actually driven (map_view.trail runs, split
     // at jumps); an older backend falls back to the per-tick track breadcrumb
@@ -3475,7 +3525,7 @@ function render(st) {
     if (c.relocating)
       badges += ` <span class="chip amber" title="continuous crew safety (SEMANTICS 10a/10e): the fire threatens (or is projected to reach) this crew's position — it is repositioning to a currently-safe zone">⟳ repositioning — ${RELOC_LABEL[c.relocate_reason] || (c.relocate_reason === "proactive_escape" ? "proactive escape" : c.relocate_reason === "zone_overrun" ? "zone overrun" : "zone threatened")}</span>`;
     if (overrunIds[c.crew_id])
-      badges += ` <span class="chip ${overrunIds[c.crew_id].transit ? "transit" : "caught"}" title="${overrunIds[c.crew_id].transit
+      badges += ` <span class="chip ${isTransitRow(overrunIds[c.crew_id]) ? "transit" : "caught"}" title="${isTransitRow(overrunIds[c.crew_id])
         ? "SEMANTICS 25: the path audit — this crew drove through the pessimistic front's band between two tick ends (each sample judged at its own pass time)"
         : "SEMANTICS 10c: a crew is standing in the fire (the founder's G1/G2 bug) — audited so violations can never read 0 while a crew is in the burn"}">⚠ ${overrunLabel(overrunIds[c.crew_id])}</span>`;
     // founder rulings 2026-09-26: a crew that LEFT THE MAP is out of the
@@ -3499,7 +3549,7 @@ function render(st) {
     }
     const cls = c.left_map ? " leftmap"
       : (overrunIds[c.crew_id]
-         ? (overrunIds[c.crew_id].transit ? " transit" : " caught")
+         ? (isTransitRow(overrunIds[c.crew_id]) ? " transit" : " caught")
          : (c.relocating ? " reloc" : ""));
     return `<div class="crew-block${cls}"><span class="cid">${c.crew_id}</span> ` +
       `<span class="st">${c.status}</span>${badges}${dep}${offroad}${stops}${done}${tail}</div>`;
