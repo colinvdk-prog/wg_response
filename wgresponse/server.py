@@ -150,6 +150,7 @@ import logging
 import math
 import os
 import threading
+import time
 from collections import OrderedDict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -281,12 +282,26 @@ SCENARIOS = {
 }
 
 
-def parse_beacon(payload: object) -> CrewBeacon:
+#: SAFETY SEMANTICS 44: a crew report may be at most this far ahead of the
+#: server's clock (s) — a phone clock a few minutes fast is normal; one hours
+#: ahead would freeze the crew where it was (every later report "older").
+BEACON_FUTURE_TOLERANCE_S = 300.0
+#: ... and a t_s above this is milliseconds (JavaScript Date.now()), not
+#: seconds: 1e11 s is the year 5138.
+BEACON_MAX_T_S = 1e11
+
+
+def parse_beacon(payload: object, now_s: Optional[float] = None) -> CrewBeacon:
     """Validate a decoded JSON payload into a CrewBeacon.
 
     Required: crew_id (non-empty str), lat/lon (degrees, in range), t_s (unix
     seconds, number). Optional: status (CrewStatus value string), accuracy_m,
-    speed_mps (non-negative numbers). Raises ValueError on any problem."""
+    speed_mps (non-negative numbers). Raises ValueError on any problem.
+
+    SAFETY SEMANTICS 44 (2026-11-17): every number must be finite (JSON NaN /
+    Infinity are refused); t_s must be seconds, not milliseconds; with now_s
+    (the server's clock) t_s may be at most BEACON_FUTURE_TOLERANCE_S ahead.
+    A report the tracker would freeze a crew on never gets in."""
     if not isinstance(payload, dict):
         raise ValueError("beacon body must be a JSON object")
     crew_id = payload.get("crew_id")
@@ -300,6 +315,15 @@ def parse_beacon(payload: object) -> CrewBeacon:
         raise ValueError("lat, lon, t_s are required numbers")
     if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
         raise ValueError("lat/lon out of range")
+    if not math.isfinite(t_s):
+        raise ValueError("t_s must be a finite number of unix seconds")
+    if t_s > BEACON_MAX_T_S:
+        raise ValueError("t_s looks like milliseconds; send unix seconds")
+    if now_s is not None and t_s > float(now_s) + BEACON_FUTURE_TOLERANCE_S:
+        raise ValueError(
+            f"t_s is {t_s - float(now_s):.0f} s ahead of the server clock "
+            f"(at most {BEACON_FUTURE_TOLERANCE_S:.0f} s): check the "
+            f"device's clock")
     status_raw = payload.get("status", CrewStatus.AVAILABLE.value)
     try:
         status = CrewStatus(status_raw)
@@ -310,6 +334,8 @@ def parse_beacon(payload: object) -> CrewBeacon:
         speed_mps = float(payload.get("speed_mps", 0.0))
     except (TypeError, ValueError):
         raise ValueError("accuracy_m/speed_mps must be numbers")
+    if not (math.isfinite(accuracy_m) and math.isfinite(speed_mps)):
+        raise ValueError("accuracy_m/speed_mps must be finite")
     if accuracy_m < 0.0 or speed_mps < 0.0:
         raise ValueError("accuracy_m/speed_mps must be >= 0")
     return CrewBeacon(crew_id=crew_id.strip(), loc=LatLon(lat, lon), t_s=t_s,
@@ -1044,15 +1070,19 @@ class _App:
             return state.get("plan")
         return None
 
-    def ingest_beacon(self, beacon: CrewBeacon) -> None:
+    def ingest_beacon(self, beacon: CrewBeacon) -> Optional[bool]:
+        """Hand a report to the sink. Returns the sink's answer (CrewTracker:
+        False = ignored, not newer than the crew's last report) or None when
+        the sink says nothing."""
         sink = self._beacon_sink
         if sink is None:
-            return
+            return None
         ingest = getattr(sink, "ingest", None)
         if callable(ingest):
-            ingest(beacon)
-        elif callable(sink):
-            sink(beacon)
+            return ingest(beacon)
+        if callable(sink):
+            return sink(beacon)
+        return None
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -1090,6 +1120,24 @@ class _Handler(BaseHTTPRequestHandler):
             return False
         self._send_json(401, {"error": "unauthorized"})
         return True
+
+    def _beacon_auth_ok(self) -> bool:
+        """SAFETY SEMANTICS 44: a crew report needs a key even when the demo
+        is open — WGRESP_DEV_OPEN never opens POST /api/beacon (an open
+        endpoint let anyone add a crew that took a real job, or bench a real
+        crew with a spoofed "off duty"). X-Beacon-Key == WGRESP_BEACON_KEY
+        (the crews' devices) or X-Internal-API-Key == WGRESP_API_KEY (ops
+        tooling); neither configured = every report refused (fail closed)."""
+        for env, header in (("WGRESP_BEACON_KEY", "X-Beacon-Key"),
+                            ("WGRESP_API_KEY", "X-Internal-API-Key")):
+            expected = os.environ.get(env)
+            if not expected:
+                continue
+            provided = self.headers.get(header, "")
+            if hmac.compare_digest(provided.encode("utf-8"),
+                                   expected.encode("utf-8")):
+                return True
+        return False
 
     def _health_payload(self) -> dict:
         """Liveness + coarse degradation signal (SAFETY SEMANTICS 6).
@@ -1394,23 +1442,35 @@ class _Handler(BaseHTTPRequestHandler):
         self._send_json(code, out)
 
     def _post_beacon(self):
-        if self._reject_unauthorized():
+        if not self._beacon_auth_ok():
+            # SAFETY SEMANTICS 44: never opened by WGRESP_DEV_OPEN
+            self._send_json(401, {"error": "unauthorized: a crew report needs "
+                                           "X-Beacon-Key"})
             return
         payload, ok = self._read_json_body()
         if not ok:
             return
         try:
-            beacon = parse_beacon(payload)
+            beacon = parse_beacon(payload, now_s=time.time())
         except ValueError as e:
             self._send_json(400, {"error": str(e)})
             return
         try:
-            self.app.ingest_beacon(beacon)
+            accepted = self.app.ingest_beacon(beacon)
         except Exception as e:
             _LOG.exception("beacon sink failed")
             self._send_json(500, {"error": f"beacon sink: {e}"})
             return
-        self._send_json(200, {"ok": True, "crew_id": beacon.crew_id})
+        if accepted is False:
+            # SAFETY SEMANTICS 44: say so — a device whose reports are being
+            # dropped must not hear "ok" alone
+            self._send_json(200, {"ok": True, "crew_id": beacon.crew_id,
+                                  "accepted": False,
+                                  "ignored": "not newer than this crew's last "
+                                             "accepted report"})
+            return
+        self._send_json(200, {"ok": True, "crew_id": beacon.crew_id,
+                              "accepted": True})
 
     def _read_json_body(self):
         """Read + decode the request's JSON body.

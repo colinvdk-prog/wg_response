@@ -1790,6 +1790,36 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    delivery time nor withdrawals, so this record cannot be rebuilt later.
    Knob OFF and no --firms-log = byte-identical (tests/test_screen_shadow.py).
 
+44. A CREW REPORT IS KEYED, SANE AND ANSWERED; A CLIENT IS TOLD ONLY WHAT
+   THE CREW PLAN SUPPORTS (2026-11-17; the founder's crew-program review,
+   scratch_review/crew_program_review_2026-11-11, lane C, verified by the
+   orchestrator). Measured on a local stack: POST /api/beacon was open under
+   WGRESP_DEV_OPEN=1 (the live watcher and the public simulator run open), so
+   a made-up crew took a real job and a spoofed "off duty" benched a real
+   crew; a report with a future, millisecond, NaN or Infinity t_s was
+   accepted, after which every real report was "older" and dropped while the
+   server still answered "ok", and the crew never went stale; and the client
+   texts said "Crew dispatch underway — ensure property access now" and
+   "Crews are clear" with no crew on duty. Now: (a) a crew report needs
+   X-Beacon-Key == WGRESP_BEACON_KEY (the crews' devices) or
+   X-Internal-API-Key == WGRESP_API_KEY (ops tooling) — WGRESP_DEV_OPEN never
+   opens it; neither key configured = every report refused (fail closed).
+   (b) server.parse_beacon refuses a non-finite number, a t_s above 1e11
+   (milliseconds) and, with the server's clock, a t_s more than 300 s ahead;
+   CrewTracker.ingest refuses a non-finite t_s too. (c) The answer says
+   whether the report was accepted: {"accepted": false, "ignored": ...} when
+   the tracker dropped it as not newer. (a)-(c) are input validation, always
+   on: no valid report and no engine output changes. (d) cfg.
+   alert_crew_wording "plan" (watch --crew-text-from-plan): before each
+   evaluate the monitor tells the engine how many crews are on duty and which
+   clients the current plan (the incumbent) serves; NOTICE / WATCH say crews
+   are being scheduled only with a crew on duty; EXTREME says a crew is
+   scheduled only for a planned client, "being assigned, none confirmed —
+   follow official evacuation orders" with crews on duty, and "no response
+   crew is on duty — follow official evacuation orders" without; "crews
+   withdrawing" and "Crews are clear" only for a planned client. "fixed" =
+   byte-identical (tests/test_crew_reports.py).
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -3907,6 +3937,13 @@ class ResponseConfig:
     dispatch_ils_skip_all_served: bool = False
     # --- crew tracking ---
     beacon_stale_s: float = 600.0
+    # CREW WORDING (2026-11-17, the crew-program review; SAFETY SEMANTICS
+    # 44): "fixed" = the original client sentences ("Crew dispatch underway
+    # — ensure property access now", "Crews are clear", ...) whatever the
+    # crew plan says (byte-identical); "plan" = a message states only what
+    # the crews on duty and the current plan support. The watch daemon arms
+    # "plan" via --crew-text-from-plan.
+    alert_crew_wording: str = "fixed"
     # --- feeds ---
     poll_period_s: float = 300.0
     user_agent: str = "wg-response/0.1 (ops@thewildfireguardian.com)"
@@ -4855,6 +4892,9 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
             and 0.0 <= cfg.forecast_domain_snap_deg <= 1.0):
         problems.append("forecast_domain_snap_deg must be within [0, 1] "
                         "degrees")
+    # --- crew wording (SAFETY SEMANTICS 44) ---
+    if cfg.alert_crew_wording not in ("fixed", "plan"):
+        problems.append('alert_crew_wording must be "fixed" or "plan"')
     # --- screening shadow labels (SAFETY SEMANTICS 43) ---
     if not (math.isfinite(cfg.screen_rx_radius_m)
             and 0.0 <= cfg.screen_rx_radius_m <= 20000.0):

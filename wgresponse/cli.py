@@ -343,6 +343,12 @@ def _build_parser() -> argparse.ArgumentParser:
                          "domain snapped outward to a 0.05-degree grid, so a "
                          "fire whose shape moves a little keeps its domain "
                          "and its cached LANDFIRE tile")
+    # SAFETY SEMANTICS 44 (2026-11-17): default-OFF knob.
+    pw.add_argument("--crew-text-from-plan", action="store_true",
+                    help="cfg.alert_crew_wording = plan: client messages say "
+                         "a crew is scheduled only when the current plan "
+                         "serves the home, and say so plainly when no "
+                         "response crew is on duty")
     # SAFETY SEMANTICS 43 (2026-11-01): screening step 0, shadow only.
     pw.add_argument("--screen-labels", action="store_true",
                     help="cfg.screen_labels (founder 2026-11-01, screening "
@@ -2117,6 +2123,13 @@ def _cmd_watch(args) -> int:
     startup_notes_fix += _notes
     cfg, _notes = _screen_cfg(cfg, args)     # SEMANTICS 43
     startup_notes_fix += _notes
+    if getattr(args, "crew_text_from_plan", False):
+        cfg = dataclasses.replace(cfg, alert_crew_wording="plan")  # SEM 44
+        startup_notes_fix.append(
+            "CREW TEXT FROM THE PLAN (2026-11-17): client messages say a crew "
+            "is scheduled only when the current plan serves the home, and "
+            "say so plainly when no response crew is on duty — SAFETY "
+            "SEMANTICS 44")
     if getattr(args, "forecast_tiers", False):
         cfg = dataclasses.replace(cfg, forecast_tiers=True)
         startup_notes_fix.append(

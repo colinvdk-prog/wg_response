@@ -959,6 +959,10 @@ class ThreatMonitor:
         timings["assess_s"] = time.monotonic() - _t
         _t = time.monotonic()
         try:
+            if getattr(self._cfg, "alert_crew_wording", "fixed") == "plan":
+                # SAFETY SEMANTICS 44: the crew facts this cycle's messages
+                # may state — crews on duty and the current plan's clients
+                self._set_crew_context(now_s)
             events = self._evaluate_alerts(assessments, now_s, blind_pairs,
                                            feeds_healthy, incident_meta)
         except Exception as exc:
@@ -1197,6 +1201,22 @@ class ThreatMonitor:
                 t_s=now_s, kind="seed_retired", message=msg,
                 incident_id=ign.incident_id,
                 detail={"reason": seeded_mod.RETIRED_AT_HORIZON}))
+
+    def _set_crew_context(self, now_s: float) -> None:
+        """SAFETY SEMANTICS 44 (cfg.alert_crew_wording "plan"): tell the
+        alert engine how many crews are on duty now and which clients the
+        current plan (the incumbent) serves. An engine without the seam, or
+        a tracker that fails, leaves the engine untold (no crew on duty)."""
+        setter = getattr(self._alert_engine, "set_crew_context", None)
+        if not callable(setter):
+            return
+        on_duty = len(self._eligible_crews(now_s, []))
+        planned = set()
+        plan = self._incumbent
+        for cp in (getattr(plan, "plans", None) or {}).values():
+            for stop in getattr(cp, "stops", None) or ():
+                planned.add(stop.client_id)
+        setter(on_duty, planned)
 
     def _evaluate_alerts(self, assessments: list, now_s: float,
                          blind_pairs: set, feeds_healthy: bool,

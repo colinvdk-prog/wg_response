@@ -10,6 +10,7 @@ cfg.beacon_stale_s (seconds).
 """
 from __future__ import annotations
 
+import math
 from collections import deque
 from typing import Deque, Dict, List, Optional
 
@@ -37,6 +38,11 @@ class CrewTracker:
         the crew's last accepted beacon are ignored (out-of-order delivery).
         Returns True if the beacon was accepted.
         """
+        if not math.isfinite(beacon.t_s):
+            # SAFETY SEMANTICS 44: a NaN time never compares newer (every
+            # later report would be dropped) and an infinite one never goes
+            # stale — refused before it can freeze a crew
+            return False
         crew = self._crews.get(beacon.crew_id)
         if crew is None:
             crew = Crew(crew_id=beacon.crew_id, name=beacon.crew_id)

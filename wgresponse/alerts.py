@@ -201,6 +201,11 @@ class AlertEngine:
         # Incident display names learned from incident_meta (D3 comms):
         # every client message names its incident, not just the pair id.
         self._incident_names: Dict[str, str] = {}
+        # CREW WORDING (SAFETY SEMANTICS 44, cfg.alert_crew_wording "plan"):
+        # what the orchestrator says about crews before each evaluate —
+        # how many crews are on duty and which clients the current plan
+        # serves. None = never told (reads as no crew on duty).
+        self._crew_context: Optional[dict] = None
 
     # ------------------------------------------------------------------ API
 
@@ -310,6 +315,19 @@ class AlertEngine:
         # already ledgered and drops out of the pending set.
         self._flush_restored_unnotified(latest, now_s)
         return events
+
+    def set_crew_context(self, on_duty: int, planned_clients) -> None:
+        """SAFETY SEMANTICS 44: the crew facts the next messages may state —
+        crews on duty now and the client ids on the current plan. Read only
+        with cfg.alert_crew_wording == "plan"."""
+        self._crew_context = {"on_duty": int(on_duty),
+                              "planned": frozenset(planned_clients or ())}
+
+    def _crew_facts(self, client_id: str) -> "tuple[bool, bool]":
+        """(on the current plan, any crew on duty) for client_id."""
+        ctx = self._crew_context or {}
+        planned = client_id in (ctx.get("planned") or ())
+        return planned, planned or int(ctx.get("on_duty") or 0) > 0
 
     def states(self) -> Dict[_PairKey, AlertRecord]:
         """Current records keyed by (client_id, incident_id).
@@ -724,27 +742,51 @@ class AlertEngine:
             "based on the pessimistic (earliest credible) arrival.]"
             if regime else ""
         )
+        # CREW WORDING (SAFETY SEMANTICS 44): with cfg.alert_crew_wording
+        # "plan" a message says only what the crew plan supports; "fixed"
+        # keeps the original sentences (byte-identical)
+        by_plan = getattr(self._cfg, "alert_crew_wording", "fixed") == "plan"
+        planned, on_duty = (self._crew_facts(rec.client_id) if by_plan
+                            else (True, True))
         if state is AlertState.NOTICE_72H:
+            crew = ("Advance notice — crews being scheduled." if on_duty else
+                    "Advance notice — no response crew is on duty yet; "
+                    "follow official guidance.")
             return (
                 f"Projected fire arrival at {name}: {etas} — {fire}. "
-                "Advance notice — crews being scheduled." + banner
+                + crew + banner
             )
         if state is AlertState.WATCH:
+            crew = ("Under continuous watch; crews scheduled as needed."
+                    if on_duty else
+                    "Under continuous watch; no response crew is on duty yet.")
             return (
                 f"Monitoring {name} for {fire}: projected fire arrival {etas}. "
-                "Under continuous watch; crews scheduled as needed." + banner
+                + crew + banner
             )
         if state is AlertState.EXTREME_24H:
             if p50_h <= 0.0:
+                crew = ("do not approach; crews withdrawing." if planned else
+                        "do not approach.")
                 return (
                     f"EXTREME alert for {name} — {fire}: fire projected AT "
-                    "the property NOW — do not approach; crews withdrawing."
-                    + banner
+                    "the property NOW — " + crew + banner
                 )
+            if not by_plan:
+                crew = "Crew dispatch underway — ensure property access now."
+            elif planned:
+                crew = ("A response crew is scheduled for this property — "
+                        "ensure property access now.")
+            elif on_duty:
+                crew = ("Crews are being assigned; none is confirmed for this "
+                        "property yet — ensure property access and follow "
+                        "official evacuation orders.")
+            else:
+                crew = ("No response crew is on duty — follow official "
+                        "evacuation orders.")
             return (
                 f"EXTREME alert for {name} — {fire}: projected fire arrival "
-                f"{etas}. Crew dispatch underway — ensure property access now."
-                + banner
+                f"{etas}. " + crew + banner
             )
         if state is AlertState.CLEARED:
             return (
@@ -752,9 +794,11 @@ class AlertEngine:
                 f"{self._cfg.notice_h:.0f}h alert window for {fire}."
             )
         if state is AlertState.IMPACTED:
+            crew = ("Crews are clear; post-impact assessment to follow."
+                    if planned else "Post-impact assessment to follow.")
             return (
                 f"Projected fire arrival time has passed at {name} ({fire}). "
-                "Crews are clear; post-impact assessment to follow."
+                + crew
             )
         return f"Alert state {state.value} for {name} — {fire}."
 
