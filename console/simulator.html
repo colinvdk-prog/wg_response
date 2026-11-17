@@ -766,14 +766,14 @@
            splits the lost homes — "lost — capacity" (some crew could once have
            served it, none reached it in time) vs "unsavable" (never feasible) -->
       <div class="sbrow" id="oc_lost_row" style="display:none" title="some crew could once have served this home lawfully, but no crew reached it before the fire"><span class="k oc-lost">lost — capacity (was savable, no crew in time)</span><span id="oc_lost">0</span></div>
-      <div class="sbrow" id="oc_abandoned_row"><span class="k oc-abandoned" id="oc_abandoned_k">abandoned — unsavable</span><span id="oc_abandoned">0</span></div>
+      <div class="sbrow" id="oc_abandoned_row"><span class="k oc-abandoned">abandoned — unsavable</span><span id="oc_abandoned">0</span></div>
       <div class="sbrow"><span class="k oc-triaged">triaged (skipped to save more)</span><span id="oc_triaged">0</span></div>
       <div class="sbrow"><span class="k">in progress / pending</span><span id="oc_inflight">0</span></div>
       <!-- 'monitoring' = beyond the 72 h notice horizon but with a PROJECTED
            ETA; distinct from not_threatened (truly no ETA). -->
       <div class="sbrow"><span class="k oc-monitoring">monitoring (beyond 72 h, ETA projected)</span><span id="oc_monitoring">0</span></div>
       <div class="sbrow"><span class="k">not threatened</span><span id="oc_notthreat">0</span></div>
-      <div id="oc_legend">blue ring = gel applied (protected) · amber dashed ring = lost to capacity, some crew could once have served it but none reached it in time · grey dashed ring = unsavable, no crew could ever lawfully reach it in time · violet dashed ring = triaged, deprioritized so crews could save more homes · slate dotted ring = monitoring, beyond 72 h but an ETA exists.</div>
+      <div id="oc_legend">blue ring = gel applied (protected) · amber dashed ring = lost to capacity, some crew could once have served it but none reached it in time · grey dashed ring = abandoned, fire beat every feasible crew · violet dashed ring = triaged, deprioritized so crews could save more homes · slate dotted ring = monitoring, beyond 72 h but an ETA exists.</div>
     </div>
     <div id="alerts" class="section"><h2>Alert feed (live ladder)</h2><div id="alertlist"></div></div>
     <div id="itins" class="section"><h2>Crew itineraries</h2><div id="itinlist"></div></div>
@@ -819,7 +819,7 @@
   <div class="row"><span class="dot" style="background:transparent;border:2px solid #2196f3"></span> gel applied (protected)</div>
   <!-- LAW 8 OUTCOME TAG: the two "why unprotected" affordance rings -->
   <div class="row"><span class="dot" style="background:transparent;border:2px dashed #ffb74d"></span> lost — capacity (was savable, no crew in time)</div>
-  <div class="row"><span class="dot" style="background:transparent;border:2px dashed #9aa4b2"></span> unsavable (no crew could ever reach it in time)</div>
+  <div class="row"><span class="dot" style="background:transparent;border:2px dashed #9aa4b2"></span> abandoned — unsavable (fire beat crews)</div>
   <div class="row"><span class="dot" style="background:transparent;border:2px dashed #c792ea"></span> triaged — saved more homes instead</div>
   <div class="row"><span class="dot" style="background:transparent;border:2px dotted #78909c"></span> monitoring — beyond 72 h, ETA projected</div>
   <div class="row"><span class="dot" style="background:#8b93a1"></span> none</div>
@@ -1211,7 +1211,7 @@ const colorFor = s => COLORS[s] || COLORS.none;
 const OUTCOME_LABEL = {
   saved: "SAVED (gelled, fire not yet arrived)",
   protected_then_impacted: "PROTECTED then impacted (gelled, fire arrived)",
-  abandoned_unsavable: "UNSAVABLE (no crew could lawfully reach it in time)",
+  abandoned_unsavable: "ABANDONED — unsavable (fire beat every feasible crew)",
   // 2026-11-17 (contracts outcome_lost_capacity): some crew could once have
   // served it (planned, in the coating window's plan, or left for capacity /
   // triage), but no crew reached it before the fire
@@ -2128,7 +2128,7 @@ function rptTableHtml(st, r) {
   const body = rows.map(h => {
     // 2026-11-17 (contracts outcome_lost_capacity): why, when the server says
     const why = h.lost === "capacity" ? " — lost to capacity (a crew could once have served it)"
-      : (h.lost === "unsavable" ? " — unsavable (no crew could reach it in time)" : "");
+      : (h.lost === "unsavable" ? " — unsavable (fire beat every feasible crew)" : "");
     const res = h.coated_in_time ? `<td class="ok">coated in time</td>`
       : (h.coated_s != null ? `<td class="no">coated after the fire${why}</td>`
                             : `<td class="no">not coated${why}</td>`);
@@ -2177,8 +2177,8 @@ function renderReport(st) {
          // 2026-11-17 (contracts outcome_lost_capacity): the split, when sent
          (r.reached_uncoated_capacity != null && r.reached_uncoated > 0
            ? ` — ${r.reached_uncoated_capacity} lost to capacity (some crew could once have ` +
-             `served them), ${r.reached_uncoated_unsavable} unsavable (no crew could reach ` +
-             `them in time)` : "") + `.</p>`;
+             `served them), ${r.reached_uncoated_unsavable} unsavable (the fire beat every ` +
+             `feasible crew)` : "") + `.</p>`;
   if (n) det += rptNearestLine(st, n, "Nearest time between a crew and the fire");
   else if (rptHasFire(st))
     det += `<p><b>Nearest time between a crew and the fire:</b> none yet — the fire has not ` +
@@ -2955,8 +2955,6 @@ function render(st) {
   $("oc_lost_row").style.display = split ? "" : "none";
   $("oc_lost").textContent = oc.lost_capacity || 0;
   $("oc_lost_row").classList.toggle("hot", (oc.lost_capacity || 0) > 0);
-  $("oc_abandoned_k").textContent = split ? "unsavable (no crew could reach it in time)"
-                                          : "abandoned — unsavable";
 
   // "SAFETY WITHDRAWAL ..." session notes -> loud transient banner on each
   // NEW one (evidence persists in the scoreboard count + amber feed entries;
@@ -3176,7 +3174,7 @@ function render(st) {
     if (c.outcome === "abandoned_unsavable") {
       L.circleMarker([c.lat, c.lon], { radius: 10.5, color: "#9aa4b2",
         weight: 2.5, opacity: 0.95, fill: false, fillOpacity: 0, dashArray: "2 3" })
-        .bindTooltip(`${c.client_id} — UNSAVABLE: no crew could lawfully reach it in time`)
+        .bindTooltip(`${c.client_id} — ABANDONED (unsavable): fire beat every feasible crew`)
         .addTo(layers.clients);
     } else if (c.outcome === "lost_capacity") {
       // 2026-11-17 (contracts outcome_lost_capacity): amber dashed ring

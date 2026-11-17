@@ -33,7 +33,13 @@ from wgresponse.contracts import ResponseConfig
 ITER3_OFF = {"sim_far_side_zones": False, "reinforce_entry_by_need": False,
              "ember_eta_landings": False,
              "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0,
-             "egress_dest_durable_h": 0.0}
+             "egress_dest_durable_h": 0.0,
+             # ... and the crew-program review fixes (SAFETY SEMANTICS
+             # 46-47 and two display-only knobs, 2026-11-17)
+             "escape_wait_watch": False, "refuge_keeps_exit": False,
+             "crew_overrun_worst_row": False, "replan_on_release": False,
+             "outcome_lost_capacity": False,
+             "unserved_reason_refresh": False}
 FAR_ONLY = dict(ITER3_OFF, sim_far_side_zones=True)
 
 

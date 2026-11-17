@@ -53,7 +53,13 @@ ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
              # ... and the iteration-4 laws (SAFETY SEMANTICS 36-37)
              "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0,
              # ... and the iteration-5 law (SAFETY SEMANTICS 38)
-             "egress_dest_durable_h": 0.0}
+             "egress_dest_durable_h": 0.0,
+             # ... and the crew-program review fixes (SAFETY SEMANTICS
+             # 46-47 and two display-only knobs, 2026-11-17)
+             "escape_wait_watch": False, "refuge_keeps_exit": False,
+             "crew_overrun_worst_row": False, "replan_on_release": False,
+             "outcome_lost_capacity": False,
+             "unserved_reason_refresh": False}
 ITER1_OFF = {"crew_path_audit": False, "dispatch_keep_frozen": False,
              "plan_route_exact": False, "crew_ingress_judged": False,
              **ITER2_OFF}

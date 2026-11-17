@@ -759,6 +759,14 @@ SIM_REVIEW_FIXES_2026_11_17 = (
 #: keep-until: the zone legs and a bisected road search from the node); the
 #: rest are refused unjudged — deterministic, never a wall clock
 REFUGE_EXIT_MAX_PROBES = 6
+#: ... and how long the way out must stay open: False (shipped) = past the
+#: arrival plus the last-exit lead and one step (the refuge is not due to be
+#: left with nowhere to go); True = until the waiting crew would have to
+#: leave the refuge (its own durable time less the lead) — the arm measured
+#: 2026-11-17 and not taken: Beaver Creek's canonical high fire 37 -> 31
+#: homes in 12 h, no row changed (docs/SIMULATOR_DESIGN.md "Crew program
+#: review fixes (2026-11-17)")
+REFUGE_EXIT_UNTIL_LEAVE = False
 
 #: SEM-10 escape-path sample spacing (m): _route_points_with_times subdivides
 #: every polyline span into pieces of at most this length so the front cannot
@@ -6249,34 +6257,26 @@ class SimSession:
                            zone_id: Optional[str] = None) -> bool:
         """A REFUGE KEEPS A WAY OUT (contracts refuge_keeps_exit, SAFETY
         SEMANTICS 46b): True when a crew that reaches the refuge at `loc` (a
-        catalog zone, or a road refuge) at arrive_s may wait there and still
-        leave it lawfully when it must. The fire never reaches it within
-        the fields' horizon (an unbounded keep-until), or both:
-          (a) it is not already due to be left: its keep-until (SEMANTICS
-              38) lies more than the last-exit lead plus one step past the
-              arrival (46a would move the crew on at once);
-          (b) its exits — 38's (ii)/(iii): a lawful way to a zone, or 28a's
-              road search to a road refuge, that stays clear H — stay open
-              until the waiting crew must leave: their latest departure
-              (less one step) no earlier than the refuge's own durable time
-              (38 (i): its 10c line less H) less the last-exit lead — the
-              moment 46a moves a crew whose keep-until its own cell sets.
-        Both reduce to ONE time, NEED: the refuge's own durable time less
-        the last-exit lead when that lies more than the lead plus one step
-        past the arrival, else the arrival plus the lead and one step; the
-        refuge keeps a way out iff its exit term (38's (ii)/(iii), the
-        latest lawful departure less one step) is at least NEED — for a
-        catalog zone its cached _dest_exit_until, for a road refuge whether
-        a way out is open at NEED plus one step (_exit_open_at: the same
-        terms judged at that departure, one road search instead of a
+        catalog zone, or a road refuge) at arrive_s still has a lawful way
+        on from it: the fire never reaches it within the fields' horizon,
+        or its EXIT TERM — 38's (ii)/(iii): the latest departure, less one
+        step, on a lawful leg to a zone, or on 28a's road search to a road
+        refuge, that stays clear H — lies at least the last-exit lead plus
+        one step past the arrival, NEED (a way out that the waiting crew
+        could still take when 46a would first move it; a refuge without one
+        is due to be left the moment it is reached, with nowhere to go). A
+        catalog zone reads its cached _dest_exit_until; a road refuge
+        whether a way out is open at NEED plus one step (_exit_open_at: the
+        same terms judged at that departure — one road search instead of a
         bisection; the fields are static, so a way open then was open
-        before). A refuge whose own cell outlasts its ways out is a dead
-        end the crew would wait in until the sweep forced it out through
-        old band (measured: Beaver Creek's 24-h canonical fire, a road
-        refuge with 12.7 h of life and no exit from the arrival — 12 h
-        later, 682.5 min past the line). One level: the exits' own refuges
-        are not asked in turn. True whenever the law is off. Memoised per
-        field generation."""
+        before). The smallest test that keeps a crew out of the measured
+        dead end (Beaver Creek's 24-h canonical fire: a road refuge with
+        12.7 h of life and no exit from the arrival, left 12 h later 682.5
+        min past the line). Measured and not taken (REFUGE_EXIT_UNTIL_LEAVE):
+        exits open until the refuge's own durable time less the lead — it
+        cost Beaver Creek's canonical high fire 6 of 37 homes in 12 h and
+        changed no row. One level: an exit's own refuge is not asked in
+        turn. True whenever the law is off. Memoised per field generation."""
         if not self._refuge_exit_armed():
             return True
         if self._refuge_exit_key != self._field_gen:
@@ -6294,8 +6294,9 @@ class SimSession:
             v = own > 0.0                    # never reached: it lasts
         else:
             le_s = self._cfg.escape_last_exit_lead_min * 60.0
-            need = (own - le_s if own > arrive_s + le_s + lead_s
-                    else arrive_s + le_s + lead_s)
+            need = arrive_s + le_s + lead_s
+            if REFUGE_EXIT_UNTIL_LEAVE and own - le_s > need:
+                need = own - le_s            # (the arm measured, not taken)
             if z.zone_id.startswith("pos:"):
                 v = self._exit_open_at(z, need + lead_s, speed_mps)
             else:
