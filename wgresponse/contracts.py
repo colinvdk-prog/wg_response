@@ -2128,14 +2128,28 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    85.5 % aspect) is one of the 3 x 3 native pixels around the one the cut
    took: every LFPS job reprojects to its own EPSG:4326 pixel grid (the
    Colorado pair: 0.0003402 vs 0.0003395 deg pixels), so two direct jobs
-   over overlapping areas disagree the same way. That is the trade: a cut
-   domain's terrain is a different, equally valid sampling of the same
-   LANDFIRE pixels, and its ETAs can move either way like a domain-snap
-   grid change (42) — not a later alert by construction. One LFPS job
-   ahead of a cycle's own: while the regions are still being fetched (the
-   first ~4-12 h after arming, 250 jobs for the six preset groups at 0.5
-   deg), a cycle's cold domain may queue at LFPS behind one regional job
-   that started before the cycle did. Knob OFF = byte-identical (tests/
+   over overlapping areas disagree the same way. THE GAIN (Lane C's harness
+   on the live config, 2 CPUs, a new fire 3 km upwind of the Beaver Creek
+   homes, a 300,960-cell domain in no mirror and no bundled tile): today no
+   forecast that cycle (two LFPS jobs first: 310-924 s live; never, if
+   LFPS fails there); with a ready region the cut took 0.30 s, 0 LFPS
+   calls, and the first alert (50 sent, 42 EXTREME) came 12.7 s after the
+   cycle started — a warm domain's time (12.0 s). THE TRADE, the founder's:
+   (a) a cut domain's terrain is a different, equally valid sampling of
+   the same LANDFIRE pixels, and its ETAs move either way like a domain-
+   snap grid change (42) — so for one home an alert can come later (or
+   earlier) than the domain's own LFPS tile would have given, once that
+   tile had arrived. Measured (region_eta_compare.py, the Colorado pair,
+   the live ensemble, 4 fires, 861 home-fire pairs): 804 kept their ladder
+   bucket (<= 24 h / <= 72 h / later), 21 moved earlier, 36 later; 212 vs
+   233 homes reached; p50 differences per fire median -0.8..+1.8 h. Over
+   24 nominal runs on all four pairs (region_bias_check.py) the cut
+   reached less in 13-15 runs and more in 9-11, 97.1 / 98.0 / 99.6 % of
+   the direct tile's cells at 12 / 24 / 72 h — no bias shown, none ruled
+   out. (b) While the regions are still being fetched (the first ~4-12 h
+   after arming, 250 jobs for the six preset groups at 0.5 deg) a cycle's
+   cold domain may queue at LFPS behind one regional job that started
+   before the cycle did. Knob OFF = byte-identical (tests/
    test_first_forecast_speed.py).
 
 54. A FIRE WITH NO FORECAST GOES FIRST IN THE MEMBER POOL — FIRST FORECAST
