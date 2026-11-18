@@ -1789,6 +1789,114 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    can be lost, every prev_s bound stays true). NASA keeps neither
    delivery time nor withdrawals, so this record cannot be rebuilt later.
    Knob OFF and no --firms-log = byte-identical (tests/test_screen_shadow.py).
+46. A WAITING CREW LEAVES BEFORE ITS REFUGE IS A DEAD END, AND A REFUGE
+   KEEPS A WAY OUT (2026-11-17; the founder-approved crew-program review of
+   2026-11-11, step 2 — scratch_review/crew_program_review_2026-11-11/
+   ASSESSMENT.md finding 3; docs/SIMULATOR_DESIGN.md "Crew program review
+   fixes (2026-11-17)"; cfg.escape_wait_watch, refuge_keeps_exit; read only
+   by the simulator — the live engine moves no crew). Measured by the
+   review's lane A on 24-h fires (page settings): Vail's canonical fire at
+   extreme kept two crews idle at Minturn from T+5.5 h to T+21.75 h while
+   its roads out closed, and the sweep then sent them through a band 339.9
+   min past the line and off the map; Beaver Creek's sent a crew at T+5.75
+   h (28a) to a road refuge 3.7 km out with 12.7 h of life and no lawful
+   exit from the moment it arrived — it waited 12 h and was moved through a
+   band 682.5 min past the line; the extended Camp-Fire-scale Paradise run
+   (28's known defect) drove a crew 495.9 and 909.1 min past it. The 28b
+   trigger watched only crews within H of their own line, and every refuge
+   law judged a refuge by its own cell's life.
+   (a) THE WAITING RULE (escape_wait_watch; with 28's H and L and 38's
+       horizon): an idle crew — whatever its own cell's margin — at a
+       catalog zone (within 250 m) or a parked spot whose KEEP-UNTIL (38:
+       the latest arrival for which the spot is not a dead end) falls
+       within L plus one step leaves now: by a lawful leg (20b) to the
+       nearest zone that stays clear H after the arrival, else a lawful road
+       refuge that does (28a's search; on the map while 36 is armed), else
+       36's off-map last exit (it stays while that way stays open) — 28b's
+       own choices, in 28b's order; with none, 28b and the pocket exit (28d)
+       as before; a fruitless search is not repeated in the same field
+       generation, position and hour.
+   (b) A REFUGE KEEPS A WAY OUT (refuge_keeps_exit; with 28a's and 38's H):
+       a refuge a crew is sent to wait at — the stop's own road refuge that
+       38 (b) counts as the stop's way out (the planner's stop_refuge, the
+       29 predicate) and that 28a then re-points the egress to, 28a's choice
+       as an egress starts, and 30b's restaging zone — must keep a lawful
+       way out: unless the fire never reaches it within the fields'
+       horizon, 38's exit term ((ii)/(iii): the latest lawful departure,
+       less one step, to a zone or a road refuge that stays clear H) must
+       lie at least L plus one step past the arrival — a way out the waiting
+       crew could still take when (a) would first move it (a refuge without
+       one is due to be left the moment it is reached, with nowhere to go).
+       28a takes such a refuge first (its target, the nearest durable zone,
+       a road refuge: the search refuses the ones without, judging at most
+       REFUGE_EXIT_MAX_PROBES), and one without only when none keeps one
+       (the law as before); 38 (b) counts only such a road refuge;
+       restaging takes none without. One level: an exit's own refuge is not
+       asked in turn. Built and measured, NOT armed by the simulator (below).
+   Measured (docs/SIMULATOR_DESIGN.md "Crew program review fixes
+   (2026-11-17)"; before = e43c24e, after = (a) armed, (b) not): Vail 24 h
+   rows 2 -> 0, crews off the map 2 -> 0, homes 40 -> 40; extended Paradise
+   rows 2 -> 0, homes 20 -> 20; the valley's 33 fires at 24 h rows 17 ->
+   4, those deeper than 30 min 14 -> 1 (Beaver Creek's, below), crews off
+   the map 17 -> 4, homes 977 -> 977, reached-uncoated 27 -> 27; six more
+   maps at 24 h rows 4 -> 1 (the one left 0.9 min, as before),
+   deepest 305.4 -> 0.9 min, crews off the map 7 -> 4, homes 247 -> 247;
+   the 12-h sets (the valley at 07:13 and 13:13, lane A's 32 fires) homes,
+   reached-uncoated, rows and crews off the map unchanged (one more
+   relocation in each valley set, one in lane A's). Beaver Creek's 24-h
+   canonical fire keeps its row: its Eagle-Vail pocket closed while the crew
+   was still working (at the 28a decision, T+5.68 h, none of the 23 road
+   refuges in reach and none of the four zones kept a lawful way on), which
+   (a) cannot reach. (b) removes that row (homes 34 -> 31: the pocket's last
+   homes are left to the fire; one crew leaves the map by its last lawful
+   way at T+11.5 h), but on tests/test_dest_durable.py's Paradise crown-fire
+   repro it sent sim-g3 at T+8.5 h to a refuge that kept a way out, (a) then
+   moved it on to one that did not, and at T+27 h the sweep drove it through
+   a band 1,019 min past the line ((b) off: no row); on the valley's 07:13
+   set it cost Beaver Creek's canonical extreme fire three reached homes and
+   took one crew off the map. Measured and dropped on the way: (b) in 28b's
+   and (a)'s own moves (it walked the extended Paradise crew from refuge to
+   refuge into a dead end, 1,473 min past the line), and (b) requiring the
+   way out to stay open until the crew would have to leave (the refuge's own
+   durable time less L; simui.REFUGE_EXIT_UNTIL_LEAVE: Beaver Creek's
+   canonical high fire 37 -> 31 homes in 12 h, no row changed). WHAT IT
+   CANNOT DO: a crew whose refuge became a dead end while it worked stays
+   until the sweep moves it (the pocket exit still takes only young bands);
+   (a)'s exits are 28b's, and one may itself become a dead end later — (a)
+   then moves the crew again while a way is open; (b) looks one level deep
+   and leaves 38's zone keep-until (iii) as it was. Knobs OFF = byte-
+   identical (pinned in tests/test_crew_waiting.py against goldens computed
+   on commit e43c24e on the worlds where they bite); the SIMULATOR arms (a)
+   and NOT (b) (simui.SIM_ARMS_REFUGE_KEEPS_EXIT — the founder's call).
+47. WHAT A SAFETY LAW DROPS IS NOT LOST — THE DEEPER AUDIT ROW AND THE
+   RELEASED STOP (2026-11-17; the crew-program review, ASSESSMENT.md
+   findings 6 and 8; cfg.crew_overrun_worst_row, replan_on_release; read
+   only by the simulator).
+   (a) THE AUDIT KEEPS THE DEEPER ROW (crew_overrun_worst_row; with 25's
+       path audit). One crew-overrun row per crew per step (25 b), and the
+       tick-end row — which carried no margin_min, so the ledger (33)
+       counted no depth — won over a deeper transit row: measured on Park
+       City's side fire at extreme (tick 13: a crew on timber-litter black
+       58 min old, its window 60), the path audit's row, 145 min past the
+       line with 607 s in the band, was dropped. When True tick-end and
+       world-change (23b) rows carry margin_min (eroded P10 less the moment
+       less the egress buffer); the WORST row per crew per step is kept
+       (burned before imminent, then the least margin; a tie keeps the
+       tick-end / world-change row, which then carries the path audit's
+       exposed_s); a transit row that wins over a crew still in the band at
+       the tick end says so (caught_at_end: the page reads it as caught);
+       a sub-stepped jump (speed above 4x) keeps the worst row per crew,
+       reason and mode, not the first. Reporting only: never fewer rows,
+       never a shallower one, no crew moves differently.
+   (b) A STOP RELEASED EN ROUTE IS RE-PLANNED AT ONCE (replan_on_release;
+       with 29). A head stop the 29 predicate released en route went back to
+       the job pool, but the fleet re-planned only once some crew idled
+       (the review's lane B, Malibu: about 45 min). When True a released
+       stop re-plans the fleet in the same step, as an opened coating window
+       does (even with no crew idle: eligible crews' non-frozen stops are
+       open to it), until a plan has seen it.
+   Knobs OFF = byte-identical (tests/test_crew_waiting.py, the Park City
+   golden on commit e43c24e); the SIMULATOR arms both.
 
 44. A CREW REPORT IS KEYED, SANE AND ANSWERED; A CLIENT IS TOLD ONLY WHAT
    THE CREW PLAN SUPPORTS (2026-11-17; the founder's crew-program review,
@@ -4299,6 +4407,84 @@ class ResponseConfig:
     # and every step of the work (the 29 predicate). 0 = off, byte-
     # identical. The SIMULATOR arms 8 (28a's horizon).
     egress_dest_durable_h: float = 0.0
+    # THE CREW-PROGRAM REVIEW FIXES (2026-11-17; the founder-approved crew-
+    # program review of 2026-11-11, step 2; read only by the simulator — the
+    # live engine moves no crew and audits no crew position).
+    # A WAITING CREW LEAVES BEFORE ITS REFUGE IS A DEAD END (SAFETY
+    # SEMANTICS 46a; read only with egress_durable_min_h,
+    # escape_last_exit_lead_min and egress_dest_durable_h > 0). The last-exit
+    # trigger (28b) watched only crews whose own cell the 10c line reaches
+    # within egress_durable_min_h: measured on 24-h fires (the review's lane
+    # A), two Vail crews idled at a zone from T+5.5 h to T+21.75 h while its
+    # roads out closed, then fled 339.9 min past the line and off the map;
+    # the extended Camp-Fire-scale Paradise run's crew drove 496 and 909
+    # min past it. When True an idle crew at a zone or a parked spot whose
+    # KEEP-UNTIL (SEMANTICS 38, _dest_keep_until: the latest arrival for
+    # which it is not a dead end) falls within escape_last_exit_lead_min plus
+    # one step leaves now — by a lawful leg to the nearest zone that stays
+    # clear egress_durable_min_h after arrival, else to a lawful road refuge
+    # that does (on the map while 36 is armed), else the 36 last exit off the
+    # map; with none, 28b and the pocket exit (28d) as before. False =
+    # byte-identical.
+    escape_wait_watch: bool = False
+    # A REFUGE KEEPS A WAY OUT (SAFETY SEMANTICS 46b; read only with
+    # egress_durable_min_h and egress_dest_durable_h > 0). The refuge laws
+    # (28a durable egress, 38 (b)'s stop refuge, 30b restaging) judged a
+    # refuge by its own cell's life only: measured, a Beaver Creek
+    # crew (24-h canonical fire, extreme) was sent at T+5.75 h to a road
+    # refuge 3.7 km out with 12.7 h of life and no lawful exit from the
+    # moment it arrived; it waited 12 h and was moved through a band 682.5
+    # min past the line. When True a refuge such a law sends a crew to wait
+    # at — and the stop's own road refuge SEMANTICS 38 (b) counts as its way
+    # out — must also keep a lawful way out (a leg to a zone, or 28a's road
+    # search to a road refuge, that stays clear egress_dest_durable_h — the
+    # 38 exits) open past the arrival plus escape_last_exit_lead_min and one
+    # step, unless the fire never reaches it in the fields' horizon; 28a
+    # takes a refuge without one only when no candidate keeps one,
+    # restaging never. False = byte-identical. Built and NOT armed by the
+    # simulator (simui.SIM_ARMS_REFUGE_KEEPS_EXIT): on the Paradise crown-
+    # fire repro it led a crew through a band 1,019 min past the line.
+    refuge_keeps_exit: bool = False
+    # THE AUDIT KEEPS THE DEEPER ROW (SAFETY SEMANTICS 47a; read only by the
+    # simulator with crew_path_audit). One crew-overrun row per crew per
+    # step, and the tick-end row (which carried no margin_min) won over a
+    # deeper transit row: measured on Park City's side fire at extreme, a
+    # row 145 min past the line with 607 s in the band was reported without
+    # either number. When True the WORST row per crew per step is kept
+    # (burned before imminent, then the least margin; a tie keeps the
+    # tick-end / world-change row), tick-end and world-change rows carry
+    # margin_min (and exposed_s from the path audit), a transit row that
+    # wins over a crew still in the band at the tick end says so
+    # (caught_at_end), and a sub-stepped jump keeps the worst row per crew,
+    # reason and mode. Reporting only — no crew moves differently. False =
+    # byte-identical.
+    crew_overrun_worst_row: bool = False
+    # A STOP RELEASED EN ROUTE IS RE-PLANNED AT ONCE (SAFETY SEMANTICS 47b;
+    # read only by the simulator with egress_corridor_guard). A head stop the
+    # 29 predicate released en route went back to the job pool, but nothing
+    # re-planned the fleet until some crew idled — measured (Malibu, the
+    # review's lane B): ~45 min. When True a released stop re-plans the
+    # fleet in the same step, as an opened coating window does (even with no
+    # crew idle). False = byte-identical.
+    replan_on_release: bool = False
+    # DISPLAY ONLY (2026-11-17; read only by the simulator's state(); no plan
+    # changes). outcome_lost_capacity: every home the fire reached uncoated
+    # read "abandoned — unsavable (fire beat every feasible crew)", though
+    # the review's lane B found 37 of 58 such homes had been feasible for
+    # some crew earlier (and a 4x fleet coated all 37). When True each home
+    # latches whether it was ever feasible for some crew (planned for a crew,
+    # held by the coating window, or unserved for 'capacity', 'dropped_by_
+    # optimizer' or 'triaged'), and such a lost home reads 'lost_capacity'
+    # instead of 'abandoned_unsavable' (the scoreboard, the map and the run
+    # report). False = byte-identical.
+    outcome_lost_capacity: bool = False
+    # ... unserved_reason_refresh: a stop released en route for safety (29)
+    # kept its old reason ('held') and a home the fire reached kept its old
+    # one ('capacity'). When True the page's reason is refreshed:
+    # 'released_en_route' at the release (until the next plan labels or
+    # assigns it), 'fire_arrived' once the fire's median has reached the
+    # home. False = byte-identical.
+    unserved_reason_refresh: bool = False
     # A STOP'S EGRESS FITS ITS DEADLINE (2026-10-21, the Eagle River valley
     # review's iteration 2; SAFETY SEMANTICS 32; read by dispatch). The
     # planner required a stop's departure to carry slack_min before the

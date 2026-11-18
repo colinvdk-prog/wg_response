@@ -45,11 +45,20 @@ from tests.test_egress_margin import SPEED, _provider
 #: the iteration-5 law off: the sessions of commit 8d0fbdf (whose simulator
 #: did not arm SEMANTICS 37's ramp either: armed by founder decision
 #: 2026-10-23)
-ITER5_OFF = {"egress_dest_durable_h": 0.0, "route_margin_egress_ramp": 0.0}
+#: ... and the crew-program review fixes of 2026-11-17 (SAFETY SEMANTICS
+#: 46-47 and two display-only knobs) off in both: the sessions these
+#: fixtures compare predate them
+REVIEW_FIXES_OFF = {"escape_wait_watch": False, "refuge_keeps_exit": False,
+                    "crew_overrun_worst_row": False,
+                    "replan_on_release": False,
+                    "outcome_lost_capacity": False,
+                    "unserved_reason_refresh": False}
+ITER5_OFF = {"egress_dest_durable_h": 0.0, "route_margin_egress_ramp": 0.0,
+             **REVIEW_FIXES_OFF}
 #: the law as commit 03dd325 armed it — 37's ramp not yet armed (founder
 #: decision 2026-10-23): the tests that measure the law alone pin this, their
 #: twins run the simulator's defaults
-LAW_ALONE = {"route_margin_egress_ramp": 0.0}
+LAW_ALONE = {"route_margin_egress_ramp": 0.0, **REVIEW_FIXES_OFF}
 
 
 def _hash(st):

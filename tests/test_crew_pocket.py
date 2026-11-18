@@ -47,7 +47,13 @@ ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
              # ... and the iteration-4 laws (SAFETY SEMANTICS 36-37)
              "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0,
              # ... and the iteration-5 law (SAFETY SEMANTICS 38)
-             "egress_dest_durable_h": 0.0}
+             "egress_dest_durable_h": 0.0,
+             # ... and the crew-program review fixes (SAFETY SEMANTICS
+             # 46-47 and two display-only knobs, 2026-11-17)
+             "escape_wait_watch": False, "refuge_keeps_exit": False,
+             "crew_overrun_worst_row": False, "replan_on_release": False,
+             "outcome_lost_capacity": False,
+             "unserved_reason_refresh": False}
 #: SEMANTICS 28 alone, at the simulator's values
 POCKET_ONLY = dict(ITER2_OFF, egress_durable_min_h=8.0,
                    escape_last_exit_lead_min=30.0)
@@ -359,20 +365,31 @@ def test_a_pocketed_crew_leaves_at_once_not_four_hours_later():
 # the extended Camp-Fire-scale run, armed — the independent review asked the
 # armed twin to cover all four drives (tests/test_crew_path_audit.py pins
 # iteration 1's yardstick with these laws off: transit rows at ticks 65, 82,
-# 88, 89); law-level assertions on a known defect are xfail(strict), exact
-# numbers ratchets (they may only improve)
+# 88, 89); exact numbers ratchets (they may only improve). The defect the
+# 2026-10-21 xfail named (sim-g1 waiting at a dead-end refuge) is fixed by
+# SAFETY SEMANTICS 46a (2026-11-17, tests/test_crew_waiting.py): the
+# iteration-5 twin below keeps the review fixes OFF and pins the old rows.
 # ---------------------------------------------------------------------------
 
-@pytest.fixture(scope="module")
-def campfire_armed():
+#: the crew-program review fixes of 2026-11-17 (SAFETY SEMANTICS 46-47 and
+#: two display-only knobs), all off
+REVIEW_FIXES_OFF = {"escape_wait_watch": False, "refuge_keeps_exit": False,
+                    "crew_overrun_worst_row": False,
+                    "replan_on_release": False,
+                    "outcome_lost_capacity": False,
+                    "unserved_reason_refresh": False}
+
+
+def _campfire(extra):
     key = "paradise_ca"
     if not simui.tile_file(key, fire_zone="extended").exists():
         pytest.skip("LOUD SKIP: paradise_ca extended tile not cached")
     loc = simui.LOCATIONS[key]
     s = simui.SimSession(
         key, 20, 2, seed="alerted|paradise_ca",
-        cfg_overrides={"spotting_enabled": True, "grass_ros_floor_frac": 0.10,
-                       "deploy_min": 15.0},
+        cfg_overrides=dict({"spotting_enabled": True,
+                            "grass_ros_floor_frac": 0.10,
+                            "deploy_min": 15.0}, **extra),
         fire_zone="extended")
     ign = geo.destination(loc.center, loc.hazard_wind_dir_deg, 13_500.0)
     s.ignite(ign.lat, ign.lon, intensity="high",
@@ -390,13 +407,26 @@ def campfire_armed():
     return st, rows, notes
 
 
-def test_extended_campfire_scale_armed_twin(campfire_armed):
-    """Armed, 120 ticks (60 h): sim-g2 leaves by its last exit at tick 30
-    (28b, a road refuge 7 km out) and its pocket at tick 70 (28d) — its two
-    egress drives through the band (ticks 82 and 89, 326 and 217 min past
-    the line) are gone; sim-g1's two stay (ticks 65 and 88), the defect the
-    next test names. Ratchets: no more rows, none deeper, none new."""
-    st, rows, notes = campfire_armed
+@pytest.fixture(scope="module")
+def campfire_iter5():
+    """The iteration-5 simulator (SEMANTICS 28-38 armed, the 2026-11-17
+    review fixes off)."""
+    return _campfire(REVIEW_FIXES_OFF)
+
+
+@pytest.fixture(scope="module")
+def campfire_armed():
+    """The simulator as it ships (the 2026-11-17 review fixes armed)."""
+    return _campfire({})
+
+
+def test_extended_campfire_scale_armed_twin(campfire_iter5):
+    """Iteration 5, 120 ticks (60 h): sim-g2 leaves by its last exit at tick
+    30 (28b, a road refuge 7 km out) and its pocket at tick 70 (28d) — its
+    two egress drives through the band (ticks 82 and 89, 326 and 217 min
+    past the line) are gone; sim-g1's two stay (ticks 65 and 88), the defect
+    the next test pins. Ratchets: no more rows, none deeper, none new."""
+    st, rows, notes = campfire_iter5
     assert all(transit for _t, _c, transit, _m in rows)
     assert len(rows) <= 2
     assert {c for _t, c, _tr, _m in rows} <= {"sim-g1"}
@@ -410,17 +440,36 @@ def test_extended_campfire_scale_armed_twin(campfire_armed):
     assert st["scoreboard"]["transit_overruns_total"] == len(rows)
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "known defect (2026-10-21): sim-g1 waits at paradise_ca-z1, a refuge with "
-    "24 h of life whose only exit (z2) stops being durable at tick 29 and "
-    "lawful at tick 43 — the last-exit trigger watches only crews within "
-    "egress_durable_min_h of their own line, and once it does every way out "
-    "is older than the pocket exit's one-buffer cap; the sweep then moves it "
-    "at ticks 64 and 87, 496 and 909 min past the line (a wider watch was "
-    "measured worse: restaging (30b) returns crews to the dead end)"))
+def test_extended_campfire_scale_iter5_waits_in_the_dead_end(campfire_iter5):
+    """The defect the 2026-10-21 xfail named, pinned with the review fixes
+    off: sim-g1 waits at paradise_ca-z1, a refuge with 24 h of life whose
+    only exit (z2) stops being durable at tick 29 and lawful at tick 43 —
+    the last-exit trigger watches only crews within egress_durable_min_h of
+    their own line, and once it does every way out is older than the pocket
+    exit's one-buffer cap; the sweep moves it at ticks 64 and 87, 495.9 and
+    909.1 min past the line."""
+    _st, rows, _notes = campfire_iter5
+    assert [(t, c, round(m, 1)) for t, c, _tr, m in rows] == [
+        (65, "sim-g1", -495.9), (88, "sim-g1", -909.1)]
+
+
 def test_extended_campfire_scale_no_row_deeper_than_30_min(campfire_armed):
-    _st, rows, _notes = campfire_armed
-    assert all(m >= -30.0 for _t, _c, _tr, m in rows)
+    """Armed (SEMANTICS 46a): at tick 47 sim-g1's refuge (paradise_ca-z1) is
+    a dead end within the last-exit window and it leaves for a lawful road
+    refuge 7.6 km out; sim-g2 leaves by its last exit at tick 30 as before
+    and, at tick 67, a parked spot about to be a dead end. No row at all
+    (ratchet: none deeper than 30 min, the 2026-10-21 acceptance); every
+    home still served."""
+    st, rows, notes = campfire_armed
+    assert all(m is not None and m >= -30.0 for _t, _c, _tr, m in rows)
+    assert len(rows) == 0
+    assert any(t == 47 and n.startswith("crew sim-g1 leaves before its "
+                                        "refuge is a dead end")
+               for t, n in notes)
+    assert any(t == 30 and n.startswith("crew sim-g2 leaves by its last exit")
+               for t, n in notes)
+    assert st["scoreboard"]["served"] >= 20
+    assert st["scoreboard"]["crews_left_map"] == 0
 
 
 def test_glenwood_pocket_exit_trades_a_deep_late_row_for_a_shallow_early_one():

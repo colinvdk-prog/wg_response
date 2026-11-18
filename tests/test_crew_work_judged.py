@@ -62,7 +62,13 @@ ITER2_OFF = {"egress_durable_min_h": 0.0, "escape_last_exit_lead_min": 0.0,
              # ... and the iteration-4 laws (SAFETY SEMANTICS 36-37)
              "escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0,
              # ... and the iteration-5 law (SAFETY SEMANTICS 38)
-             "egress_dest_durable_h": 0.0}
+             "egress_dest_durable_h": 0.0,
+             # ... and the crew-program review fixes (SAFETY SEMANTICS
+             # 46-47 and two display-only knobs, 2026-11-17)
+             "escape_wait_watch": False, "refuge_keeps_exit": False,
+             "crew_overrun_worst_row": False, "replan_on_release": False,
+             "outcome_lost_capacity": False,
+             "unserved_reason_refresh": False}
 ITER1_OFF = {"crew_path_audit": False, "dispatch_keep_frozen": False,
              "plan_route_exact": False, "crew_ingress_judged": False,
              **ITER2_OFF}
@@ -157,10 +163,14 @@ def test_knob_on_the_same_worlds_have_no_overrun(tmp_path, world):
     the sessions agree with the pre-rule ones up to the world change. The
     run ledger (SAFETY SEMANTICS 33, 2026-10-21, reporting only) is pinned
     off: it adds the run's totals to every tick's scoreboard, so no state
-    matches a pre-rule one (its own test: tests/test_overrun_ledger.py)."""
+    matches a pre-rule one (its own test: tests/test_overrun_ledger.py);
+    so is the lost-home split (2026-11-17, display only: it adds the
+    'lost_capacity' tag to every tick's outcomes; tests/
+    test_crew_waiting.py)."""
     any_angle, spot_d, nth, ticks, golden, _rows = GOLDENS[world]
     hashes, rows, s = _golden_world(tmp_path, any_angle, spot_d, nth, ticks,
-                                    {"crew_overrun_ledger": False})
+                                    {"crew_overrun_ledger": False,
+                                     "outcome_lost_capacity": False})
     assert s._cfg.crew_work_judged
     assert rows == [0] * len(rows)
     first = len(golden) - ticks              # the first tick after the change

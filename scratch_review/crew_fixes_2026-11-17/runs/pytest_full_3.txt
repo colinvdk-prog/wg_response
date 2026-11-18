@@ -1,0 +1,187 @@
+........................................................................ [  2%]
+........................................................................ [  4%]
+........................................................................ [  7%]
+........................................................................ [  9%]
+........................................................................ [ 12%]
+........................................................................ [ 14%]
+........................................................................ [ 17%]
+........................................................................ [ 19%]
+........................................................................ [ 22%]
+......x................................................................. [ 24%]
+........................................................................ [ 26%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+........................................................................ [ 34%]
+........................................................................ [ 36%]
+........................................................................ [ 39%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 46%]
+........................................................................ [ 49%]
+........................................................................ [ 51%]
+........................................................................ [ 53%]
+........................................................................ [ 56%]
+.........................................ssssss......................... [ 58%]
+........................................................................ [ 61%]
+........................................................................ [ 63%]
+........................................................................ [ 66%]
+........................................................................ [ 68%]
+........................................................................ [ 71%]
+........................................................................ [ 73%]
+........................................................................ [ 76%]
+................s...........s...........s...........s...........s....... [ 78%]
+..................F................s.................s.............F...F [ 80%]
+F.........................ss............................................ [ 83%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 93%]
+........................................................................ [ 95%]
+........................................................................ [ 98%]
+.......................................................                  [100%]
+================================== FAILURES ===================================
+_____________________ test_buffer_binds_unserved_reasons ______________________
+
+tmp_path = WindowsPath('C:/Users/colin/AppData/Local/Temp/pytest-of-colin/pytest-6075/test_buffer_binds_unserved_rea0')
+
+    def test_buffer_binds_unserved_reasons(tmp_path):
+        """The slider measurably changes dispatch semantics: with a 30-min buffer
+        the marginal stop fails only the slack floor (infeasible_slack, SAFETY
+        SEMANTICS 7); at 90 min the hard departure deadline itself fails
+        (infeasible_deadline, SAFETY SEMANTICS 2). Queue-pressure scenario:
+        16 clients, 1 crew."""
+        reasons = {}
+        for buf in (30.0, 90.0):
+            cfg = dict(FAST)
+            cfg["egress_buffer_min"] = buf
+            # TRAVEL-SUBSTRATE PIN (2026-08-02 pair calibration): this scenario's
+            # geometry was tuned so the 30-min arm isolates the SLACK floor; at
+            # the calibrated pair (circuity 1.7 / route_margin_min 56) the ~26%
+            # slower chords make the hard DEADLINE bind first and the slack rung
+            # never surfaces here. The subject of this test is the buffer ->
+            # unserved-reason semantics, not the travel constants, so the legacy
+            # pair is pinned to keep the calibrated geometry. If this pin ever
+            # blocks, re-tune the scenario geometry instead of widening it.
+            cfg["circuity"] = 1.35
+            cfg["route_margin_min"] = 60.0
+            d = _controlled_tile_dir(tmp_path, "boulder_co", hamlet_half=3)
+            s = SimSession("boulder_co", 16, 1, seed="m1", cfg_overrides=cfg,
+                           tile_dir=d, roads_module=None)
+            ign = _upwind_ignition("boulder_co", 6_000.0)
+            s.ignite(ign.lat, ign.lon, intensity="high")
+            s.set_speed(2.0)
+            for _ in range(10):
+                st = s.tick()
+                # Subject: the buffer -> unserved-reason semantics. No serviced
+                # stop may depart past its rule; the 10c crew-overrun backstop
+                # (counting IMMINENT exposure in every mode since 2026-09-03,
+                # tri-model review A8) separately reports a DEPLOYING crew whose
+                # cell sits inside the 90-min buffer at one tick — a genuine
+                # late-withdrawal exposure this assertion used to hide.
+                assert all(a["violation"] is False for a in st["audit"]), st["audit"]
+                assert st["scoreboard"]["violations"] == len(st["crew_overruns"])
+                assert all(o["reason"] == "imminent" for o in st["crew_overruns"])
+            reasons[buf] = st["scoreboard"]["unserved_by_reason"]
+>       assert "infeasible_slack" in reasons[30.0]
+E       AssertionError: assert 'infeasible_slack' in {'fire_arrived': 2, 'in_progress': 1, 'no_safe_egress': 1, 'triaged': 1}
+
+tests\test_simui.py:447: AssertionError
+____________ test_outcome_monitoring_not_mislabeled_not_threatened ____________
+
+tmp_path = WindowsPath('C:/Users/colin/AppData/Local/Temp/pytest-of-colin/pytest-6075/test_outcome_monitoring_not_mi0')
+
+    def test_outcome_monitoring_not_mislabeled_not_threatened(tmp_path):
+        """round-4 verifier fix: a home with a FINITE eta_p50 beyond the notice
+        horizon (inside horizon_h, past notice_h — not yet an alert/dispatch job)
+        is tagged 'monitoring', NOT 'not_threatened'. Its finite ETA shows in the
+        same payload, so 'not_threatened' would self-contradict. Invariants every
+        tick: not_threatened <=> NO projected ETA; monitoring <=> a finite eta_p50,
+        ungelled, un-jobbed; the breakdown sums to len(clients) over the full
+        vocabulary. As the fire nears, homes cross into the notice window and LEAVE
+        monitoring (become jobbed) — a <=notice home is never tagged monitoring."""
+        d = _controlled_tile_dir(tmp_path, "boulder_co")
+        s = SimSession("boulder_co", 12, 2, seed="mon", cfg_overrides=dict(MON_CFG),
+                       tile_dir=d, roads_module=None)
+        ign = _nudge_to_burnable(s, _upwind_ignition("boulder_co", 7_000.0))
+        s.ignite(ign.lat, ign.lon, intensity="moderate")
+        s.set_speed(2.0)
+        saw_monitoring = False
+        saw_jobbed_after_monitoring = False
+        st = None
+        for _ in range(16):
+            st = s.tick()
+            assert st["scoreboard"]["violations"] == 0
+            outs = st["scoreboard"]["outcomes"]
+            # stable vocabulary incl. the new tag; sums to exactly one per home
+>           assert set(outs) == set(OUTCOME_TAGS)
+E           AssertionError: assert {'abandoned_u...pending', ...} == {'abandoned_u...mpacted', ...}
+E             
+E             Extra items in the left set:
+E             'lost_capacity'
+E             Use -v to get more diff
+
+tests\test_simui.py:2145: AssertionError
+_____________ test_outcomes_scoreboard_shape_sums_and_consistency _____________
+
+tmp_path = WindowsPath('C:/Users/colin/AppData/Local/Temp/pytest-of-colin/pytest-6075/test_outcomes_scoreboard_shape0')
+
+    def test_outcomes_scoreboard_shape_sums_and_consistency(tmp_path):
+        """scoreboard.outcomes is a stable {tag: count} over the full vocabulary,
+        non-negative, summing to len(clients) (every home gets exactly one
+        outcome); every client's outcome is a known tag; and the cross-field
+        invariants hold every tick (gel<->saved/protected; abandoned=>ungelled;
+        not_threatened=>no ETA/assignment)."""
+        s = _high_session(tmp_path, seed="out-sb", n_clients=16, n_crews=2)
+        ign = _upwind_ignition("boulder_co", 8_000.0)
+        s.ignite(ign.lat, ign.lon, intensity="high")
+        s.set_speed(2.0)
+        seen = set()
+        st = None
+        for _ in range(30):
+            st = s.tick()
+            assert st["scoreboard"]["violations"] == 0
+            outs = st["scoreboard"]["outcomes"]
+>           assert set(outs) == set(OUTCOME_TAGS)               # every tag present
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: assert {'abandoned_u...pending', ...} == {'abandoned_u...mpacted', ...}
+E             
+E             Extra items in the left set:
+E             'lost_capacity'
+E             Use -v to get more diff
+
+tests\test_simui.py:2274: AssertionError
+_________________ test_outcome_tags_carried_in_scrub_history __________________
+
+tmp_path = WindowsPath('C:/Users/colin/AppData/Local/Temp/pytest-of-colin/pytest-6075/test_outcome_tags_carried_in_s0')
+
+    def test_outcome_tags_carried_in_scrub_history(tmp_path):
+        """LAW 1 TIME-SCRUB carries the law-8 tags: every recorded snapshot has
+        per-client outcome + scoreboard.outcomes, byte-identical to the live frame
+        (so scrubbing back replays the outcome breakdown too)."""
+        s = _high_session(tmp_path, seed="out-scrub", n_clients=12, n_crews=2)
+        ign = _upwind_ignition("boulder_co", 8_000.0)
+        s.ignite(ign.lat, ign.lon, intensity="high")
+        s.set_speed(2.0)
+        live = {}
+        for _ in range(8):
+            st = s.tick()
+            assert st["scoreboard"]["violations"] == 0
+            live[st["tick"]] = json.dumps(st, sort_keys=True, allow_nan=False)
+        for k in range(1, 9):
+            snap = s.state_at(k)
+            assert snap is not None
+            # tags present in the replay
+            assert all("outcome" in c for c in snap["clients"])
+>           assert set(snap["scoreboard"]["outcomes"]) == set(OUTCOME_TAGS)
+E           AssertionError: assert {'abandoned_u...pending', ...} == {'abandoned_u...mpacted', ...}
+E             
+E             Extra items in the left set:
+E             'lost_capacity'
+E             Use -v to get more diff
+
+tests\test_simui.py:2313: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_simui.py::test_buffer_binds_unserved_reasons - AssertionErr...
+FAILED tests/test_simui.py::test_outcome_monitoring_not_mislabeled_not_threatened
+FAILED tests/test_simui.py::test_outcomes_scoreboard_shape_sums_and_consistency
+FAILED tests/test_simui.py::test_outcome_tags_carried_in_scrub_history - Asse...

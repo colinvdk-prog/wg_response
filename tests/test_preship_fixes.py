@@ -51,7 +51,13 @@ from tests.test_safety import _b1_case, _tstar_path
 ITER4_OFF = {"escape_refuge_on_map": False, "route_margin_egress_ramp": 0.0,
              "reinforce_entry_by_need": False, "sim_far_zones_off": "",
              # ... and the iteration-5 law (SAFETY SEMANTICS 38)
-             "egress_dest_durable_h": 0.0}
+             "egress_dest_durable_h": 0.0,
+             # ... and the crew-program review fixes (SAFETY SEMANTICS
+             # 46-47 and two display-only knobs, 2026-11-17)
+             "escape_wait_watch": False, "refuge_keeps_exit": False,
+             "crew_overrun_worst_row": False, "replan_on_release": False,
+             "outcome_lost_capacity": False,
+             "unserved_reason_refresh": False}
 #: 37 as the founder's switch arms it (the measured value; armed by founder
 #: decision 2026-10-23)
 RAMP_ON = {"route_margin_egress_ramp": simui.ROUTE_MARGIN_EGRESS_RAMP_MEASURED}
