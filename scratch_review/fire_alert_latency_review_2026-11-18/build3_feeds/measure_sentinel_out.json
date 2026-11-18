@@ -1,0 +1,193 @@
+{
+ "polls": [
+  {
+   "poll": 0,
+   "wall_s": 4.47,
+   "sources": {
+    "wfigs": {
+     "s": 3.794,
+     "ok": true,
+     "requests": 1,
+     "bytes": 9997,
+     "seen": 416,
+     "error": null
+    },
+    "firis": {
+     "s": 0.293,
+     "ok": true,
+     "requests": 1,
+     "bytes": 998,
+     "seen": 505,
+     "error": null
+    },
+    "calfire": {
+     "s": 0.38,
+     "ok": true,
+     "requests": 1,
+     "bytes": 2,
+     "seen": 0,
+     "error": null
+    }
+   }
+  },
+  {
+   "poll": 1,
+   "wall_s": 4.49,
+   "sources": {
+    "wfigs": {
+     "s": 3.803,
+     "ok": true,
+     "requests": 1,
+     "bytes": 10001,
+     "seen": 416,
+     "error": null
+    },
+    "firis": {
+     "s": 0.281,
+     "ok": true,
+     "requests": 1,
+     "bytes": 998,
+     "seen": 505,
+     "error": null
+    },
+    "calfire": {
+     "s": 0.403,
+     "ok": true,
+     "requests": 1,
+     "bytes": 2,
+     "seen": 0,
+     "error": null
+    }
+   }
+  },
+  {
+   "poll": 2,
+   "wall_s": 4.81,
+   "sources": {
+    "wfigs": {
+     "s": 4.107,
+     "ok": true,
+     "requests": 1,
+     "bytes": 10002,
+     "seen": 416,
+     "error": null
+    },
+    "firis": {
+     "s": 0.325,
+     "ok": true,
+     "requests": 1,
+     "bytes": 998,
+     "seen": 505,
+     "error": null
+    },
+    "calfire": {
+     "s": 0.379,
+     "ok": true,
+     "requests": 1,
+     "bytes": 2,
+     "seen": 0,
+     "error": null
+    }
+   }
+  },
+  {
+   "poll": 3,
+   "wall_s": 4.2,
+   "sources": {
+    "wfigs": {
+     "s": 3.518,
+     "ok": true,
+     "requests": 1,
+     "bytes": 9997,
+     "seen": 416,
+     "error": null
+    },
+    "firis": {
+     "s": 0.258,
+     "ok": true,
+     "requests": 1,
+     "bytes": 998,
+     "seen": 505,
+     "error": null
+    },
+    "calfire": {
+     "s": 0.42,
+     "ok": true,
+     "requests": 1,
+     "bytes": 2,
+     "seen": 0,
+     "error": null
+    }
+   }
+  },
+  {
+   "poll": 4,
+   "wall_s": 4.55,
+   "sources": {
+    "wfigs": {
+     "s": 3.751,
+     "ok": true,
+     "requests": 1,
+     "bytes": 10003,
+     "seen": 416,
+     "error": null
+    },
+    "firis": {
+     "s": 0.406,
+     "ok": true,
+     "requests": 1,
+     "bytes": 998,
+     "seen": 505,
+     "error": null
+    },
+    "calfire": {
+     "s": 0.397,
+     "ok": true,
+     "requests": 1,
+     "bytes": 2,
+     "seen": 0,
+     "error": null
+    }
+   }
+  },
+  {
+   "poll": 5,
+   "wall_s": 4.88,
+   "sources": {
+    "wfigs": {
+     "s": 3.856,
+     "ok": true,
+     "requests": 1,
+     "bytes": 9998,
+     "seen": 416,
+     "error": null
+    },
+    "firis": {
+     "s": 0.54,
+     "ok": true,
+     "requests": 1,
+     "bytes": 998,
+     "seen": 505,
+     "error": null
+    },
+    "calfire": {
+     "s": 0.486,
+     "ok": true,
+     "requests": 1,
+     "bytes": 2,
+     "seen": 0,
+     "error": null
+    }
+   }
+  }
+ ],
+ "estimate": {
+  "period_s": 60.0,
+  "poll_wall_s_mean": 4.59,
+  "poll_wall_s_max": 4.88,
+  "publish_to_first_seen_mean_s": 34.6,
+  "publish_to_first_seen_max_s": 64.9,
+  "note": "serial sources; uniform publish within a 60 s period"
+ },
+ "status_records": 0
+}

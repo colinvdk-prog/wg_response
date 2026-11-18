@@ -513,7 +513,22 @@ class FirmsPollLog:
     00:00 UTC, or when a poll loses more than LOG_GONE_SUSPECT_FRAC of the
     window's rows at once. A restart replays the last two day files (from
     S3 when the local disk is fresh) and carries on. The log never raises
-    into the feed: the FirmsFeed guards every call."""
+    into the feed: the FirmsFeed guards every call.
+
+    MEASURED (2026-11-18, the fire -> alert latency review, lane A finding
+    A8; build3_feeds/firms_gone_guard.py over the live log 11-08..11-18):
+    the withdrawn check ran in 354 of 2,518 polls — 2,120 skipped by the
+    mass-missing guard, 44 by the midnight guard. The guard is STICKY: a
+    skipped poll keeps its missing rows in the baseline, so the next poll
+    misses them again (identical "N of M missing" counts poll after poll)
+    until they age out of the asked dates; in a guarded poll a median 41 %
+    of the window (1,306 of 3,081 rows) is missing, at every hour of the
+    day. URT rows superseded by an NRT row of the same acquisition within
+    1.5 km account for only ~25 % of those missing rows, so URT -> NRT
+    re-geolocation alone does not explain the guard; the rest needs the
+    rows each answer actually held, which the log does not record
+    (unchanged rows are not written). `gone` therefore under-counts
+    withdrawals (shadow measurement only, SAFETY SEMANTICS 43)."""
 
     def __init__(self, dir_path, s3_uri: Optional[str] = None,
                  s3_client=None) -> None:

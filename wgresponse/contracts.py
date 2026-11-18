@@ -2113,9 +2113,12 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    lane's change); net.get(gzip=True) is the seam if they are wanted. The
    founder's err-pessimistic rule: both only make an answer fresher or
    smaller — no answer is older, no fetch that succeeds today fails, except
-   a corrupt gzip body, which is blind (not clear). Knobs OFF = byte-
-   identical URLs and answers (tests/test_feeds_faster.py pins the legacy
-   URLs literally).
+   a corrupt gzip body, which is blind (not clear). Measured 2026-11-18
+   against the live layers, CONUS AOI, this code path, 3 reps
+   (build3_feeds/measure_feeds.py): 38.9 MB -> 10.2 MB a cycle (FIRIS 29.2
+   -> 6.9, WFIGS perimeters 9.8 -> 3.3), the serial agency fetch 24.8 s ->
+   14.2 s; the fused set identical. Knobs OFF = byte-identical URLs and
+   answers (tests/test_feeds_faster.py pins the legacy URLs literally).
 58. FEEDS ARE ASKED AT ONCE AND APPLIED IN ORDER (2026-11-18; the same
    review, lane A finding A3; cfg.feeds_parallel; watch --feeds-parallel).
    The live watcher asked its feeds one after another at the start of each
@@ -2134,7 +2137,9 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    random amounts, raise and report unhealthy, and with FIRMS sources
    answering out of order). Each GET keeps its own timeout; the cycle
    waits for the slowest feed instead of the sum. A feed with one adapter
-   stays serial. Nothing is later. Knob OFF = byte-identical.
+   stays serial. Nothing is later. Measured (same harness, with 57): the
+   agency fetch 14.2 s -> 6.85 s (6.80-6.88), the slowest adapter's time.
+   Knob OFF = byte-identical.
    FEED TIMINGS (telemetry, no knob; changes no decision): every cycle's
    timings (/api/state last_cycle_phases) carry feeds_detail — mode,
    fetch_s, fuse_s and per adapter its seconds, health, records and every
@@ -2183,6 +2188,11 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    hourly full fetch — up to 60 min later than a full fetch would show it
    (no worse than the CDN's 60 min on FIRIS today without 57a). Everything
    else is shown the same cycle, and the shorter cycle shows it sooner.
+   Measured (same harness, with 57 and 58): a steady-state fetch 4.7 s and
+   79 KB (WFIGS 42 KB, FIRIS 37 KB) against 24.8 s and 38.9 MB today; the
+   first (full) fetch 8.6 s; the slow part left is the WFIGS points
+   query (~4.5 s of server time for 0.2 MB). The layers' OBJECTIDs held
+   through 25 min of WFIGS re-syncs (build3_feeds/oid_churn_probe.py).
    Knob OFF = byte-identical.
 60. A NEW FIRE IS SEEN WHEN IT IS PUBLISHED, IN SHADOW (2026-11-18; the same
    review, lane A fix 7; cfg.new_fire_sentinel_s, new_fire_sentinel_km;
@@ -2207,7 +2217,12 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    it (cycle digests pinned unchanged with an injected clock); its own
    failures are its own — counted in the block, never a degraded cycle,
    never a feed_blind; it holds its own lock and writes nothing to the
-   state file (a restart re-baselines). Knob 0 = no thread, no key,
+   state file (a restart re-baselines). Measured against the live layers
+   (CONUS, 6 polls; build3_feeds/measure_sentinel.py): a poll 4.6 s and
+   ~11 KB (the WFIGS id query 3.5-4.1 s, FIRIS 0.3, CAL FIRE 0.4), so at
+   S = 60 a record is first seen ~35 s after it is published on average,
+   ~65 s at worst (estimated: a uniform wait in the period plus the poll),
+   against the cycle's 11.4 / 40 min. Knob 0 = no thread, no key,
    byte-identical.
 
 ============================================================================
