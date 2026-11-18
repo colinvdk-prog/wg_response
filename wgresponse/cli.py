@@ -415,6 +415,13 @@ def _build_parser() -> argparse.ArgumentParser:
                          "threatened pairs) in their own rings a bulk cycle "
                          "cannot evict; /healthz counts satellite heat "
                          "events in the last 24 h (SAFETY SEMANTICS 51c)")
+    pw.add_argument("--cycle-step-timings", action="store_true",
+                    help="cfg.cycle_step_timings (telemetry only): "
+                         "last_cycle_phases.steps — each pre-loop gate, each "
+                         "incident's whole assessment (no-domain incidents "
+                         "aggregated), the blind-pair pass, the alert "
+                         "evaluate, dispatch, the persist and the /api/state "
+                         "build")
     pw.add_argument("--persist-crews", action="store_true",
                     help="cfg.crew_state_persist: the crews' last reports "
                          "survive a restart (in the state file and its "
@@ -1243,6 +1250,14 @@ def _latency_cfg(cfg, args):
             "recovered events of pairs at none, cleared or impacted), so a "
             "bulk cycle cannot evict them; /healthz satellite_heat_24h — "
             "SAFETY SEMANTICS 51c")
+    if getattr(args, "cycle_step_timings", False):
+        cfg = dataclasses.replace(cfg, cycle_step_timings=True)
+        notes.append(
+            "CYCLE STEP TIMINGS (telemetry only): last_cycle_phases.steps "
+            "times each pre-loop gate, each incident's whole assessment "
+            "(the incidents without a domain in one aggregate), the "
+            "blind-pair pass, the alert evaluate, dispatch, the persist and "
+            "the previous /api/state build")
     return cfg, notes
 
 
@@ -1664,7 +1679,12 @@ class _WatchDaemon:
                             + list(res.operator_events))[-self.OP_LOG_KEEP:]
             if getattr(self._cfg, "operator_log_priority", False):
                 self._keep_priority(res.operator_events, now)
+            t_persist = time.monotonic()
             self.persist_now()
+            if getattr(self._cfg, "cycle_step_timings", False):
+                # CYCLE STEP TIMINGS: the persist, after the cycle
+                res.timings.setdefault("steps", {})["persist_s"] = round(
+                    time.monotonic() - t_persist, 4)
         finally:
             self._live_busy.clear()
         self._publish_to_test_world()
@@ -1811,7 +1831,25 @@ class _WatchDaemon:
         """Latest DispatchPlan (or None) — the /api/plan provider."""
         return self.last_result.plan if self.last_result else None
 
+    _last_state_build_s = None
+
     def state(self) -> dict:
+        """The /api/state payload — _state_body(); with cfg.cycle_step_
+        timings its last_cycle_phases.steps also carries state_build_s, the
+        PREVIOUS build's wall time (seconds; /healthz builds it too)."""
+        if not getattr(self._cfg, "cycle_step_timings", False):
+            return self._state_body()
+        t0 = time.monotonic()
+        out = self._state_body()
+        ph = out.get("last_cycle_phases")
+        if isinstance(ph, dict):
+            out["last_cycle_phases"] = dict(
+                ph, steps=dict(ph.get("steps") or {},
+                               state_build_s=self._last_state_build_s))
+        self._last_state_build_s = round(time.monotonic() - t0, 4)
+        return out
+
+    def _state_body(self) -> dict:
         """The /api/state payload (server jsonable-serializes dataclasses).
 
         Carries the degradation keys the console banner + /healthz read

@@ -2834,7 +2834,8 @@ wgresponse.cli
     # weather_grid + a "weather" block per incident; so do the summary rows.
     # FIRE -> ALERT LATENCY (SAFETY SEMANTICS 49-52; 2026-11-18): watch
     # --alert-new-fires-early / --keep-reported-point / --summarize-
-    # recoveries / --prune-idle-pairs / --operator-log-priority (cli.
+    # recoveries / --prune-idle-pairs / --operator-log-priority /
+    # --cycle-step-timings (telemetry only: last_cycle_phases.steps) (cli.
     # _latency_cfg(cfg, args) -> (cfg, notes)); operator_priority(ev) ->
     # bool (51c); with --operator-log-priority /api/state gains
     # operator_log_priority + satellite_heat_24h and /healthz
@@ -5096,6 +5097,20 @@ class ResponseConfig:
     #     /healthz counts the satellite_heat events of the last 24 h. watch
     #     --operator-log-priority.
     operator_log_priority: bool = False
+    # CYCLE STEP TIMINGS (2026-11-18, the latency review's lane C: 181 of the
+    # live assess phase's 200 s could not be attributed). TELEMETRY ONLY —
+    # no decision reads it. True = CycleResult.timings (/api/state
+    # last_cycle_phases) gains "steps": the wall time of each pre-loop gate
+    # (seeded union, stale, contained, attach, labels, heat split, learn
+    # collect, belief observe), the loop set-up, the assessment loop, the
+    # post-loop, the blind-pair pass, the meta / regime step, the crew
+    # context, the alert evaluate and what follows it, the belief / off-map
+    # step, the crew rasters, the dispatch plan, the crew watch + snapshot,
+    # each incident's whole assessment (assess_s on its own row; the
+    # incidents without a domain in one "assess_other" aggregate), the
+    # persist and the previous /api/state build. False = byte-identical (no
+    # key); watch --cycle-step-timings.
+    cycle_step_timings: bool = False
     # SIMULATOR CITY WEATHER (founder 2026-10-09, verbatim: "change the
     # weather conditions for each city specific"; docs/review/
     # city_weather_2026-10-09.md). Read ONLY by wgresponse.simui (the
