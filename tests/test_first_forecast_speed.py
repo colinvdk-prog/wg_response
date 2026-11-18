@@ -655,3 +655,286 @@ def test_memory_on_cycle_digest_equals_off(tmp_path):
     d_on = _cycle_digest(cfg, on, cycles=3)
     assert d_on == d_off
     assert on.memory.status()["hits"] >= 1
+
+
+# ---------------------------------------------------------------------------
+# PRIORITY (SAFETY SEMANTICS 54): the two-lane member dispatcher
+# ---------------------------------------------------------------------------
+
+def _job(order, name, gate=None, fail=False):
+    if gate is not None:
+        assert gate.wait(30.0)
+    if fail:
+        raise ValueError(f"{name} failed")
+    order.append(name)
+    return name
+
+
+@pytest.fixture
+def one_slot():
+    from concurrent.futures import ThreadPoolExecutor
+    pool = ThreadPoolExecutor(max_workers=1)
+    d = spread._MemberDispatch(pool, 1)
+    yield d
+    d.close("test over")
+    pool.shutdown(wait=True)
+
+
+def test_foreground_members_go_ahead_of_queued_background(one_slot):
+    order, gate = [], threading.Event()
+    futs = [one_slot.submit(_job, (order, "bg0", gate), False)]
+    time.sleep(0.1)                                  # bg0 holds the slot
+    futs += [one_slot.submit(_job, (order, n), False) for n in ("bg1", "bg2")]
+    futs += [one_slot.submit(_job, (order, n), True) for n in ("fg1", "fg2")]
+    gate.set()
+    assert [f.result(30) for f in futs] == ["bg0", "bg1", "bg2", "fg1",
+                                            "fg2"]
+    assert order == ["bg0", "fg1", "fg2", "bg1", "bg2"]
+    assert one_slot.dispatched == ["bg", "fg", "fg", "bg", "bg"]
+
+
+def test_a_cancelled_foreground_member_is_skipped(one_slot):
+    order, gate = [], threading.Event()
+    f0 = one_slot.submit(_job, (order, "bg0", gate), False)
+    time.sleep(0.1)
+    fg = one_slot.submit(_job, (order, "fg"), True)
+    bg = one_slot.submit(_job, (order, "bg1"), False)
+    assert fg.cancel()
+    gate.set()
+    assert f0.result(30) == "bg0" and bg.result(30) == "bg1"
+    assert order == ["bg0", "bg1"] and fg.cancelled()
+
+
+def test_a_failed_foreground_member_frees_its_slot(one_slot):
+    order, gate = [], threading.Event()
+    f0 = one_slot.submit(_job, (order, "bg0", gate), False)
+    time.sleep(0.1)
+    fg = one_slot.submit(_job, (order, "fg", None, True), True)
+    bgs = [one_slot.submit(_job, (order, f"bg{k}"), False) for k in (1, 2)]
+    gate.set()
+    with pytest.raises(ValueError):
+        fg.result(30)
+    assert [b.result(30) for b in bgs] == ["bg1", "bg2"]
+    assert f0.result(30) == "bg0"
+
+
+def test_closing_fails_every_queued_member_at_once(one_slot):
+    order, gate = [], threading.Event()
+    f0 = one_slot.submit(_job, (order, "bg0", gate), False)
+    time.sleep(0.1)
+    queued = [one_slot.submit(_job, (order, "x"), fg) for fg in (True, False)]
+    t = time.time()
+    one_slot.close("pool dropped")
+    for q in queued:
+        with pytest.raises(spread._DispatchClosed):
+            q.result(5)
+    assert time.time() - t < 5
+    gate.set()
+    assert f0.result(30) == "bg0"                    # in flight: finishes
+
+
+def test_priority_members_are_the_in_process_members():
+    from tests.test_spread import T0, center_ignition, const_wx, grass_tile
+    tile = grass_tile(nrows=31, ncols=31)
+    ign = center_ignition(tile)
+    wx = const_wx(ign, wind_mps=9.0, wind_dir_deg=281.25, hours=30)
+    cfg = ResponseConfig(ensemble_n=5, horizon_h=24.0)
+    here = spread.ensemble_arrival(tile, [ign], wx, T0, cfg,
+                                   incident_id="prio")
+    on = dataclasses.replace(cfg, ensemble_workers=2,
+                             first_forecast_priority=True)
+    try:
+        with spread.foreground_members():
+            fg = spread.ensemble_arrival(tile, [ign], wx, T0, on,
+                                         incident_id="prio")
+        bg = spread.ensemble_arrival(tile, [ign], wx, T0, on,
+                                     incident_id="prio")
+        for other in (fg, bg):
+            assert [m.data for m in other.members] == [
+                m.data for m in here.members]
+            assert other.p10.data == here.p10.data
+            assert other.p50.data == here.p50.data
+        assert spread._DISPATCH is not None
+        assert spread._DISPATCH.dispatched == ["fg"] * 4 + ["bg"] * 4
+    finally:
+        spread._drop_member_pool()
+    assert spread._DISPATCH is None
+
+
+def test_knob_off_never_builds_the_dispatcher():
+    from tests.test_spread import T0, center_ignition, const_wx, grass_tile
+    spread._drop_member_pool()
+    tile = grass_tile(nrows=21, ncols=21)
+    ign = center_ignition(tile)
+    wx = const_wx(ign, hours=30)
+    cfg = ResponseConfig(ensemble_n=4, horizon_h=24.0, ensemble_workers=2)
+    try:
+        with spread.foreground_members():
+            spread.ensemble_arrival(tile, [ign], wx, T0, cfg)
+        assert spread._DISPATCH is None
+    finally:
+        spread._drop_member_pool()
+
+
+def _lane_recorder(monkeypatch):
+    seen = []
+    real = spread.ensemble_arrival
+
+    def rec(*a, **k):
+        seen.append((threading.current_thread().name,
+                     bool(getattr(spread._LANE, "fg", False))))
+        return real(*a, **k)
+
+    monkeypatch.setattr(spread, "ensemble_arrival", rec)
+    return seen
+
+
+@pytest.mark.parametrize("armed", [False, True])
+def test_the_first_forecast_runs_in_the_foreground_lane(monkeypatch, armed):
+    seen = _lane_recorder(monkeypatch)
+    cfg = make_cfg(forecast_tiers=True, first_forecast_priority=armed)
+    mon = make_monitor(cfg=cfg)
+    mon.cycle(NOW)                                   # the first forecast
+    mon.cycle(NOW + 3600.0)                          # a background refresh
+    kept = mon._kept["inc-1"]
+    if kept.pending is not None:
+        kept.pending.result(60)
+    assert len(seen) == 2
+    (t1, fg1), (t2, fg2) = seen
+    assert fg1 is armed and not t1.startswith("wg-forecast-refresh")
+    assert fg2 is False and t2.startswith("wg-forecast-refresh")
+
+
+# ---------------------------------------------------------------------------
+# WEATHER RETRY (SAFETY SEMANTICS 55)
+# ---------------------------------------------------------------------------
+
+class FlakyWeather(StubWeather):
+    """Fails the first `fails` calls with `exc`, then answers."""
+
+    def __init__(self, exc, fails=1):
+        super().__init__()
+        self.exc = exc
+        self.fails = fails
+        self.tries = 0
+
+    def forecast(self, loc, horizon_h):
+        self.tries += 1
+        if self.tries <= self.fails:
+            raise self.exc
+        return super().forecast(loc, horizon_h)
+
+
+def _http_error(code):
+    import urllib.error
+    return urllib.error.HTTPError(
+        "https://api.weather.gov/gridpoints/STO/1,2?secret=k", code,
+        "Service Unavailable", {}, None)
+
+
+def _timeout():
+    import socket
+    import urllib.error
+    return urllib.error.URLError(socket.timeout("timed out"))
+
+
+def _weather_mon(weather, **kw):
+    mon = make_monitor(weather=weather, cfg=make_cfg(**kw))
+    slept = []
+    mon._retry_sleep = slept.append
+    return mon, slept
+
+
+@pytest.mark.parametrize("exc,kind", [(_http_error(503), "HTTP 503"),
+                                      (_timeout(), "timeout")])
+@pytest.mark.parametrize("tiers", [False, True])
+def test_a_first_forecast_retries_a_5xx_or_timeout_once(exc, kind, tiers,
+                                                         caplog):
+    wx = FlakyWeather(exc)
+    mon, slept = _weather_mon(wx, weather_retry_first_forecast=True,
+                              forecast_tiers=tiers)
+    with caplog.at_level("WARNING", logger="wgresponse.threat"):
+        res = mon.cycle(NOW)
+    assert res.assessments and wx.tries == 2 and slept == [5.0]
+    assert any("SAFETY SEMANTICS 55" in n and kind in n for n in res.notes)
+    text = " ".join(r.getMessage() for r in caplog.records)
+    assert "secret" not in text and "/gridpoints" not in text
+    if kind.startswith("HTTP"):
+        assert "api.weather.gov" in text
+
+
+@pytest.mark.parametrize("tiers", [False, True])
+def test_knob_off_a_first_forecast_failure_costs_the_cycle(tiers):
+    wx = FlakyWeather(_http_error(503))
+    mon, slept = _weather_mon(wx, forecast_tiers=tiers)
+    res = mon.cycle(NOW)
+    assert not res.assessments and wx.tries == 1 and slept == []
+    assert any(e.kind == "provider_error" for e in res.operator_events)
+
+
+def test_a_4xx_and_a_second_failure_are_not_retried_again():
+    wx = FlakyWeather(_http_error(404))
+    mon, slept = _weather_mon(wx, weather_retry_first_forecast=True)
+    assert not mon.cycle(NOW).assessments and wx.tries == 1 and slept == []
+    wx2 = FlakyWeather(_http_error(502), fails=5)
+    mon2, slept2 = _weather_mon(wx2, weather_retry_first_forecast=True)
+    res = mon2.cycle(NOW)
+    assert not res.assessments and wx2.tries == 2 and slept2 == [5.0]
+    assert any("failed too" in n for n in res.notes)
+
+
+@pytest.mark.parametrize("tiers", [False, True])
+def test_a_fire_with_a_forecast_is_never_retried(tiers):
+    wx = FlakyWeather(_http_error(503), fails=0)
+    mon, slept = _weather_mon(wx, weather_retry_first_forecast=True,
+                              forecast_tiers=tiers)
+    assert mon.cycle(NOW).assessments                 # forecast made
+    wx.fails, wx.tries = 1, 0
+    # tiers: past the growing tier's limit (a refresh, not a first forecast)
+    res = mon.cycle(NOW + 3600.0)
+    assert wx.tries == 1 and slept == []
+    if not tiers:
+        assert not res.assessments
+
+
+# ---------------------------------------------------------------------------
+# LEARNING YIELDS (SAFETY SEMANTICS 56)
+# ---------------------------------------------------------------------------
+
+class HoldingLfps(FakeLfps):
+    """The first job submitted holds the terrain turn (a cycle starts
+    assessing right after the learning forecast's terrain job)."""
+
+    def __init__(self, turn):
+        super().__init__()
+        self.turn = turn
+
+    def __call__(self, url, headers):
+        if "/api/job/submit" in url and not self.submits:
+            self.turn.hold()
+        return super().__call__(url, headers)
+
+
+@pytest.mark.parametrize("armed", [False, True])
+def test_a_learning_forecast_yields_between_its_two_jobs(tmp_path, armed):
+    mon = make_monitor(cfg=make_cfg(learn_terrain_yield=armed,
+                                    grid_cell_m=600.0))
+    http = HoldingLfps(mon.terrain_turn)
+    mon._terrain = lfps_for(tmp_path, http)
+    inc = incident()
+    done = threading.Event()
+
+    def run():
+        mon._learn_forecast(inc, NOW, [inc.origin], None, None, None,
+                            [inc.origin], [inc.origin])
+        done.set()
+
+    th = threading.Thread(target=run, daemon=True)
+    th.start()
+    time.sleep(1.0)
+    if armed:
+        assert len(http.submits) == 1 and not done.is_set()
+        mon.terrain_turn.release()
+    assert done.wait(60.0)
+    mon.terrain_turn.release()
+    assert len(http.submits) == 2

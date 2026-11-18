@@ -2138,6 +2138,65 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    that started before the cycle did. Knob OFF = byte-identical (tests/
    test_first_forecast_speed.py).
 
+54. A FIRE WITH NO FORECAST GOES FIRST IN THE MEMBER POOL — FIRST FORECAST
+   PRIORITY (2026-11-18; the same review, C3; cfg.first_forecast_priority;
+   watch --first-forecast-priority). The cycle and the background
+   refresher share ONE process pool of ensemble members (ensemble_workers,
+   3 live), first come first served: a new fire's members queued behind a
+   kept forecast's refresh (locally 6.96 -> 33.4 s; live up to one queued
+   Willow-scale ensemble, 282-745 s). With first_forecast_priority every
+   member goes through a parent-side two-lane dispatcher (spread.
+   _MemberDispatch: at most ensemble_workers members in the pool, FIFO in
+   each lane) and the members of a fire with NO kept forecast (forecast
+   tiers' in-cycle first forecast, inside spread.foreground_members())
+   take the next free worker ahead of queued background members; a running
+   member is never interrupted, and each member is the same call, so every
+   ensemble is identical (a refit of a fire that already has a forecast,
+   and every refresh, stay in the background lane). Nothing starves for
+   good: a member cancelled while queued is skipped, one that fails frees
+   its slot, a dropped or replaced pool fails every queued member at once
+   so its caller runs it in-process (the same member). MEASURED (Lane C's
+   harness on the live config, 2 CPUs, a new Paradise fire while a
+   Willow-scale refresh runs, 4 runs each): the new fire's first alert
+   14.7-18.0 s (median 17.2) -> 12.3-13.6 s (median 13.0); a running
+   refresh member still shares the CPUs, so not the 7 s of a fire alone.
+   Live (ensemble_n 6: 5 pool members, 3 workers) the gain is up to the
+   refresh's second wave, about half of a 282-745 s Willow ensemble
+   (estimate). THE TRADE, the founder's to arm or not: a served, kept
+   forecast's refresh lands up to one first-forecast duration later
+   (measured: it finished 2.8-5.6 s after the new fire's alert instead of
+   with it; 15.9-19.1 s after that cycle started instead of 14.7-18.0 s).
+   Knob OFF = byte-identical FIFO, no dispatcher is ever built (tests/
+   test_first_forecast_speed.py).
+
+55. A FIRST FORECAST RETRIES THE WEATHER ONCE (2026-11-18; the same review,
+   C7; cfg.weather_retry_first_forecast, weather_retry_wait_s; watch
+   --weather-retry-first-forecast). net.get never retries an HTTP answer or
+   a timeout (a slow server stays slow), so one NWS 5xx or timeout cost a
+   fire with no forecast a whole cycle (5-8 min live). With the knob, for a
+   fire with NO forecast yet (no kept forecast under the tiers; none last
+   cycle without them), a weather fetch that failed with an HTTP 5xx or a
+   timeout (the exception or one it was raised from) is retried ONCE after
+   weather_retry_wait_s; the warning names the host only (a URL may carry a
+   key), the outcome is a note; a 4xx, a parse error, a second failure, and
+   every refresh of a kept forecast fail exactly as before (provider_error,
+   SAFETY SEMANTICS 6). THE TRADE: the cycle waits the pause and the second
+   try (a timeout can be up to the request's timeout again), so the alerts
+   of the cycle's OTHER fires, evaluated after every assessment, can land
+   that much later in that cycle — once per failing first forecast — while
+   the failing fire gains a whole cycle. Knob OFF = byte-identical.
+
+56. A LEARNING FORECAST YIELDS BETWEEN ITS LANDFIRE JOBS (2026-11-18; the
+   same review, B8; cfg.learn_terrain_yield; watch --learn-terrain-yield).
+   A learning forecast (40) checked the terrain turn only when it started,
+   so its second LFPS job (the canopy) could start while the next cycle
+   assessed and hold that cycle's own jobs behind it at LANDFIRE (about 6
+   min at most, under 1 min expected). With the knob the learning worker
+   runs its inputs under terrain.job_gate(turn.wait): it waits for the turn
+   before EACH LFPS job it submits. A learning forecast can finish later
+   (never an ETA, an alert or a crew deadline: 40). Knob OFF = byte-
+   identical.
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -2228,6 +2287,10 @@ wgresponse.spread
         # lead), stratified draws, seeded on (incident_id, member_index) — NEVER on
         # wall-clock/t0 — so consecutive cycles are comparable (jitter < 5%).
     eta_at(ens: EnsembleArrival, loc: LatLon) -> ThreatEta
+    # SAFETY SEMANTICS 54 (2026-11-18): foreground_members() — a context
+    # manager; with cfg.first_forecast_priority the members of the
+    # ensembles this thread computes inside it take the member pool's
+    # foreground lane (identical members; the knob off = the plain pool).
 
 wgresponse.feeds
     class WfigsFeed / FirisFeed / CalFireFeed / FirmsFeed / WatchDutyEnterpriseFeed(stub) / MockFireFeed
@@ -5418,7 +5481,7 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
             and isinstance(cfg.terrain_memory_tiles, int)
             and not 0 <= cfg.terrain_memory_tiles <= 16):
         problems.append("terrain_memory_tiles must be within [0, 16] (a "
-                        "300k-cell tile with canopy holds ~0.1 GB)")
+                        "300k-cell tile with canopy holds ~77 MB)")
     if not (math.isfinite(cfg.weather_retry_wait_s)
             and 0.0 <= cfg.weather_retry_wait_s <= 30.0):
         problems.append("weather_retry_wait_s must be within [0, 30] s (the "
