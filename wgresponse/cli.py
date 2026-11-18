@@ -2595,9 +2595,15 @@ def _cmd_watch(args) -> int:
                        else None))
     monitor.live_roads = live_roads          # /api/state "live_roads"
     # REGIONAL TERRAIN (SAFETY SEMANTICS 53): the background fetcher waits
-    # on this monitor's terrain turn; nothing without --terrain-regions
-    startup_notes += _start_terrain_regions(terrain, monitor, registry, aoi,
-                                            cfg)
+    # on this monitor's terrain turn; nothing without --terrain-regions. It
+    # reads its OWN registry when the live one caches (the Dynamo TTL
+    # roster: a background read must never refresh the live cache)
+    if cfg.terrain_regions:
+        region_registry = (_watch_registry(args, aoi)[0]
+                           if getattr(args, "registry", "mock") == "dynamo"
+                           else registry)
+        startup_notes += _start_terrain_regions(terrain, monitor,
+                                                region_registry, aoi, cfg)
     # DURABLE STATE (fix program 2026-09-11): env WGRESP_STATE_S3 mirrors
     # the alert ladder / notified ledger / incumbent plan to S3 and restores
     # them into a fresh container before the first cycle. A configured but

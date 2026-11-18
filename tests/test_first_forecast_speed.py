@@ -628,11 +628,27 @@ def _cycle_digest(cfg, terrain, cycles=2):
     return hashlib.sha256(repr(out).encode()).hexdigest()
 
 
-def _real_cache_lfps(tmp_path):
-    """An LfpsTerrain with the test domain's real tile cached."""
-    http = FakeLfps()
-    lt = lfps_for(tmp_path, http)
-    return lt
+#: the legacy cycle digests computed on the BASE commit 9d11793 (before any
+#: of these knobs existed) by scratch_review/fire_alert_latency_review_
+#: 2026-11-18/L2_first_forecast_speed/golden_digest.py: a stub terrain
+#: without and with forecast tiers, and the synthetic-LFPS LfpsTerrain
+#: (a cold fetch, then its cache), 3 cycles each
+BASE_GOLDEN = {
+    "stub": "a19ddb0a95b1b454726eb934f93c9cb452ab75a5a9630057e619ef74af441794",
+    "stub_tiers":
+        "78c0c6e5e28cf4299430d6d9fd2bce951e9b4d943e4742d1b82409341db4cba7",
+    "lfps": "8675ef0138ae4322e31302c92f5616d8b3fa785e511e8df65412a32c2dabebbc",
+}
+
+
+def test_knobs_off_cycle_matches_the_base_commit(tmp_path):
+    from tests.seeded_stack import StubTerrain
+    assert _cycle_digest(make_cfg(), StubTerrain(), cycles=3) == \
+        BASE_GOLDEN["stub"]
+    assert _cycle_digest(make_cfg(forecast_tiers=True), StubTerrain(),
+                         cycles=3) == BASE_GOLDEN["stub_tiers"]
+    assert _cycle_digest(make_cfg(), lfps_for(tmp_path, FakeLfps()),
+                         cycles=3) == BASE_GOLDEN["lfps"]
 
 
 def test_knobs_off_cycle_is_byte_identical(tmp_path):
@@ -690,7 +706,7 @@ def test_foreground_members_go_ahead_of_queued_background(one_slot):
     assert [f.result(30) for f in futs] == ["bg0", "bg1", "bg2", "fg1",
                                             "fg2"]
     assert order == ["bg0", "fg1", "fg2", "bg1", "bg2"]
-    assert one_slot.dispatched == ["bg", "fg", "fg", "bg", "bg"]
+    assert list(one_slot.dispatched) == ["bg", "fg", "fg", "bg", "bg"]
 
 
 def test_a_cancelled_foreground_member_is_skipped(one_slot):
@@ -755,7 +771,7 @@ def test_priority_members_are_the_in_process_members():
             assert other.p10.data == here.p10.data
             assert other.p50.data == here.p50.data
         assert spread._DISPATCH is not None
-        assert spread._DISPATCH.dispatched == ["fg"] * 4 + ["bg"] * 4
+        assert list(spread._DISPATCH.dispatched) == ["fg"] * 4 + ["bg"] * 4
     finally:
         spread._drop_member_pool()
     assert spread._DISPATCH is None

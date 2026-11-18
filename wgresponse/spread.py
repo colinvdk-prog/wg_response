@@ -2179,7 +2179,8 @@ class _MemberDispatch:
         self._bg = collections.deque()
         self._inflight = 0
         self._closed = False
-        self.dispatched: list = []      # ("fg" | "bg") per member, in order
+        # the last 1000 dispatches ("fg" | "bg"), in order (telemetry)
+        self.dispatched = collections.deque(maxlen=1000)
         self._thread = threading.Thread(target=self._run, daemon=True,
                                         name="wg-member-dispatch")
         self._thread.start()
