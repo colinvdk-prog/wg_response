@@ -641,6 +641,25 @@ class ThreatMonitor:
         """The per-fire belief store (None unless tracking or injected)."""
         return self._fire_beliefs
 
+    @property
+    def terrain_turn(self) -> "_TerrainTurn":
+        """THE TERRAIN TURN (SAFETY SEMANTICS 40 / 53): held while the cycle
+        assesses (with fire_belief_learn or terrain_regions armed); a
+        background LANDFIRE fetcher waits on .wait() before each job."""
+        return self._terrain_turn
+
+    def client_range_m(self) -> float:
+        """The client range (m): a fire gets a domain when a protected home
+        lies this close (REGIONAL TERRAIN, SAFETY SEMANTICS 53, links the
+        homes into service regions with it)."""
+        return self._threat_radius_m()
+
+    def domain_reach_m(self) -> float:
+        """How far a forecast domain can reach beyond the protected home
+        that brought it in, before the snap (m): the client range plus the
+        domain pad (53 sizes the service regions with it)."""
+        return self._threat_radius_m() + _DOMAIN_PAD_M
+
     def use_fire_beliefs(self, store) -> None:
         """Swap in a belief store (TWO WORLDS, SAFETY SEMANTICS 14/16): the
         TEST world hands its monitor a fresh non-persistent copy of the LIVE
@@ -828,9 +847,10 @@ class ThreatMonitor:
                              f"this cycle")
             self._kept_failures = []
         no_domain = [] if learn is not None else None
-        if learn is not None:
+        if learn is not None or self._cfg.terrain_regions:
             # SAFETY SEMANTICS 40: the TERRAIN TURN — no learning forecast
-            # starts while the cycle fetches its own domains' terrain
+            # (and, 53, no regional LANDFIRE job) starts while the cycle
+            # fetches its own domains' terrain
             self._terrain_turn.hold()
         try:
             for inc in active:

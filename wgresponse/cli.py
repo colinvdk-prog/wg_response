@@ -292,6 +292,34 @@ def _build_parser() -> argparse.ArgumentParser:
                          "use the finest bundled LANDFIRE tile (data/tiles) "
                          "covering it, noted per fire; no covering tile = "
                          "the failure stands (fail closed)")
+    # SAFETY SEMANTICS 53-56 (2026-11-18, first forecast speed): default-OFF
+    pw.add_argument("--terrain-regions", action="store_true",
+                    help="cfg.terrain_regions: fetch the protected homes' "
+                         "service regions from LANDFIRE once, in the "
+                         "background (lattice pieces, under the terrain "
+                         "turn), and cut a domain inside them with no LFPS "
+                         "job (SAFETY SEMANTICS 53)")
+    pw.add_argument("--terrain-region-piece-deg", type=float, default=None,
+                    help="cfg.terrain_region_piece_deg: a region piece's "
+                         "size in degrees (default 0.5)")
+    pw.add_argument("--terrain-memory-tiles", type=int, default=0,
+                    help="cfg.terrain_memory_tiles: keep the last N decoded "
+                         "LANDFIRE tiles in memory instead of re-reading "
+                         "them from disk every refresh (0 = off)")
+    pw.add_argument("--first-forecast-priority", action="store_true",
+                    help="cfg.first_forecast_priority: a fire with no "
+                         "forecast yet runs its ensemble members ahead of "
+                         "queued background refreshes (a kept forecast's "
+                         "refresh can land later; SAFETY SEMANTICS 54)")
+    pw.add_argument("--weather-retry-first-forecast", action="store_true",
+                    help="cfg.weather_retry_first_forecast: an NWS 5xx or "
+                         "timeout for a fire with no forecast yet is "
+                         "retried once after a short pause (SAFETY "
+                         "SEMANTICS 55)")
+    pw.add_argument("--learn-terrain-yield", action="store_true",
+                    help="cfg.learn_terrain_yield: a learning forecast also "
+                         "waits for the terrain turn between its terrain "
+                         "and canopy LANDFIRE jobs (SAFETY SEMANTICS 56)")
     pw.add_argument("--solver-evals", type=int, default=0,
                     help="cfg.solver_budget_evals: deterministic dispatch "
                          "budget as a consult COUNT (0 = wall clock); the "
@@ -921,11 +949,89 @@ _LFPS_EMAIL_ENV = "LFPS_EMAIL"
 _LFPS_EMAIL_DEFAULT = "ops@thewildfireguardian.com"
 
 
-def _watch_terrain(args, state_dir):
+def _first_forecast_cfg(cfg, args):
+    """(cfg, startup notes) for the first-forecast-speed flags (2026-11-18;
+    SAFETY SEMANTICS 53-56). No flag = cfg unchanged, no note."""
+    notes: list = []
+    if getattr(args, "terrain_regions", False):
+        cfg = dataclasses.replace(cfg, terrain_regions=True)
+        piece = getattr(args, "terrain_region_piece_deg", None)
+        if piece is not None:
+            cfg = dataclasses.replace(cfg,
+                                      terrain_region_piece_deg=float(piece))
+        notes.append(
+            f"REGIONAL TERRAIN: the protected homes' service regions (each "
+            f"group of homes padded by the client range) are fetched from "
+            f"LANDFIRE once, in the background, as "
+            f"{cfg.terrain_region_piece_deg:g}-degree pieces (never during a "
+            f"cycle's assessment: the terrain turn), cached and mirrored; a "
+            f"new fire's domain inside ready pieces is cut from them with no "
+            f"LFPS job, a domain with a cached tile keeps it, anything else "
+            f"takes the LFPS path — SAFETY SEMANTICS 53")
+    n = int(getattr(args, "terrain_memory_tiles", 0) or 0)
+    if n:
+        cfg = dataclasses.replace(cfg, terrain_memory_tiles=n)
+        notes.append(
+            f"TERRAIN MEMORY: the last {n} decoded LANDFIRE tiles stay in "
+            f"memory (the same values, shared read-only) instead of being "
+            f"re-read from disk every refresh")
+    if getattr(args, "first_forecast_priority", False):
+        cfg = dataclasses.replace(cfg, first_forecast_priority=True)
+        notes.append(
+            "FIRST FORECAST PRIORITY: a fire with no forecast yet runs its "
+            "ensemble members ahead of queued background refreshes — a kept "
+            "forecast's refresh can land up to one first forecast later "
+            "(the founder's trade) — SAFETY SEMANTICS 54")
+    if getattr(args, "weather_retry_first_forecast", False):
+        cfg = dataclasses.replace(cfg, weather_retry_first_forecast=True)
+        notes.append(
+            f"WEATHER RETRY: an NWS 5xx or timeout for a fire with no "
+            f"forecast yet is retried once after "
+            f"{cfg.weather_retry_wait_s:g} s (the cycle waits) — SAFETY "
+            f"SEMANTICS 55")
+    if getattr(args, "learn_terrain_yield", False):
+        cfg = dataclasses.replace(cfg, learn_terrain_yield=True)
+        notes.append(
+            "LEARNING YIELDS THE TERRAIN TURN: a learning forecast also "
+            "waits for the cycle to finish assessing between its terrain "
+            "and canopy LANDFIRE jobs — SAFETY SEMANTICS 56"
+            + ("" if getattr(args, "fire_belief_learn", False) else
+               " [INERT: --fire-belief-learn is not armed]"))
+    return cfg, notes
+
+
+def _start_terrain_regions(terrain, monitor, registry, aoi, cfg) -> list:
+    """REGIONAL TERRAIN (SAFETY SEMANTICS 53): bind the regional provider
+    inside `terrain` (if any) to the monitor's terrain turn and start its
+    one background thread over the registry's roster; pieces no bundled
+    tile covers (western Colorado) are fetched first. Returns notes."""
+    from wgresponse import terrain as terrain_mod
+    regional = terrain_mod.find_regional(terrain)
+    if regional is None:
+        return []
+    regional.bind_turn(monitor.terrain_turn.wait)
+    fb = (terrain if isinstance(terrain, terrain_mod.BundledFallbackTerrain)
+          else None)
+    priority = ((lambda bb: 0 if fb.covering(bb) is None else 1)
+                if fb is not None else None)
+    rng = monitor.client_range_m()
+    regional.start(lambda: list(registry.protected_clients(aoi)),
+                   radius_m=rng, pad_m=monitor.domain_reach_m() - rng,
+                   snap_deg=cfg.forecast_domain_snap_deg, priority=priority)
+    monitor.regional_terrain = regional       # /api/state "terrain_regions"
+    return [f"REGIONAL TERRAIN: background fetcher started (pieces of "
+            f"{regional.piece_deg:g} deg; status on /api/state "
+            f"terrain_regions)"]
+
+
+def _watch_terrain(args, state_dir, cfg=None):
     """Terrain provider per the C1 rule: LfpsTerrain when the live decode
     deps import, else SyntheticTerrain with a LOUD note. --live-terrain makes
     missing deps fatal (returns (None, notes)); --synthetic-terrain forces
-    the synthetic path. Returns (provider_or_None, notes)."""
+    the synthetic path. Returns (provider_or_None, notes). With `cfg`:
+    terrain_memory_tiles reads decoded tiles through a TileMemory and
+    terrain_regions puts a RegionalTerrain under the fallback (SAFETY
+    SEMANTICS 53; started by _start_terrain_regions)."""
     from wgresponse import terrain as terrain_mod
     cache_dir = str(Path(state_dir) / "terrain_cache")
     if args.synthetic_terrain:
@@ -952,15 +1058,27 @@ def _watch_terrain(args, state_dir):
     # canopy layers (one more LFPS job per domain, cached like the terrain)
     canopy = (terrain_mod.LfpsTerrain.DEFAULT_CANOPY_LAYERS
               if getattr(args, "crown_fire", False) else None)
+    extra: dict = {}
+    n_mem = int(getattr(cfg, "terrain_memory_tiles", 0) or 0)
+    if n_mem > 0:
+        # TERRAIN MEMORY TILES: decoded tiles read through an LRU (0 = the
+        # legacy constructor call)
+        extra["memory"] = terrain_mod.TileMemory(n_mem)
     provider = terrain_mod.LfpsTerrain(cache_dir=cache_dir, email=email,
                                        s3_uri=s3_uri,
-                                       canopy_layer_list=canopy)
+                                       canopy_layer_list=canopy, **extra)
     notes = [
         f"terrain: live LANDFIRE via LFPS (zip+tile cache: {cache_dir}"
         + (f", mirrored to {s3_uri}/terrain/" if s3_uri else "")
         + f"; job email {email} — override with env {_LFPS_EMAIL_ENV})"
         + (f"; canopy layers {canopy} for the crown-fire model"
            if canopy else "")]
+    if getattr(cfg, "terrain_regions", False):
+        # REGIONAL TERRAIN (SAFETY SEMANTICS 53): under the fallback, over
+        # the live provider; its fetcher starts once the monitor exists
+        provider = terrain_mod.RegionalTerrain(
+            provider, piece_deg=cfg.terrain_region_piece_deg,
+            memory=extra.get("memory"))
     if getattr(args, "terrain_fallback", False):
         # TERRAIN FALLBACK (2026-10-28): a domain LANDFIRE fails on spreads
         # on the finest bundled tile covering it (noted per fire)
@@ -1718,6 +1836,11 @@ class _WatchDaemon:
             # — an additive key, present only with a roster
             out["crew_roster"] = roster.status()
         res = self.last_result
+        rt = getattr(self._monitor, "regional_terrain", None)
+        if rt is not None:
+            # SAFETY SEMANTICS 53: the service regions' pieces and their
+            # progress (additive; present only with --terrain-regions)
+            out["terrain_regions"] = rt.status()
         lr = getattr(self._monitor, "live_roads", None)
         if lr is not None:
             # LIVE ROADS: the service areas the planner drives (additive)
@@ -2339,6 +2462,8 @@ def _cmd_watch(args) -> int:
     startup_notes_fix += _notes
     cfg, live_roads, _notes = _live_roads(cfg, args)
     startup_notes_fix += _notes
+    cfg, _notes = _first_forecast_cfg(cfg, args)  # SEMANTICS 53-56
+    startup_notes_fix += _notes
     if getattr(args, "forecast_tiers", False):
         cfg = dataclasses.replace(cfg, forecast_tiers=True)
         startup_notes_fix.append(
@@ -2413,7 +2538,7 @@ def _cmd_watch(args) -> int:
         if getattr(args, "fuse_hotspots", False) else
         _live_feed_stack(firms_key, **stack_kw))
     startup_notes += feed_notes
-    terrain, terrain_notes = _watch_terrain(args, state_dir)
+    terrain, terrain_notes = _watch_terrain(args, state_dir, cfg=cfg)
     startup_notes += terrain_notes
     if terrain is None:
         for note in terrain_notes:
@@ -2469,6 +2594,10 @@ def _cmd_watch(args) -> int:
         road_provider=(live_roads.provider() if live_roads is not None
                        else None))
     monitor.live_roads = live_roads          # /api/state "live_roads"
+    # REGIONAL TERRAIN (SAFETY SEMANTICS 53): the background fetcher waits
+    # on this monitor's terrain turn; nothing without --terrain-regions
+    startup_notes += _start_terrain_regions(terrain, monitor, registry, aoi,
+                                            cfg)
     # DURABLE STATE (fix program 2026-09-11): env WGRESP_STATE_S3 mirrors
     # the alert ladder / notified ledger / incumbent plan to S3 and restores
     # them into a fresh container before the first cycle. A configured but
@@ -2597,6 +2726,11 @@ def _watch_test_world(args, cfg, aoi, aoi_desc, safe_zones, registry,
     else:
         test_registry = registry
     email = os.environ.get(_LFPS_EMAIL_ENV) or _LFPS_EMAIL_DEFAULT
+    from wgresponse import terrain as terrain_mod
+    if isinstance(terrain, terrain_mod.RegionalTerrain):
+        # SAFETY SEMANTICS 53: the test world overlays the live LfpsTerrain
+        # exactly as it does without regional terrain (its own cache)
+        terrain = terrain.lfps
     test_terrain = worlds.test_terrain_for(terrain, test_dir, email=email,
                                            s3_uri=test_s3)
     return worlds.TestWorld(

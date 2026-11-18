@@ -2087,6 +2087,57 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    points sit 734 / 889 m off the network (the founder's ground check).
    No flag = byte-identical.
 
+53. A NEW FIRE NEAR A CLIENT NEVER WAITS ON LANDFIRE — REGIONAL TERRAIN
+   (2026-11-18; the fire-to-alert latency review, "use every effort to
+   improve", build lane 2; cfg.terrain_regions, terrain_region_piece_deg;
+   watch --terrain-regions; terrain.RegionalTerrain). A brand-new fire's
+   first forecast runs in the cycle, and 48 of 52 new-fire positions near
+   the 13 presets missed the terrain mirror: two LFPS jobs (terrain, then
+   canopy), 155-462 s each, one at a time; the six western-Colorado presets
+   have no bundled tile, so an LFPS failure there meant no forecast and no
+   alert. With terrain_regions the protected homes are grouped (two homes
+   one fire can both have in range are linked: 2 x the client range) and
+   each group's homes' bbox, padded by the client range and the domain pad
+   plus the snap (42) and a margin, is the SERVICE REGION: every domain a
+   fire near those homes can have lies inside it. Its terrain_region_piece_
+   deg lattice pieces are fetched ONCE — the raw LFPS job zips at native
+   30 m, cached and mirrored exactly like tile()'s zips — by ONE background
+   thread that waits for the TERRAIN TURN (40; the cycle now holds it while
+   assessing whenever this knob is armed) before EACH LFPS job: no regional
+   job starts while a cycle assesses, never in a cycle's path; a piece in
+   the cache or the S3 mirror is never fetched again (a HEAD, no download;
+   a cut pulls what it needs); a failed piece is retried after 6 h; the
+   roster is re-read hourly and pieces no bundled tile covers (western
+   Colorado) go first. A domain asks, in order: a cut it holds; its OWN
+   decoded tile when cached locally or in the mirror (a known domain keeps
+   exactly the tile it had — no LFPS job either way); a CUT from the ready
+   pieces — each cell the nearest native pixel of its centre, LfpsTerrain.
+   _decode_rasters' own rule, canopy by its own divisors, source
+   "lfps-region:<layers>", 0 LFPS calls; anything else (a piece missing,
+   failed or not yet fetched, a domain reaching past the region, a decode
+   error) takes today's path unchanged. A cut is held in memory (the
+   terrain_memory_tiles budget, else the last two), never written as a
+   decoded tile, never mirrored. THE DATA (measured on four real pairs from
+   the S3 mirror, Colorado, Malibu, Redding, Bend; scratch_review/
+   fire_alert_latency_review_2026-11-18/L2_first_forecast_speed/region_
+   agreement.py): a cut of a job onto its own domain IS the decoded tile,
+   100 % of cells in every band; a cut onto a neighbouring domain against
+   that domain's own LFPS jobs agrees exactly on 78.5 % of fuel cells,
+   80.1-81.3 % of canopy, 58.7 % slope, 53.2 % aspect, 51.5 % elevation,
+   and 98.6 % of fuel (98.0-98.9 % canopy, 93.1 % slope, 86.9 % elevation,
+   85.5 % aspect) is one of the 3 x 3 native pixels around the one the cut
+   took: every LFPS job reprojects to its own EPSG:4326 pixel grid (the
+   Colorado pair: 0.0003402 vs 0.0003395 deg pixels), so two direct jobs
+   over overlapping areas disagree the same way. That is the trade: a cut
+   domain's terrain is a different, equally valid sampling of the same
+   LANDFIRE pixels, and its ETAs can move either way like a domain-snap
+   grid change (42) — not a later alert by construction. One LFPS job
+   ahead of a cycle's own: while the regions are still being fetched (the
+   first ~4-12 h after arming, 250 jobs for the six preset groups at 0.5
+   deg), a cycle's cold domain may queue at LFPS behind one regional job
+   that started before the cycle did. Knob OFF = byte-identical (tests/
+   test_first_forecast_speed.py).
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -2224,6 +2275,24 @@ wgresponse.terrain
     # the ascii format carries four optional canopy bands (a file without
     # them loads with canopy=None); attach_canopy(tile, canopy) and
     # save_ascii_canopy / load_ascii_canopy (the canopy cache file).
+    # TERRAIN MEMORY TILES (2026-11-18, cfg.terrain_memory_tiles; a cache,
+    # the same values): class TileMemory(n) .load(path, loader) .hold(key,
+    # tile) .held(key) .status(); LfpsTerrain(memory=TileMemory) reads its
+    # decoded tile / canopy files through it, keyed on (path, mtime, size)
+    # — a tile handed out is shared read-only (nothing writes a tile's
+    # rasters; tests/test_first_forecast_speed.py fingerprints it).
+    # SAFETY SEMANTICS 53 (2026-11-18): class RegionalTerrain(lfps,
+    # primary=None, piece_deg=0.5, memory=None) .tile(bbox, cell_m)
+    # .cut(bbox, cell_m) .covers(bbox, cell_m) .plan_from_points(points,
+    # radius_m, pad_m, snap_deg, priority=None) .fetch_pending(max_jobs=None)
+    # .bind_turn(wait_fn) .start(roster_fn, radius_m, pad_m, snap_deg,
+    # priority=None) .stop() .status(); region_pieces(points, radius_m,
+    # pad_m, snap_deg, piece_deg, priority=None) -> [RegionPiece];
+    # find_regional(provider); job_gate(fn) (a context manager: fn() runs
+    # before each LFPS job the thread submits; also 56); LfpsTerrain
+    # .fetch_job_zip(bbox, canopy=False) / .local_job_zip / .job_zip_state /
+    # .job_zip_path / .decoded_cached(bbox, cell_m); persist.S3Mirror
+    # .exists(key) (a HEAD).
 
 wgresponse.clients
     class DynamoClientRegistry / MockClientRegistry     (ClientRegistry protocol)
@@ -2263,6 +2332,9 @@ wgresponse.threat
         # SAFETY SEMANTICS 15: CycleResult.offmap = {incident_id:
         # OffDomainHorizon} for every domain incident ({} unless
         # cfg.corridor_offraster_per_fire), forwarded to dispatch.plan(offmap=).
+        # SAFETY SEMANTICS 53 (2026-11-18): .terrain_turn (the 40 turn:
+        # .held, .wait()), .client_range_m(), .domain_reach_m() — what the
+        # regional terrain fetcher waits on and sizes the regions with.
 
 wgresponse.offmap   (2026-09-27; SAFETY SEMANTICS 15 — the per-fire off-domain horizon)
     status_for(inc, now_s, cfg) -> (known, rapid, reasons)   # the feed's behaviour status
@@ -4847,6 +4919,38 @@ class ResponseConfig:
     # the LANDFIRE tile cached for it. 0 = the exact padded bbox
     # (byte-identical); the watch daemon arms 0.05 via --snap-domains.
     forecast_domain_snap_deg: float = 0.0
+    # FIRST FORECAST SPEED (2026-11-18 fire-to-alert latency review, build
+    # lane 2; SAFETY SEMANTICS 53-56). REGIONAL TERRAIN (53): the protected
+    # homes' service regions (their groups padded by the client range) are
+    # fetched ONCE from LANDFIRE as terrain_region_piece_deg lattice pieces
+    # on one background thread, under the terrain turn (40), cached and
+    # mirrored like every LFPS job zip; a domain inside ready pieces is cut
+    # from them with no LFPS job, anything else takes today's path. False =
+    # byte-identical; watch --terrain-regions.
+    terrain_regions: bool = False
+    terrain_region_piece_deg: float = 0.5     # a piece is this many degrees square (LFPS job AOI ~0.27 deg^2 at 0.5)
+    # TERRAIN MEMORY TILES: the last N decoded terrain / canopy tiles stay in
+    # memory (keyed on path, mtime and size; the same values, shared
+    # read-only) instead of being re-parsed every refresh. 0 = read from
+    # disk every time (byte-identical); watch --terrain-memory-tiles N.
+    terrain_memory_tiles: int = 0
+    # FIRST FORECAST PRIORITY (54): a fire with no forecast at all puts its
+    # ensemble members ahead of queued background-refresh members in the
+    # shared member pool (a kept forecast's refresh can land up to one
+    # first-forecast duration later: the founder's trade). False =
+    # byte-identical FIFO; watch --first-forecast-priority.
+    first_forecast_priority: bool = False
+    # WEATHER RETRY ON A FIRST FORECAST (55): an NWS 5xx or timeout for a
+    # fire with no forecast yet is retried once after weather_retry_wait_s
+    # instead of costing the fire a whole cycle. False = byte-identical;
+    # watch --weather-retry-first-forecast.
+    weather_retry_first_forecast: bool = False
+    weather_retry_wait_s: float = 5.0         # the pause before that one retry (s)
+    # LEARNING YIELDS THE TERRAIN TURN (56): a learning forecast (40) also
+    # waits for the terrain turn between its terrain and canopy LANDFIRE
+    # jobs, not only when it starts. False = byte-identical; watch
+    # --learn-terrain-yield.
+    learn_terrain_yield: bool = False
     # HOTSPOT SCREENING STEP 0 — SHADOW LABELS (founder 2026-11-01,
     # docs/review/hotspot_screening_2026-11-01.md; SAFETY SEMANTICS 43):
     # each incident only the satellite reports is labelled for the operator
@@ -5304,6 +5408,21 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
             and 0.0 <= cfg.forecast_domain_snap_deg <= 1.0):
         problems.append("forecast_domain_snap_deg must be within [0, 1] "
                         "degrees")
+    # --- first forecast speed (SAFETY SEMANTICS 53-56) ---
+    if not (math.isfinite(cfg.terrain_region_piece_deg)
+            and 0.1 <= cfg.terrain_region_piece_deg <= 1.0):
+        problems.append("terrain_region_piece_deg must be within [0.1, 1] "
+                        "degrees (the largest LFPS job proven live is 1.15 x "
+                        "0.75 deg)")
+    if (not isinstance(cfg.terrain_memory_tiles, bool)
+            and isinstance(cfg.terrain_memory_tiles, int)
+            and not 0 <= cfg.terrain_memory_tiles <= 16):
+        problems.append("terrain_memory_tiles must be within [0, 16] (a "
+                        "300k-cell tile with canopy holds ~0.1 GB)")
+    if not (math.isfinite(cfg.weather_retry_wait_s)
+            and 0.0 <= cfg.weather_retry_wait_s <= 30.0):
+        problems.append("weather_retry_wait_s must be within [0, 30] s (the "
+                        "pause holds the cycle)")
     # --- crew wording (SAFETY SEMANTICS 44) ---
     if cfg.alert_crew_wording not in ("fixed", "plan"):
         problems.append('alert_crew_wording must be "fixed" or "plan"')

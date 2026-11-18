@@ -80,6 +80,93 @@ FLAT_ASPECT = -1.0          # LANDFIRE Asp convention for flat cells
 S3_TERRAIN_PREFIX = "terrain"
 
 
+#: THE JOB GATE (SAFETY SEMANTICS 53 and 56): a background thread that
+#: fetches LANDFIRE (the regional fetcher; a learning forecast with
+#: cfg.learn_terrain_yield) sets a callable here, per thread, and every LFPS
+#: job that thread submits first calls it — the terrain turn's wait (40), so
+#: no such job starts while the cycle assesses. No gate set (every cycle
+#: thread, every knob off) = LfpsTerrain._submit exactly as before.
+_JOB_GATE = threading.local()
+
+
+class job_gate:
+    """``with job_gate(fn): ...`` — fn() runs before each LFPS job this
+    thread submits inside the block (nested gates: the innermost)."""
+
+    def __init__(self, fn: Callable[[], None]) -> None:
+        self._fn = fn
+        self._prev = None
+
+    def __enter__(self):
+        self._prev = getattr(_JOB_GATE, "fn", None)
+        _JOB_GATE.fn = self._fn
+        return self
+
+    def __exit__(self, *exc) -> None:
+        _JOB_GATE.fn = self._prev
+
+
+class TileMemory:
+    """TERRAIN MEMORY TILES (cfg.terrain_memory_tiles; a cache — the values
+    are the file's, exactly): the last N decoded tiles, least recently used
+    out first, keyed on (absolute path, mtime_ns, size) so a rewritten file
+    is read again. Live, Willow's 300k-cell tile was re-parsed from disk
+    every refresh, in the cycle: 18.0 s a cycle (2026-11-18, review lane C).
+    A tile handed out here is SHARED between cycles and threads: nothing in
+    the engine writes a tile's rasters (pinned by tests/test_first_forecast_
+    speed.py's fingerprint test); attach_canopy() builds a new TerrainTile
+    around the same rasters. hold()/held() keep a computed tile (a regional
+    cut, SAFETY SEMANTICS 53) under its own key in the same budget."""
+
+    def __init__(self, n: int) -> None:
+        from collections import OrderedDict
+        self._n = max(1, int(n))
+        self._lru: "OrderedDict" = OrderedDict()
+        self._lock = threading.Lock()
+        self.hits = 0
+        self.misses = 0
+
+    def _put(self, key, value) -> None:
+        with self._lock:
+            self._lru[key] = value
+            self._lru.move_to_end(key)
+            while len(self._lru) > self._n:
+                self._lru.popitem(last=False)
+
+    def load(self, path: str, loader: Callable[[str], object]):
+        """loader(path) through the memory (a hit when the file is the one
+        read before: same path, mtime and size)."""
+        st = os.stat(path)
+        key = ("file", os.path.abspath(path), st.st_mtime_ns, st.st_size)
+        with self._lock:
+            hit = self._lru.get(key)
+            if hit is not None:
+                self._lru.move_to_end(key)
+                self.hits += 1
+                return hit
+            self.misses += 1
+        value = loader(path)
+        self._put(key, value)
+        return value
+
+    def held(self, key):
+        """A tile kept with hold(key, ...), or None."""
+        with self._lock:
+            hit = self._lru.get(("held", key))
+            if hit is not None:
+                self._lru.move_to_end(("held", key))
+                self.hits += 1
+            return hit
+
+    def hold(self, key, value) -> None:
+        self._put(("held", key), value)
+
+    def status(self) -> dict:
+        with self._lock:
+            return {"tiles": len(self._lru), "max": self._n,
+                    "hits": self.hits, "misses": self.misses}
+
+
 def _default_http_get(url: str, headers: Optional[dict] = None,
                       timeout_s: float = 120.0) -> "tuple[int, bytes]":
     """Stdlib urllib GET -> (HTTP status, body bytes); retried once when
@@ -586,7 +673,8 @@ class LfpsTerrain:
                  dep_probe: Optional[Callable[[], None]] = None,
                  s3_uri: Optional[str] = None,
                  s3_client: Optional[object] = None,
-                 canopy_layer_list: Optional[str] = None):
+                 canopy_layer_list: Optional[str] = None,
+                 memory: Optional[TileMemory] = None):
         if len(layer_list.split(";")) != 4:
             raise ValueError("layer_list must name exactly 4 layers "
                              "(fuel;slope;aspect;elev) to fill a TerrainTile")
@@ -595,6 +683,9 @@ class LfpsTerrain:
             raise ValueError("canopy_layer_list must name exactly 4 layers "
                              "(CBH;CBD;CC;CH) to fill a CanopyLayers")
         self._canopy_layers = canopy_layer_list
+        # TERRAIN MEMORY TILES (cfg.terrain_memory_tiles): decoded cache
+        # files read through a TileMemory; None = read from disk every time
+        self._memory = memory
         self._cache_dir = cache_dir
         self._http_get = http_get or _default_http_get
         self._layer_list = layer_list
@@ -649,10 +740,10 @@ class LfpsTerrain:
             raise ValueError("LfpsTerrain has no canopy_layer_list")
         cache_path = self.canopy_cache_path(bbox, cell_m)
         if cache_path and os.path.exists(cache_path):
-            return load_ascii_canopy(cache_path)[1]
+            return self._load(cache_path, load_ascii_canopy)[1]
         if cache_path and self._s3_pull(cache_path):
             try:
-                return load_ascii_canopy(cache_path)[1]
+                return self._load(cache_path, load_ascii_canopy)[1]
             except Exception as exc:
                 log.error("terrain: mirrored canopy %s is unusable (%s) — "
                           "discarding it and falling back to a live LFPS job",
@@ -717,7 +808,7 @@ class LfpsTerrain:
         pre-canopy body, unchanged."""
         cache_path = self.cache_path(bbox, cell_m)
         if cache_path and os.path.exists(cache_path):
-            return load_ascii_tile(cache_path)
+            return self._load(cache_path, load_ascii_tile)
         # S3 MIRROR (decoded tile): a fresh container starts with an EMPTY
         # cache_dir on /tmp, so the local miss above says nothing about
         # whether this tile was ever fetched. One GET beats a 90-180 s LFPS
@@ -725,7 +816,7 @@ class LfpsTerrain:
         # probe must not run for a mirror hit either.
         if cache_path and self._s3_pull(cache_path):
             try:
-                return load_ascii_tile(cache_path)
+                return self._load(cache_path, load_ascii_tile)
             except Exception as exc:
                 log.error("terrain: mirrored tile %s is unusable (%s) — "
                           "discarding it and falling back to a live LFPS job",
@@ -795,6 +886,105 @@ class LfpsTerrain:
     def canopy_layer_list(self) -> Optional[str]:
         """The canopy layers every tile() carries (None: no canopy)."""
         return self._canopy_layers
+
+    @property
+    def layer_list(self) -> str:
+        """The four terrain layers (fuel;slope;aspect;elev)."""
+        return self._layer_list
+
+    @property
+    def cache_dir(self) -> Optional[str]:
+        return self._cache_dir
+
+    @property
+    def memory(self) -> Optional[TileMemory]:
+        """The TileMemory decoded cache files are read through (None:
+        cfg.terrain_memory_tiles off)."""
+        return self._memory
+
+    def _load(self, path: str, loader):
+        """A decoded cache file: through the TileMemory when one is set,
+        else loader(path) — exactly the legacy read."""
+        if self._memory is None:
+            return loader(path)
+        return self._memory.load(path, loader)
+
+    # -- regional terrain (SAFETY SEMANTICS 53) ------------------------------
+
+    def decoded_cached(self, bbox: BBox, cell_m: float) -> bool:
+        """True when tile(bbox, cell_m) needs no LFPS job and no decode: its
+        decoded tile (and canopy, when configured) is in the local cache or
+        was just pulled from the mirror."""
+        paths = [self.cache_path(bbox, cell_m)]
+        if self._canopy_layers:
+            paths.append(self.canopy_cache_path(bbox, cell_m))
+        for p in paths:
+            if not p:
+                return False
+            if not os.path.exists(p) and not self._s3_pull(p):
+                return False
+        return True
+
+    def job_zip_path(self, bbox: BBox, canopy: bool = False) -> Optional[str]:
+        """The raw job zip's cache path for bbox: the terrain layers', or
+        the canopy layers' (None without a cache_dir / canopy layers)."""
+        return (self.canopy_zip_cache_path(bbox) if canopy
+                else self.zip_cache_path(bbox))
+
+    def job_zip_state(self, bbox: BBox, canopy: bool = False) -> str:
+        """"local" (in the cache dir), "mirrored" (in the S3 mirror, not
+        yet local — a HEAD, nothing downloaded) or "missing". A mirror that
+        cannot say (no HEAD on the client, an S3 error) is asked by a pull."""
+        path = self.job_zip_path(bbox, canopy)
+        if not path:
+            return "missing"
+        if os.path.exists(path):
+            return "local"
+        if self._s3 is None:
+            return "missing"
+        try:
+            return ("mirrored" if self._s3.exists(self.s3_key(path))
+                    else "missing")
+        except Exception:
+            return "local" if self._s3_pull(path) else "missing"
+
+    def local_job_zip(self, bbox: BBox, canopy: bool = False) -> Optional[str]:
+        """The job zip's local path when it is local or can be pulled from
+        the mirror now; None otherwise (never an LFPS job)."""
+        path = self.job_zip_path(bbox, canopy)
+        if not path:
+            return None
+        if os.path.exists(path) or self._s3_pull(path):
+            return path
+        return None
+
+    def fetch_job_zip(self, bbox: BBox, canopy: bool = False) -> str:
+        """The raw LFPS job zip for bbox (terrain or canopy layers) in the
+        local cache — a local hit, else a mirror pull, else ONE LFPS job
+        (the decode deps probed first; the zip persisted and mirrored like
+        tile()'s). Never decodes. Returns the local path; raises
+        RuntimeError on a job failure (the regional fetcher's seam)."""
+        layers = self._canopy_layers if canopy else self._layer_list
+        if canopy and not layers:
+            raise ValueError("LfpsTerrain has no canopy_layer_list")
+        path = self.job_zip_path(bbox, canopy)
+        if not path:
+            raise ValueError("LfpsTerrain.fetch_job_zip needs a cache_dir")
+        if os.path.exists(path) or self._s3_pull(path):
+            return path
+        self._dep_probe()
+        job_id = self._submit(bbox, layers)
+        zip_url = self._poll(job_id)
+        status, body = self._http_get(zip_url, {})
+        if status != 200:
+            raise RuntimeError(f"LFPS zip download failed: HTTP {status}")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp = f"{path}.tmp"
+        with open(tmp, "wb") as f:
+            f.write(body)
+        os.replace(tmp, path)
+        self._s3_push(path, body)
+        return path
 
     # -- S3 cache mirror -----------------------------------------------------
 
@@ -883,6 +1073,11 @@ class LfpsTerrain:
     # -- job API --------------------------------------------------------------
 
     def _submit(self, bbox: BBox, layer_list: Optional[str] = None) -> str:
+        gate = getattr(_JOB_GATE, "fn", None)
+        if gate is not None:
+            # THE JOB GATE (SAFETY SEMANTICS 53 / 56): a background thread
+            # waits for the terrain turn before each job it submits
+            gate()
         params = {"Layer_List": layer_list or self._layer_list,
                   "Area_of_Interest": f"{bbox.west} {bbox.south} {bbox.east} {bbox.north}",
                   "Output_Projection": "4326"}
@@ -1021,3 +1216,521 @@ class LfpsTerrain:
             raise RuntimeError(
                 f"LFPS GeoTIFF decode failed ({e}) — the live decode path "
                 f"needs {_LIVE_DECODE_PIP}") from e
+
+
+# ---------------------------------------------------------------------------
+# Regional terrain (contracts SAFETY SEMANTICS 53)
+# ---------------------------------------------------------------------------
+
+#: a piece's LFPS job AOI reaches this far beyond its lattice cell
+#: (degrees; ~550 m, ~15 LANDFIRE pixels), so the nearest source pixel of
+#: any cell centre inside the cell lies inside the job's raster
+REGION_PIECE_PAD_DEG = 0.005
+#: extra margin around each service region (degrees): the slack between
+#: the client range's haversine metres and the degree boxes, and the cell
+#: centres of a domain grid
+REGION_MARGIN_DEG = 0.02
+
+
+class RegionPiece:
+    """One lattice cell of a service region: row i, column j of the global
+    piece_deg lattice; core = the cell, aoi = the cell padded
+    REGION_PIECE_PAD_DEG (the LFPS job's Area_of_Interest); dist_m = the
+    distance from the cell's centre to the nearest protected home."""
+
+    __slots__ = ("i", "j", "core", "aoi", "dist_m", "rank")
+
+    def __init__(self, i: int, j: int, deg: float, dist_m: float = 0.0,
+                 rank: int = 0) -> None:
+        self.i, self.j = int(i), int(j)
+        self.core = BBox(west=round(j * deg, 6), south=round(i * deg, 6),
+                         east=round((j + 1) * deg, 6),
+                         north=round((i + 1) * deg, 6))
+        p = REGION_PIECE_PAD_DEG
+        self.aoi = BBox(west=round(self.core.west - p, 6),
+                        south=round(self.core.south - p, 6),
+                        east=round(self.core.east + p, 6),
+                        north=round(self.core.north + p, 6))
+        self.dist_m = float(dist_m)
+        self.rank = int(rank)
+
+    @property
+    def key(self) -> tuple:
+        return (self.i, self.j)
+
+
+def _client_groups(points: list, link_m: float) -> list:
+    """The protected homes split into groups whose members are chained by
+    hops of at most link_m (single linkage): two homes one fire can both
+    have in range (each within the client range of it) are always in one
+    group. Grid-bucketed, so a large roster stays cheap."""
+    n = len(points)
+    if n == 0:
+        return []
+    parent = list(range(n))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    lat_step = max(1e-6, link_m / geo.M_PER_DEG_LAT)
+    worst = min(89.0, max(abs(p.lat) for p in points) + lat_step)
+    lon_step = max(1e-6, link_m / geo.m_per_deg_lon(worst))
+    buckets: dict = {}
+    for k, p in enumerate(points):
+        buckets.setdefault((math.floor(p.lat / lat_step),
+                            math.floor(p.lon / lon_step)), []).append(k)
+    for (bi, bj), ks in buckets.items():
+        for di in (-1, 0, 1):
+            for dj in (-1, 0, 1):
+                other = buckets.get((bi + di, bj + dj))
+                if not other:
+                    continue
+                for a in ks:
+                    for b in other:
+                        if a < b and find(a) != find(b) and \
+                                geo.haversine_m(points[a], points[b]) <= link_m:
+                            parent[find(a)] = find(b)
+    groups: dict = {}
+    for k in range(n):
+        groups.setdefault(find(k), []).append(points[k])
+    return list(groups.values())
+
+
+def region_pieces(points: list, radius_m: float, pad_m: float,
+                  snap_deg: float, piece_deg: float,
+                  priority: Optional[Callable[[BBox], int]] = None) -> list:
+    """THE SERVICE REGIONS (SAFETY SEMANTICS 53): the lattice pieces that
+    cover every forecast domain a fire near these protected homes can have,
+    in fetch order. A domain is the bbox of a fire and the homes within
+    radius_m of it, padded pad_m and snapped outward to snap_deg; its homes
+    lie in one group (_client_groups, linked at 2 x radius_m) and the fire
+    within radius_m of one of them, so it lies inside the group's homes'
+    bbox padded radius_m + pad_m, plus snap_deg and REGION_MARGIN_DEG. The
+    pieces are the piece_deg lattice cells that box touches. Order:
+    priority(core) first when given (lower first), then the distance from
+    the piece to the nearest home."""
+    d = float(piece_deg)
+    pts = list(points)
+    keys: dict = {}
+    for group in _client_groups(pts, 2.0 * float(radius_m)):
+        bb = geo.bbox_around(group, float(radius_m) + float(pad_m))
+        m = max(0.0, float(snap_deg)) + REGION_MARGIN_DEG
+        for i in range(math.floor((bb.south - m) / d),
+                       math.floor((bb.north + m) / d) + 1):
+            for j in range(math.floor((bb.west - m) / d),
+                           math.floor((bb.east + m) / d) + 1):
+                keys[(i, j)] = True
+    out = []
+    for (i, j) in keys:
+        piece = RegionPiece(i, j, d)
+        c = piece.core.center()
+        piece.dist_m = min(geo.haversine_m(c, p) for p in pts)
+        piece.rank = int(priority(piece.core)) if priority is not None else 0
+        out.append(piece)
+    out.sort(key=lambda p: (p.rank, p.dist_m, p.i, p.j))
+    return out
+
+
+def _read_job_zip(zip_bytes: bytes, n_bands: int, decode) -> tuple:
+    """([2-D band arrays], (xa, ye, x_ul, y_ul)) of an LFPS job zip — the
+    same zip / world-file / band-layout reading as
+    LfpsTerrain._decode_rasters (which stays as it was)."""
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+        tif_names = [n for n in zf.namelist() if n.lower().endswith(".tif")]
+        tfw_names = [n for n in zf.namelist() if n.lower().endswith(".tfw")]
+        if not tif_names:
+            raise RuntimeError("LFPS zip contained no GeoTIFF")
+        if not tfw_names:
+            raise RuntimeError("LFPS zip contained no .tfw world file")
+        arr = decode(zf.read(tif_names[0]))
+        tfw = [float(tok) for tok in
+               zf.read(tfw_names[0]).decode("ascii").split()][:6]
+    if len(tfw) != 6:
+        raise RuntimeError("LFPS .tfw world file malformed")
+    xa, _, _, ye, x_ul, y_ul = tfw
+    if getattr(arr, "ndim", 0) != 3:
+        raise RuntimeError(f"LFPS GeoTIFF: expected {n_bands}-band raster, "
+                           f"got shape {getattr(arr, 'shape', None)}")
+    if arr.shape[0] == n_bands:
+        bands = [arr[b] for b in range(n_bands)]
+    elif arr.shape[-1] == n_bands:
+        bands = [arr[:, :, b] for b in range(n_bands)]
+    else:
+        raise RuntimeError(f"LFPS GeoTIFF shape {arr.shape} does not match "
+                           f"{n_bands} requested layers")
+    return bands, (xa, ye, x_ul, y_ul)
+
+
+class RegionalTerrain:
+    """REGIONAL TERRAIN (cfg.terrain_regions, watch --terrain-regions;
+    contracts SAFETY SEMANTICS 53). A new fire's first forecast waited on
+    two LANDFIRE jobs (terrain, then canopy; 155-462 s each, one at a time)
+    for 48 of 52 new-fire positions near the presets (2026-11-18), and six
+    western-Colorado presets have no bundled tile to fall back on.
+
+    The service regions (region_pieces: the homes' groups, padded by the
+    client range) are fetched ONCE as piece_deg lattice pieces at LANDFIRE's
+    native 30 m — the raw LFPS job zips, the same artifact tile() caches
+    and mirrors — by ONE background thread (start()), never in a cycle:
+    before each LFPS job it waits for the terrain turn (bind_turn; SAFETY
+    SEMANTICS 40), so no regional job starts while the cycle assesses. A
+    piece already in the cache or the S3 mirror is never fetched again.
+
+    tile(bbox, cell_m): a held cut is returned; a domain whose own decoded
+    tile is cached (local or mirrored) takes today's path (no LFPS job: a
+    known domain keeps exactly the tile it had); a domain whose cell centres
+    all fall in ready pieces is CUT from them — the nearest native pixel of
+    each cell centre, LfpsTerrain._decode_rasters' own rule, the canopy
+    converted by its own divisors — with 0 LFPS calls; anything else (a
+    piece missing, failed or still fetching; a decode error) falls through
+    to the primary provider unchanged. A cut is held in memory (the
+    TileMemory when given, else the last two), never written as a decoded
+    tile and never mirrored (the pieces are). Its source reads
+    "lfps-region:<layers>"."""
+
+    def __init__(self, lfps: LfpsTerrain, primary=None,
+                 piece_deg: float = 0.5,
+                 memory: Optional[TileMemory] = None,
+                 retry_s: float = 6 * 3600.0,
+                 recheck_s: float = 3600.0,
+                 clock: Callable[[], float] = time.monotonic) -> None:
+        if not 0.05 <= float(piece_deg) <= 2.0:
+            raise ValueError("piece_deg must be within [0.05, 2]")
+        self._lfps = lfps
+        self._primary = primary if primary is not None else lfps
+        self._d = float(piece_deg)
+        self._memory = memory
+        self._retry_s = float(retry_s)
+        self._recheck_s = float(recheck_s)
+        self._clock = clock
+        self._lock = threading.Lock()
+        self._held: dict = {}
+        self._plan: dict = {}           # (i, j) -> RegionPiece
+        self._order: list = []          # plan keys, fetch order
+        self._state: dict = {}          # ((i, j), canopy) -> local|mirrored|failed
+        self._failed_at: dict = {}
+        self._errors: dict = {}
+        self._turn_wait: Optional[Callable[[], None]] = None
+        self._stop = threading.Event()
+        self._thread: Optional[threading.Thread] = None
+        self._planned_with: Optional[tuple] = None
+        self.stats = {"cuts": 0, "held_hits": 0, "cached_direct": 0,
+                      "fallthrough": 0, "cut_errors": 0, "jobs": 0,
+                      "job_failures": 0, "passes": 0}
+
+    # -- plan -----------------------------------------------------------------
+
+    @property
+    def piece_deg(self) -> float:
+        return self._d
+
+    @property
+    def lfps(self) -> LfpsTerrain:
+        """The live LfpsTerrain the pieces are fetched and cached through."""
+        return self._lfps
+
+    def set_plan(self, pieces: list) -> None:
+        """The pieces to hold (region_pieces' order is the fetch order)."""
+        with self._lock:
+            self._plan = {p.key: p for p in pieces}
+            self._order = [p.key for p in pieces]
+
+    def plan_from_points(self, points: list, radius_m: float, pad_m: float,
+                         snap_deg: float,
+                         priority: Optional[Callable] = None) -> int:
+        """set_plan(region_pieces(...)); returns the number of pieces."""
+        pieces = region_pieces(points, radius_m, pad_m, snap_deg, self._d,
+                               priority)
+        self.set_plan(pieces)
+        return len(pieces)
+
+    def pieces(self) -> list:
+        with self._lock:
+            return [self._plan[k] for k in self._order]
+
+    def _layer_sets(self) -> tuple:
+        return (False, True) if self._lfps.canopy_layer_list else (False,)
+
+    # -- the background fetch -------------------------------------------------
+
+    def bind_turn(self, wait_fn: Optional[Callable[[], None]]) -> None:
+        """The terrain turn's wait (ThreatMonitor.terrain_turn.wait): called
+        before every LFPS job the fetcher submits (terrain.job_gate)."""
+        self._turn_wait = wait_fn
+
+    def fetch_pending(self, max_jobs: Optional[int] = None) -> dict:
+        """ONE pass over the plan: each piece's terrain (and canopy) zip is
+        marked ready when it is local or mirrored, else fetched by one LFPS
+        job (under the job gate) — a failure is retried after retry_s. At
+        most max_jobs jobs (None: all). Returns the pass's counts."""
+        out = {"ready": 0, "fetched": 0, "failed": 0, "waiting_retry": 0,
+               "left": 0}
+        jobs = 0
+        self.stats["passes"] += 1
+        for key in list(self._order):
+            with self._lock:
+                piece = self._plan.get(key)
+            if piece is None:
+                continue
+            for canopy in self._layer_sets():
+                sk = (key, canopy)
+                with self._lock:
+                    st = self._state.get(sk)
+                    failed_at = self._failed_at.get(sk)
+                if st in ("local", "mirrored"):
+                    out["ready"] += 1
+                    continue
+                if (st == "failed" and failed_at is not None
+                        and self._clock() - failed_at < self._retry_s):
+                    out["waiting_retry"] += 1
+                    continue
+                state = self._lfps.job_zip_state(piece.aoi, canopy)
+                if state in ("local", "mirrored"):
+                    with self._lock:
+                        self._state[sk] = state
+                    out["ready"] += 1
+                    continue
+                if self._stop.is_set() or (max_jobs is not None
+                                           and jobs >= max_jobs):
+                    out["left"] += 1
+                    continue
+                jobs += 1
+                self.stats["jobs"] += 1
+                try:
+                    if self._turn_wait is not None:
+                        with job_gate(self._turn_wait):
+                            self._lfps.fetch_job_zip(piece.aoi, canopy)
+                    else:
+                        self._lfps.fetch_job_zip(piece.aoi, canopy)
+                except Exception as exc:
+                    self.stats["job_failures"] += 1
+                    with self._lock:
+                        self._state[sk] = "failed"
+                        self._failed_at[sk] = self._clock()
+                        self._errors[sk] = str(exc)[:200]
+                    out["failed"] += 1
+                    log.warning("terrain regions: piece %s %s failed (%s) — "
+                                "domains needing it take the LFPS path; "
+                                "retried in %.0f h", key,
+                                "canopy" if canopy else "terrain", exc,
+                                self._retry_s / 3600.0)
+                    continue
+                with self._lock:
+                    self._state[sk] = "local"
+                    self._errors.pop(sk, None)
+                out["fetched"] += 1
+        return out
+
+    def start(self, roster_fn: Callable[[], list], radius_m: float,
+              pad_m: float, snap_deg: float,
+              priority: Optional[Callable] = None) -> None:
+        """Start the ONE background thread: every recheck_s it re-plans
+        from roster_fn() (protected homes, .loc) when the roster changed and
+        runs fetch_pending()."""
+        if self._thread is not None:
+            return
+
+        def run():
+            while not self._stop.is_set():
+                try:
+                    pts = [c.loc for c in roster_fn()]
+                    sig = (len(pts), round(sum(p.lat for p in pts), 6),
+                           round(sum(p.lon for p in pts), 6))
+                    if pts and sig != self._planned_with:
+                        n = self.plan_from_points(pts, radius_m, pad_m,
+                                                  snap_deg, priority)
+                        self._planned_with = sig
+                        log.info("terrain regions: %d homes -> %d pieces of "
+                                 "%g deg", len(pts), n, self._d)
+                    got = self.fetch_pending()
+                    log.info("terrain regions: pass %s", got)
+                except Exception:
+                    log.exception("terrain regions: background pass failed "
+                                  "(domains keep the LFPS path)")
+                self._stop.wait(self._recheck_s)
+
+        self._thread = threading.Thread(target=run, daemon=True,
+                                        name="wg-terrain-regions")
+        self._thread.start()
+
+    def stop(self) -> None:
+        self._stop.set()
+
+    # -- the cut ----------------------------------------------------------------
+
+    def _hold(self, key, tile) -> None:
+        if self._memory is not None:
+            self._memory.hold(key, tile)
+            return
+        with self._lock:
+            if len(self._held) >= 2:
+                self._held.pop(next(iter(self._held)))
+            self._held[key] = tile
+
+    def _get_held(self, key):
+        if self._memory is not None:
+            return self._memory.held(key)
+        with self._lock:
+            return self._held.get(key)
+
+    def tile(self, bbox: BBox, cell_m: float) -> TerrainTile:
+        key = ("region", self._lfps.layer_list, self._lfps.canopy_layer_list,
+               self._d, bbox.west, bbox.south, bbox.east, bbox.north,
+               round(float(cell_m), 6))
+        held = self._get_held(key)
+        if held is not None:
+            self.stats["held_hits"] += 1
+            return held
+        if self._lfps.decoded_cached(bbox, cell_m):
+            self.stats["cached_direct"] += 1
+            return self._primary.tile(bbox, cell_m)
+        try:
+            t = self.cut(bbox, cell_m)
+        except Exception as exc:  # noqa: BLE001 — the LFPS path stands
+            self.stats["cut_errors"] += 1
+            log.error("terrain regions: cut of %s failed (%s) — the LFPS "
+                      "path", bbox, exc)
+            t = None
+        if t is not None:
+            self.stats["cuts"] += 1
+            self._hold(key, t)
+            return t
+        self.stats["fallthrough"] += 1
+        return self._primary.tile(bbox, cell_m)
+
+    def covers(self, bbox: BBox, cell_m: float) -> bool:
+        """True when every cell centre of the domain grid lies in a ready
+        piece (terrain and, when configured, canopy)."""
+        return self._needed(bbox, cell_m)[0] is not None
+
+    def _needed(self, bbox: BBox, cell_m: float) -> tuple:
+        spec = _grid_for_bbox(bbox, cell_m)
+        m_lon = _m_per_deg_lon((bbox.north + bbox.south) / 2.0)
+        lats = [spec.north_lat - (r + 0.5) * cell_m / M_PER_DEG_LAT
+                for r in range(spec.nrows)]
+        lons = [spec.west_lon + (c + 0.5) * cell_m / m_lon
+                for c in range(spec.ncols)]
+        rows_by_i: dict = {}
+        for r, lat in enumerate(lats):
+            rows_by_i.setdefault(math.floor(lat / self._d), []).append(r)
+        cols_by_j: dict = {}
+        for c, lon in enumerate(lons):
+            cols_by_j.setdefault(math.floor(lon / self._d), []).append(c)
+        needed = [(i, j) for i in sorted(rows_by_i)
+                  for j in sorted(cols_by_j)]
+        with self._lock:
+            for k in needed:
+                if k not in self._plan:
+                    return None, spec, lats, lons, rows_by_i, cols_by_j
+                for canopy in self._layer_sets():
+                    if self._state.get((k, canopy)) not in ("local",
+                                                            "mirrored"):
+                        return None, spec, lats, lons, rows_by_i, cols_by_j
+            pieces = [self._plan[k] for k in needed]
+        return pieces, spec, lats, lons, rows_by_i, cols_by_j
+
+    def cut(self, bbox: BBox, cell_m: float) -> Optional[TerrainTile]:
+        """The domain's tile cut from the ready pieces, or None when a piece
+        it needs is not ready (or does not cover its cells)."""
+        pieces, spec, lats, lons, rows_by_i, cols_by_j = self._needed(
+            bbox, cell_m)
+        if pieces is None:
+            return None
+        terrain = self._sample(pieces, spec, lats, lons, rows_by_i,
+                               cols_by_j, canopy=False)
+        if terrain is None:
+            return None
+        layers = self._lfps.layer_list
+        tile = TerrainTile(spec=spec, fuel=terrain[0], slope_deg=terrain[1],
+                           aspect_deg=terrain[2], elev_m=terrain[3],
+                           source=f"lfps-region:{layers}")
+        clayers = self._lfps.canopy_layer_list
+        if not clayers:
+            return tile
+        can = self._sample(pieces, spec, lats, lons, rows_by_i, cols_by_j,
+                           canopy=True)
+        if can is None:
+            return None
+        for band, div in zip(can, LfpsTerrain.CANOPY_DIVISORS):
+            band.data = [v / div if v > 0.0 else 0.0 for v in band.data]
+        return attach_canopy(tile, CanopyLayers(
+            cbh_m=can[0], cbd_kgm3=can[1], cc_pct=can[2], ch_m=can[3],
+            source=f"lfps-region:{clayers}"))
+
+    def _sample(self, pieces: list, spec: GridSpec, lats: list, lons: list,
+                rows_by_i: dict, cols_by_j: dict, canopy: bool):
+        """[4 Rasters] on spec: each cell the nearest native pixel of its
+        centre in the piece whose core holds it — _decode_rasters' rule
+        (round-half-even of (coordinate - pixel-centre origin) / pixel
+        size), piece by piece; None when a piece's zip cannot be had
+        locally or its raster does not hold a cell's pixel."""
+        import numpy as np
+        nb = 4
+        out = [np.empty((spec.nrows, spec.ncols), dtype=np.float64)
+               for _ in range(nb)]
+        lat_arr = np.array(lats, dtype=np.float64)
+        lon_arr = np.array(lons, dtype=np.float64)
+        for piece in pieces:
+            path = self._lfps.local_job_zip(piece.aoi, canopy)
+            if path is None:
+                with self._lock:
+                    self._state.pop((piece.key, canopy), None)
+                return None
+            with open(path, "rb") as f:
+                body = f.read()
+            bands, (xa, ye, x_ul, y_ul) = _read_job_zip(
+                body, nb, self._lfps._decode_geotiff)
+            del body
+            rows = np.array(rows_by_i[piece.i], dtype=np.int64)
+            cols = np.array(cols_by_j[piece.j], dtype=np.int64)
+            sr = np.rint((lat_arr[rows] - y_ul) / ye).astype(np.int64)
+            sc = np.rint((lon_arr[cols] - x_ul) / xa).astype(np.int64)
+            src_rows, src_cols = bands[0].shape
+            if (sr.min() < 0 or sr.max() >= src_rows or sc.min() < 0
+                    or sc.max() >= src_cols):
+                log.error("terrain regions: piece %s does not hold the "
+                          "domain's pixels — the LFPS path", piece.key)
+                return None
+            dst = np.ix_(rows, cols)
+            src = np.ix_(sr, sc)
+            for b in range(nb):
+                out[b][dst] = bands[b][src]
+            del bands
+        return [Raster(spec, data=o.ravel().tolist()) for o in out]
+
+    # -- surface ----------------------------------------------------------------
+
+    def status(self) -> dict:
+        """The plan and its progress (pieces, ready, failed) and counters."""
+        with self._lock:
+            n = len(self._order)
+            ready_t = sum(1 for k in self._order
+                          if self._state.get((k, False)) in ("local",
+                                                             "mirrored"))
+            ready_c = sum(1 for k in self._order
+                          if self._state.get((k, True)) in ("local",
+                                                            "mirrored"))
+            failed = sorted({k for (k, _c), st in self._state.items()
+                             if st == "failed" and k in self._plan})
+        out = {"piece_deg": self._d, "pieces": n, "terrain_ready": ready_t,
+               "failed": [list(k) for k in failed[:20]],
+               "stats": dict(self.stats)}
+        if self._lfps.canopy_layer_list:
+            out["canopy_ready"] = ready_c
+        return out
+
+
+def find_regional(provider) -> Optional[RegionalTerrain]:
+    """The RegionalTerrain inside a provider stack (a BundledFallbackTerrain
+    wraps it as its primary), or None."""
+    p = provider
+    for _ in range(6):
+        if isinstance(p, RegionalTerrain):
+            return p
+        p = getattr(p, "_primary", None)
+        if p is None:
+            return None
+    return None
