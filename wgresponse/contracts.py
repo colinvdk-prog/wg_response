@@ -2317,6 +2317,143 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
        unchanged. Under --dry-notify only the log order changes. THE TRADE:
        none in what is sent; a later send in the cycle starts later only by
        the time the earlier ones take.
+57. A FEED IS ASKED FOR TODAY'S ANSWER, COMPRESSED (2026-11-18; the fire ->
+   alert latency review, scratch_review/fire_alert_latency_review_2026-11-
+   18, lane A findings A2 and A4, verified by the orchestrator; BUILD lane
+   3; cfg.feeds_cache_bust, feeds_gzip; watch --feeds-cache-bust,
+   --feeds-gzip). Measured: the ArcGIS Online CDN in front of the feed
+   layers (Azure Front Door) keys its cache on the whole URL and the
+   watcher's URL is fixed, so FIRIS (Cache-Control s-maxage 3600) could be
+   served up to 60 min stale and WFIGS (300) up to 5 — lane A saw fixed-URL
+   answers 0.1-7.6 min older than the origin; and each cycle downloaded
+   ~39 MB of uncompressed JSON (FIRIS alone 29.2 MB). (a) feeds_cache_bust:
+   every ArcGIS query and page carries `_t=<int unix s>` (the adapter's
+   clock, one value per query); a never-seen value was a CDN MISS on all
+   three layers (build3_feeds/cdn_param_probe.py, 12 of 12; lane A's
+   reading that `_cb` is ignored was not reproduced — `_cb` and `_ts` bust
+   too). CAL FIRE and FIRMS URLs are unchanged. (b) feeds_gzip: every feed
+   GET asks Accept-Encoding gzip (wgresponse.net.get(gzip=True)) and
+   decodes the answer: the same bytes after decoding. A body that does not
+   decompress, or an encoding not asked for, RAISES (net.CorruptBodyError,
+   never retried: the server spoke) — the adapter's transport-error path,
+   so that feed is BLIND that cycle (6), exactly as a failed GET. Weather
+   and terrain are left out: the LANDFIRE answers are already-compressed
+   zip / GeoTIFF and its job submission is a GET that must not be
+   repeated, and the weather GETs sit in the assessment loop (another
+   lane's change); net.get(gzip=True) is the seam if they are wanted. The
+   founder's err-pessimistic rule: both only make an answer fresher or
+   smaller — no answer is older, no fetch that succeeds today fails, except
+   a corrupt gzip body, which is blind (not clear). Measured 2026-11-18
+   against the live layers, CONUS AOI, this code path, 3 reps
+   (build3_feeds/measure_feeds.py): 38.9 MB -> 10.2 MB a cycle (FIRIS 29.2
+   -> 6.9, WFIGS perimeters 9.8 -> 3.3), the serial agency fetch 24.8 s ->
+   14.2 s; the fused set identical. Knobs OFF = byte-identical URLs and
+   answers (tests/test_feeds_faster.py pins the legacy URLs literally).
+58. FEEDS ARE ASKED AT ONCE AND APPLIED IN ORDER (2026-11-18; the same
+   review, lane A finding A3; cfg.feeds_parallel; watch --feeds-parallel).
+   The live watcher asked its feeds one after another at the start of each
+   cycle: live feeds_s 272-498 s, and back-to-back cycles turn every second
+   of it into a later fetch of the next new record (mean wait 11.4 min,
+   max 40, on 2026-11-18). With feeds_parallel every adapter's fetch runs
+   on its own thread (the fetches are network waits), and the live FIRMS
+   adapter asks its satellites — and its five-day history asks — at once;
+   the answers (batch, exception, last_fetch_ok, an adapter's incremental
+   findings) are then applied by the serial code IN FEED ORDER (and the
+   FIRMS answers in source order, so screening.FirmsPollLog and
+   HeatSiteMemory, which are not thread-safe, are only ever called from
+   the fetching thread, in the serial order). The fused set, notes,
+   operator events, the degraded flag and the raw FIRMS log are therefore
+   byte-identical to the serial path (pinned with stub feeds that sleep
+   random amounts, raise and report unhealthy, and with FIRMS sources
+   answering out of order). Each GET keeps its own timeout; the cycle
+   waits for the slowest feed instead of the sum. A feed with one adapter
+   stays serial. Nothing is later. Measured (same harness, with 57): the
+   agency fetch 14.2 s -> 6.85 s (6.80-6.88), the slowest adapter's time.
+   Knob OFF = byte-identical.
+   FEED TIMINGS (telemetry, no knob; changes no decision): every cycle's
+   timings (/api/state last_cycle_phases) carry feeds_detail — mode,
+   fetch_s, fuse_s and per adapter its seconds, health, records and every
+   request's seconds, HTTP status, body bytes, bytes on the wire, encoding
+   and page (never a URL: FIRMS URLs carry the MAP_KEY) — the measurement
+   lane A lacked for the live agency block being 2.4-11x slower than local.
+59. A LAYER IS ASKED ONLY FOR WHAT CHANGED, AND CHECKED HOURLY AGAINST THE
+   WHOLE (2026-11-18; the same review, lane A finding A4 / fix 6;
+   cfg.feeds_incremental; watch --feeds-incremental). FIRIS answered 29.2
+   MB of polygons every cycle (505 rows, every one Inactive, the layer
+   last edited two days before) and the WFIGS perimeters 9.7 MB. With
+   feeds_incremental the two POLYGON layers are asked first for their
+   attributes only (OBJECTID, every field the adapter reads, and the
+   layer's change fields — WFIGS attr_ModifiedOnDateTime_dt,
+   poly_DateCurrent, poly_PolygonDateTime, poly_CreateDate and the
+   ArcGIS-maintained Shape__Area / Shape__Length; FIRIS every field,
+   CreationDate and EditDate among them; no geometry; ~0.2 MB), then for
+   the full features of only the ids that are NEW or whose attributes
+   CHANGED; every other feature comes from the adapter's own cache, and the
+   list is in the cheap query's order — the server's: checked live, the
+   attributes-only and full queries list both layers in the same order, and
+   a full query with OBJECTID added, stripped, equals the legacy one. A
+   FULL fetch runs at the first fetch, after ANY failure of the adapter
+   (state dropped), hourly (INCREMENTAL_FULL_EVERY_S), when more than 50
+   ids (and a quarter of the layer) changed at once, when a changed id is
+   not answered, and always for a layer over INCREMENTAL_MAX_FEATURES
+   (2000) or one whose cheap query is capped or lacks unique integer
+   OBJECTIDs (the legacy query, page-cap rule unchanged). At the hourly
+   fetch the cached answer is compared with the full one — membership,
+   order, and every feature the cache would have reused; a difference is
+   ONE OperatorEvent('feed_incremental_mismatch') and a note (not a
+   degradation: the full answer is the one used). A cheap or changed-
+   features query that fails (a renamed field, an ArcGIS error) falls back
+   to the legacy full query in the same fetch — never blind because of
+   this path; a timeout raises at once (a slow server stays slow); the
+   full fetch's own failure is the legacy failure. last_fetch_ok keeps its
+   meaning. WFIGS points stay a full query (0.2 MB; their order is not
+   stable between queries). Proof: tests/test_feeds_incremental.py, a
+   property test over simulated layer histories (adds, attribute and
+   geometry edits that move the change fields, deletions, reorders, the
+   page cap, failures): the incremental answer equals the full answer at
+   every step. THE TRADE (the founder decides): a geometry edit that moves
+   NO attribute the cheap query reads (on WFIGS not even Shape__Area /
+   Shape__Length; on FIRIS, which has no Shape fields, not area_acres,
+   EditDate or poly_DateCurrent) is served from the cache until the next
+   hourly full fetch — up to 60 min later than a full fetch would show it
+   (no worse than the CDN's 60 min on FIRIS today without 57a). Everything
+   else is shown the same cycle, and the shorter cycle shows it sooner.
+   Measured (same harness, with 57 and 58): a steady-state fetch 4.7 s and
+   79 KB (WFIGS 42 KB, FIRIS 37 KB) against 24.8 s and 38.9 MB today; the
+   first (full) fetch 8.6 s; the slow part left is the WFIGS points
+   query (~4.5 s of server time for 0.2 MB). The layers' OBJECTIDs held
+   through 25 min of WFIGS re-syncs (build3_feeds/oid_churn_probe.py).
+   Knob OFF = byte-identical.
+60. A NEW FIRE IS SEEN WHEN IT IS PUBLISHED, IN SHADOW (2026-11-18; the same
+   review, lane A fix 7; cfg.new_fire_sentinel_s, new_fire_sentinel_km;
+   watch --new-fire-sentinel S [--new-fire-sentinel-km KM];
+   wgresponse.sentinel). A new agency record waited for the next cycle's
+   fetch (11.4 min mean, 40 max on 2026-11-18). With new_fire_sentinel_s >
+   0 a daemon thread of the watch process asks, every S seconds, the cheap
+   agency queries — WFIGS incident points (returnIdsOnly; the new ids'
+   attributes and points), FIRIS (returnIdsOnly; the new rows,
+   generalized), the CAL FIRE list — keeps first_seen_s for every record
+   that appears after its first poll (the first poll is the baseline), and
+   at once raises OperatorEvent('new_fire_near_homes') — the daemon's
+   operator log and the sentinel's own event list — for a new non-RX
+   record within new_fire_sentinel_km of a protected home (the startup
+   roster), never a client message. The radius: the founder's 8 km
+   tripwire (41: 1.7 m/s x (15 + 30 + 30) min) plus the 4.1 km a fire runs
+   at 1.7 m/s in the worst 40-min wait for the next fetch seen on
+   2026-11-18 = 12 km. After each live cycle the daemon tells it which
+   records the cycle carried (cycle_seen_s): the gap is what a priority
+   pass would have saved. /api/state sentinel {rule, polls, last poll,
+   errors, records, events, lead}. SHADOW: the cycle reads nothing from
+   it (cycle digests pinned unchanged with an injected clock); its own
+   failures are its own — counted in the block, never a degraded cycle,
+   never a feed_blind; it holds its own lock and writes nothing to the
+   state file (a restart re-baselines). Measured against the live layers
+   (CONUS, 6 polls; build3_feeds/measure_sentinel.py): a poll 4.6 s and
+   ~11 KB (the WFIGS id query 3.5-4.1 s, FIRIS 0.3, CAL FIRE 0.4), so at
+   S = 60 a record is first seen ~35 s after it is published on average,
+   ~65 s at worst (estimated: a uniform wait in the period plus the poll),
+   against the cycle's 11.4 / 40 min. Knob 0 = no thread, no key,
+   byte-identical.
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -2442,6 +2579,16 @@ wgresponse.feeds
     # FireBehaviorGeneral), fire_behavior_descriptors (list[str],
     # FireBehaviorGeneral1-3, non-empty ones in field order),
     # fire_behavior_at_s (the record's ModifiedOnDateTime, unix s).
+    # SAFETY SEMANTICS 57-59 (2026-11-18) adapter transport kwargs, each
+    # default False = byte-identical: WfigsFeed / FirisFeed(cache_bust=,
+    # gzip=, incremental=, clock=None); CalFireFeed(gzip=); FirmsFeed(gzip=,
+    # parallel_sources=) and FirmsFeed.live(..., **same); .transport -> dict
+    # of the armed options. FEED TIMINGS (telemetry): every adapter keeps
+    # last_fetch_detail = fetch_detail(rows) -> {requests: [{what, s, status,
+    # bytes, wire_bytes?, encoding?, attempts?, page?, error?}], pages,
+    # bytes, wire_bytes?, s_requests, incremental?} (never a URL); the
+    # ArcGIS adapters keep last_fetch_events (SEMANTICS 59: [{kind:
+    # "feed_incremental_mismatch", message, detail}], [] unless incremental).
 
 wgresponse.weather
     class NwsWeather / OpenMeteoWeather / MockWeather   (WeatherProvider protocol)
@@ -2503,6 +2650,22 @@ wgresponse.threat
         # SAFETY SEMANTICS 15: CycleResult.offmap = {incident_id:
         # OffDomainHorizon} for every domain incident ({} unless
         # cfg.corridor_offraster_per_fire), forwarded to dispatch.plan(offmap=).
+        # FEED TIMINGS (2026-11-18, telemetry): CycleResult.timings
+        # ["feeds_detail"] = {mode serial|parallel, fetch_s, fuse_s, feeds:
+        # [{index, feed, s, ok, n, error?, requests, pages, bytes,
+        # wire_bytes?, s_requests, incremental?}]}; .feeds_detail (property)
+        # the last fetch's. SAFETY SEMANTICS 58: cfg.feeds_parallel fetches
+        # every feed at once and applies them in feed order. SAFETY
+        # SEMANTICS 59: a feed's last_fetch_events become notes + operator
+        # events (kind feed_incremental_mismatch; not degraded).
+
+wgresponse.sentinel   (2026-11-18; SAFETY SEMANTICS 60 — the new-fire sentinel, shadow)
+    class NewFireSentinel(cfg, clients_fn, http_get=None, clock=time.time,
+                          on_event=None)
+        .poll_once() -> list[OperatorEvent]   # one poll; never raises
+        .observe_cycle(res, fetched_s, done_s) # the cycle's records (cycle_seen_s)
+        .start() / .stop(); .status() -> dict  # the /api/state "sentinel" block
+    rule_summary(cfg) -> dict
 
 wgresponse.offmap   (2026-09-27; SAFETY SEMANTICS 15 — the per-fire off-domain horizon)
     status_for(inc, now_s, cfg) -> (known, rapid, reasons)   # the feed's behaviour status
@@ -2521,7 +2684,13 @@ wgresponse.net   (2026-11-01 — the live adapters' GET: one retry when the netw
         # RETRY_PAUSE_S (3 s); a reset or cut-off answer only with retry_dropped
         # (terrain: False — the LFPS submit is a GET that creates a job); never
         # an HTTP answer or a timeout; the second failure raises as the first
+        # SAFETY SEMANTICS 57 (2026-11-18): gzip=False kwarg — True asks
+        # Accept-Encoding gzip and decodes; a body that does not decode
+        # raises CorruptBodyError (a ValueError; never retried)
     failure_kind(exc) -> "unsent" | "dropped" | None
+    # FEED TIMINGS (2026-11-18, telemetry): last_transfer() -> {status,
+    # body_bytes, wire_bytes, encoding, attempts} | None — this THREAD's last
+    # successful get since clear_transfer()
 
 wgresponse.liveroads   (2026-11-17; SAFETY SEMANTICS 48 — the live service areas' roads)
     class ServiceAreaRoads(cfg, road_dir=None)   # data/roads/live/areas.json + <key>.wgr
@@ -2903,6 +3072,11 @@ wgresponse.cli
     # bool (51c); with --operator-log-priority /api/state gains
     # operator_log_priority + satellite_heat_24h and /healthz
     # satellite_heat_24h.
+    # SAFETY SEMANTICS 57-60 (2026-11-18): --feeds-cache-bust, --feeds-gzip,
+    # --feeds-parallel, --feeds-incremental arm the feed knobs (the adapters
+    # built with _feed_transport(cfg)); --new-fire-sentinel S [--new-fire-
+    # sentinel-km KM] starts the shadow sentinel thread; /api/state gains
+    # "sentinel" (armed only).
 ============================================================================
 """
 from __future__ import annotations
@@ -4530,6 +4704,30 @@ class ResponseConfig:
     # --- feeds ---
     poll_period_s: float = 300.0
     user_agent: str = "wg-response/0.1 (ops@thewildfireguardian.com)"
+    # FEEDS FASTER (2026-11-18, the fire -> alert latency review, lane A;
+    # SAFETY SEMANTICS 57-60). Each default OFF = byte-identical; read by
+    # the watch daemon (the adapters it builds) and the monitor's fetch.
+    # 57: every ArcGIS query carries a per-query `_t=<unix s>` so the CDN
+    # cannot answer it from its edge cache (FIRIS s-maxage 3600 s, WFIGS
+    # 300 s; watch --feeds-cache-bust) ...
+    feeds_cache_bust: bool = False
+    # ... and every feed GET asks Accept-Encoding gzip (same JSON, a corrupt
+    # body is a blind fetch; watch --feeds-gzip).
+    feeds_gzip: bool = False
+    # 58: the feed adapters (and the live FIRMS sources) fetched at once,
+    # applied in feed order (byte-identical result; watch --feeds-parallel).
+    feeds_parallel: bool = False
+    # 59: the polygon layers (WFIGS perimeters, FIRIS) fetched as a cheap
+    # attributes-only query + the full features of new / changed ids;
+    # hourly full refresh (watch --feeds-incremental).
+    feeds_incremental: bool = False
+    # 60: the NEW-FIRE SENTINEL — a shadow thread in the watch daemon polls
+    # the cheap agency queries every this many seconds for new records and
+    # raises OperatorEvent('new_fire_near_homes') for one within
+    # new_fire_sentinel_km of a protected home. 0 = off (watch
+    # --new-fire-sentinel S). The cycle reads nothing from it.
+    new_fire_sentinel_s: float = 0.0
+    new_fire_sentinel_km: float = 12.0   # the 8 km tripwire + 40 min of cycle lag at 1.7 m/s
     # --- Sprint 2 (Council-1 remediations) ---
     slack_min: float = 15.0            # planned-slack floor per stop (SAFETY SEMANTICS 7)
     blind_alarm_cycles: int = 1        # unassessed cycles before OperatorEvent('degraded')
@@ -5684,6 +5882,17 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
                         "incident_stale_h] hours")
     if cfg.sim_weather_profile not in ("generic", "city"):
         problems.append("sim_weather_profile must be 'generic' or 'city'")
+    # --- feeds faster (SAFETY SEMANTICS 57-60) ---
+    if not (math.isfinite(cfg.new_fire_sentinel_s)
+            and (cfg.new_fire_sentinel_s == 0.0
+                 or 15.0 <= cfg.new_fire_sentinel_s <= 3600.0)):
+        problems.append("new_fire_sentinel_s must be 0 (off) or within "
+                        "[15, 3600] s (faster polls the agencies' servers "
+                        "harder than they publish)")
+    if not (math.isfinite(cfg.new_fire_sentinel_km)
+            and 0.0 < cfg.new_fire_sentinel_km <= 60.0):
+        problems.append("new_fire_sentinel_km must be within (0, 60] km "
+                        "(60 km = the monitor's client-search cap)")
     # SAFETY SEMANTICS 34a' (2026-10-21): comma-separated far-zone ids
     if not isinstance(cfg.sim_far_zones_off, str):
         problems.append("sim_far_zones_off must be a string of comma-"

@@ -560,6 +560,40 @@ def _colocated_note(merges: list) -> str:
             + "; ".join(parts))
 
 
+def _feed_row(i: int, fname: str, feed, batch, exc, ok,
+              fetch_s: float) -> dict:
+    """FEED TIMINGS (telemetry): one adapter's fetch for feeds_detail — its
+    seconds, health, record count and the adapter's own request detail
+    (last_fetch_detail: requests, bytes, wire_bytes, pages, incremental).
+    Never raises (a broken detail is left out)."""
+    row = {"index": i, "feed": fname, "s": round(float(fetch_s), 4),
+           "ok": (None if exc is not None else bool(ok)),
+           "n": (None if batch is None else len(batch))}
+    if exc is not None:
+        row["error"] = type(exc).__name__
+    try:
+        det = getattr(feed, "last_fetch_detail", None)
+        if isinstance(det, dict):
+            for k in ("requests", "pages", "bytes", "wire_bytes",
+                      "s_requests", "incremental"):
+                if k in det:
+                    row[k] = det[k]
+    except Exception:                      # pragma: no cover - telemetry
+        pass
+    return row
+
+
+def _feeds_detail_done(detail: Optional[dict], feeds_s: float):
+    """FEED TIMINGS: the cycle's feeds_detail with the fusion's share
+    (feeds_s less the fetches' wall time) — None before any fetch."""
+    if not isinstance(detail, dict):
+        return None
+    out = dict(detail)
+    if "fetch_s" in out:
+        out["fuse_s"] = round(max(0.0, float(feeds_s) - out["fetch_s"]), 4)
+    return out
+
+
 class _ProviderFailure(RuntimeError):
     """A tagged external-provider failure inside one incident assessment.
 
@@ -809,6 +843,8 @@ class ThreatMonitor:
         incidents, feeds_healthy = self._fetch_and_fuse(now_s, notes,
                                                         operator_events)
         timings["feeds_s"] = time.monotonic() - _t
+        timings["feeds_detail"] = _feeds_detail_done(       # FEED TIMINGS
+            getattr(self, "_feeds_detail", None), timings["feeds_s"])
         _t = time.monotonic()
         # CYCLE STEP TIMINGS (cfg.cycle_step_timings): telemetry only
         steps = _Steps(getattr(self._cfg, "cycle_step_timings", False))
@@ -1707,20 +1743,60 @@ class ThreatMonitor:
         (the pass only joins groups the staleness gate keeps) and every
         union it makes is one cycle note. Knob off = the legacy one-argument
         call, byte-identical.
+
+        PARALLEL FEEDS (cfg.feeds_parallel, contracts SAFETY SEMANTICS 58):
+        every adapter's fetch_active runs at once on its own thread (the
+        fetches are network waits); their answers — batch, exception,
+        last_fetch_ok — are then applied HERE, in feed order, by the same
+        code as the serial loop, so the fused set, the notes and the
+        operator events are byte-identical to the serial path. Each
+        adapter's own timeouts are unchanged; the cycle waits for the
+        slowest adapter instead of the sum.
+
+        FEED TIMINGS (telemetry, 2026-11-18; changes nothing): per adapter
+        its fetch seconds, health, record count and — from an adapter's
+        last_fetch_detail — every request's seconds, HTTP status, bytes
+        (and bytes on the wire) and page; kept on self._feeds_detail and
+        carried by cycle() as timings["feeds_detail"]
+        (/api/state last_cycle_phases.feeds_detail).
+
+        INCREMENTAL FEEDS (cfg.feeds_incremental, SAFETY SEMANTICS 59): an
+        adapter's last_fetch_events (an incremental cache that differed
+        from the hourly full fetch) become one note and one OperatorEvent
+        each (kind feed_incremental_mismatch: not a degradation — the full
+        answer was used). No adapter sets one with the knob off.
         """
         batches = []
         healthy = True
+        parallel = (bool(getattr(self._cfg, "feeds_parallel", False))
+                    and len(self._feeds) > 1)
+        rows: list = []
+        self._feeds_detail = {"mode": "parallel" if parallel else "serial",
+                              "feeds": rows}
+        _t_all = time.monotonic()
+        answers = self._fetch_parallel() if parallel else None
         for i, feed in enumerate(self._feeds):
             fname = type(feed).__name__
-            try:
-                # AOI (Sprint 2 C1): the watch daemon's bbox bounds every
-                # live fetch; None keeps the legacy no-arg call so hand
-                # stubs without a bbox parameter stay compatible.
-                if self._aoi is not None:
-                    batch = list(feed.fetch_active(self._aoi))
-                else:
-                    batch = list(feed.fetch_active())
-            except Exception as exc:
+            if answers is None:
+                _t = time.monotonic()
+                try:
+                    # AOI (Sprint 2 C1): the watch daemon's bbox bounds every
+                    # live fetch; None keeps the legacy no-arg call so hand
+                    # stubs without a bbox parameter stay compatible.
+                    if self._aoi is not None:
+                        batch = list(feed.fetch_active(self._aoi))
+                    else:
+                        batch = list(feed.fetch_active())
+                    exc = None
+                except Exception as e:
+                    batch, exc = None, e
+                fetch_s = time.monotonic() - _t
+                ok = (getattr(feed, "last_fetch_ok", True) if exc is None
+                      else None)
+            else:
+                batch, exc, ok, fetch_s = answers[i]
+            rows.append(_feed_row(i, fname, feed, batch, exc, ok, fetch_s))
+            if exc is not None:
                 healthy = False
                 notes.append(f"feed[{i}] {fname}: fetch failed ({exc})")
                 operator_events.append(OperatorEvent(
@@ -1728,7 +1804,7 @@ class ThreatMonitor:
                     message=f"feed[{i}] {fname} fetch raised: {exc}",
                     detail={"feed": fname, "index": i}))
                 continue
-            if not getattr(feed, "last_fetch_ok", True):
+            if not ok:
                 healthy = False
                 notes.append(f"feed[{i}] {fname}: fetch unhealthy "
                              f"(last_fetch_ok=False); batch treated as blind, "
@@ -1738,7 +1814,18 @@ class ThreatMonitor:
                     message=(f"feed[{i}] {fname} reported an unhealthy fetch "
                              f"(last_fetch_ok=False)"),
                     detail={"feed": fname, "index": i}))
+            for ev in list(getattr(feed, "last_fetch_events", None) or ()):
+                # SEMANTICS 59: an incremental cache that differed from the
+                # hourly full fetch (the full answer is in the batch)
+                msg = str(ev.get("message", ""))
+                notes.append(f"feed[{i}] {fname}: {msg}")
+                operator_events.append(OperatorEvent(
+                    t_s=now_s, kind=str(ev.get("kind", "feed_note")),
+                    message=f"feed[{i}] {fname}: {msg}",
+                    detail={"feed": fname, "index": i,
+                            **dict(ev.get("detail") or {})}))
             batches.append(batch)
+        self._feeds_detail["fetch_s"] = round(time.monotonic() - _t_all, 4)
         if not batches:
             return [], healthy
         try:
@@ -1764,6 +1851,37 @@ class ThreatMonitor:
                     if cur is None or inc.updated_at_s > cur.updated_at_s:
                         merged[inc.incident_id] = inc
             return list(merged.values()), healthy
+
+    def _fetch_parallel(self) -> list:
+        """SAFETY SEMANTICS 58: every feed's fetch at once — [(batch,
+        exception, last_fetch_ok, seconds)] in feed order, each exactly what
+        the serial loop would have seen for that feed (an Exception is
+        returned, never raised; a BaseException that is not one propagates,
+        as the serial loop's would)."""
+        import concurrent.futures as cf
+        aoi = self._aoi
+
+        def one(feed):
+            t0 = time.monotonic()
+            try:
+                batch = (list(feed.fetch_active(aoi)) if aoi is not None
+                         else list(feed.fetch_active()))
+                exc = None
+            except Exception as e:
+                batch, exc = None, e
+            s = time.monotonic() - t0
+            ok = getattr(feed, "last_fetch_ok", True) if exc is None else None
+            return batch, exc, ok, s
+
+        with cf.ThreadPoolExecutor(max_workers=len(self._feeds),
+                                   thread_name_prefix="feed") as pool:
+            futs = [pool.submit(one, feed) for feed in self._feeds]
+            return [f.result() for f in futs]
+
+    @property
+    def feeds_detail(self) -> Optional[dict]:
+        """FEED TIMINGS: the last fetch's per-adapter / per-request detail."""
+        return getattr(self, "_feeds_detail", None)
 
     def _gate_stale_incidents(self, active: list, now_s: float,
                               notes: list) -> list:

@@ -1,0 +1,1193 @@
+{
+ "wfigs_points": {
+  "name": "Incidents",
+  "type": "Feature Layer",
+  "objectIdField": "OBJECTID",
+  "maxRecordCount": 2000,
+  "standardMaxRecordCount": 16000,
+  "editFieldsInfo": null,
+  "editingInfo": {
+   "lastEditDate": 1795025273078,
+   "schemaLastEditDate": 1795025273078,
+   "dataLastEditDate": 1795025273078
+  },
+  "capabilities": "Query,Extract",
+  "supportsAdvancedQueries": true,
+  "hasZ": false,
+  "hasM": false,
+  "geometryType": "esriGeometryPoint",
+  "timeInfo": null,
+  "isView": true,
+  "isDataVersioned": false,
+  "advancedQueryCapabilities": {
+   "supportsPagination": true,
+   "supportsPaginationOnAggregatedQueries": true,
+   "supportsQueryRelatedPagination": true,
+   "supportsQueryWithDistance": true,
+   "supportsOutDistance": true,
+   "supportsReturningQueryExtent": true,
+   "supportsStatistics": true,
+   "supportsOrderBy": true,
+   "supportsDistinct": true,
+   "supportsQueryWithResultType": true,
+   "supportsSqlExpression": true,
+   "supportsTimeRelation": true,
+   "supportsAdvancedQueryRelated": true,
+   "supportsCountDistinct": true,
+   "supportsPercentileStatistics": true,
+   "supportsApproxPercentileStatistics": true,
+   "supportsSpatialAggregationStatistics": true,
+   "supportedSpatialAggregationStatistics": [
+    "EnvelopeAggregate",
+    "CentroidAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportsLod": true,
+   "supportsQueryWithLodSR": false,
+   "supportedLodTypes": [
+    "geohash"
+   ],
+   "supportsReturningGeometryCentroid": false,
+   "supportsReturningGeometryEnvelope": false,
+   "supportsQueryWithDatumTransformation": true,
+   "supportsCurrentUserQueries": true,
+   "supportsHavingClause": true,
+   "supportsOutFieldSQLExpression": true,
+   "supportsMaxRecordCountFactor": true,
+   "supportsTopFeaturesQuery": true,
+   "supportsDisjointSpatialRel": true,
+   "supportsQueryWithCacheHint": true,
+   "supportedOperationsWithCacheHint": [
+    "query",
+    "queryTopFilter",
+    "queryAnalytics",
+    "queryAttachments",
+    "queryRelated",
+    "queryBins",
+    "queryPivot"
+   ],
+   "supportsQueryAnalytic": true,
+   "supportsQueryPivot": true,
+   "supportsQueryBins": true,
+   "supportsDefaultSR": true,
+   "supportsTranslations": false,
+   "supportsAggIds": true,
+   "supportsQueryWithCollation": true,
+   "supportsISODOW": true,
+   "supportsISOWeek": true,
+   "supportsFullTextSearch": true,
+   "fullTextSearchCapabilities": {
+    "supportsAccentSensitivity": true,
+    "supportsStopWords": true,
+    "supportsSearchOperator": true,
+    "supportsOperator": true
+   },
+   "fullTextSearchableFields": [
+    "IncidentName"
+   ]
+  },
+  "fields": [
+   [
+    "OBJECTID",
+    "esriFieldTypeOID"
+   ],
+   [
+    "SourceOID",
+    "esriFieldTypeInteger"
+   ],
+   [
+    "ABCDMisc",
+    "esriFieldTypeString"
+   ],
+   [
+    "ADSPermissionState",
+    "esriFieldTypeString"
+   ],
+   [
+    "ContainmentDateTime",
+    "esriFieldTypeDate"
+   ],
+   [
+    "ControlDateTime",
+    "esriFieldTypeDate"
+   ],
+   [
+    "CreatedBySystem",
+    "esriFieldTypeString"
+   ],
+   [
+    "IncidentSize",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "DiscoveryAcres",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "DispatchCenterID",
+    "esriFieldTypeString"
+   ],
+   [
+    "EstimatedCostToDate",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "FinalAcres",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "FinalFireReportApprovedByTitle",
+    "esriFieldTypeString"
+   ],
+   [
+    "FinalFireReportApprovedByUnit",
+    "esriFieldTypeString"
+   ],
+   [
+    "FinalFireReportApprovedDate",
+    "esriFieldTypeDate"
+   ],
+   [
+    "FireBehaviorGeneral",
+    "esriFieldTypeString"
+   ],
+   [
+    "FireBehaviorGeneral1",
+    "esriFieldTypeString"
+   ],
+   [
+    "FireBehaviorGeneral2",
+    "esriFieldTypeString"
+   ],
+   [
+    "FireBehaviorGeneral3",
+    "esriFieldTypeString"
+   ],
+   [
+    "FireCause",
+    "esriFieldTypeString"
+   ],
+   [
+    "FireCauseGeneral",
+    "esriFieldTypeString"
+   ],
+   [
+    "FireCauseSpecific",
+    "esriFieldTypeString"
+   ],
+   [
+    "FireCode",
+    "esriFieldTypeString"
+   ],
+   [
+    "FireDepartmentID",
+    "esriFieldTypeString"
+   ],
+   [
+    "FireDiscoveryDateTime",
+    "esriFieldTypeDate"
+   ],
+   [
+    "FireMgmtComplexity",
+    "esriFieldTypeString"
+   ],
+   [
+    "FireOutDateTime",
+    "esriFieldTypeDate"
+   ],
+   [
+    "FireStrategyConfinePercent",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "FireStrategyFullSuppPercent",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "FireStrategyMonitorPercent",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "FireStrategyPointZonePercent",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "FSJobCode",
+    "esriFieldTypeString"
+   ],
+   [
+    "FSOverrideCode",
+    "esriFieldTypeString"
+   ],
+   [
+    "GACC",
+    "esriFieldTypeString"
+   ],
+   [
+    "ICS209ReportDateTime",
+    "esriFieldTypeDate"
+   ],
+   [
+    "ICS209ReportForTimePeriodFrom",
+    "esriFieldTypeDate"
+   ],
+   [
+    "ICS209ReportForTimePeriodTo",
+    "esriFieldTypeDate"
+   ],
+   [
+    "ICS209ReportStatus",
+    "esriFieldTypeString"
+   ],
+   [
+    "IncidentManagementOrganization",
+    "esriFieldTypeString"
+   ],
+   [
+    "IncidentName",
+    "esriFieldTypeString"
+   ],
+   [
+    "IncidentShortDescription",
+    "esriFieldTypeString"
+   ],
+   [
+    "IncidentTypeCategory",
+    "esriFieldTypeString"
+   ],
+   [
+    "IncidentTypeKind",
+    "esriFieldTypeString"
+   ],
+   [
+    "InitialLatitude",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "InitialLongitude",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "InitialResponseAcres",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "InitialResponseDateTime",
+    "esriFieldTypeDate"
+   ],
+   [
+    "IrwinID",
+    "esriFieldTypeString"
+   ],
+   [
+    "IsFireCauseInvestigated",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "IsFireCodeRequested",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "IsFSAssisted",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "IsMultiJurisdictional",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "IsReimbursable",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "IsTrespass",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "IsUnifiedCommand",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "LocalIncidentIdentifier",
+    "esriFieldTypeString"
+   ],
+   [
+    "ModifiedBySystem",
+    "esriFieldTypeString"
+   ],
+   [
+    "PercentContained",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "PercentPerimeterToBeContained",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "POOCity",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOCounty",
+    "esriFieldTypeString"
+   ],
+   [
+    "POODispatchCenterID",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOFips",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOJurisdictionalAgency",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOJurisdictionalUnit",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOJurisdictionalUnitParentUnit",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOLandownerCategory",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOLandownerKind",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOLegalDescPrincipalMeridian",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOLegalDescQtr",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOLegalDescQtrQtr",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOLegalDescRange",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOLegalDescSection",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "POOLegalDescTownship",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOPredictiveServiceAreaID",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOProtectingAgency",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOProtectingUnit",
+    "esriFieldTypeString"
+   ],
+   [
+    "POOState",
+    "esriFieldTypeString"
+   ],
+   [
+    "PredominantFuelGroup",
+    "esriFieldTypeString"
+   ],
+   [
+    "PredominantFuelModel",
+    "esriFieldTypeString"
+   ],
+   [
+    "PrimaryFuelModel",
+    "esriFieldTypeString"
+   ],
+   [
+    "SecondaryFuelModel",
+    "esriFieldTypeString"
+   ],
+   [
+    "TotalIncidentPersonnel",
+    "esriFieldTypeInteger"
+   ],
+   [
+    "UniqueFireIdentifier",
+    "esriFieldTypeString"
+   ],
+   [
+    "WFDSSDecisionStatus",
+    "esriFieldTypeString"
+   ],
+   [
+    "EstimatedFinalCost",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "OrganizationalAssessment",
+    "esriFieldTypeString"
+   ],
+   [
+    "StrategicDecisionPublishDate",
+    "esriFieldTypeDate"
+   ],
+   [
+    "CreatedOnDateTime_dt",
+    "esriFieldTypeDate"
+   ],
+   [
+    "ModifiedOnDateTime_dt",
+    "esriFieldTypeDate"
+   ],
+   [
+    "ActiveFireCandidate",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "IsCpxChild",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "CpxName",
+    "esriFieldTypeString"
+   ],
+   [
+    "CpxID",
+    "esriFieldTypeString"
+   ],
+   [
+    "SourceGlobalID",
+    "esriFieldTypeString"
+   ],
+   [
+    "GlobalID",
+    "esriFieldTypeGlobalID"
+   ],
+   [
+    "IncidentComplexityLevel",
+    "esriFieldTypeString"
+   ]
+  ]
+ },
+ "wfigs_perims": {
+  "name": "Perimeters",
+  "type": "Feature Layer",
+  "objectIdField": "OBJECTID",
+  "maxRecordCount": 2000,
+  "standardMaxRecordCount": 2000,
+  "editFieldsInfo": null,
+  "editingInfo": {
+   "lastEditDate": 1795025943583,
+   "schemaLastEditDate": 1795025273112,
+   "dataLastEditDate": 1795025943583
+  },
+  "capabilities": "Query,Extract",
+  "supportsAdvancedQueries": true,
+  "hasZ": false,
+  "hasM": false,
+  "geometryType": "esriGeometryPolygon",
+  "timeInfo": null,
+  "isView": true,
+  "isDataVersioned": false,
+  "advancedQueryCapabilities": {
+   "supportsPagination": true,
+   "supportsPaginationOnAggregatedQueries": true,
+   "supportsQueryRelatedPagination": true,
+   "supportsQueryWithDistance": true,
+   "supportsOutDistance": true,
+   "supportsReturningQueryExtent": true,
+   "supportsStatistics": true,
+   "supportsOrderBy": true,
+   "supportsDistinct": true,
+   "supportsQueryWithResultType": true,
+   "supportsSqlExpression": true,
+   "supportsTimeRelation": true,
+   "supportsAdvancedQueryRelated": true,
+   "supportsCountDistinct": true,
+   "supportsPercentileStatistics": true,
+   "supportsApproxPercentileStatistics": true,
+   "supportsSpatialAggregationStatistics": true,
+   "supportsTrueCurve": true,
+   "supportedSpatialAggregationStatistics": [
+    "EnvelopeAggregate",
+    "CentroidAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportsLod": true,
+   "supportsQueryWithLodSR": false,
+   "supportedLodTypes": [
+    "geohash"
+   ],
+   "supportsReturningGeometryCentroid": true,
+   "supportsReturningGeometryEnvelope": true,
+   "supportsReturningGeometryProperties": true,
+   "supportsQueryWithDatumTransformation": true,
+   "supportsCurrentUserQueries": true,
+   "supportsHavingClause": true,
+   "supportsOutFieldSQLExpression": true,
+   "supportsMaxRecordCountFactor": true,
+   "supportsTopFeaturesQuery": true,
+   "supportsDisjointSpatialRel": true,
+   "supportsQueryWithCacheHint": true,
+   "supportedOperationsWithCacheHint": [
+    "query",
+    "queryTopFilter",
+    "queryAnalytics",
+    "queryAttachments",
+    "queryRelated",
+    "queryBins",
+    "queryPivot"
+   ],
+   "supportsQueryAnalytic": true,
+   "supportsQueryPivot": true,
+   "supportsQueryBins": true,
+   "supportsDefaultSR": true,
+   "supportsTranslations": false,
+   "supportsAggIds": true,
+   "supportsQueryWithCollation": true,
+   "supportsISODOW": true,
+   "supportsISOWeek": true,
+   "supportsFullTextSearch": true,
+   "fullTextSearchCapabilities": {
+    "supportsAccentSensitivity": true,
+    "supportsStopWords": true,
+    "supportsSearchOperator": true,
+    "supportsOperator": true
+   },
+   "fullTextSearchableFields": [
+    "poly_IncidentName"
+   ]
+  },
+  "fields": [
+   [
+    "OBJECTID",
+    "esriFieldTypeOID"
+   ],
+   [
+    "poly_SourceOID",
+    "esriFieldTypeInteger"
+   ],
+   [
+    "poly_IncidentName",
+    "esriFieldTypeString"
+   ],
+   [
+    "poly_FeatureCategory",
+    "esriFieldTypeString"
+   ],
+   [
+    "poly_MapMethod",
+    "esriFieldTypeString"
+   ],
+   [
+    "poly_GISAcres",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "poly_DeleteThis",
+    "esriFieldTypeString"
+   ],
+   [
+    "poly_FeatureAccess",
+    "esriFieldTypeString"
+   ],
+   [
+    "poly_FeatureStatus",
+    "esriFieldTypeString"
+   ],
+   [
+    "poly_IsVisible",
+    "esriFieldTypeString"
+   ],
+   [
+    "poly_CreateDate",
+    "esriFieldTypeDate"
+   ],
+   [
+    "poly_DateCurrent",
+    "esriFieldTypeDate"
+   ],
+   [
+    "poly_PolygonDateTime",
+    "esriFieldTypeDate"
+   ],
+   [
+    "poly_IRWINID",
+    "esriFieldTypeString"
+   ],
+   [
+    "poly_FORID",
+    "esriFieldTypeString"
+   ],
+   [
+    "poly_Acres_AutoCalc",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "poly_SourceGlobalID",
+    "esriFieldTypeString"
+   ],
+   [
+    "poly_Source",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_SourceOID",
+    "esriFieldTypeInteger"
+   ],
+   [
+    "attr_ABCDMisc",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_ADSPermissionState",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_CalculatedAcres",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "attr_ContainmentDateTime",
+    "esriFieldTypeDate"
+   ],
+   [
+    "attr_ControlDateTime",
+    "esriFieldTypeDate"
+   ],
+   [
+    "attr_CreatedBySystem",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_IncidentSize",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "attr_DiscoveryAcres",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "attr_DispatchCenterID",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_EstimatedCostToDate",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "attr_FinalAcres",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "attr_FFReportApprovedByTitle",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FFReportApprovedByUnit",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FFReportApprovedDate",
+    "esriFieldTypeDate"
+   ],
+   [
+    "attr_FireBehaviorGeneral",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FireBehaviorGeneral1",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FireBehaviorGeneral2",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FireBehaviorGeneral3",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FireCause",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FireCauseGeneral",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FireCauseSpecific",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FireCode",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FireDepartmentID",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FireDiscoveryDateTime",
+    "esriFieldTypeDate"
+   ],
+   [
+    "attr_FireMgmtComplexity",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FireOutDateTime",
+    "esriFieldTypeDate"
+   ],
+   [
+    "attr_FireStrategyConfinePercent",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_FireStrategyFullSuppPrcnt",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_FireStrategyMonitorPercent",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_FireStrategyPointZonePrcnt",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_FSJobCode",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FSOverrideCode",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_GACC",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_ICS209ReportDateTime",
+    "esriFieldTypeDate"
+   ],
+   [
+    "attr_ICS209RptForTimePeriodFrom",
+    "esriFieldTypeDate"
+   ],
+   [
+    "attr_ICS209RptForTimePeriodTo",
+    "esriFieldTypeDate"
+   ],
+   [
+    "attr_ICS209ReportStatus",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_IncidentManagementOrg",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_IncidentName",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_IncidentShortDescription",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_IncidentTypeCategory",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_IncidentTypeKind",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_InitialLatitude",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "attr_InitialLongitude",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "attr_InitialResponseAcres",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "attr_InitialResponseDateTime",
+    "esriFieldTypeDate"
+   ],
+   [
+    "attr_IrwinID",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_IsFireCauseInvestigated",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_IsFireCodeRequested",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_IsFSAssisted",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_IsMultiJurisdictional",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_IsReimbursable",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_IsTrespass",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_IsUnifiedCommand",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_LocalIncidentIdentifier",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_ModifiedBySystem",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_PercentContained",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "attr_PercentPerimToBeContained",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "attr_POOCity",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOCounty",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POODispatchCenterID",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOFips",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOJurisdictionalAgency",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOJurisdictionalUnit",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOJurisdictUnitParentUnit",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOLandownerCategory",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOLandownerKind",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOLegalDescPrincipalMerid",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOLegalDescQtr",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOLegalDescQtrQtr",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOLegalDescRange",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOLegalDescSection",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_POOLegalDescTownship",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOPredictiveServiceAreaID",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOProtectingAgency",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOProtectingUnit",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_POOState",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_PredominantFuelGroup",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_PredominantFuelModel",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_PrimaryFuelModel",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_SecondaryFuelModel",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_TotalIncidentPersonnel",
+    "esriFieldTypeInteger"
+   ],
+   [
+    "attr_UniqueFireIdentifier",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_FORID",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_WFDSSDecisionStatus",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_EstimatedFinalCost",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "attr_OrganizationalAssessment",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_StratDecisionPublishDate",
+    "esriFieldTypeDate"
+   ],
+   [
+    "attr_CreatedOnDateTime_dt",
+    "esriFieldTypeDate"
+   ],
+   [
+    "attr_ModifiedOnDateTime_dt",
+    "esriFieldTypeDate"
+   ],
+   [
+    "attr_Source",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_ActiveFireCandidate",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_IsCpxChild",
+    "esriFieldTypeSmallInteger"
+   ],
+   [
+    "attr_CpxName",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_CpxID",
+    "esriFieldTypeString"
+   ],
+   [
+    "attr_SourceGlobalID",
+    "esriFieldTypeString"
+   ],
+   [
+    "GlobalID",
+    "esriFieldTypeGlobalID"
+   ],
+   [
+    "Shape__Area",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "Shape__Length",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "attr_IncidentComplexityLevel",
+    "esriFieldTypeString"
+   ]
+  ]
+ },
+ "firis": {
+  "name": "FIRIS WFIGS ComboLayer",
+  "type": "Feature Layer",
+  "objectIdField": "OBJECTID",
+  "maxRecordCount": 2000,
+  "standardMaxRecordCount": 2000,
+  "editFieldsInfo": null,
+  "editingInfo": {
+   "lastEditDate": 1794846239748,
+   "schemaLastEditDate": 1792423483910,
+   "dataLastEditDate": 1794846239748
+  },
+  "capabilities": "Query",
+  "supportsAdvancedQueries": true,
+  "hasZ": false,
+  "hasM": false,
+  "geometryType": "esriGeometryPolygon",
+  "timeInfo": null,
+  "isView": true,
+  "isDataVersioned": false,
+  "advancedQueryCapabilities": {
+   "supportsPagination": true,
+   "supportsPaginationOnAggregatedQueries": true,
+   "supportsQueryRelatedPagination": true,
+   "supportsQueryWithDistance": true,
+   "supportsOutDistance": true,
+   "supportsReturningQueryExtent": true,
+   "supportsStatistics": true,
+   "supportsOrderBy": true,
+   "supportsDistinct": true,
+   "supportsQueryWithResultType": true,
+   "supportsSqlExpression": true,
+   "supportsTimeRelation": true,
+   "supportsAdvancedQueryRelated": true,
+   "supportsCountDistinct": true,
+   "supportsPercentileStatistics": true,
+   "supportsApproxPercentileStatistics": true,
+   "supportsSpatialAggregationStatistics": true,
+   "supportsTrueCurve": true,
+   "supportedSpatialAggregationStatistics": [
+    "EnvelopeAggregate",
+    "CentroidAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportsLod": true,
+   "supportsQueryWithLodSR": false,
+   "supportedLodTypes": [
+    "geohash"
+   ],
+   "supportsReturningGeometryCentroid": true,
+   "supportsReturningGeometryEnvelope": true,
+   "supportsReturningGeometryProperties": true,
+   "supportsQueryWithDatumTransformation": true,
+   "supportsCurrentUserQueries": true,
+   "supportsHavingClause": true,
+   "supportsOutFieldSQLExpression": true,
+   "supportsMaxRecordCountFactor": true,
+   "supportsTopFeaturesQuery": true,
+   "supportsDisjointSpatialRel": true,
+   "supportsQueryWithCacheHint": true,
+   "supportedOperationsWithCacheHint": [
+    "query",
+    "queryTopFilter",
+    "queryAnalytics",
+    "queryAttachments",
+    "queryRelated",
+    "queryBins",
+    "queryPivot"
+   ],
+   "supportsQueryAnalytic": true,
+   "supportsQueryPivot": true,
+   "supportsQueryBins": true,
+   "supportsDefaultSR": true,
+   "supportsTranslations": false,
+   "supportsAggIds": true,
+   "supportsQueryWithCollation": true,
+   "supportsISODOW": true,
+   "supportsISOWeek": true,
+   "supportsFullTextSearch": true,
+   "fullTextSearchCapabilities": {
+    "supportsAccentSensitivity": true,
+    "supportsStopWords": true,
+    "supportsSearchOperator": true,
+    "supportsOperator": true
+   }
+  },
+  "fields": [
+   [
+    "OBJECTID",
+    "esriFieldTypeOID"
+   ],
+   [
+    "GlobalID",
+    "esriFieldTypeGlobalID"
+   ],
+   [
+    "type",
+    "esriFieldTypeString"
+   ],
+   [
+    "source",
+    "esriFieldTypeString"
+   ],
+   [
+    "poly_DateCurrent",
+    "esriFieldTypeDate"
+   ],
+   [
+    "mission",
+    "esriFieldTypeString"
+   ],
+   [
+    "incident_name",
+    "esriFieldTypeString"
+   ],
+   [
+    "incident_number",
+    "esriFieldTypeString"
+   ],
+   [
+    "area_acres",
+    "esriFieldTypeDouble"
+   ],
+   [
+    "description",
+    "esriFieldTypeString"
+   ],
+   [
+    "FireDiscoveryDate",
+    "esriFieldTypeDate"
+   ],
+   [
+    "CreationDate",
+    "esriFieldTypeDate"
+   ],
+   [
+    "EditDate",
+    "esriFieldTypeDate"
+   ],
+   [
+    "displayStatus",
+    "esriFieldTypeString"
+   ]
+  ]
+ }
+}

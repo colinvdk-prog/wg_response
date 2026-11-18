@@ -1,0 +1,1520 @@
+{
+ "firms": false,
+ "aoi": "CONUS",
+ "reps": [
+  {
+   "legacy": {
+    "wall_s": 22.5,
+    "fetch_s": 22.4613,
+    "fuse_s": 0.034,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 7.37,
+      "ok": true,
+      "n": 111,
+      "bytes": 9767495,
+      "wire_bytes": 9767495,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 4.2254,
+        "bytes": 217144,
+        "wire_bytes": 217144,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 2.9424,
+        "bytes": 9550351,
+        "wire_bytes": 9550351,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "FirisFeed": {
+      "s": 14.67,
+      "ok": true,
+      "n": 505,
+      "bytes": 29165426,
+      "wire_bytes": 29165426,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 14.0529,
+        "bytes": 29165426,
+        "wire_bytes": 29165426,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "CalFireFeed": {
+      "s": 0.42,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.4196,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "bust": {
+    "wall_s": 12.7,
+    "fetch_s": 12.6648,
+    "fuse_s": 0.04,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 6.63,
+      "ok": true,
+      "n": 111,
+      "bytes": 9767495,
+      "wire_bytes": 9767495,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 4.508,
+        "bytes": 217144,
+        "wire_bytes": 217144,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 1.9225,
+        "bytes": 9550351,
+        "wire_bytes": 9550351,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "FirisFeed": {
+      "s": 5.64,
+      "ok": true,
+      "n": 505,
+      "bytes": 29165426,
+      "wire_bytes": 29165426,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 4.9433,
+        "bytes": 29165426,
+        "wire_bytes": 29165426,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "CalFireFeed": {
+      "s": 0.4,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.3972,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "bust+gzip": {
+    "wall_s": 12.74,
+    "fetch_s": 12.7073,
+    "fuse_s": 0.038,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 6.55,
+      "ok": true,
+      "n": 111,
+      "bytes": 9767495,
+      "wire_bytes": 3272833,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 4.3084,
+        "bytes": 217144,
+        "wire_bytes": 35390,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 2.0234,
+        "bytes": 9550351,
+        "wire_bytes": 3237443,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "FirisFeed": {
+      "s": 5.72,
+      "ok": true,
+      "n": 505,
+      "bytes": 29165426,
+      "wire_bytes": 6934209,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 5.001,
+        "bytes": 29165426,
+        "wire_bytes": 6934209,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "CalFireFeed": {
+      "s": 0.44,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.4447,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "all": {
+    "wall_s": 6.88,
+    "fetch_s": 6.8328,
+    "fuse_s": 0.044,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 6.49,
+      "ok": true,
+      "n": 111,
+      "bytes": 9767495,
+      "wire_bytes": 3272849,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 3.8345,
+        "bytes": 217144,
+        "wire_bytes": 35406,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 2.0786,
+        "bytes": 9550351,
+        "wire_bytes": 3237443,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "FirisFeed": {
+      "s": 6.83,
+      "ok": true,
+      "n": 505,
+      "bytes": 29165426,
+      "wire_bytes": 6934209,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 5.9825,
+        "bytes": 29165426,
+        "wire_bytes": 6934209,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "CalFireFeed": {
+      "s": 0.33,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.3319,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "incremental_1_full": {
+    "wall_s": 8.27,
+    "fetch_s": 8.2331,
+    "fuse_s": 0.039,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 7.17,
+      "ok": true,
+      "n": 111,
+      "bytes": 9805797,
+      "wire_bytes": 3280511,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 3.7595,
+        "bytes": 217144,
+        "wire_bytes": 35433,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current (ids+attributes)",
+        "s": 0.6234,
+        "bytes": 37345,
+        "wire_bytes": 7106,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 1.8573,
+        "bytes": 9551308,
+        "wire_bytes": 3237972,
+        "status": 200
+       }
+      ],
+      "incremental": [
+       {
+        "mode": "full",
+        "note": "WFIGS_Interagency_Perimeters_Current: full fetch (first fetch or after a failure), 49 feature(s)"
+       }
+      ]
+     },
+     "FirisFeed": {
+      "s": 8.23,
+      "ok": true,
+      "n": 505,
+      "bytes": 29370457,
+      "wire_bytes": 6971469,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view (ids+attributes)",
+        "s": 0.4068,
+        "bytes": 205031,
+        "wire_bytes": 37260,
+        "status": 200
+       },
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 6.0586,
+        "bytes": 29165426,
+        "wire_bytes": 6934209,
+        "status": 200
+       }
+      ],
+      "incremental": [
+       {
+        "mode": "full",
+        "note": "CA_Perimeters_NIFC_FIRIS_public_view: full fetch (first fetch or after a failure), 505 feature(s)"
+       }
+      ]
+     },
+     "CalFireFeed": {
+      "s": 0.41,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.4139,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "incremental_2": {
+    "wall_s": 4.82,
+    "fetch_s": 4.7841,
+    "fuse_s": 0.038,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 4.78,
+      "ok": true,
+      "n": 111,
+      "bytes": 254489,
+      "wire_bytes": 42478,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 3.8436,
+        "bytes": 217144,
+        "wire_bytes": 35372,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current (ids+attributes)",
+        "s": 0.6681,
+        "bytes": 37345,
+        "wire_bytes": 7106,
+        "status": 200
+       }
+      ],
+      "incremental": [
+       {
+        "mode": "incremental",
+        "note": "WFIGS_Interagency_Perimeters_Current: 0 of 49 feature(s) fetched, 49 from the cache"
+       }
+      ]
+     },
+     "FirisFeed": {
+      "s": 1.11,
+      "ok": true,
+      "n": 505,
+      "bytes": 205031,
+      "wire_bytes": 37260,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view (ids+attributes)",
+        "s": 0.375,
+        "bytes": 205031,
+        "wire_bytes": 37260,
+        "status": 200
+       }
+      ],
+      "incremental": [
+       {
+        "mode": "incremental",
+        "note": "CA_Perimeters_NIFC_FIRIS_public_view: 0 of 505 feature(s) fetched, 505 from the cache"
+       }
+      ]
+     },
+     "CalFireFeed": {
+      "s": 0.4,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.396,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   }
+  },
+  {
+   "legacy": {
+    "wall_s": 22.7,
+    "fetch_s": 22.6735,
+    "fuse_s": 0.031,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 5.85,
+      "ok": true,
+      "n": 111,
+      "bytes": 9767495,
+      "wire_bytes": 9767495,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 4.0621,
+        "bytes": 217144,
+        "wire_bytes": 217144,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 1.5806,
+        "bytes": 9550351,
+        "wire_bytes": 9550351,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "FirisFeed": {
+      "s": 16.13,
+      "ok": true,
+      "n": 505,
+      "bytes": 29165426,
+      "wire_bytes": 29165426,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 15.5312,
+        "bytes": 29165426,
+        "wire_bytes": 29165426,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "CalFireFeed": {
+      "s": 0.69,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.6891,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "bust": {
+    "wall_s": 12.19,
+    "fetch_s": 12.1609,
+    "fuse_s": 0.03,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 7.18,
+      "ok": true,
+      "n": 111,
+      "bytes": 9767495,
+      "wire_bytes": 9767495,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 3.9199,
+        "bytes": 217144,
+        "wire_bytes": 217144,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 3.064,
+        "bytes": 9550351,
+        "wire_bytes": 9550351,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "FirisFeed": {
+      "s": 4.57,
+      "ok": true,
+      "n": 505,
+      "bytes": 29165426,
+      "wire_bytes": 29165426,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 3.9776,
+        "bytes": 29165426,
+        "wire_bytes": 29165426,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "CalFireFeed": {
+      "s": 0.41,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.4092,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "bust+gzip": {
+    "wall_s": 15.15,
+    "fetch_s": 15.12,
+    "fuse_s": 0.032,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 7.9,
+      "ok": true,
+      "n": 111,
+      "bytes": 9767495,
+      "wire_bytes": 3272758,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 3.8288,
+        "bytes": 217144,
+        "wire_bytes": 35315,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 3.8507,
+        "bytes": 9550351,
+        "wire_bytes": 3237443,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "FirisFeed": {
+      "s": 6.65,
+      "ok": true,
+      "n": 505,
+      "bytes": 29165426,
+      "wire_bytes": 6934209,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 6.0228,
+        "bytes": 29165426,
+        "wire_bytes": 6934209,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "CalFireFeed": {
+      "s": 0.58,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.5759,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "all": {
+    "wall_s": 6.8,
+    "fetch_s": 6.7687,
+    "fuse_s": 0.031,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 6.77,
+      "ok": true,
+      "n": 111,
+      "bytes": 9767495,
+      "wire_bytes": 3272725,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 3.85,
+        "bytes": 217144,
+        "wire_bytes": 35282,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 2.7479,
+        "bytes": 9550351,
+        "wire_bytes": 3237443,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "FirisFeed": {
+      "s": 6.51,
+      "ok": true,
+      "n": 505,
+      "bytes": 29165426,
+      "wire_bytes": 6934209,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 5.7842,
+        "bytes": 29165426,
+        "wire_bytes": 6934209,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "CalFireFeed": {
+      "s": 0.35,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.3459,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "incremental_1_full": {
+    "wall_s": 8.71,
+    "fetch_s": 8.6688,
+    "fuse_s": 0.043,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 8.05,
+      "ok": true,
+      "n": 111,
+      "bytes": 9805797,
+      "wire_bytes": 3280358,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 4.1483,
+        "bytes": 217144,
+        "wire_bytes": 35280,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current (ids+attributes)",
+        "s": 0.5927,
+        "bytes": 37345,
+        "wire_bytes": 7106,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 2.5838,
+        "bytes": 9551308,
+        "wire_bytes": 3237972,
+        "status": 200
+       }
+      ],
+      "incremental": [
+       {
+        "mode": "full",
+        "note": "WFIGS_Interagency_Perimeters_Current: full fetch (first fetch or after a failure), 49 feature(s)"
+       }
+      ]
+     },
+     "FirisFeed": {
+      "s": 8.67,
+      "ok": true,
+      "n": 505,
+      "bytes": 29370457,
+      "wire_bytes": 6971469,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view (ids+attributes)",
+        "s": 0.4446,
+        "bytes": 205031,
+        "wire_bytes": 37260,
+        "status": 200
+       },
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 6.4023,
+        "bytes": 29165426,
+        "wire_bytes": 6934209,
+        "status": 200
+       }
+      ],
+      "incremental": [
+       {
+        "mode": "full",
+        "note": "CA_Perimeters_NIFC_FIRIS_public_view: full fetch (first fetch or after a failure), 505 feature(s)"
+       }
+      ]
+     },
+     "CalFireFeed": {
+      "s": 1.25,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 1.2523,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "incremental_2": {
+    "wall_s": 4.68,
+    "fetch_s": 4.6457,
+    "fuse_s": 0.038,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 4.65,
+      "ok": true,
+      "n": 111,
+      "bytes": 254489,
+      "wire_bytes": 42521,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 3.7642,
+        "bytes": 217144,
+        "wire_bytes": 35415,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current (ids+attributes)",
+        "s": 0.6155,
+        "bytes": 37345,
+        "wire_bytes": 7106,
+        "status": 200
+       }
+      ],
+      "incremental": [
+       {
+        "mode": "incremental",
+        "note": "WFIGS_Interagency_Perimeters_Current: 0 of 49 feature(s) fetched, 49 from the cache"
+       }
+      ]
+     },
+     "FirisFeed": {
+      "s": 1.06,
+      "ok": true,
+      "n": 505,
+      "bytes": 205031,
+      "wire_bytes": 37260,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view (ids+attributes)",
+        "s": 0.368,
+        "bytes": 205031,
+        "wire_bytes": 37260,
+        "status": 200
+       }
+      ],
+      "incremental": [
+       {
+        "mode": "incremental",
+        "note": "CA_Perimeters_NIFC_FIRIS_public_view: 0 of 505 feature(s) fetched, 505 from the cache"
+       }
+      ]
+     },
+     "CalFireFeed": {
+      "s": 0.4,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.4004,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   }
+  },
+  {
+   "legacy": {
+    "wall_s": 29.16,
+    "fetch_s": 29.117,
+    "fuse_s": 0.04,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 7.94,
+      "ok": true,
+      "n": 111,
+      "bytes": 9767495,
+      "wire_bytes": 9767495,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 4.7644,
+        "bytes": 217144,
+        "wire_bytes": 217144,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 2.9451,
+        "bytes": 9550351,
+        "wire_bytes": 9550351,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "FirisFeed": {
+      "s": 20.69,
+      "ok": true,
+      "n": 505,
+      "bytes": 29165426,
+      "wire_bytes": 29165426,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 19.9674,
+        "bytes": 29165426,
+        "wire_bytes": 29165426,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "CalFireFeed": {
+      "s": 0.49,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.4885,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "bust": {
+    "wall_s": 23.95,
+    "fetch_s": 23.9139,
+    "fuse_s": 0.035,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 5.98,
+      "ok": true,
+      "n": 111,
+      "bytes": 9767495,
+      "wire_bytes": 9767495,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 3.965,
+        "bytes": 217144,
+        "wire_bytes": 217144,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 1.7901,
+        "bytes": 9550351,
+        "wire_bytes": 9550351,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "FirisFeed": {
+      "s": 17.35,
+      "ok": true,
+      "n": 505,
+      "bytes": 29165426,
+      "wire_bytes": 29165426,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 16.5871,
+        "bytes": 29165426,
+        "wire_bytes": 29165426,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "CalFireFeed": {
+      "s": 0.58,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.5781,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "bust+gzip": {
+    "wall_s": 14.62,
+    "fetch_s": 14.5741,
+    "fuse_s": 0.041,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 7.36,
+      "ok": true,
+      "n": 111,
+      "bytes": 9767495,
+      "wire_bytes": 3272795,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 4.8447,
+        "bytes": 217144,
+        "wire_bytes": 35352,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 2.2806,
+        "bytes": 9550351,
+        "wire_bytes": 3237443,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "FirisFeed": {
+      "s": 6.78,
+      "ok": true,
+      "n": 505,
+      "bytes": 29165426,
+      "wire_bytes": 6934209,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 6.0375,
+        "bytes": 29165426,
+        "wire_bytes": 6934209,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "CalFireFeed": {
+      "s": 0.44,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.4357,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "all": {
+    "wall_s": 6.86,
+    "fetch_s": 6.8205,
+    "fuse_s": 0.036,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 6.82,
+      "ok": true,
+      "n": 111,
+      "bytes": 9767495,
+      "wire_bytes": 3272825,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 3.9697,
+        "bytes": 217144,
+        "wire_bytes": 35382,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 2.6516,
+        "bytes": 9550351,
+        "wire_bytes": 3237443,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "FirisFeed": {
+      "s": 6.25,
+      "ok": true,
+      "n": 505,
+      "bytes": 29165426,
+      "wire_bytes": 6934209,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 5.4527,
+        "bytes": 29165426,
+        "wire_bytes": 6934209,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     },
+     "CalFireFeed": {
+      "s": 0.41,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.4107,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "incremental_1_full": {
+    "wall_s": 8.77,
+    "fetch_s": 8.7334,
+    "fuse_s": 0.037,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 8.73,
+      "ok": true,
+      "n": 111,
+      "bytes": 9805797,
+      "wire_bytes": 3280488,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 5.2758,
+        "bytes": 217144,
+        "wire_bytes": 35410,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current (ids+attributes)",
+        "s": 1.0217,
+        "bytes": 37345,
+        "wire_bytes": 7106,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current",
+        "s": 1.9737,
+        "bytes": 9551308,
+        "wire_bytes": 3237972,
+        "status": 200
+       }
+      ],
+      "incremental": [
+       {
+        "mode": "full",
+        "note": "WFIGS_Interagency_Perimeters_Current: full fetch (first fetch or after a failure), 49 feature(s)"
+       }
+      ]
+     },
+     "FirisFeed": {
+      "s": 7.39,
+      "ok": true,
+      "n": 505,
+      "bytes": 29370457,
+      "wire_bytes": 6971469,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view (ids+attributes)",
+        "s": 0.6223,
+        "bytes": 205031,
+        "wire_bytes": 37260,
+        "status": 200
+       },
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view",
+        "s": 5.2796,
+        "bytes": 29165426,
+        "wire_bytes": 6934209,
+        "status": 200
+       }
+      ],
+      "incremental": [
+       {
+        "mode": "full",
+        "note": "CA_Perimeters_NIFC_FIRIS_public_view: full fetch (first fetch or after a failure), 505 feature(s)"
+       }
+      ]
+     },
+     "CalFireFeed": {
+      "s": 0.35,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.3501,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   },
+   "incremental_2": {
+    "wall_s": 4.54,
+    "fetch_s": 4.5014,
+    "fuse_s": 0.038,
+    "healthy": true,
+    "n_fused": 396,
+    "fused_sha": "23a870c9ac0e",
+    "events": [],
+    "feeds": {
+     "WfigsFeed": {
+      "s": 4.5,
+      "ok": true,
+      "n": 111,
+      "bytes": 254489,
+      "wire_bytes": 42408,
+      "requests": [
+       {
+        "what": "WFIGS_Incident_Locations_Current",
+        "s": 3.6572,
+        "bytes": 217144,
+        "wire_bytes": 35302,
+        "status": 200
+       },
+       {
+        "what": "WFIGS_Interagency_Perimeters_Current (ids+attributes)",
+        "s": 0.5652,
+        "bytes": 37345,
+        "wire_bytes": 7106,
+        "status": 200
+       }
+      ],
+      "incremental": [
+       {
+        "mode": "incremental",
+        "note": "WFIGS_Interagency_Perimeters_Current: 0 of 49 feature(s) fetched, 49 from the cache"
+       }
+      ]
+     },
+     "FirisFeed": {
+      "s": 1.2,
+      "ok": true,
+      "n": 505,
+      "bytes": 205031,
+      "wire_bytes": 37260,
+      "requests": [
+       {
+        "what": "CA_Perimeters_NIFC_FIRIS_public_view (ids+attributes)",
+        "s": 0.3985,
+        "bytes": 205031,
+        "wire_bytes": 37260,
+        "status": 200
+       }
+      ],
+      "incremental": [
+       {
+        "mode": "incremental",
+        "note": "CA_Perimeters_NIFC_FIRIS_public_view: 0 of 505 feature(s) fetched, 505 from the cache"
+       }
+      ]
+     },
+     "CalFireFeed": {
+      "s": 0.58,
+      "ok": true,
+      "n": 0,
+      "bytes": 2,
+      "wire_bytes": 2,
+      "requests": [
+       {
+        "what": "IncidentApi/List",
+        "s": 0.585,
+        "bytes": 2,
+        "wire_bytes": 2,
+        "status": 200
+       }
+      ],
+      "incremental": null
+     }
+    }
+   }
+  }
+ ],
+ "summary": {
+  "legacy": {
+   "wall_s_mean": 24.79,
+   "wall_s": [
+    22.5,
+    22.7,
+    29.16
+   ],
+   "feeds": {
+    "WfigsFeed": {
+     "s_mean": 7.05,
+     "bytes_wire_mean": 9767495
+    },
+    "FirisFeed": {
+     "s_mean": 17.16,
+     "bytes_wire_mean": 29165426
+    },
+    "CalFireFeed": {
+     "s_mean": 0.53,
+     "bytes_wire_mean": 2
+    }
+   },
+   "fused_sha": [
+    "23a870c9ac0e",
+    "23a870c9ac0e",
+    "23a870c9ac0e"
+   ]
+  },
+  "bust": {
+   "wall_s_mean": 16.28,
+   "wall_s": [
+    12.7,
+    12.19,
+    23.95
+   ],
+   "feeds": {
+    "WfigsFeed": {
+     "s_mean": 6.6,
+     "bytes_wire_mean": 9767495
+    },
+    "FirisFeed": {
+     "s_mean": 9.19,
+     "bytes_wire_mean": 29165426
+    },
+    "CalFireFeed": {
+     "s_mean": 0.46,
+     "bytes_wire_mean": 2
+    }
+   },
+   "fused_sha": [
+    "23a870c9ac0e",
+    "23a870c9ac0e",
+    "23a870c9ac0e"
+   ]
+  },
+  "bust+gzip": {
+   "wall_s_mean": 14.17,
+   "wall_s": [
+    12.74,
+    15.15,
+    14.62
+   ],
+   "feeds": {
+    "WfigsFeed": {
+     "s_mean": 7.27,
+     "bytes_wire_mean": 3272795
+    },
+    "FirisFeed": {
+     "s_mean": 6.38,
+     "bytes_wire_mean": 6934209
+    },
+    "CalFireFeed": {
+     "s_mean": 0.49,
+     "bytes_wire_mean": 2
+    }
+   },
+   "fused_sha": [
+    "23a870c9ac0e",
+    "23a870c9ac0e",
+    "23a870c9ac0e"
+   ]
+  },
+  "all": {
+   "wall_s_mean": 6.85,
+   "wall_s": [
+    6.88,
+    6.8,
+    6.86
+   ],
+   "feeds": {
+    "WfigsFeed": {
+     "s_mean": 6.69,
+     "bytes_wire_mean": 3272799
+    },
+    "FirisFeed": {
+     "s_mean": 6.53,
+     "bytes_wire_mean": 6934209
+    },
+    "CalFireFeed": {
+     "s_mean": 0.36,
+     "bytes_wire_mean": 2
+    }
+   },
+   "fused_sha": [
+    "23a870c9ac0e",
+    "23a870c9ac0e",
+    "23a870c9ac0e"
+   ]
+  },
+  "incremental_1_full": {
+   "wall_s_mean": 8.58,
+   "wall_s": [
+    8.27,
+    8.71,
+    8.77
+   ],
+   "feeds": {
+    "WfigsFeed": {
+     "s_mean": 7.98,
+     "bytes_wire_mean": 3280452
+    },
+    "FirisFeed": {
+     "s_mean": 8.1,
+     "bytes_wire_mean": 6971469
+    },
+    "CalFireFeed": {
+     "s_mean": 0.67,
+     "bytes_wire_mean": 2
+    }
+   },
+   "fused_sha": [
+    "23a870c9ac0e",
+    "23a870c9ac0e",
+    "23a870c9ac0e"
+   ]
+  },
+  "incremental_2": {
+   "wall_s_mean": 4.68,
+   "wall_s": [
+    4.82,
+    4.68,
+    4.54
+   ],
+   "feeds": {
+    "WfigsFeed": {
+     "s_mean": 4.64,
+     "bytes_wire_mean": 42469
+    },
+    "FirisFeed": {
+     "s_mean": 1.12,
+     "bytes_wire_mean": 37260
+    },
+    "CalFireFeed": {
+     "s_mean": 0.46,
+     "bytes_wire_mean": 2
+    }
+   },
+   "fused_sha": [
+    "23a870c9ac0e",
+    "23a870c9ac0e",
+    "23a870c9ac0e"
+   ]
+  }
+ }
+}
