@@ -415,6 +415,21 @@ def _build_parser() -> argparse.ArgumentParser:
                          "threatened pairs) in their own rings a bulk cycle "
                          "cannot evict; /healthz counts satellite heat "
                          "events in the last 24 h (SAFETY SEMANTICS 51c)")
+    pw.add_argument("--stale-missing-time", action="store_true",
+                    help="cfg.stale_gate_missing_time: a record without an "
+                         "update time is aged by its discovery time (else "
+                         "kept as current, noted) instead of being excluded "
+                         "every cycle (SAFETY SEMANTICS 52a)")
+    pw.add_argument("--strict-name-join", action="store_true",
+                    help="cfg.fuse_name_join_strict: two records of the same "
+                         "name within 5 km stay two fires when their IRWIN "
+                         "ids differ or they were discovered more than 24 h "
+                         "apart (SAFETY SEMANTICS 52b)")
+    pw.add_argument("--notify-urgent-first", action="store_true",
+                    help="cfg.notify_urgent_first: within a cycle the "
+                         "notifier sends impact / extreme alerts first, then "
+                         "by the earliest pessimistic arrival (SAFETY "
+                         "SEMANTICS 52c)")
     pw.add_argument("--cycle-step-timings", action="store_true",
                     help="cfg.cycle_step_timings (telemetry only): "
                          "last_cycle_phases.steps — each pre-loop gate, each "
@@ -1250,6 +1265,27 @@ def _latency_cfg(cfg, args):
             "recovered events of pairs at none, cleared or impacted), so a "
             "bulk cycle cannot evict them; /healthz satellite_heat_24h — "
             "SAFETY SEMANTICS 51c")
+    if getattr(args, "stale_missing_time", False):
+        cfg = dataclasses.replace(cfg, stale_gate_missing_time=True)
+        notes.append(
+            "MISSING UPDATE TIME: a record whose update time is missing is "
+            "aged by its discovery time, else kept as current (this cycle's "
+            "clock), with a note — never excluded for the missing time "
+            "alone — SAFETY SEMANTICS 52a")
+    if getattr(args, "strict_name_join", False):
+        cfg = dataclasses.replace(cfg, fuse_name_join_strict=True)
+        notes.append(
+            "STRICT NAME JOIN: records of the same name within 5 km are not "
+            "joined when their IRWIN ids differ or they were discovered "
+            f"more than {cfg.fuse_name_join_max_gap_h:g} h apart (an old "
+            "contained fire's containment never reaches a new one) — SAFETY "
+            "SEMANTICS 52b")
+    if getattr(args, "notify_urgent_first", False):
+        cfg = dataclasses.replace(cfg, notify_urgent_first=True)
+        notes.append(
+            "URGENT FIRST: within a cycle the notifier sends impact / "
+            "extreme alerts first, then notice / watch, then all-clears, "
+            "each by the earliest pessimistic arrival — SAFETY SEMANTICS 52c")
     if getattr(args, "cycle_step_timings", False):
         cfg = dataclasses.replace(cfg, cycle_step_timings=True)
         notes.append(

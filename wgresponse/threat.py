@@ -1750,6 +1750,10 @@ class ThreatMonitor:
                 if merges:
                     notes.append(_colocated_note(merges))
                 return fused, healthy
+            if getattr(self._cfg, "fuse_name_join_strict", False):
+                # SAFETY SEMANTICS 52b: the name join reads the config
+                return list(fuse_incidents(batches, cfg=self._cfg,
+                                           now_s=now_s)), healthy
             return list(fuse_incidents(batches)), healthy
         except Exception as exc:
             notes.append(f"incident fusion degraded to id-dedupe ({exc})")
@@ -1776,7 +1780,15 @@ class ThreatMonitor:
         EXACTLY the threshold age are kept (strictly-older excludes). Tracked
         pairs of a gated incident follow the SAFETY SEMANTICS 6 absence rules
         — see the module docstring. Exclusion is data hygiene, not provider
-        failure: it does not mark the cycle degraded."""
+        failure: it does not mark the cycle degraded.
+
+        MISSING TIME (cfg.stale_gate_missing_time, SAFETY SEMANTICS 52a):
+        a record whose update time is missing (the adapters write 0.0) or
+        not a finite positive number is first given one — its discovery
+        time when it has one, else this cycle's clock — and a note says so;
+        off, it is excluded every cycle (age ~488,889 h)."""
+        if getattr(self._cfg, "stale_gate_missing_time", False):
+            active = self._fill_missing_times(active, now_s, notes)
         max_age_s = self._cfg.incident_stale_h * 3600.0
         fresh = [inc for inc in active if now_s - inc.updated_at_s <= max_age_s]
         stale = [inc for inc in active if now_s - inc.updated_at_s > max_age_s]
@@ -1791,6 +1803,47 @@ class ThreatMonitor:
             notes.append(note)
             log.warning("%s", note)
         return fresh
+
+    @staticmethod
+    def _fill_missing_times(active: list, now_s: float, notes: list) -> list:
+        """SAFETY SEMANTICS 52a: each incident whose updated_at_s is not a
+        finite positive number becomes a copy carrying its discovered_at_s
+        (when that is one) — the gate then ages it by its discovery — else
+        this cycle's clock (the feed lists it as current and gives no
+        time); meta updated_at_missing says which ("discovered" / "none").
+        Same incidents, same order; one note."""
+        def ok(t) -> bool:
+            return (isinstance(t, (int, float)) and not isinstance(t, bool)
+                    and math.isfinite(t) and t > 0.0)
+
+        out, by_disc, by_now = [], [], []
+        for inc in active:
+            if ok(inc.updated_at_s):
+                out.append(inc)
+                continue
+            if ok(inc.discovered_at_s):
+                t, how = float(inc.discovered_at_s), "discovered"
+                by_disc.append(inc.incident_id)
+            else:
+                t, how = float(now_s), "none"
+                by_now.append(inc.incident_id)
+            out.append(dataclasses.replace(
+                inc, updated_at_s=t,
+                meta={**(inc.meta or {}), "updated_at_missing": how}))
+        if by_disc or by_now:
+            parts = []
+            if by_disc:
+                parts.append(f"aged by their discovery time: "
+                             f"{', '.join(sorted(by_disc))}")
+            if by_now:
+                parts.append(f"no discovery time either, kept as current "
+                             f"(this cycle's clock): "
+                             f"{', '.join(sorted(by_now))}")
+            notes.append(f"{len(by_disc) + len(by_now)} incident(s) without "
+                         f"an update time — " + "; ".join(parts)
+                         + " (SAFETY SEMANTICS 52a; never excluded for the "
+                           "missing time alone)")
+        return out
 
     def _drop_contained_incidents(self, active: list, now_s: float,
                                   notes: list) -> "tuple[list, list]":

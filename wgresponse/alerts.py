@@ -145,6 +145,20 @@ def _fmt_h(hours: float) -> str:
     return f"{hours:.0f}h"
 
 
+#: SAFETY SEMANTICS 52c: the send order within one evaluate — impact and
+#: extreme first, then notice / watch, then all-clear; within a rung the
+#: earliest pessimistic arrival, then the median.
+_URGENCY_RANK = {AlertState.IMPACTED: 0, AlertState.EXTREME_24H: 0,
+                 AlertState.NOTICE_72H: 1, AlertState.WATCH: 1,
+                 AlertState.CLEARED: 2, AlertState.NONE: 2}
+
+
+def _urgency(event: AlertEvent) -> tuple:
+    """SAFETY SEMANTICS 52c: (rung, p10 hours, p50 hours) — sort key."""
+    return (_URGENCY_RANK.get(event.state, 2), event.eta_p10_h,
+            event.eta_p50_h)
+
+
 def _short_id(incident_id: str) -> str:
     """Shorten an incident id for human messages (ids can be 40-char IRWIN
     GUIDs). Deterministic: <= 12 chars pass through, longer ids keep their
@@ -326,7 +340,12 @@ class AlertEngine:
         # so the CLEARED suppression gate sees the cycle's final states (an
         # EXTREME escalating later in the same cycle must still mute a
         # same-client all-clear sent "earlier" in iteration order).
-        for event in events:
+        sends = events
+        if getattr(self._cfg, "notify_urgent_first", False):
+            # SAFETY SEMANTICS 52c: the most urgent client hears first; the
+            # returned list keeps the engine's order
+            sends = sorted(events, key=_urgency)
+        for event in sends:
             self._notify(event)
         # Session-3 F4: re-fire restored applied-but-never-sent active states
         # (see module docstring, RESTORED-UNSENT RECONCILE). After the normal

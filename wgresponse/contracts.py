@@ -98,7 +98,9 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    older than cfg.incident_stale_h are excluded from alerting/dispatch (logged +
    note; FIRIS zombie perimeters measured at median 49 days still active=True).
    perimeter_at_s must be clamped to <= now_s before seeding (feed clock skew
-   must not freeze interiors at a future time).
+   must not freeze interiors at a future time). AMENDED BY 52a: with
+   stale_gate_missing_time a record WITHOUT an update time is aged by its
+   discovery time (else kept as current) instead of being excluded forever.
 10. CONTINUOUS CREW SAFETY (2026-07-10, founder "crews G1/G2 caught in fire";
    docs/review/crews_caught_report.md). The safety audit governed only gel-job
    DEPARTURES — a crew's live/idle position was never checked, so idle crews
@@ -1118,7 +1120,9 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    = byte-identical fusion, cycles, /api/state and persisted state (pinned
    in tests/test_fuse_colocated.py against goldens computed on commit
    bf2a868, before this rule, on the recorded payloads and a world where it
-   bites); NOT armed live (the integrator decides).
+   bites); NOT armed live (the integrator decides). AMENDED BY 52b: with
+   fuse_name_join_strict the legacy NAME join refuses two different IRWIN
+   ids, or discovery times more than fuse_name_join_max_gap_h apart.
 25. THE AUDIT SEES THE WHOLE DRIVE (2026-10-21; the Eagle River valley
    review, crew-safety lens — docs/SIMULATOR_DESIGN.md "The audit sees the
    whole drive"; scratch_review/eagle_valley; cfg.crew_path_audit, read only
@@ -2259,6 +2263,61 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    touches), alerts phase 0.218 -> 0.008 s, /api/state 1.57 MB; the
    priority ring keeps the feed_blind event through every cycle.
 
+52. THE SMALL HOLDS ON THE ALERT PATH (2026-11-18; the latency review's
+   lane B findings B7 and B6 / lane A's A6, lane C's C10). Three knobs,
+   each default OFF = byte-identical (tests/test_latency_knobs_off_golden.py
+   pins all of 49-52 off against commit 9d11793):
+   (a) A RECORD WITHOUT A TIME IS NOT A ZOMBIE — AMENDING 9 (cfg.stale_
+       gate_missing_time; watch --stale-missing-time). The adapters write
+       updated_at_s = 0.0 when a record carries no update time (WFIGS
+       ModifiedOnDateTime, FIRIS's update fields, CAL FIRE Updated; feeds.py
+       _from_point / _from_feature / _from_record), and 9's gate then
+       excluded it every cycle as "age 488,889 h" — a NaN fell out of the
+       gate's two lists silently. Latent: 0 of 422 live WFIGS Current
+       records lack the time today. With the knob, BEFORE the gate, a record
+       whose update time is not a finite positive number becomes a copy
+       carrying its discovered_at_s — so the gate ages it by its discovery
+       (a 10-day-old discovery is still stale) — else this cycle's clock
+       (the feed lists it as current and says nothing more); meta
+       updated_at_missing ("discovered" / "none") and one cycle note name
+       them. Everything downstream reads that time: a polygon with no own
+       time is seeded at it — at its discovery (it burned at least that
+       long: pessimistic) or at now (never at epoch 0, which would burn the
+       whole domain in 1970). It only keeps more fires. WHAT IT RISKS: a
+       FIRIS polygon with no time and no discovery (FIRIS carries none) is
+       treated as current — a zombie perimeter without a time would come
+       back as a fresh fire (over-alerting, the pessimistic side;
+       unmeasured: no FIRIS row without a time was in the review's pulls).
+   (b) A NAME IS NOT AN IDENTITY — AMENDING 24 (cfg.fuse_name_join_strict,
+       fuse_name_join_max_gap_h = 24 h; watch --strict-name-join).
+       fuse_incidents joined records of one normalized name within 5 km
+       even when their IRWIN ids differed (feeds.py, the legacy name join),
+       and an older CONTAINED member's 100 % and contained_at_s rode into
+       the fused record, which 13 then removed — the new fire with it
+       (lane B harness H3, pinned: off, the new fire's home hears nothing;
+       on, it is EXTREME). With the knob the name join refuses to put a
+       record into a group when the record carries an IRWIN id and a member
+       carries another, or when both carry a discovery time more than
+       fuse_name_join_max_gap_h apart; a missing id or time refuses
+       nothing (the legacy join decides); the IRWIN join is untouched. It
+       only splits groups: the two fires keep their own ids, so pairs of
+       the old fused id take 6's absence law and the new fire's pairs start
+       fresh (6's all-clear suppression keeps a client under alert from
+       reading "All clear" for the old id). Prevalence (lane B): 0 such
+       pairs live today; <= 0.8 % of 2026 records had a same-name record of
+       another IRWIN id within 5 km in the previous 30 days.
+   (c) THE MOST URGENT CLIENT HEARS FIRST (cfg.notify_urgent_first; watch
+       --notify-urgent-first). The notifier was called in the engine's pair
+       order (lane C C10: with a real provider the sends are serial, in the
+       cycle thread, with retries, EXTREME not first). With the knob each
+       evaluate sends impact / extreme first, then notice / watch, then
+       all-clears — each rung by the earliest p10, then p50. The returned
+       events keep the engine's order; every transition is applied before
+       any send, so the all-clear gate, the ledger and the records are
+       unchanged. Under --dry-notify only the log order changes. THE TRADE:
+       none in what is sent; a later send in the cycle starts later only by
+       the time the earlier ones take.
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -2360,6 +2419,9 @@ wgresponse.feeds
     # SEMANTICS 9 gate keeps (None = no clock, no group is stale); merges (a
     # list) receives one dict per union {incident_id, name, merged, names,
     # evidence}. cfg None or the knob off = byte-identical legacy fusion.
+    # SAFETY SEMANTICS 52b: with cfg.fuse_name_join_strict the legacy name
+    # join refuses different IRWIN ids / discovery more than
+    # cfg.fuse_name_join_max_gap_h apart (the monitor then passes cfg).
     # Health convention (Sprint 2): every adapter maintains `last_fetch_ok: bool`
     # after each fetch_active call — True iff HTTP + parse succeeded (an empty
     # result with last_fetch_ok=True means genuinely zero incidents; False means
@@ -2835,6 +2897,7 @@ wgresponse.cli
     # FIRE -> ALERT LATENCY (SAFETY SEMANTICS 49-52; 2026-11-18): watch
     # --alert-new-fires-early / --keep-reported-point / --summarize-
     # recoveries / --prune-idle-pairs / --operator-log-priority /
+    # --stale-missing-time / --strict-name-join / --notify-urgent-first /
     # --cycle-step-timings (telemetry only: last_cycle_phases.steps) (cli.
     # _latency_cfg(cfg, args) -> (cfg, notes)); operator_priority(ev) ->
     # bool (51c); with --operator-log-priority /api/state gains
@@ -5111,6 +5174,34 @@ class ResponseConfig:
     # persist and the previous /api/state build. False = byte-identical (no
     # key); watch --cycle-step-timings.
     cycle_step_timings: bool = False
+    # A RECORD WITHOUT A TIME IS NOT A ZOMBIE (2026-11-18, the latency
+    # review's B7; SAFETY SEMANTICS 52a, amending 9). The adapters write 0.0
+    # when a record carries no update time (WFIGS Modified, FIRIS updated,
+    # CAL FIRE Updated), and the staleness gate then excluded it every cycle
+    # ("age 488,889 h") — latent, 0 such live records today. True = such a
+    # record is aged by its discovery time when it has one, else kept as
+    # current (this cycle's clock), with a note; it only keeps more fires.
+    # False = byte-identical; watch --stale-missing-time.
+    stale_gate_missing_time: bool = False
+    # A NAME IS NOT AN IDENTITY (2026-11-18, the latency review's B6 / A6;
+    # SAFETY SEMANTICS 52b, amending 24). fuse_incidents joins records of
+    # the same normalized name within 5 km even when their IRWIN ids differ,
+    # and an older CONTAINED member's 100 % and contained_at_s leaked into a
+    # new fire, which was then removed as contained (lane B harness H3).
+    # True = the name join refuses a record whose IRWIN id differs from one
+    # in the group, or whose discovery time lies more than
+    # fuse_name_join_max_gap_h from a member's; it only splits groups.
+    # False = byte-identical; watch --strict-name-join.
+    fuse_name_join_strict: bool = False
+    fuse_name_join_max_gap_h: float = 24.0   # ... the discovery-time gap that splits (h)
+    # THE MOST URGENT CLIENT HEARS FIRST (2026-11-18, the latency review's
+    # C10; SAFETY SEMANTICS 52c). The notifier is called in the engine's pair
+    # order (EXTREME not first; serial sends, retries inside the cycle).
+    # True = within one evaluate the sends go impact / extreme first, then
+    # notice / watch, then all-clears, each rung by the earliest p10; the
+    # returned events, the ledger and the all-clear gate are unchanged.
+    # False = byte-identical; watch --notify-urgent-first.
+    notify_urgent_first: bool = False
     # SIMULATOR CITY WEATHER (founder 2026-10-09, verbatim: "change the
     # weather conditions for each city specific"; docs/review/
     # city_weather_2026-10-09.md). Read ONLY by wgresponse.simui (the
@@ -5585,6 +5676,12 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
             <= cfg.incident_stale_h):
         problems.append("fuse_colocated_time_tol_h must be within [0, "
                         "incident_stale_h]")
+    # --- strict name join (SAFETY SEMANTICS 52b) ---
+    if not (math.isfinite(cfg.fuse_name_join_max_gap_h)
+            and 0.0 < cfg.fuse_name_join_max_gap_h
+            <= cfg.incident_stale_h):
+        problems.append("fuse_name_join_max_gap_h must be within (0, "
+                        "incident_stale_h] hours")
     if cfg.sim_weather_profile not in ("generic", "city"):
         problems.append("sim_weather_profile must be 'generic' or 'city'")
     # SAFETY SEMANTICS 34a' (2026-10-21): comma-separated far-zone ids
