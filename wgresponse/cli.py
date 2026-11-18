@@ -384,6 +384,41 @@ def _build_parser() -> argparse.ArgumentParser:
                          "survive a restart (in the state file and its "
                          "mirror; a restored report keeps its own time, so "
                          "staleness applies)")
+    # SAFETY SEMANTICS 57-60 (2026-11-18, the fire -> alert latency review):
+    # the feeds fetched faster; each default OFF.
+    pw.add_argument("--feeds-cache-bust", action="store_true",
+                    help="cfg.feeds_cache_bust: every ArcGIS feed query "
+                         "carries a per-query _t=<unix s>, so the CDN "
+                         "cannot serve it from its edge cache (FIRIS up to "
+                         "60 min, WFIGS up to 5 min stale)")
+    pw.add_argument("--feeds-gzip", action="store_true",
+                    help="cfg.feeds_gzip: every feed GET asks for gzip "
+                         "(same JSON, ~4x fewer bytes; a corrupt body is a "
+                         "blind fetch)")
+    pw.add_argument("--feeds-parallel", action="store_true",
+                    help="cfg.feeds_parallel: the feed adapters (and the "
+                         "live FIRMS sources) fetched at once and applied "
+                         "in feed order — the same fused set, notes and "
+                         "events as one after another")
+    pw.add_argument("--feeds-incremental", action="store_true",
+                    help="cfg.feeds_incremental: the WFIGS perimeter and "
+                         "FIRIS layers fetched as an attributes-only query "
+                         "plus the new or changed features; a full fetch "
+                         "hourly and after any failure (a difference is an "
+                         "operator event)")
+    pw.add_argument("--new-fire-sentinel", type=float, default=0.0,
+                    metavar="S",
+                    help="cfg.new_fire_sentinel_s: a shadow thread polls the "
+                         "cheap agency queries (WFIGS points, FIRIS, CAL "
+                         "FIRE) every S s for NEW records, records when each "
+                         "was first seen, and raises an operator event for "
+                         "one within --new-fire-sentinel-km of a home "
+                         "(/api/state sentinel); the cycle reads nothing "
+                         "from it (0 = off; 60 suggested)")
+    pw.add_argument("--new-fire-sentinel-km", type=float, default=None,
+                    metavar="KM",
+                    help="cfg.new_fire_sentinel_km (default 12 km: the 8 km "
+                         "tripwire + 40 min of cycle lag at 1.7 m/s)")
     # SAFETY SEMANTICS 43 (2026-11-01): screening step 0, shadow only.
     pw.add_argument("--screen-labels", action="store_true",
                     help="cfg.screen_labels (founder 2026-11-01, screening "
@@ -695,8 +730,74 @@ def _parse_bbox(text: str):
     return BBox(west=parts[0], south=parts[1], east=parts[2], north=parts[3])
 
 
+def _feed_transport(cfg) -> dict:
+    """SAFETY SEMANTICS 57-59: the adapters' transport options from cfg —
+    {} when every one is off (the legacy stack, byte-identical)."""
+    t = {}
+    if getattr(cfg, "feeds_cache_bust", False):
+        t["cache_bust"] = True
+    if getattr(cfg, "feeds_gzip", False):
+        t["gzip"] = True
+    if getattr(cfg, "feeds_incremental", False):
+        t["incremental"] = True
+    if getattr(cfg, "feeds_parallel", False):
+        t["parallel_sources"] = True
+    return t
+
+
+def _feeds_cfg(cfg, args):
+    """(cfg, startup notes) with the SAFETY SEMANTICS 57-60 flags applied:
+    --feeds-cache-bust, --feeds-gzip, --feeds-parallel, --feeds-incremental,
+    --new-fire-sentinel [--new-fire-sentinel-km]. No flag = cfg unchanged,
+    no note."""
+    notes = []
+    if getattr(args, "feeds_cache_bust", False):
+        cfg = dataclasses.replace(cfg, feeds_cache_bust=True)
+        notes.append(
+            "FEEDS CACHE-BUSTED: every ArcGIS feed query carries a per-query "
+            "_t=<unix s>, so the ArcGIS CDN cannot answer it from its edge "
+            "cache (FIRIS s-maxage 3600 s, WFIGS 300 s) — SAFETY SEMANTICS 57")
+    if getattr(args, "feeds_gzip", False):
+        cfg = dataclasses.replace(cfg, feeds_gzip=True)
+        notes.append(
+            "FEEDS GZIP: every feed GET asks Accept-Encoding gzip (the same "
+            "JSON / CSV; a body that does not decompress is a blind fetch) "
+            "— SAFETY SEMANTICS 57")
+    if getattr(args, "feeds_parallel", False):
+        cfg = dataclasses.replace(cfg, feeds_parallel=True)
+        notes.append(
+            "FEEDS IN PARALLEL: the feed adapters (and the live FIRMS "
+            "sources) are fetched at once and applied in feed order — the "
+            "same fused set, notes and events as one after another; the "
+            "fetch takes the slowest feed, not the sum — SAFETY SEMANTICS 58")
+    if getattr(args, "feeds_incremental", False):
+        cfg = dataclasses.replace(cfg, feeds_incremental=True)
+        notes.append(
+            "FEEDS INCREMENTAL: the WFIGS perimeter and FIRIS layers are "
+            "fetched as an attributes-only query plus the features that are "
+            "new or changed; a full fetch hourly, after any failure and when "
+            "many changed — a difference between the cache and the hourly "
+            "full fetch is an operator event and the full answer is used; a "
+            "geometry edit that changes no attribute waits for the hourly "
+            "fetch — SAFETY SEMANTICS 59")
+    s = float(getattr(args, "new_fire_sentinel", 0.0) or 0.0)
+    km = getattr(args, "new_fire_sentinel_km", None)
+    if s > 0.0:
+        cfg = dataclasses.replace(cfg, new_fire_sentinel_s=s)
+        if km is not None:
+            cfg = dataclasses.replace(cfg, new_fire_sentinel_km=float(km))
+        notes.append(
+            f"NEW-FIRE SENTINEL (shadow): every {s:g} s a thread asks WFIGS, "
+            f"FIRIS and CAL FIRE for records it has not seen, notes when "
+            f"each was first seen and raises an operator event for one "
+            f"within {cfg.new_fire_sentinel_km:g} km of a protected home "
+            f"(/api/state sentinel); the cycle reads nothing from it — "
+            f"SAFETY SEMANTICS 60")
+    return cfg, notes
+
+
 def _live_feed_stack(map_key, live: bool = False, screen: bool = False,
-                     recorder=None):
+                     recorder=None, transport=None):
     """Build the live feed adapters: WFIGS + FIRIS + CAL FIRE always, FIRMS
     only when a MAP_KEY is provided (Sprint 2 C3d/C1: a keyless FirmsFeed is
     BLIND by design — [] with last_fetch_ok=False — and would mark EVERY watch
@@ -708,11 +809,22 @@ def _live_feed_stack(map_key, live: bool = False, screen: bool = False,
     memory; recorder (watch --firms-log): the live FIRMS adapter's raw poll
     log. Neither applies to the legacy FIRMS mode.
 
+    transport (SAFETY SEMANTICS 57-59; _feed_transport): cache_bust / gzip
+    / incremental for the ArcGIS adapters, gzip for CAL FIRE and FIRMS,
+    parallel_sources for FIRMS; None or {} = the legacy adapters.
+
     Returns (feeds, notes): the adapter list and human-readable notes (the
     FIRMS skip line, when applicable)."""
     from wgresponse import feeds
-    stack = [feeds.WfigsFeed(keep_rx=True) if screen else feeds.WfigsFeed(),
-             feeds.FirisFeed(), feeds.CalFireFeed()]
+    t = dict(transport or {})
+    arc = {k: True for k in ("cache_bust", "gzip", "incremental") if t.get(k)}
+    gz = {"gzip": True} if t.get("gzip") else {}
+    firms_t = dict(gz)
+    if t.get("parallel_sources"):
+        firms_t["parallel_sources"] = True
+    stack = [feeds.WfigsFeed(keep_rx=True, **arc) if screen
+             else feeds.WfigsFeed(**arc),
+             feeds.FirisFeed(**arc), feeds.CalFireFeed(**gz)]
     notes = []
     if map_key:
         memory = None
@@ -720,8 +832,8 @@ def _live_feed_stack(map_key, live: bool = False, screen: bool = False,
             from wgresponse.screening import HeatSiteMemory
             memory = HeatSiteMemory(feeds.FirmsFeed.LIVE_SOURCES)
         stack.append(feeds.FirmsFeed.live(map_key, recorder=recorder,
-                                          memory=memory) if live
-                     else feeds.FirmsFeed(map_key=map_key))
+                                          memory=memory, **firms_t) if live
+                     else feeds.FirmsFeed(map_key=map_key, **firms_t))
     else:
         notes.append(
             "FirmsFeed skipped — no FIRMS_MAP_KEY in the environment "
@@ -2339,6 +2451,8 @@ def _cmd_watch(args) -> int:
     startup_notes_fix += _notes
     cfg, live_roads, _notes = _live_roads(cfg, args)
     startup_notes_fix += _notes
+    cfg, _notes = _feeds_cfg(cfg, args)          # SEMANTICS 57-60
+    startup_notes_fix += _notes
     if getattr(args, "forecast_tiers", False):
         cfg = dataclasses.replace(cfg, forecast_tiers=True)
         startup_notes_fix.append(
@@ -2408,6 +2522,8 @@ def _cmd_watch(args) -> int:
         stack_kw["screen"] = True
     if recorder is not None:
         stack_kw["recorder"] = recorder
+    if _feed_transport(cfg):                # SEMANTICS 57-59
+        stack_kw["transport"] = _feed_transport(cfg)
     feeds_stack, feed_notes = (
         _live_feed_stack(firms_key, live=True, **stack_kw)  # 39's live mode
         if getattr(args, "fuse_hotspots", False) else
