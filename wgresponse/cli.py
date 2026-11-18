@@ -389,6 +389,13 @@ def _build_parser() -> argparse.ArgumentParser:
                          "after its own forecast, not after every other "
                          "fire; the same events, sooner (SAFETY SEMANTICS "
                          "49)")
+    pw.add_argument("--keep-reported-point", action="store_true",
+                    help="cfg.fuse_hotspots_keep_point: a point-only agency "
+                         "record that satellite heat joined (--fuse-hotspots) "
+                         "keeps its own reported point as a seed beside the "
+                         "heat — the heat no longer replaces it; an added "
+                         "seed can only make arrival earlier (SAFETY "
+                         "SEMANTICS 50)")
     pw.add_argument("--persist-crews", action="store_true",
                     help="cfg.crew_state_persist: the crews' last reports "
                          "survive a restart (in the state file and its "
@@ -1184,6 +1191,16 @@ def _latency_cfg(cfg, args):
             "are evaluated — and notified — right after its own forecast; "
             "the end-of-cycle evaluate skips them. The same events, sooner "
             "— SAFETY SEMANTICS 49")
+    if getattr(args, "keep_reported_point", False):
+        cfg = dataclasses.replace(cfg, fuse_hotspots_keep_point=True)
+        notes.append(
+            "REPORTED POINT KEPT: a point-only agency record that satellite "
+            "heat joined seeds its own reported point AND the heat (the "
+            "point is also in its client search and domain; the weather "
+            "point is unchanged); a FIRMS-only cluster is unchanged — SAFETY "
+            "SEMANTICS 50"
+            + ("" if cfg.fuse_hotspots else
+               " [INERT: no heat joins a record without --fuse-hotspots]"))
     return cfg, notes
 
 

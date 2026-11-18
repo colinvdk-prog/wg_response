@@ -359,6 +359,14 @@ def _satellite_only(inc: FireIncident) -> bool:
 _MAX_RING_VERTS = 200
 
 
+def _agency_point(inc: FireIncident) -> bool:
+    """SAFETY SEMANTICS 50: the incident's origin is a point an agency
+    reported — not a FIRMS cluster (its origin is the mean of its own
+    detections, a place no satellite saw burning) and not a seeded drill."""
+    return (inc.source not in (IncidentSource.FIRMS, IncidentSource.SEEDED)
+            and not is_seeded_id(inc.incident_id))
+
+
 def _subsample_ring(ring: list, max_verts: int = _MAX_RING_VERTS) -> list:
     """Every ceil(n/max_verts)-th vertex of `ring`, keeping <= max_verts.
 
@@ -2331,6 +2339,14 @@ class ThreatMonitor:
             provenance_s = None
             seeds = list(ign)
             geom_pts = list(ign)
+            if (self._cfg.fuse_hotspots_keep_point and inc.hotspots
+                    and _agency_point(inc)):
+                # SAFETY SEMANTICS 50: the agency's own reported point stays
+                # a seed (and in the geometry) beside the satellite heat
+                # that joined it; the weather point (the mean of `ign`)
+                # stays where it was
+                seeds = [inc.origin] + seeds
+                geom_pts = [inc.origin] + geom_pts
         return (ign, perimeter, perimeter_at_s, provenance_s, seeds,
                 geom_pts)
 

@@ -1658,7 +1658,9 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    5 of the 217 fresh reported fires — national FIRMS is mostly agricultural,
    prescribed and industrial heat, which no rule here screens (a hotspot
    screening protocol is an open owner decision). Knob OFF =
-   byte-identical (tests/test_hotspots.py).
+   byte-identical (tests/test_hotspots.py). AMENDED BY 50: with
+   fuse_hotspots_keep_point a point-only agency record that heat joined
+   keeps its own point as a seed beside the heat.
 
 40. A FIRE LEARNS WITHOUT CLIENTS — LEARNING FORECASTS (2026-10-29;
    founder: "perform fix 1"; cfg.fire_belief_learn, fire_belief_learn_
@@ -2152,6 +2154,39 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    CANNOT DO: the minutes inside the new fire's own forecast (cold LFPS,
    the shared spread pool, lane C C1/C3) are unchanged. Knob OFF = byte-
    identical (the loop, the evaluate call, the CycleResult).
+
+50. A REPORTED POINT STAYS A SEED WHEN HEAT JOINS IT — AMENDING 39 (2026-11-
+   18; the latency review's lane B finding B2, verified by the orchestrator;
+   cfg.fuse_hotspots_keep_point, default OFF; watch --keep-reported-point).
+   Without a perimeter a fire seeds ignition_points() — its hotspots, else
+   its origin — so once 39 joined satellite heat to a point-only agency
+   record its own reported point stopped being a seed: measured (lane B,
+   the live flags, stub west wind 8 m/s), night refinery-type heat 2 km
+   crosswind took a home 1.5 km downwind from p10 0.45 h to 15.2 h; 52 of
+   888 new point records took heat in their first cycle, 8 of them with the
+   nearest heat >= 1 km from the point (5 LA-area records beside night
+   refinery heat). With the knob a fire WITHOUT a perimeter whose origin an
+   agency reported (any source but FIRMS and SEEDED) and that carries
+   hotspots seeds [origin] + hotspots at now_s, and its geometry — the
+   client search and the domain — holds the origin too. Unchanged: the
+   weather point (the mean of ignition_points(), the heat as before), a
+   perimeter fire (its polygon is the fire; hotspots seed beside it as
+   before), a point without heat, a seeded fire, and a FIRMS-only cluster —
+   its origin is the mean of its own detections, a place no satellite saw
+   burning, so it never becomes a seed. The learning forecast (40) seeds
+   the same row (the no-domain row carries the seed geometry), and the
+   kept-forecast fire_key holds the point: stable from cycle to cycle,
+   changed once when the knob is armed (one background refresh per such
+   fire). NEVER LATER: an added seed at now_s can only make every arrival
+   on a given grid earlier; pinned ETA(on) <= ETA(off) for every client of
+   every world in tests/test_keep_reported_point.py (24 heat placements x 8
+   homes, lane B's geometry 15.2 h -> 0.45 h with the live flags). THE
+   RESIDUAL: when the point lies outside the knob-off domain the domain
+   grows to hold it, and a new grid (cell size, origin, the regime
+   detector's fuel fraction) can move a home behind terrain either way, as
+   42 measured for its snap — rare (the domain already holds every home in
+   range, padded 2 km, and the point lies within the 3-11 km attach
+   footprint of the heat). Knob OFF = byte-identical.
 
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
@@ -4946,6 +4981,17 @@ class ResponseConfig:
     # end-of-cycle engine state, only sooner. False = byte-identical; watch
     # --alert-new-fires-early.
     alert_new_fires_early: bool = False
+    # A REPORTED POINT STAYS A SEED (2026-11-18, the latency review's lane B
+    # finding B2; SAFETY SEMANTICS 50, amending 39). Without a perimeter the
+    # seed law is ignition_points() = hotspots, else origin — so a point-only
+    # agency record that FIRMS heat joined seeded ONLY the heat, and the
+    # agency's own point stopped burning (measured: a home's p10 0.45 h ->
+    # 15.2 h with night refinery heat 2 km crosswind). True = such a record
+    # seeds [origin] + hotspots and its geometry (client search, domain)
+    # holds the origin too; the weather point is unchanged; a FIRMS-only
+    # cluster is unchanged. False = byte-identical; watch
+    # --keep-reported-point.
+    fuse_hotspots_keep_point: bool = False
     # SIMULATOR CITY WEATHER (founder 2026-10-09, verbatim: "change the
     # weather conditions for each city specific"; docs/review/
     # city_weather_2026-10-09.md). Read ONLY by wgresponse.simui (the
