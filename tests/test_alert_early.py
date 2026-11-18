@@ -56,8 +56,17 @@ WORLDS = {
 }
 
 
-def _run(on, cycles=2, **world):
-    cfg = S.ladder_cfg(alert_new_fires_early=on)
+#: every other knob of the latency build (SAFETY SEMANTICS 50-52 and the
+#: step timings), armed together
+ALL_OTHER = dict(fuse_hotspots=True, fuse_hotspots_keep_point=True,
+                 alert_recovery_summary=True, alert_prune_idle_pairs=True,
+                 operator_log_priority=True, cycle_step_timings=True,
+                 stale_gate_missing_time=True, fuse_name_join_strict=True,
+                 notify_urgent_first=True)
+
+
+def _run(on, cycles=2, extra=None, **world):
+    cfg = S.ladder_cfg(alert_new_fires_early=on, **(extra or {}))
     mon, eng, log = S.build(cfg, **world)
     snaps, results = [], []
     for k in range(cycles):
@@ -85,6 +94,19 @@ def test_same_events_and_engine_state_on_and_off(name):
     # ... and the early path really ran
     assert [r["incident_id"] for r in
             res_on[0].timings["early_alerts"]["evaluated"]] != []
+
+
+def test_same_with_every_other_latency_knob_armed():
+    world = WORLDS["everything"]
+    off, _, _ = _run(False, cycles=3, extra=ALL_OTHER, **world)
+    on, res_on, _ = _run(True, cycles=3, extra=ALL_OTHER, **world)
+    for k, (a, b) in enumerate(zip(off, on)):
+        for key in ("events", "ops", "notes", "assessments", "degraded",
+                    "states", "ledger", "growth", "deesc", "pending"):
+            assert a[key] == b[key], (k, key)
+        assert sorted(a["sends"]) == sorted(b["sends"]), k
+    assert res_on[0].timings["steps"]["early_plan_s"] >= 0.0
+    assert any(o[0] == "degraded" for o in off[0]["ops"])
 
 
 def test_restored_unsent_refires_at_the_end_with_its_own_fresh_etas():
