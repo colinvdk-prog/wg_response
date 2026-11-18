@@ -1832,26 +1832,40 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
        REFUGE_EXIT_MAX_PROBES), and one without only when none keeps one
        (the law as before); 38 (b) counts only such a road refuge;
        restaging takes none without. One level: an exit's own refuge is not
-       asked in turn. Measured and not taken: requiring the way out to stay
-       open until the crew would have to leave (the refuge's own durable
-       time less L; simui.REFUGE_EXIT_UNTIL_LEAVE) cost Beaver Creek's
-       canonical high fire 6 of 37 homes in 12 h and changed no row.
+       asked in turn. Built and measured, NOT armed by the simulator (below).
    Measured (docs/SIMULATOR_DESIGN.md "Crew program review fixes
-   (2026-11-17)"): Vail 24 h rows 2 -> 0, crews off the map 2 -> 0, homes
-   40 -> 40; Beaver Creek 24 h rows 1 -> 0, homes 34 -> 31 (the planner no
-   longer sends crews to the last homes of a pocket whose only refuge is a
-   dead end), one crew leaves the map by its last lawful way (36) at T+11.5
-   h; extended Paradise 2 rows -> 0, homes 20 -> 20. (a) alone fixed Vail
-   and Paradise, not Beaver Creek, whose pocket closed while the crew worked
-   (no refuge in reach kept a way out when it left its last stop). WHAT IT
-   CANNOT DO: 38's zone keep-until still counts a dead-end road refuge as a
-   zone's onward exit (iii); a crew already in a dead end stays until the
-   sweep moves it; 46b does not re-rank 28b's or 46a's moves — measured on
-   the extended Paradise run, a one-level "keeps a way out" preference
-   there walked a crew from refuge to refuge into a dead end, 1,473 min
-   past the line. Knobs OFF = byte-identical (pinned in tests/
-   test_crew_waiting.py against goldens computed on commit e43c24e on the
-   worlds where they bite); the SIMULATOR arms both.
+   (2026-11-17)"; before = e43c24e, after = (a) armed, (b) not): Vail 24 h
+   rows 2 -> 0, crews off the map 2 -> 0, homes 40 -> 40; extended Paradise
+   rows 2 -> 0, homes 20 -> 20; the valley's 33 fires at 24 h «V24SEM»;
+   six more maps at 24 h rows 4 -> 1 (the one left 0.9 min, as before),
+   deepest 305.4 -> 0.9 min, crews off the map 7 -> 4, homes 247 -> 247;
+   the 12-h sets (the valley at 07:13 and 13:13, lane A's 32 fires) homes,
+   reached-uncoated, rows and crews off the map unchanged (one more
+   relocation in each valley set, one in lane A's). Beaver Creek's 24-h
+   canonical fire keeps its row: its Eagle-Vail pocket closed while the crew
+   was still working (at the 28a decision, T+5.68 h, none of the 23 road
+   refuges in reach and none of the four zones kept a lawful way on), which
+   (a) cannot reach. (b) removes that row (homes 34 -> 31: the pocket's last
+   homes are left to the fire; one crew leaves the map by its last lawful
+   way at T+11.5 h), but on tests/test_dest_durable.py's Paradise crown-fire
+   repro it sent sim-g3 at T+8.5 h to a refuge that kept a way out, (a) then
+   moved it on to one that did not, and at T+27 h the sweep drove it through
+   a band 1,019 min past the line ((b) off: no row); on the valley's 07:13
+   set it cost Beaver Creek's canonical extreme fire three reached homes and
+   took one crew off the map. Measured and dropped on the way: (b) in 28b's
+   and (a)'s own moves (it walked the extended Paradise crew from refuge to
+   refuge into a dead end, 1,473 min past the line), and (b) requiring the
+   way out to stay open until the crew would have to leave (the refuge's own
+   durable time less L; simui.REFUGE_EXIT_UNTIL_LEAVE: Beaver Creek's
+   canonical high fire 37 -> 31 homes in 12 h, no row changed). WHAT IT
+   CANNOT DO: a crew whose refuge became a dead end while it worked stays
+   until the sweep moves it (the pocket exit still takes only young bands);
+   (a)'s exits are 28b's, and one may itself become a dead end later — (a)
+   then moves the crew again while a way is open; (b) looks one level deep
+   and leaves 38's zone keep-until (iii) as it was. Knobs OFF = byte-
+   identical (pinned in tests/test_crew_waiting.py against goldens computed
+   on commit e43c24e on the worlds where they bite); the SIMULATOR arms (a)
+   and NOT (b) (simui.SIM_ARMS_REFUGE_KEEPS_EXIT — the founder's call).
 47. WHAT A SAFETY LAW DROPS IS NOT LOST — THE DEEPER AUDIT ROW AND THE
    RELEASED STOP (2026-11-17; the crew-program review, ASSESSMENT.md
    findings 6 and 8; cfg.crew_overrun_worst_row, replan_on_release; read

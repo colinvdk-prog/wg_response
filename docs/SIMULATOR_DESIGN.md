@@ -3208,3 +3208,139 @@ per-home release, a capacity crunch, the round cap, the P10 clock, the off switc
 coats no home more than 12 h ahead unless released. The proximity distance matches brute force. The
 fleet schedule serves the same homes nearest first. The server defaults are checked, and so is the
 page.
+
+## Crew program review fixes (2026-11-17)
+
+Step 2 of the founder-approved crew-program review of 2026-11-11
+(`scratch_review/crew_program_review_2026-11-11/ASSESSMENT.md`): the simulator fixes. Six knobs,
+each default OFF (byte-identical). The simulator session arms five of them
+(`simui.SIM_REVIEW_FIXES_2026_11_17`; an explicit override wins); the sixth, 46b, is built and
+measured but not armed (`simui.SIM_ARMS_REFUGE_KEEPS_EXIT = False`, below). The live watcher arms
+none of them.
+
+| Change | Where | Armed | What it changes |
+|---|---|---|---|
+| `escape_wait_watch` | SEMANTICS 46a | yes | an idle crew leaves its zone or parked spot when the spot's keep-until (38) falls within the last-exit window, whatever its own cell's margin |
+| `refuge_keeps_exit` | SEMANTICS 46b | **no** | the stop's own road refuge that 38 (b) counts as its way out, 28a's choice as an egress starts and 30b's restaging zone need a lawful way out open past the arrival plus the last-exit window |
+| `crew_overrun_worst_row` | SEMANTICS 47a | yes | the audit keeps the worst row per crew and step; tick-end and world-change rows carry their depth |
+| `replan_on_release` | SEMANTICS 47b | yes | a stop the 29 predicate releases en route re-plans the fleet in the same step |
+| `outcome_lost_capacity` | display only | yes | a lost home some crew could once have served reads "lost — capacity", not "unsavable" (scoreboard, map, run report) |
+| `unserved_reason_refresh` | display only | yes | the page's unserved reason reads `released_en_route` after an en-route release and `fire_arrived` once the fire is there |
+
+Code: `simui` `_wait_watch_choice`, `_spot_zone`, `_dest_exit_until` / `_dest_durable_until` (38's
+keep-until split into its own-cell and exit terms, values unchanged), `_refuge_keeps_exit`,
+`_exit_open_at`, `_road_refuge_until(kept=)`, `_road_escape_search(accept=)`,
+`_kept_refuge_search`, `_refuge_exit_filter`, `_merge_worst_rows`, `_overrun_row_key`,
+`_overrun_margin_min`, `OUTCOME_TAGS_SPLIT`, `SIM_REVIEW_FIXES_2026_11_17`,
+`SIM_ARMS_REFUGE_KEEPS_EXIT`, `REFUGE_EXIT_MAX_PROBES`, `REFUGE_EXIT_UNTIL_LEAVE`; the sweep,
+`_durable_egress`, `_restage_idle`, `_egress_ways`, `_plan_keep_kw`, `_run_audit`, `tick()`'s
+sub-step merge, `_ledger_tick`, `_note_instant_overrun`, `_judge_head_en_route`, the plan trigger in
+`_tick_step`, `state()` and `_report_state`; `console/simulator.html` (the lost-home row, ring,
+tooltip and report reasons; the `wait_watch` relocate label; `caught_at_end`). Tests:
+`tests/test_crew_waiting.py`; the extended Paradise case in `tests/test_crew_pocket.py` (its
+2026-10-21 xfail is now a passing armed test, with a knob-off pin of the old rows); every legacy
+knob-off dict pins the six knobs off. Harnesses and raw results: `scratch_review/crew_fixes_2026-11-17/`
+(`RESULTS.md`).
+
+**For the founder.** On long fires a crew could wait at a safety zone that itself stayed safe for
+hours while every road out of it closed; much later the safety sweep had to drive it out through
+ground the pessimistic forecast had crossed hours before (Vail's 24-hour fire: 5.7 hours past the
+safety line, two crews driven off the map). Now a crew leaves a refuge before it becomes a dead end:
+when the last safe way out of where it waits is about to close, it moves to a place that stays safe.
+On the valley's 33 fires run for 24 hours this takes «V24».
+The audit now keeps the deepest record of each crew in each step and says how deep it was; a home
+lost to the fire reads "lost to capacity" when some crew could once have reached it in time and
+"unsavable" only when none could; reasons on the page are current; and a home dropped for safety
+while a crew drove to it goes straight back to the planner. Nothing changes on the 12-hour runs
+except a relocation here and there. One case is not fixed: on Beaver Creek's 24-hour fire a crew's
+whole neighbourhood (Eagle-Vail) became a dead end while it was still coating the last homes there,
+so no waiting rule can help. A planning rule that keeps crews out of such a neighbourhood was built
+and measured: it fixes that run at the cost of three homes there, but on Paradise's crown-fire check
+it led a crew 17 hours deep into old fire ground. It is switched off; the call is yours.
+
+**What was wrong.** (1) Crews waited in a pocket on long fires (the review's finding 3, S1). The last-exit trigger
+(SEMANTICS 28b) looked only at crews whose own spot the line reaches within 8 h, so a crew parked
+at a zone whose own cell stayed clear for many hours sat there while every road out closed, and
+the sweep later forced it out through old band: Vail's 24-h canonical fire at extreme (two crews
+at Minturn from T+5.5 h to T+21.75 h, then 339.9 min past the line and off the map) and the
+extended Camp-Fire-scale Paradise run (495.9 and 909.1 min; 28's own xfail). Beaver Creek's 24-h
+canonical fire was a second shape: at T+5.75 h 28a re-pointed a crew finishing its last homes to
+a road refuge 3.7 km out with 12.7 h of life — the refuge's own cell was all 28a looked at — and
+from the moment it arrived no lawful road led on from it; it waited 12 h and was moved through a
+band 682.5 min past the line. (2) The audit dropped the deeper row (finding 6): one row per crew
+per step, and a tick-end row, which carried no depth, won over a deeper transit row (Park City's
+side fire at extreme, tick 13: the path audit's row, 145 min past the line with 607 s in the band,
+was reported as a bare "burned"). (3) Every lost home read "abandoned — unsavable (fire beat every
+feasible crew)", though lane B found 37 of 58 had been feasible for some crew earlier (finding 7).
+(4) Stale reasons and a slow re-plan (finding 8): a stop released en route for safety kept its old
+reason ("held"), a burned home kept "capacity", and a released stop waited about 45 min for a
+re-plan.
+
+**How the waiting rule and 46b were shaped.** The waiting rule (46a) is the review's lane-A prototype made a law: the crew's spot is judged by
+SEMANTICS 38's keep-until — the latest arrival for which the spot is not a dead end (it stays clear
+8 h, or a lawful road still leads on to a refuge that does) — and the crew leaves while that is
+still within the last-exit window, by 28b's own choices in 28b's order. It fixes Vail and Paradise,
+not Beaver Creek: that pocket closed while the crew was still working. At the 28a decision
+(`diag_bc.py`, T+5.68 h) none of the 23 road refuges the search could reach and none of the four
+zones still had a lawful way on (every exit term had closed 0.9-4.8 h earlier). A test that avoids
+it must reach the planner — SEMANTICS 38 (b) lets a stop be planned when it has its own road refuge,
+the one 28a then re-points the egress to — so 46b ("a refuge keeps a way out") asks that refuge, 28a's
+choice and restaging's zone for a lawful way out open past the arrival plus the last-exit window. It
+was measured three ways. In every voluntary refuge law (28b and 46a too) it walked the extended
+Paradise run's sim-g2 from refuge to refuge into a dead end (1,473 min past the line; 46a alone: no
+row). Asking the way out to stay open until the crew would have to leave (`simui.REFUGE_EXIT_UNTIL_
+LEAVE`) cost Beaver Creek's canonical high fire 6 of 37 homes in 12 h and changed no row. The
+smallest form — the stop's refuge, 28a and restaging, the arrival window — removes the Beaver Creek
+row (homes 34 → 31; one crew leaves the map by its last lawful way at T+11.5 h), but on the Paradise
+crown-fire repro (`tests/test_dest_durable.py`, extended Paradise, 64 homes, 5 crews, extreme) 28a
+sent sim-g3 at T+8.5 h to a refuge that kept a way out; 46a moved it on at T+18 h to a refuge that
+did not, and at T+27 h the sweep drove it through a band 1,019 min past the line (46b off: no row in
+the 180 ticks). With the review's "no new row anywhere" acceptance, 46b is built, pinned with the
+knob armed explicitly, and NOT armed (`simui.SIM_ARMS_REFUGE_KEEPS_EXIT = False`).
+
+**Measured** (before = main e43c24e; after = this branch as it ships; the page's settings — the
+12-h coating window and proximity first — on every set; two worker processes). "Rows" are crew-
+overrun rows (passes through the danger band, and crews caught standing in it); "deepest" counts the
+rows that carry a depth — before the fix only transit rows did, after it every row.
+
+| Set | Homes coated | Reached homes uncoated | Rows | Deepest row (min past the line) | Rows > 30 min | Crews off the map | Relocations |
+|---|---|---|---|---|---|---|---|
+| Valley, 33 fires, 12 h, 07:13 | 907 → 907 | 13 → 13 | 3 → 3 | 24.4 → 24.4 | 0 → 0 | 0 → 0 | 14 → 15 |
+| Valley, 33 fires, 12 h, 13:13 | 815 → 815 | 14 → 14 | 2 → 2 | 24.4 → 24.4 | 0 → 0 | 0 → 0 | 5 → 6 |
+«V24ROW»
+| Lane A's 32 non-valley fires | 1,066 → 1,066 | — | 2 → 2 | — → 145.0 | 0 → 2 | 4 → 4 | 17 → 18 |
+| 24-h fires, six more maps (8) | 247 → 247 | — | 4 → 1 | 305.4 → 0.9 | 3 → 0 | 7 → 4 | 13 → 16 |
+| Lane A's 24-h valley pair (Vail, Beaver Creek) | 74 → 74 | — | 3 → 1 | 682.5 → 682.5 | 3 → 1 | 2 → 0 | 4 → 4 |
+| Extended Camp-Fire-scale Paradise (the 28 xfail) | 20 → 20 | — | 2 → 0 | 909.1 → — | 2 → 0 | 0 → 0 | — |
+
+The 12-hour valley sets are unchanged but for one relocation each: the waiting rule fired once in
+each (Beaver Creek's northwest and south fires at extreme). In lane A's 32 fires it fired in three
+runs (Aspen's side and Glenwood's canonical fires at extreme, Park City's side fire at 24 h) with
+one extra relocation in all and nothing else changed (the review's own prototype measured crews
+off the map 4 → 5 there; this law keeps 4). That set's two rows are Park City's side fire at 12 h
+and 24 h — the same rows, now with their depth (145.0 min, 607 s in the band: 47a). The remaining 24-h row
+on the six maps is Beaver Creek's side fire at T+0.75 h (0.9 min, as before); the pair's is Beaver
+Creek's canonical fire (682.5 min, the known defect). Per-step cost: the valley's 07:13 runs took
+0.198 s a step against 0.188 s (measured under different machine load). The 46b arm (all six knobs
+armed) on the same sets: 07:13 906 homes, 15 reached uncoated, one crew off the map (Beaver Creek's
+canonical extreme fire: 34 → 31, 1 → 4); 13:13 820, 14; lane A 1,065, off the map 4 → 3; the six
+maps 247, rows 1, off the map 3; the pair 71 homes, no row, one crew off the map — and the crown-
+fire repro's 1,019-min row (`runs/tables_arm46b.md`).
+
+**Display only, proved.** `check_display.py` ran the same world with the two display knobs on and off (the other knobs armed
+as then, 46b included): Malibu's Santa Ana fire 40 degrees left of its one-click start and Park
+City's windstorm 40 degrees right (lane B's worlds), 16 h each — every `dispatch.plan` call returned
+the same plan (93 and 164 calls) and every tick's state minus the outcome tags and unserved reasons
+hashed the same. Park City: the 9 homes the fire reached uncoated read `lost_capacity` (all 9 had
+been in some plan), the run report says 6 of its 6 reached-uncoated homes were lost to capacity, and
+burned homes read `fire_arrived` (150 home-ticks that read `capacity` or `infeasible_deadline`
+before). Malibu: its one lost home reads `abandoned_unsavable` (never feasible). Pinned (with the
+shipped defaults) in `tests/test_crew_waiting.py::test_the_display_knobs_change_no_plan`.
+
+**What it cannot do.** A crew whose refuge became a dead end while it was still working (Beaver Creek's Eagle-Vail pocket)
+is not helped: the waiting rule finds no way out, and the planner-side test that avoids the pocket
+(46b) is not armed. The waiting rule's exits are 28b's (a zone or road refuge that stays clear 8 h);
+one of them may itself become a dead end later — 46a then moves the crew again if a way is open.
+The pocket exit still takes only young bands. 47b re-plans in the step of the release; no en-route
+release occurred in lane B's Malibu world under the other fixes, so its effect on homes is folded
+into the totals, not traced.

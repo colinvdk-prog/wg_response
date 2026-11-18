@@ -426,6 +426,10 @@ def test_buffer_binds_unserved_reasons(tmp_path):
         # blocks, re-tune the scenario geometry instead of widening it.
         cfg["circuity"] = 1.35
         cfg["route_margin_min"] = 60.0
+        # the planner's own reasons are the subject: the page's display-only
+        # refresh (2026-11-17, unserved_reason_refresh) reads a home the fire
+        # has reached as 'fire_arrived', so it is pinned off here
+        cfg["unserved_reason_refresh"] = False
         d = _controlled_tile_dir(tmp_path, "boulder_co", hamlet_half=3)
         s = SimSession("boulder_co", 16, 1, seed="m1", cfg_overrides=cfg,
                        tile_dir=d, roads_module=None)
