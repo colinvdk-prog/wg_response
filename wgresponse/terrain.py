@@ -958,6 +958,27 @@ class LfpsTerrain:
             return path
         return None
 
+    def drop_local_job_zip(self, bbox: BBox, canopy: bool = False) -> bool:
+        """REGIONAL TERRAIN (SAFETY SEMANTICS 53): remove a job zip's LOCAL
+        copy when the S3 mirror holds it (asked with a HEAD); True when it
+        was removed. The regional pieces (~2.5-3 GB for the 13 presets) must
+        not fill the container's disk (App Runner: 3 GB of ephemeral
+        storage, the image included). Never raises; never removes a zip the
+        mirror cannot vouch for (no mirror, a failed upload, an S3 error)."""
+        path = self.job_zip_path(bbox, canopy)
+        if not path or self._s3 is None or not os.path.exists(path):
+            return False
+        try:
+            if not self._s3.exists(self.s3_key(path)):
+                return False
+        except Exception:
+            return False
+        try:
+            os.remove(path)
+        except OSError:
+            return False
+        return True
+
     def fetch_job_zip(self, bbox: BBox, canopy: bool = False) -> str:
         """The raw LFPS job zip for bbox (terrain or canopy layers) in the
         local cache — a local hit, else a mirror pull, else ONE LFPS job
@@ -1518,9 +1539,17 @@ class RegionalTerrain:
                                 "canopy" if canopy else "terrain", exc,
                                 self._retry_s / 3600.0)
                     continue
+                # SAFETY SEMANTICS 53: a piece the mirror holds leaves the
+                # small container disk; a cut pulls it back when needed
+                st = ("mirrored"
+                      if self._lfps.drop_local_job_zip(piece.aoi, canopy)
+                      else "local")
                 with self._lock:
-                    self._state[sk] = "local"
+                    self._state[sk] = st
                     self._errors.pop(sk, None)
+                if st == "mirrored":
+                    self.stats["dropped_local"] = (
+                        self.stats.get("dropped_local", 0) + 1)
                 out["fetched"] += 1
         return out
 
@@ -1681,6 +1710,11 @@ class RegionalTerrain:
                 return None
             with open(path, "rb") as f:
                 body = f.read()
+            # SAFETY SEMANTICS 53: read once, then off the disk again when
+            # the mirror holds it (one piece on disk at a time)
+            if self._lfps.drop_local_job_zip(piece.aoi, canopy):
+                self.stats["dropped_local"] = (
+                    self.stats.get("dropped_local", 0) + 1)
             bands, (xa, ye, x_ul, y_ul) = _read_job_zip(
                 body, nb, self._lfps._decode_geotiff)
             del body

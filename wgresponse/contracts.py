@@ -2379,8 +2379,14 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    out. (b) While the regions are still being fetched (the first ~4-12 h
    after arming, 250 jobs for the six preset groups at 0.5 deg) a cycle's
    cold domain may queue at LFPS behind one regional job that started
-   before the cycle did. Knob OFF = byte-identical (tests/
-   test_first_forecast_speed.py).
+   before the cycle did. THE DISK (orchestrator, 2026-11-18, before the
+   first deploy): App Runner gives an instance 3 GB of ephemeral storage,
+   the image included, and the pieces are ~2.5-3 GB; so a piece the S3
+   mirror holds (a HEAD) leaves the local disk once fetched, and a cut
+   pulls each piece it needs from the mirror, reads it, and drops it again
+   (one piece on disk at a time; LfpsTerrain.drop_local_job_zip). Without
+   a mirror, or when the upload failed, the zip stays local. Knob OFF =
+   byte-identical (tests/test_first_forecast_speed.py).
 
 54. A FIRE WITH NO FORECAST GOES FIRST IN THE MEMBER POOL — FIRST FORECAST
    PRIORITY (2026-11-18; the same review, C3; cfg.first_forecast_priority;

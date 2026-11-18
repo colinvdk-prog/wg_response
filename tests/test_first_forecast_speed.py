@@ -954,3 +954,53 @@ def test_a_learning_forecast_yields_between_its_two_jobs(tmp_path, armed):
     assert done.wait(60.0)
     mon.terrain_turn.release()
     assert len(http.submits) == 2
+
+
+def test_regional_pieces_leave_the_disk_once_mirrored(tmp_path):
+    """SAFETY SEMANTICS 53, THE DISK: the container has 3 GB (App Runner,
+    image included) — a piece the mirror holds is not kept locally after
+    its fetch, a cut pulls only what it needs and drops it after reading,
+    and the cut equals the one a disk-heavy cache would give."""
+    class FakeS3:
+        def __init__(self):
+            self.objs = {}
+
+        def put_object(self, Bucket, Key, Body):
+            self.objs[Key] = bytes(Body)
+
+        def get_object(self, Bucket, Key):
+            if Key not in self.objs:
+                e = Exception("missing")
+                e.response = {"Error": {"Code": "NoSuchKey"}}
+                raise e
+            return {"Body": io.BytesIO(self.objs[Key])}
+
+        def head_object(self, Bucket, Key):
+            if Key not in self.objs:
+                e = Exception("missing")
+                e.response = {"Error": {"Code": "404"}}
+                raise e
+            return {}
+
+    def zips(root):
+        return [os.path.join(d, f) for d, _s, fs in os.walk(root)
+                for f in fs if f.endswith(".zip")]
+
+    s3 = FakeS3()
+    http = FakeLfps()
+    lfps = lfps_for(tmp_path / "c1", http, s3_uri="s3://b/p", s3_client=s3)
+    reg = T.RegionalTerrain(lfps, piece_deg=0.5)
+    reg.plan_from_points(HOMES_A, RANGE_M, PAD_M, SNAP)
+    got = reg.fetch_pending()
+    assert got["fetched"] == 2 * len(reg.pieces())
+    assert set(reg._state.values()) == {"mirrored"}
+    assert zips(tmp_path / "c1") == []                # nothing kept locally
+    dom = BBox(west=-120.95, south=39.05, east=-120.6, north=39.4)
+    t = reg.tile(dom, 300.0)
+    assert t.source.startswith("lfps-region:")
+    assert zips(tmp_path / "c1") == []                # pulled, read, dropped
+    # the same cut as a cache that keeps every piece on disk
+    heavy, _l, _h = _ready_regional(tmp_path / "heavy")
+    assert bands(t) == bands(heavy.tile(dom, 300.0))
+    # no mirror: the zips stay (nothing can bring them back)
+    assert zips(tmp_path / "heavy")
