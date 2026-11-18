@@ -927,16 +927,23 @@ class ThreatMonitor:
         no_domain = [] if learn is not None else None
         steps.mark("loop_setup_s")
         early = None
-        if self._early_alerts_on():
-            # SAFETY SEMANTICS 49: the new fires first, each one's pairs
-            # evaluated right after its own forecast
-            early = self._early_plan(active, now_s)
-            steps.mark("early_plan_s")
         if learn is not None:
             # SAFETY SEMANTICS 40: the TERRAIN TURN — no learning forecast
             # starts while the cycle fetches its own domains' terrain
             self._terrain_turn.hold()
         try:
+            if self._early_alerts_on():
+                # SAFETY SEMANTICS 49: the new fires first, each one's pairs
+                # evaluated right after its own forecast (planned inside the
+                # terrain turn: no learning fetch starts ahead of them)
+                try:
+                    early = self._early_plan(active, now_s)
+                except Exception as exc:     # noqa: BLE001 — legacy order
+                    early = None
+                    notes.append(f"new fires alert early: ordering failed "
+                                 f"({exc}) — the legacy loop runs this "
+                                 f"cycle (SAFETY SEMANTICS 49)")
+                steps.mark("early_plan_s")
             if early is not None:
                 self._assess_early(
                     early, active, now_s, feeds_healthy, t_cycle0, timings,
@@ -1555,12 +1562,12 @@ class ThreatMonitor:
             if iid in tracked or (self._cfg.forecast_tiers
                                   and iid in self._kept):
                 continue
-            geom_pts = self._seed_geometry(inc, now_s)[5]
-            bbox = geo.bbox_around(geom_pts, radius_m)
             try:
+                geom_pts = self._seed_geometry(inc, now_s)[5]
+                bbox = geo.bbox_around(geom_pts, radius_m)
                 cands = list(self._registry.protected_clients(bbox))
             except Exception:              # noqa: BLE001 — asked again
-                continue
+                continue                   # (its assessment reports it)
             prefetched[iid] = (bbox, cands)
             near = [(min(geo.haversine_m(c.loc, p) for p in geom_pts), c)
                     for c in cands]
