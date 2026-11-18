@@ -1507,8 +1507,31 @@ class _WatchDaemon:
         self.restored = False
         self._events = []              # accumulated AlertEvents (bounded)
         self._op_log = []              # accumulated OperatorEvents (bounded)
+        # NEW-FIRE SENTINEL (SAFETY SEMANTICS 60): its thread appends to the
+        # operator log too, so the log's read-modify-write takes this lock
+        self._op_lock = threading.Lock()
+        self._sentinel = None
         if test_world is not None:
             test_world.attach_live(self)
+
+    # -------------------------------------- new-fire sentinel (SEMANTICS 60)
+
+    def attach_sentinel(self, sentinel) -> None:
+        """SAFETY SEMANTICS 60: the shadow new-fire sentinel — its events go
+        to the operator log, /api/state gains its block, and each live
+        cycle's result is shown to it (it reads the cycle; the cycle never
+        reads it)."""
+        self._sentinel = sentinel
+
+    @property
+    def sentinel(self):
+        return self._sentinel
+
+    def add_operator_event(self, ev) -> None:
+        """An OperatorEvent raised between cycles (the sentinel's thread):
+        appended to the bounded operator log."""
+        with self._op_lock:
+            self._op_log = (self._op_log + [ev])[-self.OP_LOG_KEEP:]
 
     @property
     def test_world(self):
@@ -1660,11 +1683,17 @@ class _WatchDaemon:
             self.last_result = res
             self._events = (self._events
                             + list(res.events))[-self.EVENTS_KEEP:]
-            self._op_log = (self._op_log
-                            + list(res.operator_events))[-self.OP_LOG_KEEP:]
+            with self._op_lock:
+                self._op_log = (self._op_log
+                                + list(res.operator_events))[
+                                    -self.OP_LOG_KEEP:]
             self.persist_now()
         finally:
             self._live_busy.clear()
+        if self._sentinel is not None:
+            # SEMANTICS 60: the sentinel learns which records this cycle
+            # carried (shadow; it never raises)
+            self._sentinel.observe_cycle(res, now, float(self._clock()))
         self._publish_to_test_world()
         return res
 
@@ -1821,6 +1850,12 @@ class _WatchDaemon:
             "events": list(self._events),
             "operator_log": list(self._op_log),
         }
+        if self._sentinel is not None:
+            # SAFETY SEMANTICS 60: the shadow sentinel's block (armed only)
+            try:
+                out["sentinel"] = self._sentinel.status()
+            except Exception as exc:          # noqa: BLE001
+                out["sentinel"] = {"error": str(exc)[:200]}
         # (TWO WORLDS, SAFETY SEMANTICS 16a: the live world holds no seed, so
         # the W1 `seeds` key never appears here — the TEST world's seeds are
         # on /api/test/state.)
@@ -2623,6 +2658,15 @@ def _cmd_watch(args) -> int:
                           test_world=test_world,
                           belief_file=belief_file)
     restored = daemon.restore()
+    sentinel = None
+    if cfg.new_fire_sentinel_s > 0.0:
+        # SAFETY SEMANTICS 60: the shadow new-fire sentinel over the startup
+        # roster (the cycle never reads it)
+        from wgresponse.sentinel import NewFireSentinel
+        sentinel = NewFireSentinel(
+            cfg, clients_fn=lambda: list(clients_by_id.values()), aoi=aoi,
+            on_event=daemon.add_operator_event)
+        daemon.attach_sentinel(sentinel)
 
     httpd = server_mod.serve(port=args.port, host=args.host,
                              state_provider=daemon.state, beacon_sink=tracker,
@@ -2675,9 +2719,13 @@ def _cmd_watch(args) -> int:
     server_thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     server_thread.start()
     test_world.start()
+    if sentinel is not None:
+        sentinel.start()
     try:
         daemon.run(max_cycles=args.max_cycles)
     finally:
+        if sentinel is not None:
+            sentinel.stop()
         # Ctrl-C lands here too (run() catches it and returns): one last
         # persist so the on-disk state matches the final in-memory state.
         daemon.persist_now(final=True)
