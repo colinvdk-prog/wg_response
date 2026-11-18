@@ -369,6 +369,42 @@ class _TerrainTurn:
         self._free.wait()
 
 
+def _retryable_weather(exc: BaseException) -> Optional[str]:
+    """WEATHER RETRY ON A FIRST FORECAST (SAFETY SEMANTICS 55): "HTTP 5xx"
+    or "timeout" when the weather fetch failed that way (the exception or
+    one it was raised from), else None (not retried: a 4xx, a parse error,
+    a network the net module already retried)."""
+    import socket
+    import urllib.error
+    seen = 0
+    e: Optional[BaseException] = exc
+    while e is not None and seen < 6:
+        if isinstance(e, urllib.error.HTTPError):
+            code = getattr(e, "code", 0) or 0
+            return f"HTTP {code}" if 500 <= code <= 599 else None
+        reason = e.reason if isinstance(e, urllib.error.URLError) else e
+        if isinstance(reason, (socket.timeout, TimeoutError)):
+            return "timeout"
+        e = e.__cause__ or e.__context__
+        seen += 1
+    return None
+
+
+def _failure_host(exc: BaseException) -> str:
+    """The host a failed weather fetch went to (never the URL: a query can
+    carry a key), or "the weather service" when the error does not say."""
+    import urllib.parse
+    e: Optional[BaseException] = exc
+    for _ in range(6):
+        if e is None:
+            break
+        url = getattr(e, "url", None) or getattr(e, "filename", None)
+        if isinstance(url, str) and "://" in url:
+            return urllib.parse.urlsplit(url).netloc or "the weather service"
+        e = e.__cause__ or e.__context__
+    return "the weather service"
+
+
 def _snap_bbox(bb: BBox, deg: float) -> BBox:
     """bb snapped outward to a `deg`-degree grid (the terrain cache key: a
     shape that stays inside one snapped box asks one tile); deg <= 0 = bb."""
@@ -720,11 +756,36 @@ class ThreatMonitor:
         # each watched crew's level last cycle (an event per crossing), in
         # process.
         self._crew_watch_prev: dict = {}
+        # WEATHER RETRY ON A FIRST FORECAST (cfg.weather_retry_first_forecast
+        # only; SAFETY SEMANTICS 55): the incidents forecast last cycle /
+        # this cycle without tiers, and the retry's pause (injectable).
+        self._forecast_prev: set = set()
+        self._forecast_now: set = set()
+        self._retry_sleep = time.sleep
 
     @property
     def fire_beliefs(self):
         """The per-fire belief store (None unless tracking or injected)."""
         return self._fire_beliefs
+
+    @property
+    def terrain_turn(self) -> "_TerrainTurn":
+        """THE TERRAIN TURN (SAFETY SEMANTICS 40 / 53): held while the cycle
+        assesses (with fire_belief_learn or terrain_regions armed); a
+        background LANDFIRE fetcher waits on .wait() before each job."""
+        return self._terrain_turn
+
+    def client_range_m(self) -> float:
+        """The client range (m): a fire gets a domain when a protected home
+        lies this close (REGIONAL TERRAIN, SAFETY SEMANTICS 53, links the
+        homes into service regions with it)."""
+        return self._threat_radius_m()
+
+    def domain_reach_m(self) -> float:
+        """How far a forecast domain can reach beyond the protected home
+        that brought it in, before the snap (m): the client range plus the
+        domain pad (53 sizes the service regions with it)."""
+        return self._threat_radius_m() + _DOMAIN_PAD_M
 
     def use_fire_beliefs(self, store) -> None:
         """Swap in a belief store (TWO WORLDS, SAFETY SEMANTICS 14/16): the
@@ -927,9 +988,10 @@ class ThreatMonitor:
         no_domain = [] if learn is not None else None
         steps.mark("loop_setup_s")
         early = None
-        if learn is not None:
+        if learn is not None or self._cfg.terrain_regions:
             # SAFETY SEMANTICS 40: the TERRAIN TURN — no learning forecast
-            # starts while the cycle fetches its own domains' terrain
+            # (and, 53, no regional LANDFIRE job) starts while the cycle
+            # fetches its own domains' terrain
             self._terrain_turn.hold()
         try:
             if self._early_alerts_on():
@@ -965,6 +1027,10 @@ class ThreatMonitor:
                                    time.monotonic() - t_inc, timings)
         finally:
             self._terrain_turn.release()
+        if self._cfg.weather_retry_first_forecast:
+            # SAFETY SEMANTICS 55: this cycle's forecasts are next cycle's
+            # "had a forecast" (the tiers path reads its kept forecasts)
+            self._forecast_prev, self._forecast_now = self._forecast_now, set()
         steps.mark("assess_loop_s")
         if self._cfg.forecast_tiers:
             # FORECAST FRESHNESS TIERS: a refresh that could not get its
@@ -2134,9 +2200,20 @@ class ThreatMonitor:
         spread cfg, curve anchor, point start)."""
         self._terrain_turn.wait()
         domain = self._learn_domain(geom_pts)
-        b = self._forecast_inputs(inc, now_s, domain, self._pick_cell_m(domain),
-                                  ign, perimeter, perimeter_at_s, provenance_s,
-                                  [], {})
+        if self._cfg.learn_terrain_yield:
+            # SAFETY SEMANTICS 56: the turn is checked again before EACH
+            # LANDFIRE job (the canopy job too), not only at the start
+            from wgresponse import terrain as terrain_mod
+            with terrain_mod.job_gate(self._terrain_turn.wait):
+                b = self._forecast_inputs(inc, now_s, domain,
+                                          self._pick_cell_m(domain), ign,
+                                          perimeter, perimeter_at_s,
+                                          provenance_s, [], {})
+        else:
+            b = self._forecast_inputs(inc, now_s, domain,
+                                      self._pick_cell_m(domain), ign,
+                                      perimeter, perimeter_at_s, provenance_s,
+                                      [], {})
         b.spread_cfg = dataclasses.replace(b.spread_cfg, ensemble_n=1)
         ens = self._forecast_spread(inc, b, seeds, perimeter, now_s)
         anchor = b.perimeter_at_s if perimeter is not None else now_s
@@ -2536,9 +2613,16 @@ class ThreatMonitor:
                               timings, weather_fields, freshness)
             return
         _tm = {}
+        first = False
+        if self._cfg.weather_retry_first_forecast:
+            # SAFETY SEMANTICS 55: no forecast last cycle = a first forecast
+            first = inc.incident_id not in self._forecast_prev
         b = self._forecast_inputs(inc, now_s, domain, cell_m, ign, perimeter,
                                   perimeter_at_s, provenance_s, notes, _tm,
-                                  forecasts, extreme_flags, weather_fields)
+                                  forecasts, extreme_flags, weather_fields,
+                                  first=first)
+        if self._cfg.weather_retry_first_forecast:
+            self._forecast_now.add(inc.incident_id)
         ens = self._forecast_spread(inc, b, seeds, perimeter, now_s)
         if self._belief_on():
             self._belief_after_spread(
@@ -2628,13 +2712,16 @@ class ThreatMonitor:
                          perimeter_at_s, provenance_s, notes: list, _tm: dict,
                          forecasts: Optional[dict] = None,
                          extreme_flags: Optional[dict] = None,
-                         weather_fields: Optional[dict] = None):
+                         weather_fields: Optional[dict] = None,
+                         first: bool = False):
         """Everything one incident's spread needs, in _assess_incident's
         order: terrain tile, fire-centroid forecast (+ the local weather
         field), the extreme-regime posture, the confirmed perimeter time and
         the belief's member multipliers; each given map is filled at its
         step. Returns a namespace (tile, wxf, wfield, spread_cfg, flag,
-        perimeter_at_s, zoned, mhs, t_spread)."""
+        perimeter_at_s, zoned, mhs, t_spread). `first` (a fire with no
+        forecast yet): with cfg.weather_retry_first_forecast an NWS 5xx or
+        timeout is retried once (SAFETY SEMANTICS 55)."""
         _t = time.monotonic()
         try:
             tile = self._terrain.tile(domain, cell_m)
@@ -2660,7 +2747,32 @@ class ThreatMonitor:
             # feed incident gets the unchanged live-provider call.
             wxf = self._incident_forecast(inc, fire_centroid, now_s, notes)
         except Exception as exc:
-            raise _ProviderFailure("weather", exc)
+            kind = (_retryable_weather(exc)
+                    if first and self._cfg.weather_retry_first_forecast
+                    else None)
+            if kind is None:
+                raise _ProviderFailure("weather", exc)
+            # SAFETY SEMANTICS 55: one retry after a short pause, for a fire
+            # with no forecast only; the host alone is logged
+            wait = float(self._cfg.weather_retry_wait_s)
+            host = _failure_host(exc)
+            log.warning("weather: %s for incident %s's first forecast "
+                        "(%s) - one retry in %g s", kind, inc.incident_id,
+                        host, wait)
+            self._retry_sleep(wait)
+            try:
+                wxf = self._incident_forecast(inc, fire_centroid, now_s,
+                                              notes)
+            except Exception as exc2:
+                notes.append(f"incident {inc.incident_id}: weather {kind} "
+                             f"({host}) on its first forecast; the retry "
+                             f"after {wait:g} s failed too (SAFETY "
+                             f"SEMANTICS 55)")
+                raise _ProviderFailure("weather", exc2)
+            notes.append(f"incident {inc.incident_id}: weather {kind} "
+                         f"({host}) on its first forecast; the retry after "
+                         f"{wait:g} s answered (SAFETY SEMANTICS 55)")
+            _tm["weather_retry"] = kind
         wfield = None
         if self._cfg.weather_grid_km > 0.0:
             # SAFETY SEMANTICS 17: the lattice forecasts across the domain
@@ -2870,10 +2982,19 @@ class ThreatMonitor:
                 and all(geo.latlon_to_rc(kept.ens.spec, c.loc) is not None
                         for c in near))
         if not fits:
+            first = kept is None
             b = self._forecast_inputs(inc, now_s, domain, cell_m, ign,
                                       perimeter, perimeter_at_s,
-                                      provenance_s, notes, _tm)
-            ens = self._forecast_spread(inc, b, seeds, perimeter, now_s)
+                                      provenance_s, notes, _tm, first=first)
+            if first and cfg.first_forecast_priority:
+                # SAFETY SEMANTICS 54: a fire with no forecast at all runs
+                # its members ahead of queued background refreshes
+                with spread.foreground_members():
+                    ens = self._forecast_spread(inc, b, seeds, perimeter,
+                                                now_s)
+                _tm["first_forecast_priority"] = True
+            else:
+                ens = self._forecast_spread(inc, b, seeds, perimeter, now_s)
             eroded = self._forecast_post(inc, ens, b, perimeter, now_s, notes)
             _tm["spread_s"] = time.monotonic() - b.t_spread
             _tm["cells"] = b.tile.spec.nrows * b.tile.spec.ncols

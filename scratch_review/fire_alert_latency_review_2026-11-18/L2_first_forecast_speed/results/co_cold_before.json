@@ -1,0 +1,69 @@
+{
+ "scenario": "co_cold_before",
+ "priority": false,
+ "affinity": [
+  0,
+  1
+ ],
+ "cfg_extra": {},
+ "cycles": [
+  {
+   "label": "cycle1_new_fire",
+   "wall_s": 0.0,
+   "phases": {
+    "feeds_s": 0.0,
+    "assess_s": 0.002,
+    "alerts_s": 0.0,
+    "dispatch_s": 0.003,
+    "crew_watch_s": 0.0
+   },
+   "incidents": {},
+   "events": 0,
+   "event_states": {},
+   "sent": 0,
+   "first_notify_s": null,
+   "last_notify_s": null,
+   "first_transition_s": null,
+   "weather_calls_s": [],
+   "terrain_calls": [
+    {
+     "bbox": [
+      -107.3,
+      39.15,
+      -106.25,
+      39.9
+     ],
+     "cell_m": 158.2250038515555,
+     "hit": false,
+     "s": 0.0
+    }
+   ],
+   "registry_calls_s": [
+    0.0001
+   ],
+   "terrain_fallback_rows": [],
+   "notes_tail": [
+    "incident {16F6873B-6019-5C01-8030-A4CF65157912}: assessment skipped (terrain provider failed (COLD DOMAIN (harness guard: an LFPS job would be submitted here)))"
+   ],
+   "operator_events": [
+    [
+     "provider_error",
+     "terrain provider failed for incident {16F6873B-6019-5C01-8030-A4CF65157912}: COLD DOMAIN (harness guard: an LFPS job would be submitted here"
+    ]
+   ],
+   "assessments": 0,
+   "freshness": {},
+   "reached_p50": 0,
+   "p50_le_24h": 0,
+   "p10_le_12h": 0,
+   "p50_le_72h": 0,
+   "terrain_s": {},
+   "spread_s": {},
+   "cells": {}
+  }
+ ],
+ "fire": [
+  39.61618924809201,
+  -106.58692478626823
+ ]
+}

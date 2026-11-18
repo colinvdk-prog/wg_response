@@ -2122,6 +2122,163 @@ def _drop_member_pool() -> None:
         if _MEMBER_POOL is not None:
             _MEMBER_POOL.shutdown(wait=False, cancel_futures=True)
         _MEMBER_POOL, _MEMBER_POOL_N = None, 0
+    _close_member_dispatch("the member pool was dropped")
+
+
+# ---------------------------------------------------------------------------
+# FIRST FORECAST PRIORITY (contracts first_forecast_priority, SAFETY
+# SEMANTICS 54): a two-lane dispatcher in front of the member pool
+# ---------------------------------------------------------------------------
+
+#: per thread: True inside foreground_members() — the members this thread
+#: submits go ahead of the background lane (only with the knob armed)
+_LANE = threading.local()
+_DISPATCH = None                 # the _MemberDispatch of the current pool
+_DISPATCH_LOCK = threading.Lock()
+
+
+class _DispatchClosed(RuntimeError):
+    """A queued member whose dispatcher closed: its caller runs it here."""
+
+
+class foreground_members:
+    """``with spread.foreground_members(): ensemble_arrival(...)`` — with
+    cfg.first_forecast_priority the ensemble's members take the FOREGROUND
+    lane of the member pool (SAFETY SEMANTICS 54: a fire with no forecast
+    yet). Outside the block, or with the knob off, nothing changes."""
+
+    def __enter__(self):
+        self._prev = getattr(_LANE, "fg", False)
+        _LANE.fg = True
+        return self
+
+    def __exit__(self, *exc) -> None:
+        _LANE.fg = self._prev
+
+
+class _MemberDispatch:
+    """The pool takes at most n members at a time from this parent-side
+    queue; when a worker frees, the oldest FOREGROUND member goes first,
+    then the oldest background one (FIFO within a lane; a running member
+    is never interrupted). Each member is the same _member_job call as the
+    plain pool's, so the ensemble is identical; only the order changes.
+
+    Never starves anything for good: a member cancelled while queued is
+    skipped (its slot was never taken); a member that fails or is cancelled
+    in the pool frees its slot like one that finishes; close() (the pool
+    dropped or replaced, or this dispatcher's own thread failing) fails
+    every queued member at once, so its caller re-runs it in-process (the
+    same member) instead of waiting."""
+
+    def __init__(self, pool, n: int) -> None:
+        import collections
+        self._pool = pool
+        self._n = max(1, int(n))
+        self._cv = threading.Condition()
+        self._fg = collections.deque()
+        self._bg = collections.deque()
+        self._inflight = 0
+        self._closed = False
+        # the last 1000 dispatches ("fg" | "bg"), in order (telemetry)
+        self.dispatched = collections.deque(maxlen=1000)
+        self._thread = threading.Thread(target=self._run, daemon=True,
+                                        name="wg-member-dispatch")
+        self._thread.start()
+
+    @property
+    def pool(self):
+        return self._pool
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
+
+    def submit(self, fn, args: tuple, foreground: bool):
+        from concurrent.futures import Future
+        fut = Future()
+        with self._cv:
+            if self._closed:
+                raise _DispatchClosed("member dispatch closed")
+            (self._fg if foreground else self._bg).append((fut, fn, args,
+                                                           foreground))
+            self._cv.notify_all()
+        return fut
+
+    def _run(self) -> None:
+        try:
+            while True:
+                with self._cv:
+                    while not self._closed and (
+                            self._inflight >= self._n
+                            or not (self._fg or self._bg)):
+                        self._cv.wait()
+                    if self._closed:
+                        return
+                    fut, fn, args, fg = (self._fg or self._bg).popleft()
+                    if not fut.set_running_or_notify_cancel():
+                        continue            # cancelled while queued
+                    self._inflight += 1
+                    self.dispatched.append("fg" if fg else "bg")
+                try:
+                    inner = self._pool.submit(fn, *args)
+                except BaseException as exc:  # noqa: BLE001 — to the caller
+                    with self._cv:
+                        self._inflight -= 1
+                        self._cv.notify_all()
+                    fut.set_exception(exc)
+                    continue
+                inner.add_done_callback(
+                    lambda f, outer=fut: self._done(outer, f))
+        except BaseException:  # noqa: BLE001 — never strand a caller
+            _LOG.exception("spread: the member dispatcher failed — queued "
+                           "members run in-process (same members)")
+            self.close("the member dispatcher failed")
+
+    def _done(self, outer, inner) -> None:
+        with self._cv:
+            self._inflight -= 1
+            self._cv.notify_all()
+        if inner.cancelled():
+            outer.set_exception(RuntimeError("member cancelled in the pool"))
+            return
+        exc = inner.exception()
+        if exc is not None:
+            outer.set_exception(exc)
+        else:
+            outer.set_result(inner.result())
+
+    def close(self, reason: str) -> None:
+        with self._cv:
+            self._closed = True
+            pending = list(self._fg) + list(self._bg)
+            self._fg.clear()
+            self._bg.clear()
+            self._cv.notify_all()
+        for fut, _fn, _args, _fg in pending:
+            if fut.set_running_or_notify_cancel():
+                fut.set_exception(_DispatchClosed(reason))
+
+
+def _member_dispatch(pool, n: int) -> "_MemberDispatch":
+    """The dispatcher in front of `pool` (a new one when the pool changed
+    or the last one closed; the old one's queue fails to in-process)."""
+    global _DISPATCH
+    with _DISPATCH_LOCK:
+        d = _DISPATCH
+        if d is not None and d.pool is pool and not d.closed:
+            return d
+        if d is not None:
+            d.close("the member pool was replaced")
+        _DISPATCH = _MemberDispatch(pool, n)
+        return _DISPATCH
+
+
+def _close_member_dispatch(reason: str) -> None:
+    global _DISPATCH
+    with _DISPATCH_LOCK:
+        d, _DISPATCH = _DISPATCH, None
+    if d is not None:
+        d.close(reason)
 
 
 def _member_job(blob: bytes, kw: dict):
@@ -2141,6 +2298,13 @@ def _submit_members(workers, tile, pts, wx, t0_s, cfg, kws):
         blob = pickle.dumps((tile, pts, wx, t0_s, cfg),
                             protocol=pickle.HIGHEST_PROTOCOL)
         pool = _member_pool(workers)
+        if getattr(cfg, "first_forecast_priority", False):
+            # SAFETY SEMANTICS 54: through the two-lane dispatcher — the
+            # foreground lane inside spread.foreground_members()
+            d = _member_dispatch(pool, workers)
+            fg = bool(getattr(_LANE, "fg", False))
+            return [(kw, d.submit(_member_job, (blob, kw), fg))
+                    for kw in kws]
         return [(kw, pool.submit(_member_job, blob, kw)) for kw in kws]
     except Exception:
         _LOG.exception("spread: ensemble workers unavailable — the perturbed "
@@ -2157,6 +2321,11 @@ def _gather_members(futs, tile, pts, wx, t0_s, cfg) -> list:
         if fut is not None and not failed:
             try:
                 m = fut.result()
+            except _DispatchClosed:
+                # SAFETY SEMANTICS 54: another caller dropped the pool (or
+                # it was replaced) while this member queued — the rest runs
+                # here, and the (new) pool is left alone
+                failed = True
             except Exception:
                 _LOG.exception("spread: an ensemble worker failed — the rest "
                               "of this ensemble runs in-process (same members)")

@@ -1,0 +1,29 @@
+{
+ "domain": [
+  -107.4,
+  39.15,
+  -106.25,
+  39.9
+ ],
+ "cell_m": 165.58820012134714,
+ "cells": 300384,
+ "off_s_per_refresh": [
+  0.22,
+  0.224,
+  0.227
+ ],
+ "on_s_per_refresh": [
+  0.2101,
+  0.0002,
+  0.0,
+  0.0
+ ],
+ "memory_status": {
+  "tiles": 2,
+  "max": 2,
+  "hits": 6,
+  "misses": 2
+ },
+ "held_tile_mb": 77.1,
+ "bands": 8
+}

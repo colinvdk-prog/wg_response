@@ -1,0 +1,96 @@
+{
+ "scenario": "co_cold_after",
+ "priority": false,
+ "affinity": [
+  0,
+  1
+ ],
+ "cfg_extra": {
+  "terrain_regions": true
+ },
+ "cycles": [
+  {
+   "label": "cycle1_new_fire",
+   "wall_s": 12.69,
+   "phases": {
+    "feeds_s": 0.0,
+    "assess_s": 12.684,
+    "alerts_s": 0.004,
+    "dispatch_s": 0.006,
+    "crew_watch_s": 0.0
+   },
+   "incidents": {
+    "{16F6873B-6019-5C01-8030-A4CF65157912}": {
+     "tier": "growing",
+     "terrain_s": 0.3028070000000298,
+     "weather_s": 1.220441400015261,
+     "spread_s": 11.15966559998924,
+     "cells": 300960,
+     "forecast": "computed",
+     "age_s": 0.0,
+     "clients": 242
+    }
+   },
+   "events": 50,
+   "event_states": {
+    "extreme_24h": 42,
+    "notice_72h": 8
+   },
+   "sent": 50,
+   "first_notify_s": 12.687,
+   "last_notify_s": 12.688,
+   "first_transition_s": 12.685,
+   "weather_calls_s": [
+    1.22
+   ],
+   "terrain_calls": [],
+   "registry_calls_s": [
+    0.0001
+   ],
+   "terrain_fallback_rows": [],
+   "notes_tail": [
+    "incident {16F6873B-6019-5C01-8030-A4CF65157912}: off-domain horizon 6.1 km/h (ceiling: unknown); bounded samples clear max(leg margin, 60 min) \u2014 behaviour: no fire-behaviour report in the feed; no usable growth evidence yet: physics + model error (the prior) (SAFETY SEMANTICS 15)"
+   ],
+   "operator_events": [],
+   "assessments": 242,
+   "freshness": {
+    "{16F6873B-6019-5C01-8030-A4CF65157912}": {
+     "tier": "growing",
+     "limit_s": 3600.0,
+     "age_s": 0.0,
+     "computed_at_s": 1795028041.7833748,
+     "refreshing": false,
+     "stale": false,
+     "why": "0% contained"
+    }
+   },
+   "reached_p50": 54,
+   "p50_le_24h": 42,
+   "p10_le_12h": 40,
+   "p50_le_72h": 50,
+   "terrain_s": {
+    "{16F6873B-6019-5C01-8030-A4CF65157912}": 0.3028070000000298
+   },
+   "spread_s": {
+    "{16F6873B-6019-5C01-8030-A4CF65157912}": 11.15966559998924
+   },
+   "cells": {
+    "{16F6873B-6019-5C01-8030-A4CF65157912}": 300960
+   },
+   "regional_stats": {
+    "cuts": 1,
+    "held_hits": 0,
+    "cached_direct": 0,
+    "fallthrough": 0,
+    "cut_errors": 0,
+    "jobs": 0,
+    "job_failures": 0,
+    "passes": 0
+   }
+  }
+ ],
+ "fire": [
+  39.61618924809201,
+  -106.58692478626823
+ ]
+}

@@ -1,0 +1,265 @@
+{
+ "scenario": "contention2",
+ "priority": true,
+ "affinity": [
+  0,
+  1
+ ],
+ "cfg_extra": {
+  "first_forecast_priority": true
+ },
+ "cycles": [
+  {
+   "label": "A_big_fire_first_forecast",
+   "wall_s": 14.59,
+   "phases": {
+    "feeds_s": 0.0,
+    "assess_s": 14.576,
+    "alerts_s": 0.003,
+    "dispatch_s": 0.007,
+    "crew_watch_s": 0.0
+   },
+   "incidents": {
+    "{92CC961F-F297-5893-A087-D83D7EFB362A}": {
+     "tier": "growing",
+     "terrain_s": 0.24572690000059083,
+     "weather_s": 0.37024590000510216,
+     "first_forecast_priority": true,
+     "spread_s": 13.939438600005815,
+     "cells": 300384,
+     "forecast": "computed",
+     "age_s": 0.0,
+     "clients": 279
+    }
+   },
+   "events": 59,
+   "event_states": {
+    "extreme_24h": 56,
+    "notice_72h": 3
+   },
+   "sent": 59,
+   "first_notify_s": 14.578,
+   "last_notify_s": 14.578,
+   "first_transition_s": 14.576,
+   "weather_calls_s": [
+    0.37
+   ],
+   "terrain_calls": [
+    {
+     "bbox": [
+      -107.4,
+      39.15,
+      -106.25,
+      39.9
+     ],
+     "cell_m": 165.58820012134714,
+     "hit": true,
+     "s": 0.246
+    }
+   ],
+   "registry_calls_s": [
+    0.0001
+   ],
+   "terrain_fallback_rows": [],
+   "notes_tail": [
+    "incident {92CC961F-F297-5893-A087-D83D7EFB362A}: off-domain horizon 6.1 km/h (ceiling: unknown); bounded samples clear max(leg margin, 60 min) \u2014 behaviour: no fire-behaviour report in the feed; no usable growth evidence yet: physics + model error (the prior) (SAFETY SEMANTICS 15)"
+   ],
+   "operator_events": [],
+   "assessments": 279,
+   "freshness": {
+    "{92CC961F-F297-5893-A087-D83D7EFB362A}": {
+     "tier": "growing",
+     "limit_s": 3600.0,
+     "age_s": 0.0,
+     "computed_at_s": 1795028110.8817356,
+     "refreshing": false,
+     "stale": false,
+     "why": "0% contained"
+    }
+   },
+   "reached_p50": 59,
+   "p50_le_24h": 55,
+   "p10_le_12h": 56,
+   "p50_le_72h": 59
+  },
+  {
+   "label": "B1_big_refresh_submitted",
+   "wall_s": 0.56,
+   "phases": {
+    "feeds_s": 0.0,
+    "assess_s": 0.535,
+    "alerts_s": 0.025,
+    "dispatch_s": 0.001,
+    "crew_watch_s": 0.0
+   },
+   "incidents": {
+    "{92CC961F-F297-5893-A087-D83D7EFB362A}": {
+     "tier": "threat",
+     "terrain_s": 0.23016849998384714,
+     "weather_s": 0.17478120001032948,
+     "forecast": "refreshing (20 min old (limit 15 min))",
+     "age_s": 1200.0,
+     "clients": 279
+    }
+   },
+   "events": 3,
+   "event_states": {
+    "watch": 3
+   },
+   "sent": 3,
+   "first_notify_s": 0.543,
+   "last_notify_s": 0.56,
+   "first_transition_s": 0.535,
+   "weather_calls_s": [
+    0.175
+   ],
+   "terrain_calls": [
+    {
+     "bbox": [
+      -107.4,
+      39.15,
+      -106.25,
+      39.9
+     ],
+     "cell_m": 165.58820012134714,
+     "hit": true,
+     "s": 0.23
+    }
+   ],
+   "registry_calls_s": [
+    0.0001
+   ],
+   "terrain_fallback_rows": [],
+   "notes_tail": [
+    "incident {92CC961F-F297-5893-A087-D83D7EFB362A}: off-domain horizon 6.1 km/h (ceiling: unknown); bounded samples clear max(leg margin, 60 min) \u2014 behaviour: no fire-behaviour report in the feed; no usable growth evidence yet: physics + model error (the prior) (SAFETY SEMANTICS 15)"
+   ],
+   "operator_events": [],
+   "assessments": 279,
+   "freshness": {
+    "{92CC961F-F297-5893-A087-D83D7EFB362A}": {
+     "tier": "threat",
+     "limit_s": 900.0,
+     "age_s": 1200.0,
+     "computed_at_s": 1795028110.8817356,
+     "refreshing": true,
+     "stale": true,
+     "why": "56 client(s) at watch or above"
+    }
+   },
+   "reached_p50": 59,
+   "p50_le_24h": 55,
+   "p10_le_12h": 56,
+   "p50_le_72h": 59
+  },
+  {
+   "label": "B2_new_fire_while_refresh_runs",
+   "wall_s": 13.49,
+   "phases": {
+    "feeds_s": 0.0,
+    "assess_s": 13.462,
+    "alerts_s": 0.022,
+    "dispatch_s": 0.001,
+    "crew_watch_s": 0.0
+   },
+   "incidents": {
+    "{53F26DBC-335E-5C7A-9710-D814086CEC73}": {
+     "tier": "growing",
+     "terrain_s": 0.06362539998372085,
+     "weather_s": 0.6560514000011608,
+     "first_forecast_priority": true,
+     "spread_s": 12.7332097000035,
+     "cells": 88065,
+     "forecast": "computed",
+     "age_s": 0.0,
+     "clients": 40
+    },
+    "{92CC961F-F297-5893-A087-D83D7EFB362A}": {
+     "tier": "threat",
+     "forecast": "refreshing",
+     "age_s": 1201.0,
+     "clients": 279
+    }
+   },
+   "events": 26,
+   "event_states": {
+    "extreme_24h": 15,
+    "notice_72h": 11
+   },
+   "sent": 26,
+   "first_notify_s": 13.463,
+   "last_notify_s": 13.484,
+   "first_transition_s": 13.462,
+   "weather_calls_s": [
+    0.656
+   ],
+   "terrain_calls": [
+    {
+     "bbox": [
+      -121.75,
+      39.65,
+      -121.45,
+      39.9
+     ],
+     "cell_m": 90.0,
+     "hit": true,
+     "s": 0.064
+    }
+   ],
+   "registry_calls_s": [
+    0.0001,
+    0.0002
+   ],
+   "terrain_fallback_rows": [],
+   "notes_tail": [
+    "incident {53F26DBC-335E-5C7A-9710-D814086CEC73}: off-domain horizon 6.1 km/h (ceiling: unknown); bounded samples clear max(leg margin, 60 min) \u2014 behaviour: no fire-behaviour report in the feed; no usable growth evidence yet: physics + model error (the prior) (SAFETY SEMANTICS 15)",
+    "incident {92CC961F-F297-5893-A087-D83D7EFB362A}: off-domain horizon 6.1 km/h (ceiling: unknown); bounded samples clear max(leg margin, 60 min) \u2014 behaviour: no fire-behaviour report in the feed; no usable growth evidence yet: physics + model error (the prior) (SAFETY SEMANTICS 15)"
+   ],
+   "operator_events": [],
+   "assessments": 319,
+   "freshness": {
+    "{53F26DBC-335E-5C7A-9710-D814086CEC73}": {
+     "tier": "growing",
+     "limit_s": 3600.0,
+     "age_s": 0.0,
+     "computed_at_s": 1795029311.8817356,
+     "refreshing": false,
+     "stale": false,
+     "why": "0% contained"
+    },
+    "{92CC961F-F297-5893-A087-D83D7EFB362A}": {
+     "tier": "threat",
+     "limit_s": 900.0,
+     "age_s": 1201.0,
+     "computed_at_s": 1795028110.8817356,
+     "refreshing": true,
+     "stale": true,
+     "why": "59 client(s) at watch or above"
+    }
+   },
+   "reached_p50": 88,
+   "p50_le_24h": 68,
+   "p10_le_12h": 70,
+   "p50_le_72h": 85
+  }
+ ],
+ "refresh_still_running_after_B2": true,
+ "bg_refresh_tail_after_B2_s": 5.64,
+ "bg_refresh_done_after_B2_start_s": 19.12,
+ "dispatched": [
+  "fg",
+  "fg",
+  "fg",
+  "fg",
+  "fg",
+  "bg",
+  "bg",
+  "bg",
+  "fg",
+  "fg",
+  "fg",
+  "fg",
+  "fg",
+  "bg",
+  "bg"
+ ]
+}
