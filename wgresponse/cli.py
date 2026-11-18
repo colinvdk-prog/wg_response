@@ -396,6 +396,25 @@ def _build_parser() -> argparse.ArgumentParser:
                          "heat — the heat no longer replaces it; an added "
                          "seed can only make arrival earlier (SAFETY "
                          "SEMANTICS 50)")
+    pw.add_argument("--summarize-recoveries", action="store_true",
+                    help="cfg.alert_recovery_summary: the alert pairs at "
+                         "none of one fire that go blind or are seen again "
+                         "give ONE operator event per fire (with the count) "
+                         "instead of one each; threatened pairs keep their "
+                         "own (SAFETY SEMANTICS 51a)")
+    pw.add_argument("--prune-idle-pairs", action="store_true",
+                    help="cfg.alert_prune_idle_pairs: an alert pair at none "
+                         "that carries nothing is dropped once its fire has "
+                         "left the map while every feed is healthy; it "
+                         "starts fresh if the fire returns (SAFETY "
+                         "SEMANTICS 51b)")
+    pw.add_argument("--operator-log-priority", action="store_true",
+                    help="cfg.operator_log_priority: /api/state keeps the "
+                         "operator-relevant events (satellite heat, feed "
+                         "blind, provider errors, regime, crew watch, "
+                         "threatened pairs) in their own rings a bulk cycle "
+                         "cannot evict; /healthz counts satellite heat "
+                         "events in the last 24 h (SAFETY SEMANTICS 51c)")
     pw.add_argument("--persist-crews", action="store_true",
                     help="cfg.crew_state_persist: the crews' last reports "
                          "survive a restart (in the state file and its "
@@ -1201,6 +1220,29 @@ def _latency_cfg(cfg, args):
             "SEMANTICS 50"
             + ("" if cfg.fuse_hotspots else
                " [INERT: no heat joins a record without --fuse-hotspots]"))
+    if getattr(args, "summarize_recoveries", False):
+        cfg = dataclasses.replace(cfg, alert_recovery_summary=True)
+        notes.append(
+            "RECOVERIES SUMMARISED: the alert pairs at none of one fire that "
+            "go blind or are seen again give one operator event per fire "
+            "(the count, the deepest blind run, the first clients); every "
+            "other pair keeps its own — SAFETY SEMANTICS 51a")
+    if getattr(args, "prune_idle_pairs", False):
+        cfg = dataclasses.replace(cfg, alert_prune_idle_pairs=True)
+        notes.append(
+            "IDLE PAIRS PRUNED: an alert pair at none with no blind cycle, "
+            "no history, no ledgered send and no re-fire owed is dropped "
+            "once its fire is off the map while every feed is healthy; it "
+            "starts fresh at none if the fire returns — SAFETY SEMANTICS 51b")
+    if getattr(args, "operator_log_priority", False):
+        cfg = dataclasses.replace(cfg, operator_log_priority=True)
+        notes.append(
+            "OPERATOR LOG PRIORITY: /api/state operator_log_priority keeps "
+            f"the last {_WatchDaemon.OP_LOG_PRIORITY_KEEP} events of each "
+            "operator-relevant kind (all but the per-pair degraded / "
+            "recovered events of pairs at none, cleared or impacted), so a "
+            "bulk cycle cannot evict them; /healthz satellite_heat_24h — "
+            "SAFETY SEMANTICS 51c")
     return cfg, notes
 
 
@@ -1379,6 +1421,24 @@ def _feed_sanity_notes(cfg) -> list:
            "applies]")]
 
 
+#: SAFETY SEMANTICS 51c: the per-pair ladder bookkeeping kinds — kept in
+#: the priority rings only for a threatened pair (a client at notice, watch
+#: or extreme unseen, or seen again); every other kind is operator-relevant.
+_BULK_PAIR_KINDS = frozenset({"degraded", "recovered"})
+_THREAT_STATE_VALUES = frozenset({"notice_72h", "watch", "extreme_24h"})
+
+
+def operator_priority(ev) -> bool:
+    """SAFETY SEMANTICS 51c: True for an operator-relevant event — every
+    kind but the per-pair 'degraded' / 'recovered' bookkeeping, and those
+    too when their pair is threatened (detail state notice / watch /
+    extreme). A per-incident summary (51a) is at none: not kept."""
+    if getattr(ev, "kind", None) not in _BULK_PAIR_KINDS:
+        return True
+    state = (getattr(ev, "detail", None) or {}).get("state")
+    return state in _THREAT_STATE_VALUES
+
+
 class _WatchDaemon:
     """The live watch loop: cycle -> persist -> serve, with injectable clock.
 
@@ -1392,6 +1452,8 @@ class _WatchDaemon:
 
     EVENTS_KEEP = 200      # AlertEvents retained for the console feed
     OP_LOG_KEEP = 100      # OperatorEvents retained across cycles
+    OP_LOG_PRIORITY_KEEP = 50   # per operator-relevant kind (SEMANTICS 51c)
+    HEAT_COUNT_WINDOW_S = 86400.0   # /healthz satellite_heat_24h (51c)
     STALE_PERIODS = 3.0    # cycle older than this many poll periods => stale
 
     def __init__(self, monitor, engine, registry, tracker, store, cfg, aoi,
@@ -1439,6 +1501,12 @@ class _WatchDaemon:
         self.restored = False
         self._events = []              # accumulated AlertEvents (bounded)
         self._op_log = []              # accumulated OperatorEvents (bounded)
+        # SAFETY SEMANTICS 51c (cfg.operator_log_priority only): kind ->
+        # [(seq, OperatorEvent)] bounded per kind, and the satellite_heat
+        # times of the last 24 h
+        self._op_priority: dict = {}
+        self._op_seq = 0
+        self._heat_times: list = []
         if test_world is not None:
             test_world.attach_live(self)
 
@@ -1594,11 +1662,30 @@ class _WatchDaemon:
                             + list(res.events))[-self.EVENTS_KEEP:]
             self._op_log = (self._op_log
                             + list(res.operator_events))[-self.OP_LOG_KEEP:]
+            if getattr(self._cfg, "operator_log_priority", False):
+                self._keep_priority(res.operator_events, now)
             self.persist_now()
         finally:
             self._live_busy.clear()
         self._publish_to_test_world()
         return res
+
+    def _keep_priority(self, events, now: float) -> None:
+        """SAFETY SEMANTICS 51c: the operator-relevant events into their
+        kind's ring (the last OP_LOG_PRIORITY_KEEP of each), and the
+        satellite_heat times inside the last HEAT_COUNT_WINDOW_S."""
+        for ev in events:
+            if not operator_priority(ev):
+                continue
+            ring = self._op_priority.setdefault(ev.kind, [])
+            self._op_seq += 1
+            ring.append((self._op_seq, ev))
+            if len(ring) > self.OP_LOG_PRIORITY_KEEP:
+                del ring[:len(ring) - self.OP_LOG_PRIORITY_KEEP]
+            if ev.kind == "satellite_heat":
+                self._heat_times.append(float(ev.t_s))
+        cutoff = float(now) - self.HEAT_COUNT_WINDOW_S
+        self._heat_times = [t for t in self._heat_times if t >= cutoff]
 
     def _publish_to_test_world(self) -> None:
         tw = self._test_world
@@ -1753,6 +1840,15 @@ class _WatchDaemon:
             "events": list(self._events),
             "operator_log": list(self._op_log),
         }
+        if getattr(self._cfg, "operator_log_priority", False):
+            # SAFETY SEMANTICS 51c: additive keys, present only when armed
+            out["operator_log_priority"] = [
+                ev for _, ev in sorted(
+                    (row for ring in self._op_priority.values()
+                     for row in ring), key=lambda row: row[0])]
+            out["satellite_heat_24h"] = sum(
+                1 for t in self._heat_times
+                if now - t <= self.HEAT_COUNT_WINDOW_S)
         # (TWO WORLDS, SAFETY SEMANTICS 16a: the live world holds no seed, so
         # the W1 `seeds` key never appears here — the TEST world's seeds are
         # on /api/test/state.)

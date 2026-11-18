@@ -2188,6 +2188,77 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    range, padded 2 km, and the point lies within the 3-11 km attach
    footprint of the heat). Knob OFF = byte-identical.
 
+51. A BULK CYCLE NEVER BURIES WHAT THE OPERATOR MUST SEE — THE OPERATOR-
+   EVENT FLOOD (2026-11-18; the latency review's B4 / C9, verified live by
+   the orchestrator). The 17:29Z live cycle after ONE blind cycle emitted
+   15,894 'recovered' OperatorEvents — one per tracked pair (6 freezes and
+   recovers every pair) — 15,259 of them pairs at NONE, over 464 incidents
+   none of which was still on the map (records are never pruned): 79 % of
+   /api/state's 6.49 MB, and the 100-entry operator_log held 100 'recovered'
+   — the cycle's satellite_heat / feed_blind / provider_error were evicted
+   at once, and satellite_heat is the only built page signal (41). Three
+   knobs, each default OFF = byte-identical:
+   (a) THE PAIRS AT NONE ARE SUMMARISED (cfg.alert_recovery_summary; watch
+       --summarize-recoveries). In one evaluate, the pairs at NONE of one
+       incident that freeze blind give ONE OperatorEvent('degraded') — once
+       blind_alarm_cycles is reached, as before — and those seen again ONE
+       OperatorEvent('recovered'), each with detail {state 'none', pairs,
+       blind_cycles_max, clients (the first five), summary True}, after the
+       per-pair events, in the engine's pair order; one log line per
+       incident replaces one per pair. Every pair keeps its own freeze,
+       blind count and reset: the ladder, the AlertEvents, the records and
+       the cycle's degraded flag are unchanged. Every other pair (notice,
+       watch, extreme, cleared, impacted) keeps its own events. The
+       'degraded' half is the same flood one cycle earlier (the blind cycle
+       itself emitted 15,894 'degraded'), so it is summarised the same way.
+   (b) IDLE PAIRS ARE DROPPED (cfg.alert_prune_idle_pairs; watch
+       --prune-idle-pairs; AlertEngine.prune_idle_pairs). After the cycle's
+       evaluate (only when it succeeded), a record at NONE with no blind
+       cycle, no history, no ledgered send and no re-fire owed is dropped
+       when its incident is NOT in the cycle's active (forecast) set and
+       EVERY feed was healthy — 6's trustworthy absence; never on a blind
+       cycle. A NONE pair's clear / de-escalation streaks decide nothing (a
+       pair leaves NONE only by escalating, which zeroes both), so a pair
+       that comes back is created fresh at NONE and steps exactly as the
+       dropped one would have — the same AlertEvents (pinned), the record a
+       fresh pair's. The state file simply no longer carries it (persist
+       saves the records it is handed; restore of an older file brings
+       them back until the first healthy cycle drops them). One cycle note
+       counts the drops. WHAT CHANGES: a dropped pair is no longer tracked
+       when its fire returns, so 6's registry-roster rule cannot raise
+       'provider_error' for THAT pair in the cycle the fire returns (a
+       client missing from the roster then) — the pair simply starts fresh
+       when the client is returned; it was at NONE, so no client is
+       affected. A TEST-world action re-run drops nothing (16b).
+   (c) THE OPERATOR'S EVENTS HAVE THEIR OWN RINGS (cfg.operator_log_
+       priority; watch --operator-log-priority). The watch daemon keeps
+       every operator-relevant event in a ring PER KIND (the last
+       cli._WatchDaemon.OP_LOG_PRIORITY_KEEP = 50 of each; /api/state
+       operator_log_priority, oldest first): every kind except the per-pair
+       ladder bookkeeping 'degraded' / 'recovered', and those too when the
+       pair is threatened (detail state notice_72h / watch / extreme_24h: a
+       client under alert unseen, or seen again). Kept, so: satellite_heat
+       (41: the one page signal), feed_blind and provider_error (6: what is
+       blind), extreme_regime, fire_belief, feed_sanity, seed_retired, the
+       crew watch's crew_* kinds (45c) and any kind added later. Not kept:
+       pairs at none / cleared / impacted (nobody is under alert) and the
+       (a) summaries (at none). Per kind, so 60 provider errors in one
+       cycle cannot push out a satellite_heat either. /api/state
+       satellite_heat_24h and /healthz satellite_heat_24h count the
+       satellite_heat events of the last 24 h (a count only: /healthz is
+       open). The 100-entry operator_log is unchanged.
+   MEASURED (scratch_review/fire_alert_latency_review_2026-11-18/BUILD_1_
+   alert_path/flood_replay.py: the 15,894 live pairs rebuilt in a real
+   engine, monitor and daemon; logging to a file at INFO; local CPU):
+   knobs off, the healthy cycle reproduces the live payload byte for byte
+   (6,491,188 B with its operator_events swapped in); all three on: blind
+   cycle 15,895 -> 1,100 events, alerts phase 0.195 -> 0.019 s; healthy
+   cycle 15,894 -> 1,099 events, /api/state 6.49 -> 1.81 MB (live-equiv-
+   alent), 15,259 pairs dropped; the next blind cycle 636 events (the 556
+   cleared + 79 impacted pairs of fires long gone, which no knob here
+   touches), alerts phase 0.218 -> 0.008 s, /api/state 1.57 MB; the
+   priority ring keeps the feed_blind event through every cycle.
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -2356,6 +2427,8 @@ wgresponse.alerts
         # restored-unsent re-fire for a later call (default True, byte-
         # identical); the monitor's mid-cycle evaluation of a new fire uses
         # it with only_incidents={that fire}.
+                        .prune_idle_pairs(active_incidents, feeds_healthy)
+                            -> list[tuple[str,str]]   # SAFETY SEMANTICS 51b
 
 wgresponse.threat
     class ThreatMonitor .cycle(now_s) -> CycleResult    # full loop: feeds->wx->terrain->spread->etas->alerts
@@ -2759,6 +2832,13 @@ wgresponse.cli
     # SAFETY SEMANTICS 17: --weather-grid-km KM arms weather_grid_km
     # (--weather-points-max N sets weather_points_max); /api/state gains
     # weather_grid + a "weather" block per incident; so do the summary rows.
+    # FIRE -> ALERT LATENCY (SAFETY SEMANTICS 49-52; 2026-11-18): watch
+    # --alert-new-fires-early / --keep-reported-point / --summarize-
+    # recoveries / --prune-idle-pairs / --operator-log-priority (cli.
+    # _latency_cfg(cfg, args) -> (cfg, notes)); operator_priority(ev) ->
+    # bool (51c); with --operator-log-priority /api/state gains
+    # operator_log_priority + satellite_heat_24h and /healthz
+    # satellite_heat_24h.
 ============================================================================
 """
 from __future__ import annotations
@@ -4992,6 +5072,30 @@ class ResponseConfig:
     # cluster is unchanged. False = byte-identical; watch
     # --keep-reported-point.
     fuse_hotspots_keep_point: bool = False
+    # THE OPERATOR-EVENT FLOOD (2026-11-18, the latency review's B4 / C9,
+    # verified live: one blind cycle -> 15,894 'recovered' events, one per
+    # tracked pair, 15,259 of them pairs at NONE; 79 % of /api/state's 6.5
+    # MB; the 100-entry operator_log held nothing else; records never
+    # pruned; SAFETY SEMANTICS 51). Three knobs, each default OFF =
+    # byte-identical:
+    # (a) the pairs at NONE of one incident that go blind or come back give
+    #     ONE 'degraded' / 'recovered' operator event (with the count), not
+    #     one each; every other pair keeps its own. watch
+    #     --summarize-recoveries.
+    alert_recovery_summary: bool = False
+    # (b) an alert record at NONE that carries nothing (no blind cycle, no
+    #     history, no ledgered send, no re-fire owed) is dropped after the
+    #     cycle's evaluate when its incident is absent from the cycle's
+    #     active set and every feed was healthy; a pair that comes back
+    #     starts fresh at NONE. watch --prune-idle-pairs.
+    alert_prune_idle_pairs: bool = False
+    # (c) the watch daemon keeps the operator-relevant events (every kind
+    #     but the per-pair 'degraded' / 'recovered' of pairs at none,
+    #     cleared or impacted) in their own bounded rings, per kind, so a
+    #     bulk cycle cannot evict them (/api/state operator_log_priority);
+    #     /healthz counts the satellite_heat events of the last 24 h. watch
+    #     --operator-log-priority.
+    operator_log_priority: bool = False
     # SIMULATOR CITY WEATHER (founder 2026-10-09, verbatim: "change the
     # weather conditions for each city specific"; docs/review/
     # city_weather_2026-10-09.md). Read ONLY by wgresponse.simui (the

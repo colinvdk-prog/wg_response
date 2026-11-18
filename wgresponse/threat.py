@@ -984,6 +984,7 @@ class ThreatMonitor:
             for iid in gone:
                 del self._extreme_prev[iid]
         events: list = []
+        alerts_ok = False
         timings["assess_s"] = time.monotonic() - _t
         _t = time.monotonic()
         try:
@@ -996,6 +997,7 @@ class ThreatMonitor:
             events = self._evaluate_alerts(assessments, now_s, blind_pairs,
                                            feeds_healthy, incident_meta,
                                            **skip)
+            alerts_ok = True
         except Exception as exc:
             notes.append(f"alert evaluation failed ({exc})")
             operator_events.append(OperatorEvent(
@@ -1013,6 +1015,10 @@ class ThreatMonitor:
             # threatened retires (after the ladder has seen this cycle).
             self._retire_spent_seeds(now_s, failed_incidents, notes,
                                      operator_events)
+        if alerts_ok and getattr(self._cfg, "alert_prune_idle_pairs", False):
+            # SAFETY SEMANTICS 51b: pairs at NONE of fires gone from the map
+            # (every feed healthy) carry nothing and are dropped
+            self._prune_idle_pairs(active_ids, feeds_healthy, notes)
         timings["alerts_s"] = time.monotonic() - _t
         _t = time.monotonic()
 
@@ -1337,6 +1343,26 @@ class ThreatMonitor:
         except Exception as exc:
             notes.append(f"operator-event drain failed ({exc})")
             return []
+
+    def _prune_idle_pairs(self, active_ids: set, feeds_healthy: bool,
+                          notes: list) -> None:
+        """SAFETY SEMANTICS 51b: AlertEngine.prune_idle_pairs after the
+        cycle's evaluate, one note when it dropped any (an engine without
+        the seam prunes nothing; a failure is a note)."""
+        prune = getattr(self._alert_engine, "prune_idle_pairs", None)
+        if not callable(prune):
+            return
+        try:
+            dropped = list(prune(active_ids, feeds_healthy))
+        except Exception as exc:             # noqa: BLE001 — noted
+            notes.append(f"idle alert pairs not pruned ({exc})")
+            return
+        if dropped:
+            notes.append(
+                f"alert pairs: dropped {len(dropped)} idle pair(s) at none "
+                f"of {len({k[1] for k in dropped})} incident(s) no longer on "
+                f"the map (every feed healthy; a pair that comes back starts "
+                f"fresh at none — SAFETY SEMANTICS 51b)")
 
     # ------------------------------- new fires alert early (SEMANTICS 49)
 

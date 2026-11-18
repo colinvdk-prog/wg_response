@@ -557,6 +557,14 @@ class _TestWorldMonitor(ThreatMonitor):
                            if is_seeded_id(k)},
             only_incidents=only))
 
+    def _prune_idle_pairs(self, active_ids, feeds_healthy, notes):
+        # SAFETY SEMANTICS 51b / 16b: an action re-run moves no live pair on
+        # the test map — idle pairs are dropped only by the live-triggered
+        # test cycles
+        if self._seeded_ladder_only:
+            return
+        super()._prune_idle_pairs(active_ids, feeds_healthy, notes)
+
     def _fetch_and_fuse(self, now_s, notes, operator_events):
         base = self._base
         if base is None:
