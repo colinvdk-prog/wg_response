@@ -2538,7 +2538,11 @@ def _cmd_watch(args) -> int:
         if getattr(args, "fuse_hotspots", False) else
         _live_feed_stack(firms_key, **stack_kw))
     startup_notes += feed_notes
-    terrain, terrain_notes = _watch_terrain(args, state_dir, cfg=cfg)
+    if cfg.terrain_regions or cfg.terrain_memory_tiles:
+        # SAFETY SEMANTICS 53 / terrain memory: the provider reads the cfg
+        terrain, terrain_notes = _watch_terrain(args, state_dir, cfg=cfg)
+    else:
+        terrain, terrain_notes = _watch_terrain(args, state_dir)
     startup_notes += terrain_notes
     if terrain is None:
         for note in terrain_notes:
