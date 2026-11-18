@@ -1,0 +1,4 @@
+{"knob": false, "new_fire_first_notify_s": 8.157, "cycle_s": 8.157, "assess_s": 8.113, "events": [["E0", "extreme_24h"], ["E1", "extreme_24h"], ["E2", "extreme_24h"], ["E3", "extreme_24h"], ["zz-new", "extreme_24h"]]}
+{"knob": true, "new_fire_first_notify_s": 0.06, "cycle_s": 8.102, "assess_s": 8.101, "events": [["E0", "extreme_24h"], ["E1", "extreme_24h"], ["E2", "extreme_24h"], ["E3", "extreme_24h"], ["zz-new", "extreme_24h"]]}
+{"COLD_S": 2.0, "WARM_S": 0.05, "gain_s": 8.097, "same_events": true}
+{"records": 15895, "mid_cycle_evaluate_ms_median": 0.5}

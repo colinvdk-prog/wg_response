@@ -1327,6 +1327,13 @@ def fuse_incidents(batches: "list[list[FireIncident]]", cfg=None,
     groups: "list[list[FireIncident]]" = []
     group_norms: "list[list[str]]" = []      # parallel: normalized member names
     by_irwin: dict = {}
+    # SAFETY SEMANTICS 52b (cfg.fuse_name_join_strict): the name join never
+    # joins a record to a group holding another IRWIN id, or one discovered
+    # more than fuse_name_join_max_gap_h apart
+    strict_gap_s = (float(cfg.fuse_name_join_max_gap_h) * 3600.0
+                    if cfg is not None
+                    and getattr(cfg, "fuse_name_join_strict", False)
+                    else None)
     for inc in incidents:
         if (inc.source is IncidentSource.SEEDED
                 or str(inc.incident_id).startswith(SEEDED_ID_PREFIX)):
@@ -1343,6 +1350,9 @@ def fuse_incidents(batches: "list[list[FireIncident]]", cfg=None,
                 if any(gnm == nm
                        and _haversine_m(inc.origin, m.origin) < _NAME_JOIN_DIST_M
                        for m, gnm in zip(group, group_norms[j])):
+                    if (strict_gap_s is not None
+                            and _name_join_refused(inc, group, strict_gap_s)):
+                        continue
                     gi = j
                     break
         if gi is None:
@@ -1372,6 +1382,25 @@ def fuse_incidents(batches: "list[list[FireIncident]]", cfg=None,
 #: does not match.
 _FIRIS_DESIGNATOR = re.compile(
     r"^[A-Za-z]{2}-[A-Za-z0-9]{2,5}-(?P<name>.+?)(?:-N[0-9][0-9A-Za-z]{0,4})?$")
+
+
+def _name_join_refused(inc: FireIncident, group: "list[FireIncident]",
+                       gap_s: float) -> bool:
+    """SAFETY SEMANTICS 52b: True when the name join must NOT put `inc` into
+    `group` — `inc` carries an IRWIN id and a member carries another, or
+    both `inc` and a member carry a discovery time and the two lie more
+    than gap_s apart. A missing id or time never refuses (the legacy join
+    decides)."""
+    key = _norm_irwin(inc.irwin_id)
+    if key is not None and any(
+            _norm_irwin(m.irwin_id) not in (None, key) for m in group):
+        return True
+    d = inc.discovered_at_s
+    if not _pos_time(d):
+        return False
+    return any(_pos_time(m.discovered_at_s)
+               and abs(float(d) - float(m.discovered_at_s)) > gap_s
+               for m in group)
 
 
 def _firis_designator_name(inc: FireIncident) -> Optional[str]:

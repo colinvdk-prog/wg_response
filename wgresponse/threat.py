@@ -211,6 +211,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 import math
+import os
 import threading
 import time
 from types import SimpleNamespace
@@ -266,6 +267,43 @@ def _fire_key(perimeter, provenance_s, seeds) -> tuple:
         return tuple((round(p.lat, 6), round(p.lon, 6)) for p in ps)
     return (tuple(pts(r) for r in (perimeter or ())), provenance_s,
             pts(seeds))
+
+
+class _Steps:
+    """CYCLE STEP TIMINGS (cfg.cycle_step_timings; telemetry only): the
+    wall time of each step of one cycle, as consecutive segments — mark(name)
+    records the time since the previous mark. Off, it records nothing (the
+    cycle's timings are unchanged)."""
+    __slots__ = ("on", "t", "out")
+
+    def __init__(self, on: bool):
+        self.on = bool(on)
+        self.t = time.monotonic()
+        self.out: dict = {}
+
+    def mark(self, name: str) -> None:
+        if self.on:
+            now = time.monotonic()
+            self.out[name] = round(now - self.t, 4)
+            self.t = now
+
+    def incident(self, iid: str, dt: float, timings: dict) -> None:
+        """One incident's whole assessment: on its own timings row when it
+        has one (a domain), else into the 'assess_other' aggregate (no
+        protected home in range, or failed before its forecast)."""
+        if not self.on:
+            return
+        row = (timings.get("incidents") or {}).get(iid)
+        if isinstance(row, dict) and "assess_s" not in row:
+            row["assess_s"] = round(dt, 4)
+            return
+        agg = self.out.setdefault("assess_other", {
+            "incidents": 0, "total_s": 0.0, "max_s": 0.0, "max_id": None})
+        agg["incidents"] += 1
+        agg["total_s"] = round(agg["total_s"] + dt, 4)
+        if dt > agg["max_s"]:
+            agg["max_s"] = round(dt, 4)
+            agg["max_id"] = iid
 
 
 class _KeptForecast:
@@ -356,6 +394,14 @@ def _satellite_only(inc: FireIncident) -> bool:
 # spread (contracts: "rings subsampled <= 200 verts upstream") — bounds the
 # per-row scanline cost of interior rasterization on pathological rings.
 _MAX_RING_VERTS = 200
+
+
+def _agency_point(inc: FireIncident) -> bool:
+    """SAFETY SEMANTICS 50: the incident's origin is a point an agency
+    reported — not a FIRMS cluster (its origin is the mean of its own
+    detections, a place no satellite saw burning) and not a seeded drill."""
+    return (inc.source not in (IncidentSource.FIRMS, IncidentSource.SEEDED)
+            and not is_seeded_id(inc.incident_id))
 
 
 def _subsample_ring(ring: list, max_verts: int = _MAX_RING_VERTS) -> list:
@@ -565,6 +611,11 @@ class ThreatMonitor:
     accepts_seeds = True
     #: TWO WORLDS (16b): the last completed cycle's WorldSnapshot (or None).
     _last_snapshot = None
+    #: NEW FIRES ALERT EARLY (SAFETY SEMANTICS 49): False keeps this
+    #: monitor's ladder at the end of its cycle whatever the knob says (the
+    #: TEST world's — its loop reuses the live cycle's results, and an
+    #: action re-run must evaluate only the seeded fires' pairs, 16b).
+    early_alerts_ok = True
 
     def __init__(self, feeds: list, weather_provider, terrain_provider,
                  registry, alert_engine, cfg: ResponseConfig, safe_zones: list,
@@ -754,11 +805,13 @@ class ThreatMonitor:
         notes: list = []
         operator_events: list = []
         timings: dict = {"incidents": {}}      # cadence telemetry (review item 6)
-        _t = time.monotonic()
+        _t = t_cycle0 = time.monotonic()
         incidents, feeds_healthy = self._fetch_and_fuse(now_s, notes,
                                                         operator_events)
         timings["feeds_s"] = time.monotonic() - _t
         _t = time.monotonic()
+        # CYCLE STEP TIMINGS (cfg.cycle_step_timings): telemetry only
+        steps = _Steps(getattr(self._cfg, "cycle_step_timings", False))
         active = [inc for inc in incidents if inc.active]
         # W1 SEEDED INCIDENTS (SAFETY SEMANTICS 12a/c/d): unioned AFTER
         # fusion (never merged with a feed record) and BEFORE the staleness
@@ -766,7 +819,9 @@ class ThreatMonitor:
         seeded_now = self._seeded_incidents(now_s, active, notes)
         if seeded_now:
             active = active + seeded_now
+        steps.mark("gate_seeded_s")
         active = self._gate_stale_incidents(active, now_s, notes)
+        steps.mark("gate_stale_s")
         removed: list = []
         if self._cfg.drop_contained_incidents:
             # SAFETY SEMANTICS 13a-d: contained, not-growing feed fires leave
@@ -774,16 +829,19 @@ class ThreatMonitor:
             # silently; their pairs then take the absence law below.
             active, removed = self._drop_contained_incidents(active, now_s,
                                                              notes)
+        steps.mark("gate_contained_s")
         if self._cfg.fuse_hotspots:
             # SAFETY SEMANTICS 39: satellite detections on a reported fire
             # join it (after 9 and 13: a removed fire takes only its own
             # interior heat); the rest stay FIRMS fires
             active, removed = self._attach_hotspots(active, removed, notes)
+        steps.mark("gate_attach_s")
         if self._cfg.screen_labels:
             # SAFETY SEMANTICS 43: shadow labels on what only a satellite
             # sees — a known heat site, a registered burn, its looks and
             # growth; nothing they touch changes
             active = self._screen_label(active, now_s, notes)
+        steps.mark("gate_labels_s")
         heat: list = []
         if self._cfg.hotspot_heat_only:
             # SAFETY SEMANTICS 41: what only a satellite sees is heat on the
@@ -791,15 +849,18 @@ class ThreatMonitor:
             # the absence law (never the blind one)
             active, heat = self._split_heat(active, now_s, notes,
                                             operator_events)
+        steps.mark("gate_heat_split_s")
         learn = None
         if self._learn_on():
             # SAFETY SEMANTICS 40: finished learning forecasts are pinned
             # BEFORE this cycle's observations — to the ones they were for
             learn = self._learn_collect(notes)
+        steps.mark("gate_learn_collect_s")
         if self._belief_on():
             # SAFETY SEMANTICS 14: this cycle's growth observations (the
             # belief learns BEFORE the spread it may inform)
             self._belief_observe(active, now_s, notes, operator_events)
+        steps.mark("gate_belief_observe_s")
 
         assessments: list = []
         ensembles: dict = {}
@@ -828,43 +889,40 @@ class ThreatMonitor:
                              f"this cycle")
             self._kept_failures = []
         no_domain = [] if learn is not None else None
+        steps.mark("loop_setup_s")
+        early = None
+        if self._early_alerts_on():
+            # SAFETY SEMANTICS 49: the new fires first, each one's pairs
+            # evaluated right after its own forecast
+            early = self._early_plan(active, now_s)
+            steps.mark("early_plan_s")
         if learn is not None:
             # SAFETY SEMANTICS 40: the TERRAIN TURN — no learning forecast
             # starts while the cycle fetches its own domains' terrain
             self._terrain_turn.hold()
         try:
-            for inc in active:
-                try:
-                    self._assess_incident(inc, now_s, assessments, ensembles,
-                                          clients_seen, etas, notes,
-                                          roster_seen, forecasts,
-                                          extreme_flags, eroded_map,
-                                          timings=timings,
-                                          weather_fields=weather_fields,
-                                          freshness=freshness,
-                                          no_domain=no_domain)
-                except _ProviderFailure as pf:
-                    failed_incidents.add(inc.incident_id)
-                    notes.append(f"incident {inc.incident_id}: assessment "
-                                 f"skipped ({pf})")
-                    operator_events.append(OperatorEvent(
-                        t_s=now_s, kind="provider_error",
-                        message=(f"{pf.step} provider failed for incident "
-                                 f"{inc.incident_id}: {pf.cause}"),
-                        incident_id=inc.incident_id,
-                        detail={"step": pf.step}))
-                except Exception as exc:  # degrade, never raise out of cycle()
-                    failed_incidents.add(inc.incident_id)
-                    notes.append(f"incident {inc.incident_id}: assessment "
-                                 f"skipped ({exc})")
-                    operator_events.append(OperatorEvent(
-                        t_s=now_s, kind="provider_error",
-                        message=(f"assessment failed for incident "
-                                 f"{inc.incident_id}: {exc}"),
-                        incident_id=inc.incident_id,
-                        detail={"step": "assess"}))
+            if early is not None:
+                self._assess_early(
+                    early, active, now_s, feeds_healthy, t_cycle0, timings,
+                    notes,
+                    operator_events, failed_incidents,
+                    (assessments, ensembles, clients_seen, etas,
+                     roster_seen, forecasts, extreme_flags, eroded_map,
+                     weather_fields, freshness), no_domain, steps=steps)
+            else:
+                for inc in active:
+                    t_inc = time.monotonic()
+                    self._assess_guarded(
+                        inc, now_s, failed_incidents, notes, operator_events,
+                        (assessments, ensembles, clients_seen, etas, notes,
+                         roster_seen, forecasts, extreme_flags, eroded_map),
+                        dict(timings=timings, weather_fields=weather_fields,
+                             freshness=freshness, no_domain=no_domain))
+                    steps.incident(inc.incident_id,
+                                   time.monotonic() - t_inc, timings)
         finally:
             self._terrain_turn.release()
+        steps.mark("assess_loop_s")
         if self._cfg.forecast_tiers:
             # FORECAST FRESHNESS TIERS: a refresh that could not get its
             # inputs is a provider error (the kept forecast stays served);
@@ -892,6 +950,7 @@ class ThreatMonitor:
             self._sanity_events = []
             self._sanity_prev = self._sanity_now
             self._perimeter_memory.prune(now_s, self._cfg)
+        steps.mark("post_loop_s")
 
         # BLIND pairs (SAFETY SEMANTICS 6): tracked pairs whose incident's
         # assessment failed this cycle, PLUS tracked pairs whose incident is
@@ -933,6 +992,7 @@ class ThreatMonitor:
                          f"— alert state(s) FROZEN, never cleared"),
                 incident_id=iid,
                 detail={"step": "registry_roster", "clients": cids}))
+        steps.mark("blind_pairs_s")
 
         # Incident snapshot for the alert engine (Sprint 2 D2/D3, additive
         # kwarg): display names for message wording + containment/acreage for
@@ -979,6 +1039,8 @@ class ThreatMonitor:
             for iid in gone:
                 del self._extreme_prev[iid]
         events: list = []
+        alerts_ok = False
+        steps.mark("meta_regime_s")
         timings["assess_s"] = time.monotonic() - _t
         _t = time.monotonic()
         try:
@@ -986,20 +1048,36 @@ class ThreatMonitor:
                 # SAFETY SEMANTICS 44: the crew facts this cycle's messages
                 # may state — crews on duty and the current plan's clients
                 self._set_crew_context(now_s)
+            skip = ({"skip_incidents": early.done}
+                    if early is not None and early.done else {})
+            steps.mark("alert_crew_context_s")
             events = self._evaluate_alerts(assessments, now_s, blind_pairs,
-                                           feeds_healthy, incident_meta)
+                                           feeds_healthy, incident_meta,
+                                           **skip)
+            steps.mark("alert_evaluate_s")
+            alerts_ok = True
         except Exception as exc:
             notes.append(f"alert evaluation failed ({exc})")
             operator_events.append(OperatorEvent(
                 t_s=now_s, kind="provider_error",
                 message=f"alert evaluation failed: {exc}",
                 detail={"step": "alerts"}))
+        if early is not None and early.events:
+            # SAFETY SEMANTICS 49: the early events, in the order one
+            # end-of-cycle evaluate would have listed them
+            events = self._one_evaluate_order(list(early.events) + events,
+                                              early.pre_keys, assessments)
         operator_events.extend(self._drain_alert_operator_events(notes))
         if self._seeded.has_active():
             # SEMANTICS 12e: a seed past its forecast horizon with nothing
             # threatened retires (after the ladder has seen this cycle).
             self._retire_spent_seeds(now_s, failed_incidents, notes,
                                      operator_events)
+        if alerts_ok and getattr(self._cfg, "alert_prune_idle_pairs", False):
+            # SAFETY SEMANTICS 51b: pairs at NONE of fires gone from the map
+            # (every feed healthy) carry nothing and are dropped
+            self._prune_idle_pairs(active_ids, feeds_healthy, notes)
+        steps.mark("alert_after_s")
         timings["alerts_s"] = time.monotonic() - _t
         _t = time.monotonic()
 
@@ -1018,6 +1096,7 @@ class ThreatMonitor:
             # SAFETY SEMANTICS 15: each domain fire's off-domain horizon
             offmap = self._offmap_horizons(active, ensembles, now_s, notes,
                                            status=belief_status)
+        steps.mark("belief_offmap_s")
         crew_rasters = None
         if self._cfg.crew_watch:
             # SAFETY SEMANTICS 45: the dispatcher's corridor rasters, eroded
@@ -1025,12 +1104,14 @@ class ThreatMonitor:
             # it would erode itself: the same plan)
             crew_rasters = self._crew_watch_rasters(now_s, ensembles,
                                                     eroded_map, notes)
+        steps.mark("crew_rasters_s")
         plan = self._maybe_dispatch(now_s, ensembles, clients_seen, etas,
                                     notes, forecasts,
                                     eroded_map=(dict(crew_rasters)
                                                 if crew_rasters
                                                 else (eroded_map or None)),
                                     offmap=(offmap or None))
+        steps.mark("dispatch_plan_s")
         timings["dispatch_s"] = time.monotonic() - _t
         crew_watch = None
         if self._cfg.crew_watch:
@@ -1064,6 +1145,10 @@ class ThreatMonitor:
             log.exception("world snapshot not recorded this cycle (the TEST "
                           "world keeps the previous one)")
 
+        steps.mark("crew_watch_snapshot_s")
+        if steps.on:
+            # CYCLE STEP TIMINGS: one additive key (seconds, in step order)
+            timings["steps"] = steps.out
         degraded = (not feeds_healthy) or bool(failed_incidents) or any(
             ev.kind in ("degraded", "feed_blind", "provider_error")
             for ev in operator_events)
@@ -1269,20 +1354,35 @@ class ThreatMonitor:
 
     def _evaluate_alerts(self, assessments: list, now_s: float,
                          blind_pairs: set, feeds_healthy: bool,
-                         incident_meta: "Optional[dict]" = None) -> list:
+                         incident_meta: "Optional[dict]" = None,
+                         skip_incidents=None) -> list:
         """Call the alert engine with the assessed/blind distinction + meta.
 
         Prefers the full Sprint-2 seam evaluate(assessments, now_s,
         blind_pairs=..., feeds_healthy=..., incident_meta=...); an engine
         without the D2/D3 ``incident_meta`` kwarg degrades to the
         blind-pairs call, and one predating Sprint 2 entirely (hand stub
-        with the 2-arg signature) degrades to the legacy call."""
+        with the 2-arg signature) degrades to the legacy call.
+
+        ``skip_incidents`` (SAFETY SEMANTICS 49; only ever non-empty when
+        the engine took the only_incidents seam mid-cycle): the incidents
+        whose pairs were already evaluated this cycle — every OTHER tracked
+        or assessed incident is evaluated (only_incidents), so no pair steps
+        twice in one cycle."""
         def _sig_error(exc: TypeError) -> bool:
             msg = str(exc)
             return ("incident_meta" in msg or "blind_pairs" in msg
                     or "feeds_healthy" in msg or "positional" in msg
                     or "keyword" in msg)
 
+        if skip_incidents:
+            skip = set(skip_incidents)
+            only = ({key[1] for key in self._alert_engine.states()}
+                    | {a.incident_id for a in assessments}) - skip
+            return list(self._alert_engine.evaluate(
+                assessments, now_s, blind_pairs=blind_pairs,
+                feeds_healthy=feeds_healthy, incident_meta=incident_meta,
+                only_incidents=only))
         try:
             return list(self._alert_engine.evaluate(
                 assessments, now_s, blind_pairs=blind_pairs,
@@ -1309,6 +1409,281 @@ class ThreatMonitor:
         except Exception as exc:
             notes.append(f"operator-event drain failed ({exc})")
             return []
+
+    def _prune_idle_pairs(self, active_ids: set, feeds_healthy: bool,
+                          notes: list) -> None:
+        """SAFETY SEMANTICS 51b: AlertEngine.prune_idle_pairs after the
+        cycle's evaluate, one note when it dropped any (an engine without
+        the seam prunes nothing; a failure is a note)."""
+        prune = getattr(self._alert_engine, "prune_idle_pairs", None)
+        if not callable(prune):
+            return
+        try:
+            dropped = list(prune(active_ids, feeds_healthy))
+        except Exception as exc:             # noqa: BLE001 — noted
+            notes.append(f"idle alert pairs not pruned ({exc})")
+            return
+        if dropped:
+            notes.append(
+                f"alert pairs: dropped {len(dropped)} idle pair(s) at none "
+                f"of {len({k[1] for k in dropped})} incident(s) no longer on "
+                f"the map (every feed healthy; a pair that comes back starts "
+                f"fresh at none — SAFETY SEMANTICS 51b)")
+
+    # ------------------------------- new fires alert early (SEMANTICS 49)
+
+    def _assess_guarded(self, inc: FireIncident, now_s: float,
+                        failed_incidents: set, notes: list,
+                        operator_events: list, args: tuple,
+                        kwargs: dict) -> None:
+        """_assess_incident(inc, now_s, *args, **kwargs) under the cycle's
+        degradation law: a provider failure (or any exception) marks the
+        incident failed, notes it and raises a provider_error OperatorEvent
+        — never out of cycle()."""
+        try:
+            self._assess_incident(inc, now_s, *args, **kwargs)
+        except _ProviderFailure as pf:
+            failed_incidents.add(inc.incident_id)
+            notes.append(f"incident {inc.incident_id}: assessment "
+                         f"skipped ({pf})")
+            operator_events.append(OperatorEvent(
+                t_s=now_s, kind="provider_error",
+                message=(f"{pf.step} provider failed for incident "
+                         f"{inc.incident_id}: {pf.cause}"),
+                incident_id=inc.incident_id,
+                detail={"step": pf.step}))
+        except Exception as exc:  # degrade, never raise out of cycle()
+            failed_incidents.add(inc.incident_id)
+            notes.append(f"incident {inc.incident_id}: assessment "
+                         f"skipped ({exc})")
+            operator_events.append(OperatorEvent(
+                t_s=now_s, kind="provider_error",
+                message=(f"assessment failed for incident "
+                         f"{inc.incident_id}: {exc}"),
+                incident_id=inc.incident_id,
+                detail={"step": "assess"}))
+
+    def _early_alerts_on(self) -> bool:
+        return (bool(getattr(self._cfg, "alert_new_fires_early", False))
+                and self.early_alerts_ok)
+
+    def _terrain_warm(self, bbox: BBox, cell_m: float) -> Optional[bool]:
+        """Whether the terrain tile for (bbox, cell_m) is already in the
+        provider's LOCAL cache (no network): True / False, None when the
+        provider says nothing (a stub, a synthetic tile). Looks through a
+        fallback wrapper to its primary provider."""
+        prov = self._terrain
+        for _ in range(4):
+            path_fn = getattr(prov, "cache_path", None)
+            if callable(path_fn):
+                try:
+                    path = path_fn(bbox, cell_m)
+                    if not path:
+                        return None
+                    if not os.path.exists(path):
+                        return False
+                    cpath_fn = getattr(prov, "canopy_cache_path", None)
+                    if (getattr(prov, "canopy_layer_list", None)
+                            and callable(cpath_fn)):
+                        cpath = cpath_fn(bbox, cell_m)
+                        if cpath and not os.path.exists(cpath):
+                            return False
+                    return True
+                except Exception:          # noqa: BLE001 — ordering only
+                    return None
+            prov = getattr(prov, "_primary", None)
+            if prov is None:
+                return None
+        return None
+
+    def _early_plan(self, active: list, now_s: float):
+        """SAFETY SEMANTICS 49: the assessment order and the new fires. A
+        NEW fire has no tracked alert pair and (forecast tiers) no kept
+        forecast; one with a protected home within the threat radius goes
+        first — warm terrain before unknown before cold, then the nearest
+        home, then the incident order — and every other incident follows in
+        the incident order. The registry answers asked here are handed to
+        the assessment (one question per incident). An alert engine whose
+        states cannot be read = no new fire (the legacy order)."""
+        order = list(range(len(active)))
+        try:
+            pre_keys = list(self._alert_engine.states())
+        except Exception:
+            return SimpleNamespace(order=order, new=frozenset(),
+                                   prefetched={}, pre_keys=None, head=[])
+        tracked = {key[1] for key in pre_keys}
+        radius_m = self._threat_radius_m()
+        ranked, prefetched, new = [], {}, set()
+        for i, inc in enumerate(active):
+            iid = inc.incident_id
+            if iid in tracked or (self._cfg.forecast_tiers
+                                  and iid in self._kept):
+                continue
+            geom_pts = self._seed_geometry(inc, now_s)[5]
+            bbox = geo.bbox_around(geom_pts, radius_m)
+            try:
+                cands = list(self._registry.protected_clients(bbox))
+            except Exception:              # noqa: BLE001 — asked again
+                continue
+            prefetched[iid] = (bbox, cands)
+            near = [(min(geo.haversine_m(c.loc, p) for p in geom_pts), c)
+                    for c in cands]
+            near = [(d, c) for d, c in near if d <= radius_m]
+            if not near:
+                continue
+            new.add(iid)
+            domain = self._forecast_domain(geom_pts, [c for _, c in near])
+            warm = self._terrain_warm(domain, self._pick_cell_m(domain))
+            ranked.append((0 if warm is True else 1 if warm is None else 2,
+                           min(d for d, _ in near), i))
+        ranked.sort()
+        head = [i for _, _, i in ranked]
+        first = set(head)
+        return SimpleNamespace(
+            order=head + [i for i in order if i not in first],
+            new=frozenset(new), prefetched=prefetched, pre_keys=pre_keys,
+            head=[active[i].incident_id for i in head])
+
+    def _assess_early(self, plan, active: list, now_s: float,
+                      feeds_healthy: bool, t0: float, timings: dict,
+                      notes: list, operator_events: list,
+                      failed_incidents: set, maps: tuple,
+                      no_domain: Optional[list], steps=None) -> None:
+        """SAFETY SEMANTICS 49: assess in plan.order, each incident into its
+        own containers; right after a NEW fire's forecast, evaluate its
+        pairs (AlertEngine.evaluate only_incidents={it}, the same clock,
+        meta, regime flag and crew facts; the restored-unsent re-fire left
+        for the end-of-cycle evaluate) — its notifications go out now. Then
+        everything is merged back in the INCIDENT order, so the assessments,
+        maps, notes, operator events and learning queue are exactly what
+        the legacy loop builds. plan gains done (the incidents evaluated
+        here) and events (theirs)."""
+        (assessments, ensembles, clients_seen, etas, roster_seen, forecasts,
+         extreme_flags, eroded_map, weather_fields, freshness) = maps
+        kf0, se0 = len(self._kept_failures), len(self._sanity_events)
+        per: dict = {}
+        plan.done, plan.events = set(), []
+        rows: list = []
+        armed, ctx_told = True, False
+        for i in plan.order:
+            inc = active[i]
+            iid = inc.incident_id
+            c = SimpleNamespace(
+                assessments=[], ensembles={}, clients_seen={}, etas={},
+                notes=[], roster_seen={}, forecasts={}, extreme_flags={},
+                eroded_map={}, weather_fields={}, freshness={},
+                no_domain=[] if no_domain is not None else None,
+                op=[], failed=set())
+            n_kf, n_se = len(self._kept_failures), len(self._sanity_events)
+            t_inc = time.monotonic()
+            self._assess_guarded(
+                inc, now_s, c.failed, c.notes, c.op,
+                (c.assessments, c.ensembles, c.clients_seen, c.etas,
+                 c.notes, c.roster_seen, c.forecasts, c.extreme_flags,
+                 c.eroded_map),
+                dict(timings=timings, weather_fields=c.weather_fields,
+                     freshness=c.freshness, no_domain=c.no_domain,
+                     prefetched=plan.prefetched))
+            if steps is not None:
+                steps.incident(iid, time.monotonic() - t_inc, timings)
+            c.kf = self._kept_failures[n_kf:]
+            c.se = self._sanity_events[n_se:]
+            per[i] = c
+            if not (armed and iid in plan.new and c.assessments
+                    and iid not in c.failed):
+                continue
+            if not ctx_told:
+                ctx_told = True
+                if getattr(self._cfg, "alert_crew_wording", "fixed") == "plan":
+                    try:
+                        # SAFETY SEMANTICS 44: the crew facts, as the end-
+                        # of-cycle evaluate is told them
+                        self._set_crew_context(now_s)
+                    except Exception:      # noqa: BLE001 — said at the end
+                        armed = False
+                        continue
+            meta = {iid: {"name": inc.name,
+                          "containment_pct": inc.containment_pct,
+                          "acreage": inc.acreage,
+                          "updated_at_s": inc.updated_at_s}}
+            if self._cfg.extreme_regime_enabled:
+                # the end-of-cycle posture rule: this cycle's flag, else the
+                # previous posture
+                meta[iid]["extreme_regime"] = c.extreme_flags.get(
+                    iid, self._extreme_prev.get(iid, False))
+            try:
+                evs = list(self._alert_engine.evaluate(
+                    c.assessments, now_s, blind_pairs=set(),
+                    feeds_healthy=feeds_healthy, incident_meta=meta,
+                    only_incidents={iid}, flush_unsent=False))
+            except TypeError as exc:
+                msg = str(exc)
+                if ("only_incidents" in msg or "flush_unsent" in msg
+                        or "incident_meta" in msg or "blind_pairs" in msg
+                        or "feeds_healthy" in msg or "keyword" in msg
+                        or "positional" in msg):
+                    # an engine without the seam: every pair waits for the
+                    # end-of-cycle evaluate, as without the knob
+                    armed = False
+                    continue
+                evs = exc
+            except Exception as exc:       # noqa: BLE001 — degraded below
+                evs = exc
+            if isinstance(evs, Exception):
+                # left to the end-of-cycle evaluate (its new pairs can only
+                # step NONE -> NOTICE / EXTREME there)
+                c.notes.append(f"incident {iid}: mid-cycle alert evaluation "
+                               f"failed ({evs}) — its pairs are evaluated at "
+                               f"the end of the cycle")
+                c.op.append(OperatorEvent(
+                    t_s=now_s, kind="provider_error",
+                    message=f"mid-cycle alert evaluation failed for "
+                            f"incident {iid}: {evs}",
+                    incident_id=iid, detail={"step": "alerts_early"}))
+                continue
+            plan.done.add(iid)
+            plan.events.extend(evs)
+            rows.append({"incident_id": iid, "pairs": len(c.assessments),
+                         "events": len(evs),
+                         "at_s": round(time.monotonic() - t0, 3)})
+        # merge back in the incident order (the legacy loop's)
+        for i in range(len(active)):
+            c = per[i]
+            assessments.extend(c.assessments)
+            ensembles.update(c.ensembles)
+            clients_seen.update(c.clients_seen)
+            etas.update(c.etas)
+            roster_seen.update(c.roster_seen)
+            forecasts.update(c.forecasts)
+            extreme_flags.update(c.extreme_flags)
+            eroded_map.update(c.eroded_map)
+            weather_fields.update(c.weather_fields)
+            freshness.update(c.freshness)
+            notes.extend(c.notes)
+            operator_events.extend(c.op)
+            failed_incidents.update(c.failed)
+            if no_domain is not None:
+                no_domain.extend(c.no_domain)
+        self._kept_failures[kf0:] = [x for i in range(len(active))
+                                     for x in per[i].kf]
+        self._sanity_events[se0:] = [x for i in range(len(active))
+                                     for x in per[i].se]
+        timings["early_alerts"] = {"new_fires": list(plan.head),
+                                   "evaluated": rows}
+
+    @staticmethod
+    def _one_evaluate_order(events: list, pre_keys, assessments: list) -> list:
+        """SAFETY SEMANTICS 49: events in the order ONE evaluate of the
+        whole cycle lists them — the engine's pair order: the pairs tracked
+        when the cycle began, then new pairs by first assessment."""
+        if pre_keys is None:
+            return events
+        rank = {key: n for n, key in enumerate(pre_keys)}
+        for a in assessments:
+            rank.setdefault((a.client_id, a.incident_id), len(rank))
+        last = len(rank)
+        return sorted(events, key=lambda e: rank.get(
+            (e.client_id, e.incident_id), last))
 
     def _fetch_and_fuse(self, now_s: float, notes: list,
                         operator_events: list) -> "tuple[list, bool]":
@@ -1375,6 +1750,10 @@ class ThreatMonitor:
                 if merges:
                     notes.append(_colocated_note(merges))
                 return fused, healthy
+            if getattr(self._cfg, "fuse_name_join_strict", False):
+                # SAFETY SEMANTICS 52b: the name join reads the config
+                return list(fuse_incidents(batches, cfg=self._cfg,
+                                           now_s=now_s)), healthy
             return list(fuse_incidents(batches)), healthy
         except Exception as exc:
             notes.append(f"incident fusion degraded to id-dedupe ({exc})")
@@ -1401,7 +1780,15 @@ class ThreatMonitor:
         EXACTLY the threshold age are kept (strictly-older excludes). Tracked
         pairs of a gated incident follow the SAFETY SEMANTICS 6 absence rules
         — see the module docstring. Exclusion is data hygiene, not provider
-        failure: it does not mark the cycle degraded."""
+        failure: it does not mark the cycle degraded.
+
+        MISSING TIME (cfg.stale_gate_missing_time, SAFETY SEMANTICS 52a):
+        a record whose update time is missing (the adapters write 0.0) or
+        not a finite positive number is first given one — its discovery
+        time when it has one, else this cycle's clock — and a note says so;
+        off, it is excluded every cycle (age ~488,889 h)."""
+        if getattr(self._cfg, "stale_gate_missing_time", False):
+            active = self._fill_missing_times(active, now_s, notes)
         max_age_s = self._cfg.incident_stale_h * 3600.0
         fresh = [inc for inc in active if now_s - inc.updated_at_s <= max_age_s]
         stale = [inc for inc in active if now_s - inc.updated_at_s > max_age_s]
@@ -1416,6 +1803,47 @@ class ThreatMonitor:
             notes.append(note)
             log.warning("%s", note)
         return fresh
+
+    @staticmethod
+    def _fill_missing_times(active: list, now_s: float, notes: list) -> list:
+        """SAFETY SEMANTICS 52a: each incident whose updated_at_s is not a
+        finite positive number becomes a copy carrying its discovered_at_s
+        (when that is one) — the gate then ages it by its discovery — else
+        this cycle's clock (the feed lists it as current and gives no
+        time); meta updated_at_missing says which ("discovered" / "none").
+        Same incidents, same order; one note."""
+        def ok(t) -> bool:
+            return (isinstance(t, (int, float)) and not isinstance(t, bool)
+                    and math.isfinite(t) and t > 0.0)
+
+        out, by_disc, by_now = [], [], []
+        for inc in active:
+            if ok(inc.updated_at_s):
+                out.append(inc)
+                continue
+            if ok(inc.discovered_at_s):
+                t, how = float(inc.discovered_at_s), "discovered"
+                by_disc.append(inc.incident_id)
+            else:
+                t, how = float(now_s), "none"
+                by_now.append(inc.incident_id)
+            out.append(dataclasses.replace(
+                inc, updated_at_s=t,
+                meta={**(inc.meta or {}), "updated_at_missing": how}))
+        if by_disc or by_now:
+            parts = []
+            if by_disc:
+                parts.append(f"aged by their discovery time: "
+                             f"{', '.join(sorted(by_disc))}")
+            if by_now:
+                parts.append(f"no discovery time either, kept as current "
+                             f"(this cycle's clock): "
+                             f"{', '.join(sorted(by_now))}")
+            notes.append(f"{len(by_disc) + len(by_now)} incident(s) without "
+                         f"an update time — " + "; ".join(parts)
+                         + " (SAFETY SEMANTICS 52a; never excluded for the "
+                           "missing time alone)")
+        return out
 
     def _drop_contained_incidents(self, active: list, now_s: float,
                                   notes: list) -> "tuple[list, list]":
@@ -1866,8 +2294,14 @@ class ThreatMonitor:
                          timings: Optional[dict] = None,
                          weather_fields: Optional[dict] = None,
                          freshness: Optional[dict] = None,
-                         no_domain: Optional[list] = None) -> None:
+                         no_domain: Optional[list] = None,
+                         prefetched: Optional[dict] = None) -> None:
         """Spread one incident and append per-client ThreatAssessments.
+
+        ``prefetched`` (NEW FIRES ALERT EARLY, SAFETY SEMANTICS 49; None =
+        byte-identical): {incident_id: (search bbox, registry answer)} from
+        the cycle's ordering pass; used only when this incident's own search
+        bbox is that very bbox (one registry question per incident).
 
         ``no_domain`` (LEARNING FORECASTS, SAFETY SEMANTICS 40; a list when
         cfg.fire_belief_learn is armed): an incident with no protected
@@ -1934,6 +2368,89 @@ class ThreatMonitor:
         if (self._cfg.feed_sanity and inc.perimeter
                 and inc.source is not IncidentSource.SEEDED):
             inc = self._sane_seed_incident(inc, now_s, notes)
+        (ign, perimeter, perimeter_at_s, provenance_s, seeds,
+         geom_pts) = self._seed_geometry(inc, now_s)
+        radius_m = self._threat_radius_m()
+        search_bbox = geo.bbox_around(geom_pts, radius_m)
+        pre = (prefetched or {}).get(inc.incident_id)
+        if pre is not None and pre[0] == search_bbox:
+            # NEW FIRES ALERT EARLY (SAFETY SEMANTICS 49): the ordering pass
+            # already asked the registry for this very box this cycle
+            candidates = list(pre[1])
+        else:
+            try:
+                candidates = list(self._registry.protected_clients(
+                    search_bbox))
+            except Exception as exc:
+                raise _ProviderFailure("registry", exc)
+        if roster_seen is not None:
+            roster_seen[inc.incident_id] = {c.client_id for c in candidates}
+        near = [c for c in candidates
+                if min(geo.haversine_m(c.loc, p) for p in geom_pts) <= radius_m]
+        if not near:
+            note = (f"incident {inc.incident_id}: no protected clients "
+                    f"within {radius_m / 1000.0:.0f} km; spread skipped")
+            if inc.source is IncidentSource.SEEDED:
+                # SEMANTICS 12d: the same law as a live fire, said out loud
+                note += (" — a seeded fire follows the live law: listed, but "
+                         "no domain without a protected client in range")
+            notes.append(note)
+            if no_domain is not None:
+                no_domain.append((inc, ign, perimeter, perimeter_at_s,
+                                  provenance_s, seeds, geom_pts))
+            return
+
+        domain = self._forecast_domain(geom_pts, near)
+        cell_m = self._pick_cell_m(domain)
+        if self._cfg.forecast_tiers:
+            # FORECAST FRESHNESS TIERS: the kept forecast, refreshed by tier
+            self._assess_kept(inc, now_s, near, domain, cell_m, ign,
+                              perimeter, perimeter_at_s, provenance_s, seeds,
+                              assessments, ensembles, clients_seen, etas,
+                              notes, forecasts, extreme_flags, eroded_map,
+                              timings, weather_fields, freshness)
+            return
+        _tm = {}
+        b = self._forecast_inputs(inc, now_s, domain, cell_m, ign, perimeter,
+                                  perimeter_at_s, provenance_s, notes, _tm,
+                                  forecasts, extreme_flags, weather_fields)
+        ens = self._forecast_spread(inc, b, seeds, perimeter, now_s)
+        if self._belief_on():
+            self._belief_after_spread(
+                inc, ens, now_s, b.spread_cfg,
+                b.perimeter_at_s if perimeter is not None else now_s,
+                perimeter is None, notes)
+        _tm["spread_s"] = time.monotonic() - b.t_spread
+        _tm["cells"] = b.tile.spec.nrows * b.tile.spec.ncols
+        _tm["clients"] = len(near)
+        if timings is not None:
+            timings.setdefault("incidents", {})[inc.incident_id] = _tm
+        if (eroded_map is not None
+                and getattr(self._cfg, "corridor_erosion_tiered", False)):
+            # FUEL-TIERED EROSION: built here because this is where the fuel
+            # tile lives; dispatch consumes it via the eroded_rasters seam.
+            eroded_map[inc.incident_id] = spread.tiered_eroded_p10(
+                ens.p10, b.tile.fuel, self._cfg,
+                canopy=getattr(b.tile, "canopy", None))
+        self._register_forecast(inc, ens, near, now_s, assessments,
+                                ensembles, clients_seen, etas)
+
+    def _forecast_domain(self, geom_pts: list, near: list) -> BBox:
+        """The spread domain: the fire's geometry and its protected homes in
+        range, padded _DOMAIN_PAD_M (snapped outward under SAFETY SEMANTICS
+        42)."""
+        domain = geo.bbox_around(geom_pts + [c.loc for c in near],
+                                 _DOMAIN_PAD_M)
+        if self._cfg.forecast_domain_snap_deg > 0.0:
+            # SAFETY SEMANTICS 42: snapped outward, so a shape that moves a
+            # little keeps its domain and the terrain tile cached for it
+            domain = _snap_bbox(domain, self._cfg.forecast_domain_snap_deg)
+        return domain
+
+    def _seed_geometry(self, inc: FireIncident, now_s: float) -> tuple:
+        """One incident's seed law (_assess_incident's docstring): (ign,
+        perimeter, perimeter_at_s, provenance_s, seeds, geom_pts). A pure
+        function of the incident and the clock — no provider, no state."""
         ign = inc.ignition_points()
         if inc.perimeter:
             perimeter = [r for r in
@@ -1970,68 +2487,16 @@ class ThreatMonitor:
             provenance_s = None
             seeds = list(ign)
             geom_pts = list(ign)
-        radius_m = self._threat_radius_m()
-        search_bbox = geo.bbox_around(geom_pts, radius_m)
-        try:
-            candidates = list(self._registry.protected_clients(search_bbox))
-        except Exception as exc:
-            raise _ProviderFailure("registry", exc)
-        if roster_seen is not None:
-            roster_seen[inc.incident_id] = {c.client_id for c in candidates}
-        near = [c for c in candidates
-                if min(geo.haversine_m(c.loc, p) for p in geom_pts) <= radius_m]
-        if not near:
-            note = (f"incident {inc.incident_id}: no protected clients "
-                    f"within {radius_m / 1000.0:.0f} km; spread skipped")
-            if inc.source is IncidentSource.SEEDED:
-                # SEMANTICS 12d: the same law as a live fire, said out loud
-                note += (" — a seeded fire follows the live law: listed, but "
-                         "no domain without a protected client in range")
-            notes.append(note)
-            if no_domain is not None:
-                no_domain.append((inc, ign, perimeter, perimeter_at_s,
-                                  provenance_s, seeds, geom_pts))
-            return
-
-        domain = geo.bbox_around(geom_pts + [c.loc for c in near],
-                                 _DOMAIN_PAD_M)
-        if self._cfg.forecast_domain_snap_deg > 0.0:
-            # SAFETY SEMANTICS 42: snapped outward, so a shape that moves a
-            # little keeps its domain and the terrain tile cached for it
-            domain = _snap_bbox(domain, self._cfg.forecast_domain_snap_deg)
-        cell_m = self._pick_cell_m(domain)
-        if self._cfg.forecast_tiers:
-            # FORECAST FRESHNESS TIERS: the kept forecast, refreshed by tier
-            self._assess_kept(inc, now_s, near, domain, cell_m, ign,
-                              perimeter, perimeter_at_s, provenance_s, seeds,
-                              assessments, ensembles, clients_seen, etas,
-                              notes, forecasts, extreme_flags, eroded_map,
-                              timings, weather_fields, freshness)
-            return
-        _tm = {}
-        b = self._forecast_inputs(inc, now_s, domain, cell_m, ign, perimeter,
-                                  perimeter_at_s, provenance_s, notes, _tm,
-                                  forecasts, extreme_flags, weather_fields)
-        ens = self._forecast_spread(inc, b, seeds, perimeter, now_s)
-        if self._belief_on():
-            self._belief_after_spread(
-                inc, ens, now_s, b.spread_cfg,
-                b.perimeter_at_s if perimeter is not None else now_s,
-                perimeter is None, notes)
-        _tm["spread_s"] = time.monotonic() - b.t_spread
-        _tm["cells"] = b.tile.spec.nrows * b.tile.spec.ncols
-        _tm["clients"] = len(near)
-        if timings is not None:
-            timings.setdefault("incidents", {})[inc.incident_id] = _tm
-        if (eroded_map is not None
-                and getattr(self._cfg, "corridor_erosion_tiered", False)):
-            # FUEL-TIERED EROSION: built here because this is where the fuel
-            # tile lives; dispatch consumes it via the eroded_rasters seam.
-            eroded_map[inc.incident_id] = spread.tiered_eroded_p10(
-                ens.p10, b.tile.fuel, self._cfg,
-                canopy=getattr(b.tile, "canopy", None))
-        self._register_forecast(inc, ens, near, now_s, assessments,
-                                ensembles, clients_seen, etas)
+            if (self._cfg.fuse_hotspots_keep_point and inc.hotspots
+                    and _agency_point(inc)):
+                # SAFETY SEMANTICS 50: the agency's own reported point stays
+                # a seed (and in the geometry) beside the satellite heat
+                # that joined it; the weather point (the mean of `ign`)
+                # stays where it was
+                seeds = [inc.origin] + seeds
+                geom_pts = [inc.origin] + geom_pts
+        return (ign, perimeter, perimeter_at_s, provenance_s, seeds,
+                geom_pts)
 
     def _forecast_inputs(self, inc: FireIncident, now_s: float, domain,
                          cell_m: float, ign: list, perimeter,

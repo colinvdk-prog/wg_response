@@ -1215,6 +1215,11 @@ class _Handler(BaseHTTPRequestHandler):
         events = state.get("operator_events")
         if isinstance(events, (list, tuple)):
             info["operator_event_count"] = len(events)
+        heat = state.get("satellite_heat_24h")
+        if isinstance(heat, int) and not isinstance(heat, bool):
+            # SAFETY SEMANTICS 51c: satellite heat events near homes in the
+            # last 24 h (a count only — present when the daemon armed it)
+            info["satellite_heat_24h"] = heat
         stale_fires = state.get("stale_fires")
         if isinstance(stale_fires, (list, tuple)):
             # FORECAST FRESHNESS TIERS: fires past their tier's limit (only

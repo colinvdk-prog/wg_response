@@ -519,6 +519,10 @@ class _TestWorldMonitor(ThreatMonitor):
     _base_ids = frozenset()
     _base_by_incident: dict = {}
     _seeded_ladder_only = False
+    #: SAFETY SEMANTICS 49: the TEST world's ladder always runs at the end
+    #: of its cycle (its live incidents' results are shared, not computed,
+    #: and an action re-run evaluates only the seeded fires' pairs).
+    early_alerts_ok = False
 
     def cycle_over(self, snapshot, now_s: float,
                    seeded_ladder_only: bool = False):
@@ -552,6 +556,14 @@ class _TestWorldMonitor(ThreatMonitor):
             incident_meta={k: v for k, v in (incident_meta or {}).items()
                            if is_seeded_id(k)},
             only_incidents=only))
+
+    def _prune_idle_pairs(self, active_ids, feeds_healthy, notes):
+        # SAFETY SEMANTICS 51b / 16b: an action re-run moves no live pair on
+        # the test map — idle pairs are dropped only by the live-triggered
+        # test cycles
+        if self._seeded_ladder_only:
+            return
+        super()._prune_idle_pairs(active_ids, feeds_healthy, notes)
 
     def _fetch_and_fuse(self, now_s, notes, operator_events):
         base = self._base

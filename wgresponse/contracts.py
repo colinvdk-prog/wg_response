@@ -98,7 +98,9 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    older than cfg.incident_stale_h are excluded from alerting/dispatch (logged +
    note; FIRIS zombie perimeters measured at median 49 days still active=True).
    perimeter_at_s must be clamped to <= now_s before seeding (feed clock skew
-   must not freeze interiors at a future time).
+   must not freeze interiors at a future time). AMENDED BY 52a: with
+   stale_gate_missing_time a record WITHOUT an update time is aged by its
+   discovery time (else kept as current) instead of being excluded forever.
 10. CONTINUOUS CREW SAFETY (2026-07-10, founder "crews G1/G2 caught in fire";
    docs/review/crews_caught_report.md). The safety audit governed only gel-job
    DEPARTURES — a crew's live/idle position was never checked, so idle crews
@@ -1118,7 +1120,9 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    = byte-identical fusion, cycles, /api/state and persisted state (pinned
    in tests/test_fuse_colocated.py against goldens computed on commit
    bf2a868, before this rule, on the recorded payloads and a world where it
-   bites); NOT armed live (the integrator decides).
+   bites); NOT armed live (the integrator decides). AMENDED BY 52b: with
+   fuse_name_join_strict the legacy NAME join refuses two different IRWIN
+   ids, or discovery times more than fuse_name_join_max_gap_h apart.
 25. THE AUDIT SEES THE WHOLE DRIVE (2026-10-21; the Eagle River valley
    review, crew-safety lens — docs/SIMULATOR_DESIGN.md "The audit sees the
    whole drive"; scratch_review/eagle_valley; cfg.crew_path_audit, read only
@@ -1658,7 +1662,9 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    5 of the 217 fresh reported fires — national FIRMS is mostly agricultural,
    prescribed and industrial heat, which no rule here screens (a hotspot
    screening protocol is an open owner decision). Knob OFF =
-   byte-identical (tests/test_hotspots.py).
+   byte-identical (tests/test_hotspots.py). AMENDED BY 50: with
+   fuse_hotspots_keep_point a point-only agency record that heat joined
+   keeps its own point as a seed beside the heat.
 
 40. A FIRE LEARNS WITHOUT CLIENTS — LEARNING FORECASTS (2026-10-29;
    founder: "perform fix 1"; cfg.fire_belief_learn, fire_belief_learn_
@@ -2087,6 +2093,231 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    points sit 734 / 889 m off the network (the founder's ground check).
    No flag = byte-identical.
 
+49. A NEW FIRE'S ALERT DOES NOT WAIT FOR EVERY OTHER FIRE — NEW FIRES ALERT
+   EARLY (2026-11-18; the founder's fire -> alert latency review, scratch_
+   review/fire_alert_latency_review_2026-11-18, lane C finding C2, fix 1;
+   cfg.alert_new_fires_early, default OFF; watch --alert-new-fires-early).
+   The ladder ran ONCE per cycle, after every incident was assessed, and the
+   assessment loop is serial in incident-id order: a new fire near homes
+   waited for the whole loop — 200 s on the live watcher, plus 5-15 min per
+   other cold domain, 26.3 min after a restart (lane C, measured live).
+   With the knob:
+   (a) A NEW FIRE is an incident with no tracked alert pair and (forecast
+       tiers) no kept forecast, with a protected home within the threat
+       radius. New fires are assessed FIRST: a domain whose terrain tile is
+       already in the provider's local cache before one the provider cannot
+       vouch for, before one it knows is cold; then the nearest home; then
+       the incident order. Every other incident follows in the incident
+       order. The registry is asked once per incident (the ordering pass's
+       answer for the same search box is the assessment's).
+   (b) Right after a new fire's in-cycle forecast, its pairs — all new, at
+       NONE — are evaluated: AlertEngine.evaluate(its assessments, the
+       cycle's now_s, its incident meta with the cycle's extreme-regime
+       posture rule, only_incidents={it}, flush_unsent=False), the crew
+       facts (44) told once before the first such call. Its notifications go
+       out then, mid-cycle.
+   (c) The end-of-cycle evaluate takes every other tracked or assessed
+       incident (only_incidents) with the cycle's blind pairs, feed health
+       and meta — never a pair already stepped: no pair steps twice in a
+       cycle, so NOTICE -> WATCH still takes the next cycle. It re-fires the
+       restored-unsent pairs (alerts.py, Session-3 F4) with their own fire's
+       fresh ETAs, as before.
+   (d) THE BLIND / ABSENCE RULES (6) ARE UNTOUCHED: a new fire has no
+       tracked pair, so no pair of it can be absent, blind, frozen,
+       recovered or cleared in the mid-cycle call; every such pair belongs
+       to the end-of-cycle evaluate, which derives blind pairs exactly as
+       before. The all-clear suppression gate cannot fire mid-cycle (a
+       NONE pair never clears) and at the end it sees the new fires' states
+       already applied, as one evaluate would.
+   (e) THE SAME EVENTS: the assessments, maps, notes and operator events
+       are merged back in the incident order and the events are listed in
+       the order one evaluate would list them; the AlertEvents, operator
+       events, notes, alert records, notified ledger, growth clocks and
+       re-notify ward after the cycle equal the knob-off cycle's (pinned in
+       tests/test_alert_early.py across one and three new fires, assessed /
+       roster-blind / provider-blind / absent-clearing pairs, a feed-blind
+       cycle and a restored-unsent ledger). Only the send order changes —
+       a new fire's sends come before the next incident's terrain call.
+   (f) TWO WORLDS (16b): the TEST world never evaluates early (its live
+       incidents' results are shared, not computed, and an action re-run
+       must step only seeded pairs). A seeded fire in a monitor that takes
+       seeds is a new fire like any other (12d). An alert engine without the
+       only_incidents seam, or whose states cannot be read, keeps every pair
+       at the end of the cycle; a mid-cycle evaluate that raises is a note +
+       OperatorEvent('provider_error', step 'alerts_early') and its pairs are
+       evaluated at the end.
+   THE TRADE (the founder's call): every other fire's pairs are still
+   evaluated at the end of the loop, as always (the loop does the same
+   work in another order; each mid-cycle call walks the engine's pairs
+   once, milliseconds). But an existing fire is now reached AFTER the new
+   fires in the loop, so under forecast tiers its background refresh is
+   SUBMITTED later by the new fires' own assessment time (seconds warm, 6-15
+   min when a new fire's terrain is cold): a refreshed forecast of an
+   existing fire can land one cycle later than without the knob. In-cycle
+   forecasts and every alert of an existing fire keep their time. WHAT IT
+   CANNOT DO: the minutes inside the new fire's own forecast (cold LFPS,
+   the shared spread pool, lane C C1/C3) are unchanged. Knob OFF = byte-
+   identical (the loop, the evaluate call, the CycleResult).
+
+50. A REPORTED POINT STAYS A SEED WHEN HEAT JOINS IT — AMENDING 39 (2026-11-
+   18; the latency review's lane B finding B2, verified by the orchestrator;
+   cfg.fuse_hotspots_keep_point, default OFF; watch --keep-reported-point).
+   Without a perimeter a fire seeds ignition_points() — its hotspots, else
+   its origin — so once 39 joined satellite heat to a point-only agency
+   record its own reported point stopped being a seed: measured (lane B,
+   the live flags, stub west wind 8 m/s), night refinery-type heat 2 km
+   crosswind took a home 1.5 km downwind from p10 0.45 h to 15.2 h; 52 of
+   888 new point records took heat in their first cycle, 8 of them with the
+   nearest heat >= 1 km from the point (5 LA-area records beside night
+   refinery heat). With the knob a fire WITHOUT a perimeter whose origin an
+   agency reported (any source but FIRMS and SEEDED) and that carries
+   hotspots seeds [origin] + hotspots at now_s, and its geometry — the
+   client search and the domain — holds the origin too. Unchanged: the
+   weather point (the mean of ignition_points(), the heat as before), a
+   perimeter fire (its polygon is the fire; hotspots seed beside it as
+   before), a point without heat, a seeded fire, and a FIRMS-only cluster —
+   its origin is the mean of its own detections, a place no satellite saw
+   burning, so it never becomes a seed. The learning forecast (40) seeds
+   the same row (the no-domain row carries the seed geometry), and the
+   kept-forecast fire_key holds the point: stable from cycle to cycle,
+   changed once when the knob is armed (one background refresh per such
+   fire). NEVER LATER: an added seed at now_s can only make every arrival
+   on a given grid earlier; pinned ETA(on) <= ETA(off) for every client of
+   every world in tests/test_keep_reported_point.py (24 heat placements x 8
+   homes, lane B's geometry 15.2 h -> 0.45 h with the live flags). THE
+   RESIDUAL: when the point lies outside the knob-off domain the domain
+   grows to hold it, and a new grid (cell size, origin, the regime
+   detector's fuel fraction) can move a home behind terrain either way, as
+   42 measured for its snap — rare (the domain already holds every home in
+   range, padded 2 km, and the point lies within the 3-11 km attach
+   footprint of the heat). Knob OFF = byte-identical.
+
+51. A BULK CYCLE NEVER BURIES WHAT THE OPERATOR MUST SEE — THE OPERATOR-
+   EVENT FLOOD (2026-11-18; the latency review's B4 / C9, verified live by
+   the orchestrator). The 17:29Z live cycle after ONE blind cycle emitted
+   15,894 'recovered' OperatorEvents — one per tracked pair (6 freezes and
+   recovers every pair) — 15,259 of them pairs at NONE, over 464 incidents
+   none of which was still on the map (records are never pruned): 79 % of
+   /api/state's 6.49 MB, and the 100-entry operator_log held 100 'recovered'
+   — the cycle's satellite_heat / feed_blind / provider_error were evicted
+   at once, and satellite_heat is the only built page signal (41). Three
+   knobs, each default OFF = byte-identical:
+   (a) THE PAIRS AT NONE ARE SUMMARISED (cfg.alert_recovery_summary; watch
+       --summarize-recoveries). In one evaluate, the pairs at NONE of one
+       incident that freeze blind give ONE OperatorEvent('degraded') — once
+       blind_alarm_cycles is reached, as before — and those seen again ONE
+       OperatorEvent('recovered'), each with detail {state 'none', pairs,
+       blind_cycles_max, clients (the first five), summary True}, after the
+       per-pair events, in the engine's pair order; one log line per
+       incident replaces one per pair. Every pair keeps its own freeze,
+       blind count and reset: the ladder, the AlertEvents, the records and
+       the cycle's degraded flag are unchanged. Every other pair (notice,
+       watch, extreme, cleared, impacted) keeps its own events. The
+       'degraded' half is the same flood one cycle earlier (the blind cycle
+       itself emitted 15,894 'degraded'), so it is summarised the same way.
+   (b) IDLE PAIRS ARE DROPPED (cfg.alert_prune_idle_pairs; watch
+       --prune-idle-pairs; AlertEngine.prune_idle_pairs). After the cycle's
+       evaluate (only when it succeeded), a record at NONE with no blind
+       cycle, no history, no ledgered send and no re-fire owed is dropped
+       when its incident is NOT in the cycle's active (forecast) set and
+       EVERY feed was healthy — 6's trustworthy absence; never on a blind
+       cycle. A NONE pair's clear / de-escalation streaks decide nothing (a
+       pair leaves NONE only by escalating, which zeroes both), so a pair
+       that comes back is created fresh at NONE and steps exactly as the
+       dropped one would have — the same AlertEvents (pinned), the record a
+       fresh pair's. The state file simply no longer carries it (persist
+       saves the records it is handed; restore of an older file brings
+       them back until the first healthy cycle drops them). One cycle note
+       counts the drops. WHAT CHANGES: a dropped pair is no longer tracked
+       when its fire returns, so 6's registry-roster rule cannot raise
+       'provider_error' for THAT pair in the cycle the fire returns (a
+       client missing from the roster then) — the pair simply starts fresh
+       when the client is returned; it was at NONE, so no client is
+       affected. A TEST-world action re-run drops nothing (16b).
+   (c) THE OPERATOR'S EVENTS HAVE THEIR OWN RINGS (cfg.operator_log_
+       priority; watch --operator-log-priority). The watch daemon keeps
+       every operator-relevant event in a ring PER KIND (the last
+       cli._WatchDaemon.OP_LOG_PRIORITY_KEEP = 50 of each; /api/state
+       operator_log_priority, oldest first): every kind except the per-pair
+       ladder bookkeeping 'degraded' / 'recovered', and those too when the
+       pair is threatened (detail state notice_72h / watch / extreme_24h: a
+       client under alert unseen, or seen again). Kept, so: satellite_heat
+       (41: the one page signal), feed_blind and provider_error (6: what is
+       blind), extreme_regime, fire_belief, feed_sanity, seed_retired, the
+       crew watch's crew_* kinds (45c) and any kind added later. Not kept:
+       pairs at none / cleared / impacted (nobody is under alert) and the
+       (a) summaries (at none). Per kind, so 60 provider errors in one
+       cycle cannot push out a satellite_heat either. /api/state
+       satellite_heat_24h and /healthz satellite_heat_24h count the
+       satellite_heat events of the last 24 h (a count only: /healthz is
+       open). The 100-entry operator_log is unchanged.
+   MEASURED (scratch_review/fire_alert_latency_review_2026-11-18/BUILD_1_
+   alert_path/flood_replay.py: the 15,894 live pairs rebuilt in a real
+   engine, monitor and daemon; logging to a file at INFO; local CPU):
+   knobs off, the healthy cycle reproduces the live payload byte for byte
+   (6,491,188 B with its operator_events swapped in); all three on: blind
+   cycle 15,895 -> 1,100 events, alerts phase 0.195 -> 0.019 s; healthy
+   cycle 15,894 -> 1,099 events, /api/state 6.49 -> 1.81 MB (live-equiv-
+   alent), 15,259 pairs dropped; the next blind cycle 636 events (the 556
+   cleared + 79 impacted pairs of fires long gone, which no knob here
+   touches), alerts phase 0.218 -> 0.008 s, /api/state 1.57 MB; the
+   priority ring keeps the feed_blind event through every cycle.
+
+52. THE SMALL HOLDS ON THE ALERT PATH (2026-11-18; the latency review's
+   lane B findings B7 and B6 / lane A's A6, lane C's C10). Three knobs,
+   each default OFF = byte-identical (tests/test_latency_knobs_off_golden.py
+   pins all of 49-52 off against commit 9d11793):
+   (a) A RECORD WITHOUT A TIME IS NOT A ZOMBIE — AMENDING 9 (cfg.stale_
+       gate_missing_time; watch --stale-missing-time). The adapters write
+       updated_at_s = 0.0 when a record carries no update time (WFIGS
+       ModifiedOnDateTime, FIRIS's update fields, CAL FIRE Updated; feeds.py
+       _from_point / _from_feature / _from_record), and 9's gate then
+       excluded it every cycle as "age 488,889 h" — a NaN fell out of the
+       gate's two lists silently. Latent: 0 of 422 live WFIGS Current
+       records lack the time today. With the knob, BEFORE the gate, a record
+       whose update time is not a finite positive number becomes a copy
+       carrying its discovered_at_s — so the gate ages it by its discovery
+       (a 10-day-old discovery is still stale) — else this cycle's clock
+       (the feed lists it as current and says nothing more); meta
+       updated_at_missing ("discovered" / "none") and one cycle note name
+       them. Everything downstream reads that time: a polygon with no own
+       time is seeded at it — at its discovery (it burned at least that
+       long: pessimistic) or at now (never at epoch 0, which would burn the
+       whole domain in 1970). It only keeps more fires. WHAT IT RISKS: a
+       FIRIS polygon with no time and no discovery (FIRIS carries none) is
+       treated as current — a zombie perimeter without a time would come
+       back as a fresh fire (over-alerting, the pessimistic side;
+       unmeasured: no FIRIS row without a time was in the review's pulls).
+   (b) A NAME IS NOT AN IDENTITY — AMENDING 24 (cfg.fuse_name_join_strict,
+       fuse_name_join_max_gap_h = 24 h; watch --strict-name-join).
+       fuse_incidents joined records of one normalized name within 5 km
+       even when their IRWIN ids differed (feeds.py, the legacy name join),
+       and an older CONTAINED member's 100 % and contained_at_s rode into
+       the fused record, which 13 then removed — the new fire with it
+       (lane B harness H3, pinned: off, the new fire's home hears nothing;
+       on, it is EXTREME). With the knob the name join refuses to put a
+       record into a group when the record carries an IRWIN id and a member
+       carries another, or when both carry a discovery time more than
+       fuse_name_join_max_gap_h apart; a missing id or time refuses
+       nothing (the legacy join decides); the IRWIN join is untouched. It
+       only splits groups: the two fires keep their own ids, so pairs of
+       the old fused id take 6's absence law and the new fire's pairs start
+       fresh (6's all-clear suppression keeps a client under alert from
+       reading "All clear" for the old id). Prevalence (lane B): 0 such
+       pairs live today; <= 0.8 % of 2026 records had a same-name record of
+       another IRWIN id within 5 km in the previous 30 days.
+   (c) THE MOST URGENT CLIENT HEARS FIRST (cfg.notify_urgent_first; watch
+       --notify-urgent-first). The notifier was called in the engine's pair
+       order (lane C C10: with a real provider the sends are serial, in the
+       cycle thread, with retries, EXTREME not first). With the knob each
+       evaluate sends impact / extreme first, then notice / watch, then
+       all-clears — each rung by the earliest p10, then p50. The returned
+       events keep the engine's order; every transition is applied before
+       any send, so the all-clear gate, the ledger and the records are
+       unchanged. Under --dry-notify only the log order changes. THE TRADE:
+       none in what is sent; a later send in the cycle starts later only by
+       the time the earlier ones take.
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -2188,6 +2419,9 @@ wgresponse.feeds
     # SEMANTICS 9 gate keeps (None = no clock, no group is stale); merges (a
     # list) receives one dict per union {incident_id, name, merged, names,
     # evidence}. cfg None or the knob off = byte-identical legacy fusion.
+    # SAFETY SEMANTICS 52b: with cfg.fuse_name_join_strict the legacy name
+    # join refuses different IRWIN ids / discovery more than
+    # cfg.fuse_name_join_max_gap_h apart (the monitor then passes cfg).
     # Health convention (Sprint 2): every adapter maintains `last_fetch_ok: bool`
     # after each fetch_active call — True iff HTTP + parse succeeded (an empty
     # result with last_fetch_ok=True means genuinely zero incidents; False means
@@ -2251,6 +2485,12 @@ wgresponse.alerts
         # TWO WORLDS (16b): evaluate(..., only_incidents=ids) evaluates just
         # those incidents' pairs (every other tracked pair untouched); None =
         # every pair, byte-identical. The TEST world's action re-runs use it.
+        # SAFETY SEMANTICS 49: evaluate(..., flush_unsent=False) leaves the
+        # restored-unsent re-fire for a later call (default True, byte-
+        # identical); the monitor's mid-cycle evaluation of a new fire uses
+        # it with only_incidents={that fire}.
+                        .prune_idle_pairs(active_incidents, feeds_healthy)
+                            -> list[tuple[str,str]]   # SAFETY SEMANTICS 51b
 
 wgresponse.threat
     class ThreatMonitor .cycle(now_s) -> CycleResult    # full loop: feeds->wx->terrain->spread->etas->alerts
@@ -2654,6 +2894,15 @@ wgresponse.cli
     # SAFETY SEMANTICS 17: --weather-grid-km KM arms weather_grid_km
     # (--weather-points-max N sets weather_points_max); /api/state gains
     # weather_grid + a "weather" block per incident; so do the summary rows.
+    # FIRE -> ALERT LATENCY (SAFETY SEMANTICS 49-52; 2026-11-18): watch
+    # --alert-new-fires-early / --keep-reported-point / --summarize-
+    # recoveries / --prune-idle-pairs / --operator-log-priority /
+    # --stale-missing-time / --strict-name-join / --notify-urgent-first /
+    # --cycle-step-timings (telemetry only: last_cycle_phases.steps) (cli.
+    # _latency_cfg(cfg, args) -> (cfg, notes)); operator_priority(ev) ->
+    # bool (51c); with --operator-log-priority /api/state gains
+    # operator_log_priority + satellite_heat_24h and /healthz
+    # satellite_heat_24h.
 ============================================================================
 """
 from __future__ import annotations
@@ -4862,6 +5111,97 @@ class ResponseConfig:
     screen_labels: bool = False
     screen_rx_radius_m: float = 3000.0           # an RX point labels heat this close (m; report A, C10)
     screen_rx_max_age_d: float = 21.0            # ... when discovered this recently (days)
+    # NEW FIRES ALERT EARLY (2026-11-18, the fire -> alert latency review,
+    # lane C fix 1; SAFETY SEMANTICS 49). The ladder ran once, after EVERY
+    # incident was assessed (serial, in incident-id order): a new fire near
+    # homes waited for the whole loop — 200 s live, + 5-15 min per other
+    # cold domain, 26 min after a restart. True = the incidents with no kept
+    # forecast and no tracked alert pair are assessed FIRST (warm terrain
+    # before cold, then nearest protected home), and right after each one's
+    # in-cycle forecast its pairs are evaluated (AlertEngine.evaluate
+    # only_incidents, the same clock, meta, regime flag and crew facts), so
+    # its notifications go out mid-cycle; the end-of-cycle evaluate skips
+    # them (no pair steps twice in a cycle). The same events, the same
+    # end-of-cycle engine state, only sooner. False = byte-identical; watch
+    # --alert-new-fires-early.
+    alert_new_fires_early: bool = False
+    # A REPORTED POINT STAYS A SEED (2026-11-18, the latency review's lane B
+    # finding B2; SAFETY SEMANTICS 50, amending 39). Without a perimeter the
+    # seed law is ignition_points() = hotspots, else origin — so a point-only
+    # agency record that FIRMS heat joined seeded ONLY the heat, and the
+    # agency's own point stopped burning (measured: a home's p10 0.45 h ->
+    # 15.2 h with night refinery heat 2 km crosswind). True = such a record
+    # seeds [origin] + hotspots and its geometry (client search, domain)
+    # holds the origin too; the weather point is unchanged; a FIRMS-only
+    # cluster is unchanged. False = byte-identical; watch
+    # --keep-reported-point.
+    fuse_hotspots_keep_point: bool = False
+    # THE OPERATOR-EVENT FLOOD (2026-11-18, the latency review's B4 / C9,
+    # verified live: one blind cycle -> 15,894 'recovered' events, one per
+    # tracked pair, 15,259 of them pairs at NONE; 79 % of /api/state's 6.5
+    # MB; the 100-entry operator_log held nothing else; records never
+    # pruned; SAFETY SEMANTICS 51). Three knobs, each default OFF =
+    # byte-identical:
+    # (a) the pairs at NONE of one incident that go blind or come back give
+    #     ONE 'degraded' / 'recovered' operator event (with the count), not
+    #     one each; every other pair keeps its own. watch
+    #     --summarize-recoveries.
+    alert_recovery_summary: bool = False
+    # (b) an alert record at NONE that carries nothing (no blind cycle, no
+    #     history, no ledgered send, no re-fire owed) is dropped after the
+    #     cycle's evaluate when its incident is absent from the cycle's
+    #     active set and every feed was healthy; a pair that comes back
+    #     starts fresh at NONE. watch --prune-idle-pairs.
+    alert_prune_idle_pairs: bool = False
+    # (c) the watch daemon keeps the operator-relevant events (every kind
+    #     but the per-pair 'degraded' / 'recovered' of pairs at none,
+    #     cleared or impacted) in their own bounded rings, per kind, so a
+    #     bulk cycle cannot evict them (/api/state operator_log_priority);
+    #     /healthz counts the satellite_heat events of the last 24 h. watch
+    #     --operator-log-priority.
+    operator_log_priority: bool = False
+    # CYCLE STEP TIMINGS (2026-11-18, the latency review's lane C: 181 of the
+    # live assess phase's 200 s could not be attributed). TELEMETRY ONLY —
+    # no decision reads it. True = CycleResult.timings (/api/state
+    # last_cycle_phases) gains "steps": the wall time of each pre-loop gate
+    # (seeded union, stale, contained, attach, labels, heat split, learn
+    # collect, belief observe), the loop set-up, the assessment loop, the
+    # post-loop, the blind-pair pass, the meta / regime step, the crew
+    # context, the alert evaluate and what follows it, the belief / off-map
+    # step, the crew rasters, the dispatch plan, the crew watch + snapshot,
+    # each incident's whole assessment (assess_s on its own row; the
+    # incidents without a domain in one "assess_other" aggregate), the
+    # persist and the previous /api/state build. False = byte-identical (no
+    # key); watch --cycle-step-timings.
+    cycle_step_timings: bool = False
+    # A RECORD WITHOUT A TIME IS NOT A ZOMBIE (2026-11-18, the latency
+    # review's B7; SAFETY SEMANTICS 52a, amending 9). The adapters write 0.0
+    # when a record carries no update time (WFIGS Modified, FIRIS updated,
+    # CAL FIRE Updated), and the staleness gate then excluded it every cycle
+    # ("age 488,889 h") — latent, 0 such live records today. True = such a
+    # record is aged by its discovery time when it has one, else kept as
+    # current (this cycle's clock), with a note; it only keeps more fires.
+    # False = byte-identical; watch --stale-missing-time.
+    stale_gate_missing_time: bool = False
+    # A NAME IS NOT AN IDENTITY (2026-11-18, the latency review's B6 / A6;
+    # SAFETY SEMANTICS 52b, amending 24). fuse_incidents joins records of
+    # the same normalized name within 5 km even when their IRWIN ids differ,
+    # and an older CONTAINED member's 100 % and contained_at_s leaked into a
+    # new fire, which was then removed as contained (lane B harness H3).
+    # True = the name join refuses a record whose IRWIN id differs from one
+    # in the group, or whose discovery time lies more than
+    # fuse_name_join_max_gap_h from a member's; it only splits groups.
+    # False = byte-identical; watch --strict-name-join.
+    fuse_name_join_strict: bool = False
+    fuse_name_join_max_gap_h: float = 24.0   # ... the discovery-time gap that splits (h)
+    # THE MOST URGENT CLIENT HEARS FIRST (2026-11-18, the latency review's
+    # C10; SAFETY SEMANTICS 52c). The notifier is called in the engine's pair
+    # order (EXTREME not first; serial sends, retries inside the cycle).
+    # True = within one evaluate the sends go impact / extreme first, then
+    # notice / watch, then all-clears, each rung by the earliest p10; the
+    # returned events, the ledger and the all-clear gate are unchanged.
+    # False = byte-identical; watch --notify-urgent-first.
+    notify_urgent_first: bool = False
     # SIMULATOR CITY WEATHER (founder 2026-10-09, verbatim: "change the
     # weather conditions for each city specific"; docs/review/
     # city_weather_2026-10-09.md). Read ONLY by wgresponse.simui (the
@@ -5336,6 +5676,12 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
             <= cfg.incident_stale_h):
         problems.append("fuse_colocated_time_tol_h must be within [0, "
                         "incident_stale_h]")
+    # --- strict name join (SAFETY SEMANTICS 52b) ---
+    if not (math.isfinite(cfg.fuse_name_join_max_gap_h)
+            and 0.0 < cfg.fuse_name_join_max_gap_h
+            <= cfg.incident_stale_h):
+        problems.append("fuse_name_join_max_gap_h must be within (0, "
+                        "incident_stale_h] hours")
     if cfg.sim_weather_profile not in ("generic", "city"):
         problems.append("sim_weather_profile must be 'generic' or 'city'")
     # SAFETY SEMANTICS 34a' (2026-10-21): comma-separated far-zone ids

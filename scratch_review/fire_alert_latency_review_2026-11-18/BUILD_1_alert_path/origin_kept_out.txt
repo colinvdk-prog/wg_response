@@ -1,0 +1,9 @@
+B2 (heat 2 km crosswind north, home 1.5 km downwind)
+  off (live law):   p10/p50 h [(15.2, 15.2)]  events ['extreme_24h']
+  on  (point kept): p10/p50 h [(0.45, 0.45)]  events ['extreme_24h']
+heat 1 km north-west (upwind), home 3 km downwind
+  off (live law):   p10/p50 h [(3.43, 3.43)]  events ['extreme_24h']
+  on  (point kept): p10/p50 h [(0.91, 0.91)]  events ['extreme_24h']
+heat 1.5 km downwind, home 4 km downwind (heat ahead of the point)
+  off (live law):   p10/p50 h [(0.77, 0.77)]  events ['extreme_24h']
+  on  (point kept): p10/p50 h [(0.77, 0.77)]  events ['extreme_24h']
