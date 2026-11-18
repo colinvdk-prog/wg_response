@@ -270,6 +270,37 @@ def test_a_failed_mid_cycle_evaluate_is_noted_and_retried_at_the_end():
     assert dict(eng.states()) == off[0]["states"]
 
 
+def test_a_failed_ordering_pass_runs_the_legacy_loop():
+    off, _, _ = _run(False, cycles=1, new=("N1",))
+    cfg = S.ladder_cfg(alert_new_fires_early=True)
+    mon, eng, _ = S.build(cfg, new=("N1",))
+
+    def boom(*a, **kw):
+        raise RuntimeError("ordering broke")
+
+    mon._early_plan = boom
+    res = mon.cycle(NOW)
+    assert any("ordering failed (ordering broke)" in n for n in res.notes)
+    assert res.events == off[0]["events"]
+    assert dict(eng.states()) == off[0]["states"]
+
+
+def test_the_ordering_pass_runs_inside_the_terrain_turn():
+    cfg = S.ladder_cfg(alert_new_fires_early=True, fire_belief_track=True,
+                       fire_belief_learn=True)
+    mon, _, _ = S.build(cfg, new=("N1",))
+    seen = []
+    real = mon._early_plan
+
+    def probe(active, now_s):
+        seen.append(mon._terrain_turn.held)
+        return real(active, now_s)
+
+    mon._early_plan = probe
+    mon.cycle(NOW)
+    assert seen == [True] and not mon._terrain_turn.held
+
+
 def test_the_test_world_never_evaluates_early():
     assert ThreatMonitor.early_alerts_ok is True
     assert worlds._TestWorldMonitor.early_alerts_ok is False
