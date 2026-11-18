@@ -379,6 +379,16 @@ def _build_parser() -> argparse.ArgumentParser:
                          "kept (26), egress inside the deadline (32), a way "
                          "out that lasts 8 h (38); 37's ramp is road-only "
                          "and stays off")
+    # FIRE -> ALERT LATENCY (2026-11-18, build lane 1; SAFETY SEMANTICS
+    # 49-52): default-OFF knobs, each its own flag.
+    pw.add_argument("--alert-new-fires-early", action="store_true",
+                    help="cfg.alert_new_fires_early: a new fire near homes "
+                         "(no alert pair yet, no kept forecast) is assessed "
+                         "first — warm terrain before cold, then the nearest "
+                         "home — and its alerts are evaluated and sent right "
+                         "after its own forecast, not after every other "
+                         "fire; the same events, sooner (SAFETY SEMANTICS "
+                         "49)")
     pw.add_argument("--persist-crews", action="store_true",
                     help="cfg.crew_state_persist: the crews' last reports "
                          "survive a restart (in the state file and its "
@@ -1157,6 +1167,23 @@ def _crew_program_cfg(cfg, args):
             "state file (and its S3 mirror) and is restored at startup with "
             "its own time — a crew silent across the restart is stale at "
             "once — SAFETY SEMANTICS 45g")
+    return cfg, notes
+
+
+def _latency_cfg(cfg, args):
+    """(cfg, startup notes) with the fire -> alert latency flags applied
+    (2026-11-18, build lane 1; SAFETY SEMANTICS 49-52). No flag = cfg
+    unchanged, no note."""
+    notes = []
+    if getattr(args, "alert_new_fires_early", False):
+        cfg = dataclasses.replace(cfg, alert_new_fires_early=True)
+        notes.append(
+            "NEW FIRES ALERT EARLY: a fire with no alert pair and no kept "
+            "forecast whose protected homes are in range is assessed first "
+            "(warm terrain before cold, then the nearest home) and its pairs "
+            "are evaluated — and notified — right after its own forecast; "
+            "the end-of-cycle evaluate skips them. The same events, sooner "
+            "— SAFETY SEMANTICS 49")
     return cfg, notes
 
 
@@ -2338,6 +2365,8 @@ def _cmd_watch(args) -> int:
     cfg, _notes = _crew_program_cfg(cfg, args)   # SEMANTICS 45
     startup_notes_fix += _notes
     cfg, live_roads, _notes = _live_roads(cfg, args)
+    startup_notes_fix += _notes
+    cfg, _notes = _latency_cfg(cfg, args)        # SEMANTICS 49-52
     startup_notes_fix += _notes
     if getattr(args, "forecast_tiers", False):
         cfg = dataclasses.replace(cfg, forecast_tiers=True)

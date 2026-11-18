@@ -217,6 +217,7 @@ class AlertEngine:
         feeds_healthy: bool = True,
         incident_meta: Optional[Dict[str, dict]] = None,
         only_incidents: Optional[Iterable[str]] = None,
+        flush_unsent: bool = True,
     ) -> List[AlertEvent]:
         """Run one evaluation cycle at unix time now_s (seconds).
 
@@ -253,6 +254,14 @@ class AlertEngine:
         suppression gate. The TEST world's action-triggered re-runs evaluate
         only its seeded fires, so a live pair on the test map keeps the live
         world's once-per-live-cycle cadence.
+
+        ``flush_unsent`` (NEW FIRES ALERT EARLY, contracts SAFETY SEMANTICS
+        49; additive, default True = byte-identical): False skips the
+        RESTORED-UNSENT re-fire in this call — the pending pairs stay
+        pending for the next call. The monitor's mid-cycle evaluation of a
+        new fire's pairs passes False, so a restored pair of another fire is
+        re-fired at the end of the cycle with that fire's own fresh ETAs,
+        exactly as without the early evaluation.
         Returns the AlertEvents emitted this cycle (at most one per pair).
         """
         only = None if only_incidents is None else set(only_incidents)
@@ -313,7 +322,8 @@ class AlertEngine:
         # (see module docstring, RESTORED-UNSENT RECONCILE). After the normal
         # notify loop so a pair that legitimately transitioned this cycle is
         # already ledgered and drops out of the pending set.
-        self._flush_restored_unnotified(latest, now_s)
+        if flush_unsent:
+            self._flush_restored_unnotified(latest, now_s)
         return events
 
     def set_crew_context(self, on_duty: int, planned_clients) -> None:

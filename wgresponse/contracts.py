@@ -2087,6 +2087,72 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    points sit 734 / 889 m off the network (the founder's ground check).
    No flag = byte-identical.
 
+49. A NEW FIRE'S ALERT DOES NOT WAIT FOR EVERY OTHER FIRE — NEW FIRES ALERT
+   EARLY (2026-11-18; the founder's fire -> alert latency review, scratch_
+   review/fire_alert_latency_review_2026-11-18, lane C finding C2, fix 1;
+   cfg.alert_new_fires_early, default OFF; watch --alert-new-fires-early).
+   The ladder ran ONCE per cycle, after every incident was assessed, and the
+   assessment loop is serial in incident-id order: a new fire near homes
+   waited for the whole loop — 200 s on the live watcher, plus 5-15 min per
+   other cold domain, 26.3 min after a restart (lane C, measured live).
+   With the knob:
+   (a) A NEW FIRE is an incident with no tracked alert pair and (forecast
+       tiers) no kept forecast, with a protected home within the threat
+       radius. New fires are assessed FIRST: a domain whose terrain tile is
+       already in the provider's local cache before one the provider cannot
+       vouch for, before one it knows is cold; then the nearest home; then
+       the incident order. Every other incident follows in the incident
+       order. The registry is asked once per incident (the ordering pass's
+       answer for the same search box is the assessment's).
+   (b) Right after a new fire's in-cycle forecast, its pairs — all new, at
+       NONE — are evaluated: AlertEngine.evaluate(its assessments, the
+       cycle's now_s, its incident meta with the cycle's extreme-regime
+       posture rule, only_incidents={it}, flush_unsent=False), the crew
+       facts (44) told once before the first such call. Its notifications go
+       out then, mid-cycle.
+   (c) The end-of-cycle evaluate takes every other tracked or assessed
+       incident (only_incidents) with the cycle's blind pairs, feed health
+       and meta — never a pair already stepped: no pair steps twice in a
+       cycle, so NOTICE -> WATCH still takes the next cycle. It re-fires the
+       restored-unsent pairs (alerts.py, Session-3 F4) with their own fire's
+       fresh ETAs, as before.
+   (d) THE BLIND / ABSENCE RULES (6) ARE UNTOUCHED: a new fire has no
+       tracked pair, so no pair of it can be absent, blind, frozen,
+       recovered or cleared in the mid-cycle call; every such pair belongs
+       to the end-of-cycle evaluate, which derives blind pairs exactly as
+       before. The all-clear suppression gate cannot fire mid-cycle (a
+       NONE pair never clears) and at the end it sees the new fires' states
+       already applied, as one evaluate would.
+   (e) THE SAME EVENTS: the assessments, maps, notes and operator events
+       are merged back in the incident order and the events are listed in
+       the order one evaluate would list them; the AlertEvents, operator
+       events, notes, alert records, notified ledger, growth clocks and
+       re-notify ward after the cycle equal the knob-off cycle's (pinned in
+       tests/test_alert_early.py across one and three new fires, assessed /
+       roster-blind / provider-blind / absent-clearing pairs, a feed-blind
+       cycle and a restored-unsent ledger). Only the send order changes —
+       a new fire's sends come before the next incident's terrain call.
+   (f) TWO WORLDS (16b): the TEST world never evaluates early (its live
+       incidents' results are shared, not computed, and an action re-run
+       must step only seeded pairs). A seeded fire in a monitor that takes
+       seeds is a new fire like any other (12d). An alert engine without the
+       only_incidents seam, or whose states cannot be read, keeps every pair
+       at the end of the cycle; a mid-cycle evaluate that raises is a note +
+       OperatorEvent('provider_error', step 'alerts_early') and its pairs are
+       evaluated at the end.
+   THE TRADE (the founder's call): every other fire's pairs are still
+   evaluated at the end of the loop, as always (the loop does the same
+   work in another order; each mid-cycle call walks the engine's pairs
+   once, milliseconds). But an existing fire is now reached AFTER the new
+   fires in the loop, so under forecast tiers its background refresh is
+   SUBMITTED later by the new fires' own assessment time (seconds warm, 6-15
+   min when a new fire's terrain is cold): a refreshed forecast of an
+   existing fire can land one cycle later than without the knob. In-cycle
+   forecasts and every alert of an existing fire keep their time. WHAT IT
+   CANNOT DO: the minutes inside the new fire's own forecast (cold LFPS,
+   the shared spread pool, lane C C1/C3) are unchanged. Knob OFF = byte-
+   identical (the loop, the evaluate call, the CycleResult).
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -2251,6 +2317,10 @@ wgresponse.alerts
         # TWO WORLDS (16b): evaluate(..., only_incidents=ids) evaluates just
         # those incidents' pairs (every other tracked pair untouched); None =
         # every pair, byte-identical. The TEST world's action re-runs use it.
+        # SAFETY SEMANTICS 49: evaluate(..., flush_unsent=False) leaves the
+        # restored-unsent re-fire for a later call (default True, byte-
+        # identical); the monitor's mid-cycle evaluation of a new fire uses
+        # it with only_incidents={that fire}.
 
 wgresponse.threat
     class ThreatMonitor .cycle(now_s) -> CycleResult    # full loop: feeds->wx->terrain->spread->etas->alerts
@@ -4862,6 +4932,20 @@ class ResponseConfig:
     screen_labels: bool = False
     screen_rx_radius_m: float = 3000.0           # an RX point labels heat this close (m; report A, C10)
     screen_rx_max_age_d: float = 21.0            # ... when discovered this recently (days)
+    # NEW FIRES ALERT EARLY (2026-11-18, the fire -> alert latency review,
+    # lane C fix 1; SAFETY SEMANTICS 49). The ladder ran once, after EVERY
+    # incident was assessed (serial, in incident-id order): a new fire near
+    # homes waited for the whole loop — 200 s live, + 5-15 min per other
+    # cold domain, 26 min after a restart. True = the incidents with no kept
+    # forecast and no tracked alert pair are assessed FIRST (warm terrain
+    # before cold, then nearest protected home), and right after each one's
+    # in-cycle forecast its pairs are evaluated (AlertEngine.evaluate
+    # only_incidents, the same clock, meta, regime flag and crew facts), so
+    # its notifications go out mid-cycle; the end-of-cycle evaluate skips
+    # them (no pair steps twice in a cycle). The same events, the same
+    # end-of-cycle engine state, only sooner. False = byte-identical; watch
+    # --alert-new-fires-early.
+    alert_new_fires_early: bool = False
     # SIMULATOR CITY WEATHER (founder 2026-10-09, verbatim: "change the
     # weather conditions for each city specific"; docs/review/
     # city_weather_2026-10-09.md). Read ONLY by wgresponse.simui (the
