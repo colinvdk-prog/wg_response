@@ -1836,8 +1836,10 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    Measured (docs/SIMULATOR_DESIGN.md "Crew program review fixes
    (2026-11-17)"; before = e43c24e, after = (a) armed, (b) not): Vail 24 h
    rows 2 -> 0, crews off the map 2 -> 0, homes 40 -> 40; extended Paradise
-   rows 2 -> 0, homes 20 -> 20; the valley's 33 fires at 24 h «V24SEM»;
-   six more maps at 24 h rows 4 -> 1 (the one left 0.9 min, as before),
+   rows 2 -> 0, homes 20 -> 20; the valley's 33 fires at 24 h rows 17 ->
+   4, those deeper than 30 min 14 -> 1 (Beaver Creek's, below), crews off
+   the map 17 -> 4, homes 977 -> 977, reached-uncoated 27 -> 27; six more
+   maps at 24 h rows 4 -> 1 (the one left 0.9 min, as before),
    deepest 305.4 -> 0.9 min, crews off the map 7 -> 4, homes 247 -> 247;
    the 12-h sets (the valley at 07:13 and 13:13, lane A's 32 fires) homes,
    reached-uncoated, rows and crews off the map unchanged (one more

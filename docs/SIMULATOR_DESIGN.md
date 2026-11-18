@@ -3247,7 +3247,7 @@ hours while every road out of it closed; much later the safety sweep had to driv
 ground the pessimistic forecast had crossed hours before (Vail's 24-hour fire: 5.7 hours past the
 safety line, two crews driven off the map). Now a crew leaves a refuge before it becomes a dead end:
 when the last safe way out of where it waits is about to close, it moves to a place that stays safe.
-On the valley's 33 fires run for 24 hours this takes «V24».
+On the valley's 33 fires run for 24 hours this takes the passes through the danger band from 17 to 4, those deeper than 30 minutes from 14 to 1, and the crews driven off the map from 17 to 4, with the same 977 homes coated and the same 27 reached homes uncoated..
 The audit now keeps the deepest record of each crew in each step and says how deep it was; a home
 lost to the fire reads "lost to capacity" when some crew could once have reached it in time and
 "unsavable" only when none could; reasons on the page are current; and a home dropped for safety
@@ -3307,7 +3307,7 @@ rows that carry a depth — before the fix only transit rows did, after it every
 |---|---|---|---|---|---|---|---|
 | Valley, 33 fires, 12 h, 07:13 | 907 → 907 | 13 → 13 | 3 → 3 | 24.4 → 24.4 | 0 → 0 | 0 → 0 | 14 → 15 |
 | Valley, 33 fires, 12 h, 13:13 | 815 → 815 | 14 → 14 | 2 → 2 | 24.4 → 24.4 | 0 → 0 | 0 → 0 | 5 → 6 |
-«V24ROW»
+| Valley, 33 fires, 24 h, 07:13 | 977 → 977 | 27 → 27 | 17 → 4 | 823.4 → 682.5 | 14 → 1 | 17 → 4 | 39 → 49 |
 | Lane A's 32 non-valley fires | 1,066 → 1,066 | — | 2 → 2 | — → 145.0 | 0 → 2 | 4 → 4 | 17 → 18 |
 | 24-h fires, six more maps (8) | 247 → 247 | — | 4 → 1 | 305.4 → 0.9 | 3 → 0 | 7 → 4 | 13 → 16 |
 | Lane A's 24-h valley pair (Vail, Beaver Creek) | 74 → 74 | — | 3 → 1 | 682.5 → 682.5 | 3 → 1 | 2 → 0 | 4 → 4 |

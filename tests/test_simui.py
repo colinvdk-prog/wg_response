@@ -28,7 +28,7 @@ from wgresponse.simui import (
     GUST_FACTOR,
     LOCATIONS,
     MPH_TO_MPS,
-    OUTCOME_TAGS,
+    OUTCOME_TAGS_SPLIT,
     SIM_EMBER_THREAT_RADIUS_M,
     SYNTHETIC_BANNER,
     SimSession,
@@ -2146,7 +2146,9 @@ def test_outcome_monitoring_not_mislabeled_not_threatened(tmp_path):
         assert st["scoreboard"]["violations"] == 0
         outs = st["scoreboard"]["outcomes"]
         # stable vocabulary incl. the new tag; sums to exactly one per home
-        assert set(outs) == set(OUTCOME_TAGS)
+        # (the simulator arms the lost-home split, 2026-11-17: its vocabulary
+        # adds 'lost_capacity' — contracts outcome_lost_capacity)
+        assert set(outs) == set(OUTCOME_TAGS_SPLIT)
         assert sum(outs.values()) == len(st["clients"])
         for c in st["clients"]:
             # the contradiction is gone: a finite ETA is NEVER 'not_threatened'
@@ -2275,23 +2277,25 @@ def test_outcomes_scoreboard_shape_sums_and_consistency(tmp_path):
         st = s.tick()
         assert st["scoreboard"]["violations"] == 0
         outs = st["scoreboard"]["outcomes"]
-        assert set(outs) == set(OUTCOME_TAGS)               # every tag present
+        assert set(outs) == set(OUTCOME_TAGS_SPLIT)         # every tag present
         assert all(v >= 0 for v in outs.values())
         assert sum(outs.values()) == len(st["clients"])     # exactly one each
         # the breakdown matches the per-client tags exactly
         tally = {}
         for c in st["clients"]:
-            assert c["outcome"] in OUTCOME_TAGS
+            assert c["outcome"] in OUTCOME_TAGS_SPLIT
             tally[c["outcome"]] = tally.get(c["outcome"], 0) + 1
             seen.add(c["outcome"])
             gel_out = c["outcome"] in ("saved", "protected_then_impacted")
             assert gel_out == c["gel_applied"]
-            if c["outcome"] == "abandoned_unsavable":
+            if c["outcome"] in ("abandoned_unsavable", "lost_capacity"):
                 assert not c["gel_applied"]
+            if c["outcome"] == "lost_capacity":
+                assert c["client_id"] in s._ever_feasible
             if c["outcome"] == "not_threatened":
                 assert not c["gel_applied"] and not c["assigned"]
                 assert c["eta_p50_s"] is None       # FAST horizon <= notice
-        assert {t: tally.get(t, 0) for t in OUTCOME_TAGS} == outs
+        assert {t: tally.get(t, 0) for t in OUTCOME_TAGS_SPLIT} == outs
     # a real, varied run exercised several tags (not a vacuous all-one-bucket)
     assert len(seen) >= 3, seen
 
@@ -2314,7 +2318,7 @@ def test_outcome_tags_carried_in_scrub_history(tmp_path):
         assert snap is not None
         # tags present in the replay
         assert all("outcome" in c for c in snap["clients"])
-        assert set(snap["scoreboard"]["outcomes"]) == set(OUTCOME_TAGS)
+        assert set(snap["scoreboard"]["outcomes"]) == set(OUTCOME_TAGS_SPLIT)
         # byte-identical to what tick k served live
         assert json.dumps(snap, sort_keys=True, allow_nan=False) == live[k]
 
