@@ -2827,7 +2827,9 @@ def _cmd_watch(args) -> int:
     cfg, live_roads, _notes = _live_roads(cfg, args)
     startup_notes_fix += _notes
     cfg, _notes = _latency_cfg(cfg, args)        # SEMANTICS 49-52
+    startup_notes_fix += _notes
     cfg, _notes = _feeds_cfg(cfg, args)          # SEMANTICS 57-60
+    startup_notes_fix += _notes
     cfg, _notes = _first_forecast_cfg(cfg, args)  # SEMANTICS 53-56
     startup_notes_fix += _notes
     if getattr(args, "forecast_tiers", False):
