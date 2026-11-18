@@ -501,9 +501,12 @@ class _ArcGisFeedBase:
     def _paged(self, layer_url: str, params: dict, what: str) -> tuple:
         """(features, capped): every page of one query; raises on failure.
         capped = the pager ran out of pages while the server still had
-        more (the tail is missing)."""
+        more (the tail is missing). self._last_page_len: the shortest page
+        the server said was not the last (its page size; None when one
+        page held everything)."""
         features: list = []
         offset = 0
+        self._last_page_len = None
         for _page in range(self._MAX_PAGES):
             page_params = dict(params)
             if offset:
@@ -521,6 +524,8 @@ class _ArcGisFeedBase:
             features.extend(page)
             if not payload.get("exceededTransferLimit") or not page:
                 return features, False
+            self._last_page_len = (len(page) if self._last_page_len is None
+                                   else min(self._last_page_len, len(page)))
             offset += len(page)
         return features, True
 
@@ -636,6 +641,11 @@ class _ArcGisFeedBase:
         elif now - st["full_at_s"] >= self.INCREMENTAL_FULL_EVERY_S \
                 or now < st["full_at_s"]:
             full_why = "hourly full refresh"
+        elif len(oids) > self._MAX_PAGES * (st["page_len"]
+                                            or max(1, st["n_full"])):
+            # the legacy pager might run out of pages now: ask as it would
+            full_why = (f"{len(oids)} features may exceed the full query's "
+                        f"{self._MAX_PAGES} pages")
         need = [o for o in oids
                 if st is None or o not in st["feats"]
                 or st["attrs"].get(o) != attrs[o]]
@@ -703,10 +713,13 @@ class _ArcGisFeedBase:
             self._note_inc("full", f"{name}: legacy full fetch — a feature "
                                    f"without a unique integer OBJECTID")
             return out
+        page_len = self._last_page_len
         if st is not None and why == "hourly full refresh":
             self._compare(name, st, rows, full_oids, out)
         self._inc_state[key] = {
             "full_at_s": now,
+            "n_full": len(out),
+            "page_len": page_len,
             "attrs": dict(rows),
             "feats": {o: _pack_feature(f) for o, f in zip(full_oids, out)}}
         self._note_inc("full", f"{name}: full fetch ({why}), "
