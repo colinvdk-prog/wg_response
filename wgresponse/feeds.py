@@ -91,6 +91,7 @@ fire off-domain horizon, wgresponse.offmap); no output path serializes it.
 """
 from __future__ import annotations
 
+import copy
 import csv
 import io
 import json
@@ -239,6 +240,9 @@ def _norm_irwin(raw: Optional[str]) -> Optional[str]:
     s = str(raw).strip().strip("{}").strip().lower()
     return s or None
 
+
+#: SAFETY SEMANTICS 62: a normalized IRWIN id that may enter a query
+_IRWIN_QUERY_SAFE = re.compile(r"^[0-9a-f-]{8,64}$")
 
 _NAME_STRIP_TOKENS = frozenset({"fire", "incident"})
 
@@ -827,6 +831,50 @@ class WfigsFeed(_ArcGisFeedBase):
     def keeps_rx(self) -> bool:
         """keep_rx (SEMANTICS 43): this adapter holds rx_records."""
         return self._keep_rx
+
+    def fetch_irwins(self, irwin_ids, bbox: Optional[BBox] = None
+                     ) -> "tuple[list[FireIncident], bool]":
+        """SENTINEL PRIORITY PASS (contracts SAFETY SEMANTICS 62): the
+        records of these IRWIN ids only — both layers asked with an IRWIN
+        filter (each id in its stored spellings: braces or none, upper or
+        lower case), parsed by the same _build as fetch_active, prescribed
+        burns dropped as they are there. Runs on a COPY of the adapter, so
+        fetch_active's per-fetch state — last_fetch_ok, the telemetry, the
+        incremental cache, rx_records — is untouched. An id that is not a
+        plain IRWIN string (hex, dashes, braces) is never sent. Returns
+        (incidents, ok); never raises."""
+        vals: set = set()
+        for raw in irwin_ids or ():
+            core = _norm_irwin(raw)
+            if not core or not _IRWIN_QUERY_SAFE.match(core):
+                continue
+            for v in (core, core.upper()):
+                vals.update((v, "{" + v + "}"))
+        if not vals:
+            return [], True
+        inlist = ",".join(f"'{v}'" for v in sorted(vals))
+        twin = copy.copy(self)
+        twin._requests = []
+        twin._inc_notes = []
+        twin._inc_state = {}
+        twin.last_fetch_events = []
+        twin._include_rx = False
+        twin._rx_seen = []          # RX points land here and are dropped
+        try:
+            pts_params = twin._params(self.POINT_OUT_FIELDS, bbox)
+            pts_params["where"] = f"IrwinID IN ({inlist})"
+            points, _ = twin._paged(self.POINTS_URL, pts_params,
+                                    "wfigs priority points")
+            per_params = twin._params(
+                self.PERIM_OUT_FIELDS + ",attr_IncidentTypeCategory", bbox)
+            per_params["where"] = (f"attr_IrwinID IN ({inlist}) OR "
+                                   f"poly_IRWINID IN ({inlist})")
+            perims, _ = twin._paged(self.PERIMETERS_URL, per_params,
+                                    "wfigs priority perimeters")
+            return twin._build(points, perims), True
+        except Exception:                  # noqa: BLE001 — the caller notes it
+            log.warning("WFIGS priority fetch failed", exc_info=True)
+            return [], False
 
     def fetch_active(self, bbox: Optional[BBox] = None) -> "list[FireIncident]":
         """Active incidents (optionally bbox-filtered). Never raises: transport or

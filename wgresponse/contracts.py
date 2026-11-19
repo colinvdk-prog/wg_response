@@ -2602,6 +2602,57 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    later. Bounds [60, 7200] s. 0 (the default) = STALE_PERIODS x the
    period, byte-identical.
 
+62. A FIRE THE SENTINEL FINDS NEAR HOMES IS FORECAST AT ONCE — THE SENTINEL
+   PRIORITY PASS (2026-11-19; founder: "build the sentinel priority pass";
+   cfg.sentinel_priority_pass, watch --sentinel-priority; needs 60's
+   sentinel; amends 60's SHADOW rule when on). The sentinel sees a new
+   agency record about a minute after it is published, but the cycle
+   fetched its feeds before that: the record waited for the next cycle's
+   fetch — on world24 (2026-11-19) cycles were 292 s apart at the median
+   and 44 min at worst. With the knob on, an event the sentinel raises for
+   a WFIGS record (non-RX, within new_fire_sentinel_km of a protected home)
+   is handed to the daemon, which queues its IRWIN id on the live
+   monitor and wakes the loop. Only WFIGS records: the fusion names a fire
+   by its IRWIN id whenever one of its records has one (feeds,
+   _canonical_group_id), so the id the pass gives the fire is the id every
+   later cycle gives it — no client ever gets a second alert stream for it.
+   FIRIS and CAL FIRE records carry no IRWIN id; they stay operator-only.
+   THE CHECKPOINTS: before the assessment loop, between any two incidents
+   of it (the early plan's order and the legacy order) and after it — all
+   inside the terrain turn — the monitor takes every queued id this cycle
+   neither carries (any fused record, before the gates, by incident or
+   IRWIN id) nor tracks (an alert pair), fetches that record alone through
+   the WFIGS adapter (both layers asked by IRWIN id, parsed by the same
+   build, RX dropped; on a copy of the adapter, so the cycle's fetch state
+   and telemetry are untouched), fuses it with the cycle's own fusion call,
+   runs it through the staleness gate (9) and, when that gate is on, the
+   contained gate (13), skips it when a fire of this cycle is the same fire
+   under another id (the fusion's name join: same normalized name, origins
+   under 5 km), then assesses it and evaluates its pairs at once — the
+   SAFETY SEMANTICS 49 seam (only_incidents, no unsent flush); its
+   notifications go out then. The fire joins the cycle's set after the
+   loop (map, blind pairs, meta, dispatch); the end-of-cycle evaluate skips
+   its pairs (no pair steps twice in a cycle). A failed fetch or assessment
+   is a note: never a degraded cycle, never a blind feed.
+   NEVER LATER: the pass forecasts from the record alone — no satellite
+   heat is attached to it — so the next full cycle that carries the fire
+   treats it as NEW again: its kept forecast and its "had a forecast" mark
+   (55) are dropped, so its forecast is computed in the cycle as a first
+   forecast (54) and, with 49, it goes first and its pairs are evaluated
+   right after it. Every alert the full cycle would have sent without the
+   pass is sent at the same point of that cycle or sooner; the pass only
+   adds an earlier evaluation of pairs that did not exist before it (a new
+   pair can only step up from NONE; no pair it creates can step down
+   before clear_cycles full evaluations). A fire a pass assessed that no
+   full cycle carries within 6 h stops being treated as new.
+   CycleResult.timings["priority_pass"] lists each handled id and its
+   outcome (in_cycle, fetch_failed, not_found, stale, contained,
+   joins_active, no_homes, assess_failed, assessed, assessed_alerts_at_end,
+   failed) with its fetch time and when it was done; the sentinel's
+   records gain priority / priority_done_s / priority_lead_s
+   (/api/state sentinel). The TEST world never runs a pass. Knob off = no
+   hand-off, no checkpoint, byte-identical.
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -4900,6 +4951,13 @@ class ResponseConfig:
     # --new-fire-sentinel S). The cycle reads nothing from it.
     new_fire_sentinel_s: float = 0.0
     new_fire_sentinel_km: float = 12.0   # the 8 km tripwire + 40 min of cycle lag at 1.7 m/s
+    # 62: THE SENTINEL PRIORITY PASS — a WFIGS record the sentinel raises an
+    # event for is queued on the live monitor (the loop woken) and, at the
+    # cycle's next checkpoint between two assessments, fetched alone,
+    # assessed and its pairs evaluated at once; the next full cycle treats
+    # it as new again. Needs new_fire_sentinel_s > 0. False = no hand-off,
+    # byte-identical (watch --sentinel-priority).
+    sentinel_priority_pass: bool = False
     # --- Sprint 2 (Council-1 remediations) ---
     slack_min: float = 15.0            # planned-slack floor per stop (SAFETY SEMANTICS 7)
     blind_alarm_cycles: int = 1        # unassessed cycles before OperatorEvent('degraded')
@@ -6124,6 +6182,9 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
             and 0.0 < cfg.new_fire_sentinel_km <= 60.0):
         problems.append("new_fire_sentinel_km must be within (0, 60] km "
                         "(60 km = the monitor's client-search cap)")
+    if cfg.sentinel_priority_pass and not cfg.new_fire_sentinel_s > 0.0:
+        problems.append("sentinel_priority_pass needs the new-fire sentinel "
+                        "(new_fire_sentinel_s > 0; SAFETY SEMANTICS 62)")
     # SAFETY SEMANTICS 34a' (2026-10-21): comma-separated far-zone ids
     if not isinstance(cfg.sim_far_zones_off, str):
         problems.append("sim_far_zones_off must be a string of comma-"

@@ -707,6 +707,14 @@ class ThreatMonitor:
         self._aoi = aoi
         self._incumbent = None          # last DispatchPlan, warm-start seed
         self._extreme_prev: dict = {}   # incident_id -> bool (regime toggle events)
+        # SENTINEL PRIORITY PASS (cfg.sentinel_priority_pass; SAFETY
+        # SEMANTICS 62): the sentinel's queued WFIGS records, and the fires a
+        # pass assessed (incident_id -> when), treated as NEW again by the
+        # next full cycle that carries them
+        self._priority_lock = threading.Lock()
+        self._priority_inbox: list = []
+        self._priority_provisional: dict = {}
+        self._priority_new_again: set = set()
         # W1 SEEDED INCIDENTS (contracts SAFETY SEMANTICS 12): user-lit fires,
         # consulted every cycle; empty = byte-identical cycles.
         self._seeded = seeded_mod.SeededIncidentStore()
@@ -987,6 +995,22 @@ class ThreatMonitor:
             self._kept_failures = []
         no_domain = [] if learn is not None else None
         steps.mark("loop_setup_s")
+        pr = None
+        if (getattr(self._cfg, "sentinel_priority_pass", False)
+                and self.early_alerts_ok):
+            # SAFETY SEMANTICS 62: a fire a pass assessed is NEW again here
+            # (its kept forecast dropped, before the early plan reads it)
+            pr = self._priority_begin(incidents, now_s, t_cycle0, timings)
+        between = None
+        if pr is not None:
+            _pmaps = (assessments, ensembles, clients_seen, etas, roster_seen,
+                      forecasts, extreme_flags, eroded_map, weather_fields,
+                      freshness)
+
+            def between():
+                self._priority_checkpoint(
+                    pr, active, now_s, feeds_healthy, notes, operator_events,
+                    failed_incidents, _pmaps, no_domain, timings)
         early = None
         if learn is not None or self._cfg.terrain_regions:
             # SAFETY SEMANTICS 40: the TERRAIN TURN — no learning forecast
@@ -1006,6 +1030,8 @@ class ThreatMonitor:
                                  f"({exc}) — the legacy loop runs this "
                                  f"cycle (SAFETY SEMANTICS 49)")
                 steps.mark("early_plan_s")
+            if between is not None:
+                between()
             if early is not None:
                 self._assess_early(
                     early, active, now_s, feeds_healthy, t_cycle0, timings,
@@ -1013,9 +1039,12 @@ class ThreatMonitor:
                     operator_events, failed_incidents,
                     (assessments, ensembles, clients_seen, etas,
                      roster_seen, forecasts, extreme_flags, eroded_map,
-                     weather_fields, freshness), no_domain, steps=steps)
+                     weather_fields, freshness), no_domain, steps=steps,
+                    between=between)
             else:
                 for inc in active:
+                    if between is not None:
+                        between()
                     t_inc = time.monotonic()
                     self._assess_guarded(
                         inc, now_s, failed_incidents, notes, operator_events,
@@ -1025,8 +1054,14 @@ class ThreatMonitor:
                              freshness=freshness, no_domain=no_domain))
                     steps.incident(inc.incident_id,
                                    time.monotonic() - t_inc, timings)
+            if between is not None:
+                between()
         finally:
             self._terrain_turn.release()
+        if pr is not None:
+            # SAFETY SEMANTICS 62: the passes' fires join the cycle's set
+            active = self._priority_end(pr, active, failed_incidents, now_s,
+                                        timings)
         if self._cfg.weather_retry_first_forecast:
             # SAFETY SEMANTICS 55: this cycle's forecasts are next cycle's
             # "had a forecast" (the tiers path reads its kept forecasts)
@@ -1159,6 +1194,10 @@ class ThreatMonitor:
                 self._set_crew_context(now_s)
             skip = ({"skip_incidents": early.done}
                     if early is not None and early.done else {})
+            if pr is not None and pr.done:
+                # SAFETY SEMANTICS 62: a pass's pairs stepped once already
+                skip = {"skip_incidents": set(skip.get("skip_incidents")
+                                              or ()) | set(pr.done)}
             steps.mark("alert_crew_context_s")
             events = self._evaluate_alerts(assessments, now_s, blind_pairs,
                                            feeds_healthy, incident_meta,
@@ -1176,6 +1215,10 @@ class ThreatMonitor:
             # end-of-cycle evaluate would have listed them
             events = self._one_evaluate_order(list(early.events) + events,
                                               early.pre_keys, assessments)
+        if pr is not None and pr.events:
+            # SAFETY SEMANTICS 62: a pass's events, in the same pair order
+            events = self._one_evaluate_order(list(pr.events) + events,
+                                              pr.pre_keys, assessments)
         operator_events.extend(self._drain_alert_operator_events(notes))
         if self._seeded.has_active():
             # SEMANTICS 12e: a seed past its forecast horizon with nothing
@@ -1572,6 +1615,269 @@ class ThreatMonitor:
                 incident_id=inc.incident_id,
                 detail={"step": "assess"}))
 
+    # ------------------------------- sentinel priority pass (SEMANTICS 62)
+
+    #: a fire assessed by a pass and never carried by a full cycle stops
+    #: counting as provisional after this long (s)
+    PRIORITY_PROVISIONAL_S = 6 * 3600.0
+
+    def queue_priority(self, item: dict) -> None:
+        """SAFETY SEMANTICS 62: the sentinel's hand-off (its thread) — a
+        WFIGS record {irwin, raw_irwin, t_s, client, km, name} for the live
+        cycle's next priority checkpoint. Thread-safe; a record already
+        queued is not queued twice."""
+        irwin = str(item.get("irwin") or "").strip().lower()
+        if not irwin:
+            return
+        with self._priority_lock:
+            if any(q["irwin"] == irwin for q in self._priority_inbox):
+                return
+            self._priority_inbox.append(dict(item, irwin=irwin))
+
+    def _priority_begin(self, incidents: list, now_s: float, t0: float,
+                        timings: dict):
+        """SAFETY SEMANTICS 62, before the assessment: the ids this cycle
+        already carries (every fused record, before any gate) and tracks;
+        a fire a pass assessed that this cycle carries is NEW again — its
+        kept forecast and its 'had a forecast' mark are dropped, so it is
+        forecast first and on its own, exactly as a new fire is."""
+        known: set = set()
+        carried: set = set()
+        for inc in incidents:
+            known.add(str(inc.incident_id).lower())
+            carried.add(str(inc.incident_id))
+            if inc.irwin_id:
+                known.add(str(inc.irwin_id).lower())
+        try:
+            pre_keys = list(self._alert_engine.states())
+        except Exception:                    # noqa: BLE001 — order only
+            pre_keys = None
+        known |= {str(key[1]).lower() for key in (pre_keys or ())}
+        for iid in [iid for iid, t in self._priority_provisional.items()
+                    if now_s - t > self.PRIORITY_PROVISIONAL_S]:
+            del self._priority_provisional[iid]
+        again = {iid for iid in self._priority_provisional if iid in carried}
+        for iid in again:
+            self._kept.pop(iid, None)
+            self._forecast_prev.discard(iid)
+        self._priority_new_again = again
+        return SimpleNamespace(known=known, pre_keys=pre_keys, t0=t0,
+                               done=set(), events=[], rows=[], added=[],
+                               kf=[], se=[], ctx_told=False, again=again)
+
+    def _priority_checkpoint(self, pr, active: list, now_s: float,
+                             feeds_healthy: bool, notes: list,
+                             operator_events: list, failed_incidents: set,
+                             maps: tuple, no_domain: Optional[list],
+                             timings: dict) -> None:
+        """SAFETY SEMANTICS 62, between two assessments: every queued
+        sentinel record this cycle does not already carry or track is
+        fetched alone (WFIGS, by IRWIN id), fused, gated (stale; contained
+        when that gate is on), skipped when a fire of this cycle carries it
+        under another id (its name within the fusion's 5 km), then
+        assessed and its pairs evaluated at once. Never raises; nothing it
+        does marks the cycle degraded or a feed blind."""
+        with self._priority_lock:
+            items, self._priority_inbox = self._priority_inbox, []
+        for item in items:
+            irwin = item["irwin"]
+            row = {"irwin": irwin, "name": item.get("name"),
+                   "client": item.get("client"), "km": item.get("km"),
+                   "queued_s": item.get("t_s"),
+                   "at_s": round(time.monotonic() - pr.t0, 3)}
+            pr.rows.append(row)
+            try:
+                row["outcome"] = self._priority_one(
+                    pr, item, row, active, now_s, feeds_healthy, notes,
+                    operator_events, failed_incidents, maps, no_domain,
+                    timings)
+            except Exception as exc:             # noqa: BLE001 — noted
+                row["outcome"] = "failed"
+                notes.append(f"sentinel priority pass: {irwin} failed "
+                             f"({exc}) — the next full cycle carries it "
+                             f"(SAFETY SEMANTICS 62)")
+            row["done_s"] = float(now_s) + (time.monotonic() - pr.t0)
+
+    def _priority_one(self, pr, item: dict, row: dict, active: list,
+                      now_s: float, feeds_healthy: bool, notes: list,
+                      operator_events: list, failed_incidents: set,
+                      maps: tuple, no_domain: Optional[list],
+                      timings: dict) -> str:
+        irwin = item["irwin"]
+        if irwin in pr.known:
+            return "in_cycle"
+        fetch = None
+        for feed in self._feeds:
+            fn = getattr(feed, "fetch_irwins", None)
+            if callable(fn):
+                fetch = fn
+                break
+        if fetch is None:
+            return "no_wfigs_feed"
+        t_f = time.monotonic()
+        got, ok = fetch([item.get("raw_irwin") or irwin], self._aoi)
+        row["fetch_s"] = round(time.monotonic() - t_f, 3)
+        if not ok:
+            notes.append(f"sentinel priority pass: the WFIGS fetch of "
+                         f"{irwin} failed — the next full cycle carries it "
+                         f"(never a blind feed; SAFETY SEMANTICS 62)")
+            return "fetch_failed"
+        incs = [inc for inc in got if inc.active]
+        if not incs:
+            return "not_found"
+        fused = self._priority_fuse(incs, now_s)
+        fused = self._gate_stale_incidents(fused, now_s, notes)
+        if not fused:
+            return "stale"
+        if self._cfg.drop_contained_incidents:
+            fused, _removed = self._drop_contained_incidents(fused, now_s,
+                                                             notes)
+            if not fused:
+                return "contained"
+        outcome = "not_found"
+        for inc in fused:
+            iid = str(inc.incident_id)
+            if iid.lower() in pr.known:
+                outcome = "in_cycle"
+                continue
+            if self._priority_joins(inc, active):
+                outcome = "joins_active"
+                continue
+            outcome = self._priority_assess(
+                pr, inc, now_s, feeds_healthy, notes, operator_events,
+                failed_incidents, maps, no_domain, timings)
+            row["incident_id"] = iid
+            pr.known.add(iid.lower())
+        return outcome
+
+    def _priority_fuse(self, incs: list, now_s: float) -> list:
+        """The cycle's own fusion call on the pass's records alone (a WFIGS
+        record's IRWIN id is its canonical id whatever joins it later)."""
+        try:
+            from wgresponse.feeds import fuse_incidents
+            if getattr(self._cfg, "fuse_colocated_incidents", False):
+                return list(fuse_incidents([incs], cfg=self._cfg,
+                                           now_s=now_s, merges=[]))
+            if getattr(self._cfg, "fuse_name_join_strict", False):
+                return list(fuse_incidents([incs], cfg=self._cfg,
+                                           now_s=now_s))
+            return list(fuse_incidents([incs]))
+        except Exception:                        # noqa: BLE001 — as fetched
+            return list(incs)
+
+    @staticmethod
+    def _priority_joins(inc, active: list) -> bool:
+        """True when a fire of this cycle is the same fire under another id:
+        the fusion's name join (same normalized name, origins < 5 km)."""
+        from wgresponse.feeds import _NAME_JOIN_DIST_M, _norm_name
+        name = _norm_name(inc.name)
+        if not name:
+            return False
+        return any(_norm_name(a.name) == name
+                   and geo.haversine_m(a.origin, inc.origin)
+                   < _NAME_JOIN_DIST_M for a in active)
+
+    def _priority_assess(self, pr, inc, now_s: float, feeds_healthy: bool,
+                         notes: list, operator_events: list,
+                         failed_incidents: set, maps: tuple,
+                         no_domain: Optional[list], timings: dict) -> str:
+        """Assess one pass fire into the cycle's containers and evaluate its
+        pairs at once (the SAFETY SEMANTICS 49 seam: only_incidents, no
+        unsent flush)."""
+        (assessments, ensembles, clients_seen, etas, roster_seen, forecasts,
+         extreme_flags, eroded_map, weather_fields, freshness) = maps
+        iid = inc.incident_id
+        c = SimpleNamespace(
+            assessments=[], ensembles={}, clients_seen={}, etas={}, notes=[],
+            roster_seen={}, forecasts={}, extreme_flags={}, eroded_map={},
+            weather_fields={}, freshness={},
+            no_domain=[] if no_domain is not None else None, op=[],
+            failed=set())
+        n_kf, n_se = len(self._kept_failures), len(self._sanity_events)
+        self._assess_guarded(
+            inc, now_s, c.failed, c.notes, c.op,
+            (c.assessments, c.ensembles, c.clients_seen, c.etas, c.notes,
+             c.roster_seen, c.forecasts, c.extreme_flags, c.eroded_map),
+            dict(timings=timings, weather_fields=c.weather_fields,
+                 freshness=c.freshness, no_domain=c.no_domain))
+        # _assess_early rebuilds these two lists after its loop: held here
+        # and put back after it
+        pr.kf += self._kept_failures[n_kf:]
+        del self._kept_failures[n_kf:]
+        pr.se += self._sanity_events[n_se:]
+        del self._sanity_events[n_se:]
+        if self._cfg.weather_retry_first_forecast:
+            # the next full cycle's forecast is its first again (SEM 55)
+            self._forecast_now.discard(iid)
+        assessments.extend(c.assessments)
+        ensembles.update(c.ensembles)
+        clients_seen.update(c.clients_seen)
+        etas.update(c.etas)
+        roster_seen.update(c.roster_seen)
+        forecasts.update(c.forecasts)
+        extreme_flags.update(c.extreme_flags)
+        eroded_map.update(c.eroded_map)
+        weather_fields.update(c.weather_fields)
+        freshness.update(c.freshness)
+        notes.extend(c.notes)
+        operator_events.extend(c.op)
+        failed_incidents.update(c.failed)
+        if no_domain is not None:
+            no_domain.extend(c.no_domain)
+        pr.added.append(inc)
+        self._priority_provisional[iid] = float(now_s)
+        if iid in c.failed:
+            return "assess_failed"
+        if not c.assessments:
+            return "no_homes"
+        if (not pr.ctx_told
+                and getattr(self._cfg, "alert_crew_wording", "fixed")
+                == "plan"):
+            # SAFETY SEMANTICS 44: the crew facts, as the end-of-cycle
+            # evaluate is told them
+            self._set_crew_context(now_s)
+            pr.ctx_told = True
+        meta = {iid: {"name": inc.name,
+                      "containment_pct": inc.containment_pct,
+                      "acreage": inc.acreage,
+                      "updated_at_s": inc.updated_at_s}}
+        if self._cfg.extreme_regime_enabled:
+            meta[iid]["extreme_regime"] = c.extreme_flags.get(
+                iid, self._extreme_prev.get(iid, False))
+        try:
+            evs = list(self._alert_engine.evaluate(
+                c.assessments, now_s, blind_pairs=set(),
+                feeds_healthy=feeds_healthy, incident_meta=meta,
+                only_incidents={iid}, flush_unsent=False))
+        except TypeError as exc:
+            msg = str(exc)
+            if ("only_incidents" in msg or "flush_unsent" in msg
+                    or "keyword" in msg or "positional" in msg):
+                # an engine without the seam: the end-of-cycle evaluate
+                return "assessed_alerts_at_end"
+            raise
+        pr.done.add(iid)
+        pr.events.extend(evs)
+        return "assessed"
+
+    def _priority_end(self, pr, active: list, failed_incidents: set,
+                      now_s: float, timings: dict) -> list:
+        """SAFETY SEMANTICS 62, after the assessment: the held kept-failure
+        and sanity rows go back; a fire this cycle carried and assessed
+        stops being provisional; the passes' fires join the active set;
+        the telemetry row. Returns the new active list."""
+        self._kept_failures.extend(pr.kf)
+        self._sanity_events.extend(pr.se)
+        added = {id(a) for a in pr.added}
+        for inc in active:
+            iid = inc.incident_id
+            if (iid in self._priority_provisional and id(inc) not in added
+                    and iid not in failed_incidents):
+                del self._priority_provisional[iid]
+        self._priority_new_again = set()
+        timings["priority_pass"] = list(pr.rows)
+        return list(active) + [inc for inc in pr.added]
+
     def _early_alerts_on(self) -> bool:
         return (bool(getattr(self._cfg, "alert_new_fires_early", False))
                 and self.early_alerts_ok)
@@ -1621,6 +1927,9 @@ class ThreatMonitor:
             return SimpleNamespace(order=order, new=frozenset(),
                                    prefetched={}, pre_keys=None, head=[])
         tracked = {key[1] for key in pre_keys}
+        # SAFETY SEMANTICS 62: a fire a priority pass assessed is NEW again
+        # in the next full cycle (first, a forecast of its own, early alerts)
+        tracked -= set(getattr(self, "_priority_new_again", ()) or ())
         radius_m = self._threat_radius_m()
         ranked, prefetched, new = [], {}, set()
         for i, inc in enumerate(active):
@@ -1657,7 +1966,8 @@ class ThreatMonitor:
                       feeds_healthy: bool, t0: float, timings: dict,
                       notes: list, operator_events: list,
                       failed_incidents: set, maps: tuple,
-                      no_domain: Optional[list], steps=None) -> None:
+                      no_domain: Optional[list], steps=None,
+                      between=None) -> None:
         """SAFETY SEMANTICS 49: assess in plan.order, each incident into its
         own containers; right after a NEW fire's forecast, evaluate its
         pairs (AlertEngine.evaluate only_incidents={it}, the same clock,
@@ -1675,6 +1985,9 @@ class ThreatMonitor:
         rows: list = []
         armed, ctx_told = True, False
         for i in plan.order:
+            if between is not None:
+                # SAFETY SEMANTICS 62: a queued sentinel fire goes next
+                between()
             inc = active[i]
             iid = inc.incident_id
             c = SimpleNamespace(

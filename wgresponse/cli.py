@@ -507,6 +507,12 @@ def _build_parser() -> argparse.ArgumentParser:
                          "one within --new-fire-sentinel-km of a home "
                          "(/api/state sentinel); the cycle reads nothing "
                          "from it (0 = off; 60 suggested)")
+    pw.add_argument("--sentinel-priority", action="store_true",
+                    help="cfg.sentinel_priority_pass: a WFIGS record the "
+                         "sentinel finds near a home is fetched, forecast "
+                         "and its alerts evaluated at the cycle's next "
+                         "checkpoint between two assessments (needs "
+                         "--new-fire-sentinel; SAFETY SEMANTICS 62)")
     pw.add_argument("--new-fire-sentinel-km", type=float, default=None,
                     metavar="KM",
                     help="cfg.new_fire_sentinel_km (default 12 km: the 8 km "
@@ -885,6 +891,14 @@ def _feeds_cfg(cfg, args):
             f"within {cfg.new_fire_sentinel_km:g} km of a protected home "
             f"(/api/state sentinel); the cycle reads nothing from it — "
             f"SAFETY SEMANTICS 60")
+    if getattr(args, "sentinel_priority", False):
+        cfg = dataclasses.replace(cfg, sentinel_priority_pass=True)
+        notes.append(
+            "SENTINEL PRIORITY PASS: a WFIGS record the sentinel finds near "
+            "a home is queued and the loop woken; at the cycle's next "
+            "checkpoint between two assessments it is fetched alone, "
+            "forecast and its pairs evaluated at once; the next full cycle "
+            "treats it as new again (never later) — SAFETY SEMANTICS 62")
     return cfg, notes
 
 
@@ -1821,6 +1835,13 @@ class _WatchDaemon:
     def sentinel(self):
         return self._sentinel
 
+    def priority_from_sentinel(self, item: dict) -> None:
+        """SAFETY SEMANTICS 62: the sentinel's WFIGS hand-off — queued on
+        the live monitor for the next priority checkpoint, and the loop
+        woken (a sleeping loop starts its next cycle now)."""
+        self._monitor.queue_priority(item)
+        self.wake()
+
     def add_operator_event(self, ev) -> None:
         """An OperatorEvent raised between cycles (the sentinel's thread):
         appended to the bounded operator log."""
@@ -1998,6 +2019,10 @@ class _WatchDaemon:
             # SEMANTICS 60: the sentinel learns which records this cycle
             # carried (shadow; it never raises)
             self._sentinel.observe_cycle(res, now, float(self._clock()))
+            rows = (getattr(res, "timings", None) or {}).get("priority_pass")
+            if rows:
+                # SAFETY SEMANTICS 62: what the pass did with its records
+                self._sentinel.observe_priority(rows)
         self._publish_to_test_world()
         return res
 
@@ -3039,7 +3064,9 @@ def _cmd_watch(args) -> int:
         from wgresponse.sentinel import NewFireSentinel
         sentinel = NewFireSentinel(
             cfg, clients_fn=lambda: list(clients_by_id.values()), aoi=aoi,
-            on_event=daemon.add_operator_event)
+            on_event=daemon.add_operator_event,
+            on_priority=(daemon.priority_from_sentinel
+                         if cfg.sentinel_priority_pass else None))
         daemon.attach_sentinel(sentinel)
 
     httpd = server_mod.serve(port=args.port, host=args.host,

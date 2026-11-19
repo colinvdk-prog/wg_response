@@ -30,7 +30,15 @@ cycle_done_s (when its result was ready): cycle_done_s - first_seen_s is
 what a priority pass would have saved (best effort: a FIRIS row fused
 under another source's id may never match).
 
-SHADOW: the cycle reads NOTHING from here. The sentinel's own failures are
+PRIORITY HAND-OFF (cfg.sentinel_priority_pass, SAFETY SEMANTICS 62; given
+on_priority): an event raised for a WFIGS record — it carries an IRWIN
+id, which the fusion keeps as the fire's id whatever joins it later — is
+also handed to on_priority({irwin, raw_irwin, t_s, client, km, name}),
+after the lock, like the event; the daemon queues it for the live cycle's
+priority pass and wakes the loop. FIRIS and CAL FIRE records stay
+operator-only. observe_priority() then marks what the pass did.
+
+SHADOW (without the hand-off): the cycle reads NOTHING from here. The sentinel's own failures are
 its own — counted in status(), never a degraded cycle, never a feed_blind
 — and it writes nothing to the state file (a restart re-baselines). It
 holds its own lock; the network is never asked under it. Stdlib only."""
@@ -104,7 +112,8 @@ class NewFireSentinel:
                  aoi: Optional[BBox] = None,
                  http_get: Optional[Callable] = None,
                  clock: Callable[[], float] = time.time,
-                 on_event: Optional[Callable] = None):
+                 on_event: Optional[Callable] = None,
+                 on_priority: Optional[Callable] = None):
         self._period_s = float(cfg.new_fire_sentinel_s)
         self._radius_m = float(cfg.new_fire_sentinel_km) * 1000.0
         self._rule = rule_summary(cfg)
@@ -113,6 +122,7 @@ class NewFireSentinel:
         self._get = http_get or _default_get
         self._clock = clock
         self._on_event = on_event
+        self._on_priority = on_priority
         self._lock = threading.Lock()
         self._seen: dict = {"wfigs": None, "firis": None, "calfire": None}
         self._records: dict = {}          # key -> row
@@ -195,7 +205,57 @@ class NewFireSentinel:
                 except Exception:              # noqa: BLE001
                     log.exception("new-fire sentinel: the operator log "
                                   "refused an event")
+        if self._on_priority is not None:
+            self._hand_off(events)
         return events
+
+    def _hand_off(self, events: list) -> None:
+        """SAFETY SEMANTICS 62: each WFIGS event to on_priority (never
+        raises; a refused hand-off is logged and marked on the record)."""
+        for ev in events:
+            d = ev.detail or {}
+            if d.get("source") != "wfigs":
+                continue
+            with self._lock:
+                row = self._records.get(f"wfigs:{d.get('id')}")
+                raw = None if row is None else row.get("_raw_irwin")
+            item = {"irwin": d.get("id"), "raw_irwin": raw or d.get("id"),
+                    "t_s": float(ev.t_s), "client": d.get("client"),
+                    "km": d.get("km"), "name": d.get("name")}
+            try:
+                self._on_priority(item)
+                mark = "queued"
+            except Exception:                  # noqa: BLE001
+                log.exception("new-fire sentinel: the priority hand-off "
+                              "failed")
+                mark = "hand-off failed"
+            with self._lock:
+                if row is not None:
+                    row["priority"] = mark
+
+    def observe_priority(self, rows: list) -> int:
+        """SAFETY SEMANTICS 62: what the cycle's priority pass did with each
+        handed-off record (CycleResult.timings["priority_pass"] rows) —
+        marked on the record: priority (the outcome), priority_done_s and,
+        when its pairs were evaluated, priority_lead_s (done - first seen).
+        Never raises."""
+        n = 0
+        try:
+            with self._lock:
+                for r in rows or ():
+                    row = self._records.get(f"wfigs:{r.get('irwin')}")
+                    if row is None:
+                        continue
+                    row["priority"] = r.get("outcome")
+                    if r.get("done_s") is not None:
+                        row["priority_done_s"] = float(r["done_s"])
+                        if r.get("outcome") == "assessed":
+                            row["priority_lead_s"] = round(
+                                float(r["done_s"]) - row["first_seen_s"], 1)
+                    n += 1
+        except Exception:                      # noqa: BLE001
+            log.exception("new-fire sentinel: observe_priority failed")
+        return n
 
     def _ask(self, url: str, rows: list, what: str) -> dict:
         status, body = feeds._timed_get(self._get, url,
@@ -261,6 +321,7 @@ class NewFireSentinel:
                 if irwin is None or g.get("x") is None or g.get("y") is None:
                     continue
                 out.append({"source": "wfigs", "id": irwin,
+                            "raw_irwin": str(a.get("IrwinID")),
                             "key": f"wfigs:{irwin}",
                             "match": {irwin},
                             "name": a.get("IncidentName") or "",
@@ -409,6 +470,8 @@ class NewFireSentinel:
                                                              2),
                "event": False, "cycle_seen_s": None, "cycle_done_s": None,
                "_match": sorted(rec.get("match") or ())}
+        if rec.get("raw_irwin"):
+            row["_raw_irwin"] = rec["raw_irwin"]
         if rec.get("created_s") is not None:
             row["created_to_seen_s"] = round(t - rec["created_s"], 1)
         self._records[key] = row
