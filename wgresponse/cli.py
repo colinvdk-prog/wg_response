@@ -292,6 +292,34 @@ def _build_parser() -> argparse.ArgumentParser:
                          "use the finest bundled LANDFIRE tile (data/tiles) "
                          "covering it, noted per fire; no covering tile = "
                          "the failure stands (fail closed)")
+    # SAFETY SEMANTICS 53-56 (2026-11-18, first forecast speed): default-OFF
+    pw.add_argument("--terrain-regions", action="store_true",
+                    help="cfg.terrain_regions: fetch the protected homes' "
+                         "service regions from LANDFIRE once, in the "
+                         "background (lattice pieces, under the terrain "
+                         "turn), and cut a domain inside them with no LFPS "
+                         "job (SAFETY SEMANTICS 53)")
+    pw.add_argument("--terrain-region-piece-deg", type=float, default=None,
+                    help="cfg.terrain_region_piece_deg: a region piece's "
+                         "size in degrees (default 0.5)")
+    pw.add_argument("--terrain-memory-tiles", type=int, default=0,
+                    help="cfg.terrain_memory_tiles: keep the last N decoded "
+                         "LANDFIRE tiles in memory instead of re-reading "
+                         "them from disk every refresh (0 = off)")
+    pw.add_argument("--first-forecast-priority", action="store_true",
+                    help="cfg.first_forecast_priority: a fire with no "
+                         "forecast yet runs its ensemble members ahead of "
+                         "queued background refreshes (a kept forecast's "
+                         "refresh can land later; SAFETY SEMANTICS 54)")
+    pw.add_argument("--weather-retry-first-forecast", action="store_true",
+                    help="cfg.weather_retry_first_forecast: an NWS 5xx or "
+                         "timeout for a fire with no forecast yet is "
+                         "retried once after a short pause (SAFETY "
+                         "SEMANTICS 55)")
+    pw.add_argument("--learn-terrain-yield", action="store_true",
+                    help="cfg.learn_terrain_yield: a learning forecast also "
+                         "waits for the terrain turn between its terrain "
+                         "and canopy LANDFIRE jobs (SAFETY SEMANTICS 56)")
     pw.add_argument("--solver-evals", type=int, default=0,
                     help="cfg.solver_budget_evals: deterministic dispatch "
                          "budget as a consult COUNT (0 = wall clock); the "
@@ -379,11 +407,104 @@ def _build_parser() -> argparse.ArgumentParser:
                          "kept (26), egress inside the deadline (32), a way "
                          "out that lasts 8 h (38); 37's ramp is road-only "
                          "and stays off")
+    # FIRE -> ALERT LATENCY (2026-11-18, build lane 1; SAFETY SEMANTICS
+    # 49-52): default-OFF knobs, each its own flag.
+    pw.add_argument("--alert-new-fires-early", action="store_true",
+                    help="cfg.alert_new_fires_early: a new fire near homes "
+                         "(no alert pair yet, no kept forecast) is assessed "
+                         "first — warm terrain before cold, then the nearest "
+                         "home — and its alerts are evaluated and sent right "
+                         "after its own forecast, not after every other "
+                         "fire; the same events, sooner (SAFETY SEMANTICS "
+                         "49)")
+    pw.add_argument("--keep-reported-point", action="store_true",
+                    help="cfg.fuse_hotspots_keep_point: a point-only agency "
+                         "record that satellite heat joined (--fuse-hotspots) "
+                         "keeps its own reported point as a seed beside the "
+                         "heat — the heat no longer replaces it; an added "
+                         "seed can only make arrival earlier (SAFETY "
+                         "SEMANTICS 50)")
+    pw.add_argument("--summarize-recoveries", action="store_true",
+                    help="cfg.alert_recovery_summary: the alert pairs at "
+                         "none of one fire that go blind or are seen again "
+                         "give ONE operator event per fire (with the count) "
+                         "instead of one each; threatened pairs keep their "
+                         "own (SAFETY SEMANTICS 51a)")
+    pw.add_argument("--prune-idle-pairs", action="store_true",
+                    help="cfg.alert_prune_idle_pairs: an alert pair at none "
+                         "that carries nothing is dropped once its fire has "
+                         "left the map while every feed is healthy; it "
+                         "starts fresh if the fire returns (SAFETY "
+                         "SEMANTICS 51b)")
+    pw.add_argument("--operator-log-priority", action="store_true",
+                    help="cfg.operator_log_priority: /api/state keeps the "
+                         "operator-relevant events (satellite heat, feed "
+                         "blind, provider errors, regime, crew watch, "
+                         "threatened pairs) in their own rings a bulk cycle "
+                         "cannot evict; /healthz counts satellite heat "
+                         "events in the last 24 h (SAFETY SEMANTICS 51c)")
+    pw.add_argument("--stale-missing-time", action="store_true",
+                    help="cfg.stale_gate_missing_time: a record without an "
+                         "update time is aged by its discovery time (else "
+                         "kept as current, noted) instead of being excluded "
+                         "every cycle (SAFETY SEMANTICS 52a)")
+    pw.add_argument("--strict-name-join", action="store_true",
+                    help="cfg.fuse_name_join_strict: two records of the same "
+                         "name within 5 km stay two fires when their IRWIN "
+                         "ids differ or they were discovered more than 24 h "
+                         "apart (SAFETY SEMANTICS 52b)")
+    pw.add_argument("--notify-urgent-first", action="store_true",
+                    help="cfg.notify_urgent_first: within a cycle the "
+                         "notifier sends impact / extreme alerts first, then "
+                         "by the earliest pessimistic arrival (SAFETY "
+                         "SEMANTICS 52c)")
+    pw.add_argument("--cycle-step-timings", action="store_true",
+                    help="cfg.cycle_step_timings (telemetry only): "
+                         "last_cycle_phases.steps — each pre-loop gate, each "
+                         "incident's whole assessment (no-domain incidents "
+                         "aggregated), the blind-pair pass, the alert "
+                         "evaluate, dispatch, the persist and the /api/state "
+                         "build")
     pw.add_argument("--persist-crews", action="store_true",
                     help="cfg.crew_state_persist: the crews' last reports "
                          "survive a restart (in the state file and its "
                          "mirror; a restored report keeps its own time, so "
                          "staleness applies)")
+    # SAFETY SEMANTICS 57-60 (2026-11-18, the fire -> alert latency review):
+    # the feeds fetched faster; each default OFF.
+    pw.add_argument("--feeds-cache-bust", action="store_true",
+                    help="cfg.feeds_cache_bust: every ArcGIS feed query "
+                         "carries a per-query _t=<unix s>, so the CDN "
+                         "cannot serve it from its edge cache (FIRIS up to "
+                         "60 min, WFIGS up to 5 min stale)")
+    pw.add_argument("--feeds-gzip", action="store_true",
+                    help="cfg.feeds_gzip: every feed GET asks for gzip "
+                         "(same JSON, ~4x fewer bytes; a corrupt body is a "
+                         "blind fetch)")
+    pw.add_argument("--feeds-parallel", action="store_true",
+                    help="cfg.feeds_parallel: the feed adapters (and the "
+                         "live FIRMS sources) fetched at once and applied "
+                         "in feed order — the same fused set, notes and "
+                         "events as one after another")
+    pw.add_argument("--feeds-incremental", action="store_true",
+                    help="cfg.feeds_incremental: the WFIGS perimeter and "
+                         "FIRIS layers fetched as an attributes-only query "
+                         "plus the new or changed features; a full fetch "
+                         "hourly and after any failure (a difference is an "
+                         "operator event)")
+    pw.add_argument("--new-fire-sentinel", type=float, default=0.0,
+                    metavar="S",
+                    help="cfg.new_fire_sentinel_s: a shadow thread polls the "
+                         "cheap agency queries (WFIGS points, FIRIS, CAL "
+                         "FIRE) every S s for NEW records, records when each "
+                         "was first seen, and raises an operator event for "
+                         "one within --new-fire-sentinel-km of a home "
+                         "(/api/state sentinel); the cycle reads nothing "
+                         "from it (0 = off; 60 suggested)")
+    pw.add_argument("--new-fire-sentinel-km", type=float, default=None,
+                    metavar="KM",
+                    help="cfg.new_fire_sentinel_km (default 12 km: the 8 km "
+                         "tripwire + 40 min of cycle lag at 1.7 m/s)")
     # SAFETY SEMANTICS 43 (2026-11-01): screening step 0, shadow only.
     pw.add_argument("--screen-labels", action="store_true",
                     help="cfg.screen_labels (founder 2026-11-01, screening "
@@ -695,8 +816,74 @@ def _parse_bbox(text: str):
     return BBox(west=parts[0], south=parts[1], east=parts[2], north=parts[3])
 
 
+def _feed_transport(cfg) -> dict:
+    """SAFETY SEMANTICS 57-59: the adapters' transport options from cfg —
+    {} when every one is off (the legacy stack, byte-identical)."""
+    t = {}
+    if getattr(cfg, "feeds_cache_bust", False):
+        t["cache_bust"] = True
+    if getattr(cfg, "feeds_gzip", False):
+        t["gzip"] = True
+    if getattr(cfg, "feeds_incremental", False):
+        t["incremental"] = True
+    if getattr(cfg, "feeds_parallel", False):
+        t["parallel_sources"] = True
+    return t
+
+
+def _feeds_cfg(cfg, args):
+    """(cfg, startup notes) with the SAFETY SEMANTICS 57-60 flags applied:
+    --feeds-cache-bust, --feeds-gzip, --feeds-parallel, --feeds-incremental,
+    --new-fire-sentinel [--new-fire-sentinel-km]. No flag = cfg unchanged,
+    no note."""
+    notes = []
+    if getattr(args, "feeds_cache_bust", False):
+        cfg = dataclasses.replace(cfg, feeds_cache_bust=True)
+        notes.append(
+            "FEEDS CACHE-BUSTED: every ArcGIS feed query carries a per-query "
+            "_t=<unix s>, so the ArcGIS CDN cannot answer it from its edge "
+            "cache (FIRIS s-maxage 3600 s, WFIGS 300 s) — SAFETY SEMANTICS 57")
+    if getattr(args, "feeds_gzip", False):
+        cfg = dataclasses.replace(cfg, feeds_gzip=True)
+        notes.append(
+            "FEEDS GZIP: every feed GET asks Accept-Encoding gzip (the same "
+            "JSON / CSV; a body that does not decompress is a blind fetch) "
+            "— SAFETY SEMANTICS 57")
+    if getattr(args, "feeds_parallel", False):
+        cfg = dataclasses.replace(cfg, feeds_parallel=True)
+        notes.append(
+            "FEEDS IN PARALLEL: the feed adapters (and the live FIRMS "
+            "sources) are fetched at once and applied in feed order — the "
+            "same fused set, notes and events as one after another; the "
+            "fetch takes the slowest feed, not the sum — SAFETY SEMANTICS 58")
+    if getattr(args, "feeds_incremental", False):
+        cfg = dataclasses.replace(cfg, feeds_incremental=True)
+        notes.append(
+            "FEEDS INCREMENTAL: the WFIGS perimeter and FIRIS layers are "
+            "fetched as an attributes-only query plus the features that are "
+            "new or changed; a full fetch hourly, after any failure and when "
+            "many changed — a difference between the cache and the hourly "
+            "full fetch is an operator event and the full answer is used; a "
+            "geometry edit that changes no attribute waits for the hourly "
+            "fetch — SAFETY SEMANTICS 59")
+    s = float(getattr(args, "new_fire_sentinel", 0.0) or 0.0)
+    km = getattr(args, "new_fire_sentinel_km", None)
+    if s > 0.0:
+        cfg = dataclasses.replace(cfg, new_fire_sentinel_s=s)
+        if km is not None:
+            cfg = dataclasses.replace(cfg, new_fire_sentinel_km=float(km))
+        notes.append(
+            f"NEW-FIRE SENTINEL (shadow): every {s:g} s a thread asks WFIGS, "
+            f"FIRIS and CAL FIRE for records it has not seen, notes when "
+            f"each was first seen and raises an operator event for one "
+            f"within {cfg.new_fire_sentinel_km:g} km of a protected home "
+            f"(/api/state sentinel); the cycle reads nothing from it — "
+            f"SAFETY SEMANTICS 60")
+    return cfg, notes
+
+
 def _live_feed_stack(map_key, live: bool = False, screen: bool = False,
-                     recorder=None):
+                     recorder=None, transport=None):
     """Build the live feed adapters: WFIGS + FIRIS + CAL FIRE always, FIRMS
     only when a MAP_KEY is provided (Sprint 2 C3d/C1: a keyless FirmsFeed is
     BLIND by design — [] with last_fetch_ok=False — and would mark EVERY watch
@@ -708,11 +895,22 @@ def _live_feed_stack(map_key, live: bool = False, screen: bool = False,
     memory; recorder (watch --firms-log): the live FIRMS adapter's raw poll
     log. Neither applies to the legacy FIRMS mode.
 
+    transport (SAFETY SEMANTICS 57-59; _feed_transport): cache_bust / gzip
+    / incremental for the ArcGIS adapters, gzip for CAL FIRE and FIRMS,
+    parallel_sources for FIRMS; None or {} = the legacy adapters.
+
     Returns (feeds, notes): the adapter list and human-readable notes (the
     FIRMS skip line, when applicable)."""
     from wgresponse import feeds
-    stack = [feeds.WfigsFeed(keep_rx=True) if screen else feeds.WfigsFeed(),
-             feeds.FirisFeed(), feeds.CalFireFeed()]
+    t = dict(transport or {})
+    arc = {k: True for k in ("cache_bust", "gzip", "incremental") if t.get(k)}
+    gz = {"gzip": True} if t.get("gzip") else {}
+    firms_t = dict(gz)
+    if t.get("parallel_sources"):
+        firms_t["parallel_sources"] = True
+    stack = [feeds.WfigsFeed(keep_rx=True, **arc) if screen
+             else feeds.WfigsFeed(**arc),
+             feeds.FirisFeed(**arc), feeds.CalFireFeed(**gz)]
     notes = []
     if map_key:
         memory = None
@@ -720,8 +918,8 @@ def _live_feed_stack(map_key, live: bool = False, screen: bool = False,
             from wgresponse.screening import HeatSiteMemory
             memory = HeatSiteMemory(feeds.FirmsFeed.LIVE_SOURCES)
         stack.append(feeds.FirmsFeed.live(map_key, recorder=recorder,
-                                          memory=memory) if live
-                     else feeds.FirmsFeed(map_key=map_key))
+                                          memory=memory, **firms_t) if live
+                     else feeds.FirmsFeed(map_key=map_key, **firms_t))
     else:
         notes.append(
             "FirmsFeed skipped — no FIRMS_MAP_KEY in the environment "
@@ -921,11 +1119,89 @@ _LFPS_EMAIL_ENV = "LFPS_EMAIL"
 _LFPS_EMAIL_DEFAULT = "ops@thewildfireguardian.com"
 
 
-def _watch_terrain(args, state_dir):
+def _first_forecast_cfg(cfg, args):
+    """(cfg, startup notes) for the first-forecast-speed flags (2026-11-18;
+    SAFETY SEMANTICS 53-56). No flag = cfg unchanged, no note."""
+    notes: list = []
+    if getattr(args, "terrain_regions", False):
+        cfg = dataclasses.replace(cfg, terrain_regions=True)
+        piece = getattr(args, "terrain_region_piece_deg", None)
+        if piece is not None:
+            cfg = dataclasses.replace(cfg,
+                                      terrain_region_piece_deg=float(piece))
+        notes.append(
+            f"REGIONAL TERRAIN: the protected homes' service regions (each "
+            f"group of homes padded by the client range) are fetched from "
+            f"LANDFIRE once, in the background, as "
+            f"{cfg.terrain_region_piece_deg:g}-degree pieces (never during a "
+            f"cycle's assessment: the terrain turn), cached and mirrored; a "
+            f"new fire's domain inside ready pieces is cut from them with no "
+            f"LFPS job, a domain with a cached tile keeps it, anything else "
+            f"takes the LFPS path — SAFETY SEMANTICS 53")
+    n = int(getattr(args, "terrain_memory_tiles", 0) or 0)
+    if n:
+        cfg = dataclasses.replace(cfg, terrain_memory_tiles=n)
+        notes.append(
+            f"TERRAIN MEMORY: the last {n} decoded LANDFIRE tiles stay in "
+            f"memory (the same values, shared read-only) instead of being "
+            f"re-read from disk every refresh")
+    if getattr(args, "first_forecast_priority", False):
+        cfg = dataclasses.replace(cfg, first_forecast_priority=True)
+        notes.append(
+            "FIRST FORECAST PRIORITY: a fire with no forecast yet runs its "
+            "ensemble members ahead of queued background refreshes — a kept "
+            "forecast's refresh can land up to one first forecast later "
+            "(the founder's trade) — SAFETY SEMANTICS 54")
+    if getattr(args, "weather_retry_first_forecast", False):
+        cfg = dataclasses.replace(cfg, weather_retry_first_forecast=True)
+        notes.append(
+            f"WEATHER RETRY: an NWS 5xx or timeout for a fire with no "
+            f"forecast yet is retried once after "
+            f"{cfg.weather_retry_wait_s:g} s (the cycle waits) — SAFETY "
+            f"SEMANTICS 55")
+    if getattr(args, "learn_terrain_yield", False):
+        cfg = dataclasses.replace(cfg, learn_terrain_yield=True)
+        notes.append(
+            "LEARNING YIELDS THE TERRAIN TURN: a learning forecast also "
+            "waits for the cycle to finish assessing between its terrain "
+            "and canopy LANDFIRE jobs — SAFETY SEMANTICS 56"
+            + ("" if getattr(args, "fire_belief_learn", False) else
+               " [INERT: --fire-belief-learn is not armed]"))
+    return cfg, notes
+
+
+def _start_terrain_regions(terrain, monitor, registry, aoi, cfg) -> list:
+    """REGIONAL TERRAIN (SAFETY SEMANTICS 53): bind the regional provider
+    inside `terrain` (if any) to the monitor's terrain turn and start its
+    one background thread over the registry's roster; pieces no bundled
+    tile covers (western Colorado) are fetched first. Returns notes."""
+    from wgresponse import terrain as terrain_mod
+    regional = terrain_mod.find_regional(terrain)
+    if regional is None:
+        return []
+    regional.bind_turn(monitor.terrain_turn.wait)
+    fb = (terrain if isinstance(terrain, terrain_mod.BundledFallbackTerrain)
+          else None)
+    priority = ((lambda bb: 0 if fb.covering(bb) is None else 1)
+                if fb is not None else None)
+    rng = monitor.client_range_m()
+    regional.start(lambda: list(registry.protected_clients(aoi)),
+                   radius_m=rng, pad_m=monitor.domain_reach_m() - rng,
+                   snap_deg=cfg.forecast_domain_snap_deg, priority=priority)
+    monitor.regional_terrain = regional       # /api/state "terrain_regions"
+    return [f"REGIONAL TERRAIN: background fetcher started (pieces of "
+            f"{regional.piece_deg:g} deg; status on /api/state "
+            f"terrain_regions)"]
+
+
+def _watch_terrain(args, state_dir, cfg=None):
     """Terrain provider per the C1 rule: LfpsTerrain when the live decode
     deps import, else SyntheticTerrain with a LOUD note. --live-terrain makes
     missing deps fatal (returns (None, notes)); --synthetic-terrain forces
-    the synthetic path. Returns (provider_or_None, notes)."""
+    the synthetic path. Returns (provider_or_None, notes). With `cfg`:
+    terrain_memory_tiles reads decoded tiles through a TileMemory and
+    terrain_regions puts a RegionalTerrain under the fallback (SAFETY
+    SEMANTICS 53; started by _start_terrain_regions)."""
     from wgresponse import terrain as terrain_mod
     cache_dir = str(Path(state_dir) / "terrain_cache")
     if args.synthetic_terrain:
@@ -952,15 +1228,27 @@ def _watch_terrain(args, state_dir):
     # canopy layers (one more LFPS job per domain, cached like the terrain)
     canopy = (terrain_mod.LfpsTerrain.DEFAULT_CANOPY_LAYERS
               if getattr(args, "crown_fire", False) else None)
+    extra: dict = {}
+    n_mem = int(getattr(cfg, "terrain_memory_tiles", 0) or 0)
+    if n_mem > 0:
+        # TERRAIN MEMORY TILES: decoded tiles read through an LRU (0 = the
+        # legacy constructor call)
+        extra["memory"] = terrain_mod.TileMemory(n_mem)
     provider = terrain_mod.LfpsTerrain(cache_dir=cache_dir, email=email,
                                        s3_uri=s3_uri,
-                                       canopy_layer_list=canopy)
+                                       canopy_layer_list=canopy, **extra)
     notes = [
         f"terrain: live LANDFIRE via LFPS (zip+tile cache: {cache_dir}"
         + (f", mirrored to {s3_uri}/terrain/" if s3_uri else "")
         + f"; job email {email} — override with env {_LFPS_EMAIL_ENV})"
         + (f"; canopy layers {canopy} for the crown-fire model"
            if canopy else "")]
+    if getattr(cfg, "terrain_regions", False):
+        # REGIONAL TERRAIN (SAFETY SEMANTICS 53): under the fallback, over
+        # the live provider; its fetcher starts once the monitor exists
+        provider = terrain_mod.RegionalTerrain(
+            provider, piece_deg=cfg.terrain_region_piece_deg,
+            memory=extra.get("memory"))
     if getattr(args, "terrain_fallback", False):
         # TERRAIN FALLBACK (2026-10-28): a domain LANDFIRE fails on spreads
         # on the finest bundled tile covering it (noted per fire)
@@ -1160,6 +1448,85 @@ def _crew_program_cfg(cfg, args):
     return cfg, notes
 
 
+def _latency_cfg(cfg, args):
+    """(cfg, startup notes) with the fire -> alert latency flags applied
+    (2026-11-18, build lane 1; SAFETY SEMANTICS 49-52). No flag = cfg
+    unchanged, no note."""
+    notes = []
+    if getattr(args, "alert_new_fires_early", False):
+        cfg = dataclasses.replace(cfg, alert_new_fires_early=True)
+        notes.append(
+            "NEW FIRES ALERT EARLY: a fire with no alert pair and no kept "
+            "forecast whose protected homes are in range is assessed first "
+            "(warm terrain before cold, then the nearest home) and its pairs "
+            "are evaluated — and notified — right after its own forecast; "
+            "the end-of-cycle evaluate skips them. The same events, sooner "
+            "— SAFETY SEMANTICS 49")
+    if getattr(args, "keep_reported_point", False):
+        cfg = dataclasses.replace(cfg, fuse_hotspots_keep_point=True)
+        notes.append(
+            "REPORTED POINT KEPT: a point-only agency record that satellite "
+            "heat joined seeds its own reported point AND the heat (the "
+            "point is also in its client search and domain; the weather "
+            "point is unchanged); a FIRMS-only cluster is unchanged — SAFETY "
+            "SEMANTICS 50"
+            + ("" if cfg.fuse_hotspots else
+               " [INERT: no heat joins a record without --fuse-hotspots]"))
+    if getattr(args, "summarize_recoveries", False):
+        cfg = dataclasses.replace(cfg, alert_recovery_summary=True)
+        notes.append(
+            "RECOVERIES SUMMARISED: the alert pairs at none of one fire that "
+            "go blind or are seen again give one operator event per fire "
+            "(the count, the deepest blind run, the first clients); every "
+            "other pair keeps its own — SAFETY SEMANTICS 51a")
+    if getattr(args, "prune_idle_pairs", False):
+        cfg = dataclasses.replace(cfg, alert_prune_idle_pairs=True)
+        notes.append(
+            "IDLE PAIRS PRUNED: an alert pair at none with no blind cycle, "
+            "no history, no ledgered send and no re-fire owed is dropped "
+            "once its fire is off the map while every feed is healthy; it "
+            "starts fresh at none if the fire returns — SAFETY SEMANTICS 51b")
+    if getattr(args, "operator_log_priority", False):
+        cfg = dataclasses.replace(cfg, operator_log_priority=True)
+        notes.append(
+            "OPERATOR LOG PRIORITY: /api/state operator_log_priority keeps "
+            f"the last {_WatchDaemon.OP_LOG_PRIORITY_KEEP} events of each "
+            "operator-relevant kind (all but the per-pair degraded / "
+            "recovered events of pairs at none, cleared or impacted), so a "
+            "bulk cycle cannot evict them; /healthz satellite_heat_24h — "
+            "SAFETY SEMANTICS 51c")
+    if getattr(args, "stale_missing_time", False):
+        cfg = dataclasses.replace(cfg, stale_gate_missing_time=True)
+        notes.append(
+            "MISSING UPDATE TIME: a record whose update time is missing is "
+            "aged by its discovery time, else kept as current (this cycle's "
+            "clock), with a note — never excluded for the missing time "
+            "alone — SAFETY SEMANTICS 52a")
+    if getattr(args, "strict_name_join", False):
+        cfg = dataclasses.replace(cfg, fuse_name_join_strict=True)
+        notes.append(
+            "STRICT NAME JOIN: records of the same name within 5 km are not "
+            "joined when their IRWIN ids differ or they were discovered "
+            f"more than {cfg.fuse_name_join_max_gap_h:g} h apart (an old "
+            "contained fire's containment never reaches a new one) — SAFETY "
+            "SEMANTICS 52b")
+    if getattr(args, "notify_urgent_first", False):
+        cfg = dataclasses.replace(cfg, notify_urgent_first=True)
+        notes.append(
+            "URGENT FIRST: within a cycle the notifier sends impact / "
+            "extreme alerts first, then notice / watch, then all-clears, "
+            "each by the earliest pessimistic arrival — SAFETY SEMANTICS 52c")
+    if getattr(args, "cycle_step_timings", False):
+        cfg = dataclasses.replace(cfg, cycle_step_timings=True)
+        notes.append(
+            "CYCLE STEP TIMINGS (telemetry only): last_cycle_phases.steps "
+            "times each pre-loop gate, each incident's whole assessment "
+            "(the incidents without a domain in one aggregate), the "
+            "blind-pair pass, the alert evaluate, dispatch, the persist and "
+            "the previous /api/state build")
+    return cfg, notes
+
+
 def _live_roads(cfg, args):
     """(cfg, ServiceAreaRoads | None, startup notes) for --live-roads (the
     founder, 2026-11-17: "start with the Eagle valley and Aspen"). Arms
@@ -1335,6 +1702,24 @@ def _feed_sanity_notes(cfg) -> list:
            "applies]")]
 
 
+#: SAFETY SEMANTICS 51c: the per-pair ladder bookkeeping kinds — kept in
+#: the priority rings only for a threatened pair (a client at notice, watch
+#: or extreme unseen, or seen again); every other kind is operator-relevant.
+_BULK_PAIR_KINDS = frozenset({"degraded", "recovered"})
+_THREAT_STATE_VALUES = frozenset({"notice_72h", "watch", "extreme_24h"})
+
+
+def operator_priority(ev) -> bool:
+    """SAFETY SEMANTICS 51c: True for an operator-relevant event — every
+    kind but the per-pair 'degraded' / 'recovered' bookkeeping, and those
+    too when their pair is threatened (detail state notice / watch /
+    extreme). A per-incident summary (51a) is at none: not kept."""
+    if getattr(ev, "kind", None) not in _BULK_PAIR_KINDS:
+        return True
+    state = (getattr(ev, "detail", None) or {}).get("state")
+    return state in _THREAT_STATE_VALUES
+
+
 class _WatchDaemon:
     """The live watch loop: cycle -> persist -> serve, with injectable clock.
 
@@ -1348,6 +1733,8 @@ class _WatchDaemon:
 
     EVENTS_KEEP = 200      # AlertEvents retained for the console feed
     OP_LOG_KEEP = 100      # OperatorEvents retained across cycles
+    OP_LOG_PRIORITY_KEEP = 50   # per operator-relevant kind (SEMANTICS 51c)
+    HEAT_COUNT_WINDOW_S = 86400.0   # /healthz satellite_heat_24h (51c)
     STALE_PERIODS = 3.0    # cycle older than this many poll periods => stale
 
     def __init__(self, monitor, engine, registry, tracker, store, cfg, aoi,
@@ -1395,8 +1782,40 @@ class _WatchDaemon:
         self.restored = False
         self._events = []              # accumulated AlertEvents (bounded)
         self._op_log = []              # accumulated OperatorEvents (bounded)
+        # SAFETY SEMANTICS 51c (cfg.operator_log_priority only): kind ->
+        # [(seq, OperatorEvent)] bounded per kind, and the satellite_heat
+        # times of the last 24 h
+        self._op_priority: dict = {}
+        self._op_seq = 0
+        self._heat_times: list = []
+        # NEW-FIRE SENTINEL (SAFETY SEMANTICS 60): its thread appends to the
+        # operator log too, so the log's read-modify-write takes this lock
+        self._op_lock = threading.Lock()
+        self._sentinel = None
         if test_world is not None:
             test_world.attach_live(self)
+
+    # -------------------------------------- new-fire sentinel (SEMANTICS 60)
+
+    def attach_sentinel(self, sentinel) -> None:
+        """SAFETY SEMANTICS 60: the shadow new-fire sentinel — its events go
+        to the operator log, /api/state gains its block, and each live
+        cycle's result is shown to it (it reads the cycle; the cycle never
+        reads it)."""
+        self._sentinel = sentinel
+
+    @property
+    def sentinel(self):
+        return self._sentinel
+
+    def add_operator_event(self, ev) -> None:
+        """An OperatorEvent raised between cycles (the sentinel's thread):
+        appended to the bounded operator log."""
+        with self._op_lock:
+            self._op_log = (self._op_log + [ev])[-self.OP_LOG_KEEP:]
+            if getattr(self._cfg, "operator_log_priority", False):
+                # SEMANTICS 51c: a sentinel event is operator-relevant
+                self._keep_priority([ev], float(ev.t_s))
 
     @property
     def test_world(self):
@@ -1548,13 +1967,43 @@ class _WatchDaemon:
             self.last_result = res
             self._events = (self._events
                             + list(res.events))[-self.EVENTS_KEEP:]
-            self._op_log = (self._op_log
-                            + list(res.operator_events))[-self.OP_LOG_KEEP:]
+            with self._op_lock:
+                self._op_log = (self._op_log
+                                + list(res.operator_events))[
+                                    -self.OP_LOG_KEEP:]
+                if getattr(self._cfg, "operator_log_priority", False):
+                    self._keep_priority(res.operator_events, now)
+            t_persist = time.monotonic()
             self.persist_now()
+            if getattr(self._cfg, "cycle_step_timings", False):
+                # CYCLE STEP TIMINGS: the persist, after the cycle
+                res.timings.setdefault("steps", {})["persist_s"] = round(
+                    time.monotonic() - t_persist, 4)
         finally:
             self._live_busy.clear()
+        if self._sentinel is not None:
+            # SEMANTICS 60: the sentinel learns which records this cycle
+            # carried (shadow; it never raises)
+            self._sentinel.observe_cycle(res, now, float(self._clock()))
         self._publish_to_test_world()
         return res
+
+    def _keep_priority(self, events, now: float) -> None:
+        """SAFETY SEMANTICS 51c: the operator-relevant events into their
+        kind's ring (the last OP_LOG_PRIORITY_KEEP of each), and the
+        satellite_heat times inside the last HEAT_COUNT_WINDOW_S."""
+        for ev in events:
+            if not operator_priority(ev):
+                continue
+            ring = self._op_priority.setdefault(ev.kind, [])
+            self._op_seq += 1
+            ring.append((self._op_seq, ev))
+            if len(ring) > self.OP_LOG_PRIORITY_KEEP:
+                del ring[:len(ring) - self.OP_LOG_PRIORITY_KEEP]
+            if ev.kind == "satellite_heat":
+                self._heat_times.append(float(ev.t_s))
+        cutoff = float(now) - self.HEAT_COUNT_WINDOW_S
+        self._heat_times = [t for t in self._heat_times if t >= cutoff]
 
     def _publish_to_test_world(self) -> None:
         tw = self._test_world
@@ -1680,7 +2129,25 @@ class _WatchDaemon:
         """Latest DispatchPlan (or None) — the /api/plan provider."""
         return self.last_result.plan if self.last_result else None
 
+    _last_state_build_s = None
+
     def state(self) -> dict:
+        """The /api/state payload — _state_body(); with cfg.cycle_step_
+        timings its last_cycle_phases.steps also carries state_build_s, the
+        PREVIOUS build's wall time (seconds; /healthz builds it too)."""
+        if not getattr(self._cfg, "cycle_step_timings", False):
+            return self._state_body()
+        t0 = time.monotonic()
+        out = self._state_body()
+        ph = out.get("last_cycle_phases")
+        if isinstance(ph, dict):
+            out["last_cycle_phases"] = dict(
+                ph, steps=dict(ph.get("steps") or {},
+                               state_build_s=self._last_state_build_s))
+        self._last_state_build_s = round(time.monotonic() - t0, 4)
+        return out
+
+    def _state_body(self) -> dict:
         """The /api/state payload (server jsonable-serializes dataclasses).
 
         Carries the degradation keys the console banner + /healthz read
@@ -1709,6 +2176,21 @@ class _WatchDaemon:
             "events": list(self._events),
             "operator_log": list(self._op_log),
         }
+        if getattr(self._cfg, "operator_log_priority", False):
+            # SAFETY SEMANTICS 51c: additive keys, present only when armed
+            out["operator_log_priority"] = [
+                ev for _, ev in sorted(
+                    (row for ring in self._op_priority.values()
+                     for row in ring), key=lambda row: row[0])]
+            out["satellite_heat_24h"] = sum(
+                1 for t in self._heat_times
+                if now - t <= self.HEAT_COUNT_WINDOW_S)
+        if self._sentinel is not None:
+            # SAFETY SEMANTICS 60: the shadow sentinel's block (armed only)
+            try:
+                out["sentinel"] = self._sentinel.status()
+            except Exception as exc:          # noqa: BLE001
+                out["sentinel"] = {"error": str(exc)[:200]}
         # (TWO WORLDS, SAFETY SEMANTICS 16a: the live world holds no seed, so
         # the W1 `seeds` key never appears here — the TEST world's seeds are
         # on /api/test/state.)
@@ -1718,6 +2200,11 @@ class _WatchDaemon:
             # — an additive key, present only with a roster
             out["crew_roster"] = roster.status()
         res = self.last_result
+        rt = getattr(self._monitor, "regional_terrain", None)
+        if rt is not None:
+            # SAFETY SEMANTICS 53: the service regions' pieces and their
+            # progress (additive; present only with --terrain-regions)
+            out["terrain_regions"] = rt.status()
         lr = getattr(self._monitor, "live_roads", None)
         if lr is not None:
             # LIVE ROADS: the service areas the planner drives (additive)
@@ -2339,6 +2826,12 @@ def _cmd_watch(args) -> int:
     startup_notes_fix += _notes
     cfg, live_roads, _notes = _live_roads(cfg, args)
     startup_notes_fix += _notes
+    cfg, _notes = _latency_cfg(cfg, args)        # SEMANTICS 49-52
+    startup_notes_fix += _notes
+    cfg, _notes = _feeds_cfg(cfg, args)          # SEMANTICS 57-60
+    startup_notes_fix += _notes
+    cfg, _notes = _first_forecast_cfg(cfg, args)  # SEMANTICS 53-56
+    startup_notes_fix += _notes
     if getattr(args, "forecast_tiers", False):
         cfg = dataclasses.replace(cfg, forecast_tiers=True)
         startup_notes_fix.append(
@@ -2408,12 +2901,18 @@ def _cmd_watch(args) -> int:
         stack_kw["screen"] = True
     if recorder is not None:
         stack_kw["recorder"] = recorder
+    if _feed_transport(cfg):                # SEMANTICS 57-59
+        stack_kw["transport"] = _feed_transport(cfg)
     feeds_stack, feed_notes = (
         _live_feed_stack(firms_key, live=True, **stack_kw)  # 39's live mode
         if getattr(args, "fuse_hotspots", False) else
         _live_feed_stack(firms_key, **stack_kw))
     startup_notes += feed_notes
-    terrain, terrain_notes = _watch_terrain(args, state_dir)
+    if cfg.terrain_regions or cfg.terrain_memory_tiles:
+        # SAFETY SEMANTICS 53 / terrain memory: the provider reads the cfg
+        terrain, terrain_notes = _watch_terrain(args, state_dir, cfg=cfg)
+    else:
+        terrain, terrain_notes = _watch_terrain(args, state_dir)
     startup_notes += terrain_notes
     if terrain is None:
         for note in terrain_notes:
@@ -2469,6 +2968,16 @@ def _cmd_watch(args) -> int:
         road_provider=(live_roads.provider() if live_roads is not None
                        else None))
     monitor.live_roads = live_roads          # /api/state "live_roads"
+    # REGIONAL TERRAIN (SAFETY SEMANTICS 53): the background fetcher waits
+    # on this monitor's terrain turn; nothing without --terrain-regions. It
+    # reads its OWN registry when the live one caches (the Dynamo TTL
+    # roster: a background read must never refresh the live cache)
+    if cfg.terrain_regions:
+        region_registry = (_watch_registry(args, aoi)[0]
+                           if getattr(args, "registry", "mock") == "dynamo"
+                           else registry)
+        startup_notes += _start_terrain_regions(terrain, monitor,
+                                                region_registry, aoi, cfg)
     # DURABLE STATE (fix program 2026-09-11): env WGRESP_STATE_S3 mirrors
     # the alert ladder / notified ledger / incumbent plan to S3 and restores
     # them into a fresh container before the first cycle. A configured but
@@ -2507,6 +3016,15 @@ def _cmd_watch(args) -> int:
                           test_world=test_world,
                           belief_file=belief_file)
     restored = daemon.restore()
+    sentinel = None
+    if cfg.new_fire_sentinel_s > 0.0:
+        # SAFETY SEMANTICS 60: the shadow new-fire sentinel over the startup
+        # roster (the cycle never reads it)
+        from wgresponse.sentinel import NewFireSentinel
+        sentinel = NewFireSentinel(
+            cfg, clients_fn=lambda: list(clients_by_id.values()), aoi=aoi,
+            on_event=daemon.add_operator_event)
+        daemon.attach_sentinel(sentinel)
 
     httpd = server_mod.serve(port=args.port, host=args.host,
                              state_provider=daemon.state, beacon_sink=tracker,
@@ -2559,9 +3077,13 @@ def _cmd_watch(args) -> int:
     server_thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     server_thread.start()
     test_world.start()
+    if sentinel is not None:
+        sentinel.start()
     try:
         daemon.run(max_cycles=args.max_cycles)
     finally:
+        if sentinel is not None:
+            sentinel.stop()
         # Ctrl-C lands here too (run() catches it and returns): one last
         # persist so the on-disk state matches the final in-memory state.
         daemon.persist_now(final=True)
@@ -2597,6 +3119,11 @@ def _watch_test_world(args, cfg, aoi, aoi_desc, safe_zones, registry,
     else:
         test_registry = registry
     email = os.environ.get(_LFPS_EMAIL_ENV) or _LFPS_EMAIL_DEFAULT
+    from wgresponse import terrain as terrain_mod
+    if isinstance(terrain, terrain_mod.RegionalTerrain):
+        # SAFETY SEMANTICS 53: the test world overlays the live LfpsTerrain
+        # exactly as it does without regional terrain (its own cache)
+        terrain = terrain.lfps
     test_terrain = worlds.test_terrain_for(terrain, test_dir, email=email,
                                            s3_uri=test_s3)
     return worlds.TestWorld(

@@ -1,0 +1,14 @@
+Full suite, build lane 1, at commit 7626525 (all seven items in; before
+the last small refinement f183a98):
+    python -m pytest -q -p no:cacheprovider        (exit code 0, ~60 min)
+    3088 passed, 15 skipped, 1 xfailed, 0 failed, 0 errors
+    (counted from the progress characters: pytest.ini's addopts -q plus the
+    command's -q suppress the summary line)
+The xfail is the pre-existing strict xfail in tests/test_crew_waiting.py
+(the Beaver Creek known defect, SAFETY SEMANTICS 46), untouched here.
+
+After f183a98 (the ordering pass moved inside the terrain turn, guarded):
+targeted run of test_alert_early, test_latency_knobs_off_golden,
+test_cycle_step_timings, test_threat, test_belief_learning,
+test_worlds_isolation, test_keep_reported_point, test_operator_flood,
+test_latency_small_fixes, test_forecast_tiers, test_docs: 167 passed.

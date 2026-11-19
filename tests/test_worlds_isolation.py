@@ -217,12 +217,18 @@ def _http(srv, method, path, body=None):
 #: wall-clock telemetry — the only non-deterministic numbers a payload
 #: carries under injected clocks (time.monotonic / perf_counter)
 _WALL = re.compile(rb'"(last_cycle_duration_s|solver_s|terrain_s|weather_s|'
-                   rb'spread_s|feeds_s|assess_s|alerts_s|dispatch_s)": '
+                   rb'spread_s|feeds_s|assess_s|alerts_s|dispatch_s|'
+                   rb'fetch_s|fuse_s)": '
                    rb'-?[0-9][0-9.]*([eE][-+]?[0-9]+)?')
+#: the always-on feed timings (SAFETY SEMANTICS 58, last_cycle_phases.
+#: feeds_detail): each adapter's and each request's "s" is wall-clock too
+_WALL_FEED_S = re.compile(rb'("(?:feed|what)": [^,}]+, "s": )'
+                          rb'-?[0-9][0-9.]*([eE][-+]?[0-9]+)?')
 
 
 def _mask(raw: bytes) -> bytes:
-    return _WALL.sub(lambda m: b'"' + m.group(1) + b'": 0', raw)
+    raw = _WALL.sub(lambda m: b'"' + m.group(1) + b'": 0', raw)
+    return _WALL_FEED_S.sub(lambda m: m.group(1) + b'0', raw)
 
 
 def _h(raw: bytes) -> str:

@@ -22,22 +22,74 @@ and a timeout (a slow server stays slow; a second wait would double the
 cycle's cost). A second failure raises exactly as the first would have:
 the caller's blind-fetch handling is unchanged. The warning names the
 host only — FIRMS URLs carry the MAP_KEY and LANDFIRE's the contact
-email."""
+email.
+
+GZIP (2026-11-18, the fire -> alert latency review, lane A finding A4;
+cfg.feeds_gzip, SAFETY SEMANTICS 57): get(..., gzip=True) asks
+Accept-Encoding: gzip and decompresses an answer whose Content-Encoding is
+gzip (or x-gzip). A body that does not decompress — or an encoding we did
+not ask for — RAISES (CorruptBodyError, never retried: the server spoke),
+so the caller's transport-error path runs: a feed fetch goes blind
+(SAFETY SEMANTICS 6), exactly as a failed GET does today. gzip=False (the
+default) = byte-identical: no header added, nothing decoded.
+
+TRANSFER STATS (2026-11-18, feed_timings telemetry): every successful get
+leaves {status, body_bytes, wire_bytes, encoding, attempts} in a per-
+THREAD slot, read back by last_transfer() on the same thread (the feed
+adapters' per-request telemetry; the parallel feed fetch runs each adapter
+on its own thread). Reading it changes nothing."""
 from __future__ import annotations
 
+import gzip as _gzip
 import http.client
 import logging
 import socket
+import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zlib
 from typing import Callable, Optional
 
 log = logging.getLogger(__name__)
 
 #: the pause before the one retry (s)
 RETRY_PAUSE_S = 3.0
+
+_TLS = threading.local()
+
+
+class CorruptBodyError(ValueError):
+    """A gzip answer that does not decompress, or an encoding we did not
+    ask for (get(..., gzip=True)): the caller's transport-error path."""
+
+
+def clear_transfer() -> None:
+    """Forget this thread's last transfer (before a timed request)."""
+    _TLS.last = None
+
+
+def last_transfer() -> Optional[dict]:
+    """This thread's last successful get: {status, body_bytes, wire_bytes,
+    encoding, attempts} — None when none since clear_transfer()."""
+    return getattr(_TLS, "last", None)
+
+
+def _decode(body: bytes, encoding: Optional[str], netloc: str) -> bytes:
+    """gzip=True: the answer's body as the server meant it (module
+    docstring). Raises CorruptBodyError on a body that does not decode."""
+    enc = (encoding or "").strip().lower()
+    if enc in ("", "identity"):
+        return body
+    if enc not in ("gzip", "x-gzip"):
+        raise CorruptBodyError(f"unrequested Content-Encoding {enc!r} from "
+                               f"{netloc or '?'}")
+    try:
+        return _gzip.decompress(body)
+    except (OSError, EOFError, zlib.error) as exc:
+        raise CorruptBodyError(f"gzip body from {netloc or '?'} does not "
+                               f"decompress ({type(exc).__name__})") from exc
 
 
 def failure_kind(exc: BaseException) -> Optional[str]:
@@ -59,16 +111,35 @@ def get(url: str, headers: Optional[dict] = None, timeout_s: float = 30.0,
         *, retry_dropped: bool = True,
         opener: Optional[Callable] = None,
         sleep: Callable[[float], None] = time.sleep,
-        pause_s: float = RETRY_PAUSE_S) -> "tuple[int, bytes]":
+        pause_s: float = RETRY_PAUSE_S,
+        gzip: bool = False) -> "tuple[int, bytes]":
     """Stdlib urllib GET -> (HTTP status, body bytes), retried once after
     pause_s when the network failed (module docstring); the second failure
-    raises as the first would have."""
+    raises as the first would have. gzip=True: Accept-Encoding gzip and the
+    body decompressed (CorruptBodyError when it does not decode)."""
     open_ = opener or urllib.request.urlopen
+    hdrs = dict(headers or {})
+    if gzip and not any(k.lower() == "accept-encoding" for k in hdrs):
+        hdrs["Accept-Encoding"] = "gzip"
+    netloc = urllib.parse.urlsplit(url).netloc
     for attempt in (1, 2):
-        req = urllib.request.Request(url, headers=headers or {})
+        req = urllib.request.Request(url, headers=hdrs)
         try:
             with open_(req, timeout=timeout_s) as resp:  # nosec: fixed URLs
-                return resp.getcode(), resp.read()
+                status, raw = resp.getcode(), resp.read()
+                encoding = None
+                if gzip:
+                    h = getattr(resp, "headers", None)
+                    encoding = h.get("Content-Encoding") if h is not None \
+                        else None
+                    body = _decode(raw, encoding, netloc)
+                else:
+                    body = raw
+                _TLS.last = {"status": status, "body_bytes": len(body),
+                             "wire_bytes": len(raw),
+                             "encoding": encoding or None,
+                             "attempts": attempt}
+                return status, body
         except Exception as exc:
             kind = failure_kind(exc)
             if attempt == 2 or kind is None or (kind == "dropped"

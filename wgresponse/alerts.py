@@ -145,6 +145,20 @@ def _fmt_h(hours: float) -> str:
     return f"{hours:.0f}h"
 
 
+#: SAFETY SEMANTICS 52c: the send order within one evaluate — impact and
+#: extreme first, then notice / watch, then all-clear; within a rung the
+#: earliest pessimistic arrival, then the median.
+_URGENCY_RANK = {AlertState.IMPACTED: 0, AlertState.EXTREME_24H: 0,
+                 AlertState.NOTICE_72H: 1, AlertState.WATCH: 1,
+                 AlertState.CLEARED: 2, AlertState.NONE: 2}
+
+
+def _urgency(event: AlertEvent) -> tuple:
+    """SAFETY SEMANTICS 52c: (rung, p10 hours, p50 hours) — sort key."""
+    return (_URGENCY_RANK.get(event.state, 2), event.eta_p10_h,
+            event.eta_p50_h)
+
+
 def _short_id(incident_id: str) -> str:
     """Shorten an incident id for human messages (ids can be 40-char IRWIN
     GUIDs). Deterministic: <= 12 chars pass through, longer ids keep their
@@ -217,6 +231,7 @@ class AlertEngine:
         feeds_healthy: bool = True,
         incident_meta: Optional[Dict[str, dict]] = None,
         only_incidents: Optional[Iterable[str]] = None,
+        flush_unsent: bool = True,
     ) -> List[AlertEvent]:
         """Run one evaluation cycle at unix time now_s (seconds).
 
@@ -253,6 +268,14 @@ class AlertEngine:
         suppression gate. The TEST world's action-triggered re-runs evaluate
         only its seeded fires, so a live pair on the test map keeps the live
         world's once-per-live-cycle cadence.
+
+        ``flush_unsent`` (NEW FIRES ALERT EARLY, contracts SAFETY SEMANTICS
+        49; additive, default True = byte-identical): False skips the
+        RESTORED-UNSENT re-fire in this call — the pending pairs stay
+        pending for the next call. The monitor's mid-cycle evaluation of a
+        new fire's pairs passes False, so a restored pair of another fire is
+        re-fired at the end of the cycle with that fire's own fresh ETAs,
+        exactly as without the early evaluation.
         Returns the AlertEvents emitted this cycle (at most one per pair).
         """
         only = None if only_incidents is None else set(only_incidents)
@@ -274,13 +297,21 @@ class AlertEngine:
                 )
                 self._deesc_streak[key] = 0
         events: List[AlertEvent] = []
+        # SAFETY SEMANTICS 51a (cfg.alert_recovery_summary): pairs at NONE
+        # are summarised per incident instead of one operator event each
+        summary = (({}, {}) if getattr(self._cfg, "alert_recovery_summary",
+                                       False) else None)
         for key, rec in self._records.items():
             if only is not None and key[1] not in only:
                 continue            # not evaluated this call (16b)
             a = latest.get(key)
             if a is None and (key in blind_keys or not feeds_healthy):
-                self._freeze_blind(key, rec, now_s)
+                self._freeze_blind(key, rec, now_s, summary)
                 continue
+            if (summary is not None and rec.blind_cycles > 0
+                    and rec.state is AlertState.NONE):
+                self._tally(summary[1], key, rec)
+                rec.blind_cycles = 0
             if rec.blind_cycles > 0:
                 # Pair is visible again (assessed, or trustworthy absence):
                 # emit exactly one recovery event, then evaluate normally.
@@ -303,17 +334,25 @@ class AlertEngine:
             if new_state is not None and new_state != rec.state:
                 events.append(self._transition(rec, new_state, now_s, p10_h,
                                                p50_h, regime=regime))
+        if summary is not None:
+            self._summary_events(summary, now_s)
         # Notify only after EVERY transition of this cycle has been applied,
         # so the CLEARED suppression gate sees the cycle's final states (an
         # EXTREME escalating later in the same cycle must still mute a
         # same-client all-clear sent "earlier" in iteration order).
-        for event in events:
+        sends = events
+        if getattr(self._cfg, "notify_urgent_first", False):
+            # SAFETY SEMANTICS 52c: the most urgent client hears first; the
+            # returned list keeps the engine's order
+            sends = sorted(events, key=_urgency)
+        for event in sends:
             self._notify(event)
         # Session-3 F4: re-fire restored applied-but-never-sent active states
         # (see module docstring, RESTORED-UNSENT RECONCILE). After the normal
         # notify loop so a pair that legitimately transitioned this cycle is
         # already ledgered and drops out of the pending set.
-        self._flush_restored_unnotified(latest, now_s)
+        if flush_unsent:
+            self._flush_restored_unnotified(latest, now_s)
         return events
 
     def set_crew_context(self, on_duty: int, planned_clients) -> None:
@@ -346,6 +385,31 @@ class AlertEngine:
         out = self._op_events
         self._op_events = []
         return out
+
+    def prune_idle_pairs(self, active_incidents: Iterable[str],
+                         feeds_healthy: bool) -> List[_PairKey]:
+        """SAFETY SEMANTICS 51b (cfg.alert_prune_idle_pairs; the monitor
+        calls it after the cycle's evaluate): drop every record that carries
+        nothing — state NONE (a pair leaves NONE only by escalating, which
+        zeroes its streaks, so a NONE pair's clear / de-escalation streaks
+        decide nothing), no blind cycle, no history, nothing in the notified
+        ledger, not owed a re-fire — whose incident is NOT in this cycle's
+        active set while EVERY feed was healthy (the trustworthy absence of
+        SEMANTICS 6). A pair that comes back is created fresh, at NONE, and
+        steps exactly as the dropped one would have. Nothing is dropped on
+        a blind cycle. Returns the dropped keys (engine order)."""
+        if not feeds_healthy:
+            return []
+        active = set(active_incidents)
+        sent = {(k[0], k[1]) for k in self._notified}
+        drop = [key for key, rec in self._records.items()
+                if rec.state is AlertState.NONE and key[1] not in active
+                and rec.blind_cycles == 0 and not rec.history
+                and key not in self._resend_pending and key not in sent]
+        for key in drop:
+            del self._records[key]
+            self._deesc_streak.pop(key, None)
+        return drop
 
     def notified_ledger(self) -> Dict[_LedgerKey, float]:
         """What was ACTUALLY sent (contracts persist seam).
@@ -516,7 +580,62 @@ class AlertEngine:
                     (now_s - g["last_growth_s"]) / 3600.0)
         return capped
 
-    def _freeze_blind(self, key: _PairKey, rec: AlertRecord, now_s: float) -> None:
+    @staticmethod
+    def _tally(book: dict, key: _PairKey, rec: AlertRecord) -> None:
+        """SAFETY SEMANTICS 51a: count one NONE pair into its incident's
+        summary row (pairs, the deepest blind run, the first client ids)."""
+        row = book.get(key[1])
+        if row is None:
+            row = book[key[1]] = {"pairs": 0, "blind_cycles_max": 0,
+                                  "clients": []}
+        row["pairs"] += 1
+        row["blind_cycles_max"] = max(row["blind_cycles_max"],
+                                      rec.blind_cycles)
+        if len(row["clients"]) < 5:
+            row["clients"].append(key[0])
+
+    def _summary_events(self, summary: tuple, now_s: float) -> None:
+        """SAFETY SEMANTICS 51a: ONE OperatorEvent per incident for its
+        NONE pairs that went (or stayed) blind and for those seen again —
+        kind 'degraded' / 'recovered' as the per-pair events, detail
+        {state: 'none', pairs, blind_cycles_max, clients (the first five),
+        summary: True}; incidents in the engine's pair order."""
+        frozen, back = summary
+        for iid, row in frozen.items():
+            logger.warning(
+                "%d pair(s) of incident %s at none BLIND (up to %d "
+                "cycle(s)); alert states frozen", row["pairs"], iid,
+                row["blind_cycles_max"])
+            if row.get("alarm", 0) == 0:
+                continue
+            self._op_events.append(OperatorEvent(
+                t_s=now_s, kind="degraded",
+                message=(f"{row['alarm']} pair(s) of incident {iid} at none "
+                         f"unassessed for up to {row['blind_cycles_max']} "
+                         f"cycle(s); alert states FROZEN at none — absence "
+                         f"is not clearance (one summary for the pairs at "
+                         f"none — SAFETY SEMANTICS 51a)"),
+                incident_id=iid,
+                detail={"state": AlertState.NONE.value,
+                        "pairs": row["alarm"],
+                        "blind_cycles_max": row["blind_cycles_max"],
+                        "clients": list(row["clients"]), "summary": True}))
+        for iid, row in back.items():
+            self._op_events.append(OperatorEvent(
+                t_s=now_s, kind="recovered",
+                message=(f"{row['pairs']} pair(s) of incident {iid} at none "
+                         f"assessed again after up to "
+                         f"{row['blind_cycles_max']} blind cycle(s); ladder "
+                         f"resumed (one summary for the pairs at none — "
+                         f"SAFETY SEMANTICS 51a)"),
+                incident_id=iid,
+                detail={"state": AlertState.NONE.value,
+                        "pairs": row["pairs"],
+                        "blind_cycles_max": row["blind_cycles_max"],
+                        "clients": list(row["clients"]), "summary": True}))
+
+    def _freeze_blind(self, key: _PairKey, rec: AlertRecord, now_s: float,
+                      summary: Optional[tuple] = None) -> None:
         """One BLIND cycle for a pair: freeze state, alarm the operator.
 
         SAFETY SEMANTICS 6 — absence is not clearance. The pair's alert state,
@@ -524,9 +643,18 @@ class AlertEngine:
         advance toward CLEARED nor de-escalate); blind_cycles increments and,
         at/beyond cfg.blind_alarm_cycles, an OperatorEvent('degraded') is
         queued every cycle the pair stays blind. No AlertEvent is emitted and
-        the notifier is never called."""
+        the notifier is never called. ``summary`` (SAFETY SEMANTICS 51a): a
+        pair at NONE is counted into its incident's summary row instead of
+        its own log line and event."""
         rec.blind_cycles += 1
         rec.last_eval_s = now_s
+        if summary is not None and rec.state is AlertState.NONE:
+            book = summary[0]
+            self._tally(book, key, rec)
+            if rec.blind_cycles >= self._cfg.blind_alarm_cycles:
+                row = book[key[1]]
+                row["alarm"] = row.get("alarm", 0) + 1
+            return
         logger.warning(
             "pair (%s, %s) BLIND for %d cycle(s); alert state frozen at %s",
             key[0], key[1], rec.blind_cycles, rec.state.value,

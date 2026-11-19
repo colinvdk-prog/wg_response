@@ -1,0 +1,57 @@
+{
+ "wfigs_points": {
+  "legacy_eq_stripped_with_oid": false,
+  "legacy_s": 3.75,
+  "full_n": 416,
+  "full_wire": 37459,
+  "full_raw": 224756,
+  "full_s": 7.18,
+  "attrs_wire": 27070,
+  "attrs_raw": 199997,
+  "attrs_s": 3.93,
+  "same_order": false,
+  "oid_ascending": false,
+  "exceeded": null,
+  "objectIds_ok": false
+ },
+ "wfigs_perims": {
+  "legacy_eq_stripped_with_oid": true,
+  "legacy_s": 2.11,
+  "full_n": 49,
+  "full_wire": 3237972,
+  "full_raw": 9551308,
+  "full_s": 2.28,
+  "attrs_wire": 5048,
+  "attrs_raw": 29785,
+  "attrs_s": 0.59,
+  "same_order": true,
+  "oid_ascending": false,
+  "exceeded": null,
+  "objectIds_ok": true
+ },
+ "firis": {
+  "legacy_eq_stripped_with_oid": true,
+  "legacy_s": 5.31,
+  "full_n": 505,
+  "full_wire": 6934209,
+  "full_raw": 29165426,
+  "full_s": 5.76,
+  "attrs_wire": 37260,
+  "attrs_raw": 205031,
+  "attrs_s": 0.4,
+  "same_order": true,
+  "oid_ascending": false,
+  "exceeded": null,
+  "objectIds_ok": true
+ },
+ "firis_trim": {
+  "star_raw": 29165426,
+  "trim_raw": 29042508,
+  "saved_frac": 0.0042,
+  "geometry_json_bytes": 30528231,
+  "attribute_json_bytes": 208250,
+  "display_status": [
+   "Inactive"
+  ]
+ }
+}

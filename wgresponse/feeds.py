@@ -97,8 +97,10 @@ import json
 import logging
 import math
 import re
+import socket
 import time
 import urllib.parse
+import zlib
 from dataclasses import replace as _replace
 from datetime import datetime, timezone
 from typing import Callable, Optional
@@ -120,6 +122,106 @@ def _default_http_get(url: str, headers: Optional[dict] = None,
     """Stdlib urllib GET. Returns (HTTP status code, raw body bytes);
     retried once when the network failed (wgresponse.net)."""
     return net.get(url, headers, timeout_s)
+
+
+def _gzip_http_get(url: str, headers: Optional[dict] = None,
+                   timeout_s: float = 30.0) -> "tuple[int, bytes]":
+    """FEEDS GZIP (cfg.feeds_gzip, SAFETY SEMANTICS 57): _default_http_get
+    asking Accept-Encoding gzip; the body comes back decompressed, and one
+    that does not decompress raises (the adapter's blind-fetch path)."""
+    return net.get(url, headers, timeout_s, gzip=True)
+
+
+def _pick_http_get(http_get: Optional[HttpGet], gzip: bool) -> HttpGet:
+    """An injected getter wins (tests); else the stdlib GET, gzip or not."""
+    if http_get is not None:
+        return http_get
+    return _gzip_http_get if gzip else _default_http_get
+
+
+def _timed_get(http_get: HttpGet, url: str, headers: dict, rows: list,
+               what: str, **extra) -> "tuple[int, bytes]":
+    """FEED TIMINGS (telemetry, 2026-11-18): http_get(url, headers), with one
+    row appended to `rows` — what, seconds, HTTP status, body bytes and,
+    through wgresponse.net, the bytes on the wire / encoding / attempts.
+    Never the URL (FIRMS URLs carry the MAP_KEY). The answer and any
+    exception are exactly http_get's; the row can never raise."""
+    net.clear_transfer()
+    t0 = time.monotonic()
+    status = body = None
+    err = None
+    try:
+        status, body = http_get(url, headers)
+        return status, body
+    except BaseException as exc:
+        err = type(exc).__name__
+        raise
+    finally:
+        try:
+            row = {"what": what, "s": round(time.monotonic() - t0, 4),
+                   "status": status,
+                   "bytes": (len(body) if isinstance(body, (bytes, bytearray))
+                             else None)}
+            row.update(extra)
+            tr = net.last_transfer()
+            if tr is not None:
+                row["wire_bytes"] = tr.get("wire_bytes")
+                if tr.get("encoding"):
+                    row["encoding"] = tr["encoding"]
+                if tr.get("attempts", 1) != 1:
+                    row["attempts"] = tr["attempts"]
+            if err is not None:
+                row["error"] = err
+            rows.append(row)
+        except Exception:                  # pragma: no cover - telemetry only
+            pass
+
+
+class _FullFetchFailed(Exception):
+    """SEMANTICS 59: the full fetch of an incremental layer failed — raised
+    to the adapter exactly as the legacy query's failure."""
+
+    def __init__(self, cause: BaseException):
+        super().__init__(str(cause))
+        self.cause = cause
+
+
+def _is_timeout(exc: BaseException) -> bool:
+    reason = getattr(exc, "reason", exc)
+    return isinstance(reason, (TimeoutError, socket.timeout)) or \
+        isinstance(exc, (TimeoutError, socket.timeout))
+
+
+def _pack_feature(feat: dict) -> bytes:
+    """SEMANTICS 59 cache form of one feature: compact JSON, zlib level 1
+    (a JSON round trip returns an equal dict: finite floats repr exactly,
+    key order kept)."""
+    return zlib.compress(json.dumps(feat, separators=(",", ":")).encode(
+        "utf-8"), 1)
+
+
+def _unpack_feature(blob: bytes) -> dict:
+    return json.loads(zlib.decompress(blob).decode("utf-8"))
+
+
+def _layer_name(layer_url: str) -> str:
+    """'CA_Perimeters_NIFC_FIRIS_public_view' from a FeatureServer URL."""
+    try:
+        return layer_url.split("/services/", 1)[1].split("/", 1)[0]
+    except IndexError:
+        return layer_url.rsplit("/", 3)[0][-40:]
+
+
+def fetch_detail(rows: list) -> dict:
+    """FEED TIMINGS: an adapter's per-fetch summary from its request rows —
+    {requests, bytes, wire_bytes, pages, s_requests}."""
+    out = {"requests": list(rows), "pages": len(rows),
+           "bytes": sum(r.get("bytes") or 0 for r in rows),
+           "s_requests": round(sum(r.get("s") or 0.0 for r in rows), 4)}
+    wires = [r.get("wire_bytes") for r in rows]
+    if rows and all(w is not None for w in wires):
+        out["wire_bytes"] = sum(wires)
+    return out
 
 
 def _haversine_m(a: LatLon, b: LatLon) -> float:
@@ -291,32 +393,128 @@ class _ArcGisFeedBase:
     That case now logs an ERROR, keeps every feature it did fetch, and sets
     ``last_fetch_truncated`` — fetch_active then reports last_fetch_ok=False
     (a partial fetch is a blind fetch: absence is not clearance). Any fetch
-    that ends within the cap is byte-identical to before."""
+    that ends within the cap is byte-identical to before.
+
+    TRANSPORT (2026-11-18, the fire -> alert latency review; each default
+    OFF = byte-identical URLs and answers):
+      cache_bust  (cfg.feeds_cache_bust, SAFETY SEMANTICS 57) every query
+                  carries `_t=<int unix s>` from `clock` (one value per
+                  query): the ArcGIS Online CDN (Azure Front Door) keys its
+                  cache on the whole URL, so a fixed URL is served from the
+                  edge for up to s-maxage (FIRIS 3600 s, WFIGS 300 s) —
+                  measured 2026-11-18: a never-seen `_t` (or `_cb`, `_ts`)
+                  is a MISS on all three layers.
+      gzip        (cfg.feeds_gzip, SAFETY SEMANTICS 57) the stdlib GET asks
+                  Accept-Encoding gzip (wgresponse.net); same JSON, ~4x
+                  fewer bytes; a corrupt body is a failed fetch.
+      incremental (cfg.feeds_incremental, SAFETY SEMANTICS 59) the POLYGON
+                  layers (WFIGS perimeters, FIRIS) are fetched as a cheap
+                  attributes-only query (OBJECTID + every field the adapter
+                  reads + the layer's change fields, no geometry) plus the
+                  full features of only the ids that are new or whose
+                  attributes changed; the rest come from the adapter's own
+                  cache, in the cheap query's (= the server's) order. A
+                  full fetch runs hourly (INCREMENTAL_FULL_EVERY_S), after
+                  ANY failure, at start, and whenever many ids changed; at
+                  the hourly one the cached answer is compared with the
+                  full one and a difference is an operator event
+                  (last_fetch_events: feed_incremental_mismatch) — the full
+                  answer is used. More than INCREMENTAL_MAX_FEATURES
+                  features, a capped cheap query, or a feature without an
+                  integer OBJECTID = the legacy full query (page cap rule
+                  unchanged).
+    FEED TIMINGS (telemetry, always on; changes nothing): every request is
+    one row in ``last_fetch_detail`` (fetch_detail)."""
 
     _MAX_PAGES = 5
+    #: SEMANTICS 59: the full refresh period of an incremental layer (s)
+    INCREMENTAL_FULL_EVERY_S = 3600.0
+    #: ... a layer larger than this is always fetched whole (one page of
+    #: the full query at the layers' maxRecordCount 2000)
+    INCREMENTAL_MAX_FEATURES = 2000
+    #: ... a full fetch instead when more ids than this changed at once
+    #: (and more than INCREMENTAL_MAX_FRAC of the layer)
+    INCREMENTAL_MAX_CHANGED = 50
+    INCREMENTAL_MAX_FRAC = 0.25
+    #: ... object ids per changed-features request (URL length)
+    INCREMENTAL_IDS_PER_REQUEST = 100
 
-    def __init__(self, http_get: Optional[HttpGet] = None):
-        self._http_get = http_get or _default_http_get
+    def __init__(self, http_get: Optional[HttpGet] = None, *,
+                 cache_bust: bool = False, gzip: bool = False,
+                 incremental: bool = False,
+                 clock: Optional[Callable[[], float]] = None):
+        self._http_get = _pick_http_get(http_get, gzip)
         # Health flag per the module docstring convention; True until a fetch
         # proves otherwise (optimistic pre-first-fetch default).
         self.last_fetch_ok = True
         self.last_fetch_truncated = False
+        self._cache_bust = bool(cache_bust)
+        self._incremental = bool(incremental)
+        self._clock = clock or time.time
+        self._inc_state: dict = {}        # SEMANTICS 59: query key -> state
+        self._requests: list = []         # this fetch's request rows
+        self._inc_notes: list = []        # this fetch's incremental notes
+        #: FEED TIMINGS: the last fetch's requests (fetch_detail) or None
+        self.last_fetch_detail: Optional[dict] = None
+        #: SEMANTICS 59: the last fetch's incremental findings (dicts with
+        #: kind / message / detail) — [] unless incremental
+        self.last_fetch_events: list = []
 
-    def _query(self, layer_url: str, out_fields: str,
-               bbox: Optional[BBox]) -> list:
-        """Return the feature dict list for one layer query; raises on failure."""
+    @property
+    def transport(self) -> dict:
+        """The armed transport options (the watch daemon's startup note)."""
+        return {"cache_bust": self._cache_bust,
+                "gzip": self._http_get is _gzip_http_get,
+                "incremental": self._incremental}
+
+    def _begin_fetch(self) -> None:
+        self._requests = []
+        self._inc_notes = []
+        self.last_fetch_events = []
+        self.last_fetch_detail = None
+
+    def _end_fetch(self, ok: bool) -> None:
+        """Close a fetch: the telemetry; a fetch that was not healthy ends
+        every incremental cache (SEMANTICS 59: the next fetch is full)."""
+        if not ok:
+            self._inc_state.clear()
+        try:
+            detail = fetch_detail(self._requests)
+            if self._inc_notes:
+                detail["incremental"] = list(self._inc_notes)
+            self.last_fetch_detail = detail
+        except Exception:                  # pragma: no cover - telemetry only
+            self.last_fetch_detail = None
+
+    def _params(self, out_fields: str, bbox: Optional[BBox],
+                geometry: bool = True) -> dict:
         params = {"where": "1=1", "outFields": out_fields, "f": "json",
-                  "returnGeometry": "true", "outSR": "4326"}
+                  "returnGeometry": "true" if geometry else "false",
+                  "outSR": "4326"}
         if bbox is not None:
             params.update(_envelope_params(bbox))
+        if self._cache_bust:
+            # SEMANTICS 57: a never-seen URL — the CDN cannot answer it
+            params["_t"] = str(int(float(self._clock())))
+        return params
+
+    def _paged(self, layer_url: str, params: dict, what: str) -> tuple:
+        """(features, capped): every page of one query; raises on failure.
+        capped = the pager ran out of pages while the server still had
+        more (the tail is missing). self._last_page_len: the shortest page
+        the server said was not the last (its page size; None when one
+        page held everything)."""
         features: list = []
         offset = 0
+        self._last_page_len = None
         for _page in range(self._MAX_PAGES):
             page_params = dict(params)
             if offset:
                 page_params["resultOffset"] = str(offset)
             url = layer_url + "?" + urllib.parse.urlencode(page_params)
-            status, body = self._http_get(url, {"Accept": "application/json"})
+            status, body = _timed_get(self._http_get, url,
+                                      {"Accept": "application/json"},
+                                      self._requests, what, page=_page)
             if status != 200:
                 raise RuntimeError(f"HTTP {status} from {layer_url}")
             payload = json.loads(body.decode("utf-8"))
@@ -325,18 +523,241 @@ class _ArcGisFeedBase:
             page = payload.get("features") or []
             features.extend(page)
             if not payload.get("exceededTransferLimit") or not page:
-                break
+                return features, False
+            self._last_page_len = (len(page) if self._last_page_len is None
+                                   else min(self._last_page_len, len(page)))
             offset += len(page)
-        else:
-            # every page was full and the server still has more: the tail
-            # beyond _MAX_PAGES pages is NOT in `features` — never silent.
-            self.last_fetch_truncated = True
-            log.error("ArcGIS page cap reached for %s: %d features over %d "
-                      "pages and the server still reports "
-                      "exceededTransferLimit — the rest are MISSING from "
-                      "this fetch (marked unhealthy: absence is not "
-                      "clearance)", layer_url, len(features), self._MAX_PAGES)
+        return features, True
+
+    def _query(self, layer_url: str, out_fields: str,
+               bbox: Optional[BBox], *,
+               change_fields: Optional[tuple] = None) -> list:
+        """Return the feature dict list for one layer query; raises on failure.
+        change_fields (a polygon layer's own change fields; SEMANTICS 59):
+        the layer may be fetched incrementally when the adapter is."""
+        if self._incremental and change_fields is not None:
+            return self._query_incremental(layer_url, out_fields, bbox,
+                                           tuple(change_fields))
+        return self._query_full(layer_url, out_fields, bbox)
+
+    def _query_full(self, layer_url: str, out_fields: str,
+                    bbox: Optional[BBox]) -> list:
+        features, capped = self._paged(layer_url,
+                                       self._params(out_fields, bbox),
+                                       _layer_name(layer_url))
+        if capped:
+            self._capped(layer_url, features)
         return features
+
+    def _capped(self, layer_url: str, features: list) -> None:
+        # every page was full and the server still has more: the tail
+        # beyond _MAX_PAGES pages is NOT in `features` — never silent.
+        self.last_fetch_truncated = True
+        log.error("ArcGIS page cap reached for %s: %d features over %d "
+                  "pages and the server still reports "
+                  "exceededTransferLimit — the rest are MISSING from "
+                  "this fetch (marked unhealthy: absence is not "
+                  "clearance)", layer_url, len(features), self._MAX_PAGES)
+
+    # -- SAFETY SEMANTICS 59: the incremental polygon fetch -----------------
+
+    def _query_incremental(self, layer_url: str, out_fields: str,
+                           bbox: Optional[BBox], change_fields: tuple) -> list:
+        """The incremental fetch (class docstring); the same feature list,
+        in the same order, as _query_full. Raises like _query_full; any
+        raise leaves no state behind (the next fetch is full)."""
+        key = (layer_url, out_fields, None if bbox is None else
+               (bbox.west, bbox.south, bbox.east, bbox.north))
+        st = self._inc_state.pop(key, None)
+        now = float(self._clock())
+        name = _layer_name(layer_url)
+        try:
+            return self._incremental_steps(layer_url, out_fields, bbox,
+                                           change_fields, key, st, now, name)
+        except _FullFetchFailed as exc:
+            raise exc.cause from None
+        except Exception as exc:
+            if _is_timeout(exc):
+                raise                     # a slow server stays slow
+            # the cheap or changed-features query failed (a renamed field,
+            # an ArcGIS error): this fetch is the legacy one, never blind
+            # because of the incremental path itself
+            log.warning("%s: incremental query failed (%s) — legacy full "
+                        "fetch", name, type(exc).__name__, exc_info=True)
+            self._note_inc("full", f"{name}: incremental query failed "
+                                   f"({type(exc).__name__}) — legacy full "
+                                   f"fetch")
+            return self._query_full(layer_url, out_fields, bbox)
+
+    def _incremental_steps(self, layer_url, out_fields, bbox, change_fields,
+                           key, st, now, name) -> list:
+        fields = [f.strip() for f in out_fields.split(",") if f.strip()]
+        star = out_fields.strip() == "*"
+        has_oid = star or any(f.lower() == "objectid" for f in fields)
+        fetch_fields = out_fields if has_oid else out_fields + ",OBJECTID"
+        if star:
+            cheap_fields = "*"
+        else:
+            seen: set = set()
+            cheap = []
+            for f in fields + ["OBJECTID"] + list(change_fields):
+                if f.lower() not in seen:
+                    seen.add(f.lower())
+                    cheap.append(f)
+            cheap_fields = ",".join(cheap)
+        cheap_feats, capped = self._paged(
+            layer_url, self._params(cheap_fields, bbox, geometry=False),
+            name + " (ids+attributes)")
+        rows = [((f.get("attributes") or {}).get("OBJECTID"),
+                 f.get("attributes") or {}) for f in cheap_feats]
+        oids = [o for o, _ in rows]
+        why = None
+        if capped or len(rows) > self.INCREMENTAL_MAX_FEATURES:
+            why = f"{len(rows)} features (incremental limit " \
+                  f"{self.INCREMENTAL_MAX_FEATURES})"
+        elif any(not isinstance(o, int) or isinstance(o, bool) for o in oids) \
+                or len(set(oids)) != len(oids):
+            why = "a feature without a unique integer OBJECTID"
+        if why is not None:
+            self._note_inc("full", f"{name}: legacy full fetch — {why}")
+            return self._query_full(layer_url, out_fields, bbox)
+        attrs = dict(rows)
+
+        def strip(feat: dict) -> dict:
+            if has_oid:
+                return feat
+            a = dict(feat.get("attributes") or {})
+            a.pop("OBJECTID", None)
+            out = dict(feat)
+            out["attributes"] = a
+            return out
+
+        def oid_of(feat: dict):
+            return (feat.get("attributes") or {}).get("OBJECTID")
+
+        full_why = None
+        if st is None:
+            full_why = "first fetch or after a failure"
+        elif now - st["full_at_s"] >= self.INCREMENTAL_FULL_EVERY_S \
+                or now < st["full_at_s"]:
+            full_why = "hourly full refresh"
+        elif len(oids) > self._MAX_PAGES * (st["page_len"]
+                                            or max(1, st["n_full"])):
+            # the legacy pager might run out of pages now: ask as it would
+            full_why = (f"{len(oids)} features may exceed the full query's "
+                        f"{self._MAX_PAGES} pages")
+        need = [o for o in oids
+                if st is None or o not in st["feats"]
+                or st["attrs"].get(o) != attrs[o]]
+        if full_why is None and len(need) > max(
+                self.INCREMENTAL_MAX_CHANGED,
+                self.INCREMENTAL_MAX_FRAC * len(oids)):
+            full_why = f"{len(need)} of {len(oids)} features new or changed"
+        got: dict = {}
+        if full_why is None and need:
+            for i in range(0, len(need), self.INCREMENTAL_IDS_PER_REQUEST):
+                chunk = need[i:i + self.INCREMENTAL_IDS_PER_REQUEST]
+                params = self._params(fetch_fields, bbox)
+                params["objectIds"] = ",".join(str(o) for o in chunk)
+                feats, cap = self._paged(layer_url, params,
+                                         name + " (changed)")
+                if cap:
+                    full_why = "the changed-features query was capped"
+                    break
+                for f in feats:
+                    got[oid_of(f)] = strip(f)
+            missing = [o for o in need if o not in got]
+            if full_why is None and missing:
+                # deleted or re-filtered between the two queries
+                full_why = (f"{len(missing)} changed feature(s) not answered "
+                            f"(edited between the queries)")
+        if full_why is not None:
+            return self._incremental_full(layer_url, out_fields, bbox, key,
+                                          st, rows, fetch_fields, strip,
+                                          oid_of, now, full_why, name)
+        out = []
+        for o in oids:
+            if o in got:
+                st["feats"][o] = _pack_feature(got[o])
+                out.append(got[o])
+            else:
+                out.append(_unpack_feature(st["feats"][o]))
+        st["attrs"] = attrs
+        st["feats"] = {o: st["feats"][o] for o in oids}
+        self._inc_state[key] = st
+        self._note_inc("incremental",
+                       f"{name}: {len(need)} of {len(oids)} feature(s) "
+                       f"fetched, {len(oids) - len(need)} from the cache")
+        return out
+
+    def _incremental_full(self, layer_url, out_fields, bbox, key, st, rows,
+                          fetch_fields, strip, oid_of, now, why,
+                          name) -> list:
+        """SEMANTICS 59: the full fetch of an incremental layer — its answer
+        is THE answer; with a cache, the cached answer is compared with it
+        first (a difference is an operator event)."""
+        try:
+            feats, capped = self._paged(layer_url,
+                                        self._params(fetch_fields, bbox),
+                                        name)
+        except Exception as exc:
+            # the full fetch itself failed: raise as the legacy query would
+            raise _FullFetchFailed(exc) from exc
+        out = [strip(f) for f in feats]
+        if capped:
+            self._capped(layer_url, out)
+            return out
+        full_oids = [oid_of(f) for f in feats]
+        if any(not isinstance(o, int) or isinstance(o, bool)
+               for o in full_oids) or len(set(full_oids)) != len(full_oids):
+            self._note_inc("full", f"{name}: legacy full fetch — a feature "
+                                   f"without a unique integer OBJECTID")
+            return out
+        page_len = self._last_page_len
+        if st is not None and why == "hourly full refresh":
+            self._compare(name, st, rows, full_oids, out)
+        self._inc_state[key] = {
+            "full_at_s": now,
+            "n_full": len(out),
+            "page_len": page_len,
+            "attrs": dict(rows),
+            "feats": {o: _pack_feature(f) for o, f in zip(full_oids, out)}}
+        self._note_inc("full", f"{name}: full fetch ({why}), "
+                               f"{len(out)} feature(s)")
+        return out
+
+    def _compare(self, name: str, st: dict, rows: list, full_oids: list,
+                 full: list) -> None:
+        """SEMANTICS 59: what the cache would have answered vs the full
+        answer — membership, order, and every feature the cache would have
+        reused (its attributes unchanged). A difference is one event."""
+        oids = [o for o, _ in rows]
+        diff = {}
+        if set(oids) != set(full_oids):
+            diff["membership"] = {
+                "only_cheap": sorted(set(oids) - set(full_oids))[:20],
+                "only_full": sorted(set(full_oids) - set(oids))[:20]}
+        elif oids != full_oids:
+            diff["order"] = True
+        by_oid = dict(zip(full_oids, full))
+        stale = [o for o, a in rows
+                 if o in by_oid and o in st["feats"]
+                 and st["attrs"].get(o) == a
+                 and _unpack_feature(st["feats"][o]) != by_oid[o]]
+        if stale:
+            diff["stale_features"] = stale[:20]
+            diff["n_stale"] = len(stale)
+        if diff:
+            msg = (f"{name}: the incremental cache differed from the hourly "
+                   f"full fetch ({', '.join(sorted(diff))}) — the full "
+                   f"answer is used (SAFETY SEMANTICS 59)")
+            log.warning("%s: %s", msg, diff)
+            self.last_fetch_events.append({
+                "kind": "feed_incremental_mismatch", "message": msg,
+                "detail": {"layer": name, **diff}})
+
+    def _note_inc(self, mode: str, text: str) -> None:
+        self._inc_notes.append({"mode": mode, "note": text})
 
 
 class WfigsFeed(_ArcGisFeedBase):
@@ -383,10 +804,18 @@ class WfigsFeed(_ArcGisFeedBase):
                         "attr_ContainmentDateTime,attr_ControlDateTime,"
                         "attr_FireOutDateTime,attr_IncidentSize")
 
+    #: SEMANTICS 59: the perimeter layer's change fields (checked on the
+    #: live schema 2026-11-18) — the cheap query asks them beside the
+    #: adapter's own; Shape__Area / Shape__Length are ArcGIS-maintained
+    #: (a geometry edit moves them)
+    PERIM_CHANGE_FIELDS = ("attr_ModifiedOnDateTime_dt", "poly_DateCurrent",
+                           "poly_PolygonDateTime", "poly_CreateDate",
+                           "Shape__Area", "Shape__Length")
+
     def __init__(self, http_get: Optional[HttpGet] = None,
                  max_ring_vertices: int = 200, include_rx: bool = False,
-                 keep_rx: bool = False):
-        super().__init__(http_get)
+                 keep_rx: bool = False, **transport):
+        super().__init__(http_get, **transport)
         self._max_ring_vertices = max_ring_vertices
         self._include_rx = include_rx
         self._keep_rx = bool(keep_rx)
@@ -409,6 +838,7 @@ class WfigsFeed(_ArcGisFeedBase):
         points: list = []
         perims: list = []
         self.last_fetch_truncated = False
+        self._begin_fetch()
         self._rx_seen = [] if self._keep_rx else None
         self.rx_records = None
         perim_fields = self.PERIM_OUT_FIELDS + (
@@ -419,7 +849,8 @@ class WfigsFeed(_ArcGisFeedBase):
             ok = False
             log.warning("WFIGS incident-locations query failed", exc_info=True)
         try:
-            perims = self._query(self.PERIMETERS_URL, perim_fields, bbox)
+            perims = self._query(self.PERIMETERS_URL, perim_fields, bbox,
+                                 change_fields=self.PERIM_CHANGE_FIELDS)
         except Exception:
             ok = False
             log.warning("WFIGS perimeters query failed", exc_info=True)
@@ -428,12 +859,14 @@ class WfigsFeed(_ArcGisFeedBase):
         except Exception:
             log.warning("WFIGS parse failed", exc_info=True)
             self.last_fetch_ok = False
+            self._end_fetch(False)
             return []
         # a page-capped (truncated) layer is a partial fetch: keep the data,
         # but it must not read as 'genuinely clear' (class docstring)
         self.last_fetch_ok = ok and not self.last_fetch_truncated
         if self._keep_rx and self.last_fetch_ok:
             self.rx_records = list(self._rx_seen or [])
+        self._end_fetch(self.last_fetch_ok)
         return out
 
     # -- parsing ------------------------------------------------------------
@@ -626,8 +1059,13 @@ class FirisFeed(_ArcGisFeedBase):
                      "date_current", "last_edited_date", "editdate", "updated")
     _ACRES_KEYS = ("poly_gisacres", "gisacres", "gis_acres", "acres", "area_acres")
 
-    def __init__(self, http_get: Optional[HttpGet] = None, max_ring_vertices: int = 200):
-        super().__init__(http_get)
+    #: SEMANTICS 59: outFields '*' already carries the layer's edit fields
+    #: (CreationDate, EditDate, poly_DateCurrent) to the cheap query
+    CHANGE_FIELDS = ()
+
+    def __init__(self, http_get: Optional[HttpGet] = None,
+                 max_ring_vertices: int = 200, **transport):
+        super().__init__(http_get, **transport)
         self._max_ring_vertices = max_ring_vertices
 
     def fetch_active(self, bbox: Optional[BBox] = None) -> "list[FireIncident]":
@@ -635,8 +1073,10 @@ class FirisFeed(_ArcGisFeedBase):
         Sets self.last_fetch_ok per the module health convention (a
         page-capped fetch keeps its features but reports unhealthy)."""
         self.last_fetch_truncated = False
+        self._begin_fetch()
         try:
-            feats = self._query(self.LAYER_URL, "*", bbox)
+            feats = self._query(self.LAYER_URL, "*", bbox,
+                                change_fields=self.CHANGE_FIELDS)
             out = []
             for feat in feats:
                 try:
@@ -648,10 +1088,12 @@ class FirisFeed(_ArcGisFeedBase):
                 if inc is not None:
                     out.append(inc)
             self.last_fetch_ok = not self.last_fetch_truncated
+            self._end_fetch(self.last_fetch_ok)
             return out
         except Exception:
             log.warning("FIRIS ComboLayer fetch failed", exc_info=True)
             self.last_fetch_ok = False
+            self._end_fetch(False)
             return []
 
     def _from_feature(self, feat: dict) -> Optional[FireIncident]:
@@ -698,15 +1140,31 @@ class CalFireFeed:
 
     LIST_URL = "https://incidents.fire.ca.gov/umbraco/api/IncidentApi/List?inactive=false"
 
-    def __init__(self, http_get: Optional[HttpGet] = None):
-        self._http_get = http_get or _default_http_get
+    def __init__(self, http_get: Optional[HttpGet] = None, *,
+                 gzip: bool = False):
+        self._http_get = _pick_http_get(http_get, gzip)
         self.last_fetch_ok = True
+        #: FEED TIMINGS: the last fetch's request (fetch_detail) or None
+        self.last_fetch_detail: Optional[dict] = None
+
+    @property
+    def transport(self) -> dict:
+        return {"gzip": self._http_get is _gzip_http_get}
 
     def fetch_active(self, bbox: Optional[BBox] = None) -> "list[FireIncident]":
         """Active CA incidents (bbox filter applied client-side); never raises.
         Sets self.last_fetch_ok per the module health convention."""
+        rows: list = []
         try:
-            status, body = self._http_get(self.LIST_URL, {"Accept": "application/json"})
+            return self._fetch(bbox, rows)
+        finally:
+            self.last_fetch_detail = fetch_detail(rows)
+
+    def _fetch(self, bbox: Optional[BBox], rows: list) -> "list[FireIncident]":
+        try:
+            status, body = _timed_get(self._http_get, self.LIST_URL,
+                                      {"Accept": "application/json"}, rows,
+                                      "IncidentApi/List")
             if status != 200:
                 raise RuntimeError(f"HTTP {status} from CAL FIRE IncidentApi")
             records = json.loads(body.decode("utf-8"))
@@ -893,12 +1351,18 @@ class FirmsFeed:
                  sources: Optional[tuple] = None,
                  window_h: Optional[float] = None,
                  clock: Optional[Callable[[], float]] = None,
-                 track_ids: bool = False, recorder=None, memory=None):
+                 track_ids: bool = False, recorder=None, memory=None,
+                 gzip: bool = False, parallel_sources: bool = False):
         self._map_key = map_key or None      # '' and None both mean "no key"
         self._source = source
         self._day_range = max(1, min(5, int(day_range)))
         self._cluster_m = cluster_km * 1000.0
-        self._http_get = http_get or _default_http_get
+        # FEEDS GZIP (SEMANTICS 57) / PARALLEL SOURCES (SEMANTICS 58): the
+        # live mode's sources asked at once, answered in source order
+        self._http_get = _pick_http_get(http_get, gzip)
+        self._parallel = bool(parallel_sources)
+        #: FEED TIMINGS: the last fetch's requests (fetch_detail) or None
+        self.last_fetch_detail: Optional[dict] = None
         self._warned_no_key = False
         self.last_fetch_ok = True
         self._sources = tuple(sources) if sources else None
@@ -918,13 +1382,19 @@ class FirmsFeed:
     def live(cls, map_key: Optional[str],
              http_get: Optional[HttpGet] = None,
              clock: Optional[Callable[[], float]] = None,
-             recorder=None, memory=None) -> "FirmsFeed":
+             recorder=None, memory=None, **transport) -> "FirmsFeed":
         """The live mode: the NOAA-20 and NOAA-21 VIIRS, a rolling 24 h window,
-        cluster ids kept across fetches (recorder / memory: SEMANTICS 43)."""
+        cluster ids kept across fetches (recorder / memory: SEMANTICS 43;
+        transport: gzip / parallel_sources, SEMANTICS 57 / 58)."""
         return cls(map_key=map_key, http_get=http_get,
                    sources=cls.LIVE_SOURCES, window_h=cls.LIVE_WINDOW_H,
                    clock=clock, track_ids=True, recorder=recorder,
-                   memory=memory)
+                   memory=memory, **transport)
+
+    @property
+    def transport(self) -> dict:
+        return {"gzip": self._http_get is _gzip_http_get,
+                "parallel_sources": self._parallel}
 
     @property
     def poll_log(self):
@@ -954,6 +1424,41 @@ class FirmsFeed:
         Sets self.last_fetch_ok per the module health convention. Without a
         MAP_KEY the adapter is BLIND: [] + last_fetch_ok=False + one loud
         log naming the signup URL (see class docstring)."""
+        self._rows: dict = {}             # FEED TIMINGS: source -> rows
+        try:
+            return self._fetch_active(bbox)
+        finally:
+            try:
+                srcs = list(self._sources or (self._source,))
+                keys = srcs + [s + " five-day" for s in srcs]
+                self.last_fetch_detail = fetch_detail(
+                    [r for k in keys for r in self._rows.get(k, ())])
+            except Exception:              # pragma: no cover - telemetry
+                self.last_fetch_detail = None
+
+    def _ask(self, src: str, url: str) -> "tuple[int, bytes]":
+        """One FIRMS GET, timed (FEED TIMINGS: rows per source, never the
+        URL — it carries the MAP_KEY)."""
+        return _timed_get(self._http_get, url, {"Accept": "text/csv"},
+                          self._rows.setdefault(src, []), src)
+
+    def _ask_all(self, asks: list) -> list:
+        """SEMANTICS 58 (parallel_sources): every (src, url) asked at once;
+        [(status, body) | Exception] in the asks' order. A BaseException
+        that is not an Exception propagates (as the serial loop's would)."""
+        import concurrent.futures as cf
+
+        def one(src, url):
+            try:
+                return self._ask(src, url)
+            except Exception as exc:
+                return exc
+        with cf.ThreadPoolExecutor(max_workers=max(1, len(asks)),
+                                   thread_name_prefix="firms") as pool:
+            futs = [pool.submit(one, src, url) for src, url in asks]
+            return [f.result() for f in futs]
+
+    def _fetch_active(self, bbox: Optional[BBox]) -> "list[FireIncident]":
         if not self._map_key:
             if not self._warned_no_key:
                 log.warning(
@@ -970,7 +1475,7 @@ class FirmsFeed:
             return self._fetch_live(area)
         url = f"{self.BASE_URL}/{self._map_key}/{self._source}/{area}/{self._day_range}"
         try:
-            status, body = self._http_get(url, {"Accept": "text/csv"})
+            status, body = self._ask(self._source, url)
             if status != 200:
                 raise RuntimeError(f"HTTP {status} from FIRMS")
             detections = self._parse_csv(body.decode("utf-8", errors="replace"))
@@ -1008,10 +1513,21 @@ class FirmsFeed:
         ok = True
         shadow = self._recorder is not None or self._memory is not None
         t_poll = float(self._clock()) if shadow else None
-        for src in (self._sources or (self._source,)):
-            url = f"{self.BASE_URL}/{self._map_key}/{src}/{area}/{self._day_range}"
+        srcs = list(self._sources or (self._source,))
+        urls = [f"{self.BASE_URL}/{self._map_key}/{src}/{area}/"
+                f"{self._day_range}" for src in srcs]
+        # SEMANTICS 58: asked at once, answered below in source order (the
+        # log, the memory and the detections see exactly the serial order)
+        answers = (self._ask_all(list(zip(srcs, urls)))
+                   if self._parallel and len(srcs) > 1 else None)
+        for k, (src, url) in enumerate(zip(srcs, urls)):
             try:
-                status, body = self._http_get(url, {"Accept": "text/csv"})
+                if answers is None:
+                    status, body = self._ask(src, url)
+                elif isinstance(answers[k], Exception):
+                    raise answers[k]
+                else:
+                    status, body = answers[k]
                 if status != 200:
                     raise RuntimeError(f"HTTP {status} from FIRMS ({src})")
                 text = body.decode("utf-8", errors="replace")
@@ -1066,12 +1582,36 @@ class FirmsFeed:
         """SCREENING STEP 0 (SEMANTICS 43): the memory's five-day ask per
         source when it wants one, then the log's flush. Never raises."""
         if self._memory is not None:
-            for src in (self._sources or (self._source,)):
+            srcs = list(self._sources or (self._source,))
+            answers: dict = {}
+            if self._parallel and len(srcs) > 1:
+                # SEMANTICS 58: the five-day asks at once; whether a source
+                # wants one reads only that source's own memory, so asking
+                # first and answering in source order below is the serial
+                # loop's result
+                wanted = []
+                for src in srcs:
+                    try:
+                        if self._memory.wants_history(src, t_poll):
+                            wanted.append(src)
+                    except Exception:
+                        pass              # the loop below meets it again
+                if len(wanted) > 1:
+                    asks = [(src, f"{self.BASE_URL}/{self._map_key}/{src}/"
+                                  f"{area}/5") for src in wanted]
+                    answers = dict(zip(wanted, self._ask_all(
+                        [(src + " five-day", url) for src, url in asks])))
+            for src in srcs:
                 try:
                     if not self._memory.wants_history(src, t_poll):
                         continue
                     url = f"{self.BASE_URL}/{self._map_key}/{src}/{area}/5"
-                    status, body = self._http_get(url, {"Accept": "text/csv"})
+                    if src not in answers:
+                        status, body = self._ask(src + " five-day", url)
+                    elif isinstance(answers[src], Exception):
+                        raise answers[src]
+                    else:
+                        status, body = answers[src]
                     if status != 200:
                         raise RuntimeError(
                             f"HTTP {status} from FIRMS ({src}, five days)")
@@ -1327,6 +1867,13 @@ def fuse_incidents(batches: "list[list[FireIncident]]", cfg=None,
     groups: "list[list[FireIncident]]" = []
     group_norms: "list[list[str]]" = []      # parallel: normalized member names
     by_irwin: dict = {}
+    # SAFETY SEMANTICS 52b (cfg.fuse_name_join_strict): the name join never
+    # joins a record to a group holding another IRWIN id, or one discovered
+    # more than fuse_name_join_max_gap_h apart
+    strict_gap_s = (float(cfg.fuse_name_join_max_gap_h) * 3600.0
+                    if cfg is not None
+                    and getattr(cfg, "fuse_name_join_strict", False)
+                    else None)
     for inc in incidents:
         if (inc.source is IncidentSource.SEEDED
                 or str(inc.incident_id).startswith(SEEDED_ID_PREFIX)):
@@ -1343,6 +1890,9 @@ def fuse_incidents(batches: "list[list[FireIncident]]", cfg=None,
                 if any(gnm == nm
                        and _haversine_m(inc.origin, m.origin) < _NAME_JOIN_DIST_M
                        for m, gnm in zip(group, group_norms[j])):
+                    if (strict_gap_s is not None
+                            and _name_join_refused(inc, group, strict_gap_s)):
+                        continue
                     gi = j
                     break
         if gi is None:
@@ -1372,6 +1922,25 @@ def fuse_incidents(batches: "list[list[FireIncident]]", cfg=None,
 #: does not match.
 _FIRIS_DESIGNATOR = re.compile(
     r"^[A-Za-z]{2}-[A-Za-z0-9]{2,5}-(?P<name>.+?)(?:-N[0-9][0-9A-Za-z]{0,4})?$")
+
+
+def _name_join_refused(inc: FireIncident, group: "list[FireIncident]",
+                       gap_s: float) -> bool:
+    """SAFETY SEMANTICS 52b: True when the name join must NOT put `inc` into
+    `group` — `inc` carries an IRWIN id and a member carries another, or
+    both `inc` and a member carry a discovery time and the two lie more
+    than gap_s apart. A missing id or time never refuses (the legacy join
+    decides)."""
+    key = _norm_irwin(inc.irwin_id)
+    if key is not None and any(
+            _norm_irwin(m.irwin_id) not in (None, key) for m in group):
+        return True
+    d = inc.discovered_at_s
+    if not _pos_time(d):
+        return False
+    return any(_pos_time(m.discovered_at_s)
+               and abs(float(d) - float(m.discovered_at_s)) > gap_s
+               for m in group)
 
 
 def _firis_designator_name(inc: FireIncident) -> Optional[str]:

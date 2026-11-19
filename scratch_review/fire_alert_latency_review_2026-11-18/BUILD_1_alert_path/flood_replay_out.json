@@ -1,0 +1,124 @@
+{
+ "OFF": [
+  {
+   "cycle": "blind cycle",
+   "alerts_s": 0.195,
+   "cycle_wall_s": 0.26,
+   "operator_events": 15895,
+   "kinds": {
+    "feed_blind": 1,
+    "degraded": 15894
+   },
+   "op_events_bytes": 5472493,
+   "op_log_kinds": [
+    "degraded"
+   ],
+   "priority_kinds": [],
+   "state_bytes": 5566693,
+   "state_build_s": 0.07,
+   "records_left": 15894,
+   "swapped_live_state_bytes": 6827261
+  },
+  {
+   "cycle": "healthy cycle",
+   "alerts_s": 0.021,
+   "cycle_wall_s": 0.07,
+   "operator_events": 15894,
+   "kinds": {
+    "recovered": 15894
+   },
+   "op_events_bytes": 5138520,
+   "op_log_kinds": [
+    "recovered"
+   ],
+   "priority_kinds": [],
+   "state_bytes": 5252904,
+   "state_build_s": 0.053,
+   "records_left": 15894,
+   "swapped_live_state_bytes": 6491188
+  },
+  {
+   "cycle": "2nd blind cycle",
+   "alerts_s": 0.218,
+   "cycle_wall_s": 0.27,
+   "operator_events": 15895,
+   "kinds": {
+    "feed_blind": 1,
+    "degraded": 15894
+   },
+   "op_events_bytes": 5472493,
+   "op_log_kinds": [
+    "degraded"
+   ],
+   "priority_kinds": [],
+   "state_bytes": 5566693,
+   "state_build_s": 0.058,
+   "records_left": 15894,
+   "swapped_live_state_bytes": 6827261
+  }
+ ],
+ "ON": [
+  {
+   "cycle": "blind cycle",
+   "alerts_s": 0.019,
+   "cycle_wall_s": 0.07,
+   "operator_events": 1100,
+   "kinds": {
+    "feed_blind": 1,
+    "degraded": 1099
+   },
+   "op_events_bytes": 465393,
+   "op_log_kinds": [
+    "degraded"
+   ],
+   "priority_kinds": [
+    "feed_blind"
+   ],
+   "state_bytes": 579777,
+   "state_build_s": 0.008,
+   "records_left": 15894,
+   "swapped_live_state_bytes": 1840292
+  },
+  {
+   "cycle": "healthy cycle",
+   "alerts_s": 0.014,
+   "cycle_wall_s": 0.03,
+   "operator_events": 1099,
+   "kinds": {
+    "recovered": 1099
+   },
+   "op_events_bytes": 437011,
+   "op_log_kinds": [
+    "recovered"
+   ],
+   "priority_kinds": [
+    "feed_blind"
+   ],
+   "state_bytes": 528975,
+   "state_build_s": 0.005,
+   "records_left": 635,
+   "swapped_live_state_bytes": 1808710
+  },
+  {
+   "cycle": "2nd blind cycle",
+   "alerts_s": 0.008,
+   "cycle_wall_s": 0.02,
+   "operator_events": 636,
+   "kinds": {
+    "feed_blind": 1,
+    "degraded": 635
+   },
+   "op_events_bytes": 219090,
+   "op_log_kinds": [
+    "degraded"
+   ],
+   "priority_kinds": [
+    "feed_blind"
+   ],
+   "state_bytes": 271809,
+   "state_build_s": 0.002,
+   "records_left": 635,
+   "swapped_live_state_bytes": 1574010
+  }
+ ]
+}

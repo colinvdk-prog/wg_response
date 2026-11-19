@@ -399,6 +399,20 @@ class S3Mirror:
         body = resp["Body"] if isinstance(resp, dict) else resp
         return body.read() if hasattr(body, "read") else bytes(body)
 
+    def exists(self, key: str) -> bool:
+        """True when the object exists, False when it does not (a HEAD, no
+        body). Raises on every other failure, like download(); a client
+        without head_object raises AttributeError (the caller then
+        downloads instead). REGIONAL TERRAIN (SAFETY SEMANTICS 53) reads
+        it; nothing else does."""
+        try:
+            self.client().head_object(Bucket=self._bucket, Key=key)
+        except Exception as exc:
+            if _is_missing_object(exc):
+                return False
+            raise
+        return True
+
     def upload(self, key: str, body: bytes,
                now_s: Optional[float] = None) -> bool:
         """PUT body at key; True on success. NEVER raises: any failure is a
