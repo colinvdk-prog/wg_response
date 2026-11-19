@@ -311,6 +311,50 @@ def _daemon(tmp_path, cfg=None, dispatcher=None, notifier=None,
     return daemon, feed, engine, notifier, store
 
 
+def test_the_staleness_alarm_can_be_set_in_seconds_not_periods(tmp_path):
+    """SAFETY SEMANTICS 61: cycle_stale_after_s > 0 fixes the alarm in
+    seconds whatever the period; 0 keeps 3 x the period."""
+    import dataclasses
+    from wgresponse.contracts import validate_config
+    base = ResponseConfig(horizon_h=24.0, ensemble_n=2, grid_cell_m=200.0,
+                          grid_max_cells=20_000)
+    cfg = dataclasses.replace(base, cycle_stale_after_s=900.0)
+    daemon, _, _, _, _ = _daemon(tmp_path, cfg=cfg)
+    daemon._period_s = 120.0
+    res = daemon.run_cycle()
+    assert daemon.state()["stale_after_s"] == 900.0
+    daemon._clock = lambda: res.t_s + 600.0     # 5 periods, under 900 s
+    assert daemon.state()["cycle_stale"] is False
+    daemon._clock = lambda: res.t_s + 901.0
+    assert daemon.state()["cycle_stale"] is True
+    # 0 = the period rule, unchanged
+    d0, _, _, _, _ = _daemon(tmp_path / "zero", cfg=base)
+    d0._period_s = 120.0
+    r0 = d0.run_cycle()
+    assert d0.state()["stale_after_s"] == 360.0
+    d0._clock = lambda: r0.t_s + 361.0
+    assert d0.state()["cycle_stale"] is True
+    # bounds
+    assert validate_config(base) == validate_config(
+        dataclasses.replace(base, cycle_stale_after_s=0.0))
+    for bad in (-1.0, 30.0, 7201.0, float("nan")):
+        assert any("cycle_stale_after_s" in p for p in validate_config(
+            dataclasses.replace(base, cycle_stale_after_s=bad)))
+    assert not any("cycle_stale_after_s" in p for p in validate_config(
+        dataclasses.replace(base, cycle_stale_after_s=900.0)))
+
+
+def test_watch_stale_after_flag_sets_the_alarm_and_says_so():
+    import argparse
+    from wgresponse.cli import _latency_cfg
+    base = ResponseConfig()
+    cfg, notes = _latency_cfg(base, argparse.Namespace(stale_after_s=900.0))
+    assert cfg.cycle_stale_after_s == 900.0
+    assert any("SAFETY SEMANTICS 61" in n for n in notes)
+    cfg, notes = _latency_cfg(base, argparse.Namespace())
+    assert cfg == base and not any("61" in n for n in notes)
+
+
 def test_watch_daemon_threads_aoi_into_every_feed_fetch(tmp_path):
     daemon, feed, _, _, _ = _daemon(tmp_path)
     daemon.run_cycle()

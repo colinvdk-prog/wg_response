@@ -2584,6 +2584,24 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    against the cycle's 11.4 / 40 min. Knob 0 = no thread, no key,
    byte-identical.
 
+61. THE STALENESS ALARM IS SET IN SECONDS, NOT IN PERIODS (2026-11-19;
+   founder: "fix the stale threshold"; cfg.cycle_stale_after_s, watch
+   --stale-after-s S). The daemon's STALENESS SLO calls a cycle stale when
+   the last completed cycle is older than STALE_PERIODS (3) x the poll
+   period (/healthz + /api/state cycle_stale, stale_after_s, the console
+   banner). The period sets how long the loop rests between cycles, not how
+   long a cycle may take: when the live watcher went from --period 300 to
+   120 (2026-11-19) the alarm fell from 900 s to 360 s and read stale on
+   ~70 % of polls (measured 03:29-04:49 UTC) while the cycles ran as before
+   (46-897 s, median ~4 min) — an alarm that is on most of the time is
+   read as noise, and a real stall then hides in it. With
+   cycle_stale_after_s > 0 the alarm is that many seconds whatever the
+   period; the live watcher sets 900 (the alarm it had at --period 300).
+   It is an alarm only: nothing alerts, dispatches, freezes or restarts on
+   it (the App Runner health check is TCP), so it can make no alert or ETA
+   later. Bounds [60, 7200] s. 0 (the default) = STALE_PERIODS x the
+   period, byte-identical.
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -5558,6 +5576,13 @@ class ResponseConfig:
     # persist and the previous /api/state build. False = byte-identical (no
     # key); watch --cycle-step-timings.
     cycle_step_timings: bool = False
+    # THE STALENESS ALARM IN SECONDS (2026-11-19; SAFETY SEMANTICS 61).
+    # > 0: the daemon's cycle_stale / stale_after_s (/healthz, /api/state,
+    # the console banner) use this many seconds instead of STALE_PERIODS x
+    # the poll period, so a shorter --period does not shrink the alarm.
+    # Alarm only — nothing reads it to alert, dispatch or restart. 0 = 3 x
+    # the period, byte-identical; watch --stale-after-s S.
+    cycle_stale_after_s: float = 0.0
     # A RECORD WITHOUT A TIME IS NOT A ZOMBIE (2026-11-18, the latency
     # review's B7; SAFETY SEMANTICS 52a, amending 9). The adapters write 0.0
     # when a record carries no update time (WFIGS Modified, FIRIS updated,
@@ -6039,6 +6064,11 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
             and not 0 <= cfg.terrain_memory_tiles <= 16):
         problems.append("terrain_memory_tiles must be within [0, 16] (a "
                         "300k-cell tile with canopy holds ~77 MB)")
+    if not (math.isfinite(cfg.cycle_stale_after_s)
+            and (cfg.cycle_stale_after_s == 0.0
+                 or 60.0 <= cfg.cycle_stale_after_s <= 7200.0)):
+        problems.append("cycle_stale_after_s must be 0 (3 x the poll period) "
+                        "or within [60, 7200] s (SAFETY SEMANTICS 61)")
     if not (math.isfinite(cfg.weather_retry_wait_s)
             and 0.0 <= cfg.weather_retry_wait_s <= 30.0):
         problems.append("weather_retry_wait_s must be within [0, 30] s (the "

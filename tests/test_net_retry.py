@@ -17,6 +17,7 @@ import http.client
 import io
 import logging
 import socket
+import ssl
 import urllib.error
 
 import pytest
@@ -101,6 +102,27 @@ def test_a_dropped_answer_is_retried_only_where_it_may_be_repeated():
     with pytest.raises(ConnectionResetError):
         _get(op, retry_dropped=False)
     assert len(op.calls) == 1
+
+
+def test_a_tls_connection_cut_without_close_notify_counts_as_dropped():
+    # world23 2026-11-19 01:09 UTC: the WFIGS incident-locations GET died in
+    # the TLS handshake with SSLEOFError, was not retried, and blinded WFIGS
+    # for a cycle while plain resets of the same hosts were retried.
+    eof = ssl.SSLEOFError(8, "EOF occurred in violation of protocol")
+    assert net.failure_kind(urllib.error.URLError(eof)) == "dropped"
+    op = _opener(urllib.error.URLError(eof), _Resp(b"again"))
+    out, pauses = _get(op)
+    assert out == (200, b"again") and pauses == [net.RETRY_PAUSE_S]
+    # ...but, like any drop, never twice where the GET may not be repeated
+    op = _opener(urllib.error.URLError(eof), _Resp())
+    with pytest.raises(urllib.error.URLError):
+        _get(op, retry_dropped=False)
+    assert len(op.calls) == 1
+    # other TLS failures (a bad certificate, a handshake timeout) stay unretried
+    assert net.failure_kind(urllib.error.URLError(
+        ssl.SSLCertVerificationError(1, "certificate verify failed"))) is None
+    assert net.failure_kind(urllib.error.URLError(
+        TimeoutError("_ssl.c:1018: The handshake operation timed out"))) is None
 
 
 def test_an_http_answer_or_a_timeout_is_never_retried():

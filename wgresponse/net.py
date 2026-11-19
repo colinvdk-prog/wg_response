@@ -17,6 +17,15 @@ What is retried, once, after RETRY_PAUSE_S:
             only when the caller says the request may be repeated
             (retry_dropped; LANDFIRE's job submission is a GET that
             creates a job, so the terrain adapter says no).
+            A TLS connection the far end closed without a close_notify
+            (ssl.SSLEOFError, "UNEXPECTED_EOF_WHILE_READING") counts as
+            DROPPED (2026-11-19): world23's two blind cycles on the live
+            watcher (01:06 and 02:54 UTC) began with exactly this error in
+            the WFIGS handshake, raised straight through as "not worth a
+            retry" while the same hosts' plain resets were retried and
+            recovered. Classed DROPPED, not UNSENT: the exception does not
+            say whether the handshake or the answer was cut, so a
+            non-repeatable GET (terrain) is still never sent twice.
 Never retried: an HTTP answer (urllib.error.HTTPError — the server spoke)
 and a timeout (a slow server stays slow; a second wait would double the
 cycle's cost). A second failure raises exactly as the first would have:
@@ -44,6 +53,7 @@ import gzip as _gzip
 import http.client
 import logging
 import socket
+import ssl
 import threading
 import time
 import urllib.error
@@ -102,7 +112,7 @@ def failure_kind(exc: BaseException) -> Optional[str]:
     if isinstance(reason, (socket.gaierror, ConnectionRefusedError)):
         return "unsent"
     if isinstance(reason, (ConnectionError, http.client.RemoteDisconnected,
-                           http.client.IncompleteRead)):
+                           http.client.IncompleteRead, ssl.SSLEOFError)):
         return "dropped"
     return None
 

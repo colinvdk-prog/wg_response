@@ -465,6 +465,12 @@ def _build_parser() -> argparse.ArgumentParser:
                          "aggregated), the blind-pair pass, the alert "
                          "evaluate, dispatch, the persist and the /api/state "
                          "build")
+    pw.add_argument("--stale-after-s", type=float, default=None,
+                    metavar="S",
+                    help="cfg.cycle_stale_after_s: /healthz cycle_stale "
+                         "after S seconds without a completed cycle, "
+                         "whatever --period is (default: 3 x the period; "
+                         "SAFETY SEMANTICS 61)")
     pw.add_argument("--persist-crews", action="store_true",
                     help="cfg.crew_state_persist: the crews' last reports "
                          "survive a restart (in the state file and its "
@@ -1524,6 +1530,13 @@ def _latency_cfg(cfg, args):
             "(the incidents without a domain in one aggregate), the "
             "blind-pair pass, the alert evaluate, dispatch, the persist and "
             "the previous /api/state build")
+    stale_s = getattr(args, "stale_after_s", None)
+    if stale_s is not None and stale_s != 0:     # < 0 -> validate_config refuses
+        cfg = dataclasses.replace(cfg, cycle_stale_after_s=float(stale_s))
+        notes.append(
+            f"STALENESS ALARM {stale_s:g} s: /healthz cycle_stale after "
+            f"{stale_s:g} s without a completed cycle, whatever the poll "
+            "period (alarm only) — SAFETY SEMANTICS 61")
     return cfg, notes
 
 
@@ -2226,7 +2239,10 @@ class _WatchDaemon:
                         "incidents": [], "clients": [], "plan": None})
             return out
         age_s = max(0.0, now - res.t_s)
-        stale_after_s = self.STALE_PERIODS * self._period_s
+        # SAFETY SEMANTICS 61: a fixed alarm in seconds when set
+        fixed = float(getattr(self._cfg, "cycle_stale_after_s", 0.0) or 0.0)
+        stale_after_s = (fixed if fixed > 0
+                         else self.STALE_PERIODS * self._period_s)
         out.update({
             "now_s": res.t_s,
             "last_cycle_t_s": res.t_s,
