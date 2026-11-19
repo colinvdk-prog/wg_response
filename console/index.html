@@ -71,6 +71,20 @@
   .watch-row .t, .watch-block .t { color: var(--dim); font-size: 10px; }
   .watch-row .m { margin-left: auto; color: var(--dim); }
   .stop.held { color: var(--dim); font-style: italic; }
+  /* SAFETY SEMANTICS 63: the operator pages + who is on call */
+  #pages { flex: 0 0 auto; max-height: 40%; border-bottom: 1px solid var(--navy3); }
+  .oncall { font-size: 11px; color: var(--dim); margin-bottom: 6px; }
+  .oncall b { color: var(--text); font-weight: 600; }
+  .oncall .warn { color: var(--watch); }
+  .pg { font-size: 12px; padding: 6px 8px; margin-bottom: 6px; border-radius: 4px;
+        background: var(--navy3); border-left: 3px solid var(--extreme); }
+  .pg.acked { border-left-color: var(--cleared); opacity: 0.75; }
+  .pg.unanswered { border-left-color: #ff5252; background: #3a1420; }
+  .pg .pt { font-weight: 600; }
+  .pg .pm { color: var(--dim); font-size: 11px; margin-top: 3px; }
+  .pg button { margin-top: 5px; font: 600 11px system-ui; padding: 4px 10px;
+               border: 0; border-radius: 4px; background: var(--orange);
+               color: var(--navy); cursor: pointer; }
   /* SAFETY SEMANTICS 6: operator-facing degradation banner. Plain DOM —
      independent of Leaflet and of the offline SVG shim, so it renders in
      every mode (live, demo, sim file, air-gapped). */
@@ -116,6 +130,7 @@
       <div class="sub" id="subtitle">operational fire-response console</div>
     </div>
     <div id="status"><span id="statustext">connecting…</span><span id="agechip"></span></div>
+    <div id="pages" class="section" style="display:none"><h2>Operator pages</h2><div id="oncall" class="oncall"></div><div id="pagelist"></div></div>
     <div id="alerts" class="section"><h2>Alert feed</h2><div id="alertlist"></div></div>
     <div id="itins" class="section"><h2>Crew itineraries</h2><div id="itinlist"></div></div>
   </div>
@@ -349,6 +364,57 @@ function apiKey(forceAsk) {
 
 function setStatus(html) { $("statustext").innerHTML = html; }
 
+// SAFETY SEMANTICS 63: page text comes from the feeds — always escaped
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;",
+    ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+async function ackPage(pageId) {
+  const by = window.prompt("Acknowledge this page as (your name):", "") || "console";
+  try {
+    const r = await fetch("/api/pages/ack", { method: "POST",
+      headers: { "Content-Type": "application/json",
+                 "X-Internal-API-Key": apiKey(false) },
+      body: JSON.stringify({ page_id: pageId, by }) });
+    if (!r.ok) throw new Error("acknowledge failed: HTTP " + r.status);
+  } catch (e) {
+    window.alert(String(e.message || e));
+  }
+  tick();
+}
+
+function renderPages(pg, now) {
+  const box = $("pages");
+  if (!pg) { box.style.display = "none"; return; }
+  box.style.display = "block";
+  const rota = pg.rota || {};
+  const oc = rota.on_call || {};
+  const who = oc.primary
+    ? `on call: <b>${esc(oc.primary_name || oc.primary)}</b>` +
+      (oc.secondary ? ` · secondary <b>${esc(oc.secondary_name || oc.secondary)}</b>` : " · no secondary")
+    : `<span class="warn">nobody on call — pages stay on this console</span>`;
+  const extra = [
+    rota.in_season === false ? "out of fire season" : null,
+    rota.error ? `<span class="warn">rota: ${esc(rota.error)}</span>` : null,
+    (rota.problems || []).length ? `<span class="warn">${(rota.problems || []).length} rota problem(s)</span>` : null,
+    `channel ${esc(pg.channel || "?")}` + (pg.channel === "dry" ? " (nothing is sent)" : ""),
+  ].filter(Boolean).join(" · ");
+  $("oncall").innerHTML = who + (extra ? "<br>" + extra : "");
+  const pages = pg.pages || [];
+  $("pagelist").innerHTML = pages.slice(0, 12).map(p => {
+    const age = (now != null && p.created_s != null) ? Math.max(0, Math.round((now - p.created_s) / 60)) : null;
+    const st = p.status === "acked"
+      ? `acknowledged by ${esc(p.acked_by)} (${esc(p.acked_via)})`
+      : (p.status === "unanswered" ? "UNANSWERED" : `open · escalation ${p.escalation || 0}`);
+    const btn = (p.status === "open" || p.status === "unanswered")
+      ? `<button onclick="ackPage('${esc(p.page_id)}')">Acknowledge</button>` : "";
+    return `<div class="pg ${esc(p.status)}"><div class="pt">${esc(p.title)}</div>` +
+      `<div class="pm">${st}${age != null ? " · " + age + " min ago" : ""}` +
+      ((p.homes || []).length ? " · homes " + esc(p.homes.join(", ")) : "") + `</div>${btn}</div>`;
+  }).join("") || `<div class="evt"><span class="t">no pages</span></div>`;
+}
+
 // --- last-cycle age chip (live watch mode; Sprint-2 C1) ---------------------
 // Driven off /api/state's last_cycle_t_s (unix s, daemon clock) + wall clock;
 // re-rendered every second so a stalled watch loop visibly ages even between
@@ -506,6 +572,7 @@ function render(d) {
   lastCycleT = (typeof d.last_cycle_t_s === "number") ? d.last_cycle_t_s : null;
   pollPeriod = (typeof d.poll_period_s === "number") ? d.poll_period_s : null;
   renderAgeChip();
+  renderPages(d.paging, (typeof d.now_s === "number") ? Date.now() / 1000 : null);
 
   Object.values(layers).forEach(g => g.clearLayers());
 

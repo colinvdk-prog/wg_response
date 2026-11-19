@@ -2653,6 +2653,48 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    (/api/state sentinel). The TEST world never runs a pass. Knob off = no
    hand-off, no checkpoint, byte-identical.
 
+63. A WARNING THAT NEEDS A PERSON PAGES THE ONE ON CALL — THE OPERATOR PAGE
+   AND THE ON-CALL ROTA (2026-11-19; founder: "build the operator page and
+   on-call rota next"; cfg.operator_paging, paging_ack_min,
+   paging_repeat_max, paging_triggers; watch --operator-paging [--rota
+   PATH]; wgresponse.paging). The 2026-11-01 screening decision 4 — on call
+   24/7 in fire season, a 15-minute acknowledgement, a second person paged
+   if there is no answer — had no code: an operator event only reached the
+   console. With operator_paging, a satellite_heat event (41: heat only a
+   satellite sees within 8 km of a home), a new_fire_near_homes event (60:
+   a new agency record within 12 km of a home; paged the moment the
+   sentinel raises it, between cycles) and an alert step UP to EXTREME_24H
+   or IMPACTED (one page per fire and state, listing its homes) each raise
+   a page — the founder's 2026-11-19 trigger choice (paging_triggers);
+   watcher health does not page. One page per key (the fire, and for alerts
+   its state): a later trigger for an open page adds its homes without
+   paging again; one for a page acknowledged within 6 h is noted on it, not
+   paged. The page goes to the rota's on-call PRIMARY at once; with no
+   acknowledgement after paging_ack_min (15) the SECONDARY is paged and the
+   primary again, then both every paging_ack_min until paging_repeat_max
+   (8) rounds, after which the page reads UNANSWERED and stays open on the
+   console. Nobody on call (no rota, no covering shift) never drops a page:
+   it stays on the console and its audit says so. THE ROTA is JSON (people,
+   shifts with a primary and a secondary, fire-season ranges) in the
+   private S3 state prefix (oncall/rota.json) or a local --rota file,
+   re-read every minute; a read that fails or does not parse keeps the last
+   good rota and says so. Contact details are read by a channel only —
+   never a log, /api/state or the audit. ACKNOWLEDGEMENT: the console's
+   button (authed) or a one-time signed link (HMAC with env
+   WGRESP_PAGE_KEY, valid 24 h; GET shows the page and a button, only the
+   POST acknowledges, so a link scanner acknowledges nothing); who, when
+   and how are recorded; a second acknowledgement never replaces the
+   first. THE CHANNEL is DRY (founder 2026-11-19, until the SMS provider
+   O-1 is chosen): nothing leaves the system — the log names the person id
+   and tier, the console shows the page. AUDIT: every step (raised, sent,
+   escalated, acknowledged, unanswered, a repeat) is a row in
+   oncall/audit-<date>.jsonl beside the state, mirrored to S3; open pages
+   are persisted (oncall/pages.json) and restored after a restart, and
+   their escalation continues. Paging reads the live world only (a drill
+   never pages) and changes nothing the engine computes: no alert, ETA,
+   plan or crew law reads it. Knob off = no pager, no thread, no key,
+   byte-identical.
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -4958,6 +5000,17 @@ class ResponseConfig:
     # it as new again. Needs new_fire_sentinel_s > 0. False = no hand-off,
     # byte-identical (watch --sentinel-priority).
     sentinel_priority_pass: bool = False
+    # 63: THE OPERATOR PAGE AND THE ON-CALL ROTA (wgresponse.paging) — a
+    # page per warning to the rota's on-call primary, the secondary after
+    # paging_ack_min without an acknowledgement, then both every
+    # paging_ack_min until paging_repeat_max rounds (then UNANSWERED); the
+    # channel is dry (console + log) until O-1. paging_triggers: a comma
+    # list of satellite_heat, new_fire_near_homes, alert_step_up. False =
+    # byte-identical (watch --operator-paging [--rota PATH]).
+    operator_paging: bool = False
+    paging_ack_min: float = 15.0          # the founder's 15-minute acknowledgement
+    paging_repeat_max: int = 8
+    paging_triggers: str = "satellite_heat,new_fire_near_homes,alert_step_up"
     # --- Sprint 2 (Council-1 remediations) ---
     slack_min: float = 15.0            # planned-slack floor per stop (SAFETY SEMANTICS 7)
     blind_alarm_cycles: int = 1        # unassessed cycles before OperatorEvent('degraded')
@@ -6182,6 +6235,20 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
             and 0.0 < cfg.new_fire_sentinel_km <= 60.0):
         problems.append("new_fire_sentinel_km must be within (0, 60] km "
                         "(60 km = the monitor's client-search cap)")
+    if not (math.isfinite(cfg.paging_ack_min)
+            and 5.0 <= cfg.paging_ack_min <= 60.0):
+        problems.append("paging_ack_min must be within [5, 60] min (the "
+                        "founder's acknowledgement is 15; SAFETY SEMANTICS 63)")
+    if (isinstance(cfg.paging_repeat_max, bool)
+            or not isinstance(cfg.paging_repeat_max, int)
+            or not 1 <= cfg.paging_repeat_max <= 50):
+        problems.append("paging_repeat_max must be an integer within [1, 50]")
+    _trig = [t.strip() for t in str(cfg.paging_triggers).split(",")
+             if t.strip()]
+    if not _trig or any(t not in ("satellite_heat", "new_fire_near_homes",
+                                  "alert_step_up") for t in _trig):
+        problems.append("paging_triggers must name one or more of "
+                        "satellite_heat, new_fire_near_homes, alert_step_up")
     if cfg.sentinel_priority_pass and not cfg.new_fire_sentinel_s > 0.0:
         problems.append("sentinel_priority_pass needs the new-fire sentinel "
                         "(new_fire_sentinel_s > 0; SAFETY SEMANTICS 62)")

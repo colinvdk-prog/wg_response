@@ -507,6 +507,16 @@ def _build_parser() -> argparse.ArgumentParser:
                          "one within --new-fire-sentinel-km of a home "
                          "(/api/state sentinel); the cycle reads nothing "
                          "from it (0 = off; 60 suggested)")
+    pw.add_argument("--operator-paging", action="store_true",
+                    help="cfg.operator_paging: satellite heat within 8 km, a "
+                         "new agency fire near homes and an alert step up to "
+                         "EXTREME/IMPACTED page the rota's on-call operator "
+                         "(15-min acknowledgement, then the secondary); the "
+                         "channel is dry — the console and the log (SAFETY "
+                         "SEMANTICS 63)")
+    pw.add_argument("--rota", default=None, metavar="PATH",
+                    help="the on-call rota JSON file (default: oncall/rota."
+                         "json in the S3 state prefix; SAFETY SEMANTICS 63)")
     pw.add_argument("--sentinel-priority", action="store_true",
                     help="cfg.sentinel_priority_pass: a WFIGS record the "
                          "sentinel finds near a home is fetched, forecast "
@@ -891,6 +901,16 @@ def _feeds_cfg(cfg, args):
             f"within {cfg.new_fire_sentinel_km:g} km of a protected home "
             f"(/api/state sentinel); the cycle reads nothing from it — "
             f"SAFETY SEMANTICS 60")
+    if getattr(args, "operator_paging", False):
+        cfg = dataclasses.replace(cfg, operator_paging=True)
+        notes.append(
+            f"OPERATOR PAGING: {cfg.paging_triggers.replace(',', ', ')} page "
+            f"the rota's on-call primary; no acknowledgement in "
+            f"{cfg.paging_ack_min:g} min pages the secondary too, then both "
+            f"every {cfg.paging_ack_min:g} min (max {cfg.paging_repeat_max} "
+            f"rounds); acknowledge on the console or by the page's link; "
+            f"channel DRY — the console and the log, nothing is sent "
+            f"(SAFETY SEMANTICS 63)")
     if getattr(args, "sentinel_priority", False):
         cfg = dataclasses.replace(cfg, sentinel_priority_pass=True)
         notes.append(
@@ -1835,6 +1855,16 @@ class _WatchDaemon:
     def sentinel(self):
         return self._sentinel
 
+    def attach_pager(self, pager) -> None:
+        """SAFETY SEMANTICS 63: the operator pager — fed every live
+        cycle's result and every between-cycle operator event; its block
+        on /api/state."""
+        self._pager = pager
+
+    @property
+    def pager(self):
+        return getattr(self, "_pager", None)
+
     def priority_from_sentinel(self, item: dict) -> None:
         """SAFETY SEMANTICS 62: the sentinel's WFIGS hand-off — queued on
         the live monitor for the next priority checkpoint, and the loop
@@ -1850,6 +1880,13 @@ class _WatchDaemon:
             if getattr(self._cfg, "operator_log_priority", False):
                 # SEMANTICS 51c: a sentinel event is operator-relevant
                 self._keep_priority([ev], float(ev.t_s))
+        pager = getattr(self, "_pager", None)
+        if pager is not None:
+            # SAFETY SEMANTICS 63: a sentinel event pages at once
+            try:
+                pager.observe_operator_event(ev)
+            except Exception:                  # noqa: BLE001
+                log.exception("paging: a between-cycle event failed to page")
 
     @property
     def test_world(self):
@@ -2023,6 +2060,14 @@ class _WatchDaemon:
             if rows:
                 # SAFETY SEMANTICS 62: what the pass did with its records
                 self._sentinel.observe_priority(rows)
+        pager = getattr(self, "_pager", None)
+        if pager is not None:
+            # SAFETY SEMANTICS 63: this cycle's warnings page the on-call
+            try:
+                pager.observe_cycle(res, {inc.incident_id: inc.name
+                                          for inc in (res.incidents or [])})
+            except Exception:                  # noqa: BLE001
+                log.exception("paging: the cycle's warnings failed to page")
         self._publish_to_test_world()
         return res
 
@@ -2223,6 +2268,13 @@ class _WatchDaemon:
             out["satellite_heat_24h"] = sum(
                 1 for t in self._heat_times
                 if now - t <= self.HEAT_COUNT_WINDOW_S)
+        pager = getattr(self, "_pager", None)
+        if pager is not None:
+            # SAFETY SEMANTICS 63: the rota (who is on call) and the pages
+            try:
+                out["paging"] = pager.status()
+            except Exception as exc:          # noqa: BLE001
+                out["paging"] = {"error": str(exc)[:200]}
         if self._sentinel is not None:
             # SAFETY SEMANTICS 60: the shadow sentinel's block (armed only)
             try:
@@ -3069,9 +3121,35 @@ def _cmd_watch(args) -> int:
                          if cfg.sentinel_priority_pass else None))
         daemon.attach_sentinel(sentinel)
 
+    pager = None
+    if cfg.operator_paging:
+        # SAFETY SEMANTICS 63: the operator page and the on-call rota (a dry
+        # channel: the console and the log)
+        from wgresponse import paging as paging_mod
+        from wgresponse.persist import S3Mirror
+        mirror = S3Mirror(s3_uri) if s3_uri else None
+        rota_path = getattr(args, "rota", None)
+        rota_src = paging_mod.RotaSource(
+            path=rota_path, mirror=None if rota_path else mirror)
+        pager = paging_mod.Pager(cfg, rota_source=rota_src,
+                                 state_dir=str(state_dir), mirror=mirror)
+        n_back = pager.restore()
+        rota_src.rota(force=True)
+        daemon.attach_pager(pager)
+        rs = rota_src.status(time.time())
+        startup_notes.append(
+            f"PAGING: rota {rota_src.where}"
+            + (f" ({rs['error']})" if rs["error"] else
+               f" ({rs['people']} people, {rs['shifts']} shifts)")
+            + f"; {n_back} page(s) restored; ack links "
+            + ("survive restarts (WGRESP_PAGE_KEY)" if pager.key_from_env
+               else "die with this process (set WGRESP_PAGE_KEY)"))
+
     httpd = server_mod.serve(port=args.port, host=args.host,
                              state_provider=daemon.state, beacon_sink=tracker,
                              plan_provider=daemon.plan)
+    if pager is not None:
+        httpd.app.pager = pager              # SEMANTICS 63: /page/ack, /api/pages
     if roster is not None:
         httpd.app.crew_roster = roster       # SEMANTICS 45f: the same roster
     if os.environ.get("WGRESP_DEV_OPEN") == "1":
@@ -3122,6 +3200,8 @@ def _cmd_watch(args) -> int:
     test_world.start()
     if sentinel is not None:
         sentinel.start()
+    if pager is not None:
+        pager.start()
     try:
         daemon.run(max_cycles=args.max_cycles)
     finally:

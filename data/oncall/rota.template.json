@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "_about": "On-call rota for operator pages (SAFETY SEMANTICS 63; wgresponse.paging). The watcher reads oncall/rota.json in its private S3 state prefix (or watch --rota PATH) every minute. Copy this template there and fill it in. NEVER commit real names or contact details to the repo. people: id -> name + contact details (read only by a real channel; the channel is dry until the SMS provider, OPEN_QUESTIONS O-1, is chosen). shifts: UTC start/end with a primary and a secondary; the covering shift that started last is on call. season: fire-season date ranges; [] = all year (24/7, the safe default until the season dates are set).",
+  "season": [],
+  "people": {
+    "op-primary": {"name": "Primary on call (unassigned)", "email": "", "sms": ""},
+    "op-secondary": {"name": "Secondary on call (unassigned)", "email": "", "sms": ""}
+  },
+  "shifts": [
+    {"start": "2026-11-19T00:00:00Z", "end": "2027-12-31T00:00:00Z",
+     "primary": "op-primary", "secondary": "op-secondary"}
+  ]
+}

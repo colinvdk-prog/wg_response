@@ -21,6 +21,13 @@ Endpoints:
                        ?since=<t_s> -> {"unchanged": true} when the cycle has
                        not moved), else worldview.summary_from_state over the
                        state_provider (no domains claimed). Read-only.
+    GET  /page/ack?t=  SAFETY SEMANTICS 63 (open: the signed link IS the
+                       credential): the page and an Acknowledge button —
+                       GET never acknowledges (a link scanner must not)
+    POST /page/ack     form t=<token>: acknowledge as the link's person
+    GET  /api/pages    (auth) the pager's block: rota status + pages
+    POST /api/pages/ack (auth) {"page_id", "by"?}: the console's button
+                       (no pager attached = 404 for all four)
     GET  /healthz      liveness probe (always open). When the state_provider's
                        dict carries degradation keys (SAFETY SEMANTICS 6:
                        `degraded` bool, `t_s`/`now_s`/`last_cycle_t_s` unix s,
@@ -1072,6 +1079,9 @@ class _App:
     #: attaches the one its tracker holds; None = read WGRESP_CREW_ROSTER
     #: per request (unset = the shared-key law of SEMANTICS 44).
     crew_roster = None
+    #: SAFETY SEMANTICS 63: the operator pager (wgresponse.paging.Pager) the
+    #: watch daemon attaches after serve(); None = the paging routes 404.
+    pager = None
 
     def __init__(self, state_provider: Optional[Callable] = None,
                  beacon_sink=None, plan_provider: Optional[Callable] = None,
@@ -1220,6 +1230,10 @@ class _Handler(BaseHTTPRequestHandler):
             # SAFETY SEMANTICS 51c: satellite heat events near homes in the
             # last 24 h (a count only — present when the daemon armed it)
             info["satellite_heat_24h"] = heat
+        paging = state.get("paging")
+        if isinstance(paging, dict) and isinstance(paging.get("open"), int):
+            # SAFETY SEMANTICS 63: open (unacknowledged) pages — a count only
+            info["pages_open"] = paging["open"]
         stale_fires = state.get("stale_fires")
         if isinstance(stale_fires, (list, tuple)):
             # FORECAST FRESHNESS TIERS: fires past their tier's limit (only
@@ -1251,6 +1265,17 @@ class _Handler(BaseHTTPRequestHandler):
             if self._reject_unauthorized():
                 return
             self._sim_get(path)
+            return
+        if path == "/page/ack":
+            self._page_ack_get()
+            return
+        if path == "/api/pages":
+            if self._reject_unauthorized():
+                return
+            if self.app.pager is None:
+                self._send_json(404, {"error": "paging is off"})
+                return
+            self._send_json(200, self.app.pager.status())
             return
         if path == "/api/state":
             if self._reject_unauthorized():
@@ -1285,6 +1310,12 @@ class _Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path.rstrip("/")
         if path == "/api/beacon":
             self._post_beacon()
+            return
+        if path == "/page/ack":
+            self._page_ack_post()
+            return
+        if path == "/api/pages/ack":
+            self._pages_ack_console()
             return
         if path.startswith("/api/sim"):
             self._sim_post(path)
@@ -1647,6 +1678,119 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _serve_simulator(self):
         self._serve_html(self.app.simulator_path, "simulator not installed")
+
+    # -- SAFETY SEMANTICS 63: the operator page's acknowledgement --------------
+
+    def _send_page_html(self, code: int, title: str, body_html: str) -> None:
+        import html as _html
+        doc = ("<!doctype html><html><head><meta charset='utf-8'>"
+               "<meta name='viewport' content='width=device-width,"
+               "initial-scale=1'><title>" + _html.escape(title) +
+               "</title><style>*{box-sizing:border-box}"
+               "body{font:16px system-ui,sans-serif;overflow-wrap:anywhere;"
+               "margin:0;padding:16px;background:#0e2038;color:#e8eef7}"
+               ".card{max-width:560px;margin:0 auto}h1{font-size:19px;"
+               "color:#ff7a1a}p{line-height:1.45}.dim{color:#9db0c9;"
+               "font-size:14px}button{font:600 18px system-ui;padding:14px"
+               " 22px;border:0;border-radius:8px;background:#ff7a1a;"
+               "color:#0e2038;width:100%}.ok{color:#4caf50}</style></head>"
+               "<body><div class='card'>" + body_html +
+               "</div></body></html>").encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(doc)))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.end_headers()
+        self.wfile.write(doc)
+
+    def _page_view_html(self, page: dict) -> str:
+        import html as _html
+        e = _html.escape
+        homes = ", ".join(page.get("homes") or []) or "—"
+        when = time.strftime("%Y-%m-%d %H:%M UTC",
+                             time.gmtime(float(page.get("created_s") or 0)))
+        return (f"<h1>{e(page.get('title') or 'Page')}</h1>"
+                f"<p>{e(page.get('message') or '')}</p>"
+                f"<p class='dim'>Homes: {e(homes)}<br>Raised {e(when)} · "
+                f"status {e(str(page.get('status')))}</p>")
+
+    def _page_ack_get(self) -> None:
+        import html as _html
+        pager = self.app.pager
+        if pager is None:
+            self._send_json(404, {"error": "paging is off"})
+            return
+        tok = (parse_qs(urlparse(self.path).query).get("t") or [""])[0]
+        try:
+            page = pager.check_link(tok)
+        except ValueError as exc:
+            self._send_page_html(400, "Page link",
+                                 f"<h1>Page link</h1><p>{_html.escape(str(exc))}"
+                                 "</p>")
+            return
+        view = self._page_view_html(page)
+        if page.get("status") == "acked":
+            view += (f"<p class='ok'>Acknowledged by "
+                     f"{_html.escape(str(page.get('acked_by')))}.</p>")
+        else:
+            who = _html.escape(str(page.get("link_person_name")
+                                   or page.get("link_person") or "you"))
+            view += ("<form method='post' action='/page/ack'>"
+                     f"<input type='hidden' name='t' value='{_html.escape(tok)}'>"
+                     f"<button type='submit'>Acknowledge as {who}</button>"
+                     "</form><p class='dim'>Opening this link does not "
+                     "acknowledge the page; the button does.</p>")
+        self._send_page_html(200, "Page", view)
+
+    def _page_ack_post(self) -> None:
+        import html as _html
+        pager = self.app.pager
+        if pager is None:
+            self._send_json(404, {"error": "paging is off"})
+            return
+        try:
+            n = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            n = 0
+        if n <= 0 or n > 8192:
+            self._send_page_html(400, "Page", "<p>Bad request.</p>")
+            return
+        form = parse_qs(self.rfile.read(n).decode("utf-8", "replace"))
+        tok = (form.get("t") or [""])[0]
+        try:
+            page = pager.ack_by_link(tok)
+        except (ValueError, KeyError) as exc:
+            self._send_page_html(400, "Page",
+                                 f"<p>{_html.escape(str(exc))}</p>")
+            return
+        self._send_page_html(
+            200, "Acknowledged",
+            self._page_view_html(page)
+            + f"<p class='ok'>Acknowledged by "
+              f"{_html.escape(str(page.get('acked_by')))}. Thank you.</p>")
+
+    def _pages_ack_console(self) -> None:
+        if self._reject_unauthorized():
+            return
+        pager = self.app.pager
+        if pager is None:
+            self._send_json(404, {"error": "paging is off"})
+            return
+        payload, ok = self._read_json_body()
+        if not ok:
+            return
+        page_id = str((payload or {}).get("page_id") or "")
+        by = str((payload or {}).get("by") or "console")[:80]
+        try:
+            page = pager.ack(page_id, by=by, via="console")
+        except KeyError:
+            self._send_json(404, {"error": "no such page"})
+            return
+        self._send_json(200, {"page_id": page_id, "status": page["status"],
+                              "acked_by": page["acked_by"],
+                              "acked_s": page["acked_s"]})
 
     def _serve_html(self, path: Path, missing_msg: str):
         try:
