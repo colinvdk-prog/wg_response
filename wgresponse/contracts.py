@@ -2684,7 +2684,11 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    WGRESP_PAGE_KEY, valid 24 h; GET shows the page and a button, only the
    POST acknowledges, so a link scanner acknowledges nothing); who, when
    and how are recorded; a second acknowledgement never replaces the
-   first. THE CHANNEL is DRY (founder 2026-11-19, until the SMS provider
+   first. The console's acknowledgement (and every operator write of 64)
+   needs X-Internal-API-Key = WGRESP_API_KEY and is NEVER opened by
+   WGRESP_DEV_OPEN (as a crew report, 44): unset = refused (2026-11-19,
+   found on the live watcher, whose read API runs open). THE CHANNEL is
+   DRY (founder 2026-11-19, until the SMS provider
    O-1 is chosen): nothing leaves the system — the log names the person id
    and tier, the console shows the page. AUDIT: every step (raised, sent,
    escalated, acknowledged, unanswered, a repeat) is a row in
@@ -2707,8 +2711,10 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    after 12 h and is undone by growth". The founder's 2026-11-19 answers:
    the quiet period is 24 h with no new detection; when an agency report
    takes a confirmed fire its homes' alerts CARRY OVER; the buttons are on
-   the ops console (authed POST /api/operator/confirm | dismiss |
-   stand-down). CONFIRM: the heat cluster's detections become the
+   the ops console (POST /api/operator/confirm | dismiss | stand-down,
+   which need X-Internal-API-Key = WGRESP_API_KEY and are never opened by
+   WGRESP_DEV_OPEN — an open write could dismiss real heat or confirm a
+   fire). CONFIRM: the heat cluster's detections become the
    confirmation's footprint and it gets a stable id (confirmed:<hex>).
    Before the heat split of every cycle, each satellite-only cluster with a
    detection within 2 km (the FIRMS clustering distance) of the footprint,

@@ -26,9 +26,11 @@ Endpoints:
                        GET never acknowledges (a link scanner must not)
     POST /page/ack     form t=<token>: acknowledge as the link's person
     GET  /api/pages    (auth) the pager's block: rota status + pages
-    POST /api/pages/ack (auth) {"page_id", "by"?}: the console's button
-    POST /api/operator/confirm | dismiss  (auth) {"incident_id", "by"}
-    POST /api/operator/stand-down        (auth) {"confirm_id", "by"}
+    POST /api/pages/ack (operator key: X-Internal-API-Key = WGRESP_API_KEY,
+                       NEVER opened by WGRESP_DEV_OPEN) {"page_id", "by"?}
+    POST /api/operator/confirm | dismiss  (operator key, never DEV_OPEN)
+                       {"incident_id", "by"}
+    POST /api/operator/stand-down        (operator key) {"confirm_id", "by"}
                        SAFETY SEMANTICS 64 (no provider attached = 404)
                        (no pager attached = 404 for all four)
     GET  /healthz      liveness probe (always open). When the state_provider's
@@ -1174,6 +1176,32 @@ class _Handler(BaseHTTPRequestHandler):
         self._send_json(401, {"error": "unauthorized"})
         return True
 
+    def _operator_write_ok(self) -> bool:
+        """SAFETY SEMANTICS 63 / 64: an operator's WRITE — acknowledging a
+        page on the console, Confirm, Dismiss, a stand-down signature — is
+        never opened by WGRESP_DEV_OPEN (like a crew report, 44): the live
+        watcher runs with the read API open, and an open write would let
+        anyone silence a page, dismiss real heat or confirm a fire.
+        X-Internal-API-Key == WGRESP_API_KEY; unset = refused (fail
+        closed). The signed page link (/page/ack) carries its own HMAC."""
+        expected = os.environ.get("WGRESP_API_KEY")
+        if not expected:
+            return False
+        provided = self.headers.get("X-Internal-API-Key", "")
+        return hmac.compare_digest(provided.encode("utf-8"),
+                                   expected.encode("utf-8"))
+
+    def _reject_operator_write(self) -> bool:
+        if self._operator_write_ok():
+            return False
+        self._send_json(401, {"error": (
+            "operator actions need X-Internal-API-Key = WGRESP_API_KEY; "
+            "WGRESP_DEV_OPEN never opens them" if os.environ.get(
+                "WGRESP_API_KEY") else
+            "operator actions are refused: WGRESP_API_KEY is not set on "
+            "this server (WGRESP_DEV_OPEN never opens them)")})
+        return True
+
     def _beacon_auth_ok(self) -> bool:
         """SAFETY SEMANTICS 44: a crew report needs a key even when the demo
         is open — WGRESP_DEV_OPEN never opens POST /api/beacon (an open
@@ -1783,8 +1811,8 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _operator_post(self, action: str) -> None:
         """SAFETY SEMANTICS 64: POST /api/operator/confirm | dismiss |
-        stand-down (authed) -> the daemon's operator_action."""
-        if self._reject_unauthorized():
+        stand-down (the operator write key) -> the daemon's operator_action."""
+        if self._reject_operator_write():
             return
         api = self.app.operator_api
         if api is None or action not in ("confirm", "dismiss",
@@ -1803,7 +1831,7 @@ class _Handler(BaseHTTPRequestHandler):
         self._send_json(code, out)
 
     def _pages_ack_console(self) -> None:
-        if self._reject_unauthorized():
+        if self._reject_operator_write():     # SEMANTICS 63: never DEV_OPEN
             return
         pager = self.app.pager
         if pager is None:

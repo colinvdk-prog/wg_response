@@ -421,3 +421,63 @@ def test_config_rule_and_flag():
     assert any("SAFETY SEMANTICS 64" in n for n in notes)
     cfg0, notes0 = cli._feeds_cfg(ResponseConfig(), argparse.Namespace())
     assert not cfg0.operator_confirm
+
+
+def test_dev_open_never_opens_an_operator_write(monkeypatch):
+    """2026-11-19, found on the live watcher (its read API runs with
+    WGRESP_DEV_OPEN=1): Confirm / Dismiss / stand-down and the console's
+    page acknowledgement need the real key; with no key set they are
+    refused even when the read API is open."""
+    calls = []
+
+    class Api:
+        def operator_action(self, action, payload):
+            calls.append(action)
+            return 200, {"ok": True}
+
+    class Pg:
+        def ack(self, page_id, by, via):
+            calls.append("ack")
+            return {"status": "acked", "acked_by": by, "acked_s": 1.0}
+
+        def status(self):
+            return {"open": 0, "pages": []}
+    s = server.serve(0, state_provider=lambda: {})
+    s.app.operator_api = Api()
+    s.app.pager = Pg()
+    th = threading.Thread(target=s.serve_forever, daemon=True)
+    th.start()
+    port = s.server_address[1]
+
+    def post(path, key=None):
+        c = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+        h = {"Content-Type": "application/json"}
+        if key:
+            h["X-Internal-API-Key"] = key
+        c.request("POST", path, body=json.dumps({"incident_id": "x",
+                                                 "page_id": "p",
+                                                 "by": "A"}), headers=h)
+        r = c.getresponse()
+        r.read()
+        c.close()
+        return r.status
+    try:
+        monkeypatch.setenv("WGRESP_DEV_OPEN", "1")
+        monkeypatch.delenv("WGRESP_API_KEY", raising=False)
+        for path in ("/api/operator/confirm", "/api/operator/dismiss",
+                     "/api/operator/stand-down", "/api/pages/ack"):
+            assert post(path) == 401, path              # open reads, closed writes
+        monkeypatch.setenv("WGRESP_API_KEY", "k-9")
+        assert post("/api/operator/confirm") == 401
+        assert post("/api/operator/confirm", "wrong") == 401
+        assert post("/api/operator/confirm", "k-9") == 200
+        assert post("/api/pages/ack", "k-9") == 200
+        assert calls == ["confirm", "ack"]
+        c = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+        c.request("GET", "/api/pages")                  # a READ stays open
+        assert c.getresponse().status == 200
+        c.close()
+    finally:
+        s.shutdown()
+        th.join(timeout=5)
+        s.server_close()
