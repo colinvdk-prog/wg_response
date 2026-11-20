@@ -507,6 +507,13 @@ def _build_parser() -> argparse.ArgumentParser:
                          "one within --new-fire-sentinel-km of a home "
                          "(/api/state sentinel); the cycle reads nothing "
                          "from it (0 = off; 60 suggested)")
+    pw.add_argument("--operator-confirm", action="store_true",
+                    help="cfg.operator_confirm: the ops console's Confirm "
+                         "makes satellite-only heat a fire (forecast, "
+                         "client ladder, dispatch) until 24 h quiet or a "
+                         "two-operator stand-down; Dismiss quiets it for "
+                         "12 h unless it grows (needs --hotspot-heat-only; "
+                         "SAFETY SEMANTICS 64)")
     pw.add_argument("--operator-paging", action="store_true",
                     help="cfg.operator_paging: satellite heat within 8 km, a "
                          "new agency fire near homes and an alert step up to "
@@ -901,6 +908,16 @@ def _feeds_cfg(cfg, args):
             f"within {cfg.new_fire_sentinel_km:g} km of a protected home "
             f"(/api/state sentinel); the cycle reads nothing from it — "
             f"SAFETY SEMANTICS 60")
+    if getattr(args, "operator_confirm", False):
+        cfg = dataclasses.replace(cfg, operator_confirm=True)
+        notes.append(
+            "OPERATOR CONFIRM / DISMISS: the console's Confirm makes "
+            "satellite-only heat a fire (forecast, the client ladder, "
+            "dispatch) under a stable id until 24 h with no detection or a "
+            "stand-down two operators sign; an agency report that takes it "
+            "carries its alerts over (nothing re-sent, no step down); "
+            "Dismiss quiets its page for 12 h unless it grows — SAFETY "
+            "SEMANTICS 64")
     if getattr(args, "operator_paging", False):
         cfg = dataclasses.replace(cfg, operator_paging=True)
         notes.append(
@@ -1865,6 +1882,54 @@ class _WatchDaemon:
     def pager(self):
         return getattr(self, "_pager", None)
 
+    # ------------------------- operator confirm / dismiss (SEMANTICS 64)
+
+    def attach_decisions(self, decisions) -> None:
+        """SAFETY SEMANTICS 64: the operator's Confirm / Dismiss, applied by
+        the live monitor before the heat split; the /api/operator routes."""
+        self._decisions = decisions
+        self._monitor.operator_decisions = decisions
+        pager = getattr(self, "_pager", None)
+        if pager is not None:
+            pager.decisions = decisions
+
+    def _heat_incident(self, incident_id: str):
+        res = getattr(self, "last_result", None) or getattr(
+            self, "_last_result", None)
+        for inc in (getattr(res, "incidents", None) or []):
+            if inc.incident_id == incident_id:
+                return inc
+        return None
+
+    def operator_action(self, action: str, payload: dict):
+        """POST /api/operator/<confirm|dismiss|stand-down> -> (status,
+        payload). Confirm and Dismiss name a heat cluster of the last
+        cycle; a stand-down names a confirmation."""
+        dec = getattr(self, "_decisions", None)
+        if dec is None:
+            return 404, {"error": "operator confirm is off"}
+        by = str((payload or {}).get("by") or "").strip()[:80]
+        if not by:
+            return 400, {"error": "say who you are (by)"}
+        if action == "stand-down":
+            return dec.stand_down(str(payload.get("confirm_id") or ""), by)
+        iid = str((payload or {}).get("incident_id") or "")
+        inc = self._heat_incident(iid)
+        if inc is None:
+            return 404, {"error": f"no heat {iid!r} on the last cycle's map"}
+        if action == "confirm":
+            code, out = dec.confirm(inc, by)
+        elif action == "dismiss":
+            code, out = dec.dismiss(inc, by)
+        else:
+            return 404, {"error": "unknown action"}
+        pager = getattr(self, "_pager", None)
+        if code == 200 and pager is not None:
+            pager.ack_key(f"satellite_heat:{iid}", by=by, via=action)
+        if code == 200 and action == "confirm":
+            self.wake()                 # the confirmed fire is forecast now
+        return code, out
+
     def priority_from_sentinel(self, item: dict) -> None:
         """SAFETY SEMANTICS 62: the sentinel's WFIGS hand-off — queued on
         the live monitor for the next priority checkpoint, and the loop
@@ -2275,6 +2340,19 @@ class _WatchDaemon:
                 out["paging"] = pager.status()
             except Exception as exc:          # noqa: BLE001
                 out["paging"] = {"error": str(exc)[:200]}
+        dec = getattr(self, "_decisions", None)
+        if dec is not None:
+            # SAFETY SEMANTICS 64: confirmations and dismissals; each heat
+            # row says which applies
+            try:
+                out["operator_decisions"] = dec.status()
+                for row in out.get("heat_near_homes") or []:
+                    d = dec.dismissed_for(row.get("incident_id"))
+                    row["dismissed"] = (None if d is None else
+                                        {"by": d["dismissed_by"],
+                                         "until_s": d["expires_s"]})
+            except Exception as exc:          # noqa: BLE001
+                out["operator_decisions"] = {"error": str(exc)[:200]}
         if self._sentinel is not None:
             # SAFETY SEMANTICS 60: the shadow sentinel's block (armed only)
             try:
@@ -3145,9 +3223,22 @@ def _cmd_watch(args) -> int:
             + ("survive restarts (WGRESP_PAGE_KEY)" if pager.key_from_env
                else "die with this process (set WGRESP_PAGE_KEY)"))
 
+    if cfg.operator_confirm:
+        # SAFETY SEMANTICS 64: the operator's Confirm / Dismiss (live only)
+        from wgresponse import decisions as decisions_mod
+        from wgresponse.persist import S3Mirror as _Mirror
+        decisions = decisions_mod.OperatorDecisions(
+            state_dir=str(state_dir),
+            mirror=_Mirror(s3_uri) if s3_uri else None)
+        n_dec = decisions.restore()
+        daemon.attach_decisions(decisions)
+        startup_notes.append(f"OPERATOR DECISIONS: {n_dec} confirmation(s) "
+                             f"/ dismissal(s) restored")
+
     httpd = server_mod.serve(port=args.port, host=args.host,
                              state_provider=daemon.state, beacon_sink=tracker,
                              plan_provider=daemon.plan)
+    httpd.app.operator_api = (daemon if cfg.operator_confirm else None)
     if pager is not None:
         httpd.app.pager = pager              # SEMANTICS 63: /page/ack, /api/pages
     if roster is not None:

@@ -85,6 +85,13 @@
   .pg button { margin-top: 5px; font: 600 11px system-ui; padding: 4px 10px;
                border: 0; border-radius: 4px; background: var(--orange);
                color: var(--navy); cursor: pointer; }
+  .pg button.alt { background: var(--navy2); color: var(--text);
+                   border: 1px solid var(--dim); margin-left: 4px; }
+  /* SAFETY SEMANTICS 64: satellite heat to confirm or dismiss */
+  #screen { flex: 0 0 auto; max-height: 35%; border-bottom: 1px solid var(--navy3); }
+  .pg.heat { border-left-color: var(--watch); }
+  .pg.conf { border-left-color: var(--extreme); }
+  .pg.dis { border-left-color: var(--dim); opacity: 0.8; }
   /* SAFETY SEMANTICS 6: operator-facing degradation banner. Plain DOM —
      independent of Leaflet and of the offline SVG shim, so it renders in
      every mode (live, demo, sim file, air-gapped). */
@@ -131,6 +138,7 @@
     </div>
     <div id="status"><span id="statustext">connecting…</span><span id="agechip"></span></div>
     <div id="pages" class="section" style="display:none"><h2>Operator pages</h2><div id="oncall" class="oncall"></div><div id="pagelist"></div></div>
+    <div id="screen" class="section" style="display:none"><h2>Satellite heat near homes</h2><div id="heatlist"></div><div id="conflist"></div></div>
     <div id="alerts" class="section"><h2>Alert feed</h2><div id="alertlist"></div></div>
     <div id="itins" class="section"><h2>Crew itineraries</h2><div id="itinlist"></div></div>
   </div>
@@ -384,6 +392,54 @@ async function ackPage(pageId) {
   tick();
 }
 
+// SAFETY SEMANTICS 64: Confirm / Dismiss / stand-down (authed POSTs)
+async function operatorAction(action, body) {
+  if (action === "confirm" && !window.confirm(
+      "Confirm makes this heat a FIRE: a forecast, client alerts and crew " +
+      "dispatch, until 24 h with no detection or a stand-down two operators sign. Continue?")) return;
+  const by = (window.prompt("Your name (recorded in the audit):", "") || "").trim();
+  if (!by) return;
+  try {
+    const r = await fetch("/api/operator/" + action, { method: "POST",
+      headers: { "Content-Type": "application/json",
+                 "X-Internal-API-Key": apiKey(false) },
+      body: JSON.stringify(Object.assign({ by }, body)) });
+    const out = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(out.error || ("HTTP " + r.status));
+  } catch (e) {
+    window.alert(action + " failed: " + String(e.message || e));
+  }
+  tick();
+}
+
+function renderScreen(d, now) {
+  const box = $("screen");
+  const od = d.operator_decisions;
+  if (!od) { box.style.display = "none"; return; }
+  box.style.display = "block";
+  const heat = d.heat_near_homes || [];
+  $("heatlist").innerHTML = heat.map(h => {
+    const km = h.nearest_m != null ? (h.nearest_m / 1000).toFixed(1) + " km" : "?";
+    const age = (now != null && h.newest_s != null) ? ((now - h.newest_s) / 3600).toFixed(1) + " h ago" : "";
+    const dis = h.dismissed;
+    const btns = dis
+      ? `<div class="pm">dismissed by ${esc(dis.by)} until ${esc(fmtClock(dis.until_s))}</div>`
+      : `<button onclick="operatorAction('confirm', {incident_id: ${esc(JSON.stringify(String(h.incident_id)))}})">Confirm fire</button>` +
+        `<button class="alt" onclick="operatorAction('dismiss', {incident_id: ${esc(JSON.stringify(String(h.incident_id)))}})">Dismiss 12 h</button>`;
+    return `<div class="pg ${dis ? "dis" : "heat"}"><div class="pt">${esc(km)} from ${esc(h.nearest_client)}` +
+      `${h.homes_in_range > 1 ? " (+" + (h.homes_in_range - 1) + " homes)" : ""}</div>` +
+      `<div class="pm">${esc(h.name || h.incident_id)} · ${esc(h.n_detections)} detection(s), newest ${esc(age)}</div>${btns}</div>`;
+  }).join("") || `<div class="evt"><span class="t">no satellite heat near homes</span></div>`;
+  const conf = (od.confirmed || []).filter(c => c.status === "active" || c.status === "stand_down_pending");
+  $("conflist").innerHTML = conf.map(c => {
+    const sig = (c.stand_down || []).map(s => esc(s.by)).join(", ");
+    return `<div class="pg conf"><div class="pt">CONFIRMED ${esc(c.confirm_id)}</div>` +
+      `<div class="pm">by ${esc(c.confirmed_by)} · last detection ${esc(fmtClock(c.last_seen_s))}` +
+      ` · lapses after 24 h quiet${sig ? " · stand-down signed by " + sig + " (needs a second operator)" : ""}</div>` +
+      `<button class="alt" onclick="operatorAction('stand-down', {confirm_id: ${esc(JSON.stringify(String(c.confirm_id)))}})">Sign stand-down</button></div>`;
+  }).join("");
+}
+
 function renderPages(pg, now) {
   const box = $("pages");
   if (!pg) { box.style.display = "none"; return; }
@@ -407,8 +463,13 @@ function renderPages(pg, now) {
     const st = p.status === "acked"
       ? `acknowledged by ${esc(p.acked_by)} (${esc(p.acked_via)})`
       : (p.status === "unanswered" ? "UNANSWERED" : `open · escalation ${p.escalation || 0}`);
-    const btn = (p.status === "open" || p.status === "unanswered")
-      ? `<button onclick="ackPage('${esc(p.page_id)}')">Acknowledge</button>` : "";
+    const isOpen = (p.status === "open" || p.status === "unanswered");
+    let btn = isOpen ? `<button onclick="ackPage('${esc(p.page_id)}')">Acknowledge</button>` : "";
+    if (isOpen && p.kind === "satellite_heat" && window.__screenOn) {
+      const iid = esc(JSON.stringify(String(p.incident_id)));
+      btn += `<button class="alt" onclick="operatorAction('confirm', {incident_id: ${iid}})">Confirm fire</button>` +
+             `<button class="alt" onclick="operatorAction('dismiss', {incident_id: ${iid}})">Dismiss</button>`;
+    }
     return `<div class="pg ${esc(p.status)}"><div class="pt">${esc(p.title)}</div>` +
       `<div class="pm">${st}${age != null ? " · " + age + " min ago" : ""}` +
       ((p.homes || []).length ? " · homes " + esc(p.homes.join(", ")) : "") + `</div>${btn}</div>`;
@@ -572,7 +633,9 @@ function render(d) {
   lastCycleT = (typeof d.last_cycle_t_s === "number") ? d.last_cycle_t_s : null;
   pollPeriod = (typeof d.poll_period_s === "number") ? d.poll_period_s : null;
   renderAgeChip();
+  window.__screenOn = !!d.operator_decisions;
   renderPages(d.paging, (typeof d.now_s === "number") ? Date.now() / 1000 : null);
+  renderScreen(d, (typeof d.now_s === "number") ? Date.now() / 1000 : null);
 
   Object.values(layers).forEach(g => g.clearLayers());
 

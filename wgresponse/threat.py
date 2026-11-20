@@ -715,6 +715,12 @@ class ThreatMonitor:
         self._priority_inbox: list = []
         self._priority_provisional: dict = {}
         self._priority_new_again: set = set()
+        # OPERATOR CONFIRM AND DISMISS (cfg.operator_confirm; SAFETY
+        # SEMANTICS 64): the live daemon attaches a decisions.
+        # OperatorDecisions; an agency fire that took a confirmed fire this
+        # cycle is assessed as NEW (first, early alerts)
+        self.operator_decisions = None
+        self._handover_new: set = set()
         # W1 SEEDED INCIDENTS (contracts SAFETY SEMANTICS 12): user-lit fires,
         # consulted every cycle; empty = byte-identical cycles.
         self._seeded = seeded_mod.SeededIncidentStore()
@@ -948,6 +954,14 @@ class ThreatMonitor:
             active = self._screen_label(active, now_s, notes)
         steps.mark("gate_labels_s")
         heat: list = []
+        if self.operator_decisions is not None:
+            # SAFETY SEMANTICS 64: confirmed heat is a fire (one incident
+            # under its confirmation's id, kept by the split below);
+            # lapses, handovers (alerts carried), dismissal expiry / growth
+            active = self.operator_decisions.apply(
+                active, now_s, notes, operator_events,
+                carry=self._carry_pairs)
+            self._handover_new = set(self.operator_decisions.handover_new)
         if self._cfg.hotspot_heat_only:
             # SAFETY SEMANTICS 41: what only a satellite sees is heat on the
             # map — no domain, alert or crew; a pair it raised before takes
@@ -1750,6 +1764,12 @@ class ThreatMonitor:
             pr.known.add(iid.lower())
         return outcome
 
+    def _carry_pairs(self, old: str, new: str, now_s: float) -> list:
+        """SAFETY SEMANTICS 64: the engine's carry_pairs (an engine without
+        the seam carries nothing — its pairs take the absence law)."""
+        fn = getattr(self._alert_engine, "carry_pairs", None)
+        return list(fn(old, new, now_s)) if callable(fn) else []
+
     def _priority_fuse(self, incs: list, now_s: float) -> list:
         """The cycle's own fusion call on the pass's records alone (a WFIGS
         record's IRWIN id is its canonical id whatever joins it later)."""
@@ -1930,6 +1950,9 @@ class ThreatMonitor:
         # SAFETY SEMANTICS 62: a fire a priority pass assessed is NEW again
         # in the next full cycle (first, a forecast of its own, early alerts)
         tracked -= set(getattr(self, "_priority_new_again", ()) or ())
+        # SAFETY SEMANTICS 64: an agency fire that took a confirmed fire
+        # this cycle is NEW too (its carried pairs are tracked)
+        tracked -= set(getattr(self, "_handover_new", ()) or ())
         radius_m = self._threat_radius_m()
         ranked, prefetched, new = [], {}, set()
         for i, inc in enumerate(active):

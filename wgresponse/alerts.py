@@ -411,6 +411,75 @@ class AlertEngine:
             self._deesc_streak.pop(key, None)
         return drop
 
+    #: SAFETY SEMANTICS 64: alert levels, lowest first (NONE and CLEARED
+    #: carry no threat)
+    _LEVEL = {"none": 0, "cleared": 0, "notice_72h": 1, "watch": 2,
+              "extreme_24h": 3, "impacted": 4}
+
+    def carry_pairs(self, old_incident: str, new_incident: str,
+                    now_s: float) -> "List[Tuple[str, str, str]]":
+        """SAFETY SEMANTICS 64 (an agency report took an operator-confirmed
+        fire; founder 2026-11-19 "carry the alerts over"): every pair of
+        old_incident moves to new_incident — its record (state, entry
+        time, streaks, history), its de-escalation streak, its owed
+        re-fire and its sent-message ledger rows — so the agency fire's
+        evaluation continues from where the client is: nothing is re-sent,
+        no all-clear is said for the old id, and no level steps down. When
+        the client already has a pair on new_incident the HIGHER level
+        stands (the lower record is replaced, its own history kept on the
+        survivor); the ledger keeps every row of both. No transition, no
+        AlertEvent, no notification. One OperatorEvent('alerts_carried')
+        when any pair moved. Returns [(client_id, outcome, state)] with
+        outcome "carried" or "kept" (the new pair's level stood)."""
+        if not old_incident or old_incident == new_incident:
+            return []
+        out: list = []
+        for key in [k for k in self._records if k[1] == old_incident]:
+            cid = key[0]
+            rec = self._records.pop(key)
+            streak = self._deesc_streak.pop(key, 0)
+            owed = key in self._resend_pending
+            self._resend_pending.discard(key)
+            new_key = (cid, new_incident)
+            cur = self._records.get(new_key)
+            hist_note = (now_s, rec.state)
+            if cur is None or (self._LEVEL.get(rec.state.value, 0)
+                               > self._LEVEL.get(cur.state.value, 0)):
+                moved = AlertRecord(
+                    client_id=cid, incident_id=new_incident,
+                    state=rec.state, entered_at_s=rec.entered_at_s,
+                    last_eval_s=rec.last_eval_s,
+                    clear_streak=rec.clear_streak,
+                    blind_cycles=rec.blind_cycles,
+                    history=list(cur.history if cur is not None else [])
+                    + list(rec.history) + [hist_note])
+                self._records[new_key] = moved
+                self._deesc_streak[new_key] = streak
+                if owed:
+                    self._resend_pending.add(new_key)
+                out.append((cid, "carried", rec.state.value))
+            else:
+                cur.history = list(cur.history) + [hist_note]
+                out.append((cid, "kept", cur.state.value))
+            for lk in [k for k in self._notified
+                       if k[0] == cid and k[1] == old_incident]:
+                t = self._notified.pop(lk)
+                nk = (cid, new_incident, lk[2])
+                self._notified[nk] = max(t, self._notified.get(nk, t))
+        if old_incident in self._incident_names:
+            self._incident_names.pop(old_incident, None)
+        if out:
+            self._op_events.append(OperatorEvent(
+                t_s=now_s, kind="alerts_carried",
+                message=(f"{len(out)} alert pair(s) of confirmed fire "
+                         f"{old_incident} carried to {new_incident} — no "
+                         f"message re-sent, no level stepped down (SAFETY "
+                         f"SEMANTICS 64)"),
+                incident_id=new_incident,
+                detail={"from": old_incident, "to": new_incident,
+                        "pairs": [list(o) for o in out]}))
+        return out
+
     def notified_ledger(self) -> Dict[_LedgerKey, float]:
         """What was ACTUALLY sent (contracts persist seam).
 

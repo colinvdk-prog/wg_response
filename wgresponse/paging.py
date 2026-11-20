@@ -370,6 +370,9 @@ class Pager:
         self._order: list = []          # page ids, oldest first
         self._ticker: Optional[threading.Thread] = None
         self._stop = threading.Event()
+        #: SAFETY SEMANTICS 64: the operator decisions (a dismissed heat
+        #: cluster is not paged again; set by the daemon)
+        self.decisions = None
 
     # -- persistence ---------------------------------------------------------
 
@@ -446,8 +449,19 @@ class Pager:
         """satellite_heat (41) and new_fire_near_homes (60): a page (or an
         addition to the open one). Returns the page id, else None."""
         kind = getattr(ev, "kind", None)
+        if (kind == "dismissed_heat_grew"
+                and "satellite_heat" in self._triggers):
+            # SAFETY SEMANTICS 64: a dismissal undone by growth pages anew
+            d = getattr(ev, "detail", None) or {}
+            return self._raise(
+                f"heat_grew:{ev.incident_id}:{d.get('dismiss_id')}", kind,
+                ev.incident_id, "DISMISSED HEAT GREW — the dismissal is "
+                f"undone ({d.get('why', 'growth')})", ev.message, homes=[])
         if kind == "satellite_heat" and "satellite_heat" in self._triggers:
             d = getattr(ev, "detail", None) or {}
+            dec = self.decisions
+            if dec is not None and dec.dismissed_for(ev.incident_id):
+                return None                     # SEMANTICS 64: dismissed
             km = d.get("nearest_m")
             title = ("POTENTIAL FIRE — satellite heat"
                      + (f" {float(km) / 1000.0:.1f} km" if km is not None
@@ -671,6 +685,17 @@ class Pager:
                         after_s=round(now - page["created_s"], 1))
             self._persist()
             return dict(page)
+
+    def ack_key(self, key: str, by: str, via: str) -> Optional[str]:
+        """Acknowledge the open page with this key (a Confirm or Dismiss
+        answers its satellite-heat page); the page id, else None."""
+        with self._lock:
+            for pid in reversed(self._order):
+                p = self._pages[pid]
+                if p["key"] == key and p["status"] in ("open", "unanswered"):
+                    self.ack(pid, by=by, via=via)
+                    return pid
+        return None
 
     def ack_by_link(self, token: str) -> dict:
         obj = check_ack_token(token, self._key, float(self._clock()))

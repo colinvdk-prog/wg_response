@@ -27,6 +27,9 @@ Endpoints:
     POST /page/ack     form t=<token>: acknowledge as the link's person
     GET  /api/pages    (auth) the pager's block: rota status + pages
     POST /api/pages/ack (auth) {"page_id", "by"?}: the console's button
+    POST /api/operator/confirm | dismiss  (auth) {"incident_id", "by"}
+    POST /api/operator/stand-down        (auth) {"confirm_id", "by"}
+                       SAFETY SEMANTICS 64 (no provider attached = 404)
                        (no pager attached = 404 for all four)
     GET  /healthz      liveness probe (always open). When the state_provider's
                        dict carries degradation keys (SAFETY SEMANTICS 6:
@@ -1082,6 +1085,10 @@ class _App:
     #: SAFETY SEMANTICS 63: the operator pager (wgresponse.paging.Pager) the
     #: watch daemon attaches after serve(); None = the paging routes 404.
     pager = None
+    #: SAFETY SEMANTICS 64: the operator Confirm / Dismiss provider (the
+    #: watch daemon: operator_action(action, payload) -> (status, payload));
+    #: None = the /api/operator routes answer 404.
+    operator_api = None
 
     def __init__(self, state_provider: Optional[Callable] = None,
                  beacon_sink=None, plan_provider: Optional[Callable] = None,
@@ -1316,6 +1323,9 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/pages/ack":
             self._pages_ack_console()
+            return
+        if path.startswith("/api/operator/"):
+            self._operator_post(path[len("/api/operator/"):])
             return
         if path.startswith("/api/sim"):
             self._sim_post(path)
@@ -1770,6 +1780,27 @@ class _Handler(BaseHTTPRequestHandler):
             self._page_view_html(page)
             + f"<p class='ok'>Acknowledged by "
               f"{_html.escape(str(page.get('acked_by')))}. Thank you.</p>")
+
+    def _operator_post(self, action: str) -> None:
+        """SAFETY SEMANTICS 64: POST /api/operator/confirm | dismiss |
+        stand-down (authed) -> the daemon's operator_action."""
+        if self._reject_unauthorized():
+            return
+        api = self.app.operator_api
+        if api is None or action not in ("confirm", "dismiss",
+                                         "stand-down"):
+            self._send_json(404, {"error": "not found"})
+            return
+        payload, ok = self._read_json_body()
+        if not ok:
+            return
+        try:
+            code, out = api.operator_action(action, payload or {})
+        except Exception as exc:                  # noqa: BLE001
+            _LOG.exception("operator action failed")
+            self._send_json(500, {"error": str(exc)[:200]})
+            return
+        self._send_json(code, out)
 
     def _pages_ack_console(self) -> None:
         if self._reject_unauthorized():

@@ -2695,6 +2695,54 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    plan or crew law reads it. Knob off = no pager, no thread, no key,
    byte-identical.
 
+64. AN OPERATOR CONFIRMS OR DISMISSES WHAT ONLY A SATELLITE SEES (2026-11-19;
+   founder: "build operator Confirm and Dismiss next"; cfg.operator_confirm,
+   watch --operator-confirm; wgresponse.decisions; needs 41's
+   hotspot_heat_only; amends 41 for the heat an operator confirms). The
+   2026-11-01 protocol: clients hear nothing about a fire only the
+   satellite sees until an agency reports it or an operator confirms it;
+   crews only after a Confirm or an agency report; "a Confirm sticks"; "a
+   wrong Confirm is undone only by a sustained quiet period or by a
+   stand-down that two operators sign, never silently"; "a Dismiss expires
+   after 12 h and is undone by growth". The founder's 2026-11-19 answers:
+   the quiet period is 24 h with no new detection; when an agency report
+   takes a confirmed fire its homes' alerts CARRY OVER; the buttons are on
+   the ops console (authed POST /api/operator/confirm | dismiss |
+   stand-down). CONFIRM: the heat cluster's detections become the
+   confirmation's footprint and it gets a stable id (confirmed:<hex>).
+   Before the heat split of every cycle, each satellite-only cluster with a
+   detection within 2 km (the FIRMS clustering distance) of the footprint,
+   or carrying an id the confirmation has seen, is that fire: merged into
+   ONE incident under the confirmation's id with source id "operator", so
+   41's split keeps it — a forecast, the client ladder and dispatch, as
+   for a reported fire. New detections join the footprint. A Confirm wakes
+   the loop. LAPSE: no detection for 24 h -> the confirmation lapses
+   (operator event confirmed_fire_lapsed; its pairs take the absence law
+   of 6). STAND-DOWN: two different operators sign (the first signature
+   changes nothing). HANDOVER: a confirmed fire no cluster carries whose
+   footprint an agency fire now covers (a detection or its origin within 2
+   km — 39 attaches the detections to it) is handed over:
+   AlertEngine.carry_pairs moves each home's record, de-escalation streak,
+   owed re-fire and sent-message ledger rows to the agency fire's id
+   (where the client already has a pair there, the higher level stands);
+   no transition, no message re-sent, no all-clear, no level stepped down;
+   operator events confirmed_fire_handed_over + alerts_carried; and the
+   agency fire is assessed as NEW in that cycle (first; its pairs
+   evaluated right after it — 49), so its alerts come no later than
+   without the Confirm. DISMISS: the cluster's footprint, detections and
+   max FRP are kept 12 h; its satellite-heat page is not raised again (63)
+   and the console says who dismissed it until when. GROWTH undoes it at
+   once — a detection more than 500 m outside the footprint, or the
+   detections or the FRP doubled (the protocol's escape rule) — with
+   OperatorEvent('dismissed_heat_grew'), which pages. A Dismiss never
+   touches a confirmed fire (409), and a Confirm supersedes a Dismiss.
+   AUDIT: every decision, signature, lapse, handover, expiry and growth is
+   a row in oncall/decisions-audit-<date>.jsonl beside the state (mirrored
+   to S3); the decisions persist (oncall/decisions.json) and are restored
+   after a restart (the footprint, not the cluster id, carries a Confirm
+   across the restart). The TEST world never reads them. Knob off = no
+   decisions, no routes, byte-identical.
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -5007,6 +5055,13 @@ class ResponseConfig:
     # channel is dry (console + log) until O-1. paging_triggers: a comma
     # list of satellite_heat, new_fire_near_homes, alert_step_up. False =
     # byte-identical (watch --operator-paging [--rota PATH]).
+    # 64: OPERATOR CONFIRM AND DISMISS (wgresponse.decisions) — the ops
+    # console's Confirm makes satellite-only heat a fire under a stable id
+    # (24 h quiet or a two-operator stand-down ends it; an agency report
+    # that takes it carries its alerts over); Dismiss quiets its page 12 h
+    # unless it grows. Needs hotspot_heat_only. False = byte-identical
+    # (watch --operator-confirm).
+    operator_confirm: bool = False
     operator_paging: bool = False
     paging_ack_min: float = 15.0          # the founder's 15-minute acknowledgement
     paging_repeat_max: int = 8
@@ -6249,6 +6304,10 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
                                   "alert_step_up") for t in _trig):
         problems.append("paging_triggers must name one or more of "
                         "satellite_heat, new_fire_near_homes, alert_step_up")
+    if cfg.operator_confirm and not cfg.hotspot_heat_only:
+        problems.append("operator_confirm needs hotspot_heat_only (without "
+                        "it satellite-only heat is already forecast; SAFETY "
+                        "SEMANTICS 64)")
     if cfg.sentinel_priority_pass and not cfg.new_fire_sentinel_s > 0.0:
         problems.append("sentinel_priority_pass needs the new-fire sentinel "
                         "(new_fire_sentinel_s > 0; SAFETY SEMANTICS 62)")
