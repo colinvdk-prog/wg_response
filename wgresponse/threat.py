@@ -260,6 +260,53 @@ _THREAT_TIER_STATES = frozenset({
 })
 
 
+def _pass_time_seeds(inc: FireIncident, seeds: list, now_s: float,
+                     cfg) -> "tuple[list, list]":
+    """SAFETY SEMANTICS 65: (the seeds left at now, the timed footprint
+    seeds). Each hotspot with a known pass time — meta["seed_px"] by point
+    (the FIRMS adapter, attachment and a Confirm carry it), else, on a
+    satellite-only cluster, its aligned hotspot_t_s — becomes its pixel's
+    footprint (scan east-west x track north-south, hotspot_footprint_m a
+    side when FIRMS gave none) burning from that pass time (clamped to now:
+    never later). A hotspot without a time stays a seed at now."""
+    hs = list(inc.hotspots or [])
+    if not hs:
+        return list(seeds), []
+    meta = inc.meta or {}
+    look = meta.get("seed_px") or {}
+    aligned = meta.get("hotspot_t_s")
+    if (inc.source is not IncidentSource.FIRMS or not isinstance(aligned, list)
+            or len(aligned) != len(hs)):
+        aligned = None
+    side = float(getattr(cfg, "hotspot_footprint_m", 375.0))
+    timed, done = [], set()
+    for i, p in enumerate(hs):
+        key = f"{p.lat:.5f},{p.lon:.5f}"
+        if key in done:
+            continue
+        rec = look.get(key)
+        if rec is not None:
+            t, sc, tr = rec[0], rec[1], rec[2]
+        elif aligned is not None:
+            t, sc, tr = aligned[i], None, None
+        else:
+            continue
+        if not isinstance(t, (int, float)) or not math.isfinite(t):
+            continue
+        sx = float(sc) if isinstance(sc, (int, float)) and sc > 0 else side
+        sy = float(tr) if isinstance(tr, (int, float)) and tr > 0 else side
+        n = geo.destination(p, 0.0, sy / 2.0)
+        s = geo.destination(p, 180.0, sy / 2.0)
+        ring = [geo.destination(n, 270.0, sx / 2.0),
+                geo.destination(n, 90.0, sx / 2.0),
+                geo.destination(s, 90.0, sx / 2.0),
+                geo.destination(s, 270.0, sx / 2.0)]
+        timed.append((ring, min(float(t), float(now_s)), p))
+        done.add(key)
+    left = [q for q in seeds if f"{q.lat:.5f},{q.lon:.5f}" not in done]
+    return left, timed
+
+
 def _fire_key(perimeter, provenance_s, seeds) -> tuple:
     """FORECAST FRESHNESS TIERS: the fire geometry a kept forecast was made
     from — its perimeter rings, the perimeter's own time, its seeds."""
@@ -3170,18 +3217,25 @@ class ThreatMonitor:
         """The ensemble itself from _forecast_inputs' namespace — a pure
         function of its arguments (FORECAST FRESHNESS TIERS run it on the
         background worker)."""
+        zoned = b.zoned
+        if getattr(b.spread_cfg, "hotspot_pass_time_seeding", False):
+            # SAFETY SEMANTICS 65: each detection's footprint burns from its
+            # own pass time (absent => the legacy call, byte-identical)
+            seeds, timed = _pass_time_seeds(inc, seeds, now_s, b.spread_cfg)
+            if timed:
+                zoned = dict(b.zoned, timed_seeds=timed)
         if b.mhs is not None:
             # the belief drives the members; P10 guarded unless
             # fire_belief_apply_p10 (fire_belief.applied_ensemble)
             return fire_belief_mod.applied_ensemble(
                 b.tile, seeds, b.wxf, now_s, b.spread_cfg, inc.incident_id,
-                perimeter, b.perimeter_at_s, b.mhs, **b.zoned)
+                perimeter, b.perimeter_at_s, b.mhs, **zoned)
         return spread.ensemble_arrival(b.tile, seeds, b.wxf, now_s,
                                        b.spread_cfg,
                                        incident_id=inc.incident_id,
                                        perimeter=perimeter,
                                        perimeter_at_s=b.perimeter_at_s,
-                                       **b.zoned)
+                                       **zoned)
 
     def _register_forecast(self, inc: FireIncident, ens, near: list,
                            now_s: float, assessments: list, ensembles: dict,

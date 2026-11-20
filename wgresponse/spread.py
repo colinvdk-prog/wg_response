@@ -590,8 +590,20 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                     kept_anchor: dict = None,
                     anchor_log: dict = None,
                     crown_trace: dict = None,
-                    land_log: list = None) -> Raster:
+                    land_log: list = None,
+                    timed_seeds: list = None) -> Raster:
     """Fire arrival-time raster (absolute unix SECONDS per cell; UNREACHED=inf).
+
+    timed_seeds (SAFETY SEMANTICS 65, the pass-time footprint seeds; None =
+    byte-identical): [(ring, t_s, center)] — each satellite detection's
+    pixel footprint (ring: list[LatLon], the scan x track rectangle) burning
+    from its own pass time t_s (clamped to t0_s, never later): every cell
+    whose centre falls inside the ring, else the centre's cell, is seeded at
+    t_s exactly as an `ignition` point is at t0_s (a final perimeter cell is
+    skipped; a non-burnable cell takes the time but does not spread; without
+    seed_spotting the seed throws no ember). The Dijkstra runs from the
+    earliest seed; times before t0_s read the forecast's earliest sample, as
+    a perimeter burning at perimeter_at_s does.
 
     CROWN FIRE (cfg.crown_fire, contracts SAFETY SEMANTICS 22; default OFF
     => byte-identical, and so is a tile without canopy layers, every branch
@@ -999,6 +1011,24 @@ def compute_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
             if quiet is None:
                 quiet = bytearray(n)
             quiet[idx] = 1
+
+    for ring, t_seed, center in (timed_seeds or ()):
+        # SAFETY SEMANTICS 65: a detection's footprint at its pass time
+        t_seed = min(float(t_seed), t0_s)
+        cells = _perimeter_interior_cells(spec, [ring]) if ring else []
+        if not cells:
+            rc = geo.latlon_to_rc(spec, center)
+            cells = [] if rc is None else [rc[0] * ncols + rc[1]]
+        for idx in cells:
+            if final is not None and final[idx]:
+                continue         # already burned at perimeter_at_s; final
+            if t_seed < best[idx]:
+                best[idx] = t_seed
+                heapq.heappush(heap, (t_seed, idx))
+            if not seed_spotting:
+                if quiet is None:
+                    quiet = bytearray(n)
+                quiet[idx] = 1
 
     horizon_end_s = t0_s + cfg.horizon_h * 3600.0
     for idx, t_land in (embers_aloft or ()):
@@ -2350,7 +2380,8 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
                      weather_field=None,
                      kept_anchor: dict = None,
                      anchor_log: dict = None,
-                     land_log: list = None) -> EnsembleArrival:
+                     land_log: list = None,
+                     timed_seeds: list = None) -> EnsembleArrival:
     """Ensemble v2 (Sprint 2 ticket A4, Council-1 model F2+F6): nominal member
     (k=0, unperturbed) + (cfg.ensemble_n - 1) perturbed members, plus per-cell
     p10/p50/p90 quantile rasters (unix seconds; p10 = EARLIEST/pessimistic).
@@ -2460,6 +2491,10 @@ def ensemble_arrival(tile: TerrainTile, ignition: list, wx: WeatherForecast,
     aa_kw = {}
     if kept_anchor is not None:
         aa_kw["kept_anchor"] = kept_anchor
+    if timed_seeds:
+        # SAFETY SEMANTICS 65: every member seeds the same footprints at
+        # their pass times (absent => no keyword, byte-identical)
+        aa_kw["timed_seeds"] = list(timed_seeds)
     nom_kw = dict(aa_kw)
     if anchor_log is not None:
         nom_kw["anchor_log"] = anchor_log

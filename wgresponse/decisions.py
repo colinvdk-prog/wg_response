@@ -482,6 +482,13 @@ class OperatorDecisions:
         if ts:
             meta["hotspot_t_s"] = ts
         meta["n_detections"] = len(pts)
+        sp: dict = {}
+        for inc in incs:
+            for k, rec in ((inc.meta or {}).get("seed_px") or {}).items():
+                if k not in sp or rec[0] < sp[k][0]:
+                    sp[k] = list(rec)
+        if sp:
+            meta["seed_px"] = sp          # SEMANTICS 65: every pass time
         meta["operator_confirmed"] = {
             "confirm_id": r["confirm_id"], "by": r["confirmed_by"],
             "at_s": r["confirmed_s"], "clusters": [i.incident_id

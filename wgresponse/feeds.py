@@ -1400,7 +1400,8 @@ class FirmsFeed:
                  window_h: Optional[float] = None,
                  clock: Optional[Callable[[], float]] = None,
                  track_ids: bool = False, recorder=None, memory=None,
-                 gzip: bool = False, parallel_sources: bool = False):
+                 gzip: bool = False, parallel_sources: bool = False,
+                 footprints: bool = False):
         self._map_key = map_key or None      # '' and None both mean "no key"
         self._source = source
         self._day_range = max(1, min(5, int(day_range)))
@@ -1425,6 +1426,10 @@ class FirmsFeed:
         self._tracks: dict = {}   # id -> (detection keys, lat, lon), last fetch
         self._recorder = recorder
         self._memory = memory
+        # SAFETY SEMANTICS 65: each detection's pixel (scan x track, m) and
+        # pass time ride on its cluster as meta["seed_px"]; off = no key
+        self._footprints = bool(footprints)
+        self._px: dict = {}
 
     @classmethod
     def live(cls, map_key: Optional[str],
@@ -1536,8 +1541,10 @@ class FirmsFeed:
             return []
 
     @staticmethod
-    def _parse_csv(text: str) -> list:
-        """-> list[(t_s, LatLon, frp)] sorted newest first (tie: lat, lon)."""
+    def _parse_csv(text: str, px: Optional[dict] = None) -> list:
+        """-> list[(t_s, LatLon, frp)] sorted newest first (tie: lat, lon).
+        px (SAFETY SEMANTICS 65): when a dict, each row's pixel size in m
+        (the CSV's scan / track km) is recorded under (int t, lat5, lon5)."""
         out = []
         for row in csv.DictReader(io.StringIO(text)):
             try:
@@ -1551,6 +1558,12 @@ class FirmsFeed:
                 continue
             frp = _maybe_float(row.get("frp"))
             out.append((t, LatLon(lat, lon), frp))
+            if px is not None:
+                sc = _maybe_float(row.get("scan"))
+                tr = _maybe_float(row.get("track"))
+                px[(int(round(t)), round(lat, 5), round(lon, 5))] = (
+                    None if sc is None else sc * 1000.0,
+                    None if tr is None else tr * 1000.0)
         out.sort(key=lambda x: (-x[0], x[1].lat, x[1].lon))
         return out
 
@@ -1559,6 +1572,7 @@ class FirmsFeed:
         window, the clusters, the kept ids. Never raises."""
         detections: list = []          # (t_s, LatLon, frp, source)
         ok = True
+        px = {} if self._footprints else None     # SEMANTICS 65
         shadow = self._recorder is not None or self._memory is not None
         t_poll = float(self._clock()) if shadow else None
         srcs = list(self._sources or (self._source,))
@@ -1579,7 +1593,8 @@ class FirmsFeed:
                 if status != 200:
                     raise RuntimeError(f"HTTP {status} from FIRMS ({src})")
                 text = body.decode("utf-8", errors="replace")
-                rows = self._parse_csv(text)
+                rows = (self._parse_csv(text, px) if px is not None
+                        else self._parse_csv(text))
             except Exception as exc:
                 log.warning("FIRMS fetch failed (%s)", src, exc_info=True)
                 ok = False
@@ -1591,6 +1606,8 @@ class FirmsFeed:
                 self._shadow(src, text, t_poll, None)
         if shadow:
             self._shadow_end(area, t_poll)
+        if px is not None:
+            self._px = px
         try:
             if self._window_h is not None:
                 cut = float(self._clock()) - self._window_h * 3600.0
@@ -1695,7 +1712,24 @@ class FirmsFeed:
                   "satellite_source": ",".join(self._sources
                                                or (self._source,)),
                   "satellites": sorted({d[3] for d in pts}),
-                  "hotspot_t_s": [d[0] for d in pts]})
+                  "hotspot_t_s": [d[0] for d in pts],
+                  **({"seed_px": self._seed_px(pts)} if self._footprints
+                     else {})})
+
+    def _seed_px(self, pts: list) -> dict:
+        """SAFETY SEMANTICS 65: {"lat5,lon5": [pass time, scan_m,
+        track_m]} for a cluster's detections (the earliest pass of a pixel
+        seen twice; the pixel size None when FIRMS gave none)."""
+        out: dict = {}
+        for d in pts:
+            t, p = float(d[0]), d[1]
+            key = f"{p.lat:.5f},{p.lon:.5f}"
+            sc, tr = self._px.get((int(round(t)), round(p.lat, 5),
+                                   round(p.lon, 5)), (None, None))
+            cur = out.get(key)
+            if cur is None or t < cur[0]:
+                out[key] = [t, sc, tr]
+        return out
 
     def _assign_ids(self, clusters: list, carry: bool = False) -> list:
         """Stable cluster ids (class docstring, track_ids). Deterministic:
@@ -2344,6 +2378,13 @@ def attach_hotspots(kept: list, contained: list, cfg) -> tuple:
     if not gains:
         return list(kept), list(contained), stats
 
+    seed_on = bool(getattr(cfg, "hotspot_pass_time_seeding", False))
+    seed_info: dict = {}
+    if seed_on:
+        # SAFETY SEMANTICS 65: the clusters' pass times / pixels by point
+        for _, finc in firms:
+            seed_info.update((finc.meta or {}).get("seed_px") or {})
+
     def gained(inc: FireIncident, got: list) -> FireIncident:
         got = sorted(got, key=lambda g: (-g[0], g[1].lat, g[1].lon))
         clusters = sorted({g[2] for g in got})
@@ -2353,6 +2394,15 @@ def attach_hotspots(kept: list, contained: list, cfg) -> tuple:
         meta = dict(inc.meta or {})
         meta["hotspots_attached"] = {"n": len(got), "newest_s": got[0][0],
                                      "clusters": clusters}
+        if seed_on:
+            sp = dict(meta.get("seed_px") or {})
+            for g in got:
+                key = f"{g[1].lat:.5f},{g[1].lon:.5f}"
+                rec = seed_info.get(key) or [float(g[0]), None, None]
+                cur = sp.get(key)
+                if cur is None or rec[0] < cur[0]:
+                    sp[key] = list(rec)
+            meta["seed_px"] = sp
         return _replace(inc, hotspots=list(inc.hotspots or [])
                         + [g[1] for g in got],
                         source_ids=src_ids, meta=meta)

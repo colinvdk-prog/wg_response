@@ -507,6 +507,11 @@ def _build_parser() -> argparse.ArgumentParser:
                          "one within --new-fire-sentinel-km of a home "
                          "(/api/state sentinel); the cycle reads nothing "
                          "from it (0 = off; 60 suggested)")
+    pw.add_argument("--pass-time-seeding", action="store_true",
+                    help="cfg.hotspot_pass_time_seeding: each satellite "
+                         "detection seeds its pixel's footprint burning "
+                         "from its pass time, not one cell at the cycle "
+                         "time (SAFETY SEMANTICS 65)")
     pw.add_argument("--operator-confirm", action="store_true",
                     help="cfg.operator_confirm: the ops console's Confirm "
                          "makes satellite-only heat a fire (forecast, "
@@ -908,6 +913,13 @@ def _feeds_cfg(cfg, args):
             f"within {cfg.new_fire_sentinel_km:g} km of a protected home "
             f"(/api/state sentinel); the cycle reads nothing from it — "
             f"SAFETY SEMANTICS 60")
+    if getattr(args, "pass_time_seeding", False):
+        cfg = dataclasses.replace(cfg, hotspot_pass_time_seeding=True)
+        notes.append(
+            "PASS-TIME FOOTPRINT SEEDING: each satellite detection seeds its "
+            "pixel (scan x track; 375 m when FIRMS gives none) burning from "
+            "its pass time — arrivals only move earlier — SAFETY SEMANTICS "
+            "65")
     if getattr(args, "operator_confirm", False):
         cfg = dataclasses.replace(cfg, operator_confirm=True)
         notes.append(
@@ -940,7 +952,7 @@ def _feeds_cfg(cfg, args):
 
 
 def _live_feed_stack(map_key, live: bool = False, screen: bool = False,
-                     recorder=None, transport=None):
+                     recorder=None, transport=None, footprints: bool = False):
     """Build the live feed adapters: WFIGS + FIRIS + CAL FIRE always, FIRMS
     only when a MAP_KEY is provided (Sprint 2 C3d/C1: a keyless FirmsFeed is
     BLIND by design — [] with last_fetch_ok=False — and would mark EVERY watch
@@ -974,6 +986,8 @@ def _live_feed_stack(map_key, live: bool = False, screen: bool = False,
         if live and screen:
             from wgresponse.screening import HeatSiteMemory
             memory = HeatSiteMemory(feeds.FirmsFeed.LIVE_SOURCES)
+        if footprints:
+            firms_t = dict(firms_t, footprints=True)       # SEMANTICS 65
         stack.append(feeds.FirmsFeed.live(map_key, recorder=recorder,
                                           memory=memory, **firms_t) if live
                      else feeds.FirmsFeed(map_key=map_key, **firms_t))
@@ -3074,6 +3088,8 @@ def _cmd_watch(args) -> int:
         stack_kw["recorder"] = recorder
     if _feed_transport(cfg):                # SEMANTICS 57-59
         stack_kw["transport"] = _feed_transport(cfg)
+    if cfg.hotspot_pass_time_seeding:       # SEMANTICS 65: pixels + times
+        stack_kw["footprints"] = True
     feeds_stack, feed_notes = (
         _live_feed_stack(firms_key, live=True, **stack_kw)  # 39's live mode
         if getattr(args, "fuse_hotspots", False) else

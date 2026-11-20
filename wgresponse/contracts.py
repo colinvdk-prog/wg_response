@@ -2749,6 +2749,33 @@ arrival at a property from the ensemble, and `eta_p50_s` the median.
    across the restart). The TEST world never reads them. Knob off = no
    decisions, no routes, byte-identical.
 
+65. A SATELLITE DETECTION BURNS FROM ITS PASS TIME, OVER ITS PIXEL —
+   FOOTPRINT SEEDING (2026-11-19; founder: "build footprint seeding at the
+   pass time next"; the 2026-11-01 screening build order, step 1: "at the
+   pass time and over the pixel's footprint. Measure it on its own first,
+   because it changes forecasts"; cfg.hotspot_pass_time_seeding,
+   hotspot_footprint_m; watch --pass-time-seeding). Every hotspot seeded
+   one grid cell at the cycle time, whatever its age (report C, hazard
+   (a)): a fire only a satellite saw ran late by the detection's age
+   (median 4.4 h on 2026-11-18), the crew deadlines (2, on P10) optimistic
+   by the same, and one non-burnable seed cell could stop a forecast (C,
+   G). With the knob on, the live FIRMS adapter keeps each detection's
+   pixel (the CSV's scan x track) and pass time on its cluster
+   (meta seed_px), attachment (39) carries them to the reported fire and a
+   Confirm (64) to the confirmed one; each hotspot with a known pass time is
+   seeded as its pixel's footprint (scan east-west x track north-south;
+   hotspot_footprint_m, 375 m — VIIRS I-band at nadir — a side when FIRMS
+   gave none) burning from that time (clamped to now: never later), in
+   every ensemble member (spread timed_seeds); a hotspot without a time
+   stays a seed at now; a perimeter cell stays final (A5). Only arrivals
+   move, and only earlier: a seed at an earlier time over a larger area can
+   never make an arrival later (the Dijkstra minimum), so no alert or crew
+   deadline gets later. The cost the founder asked to see first (C,
+   experiment D): honest seeding of a detection hours old can put homes
+   within reach of it at arrival 0 (EXTREME, then IMPACTED) — measured in
+   scratch_review/pass_time_seeding_2026-11-19 before it is armed. Knob off
+   = the adapter keeps no pixel, no timed seed, byte-identical.
+
 ============================================================================
 MODULE SEAMS (public functions each module MUST expose, exactly)
 ============================================================================
@@ -5061,6 +5088,12 @@ class ResponseConfig:
     # channel is dry (console + log) until O-1. paging_triggers: a comma
     # list of satellite_heat, new_fire_near_homes, alert_step_up. False =
     # byte-identical (watch --operator-paging [--rota PATH]).
+    # 65: FOOTPRINT SEEDING AT THE PASS TIME — each satellite detection
+    # with a known pass time seeds its pixel (scan x track, else
+    # hotspot_footprint_m a side) burning from that time, never later than
+    # now. False = byte-identical (watch --pass-time-seeding).
+    hotspot_pass_time_seeding: bool = False
+    hotspot_footprint_m: float = 375.0     # VIIRS I-band pixel at nadir
     # 64: OPERATOR CONFIRM AND DISMISS (wgresponse.decisions) — the ops
     # console's Confirm makes satellite-only heat a fire under a stable id
     # (24 h quiet or a two-operator stand-down ends it; an agency report
@@ -6310,6 +6343,11 @@ def validate_config(cfg: ResponseConfig) -> "list[str]":
                                   "alert_step_up") for t in _trig):
         problems.append("paging_triggers must name one or more of "
                         "satellite_heat, new_fire_near_homes, alert_step_up")
+    if not (math.isfinite(cfg.hotspot_footprint_m)
+            and 100.0 <= cfg.hotspot_footprint_m <= 2000.0):
+        problems.append("hotspot_footprint_m must be within [100, 2000] m "
+                        "(VIIRS I-band 375 m at nadir, ~800 m at the swath "
+                        "edge; MODIS 1 km; SAFETY SEMANTICS 65)")
     if cfg.operator_confirm and not cfg.hotspot_heat_only:
         problems.append("operator_confirm needs hotspot_heat_only (without "
                         "it satellite-only heat is already forecast; SAFETY "
