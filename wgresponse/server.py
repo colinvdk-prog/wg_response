@@ -163,6 +163,7 @@ All times in payloads are unix seconds; positions are lat/lon degrees.
 from __future__ import annotations
 
 import hmac
+import io
 import json
 import logging
 import math
@@ -1341,7 +1342,51 @@ class _Handler(BaseHTTPRequestHandler):
             return
         self._send_json(404, {"error": "not found"})
 
+    def _buffer_body(self) -> bool:
+        """Read the WHOLE request body before any route answers (2026-11-19,
+        found on the live watcher): a route that refused a POST without
+        reading its body (401, 404) left the bytes on the keep-alive
+        connection, and App Runner's proxy reuses that connection, so the
+        NEXT request on it — anyone's — parsed as garbage (501). The body is
+        read here into memory and every handler reads that copy. Over
+        _MAX_BODY_BYTES (or chunked, which this server does not parse) the
+        connection is closed after a 413. False = answered already."""
+        if self.headers.get("Transfer-Encoding"):
+            self.close_connection = True
+            self._send_json(411, {"error": "a Content-Length is required"})
+            return False
+        try:
+            n = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            n = 0
+        if n > _MAX_BODY_BYTES:
+            self.close_connection = True
+            self._send_json(413, {"error": "body too large"})
+            return False
+        raw = self.rfile.read(n) if n > 0 else b""
+        if len(raw) < n:
+            self.close_connection = True       # the peer sent less than it said
+        # the handler reads this copy; the socket's reader comes back after
+        # it (the next request on the connection is read from the socket)
+        self._sock_rfile = self.rfile
+        self.rfile = io.BytesIO(raw)
+        return True
+
+    def _restore_rfile(self) -> None:
+        sock = getattr(self, "_sock_rfile", None)
+        if sock is not None:
+            self.rfile = sock
+            self._sock_rfile = None
+
     def do_POST(self):
+        if not self._buffer_body():
+            return
+        try:
+            self._route_post()
+        finally:
+            self._restore_rfile()
+
+    def _route_post(self):
         path = urlparse(self.path).path.rstrip("/")
         if path == "/api/beacon":
             self._post_beacon()
@@ -1367,6 +1412,14 @@ class _Handler(BaseHTTPRequestHandler):
         self._send_json(404, {"error": "not found"})
 
     def do_DELETE(self):
+        if not self._buffer_body():
+            return
+        try:
+            self._route_delete()
+        finally:
+            self._restore_rfile()
+
+    def _route_delete(self):
         path = urlparse(self.path).path.rstrip("/")
         if path == "/api/seed" or path.startswith("/api/seed/"):
             self._seed_request("DELETE", path)

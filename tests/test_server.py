@@ -1379,3 +1379,39 @@ def test_sim_state_carries_display_only_map_view(sim_ctx):
     assert status == 200
     assert [c["map_view"] for c in snap["state"]["crews"]] == \
         [c["map_view"] for c in live["crews"]]
+
+
+def test_a_refused_post_never_poisons_the_next_request_on_the_connection(ctx):
+    """2026-11-19, found on the live watcher behind App Runner's proxy: a
+    POST refused before its body was read (401) left the body on the
+    keep-alive connection and the NEXT request on it parsed as garbage
+    (501). Every POST / DELETE body is now read before routing."""
+    conn = http.client.HTTPConnection("127.0.0.1", ctx.port, timeout=10)
+    try:
+        body = json.dumps({"crew_id": "x", "lat": 1, "lon": 2}).encode()
+        for path in ("/api/beacon", "/api/operator/confirm",
+                     "/api/no-such-route"):
+            conn.request("POST", path, body=body,
+                         headers={"Content-Type": "application/json"})
+            r = conn.getresponse()
+            r.read()
+            assert r.status in (401, 404), (path, r.status)
+            conn.request("GET", "/healthz")          # same connection
+            r2 = conn.getresponse()
+            assert r2.status == 200, (path, r2.status)
+            assert json.loads(r2.read())["ok"] is True
+        conn.request("DELETE", "/api/seed/x", body=b"junk-body",
+                     headers={"Content-Length": "9"})
+        r = conn.getresponse()
+        r.read()
+        conn.request("GET", "/healthz")
+        assert conn.getresponse().status == 200
+    finally:
+        conn.close()
+
+
+def test_an_oversized_or_chunked_body_is_refused_and_the_connection_closed(ctx):
+    status, _ = ctx.request("POST", "/api/beacon", raw_body=b"x",
+                            headers={"Content-Length": str(
+                                server._MAX_BODY_BYTES + 1)})
+    assert status == 413
